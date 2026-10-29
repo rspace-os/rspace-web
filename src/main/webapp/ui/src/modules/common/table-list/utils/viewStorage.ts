@@ -1,6 +1,6 @@
 import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/config";
-import { parseRsqlExpression, rsqlSelectors, type StaleFieldPolicy, serializeRsqlExpression } from "../rsql";
+import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
 import { columnSelectors, parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryString";
 
@@ -17,7 +17,7 @@ export const tableViewStateSchema = v.object({
   sort: v.nullable(v.string()),
 });
 
-export type TableViewState = v.InferOutput<typeof tableViewStateSchema>;
+type TableViewState = v.InferOutput<typeof tableViewStateSchema>;
 
 export type TableViewValues<TDocument> = {
   search: string | null;
@@ -102,11 +102,6 @@ function savedColumns<TDocument>(
   return merged;
 }
 
-const storedSelectorsSchema = v.object({
-  where: v.fallback(v.string(), ""),
-  columns: v.fallback(v.string(), ""),
-});
-
 export function tableViewStorageKey(tableId: string): string {
   return `rspace.tableList.${tableId}.view`;
 }
@@ -124,19 +119,6 @@ export function removeStoredTableView(key: string): void {
     window.localStorage.removeItem(key);
   } catch {
     // Browser privacy settings must not prevent the table from loading.
-  }
-}
-
-export function storedTableViewSelectors(key: string): readonly string[] {
-  try {
-    const serialized = readStoredTableView(key);
-    if (serialized === null) return [];
-    const result = v.safeParse(storedSelectorsSchema, JSON.parse(serialized));
-    if (!result.success) return [];
-    const { where, columns } = result.output;
-    return [...rsqlSelectors(where), ...columnSelectors(columns)];
-  } catch {
-    return [];
   }
 }
 

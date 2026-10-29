@@ -5,7 +5,7 @@ import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import type { RelationshipOption } from "@/modules/common/relationship-picker/types";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
-import { GranteeSchema, InstrumentSchema, RelationshipSearchResponseSchema } from "./schema";
+import { InstrumentSchema, RelationshipSearchResponseSchema } from "./schema";
 
 /**
  * What the picker owns and this layer cannot supply: the wording, because this layer has no i18n of
@@ -162,30 +162,6 @@ const instruments: RelationshipSource = {
     };
   },
 };
-
-export function granteeRelationshipSource(resource: string, resourceId: number): RelationshipSource {
-  const id = `grantees:${resource}:${resourceId}`;
-  return {
-    id,
-    search: async (term, token, signal) => {
-      const query = term.trim();
-      if (query.length < 2) return [];
-      const params = new URLSearchParams({ query, limit: "20" });
-      const response = await fetchWithUiToken(`/api/v2/${resource}/${resourceId}/access/grantees?${params}`, {
-        headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        signal,
-      });
-      if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
-      const body: unknown = await response.json();
-      return Array.isArray(body) ? body : [];
-    },
-    ownsValue: (value) => /^(user|group):\d+$/i.test(value),
-    toOption: (document) => {
-      const grantee = parseOrThrow(GranteeSchema, document);
-      return { value: grantee.key, label: grantee.name };
-    },
-  };
-}
 
 /**
  * Pickable relationship targets, keyed by the `relationTo` a relationship field already declares,

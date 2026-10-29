@@ -105,8 +105,8 @@ function searchExpression<TDocument>(
 export function selectedFields<TDocument>(
   state: CollectionQueryState<TDocument>,
   config: ResolvedCollectionConfig<TDocument>,
-  virtualFields: ReadonlySet<FieldName<TDocument>> = new Set(),
-  projectableFields: ReadonlySet<FieldName<TDocument>> = new Set(config.fields.map((field) => field.name)),
+  virtualFields: ReadonlySet<FieldName<TDocument>>,
+  projectableFields: ReadonlySet<FieldName<TDocument>>,
 ): readonly FieldName<TDocument>[] {
   const fields = new Set<FieldName<TDocument>>([config.idField, config.useAsTitle]);
   const byName = new Map(config.fields.map((field) => [field.name, field]));
@@ -123,10 +123,9 @@ export function selectedFields<TDocument>(
     const list = field?.list;
     if (list) for (const dependency of list.dependencies ?? []) fields.add(dependency);
   }
-  const configured = new Set(config.fields.map((field) => field.name));
   const selected = config.fields.map((field) => field.name).filter((name) => fields.has(name));
   for (const name of state.visibleFields) {
-    if (fields.has(name) && !configured.has(name) && !virtualFields.has(name) && projectableFields.has(name)) {
+    if (fields.has(name) && !byName.has(name) && !virtualFields.has(name) && projectableFields.has(name)) {
       selected.push(name);
     }
   }
@@ -137,15 +136,15 @@ export function collectionQueryParams<TDocument>(
   state: CollectionQueryState<TDocument>,
   config: ResolvedCollectionConfig<TDocument>,
   metadata: ApiV2CollectionMetadata<TDocument>,
-  virtualFields: ReadonlySet<FieldName<TDocument>> = new Set(),
-  projectableFields: ReadonlySet<FieldName<TDocument>> = new Set(config.fields.map((field) => field.name)),
+  virtualFields: ReadonlySet<FieldName<TDocument>>,
+  projectableFields: ReadonlySet<FieldName<TDocument>>,
   runtime: {
-    projection?: readonly string[];
-    selectors?: ApiV2CollectionMetadata<TDocument>["filtering"]["selectors"];
-    projectionLimitMessage?: (limit: number) => string;
-  } = {},
+    projection: readonly string[];
+    selectors: ApiV2CollectionMetadata<TDocument>["filtering"]["selectors"];
+    projectionLimitMessage: (limit: number) => string;
+  },
 ): URLSearchParams {
-  const runtimeProjection = runtime.projection ?? [];
+  const runtimeProjection = runtime.projection;
   if (state.page.pageIndex < 0) throw new Error("Page index must not be negative");
   if (state.page.pageSize <= 0 || state.page.pageSize > metadata.pagination.maximumLimit) {
     throw new Error(`Page size must be between 1 and ${metadata.pagination.maximumLimit}`);
@@ -176,19 +175,13 @@ export function collectionQueryParams<TDocument>(
   if (expression)
     params.set(
       "where",
-      serializeRsql(
-        expression,
-        { ...metadata.filtering.selectors, ...(runtime.selectors ?? {}) },
-        metadata.filtering.limits,
-      ),
+      serializeRsql(expression, { ...metadata.filtering.selectors, ...runtime.selectors }, metadata.filtering.limits),
     );
 
   for (const namespace of metadata.runtimeFields ?? []) {
     const selected = runtimeProjection.filter((name) => isRuntimeFieldInNamespace(name, namespace.namespace));
     if (selected.length > namespace.maximumProjections) {
-      if (runtime.projectionLimitMessage)
-        throw new LocalizedTableListError(runtime.projectionLimitMessage(namespace.maximumProjections));
-      throw new Error(`Custom field column limit exceeded: maximum ${namespace.maximumProjections}`);
+      throw new LocalizedTableListError(runtime.projectionLimitMessage(namespace.maximumProjections));
     }
   }
   params.set(

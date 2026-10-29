@@ -22,8 +22,6 @@ import type { ApiV2CollectionMetadata } from "./metadata";
 import { collectionQueryParams, selectedFields } from "./queryParams";
 import { type ApiV2DocumentSchema, createApiV2ResponseSchema, objectInput } from "./schema";
 
-export type { RuntimeFieldCatalogForNamespace } from "./filterFields";
-
 export type { ApiV2DocumentSchema } from "./schema";
 
 export type ApiV2CollectionAdapter<TDocument> = {
@@ -45,14 +43,6 @@ export type ApiV2CollectionDefinition<TDocument> = {
   /** Formats multi-value cells as a list in this language. */
   language?: string;
 };
-
-export function staleRuntimeFields<TDocument>(
-  names: readonly string[],
-  adapter: ApiV2CollectionAdapter<TDocument>,
-): readonly string[] {
-  const known = new Set(adapter.config.fields.map((field) => String(field.name)));
-  return names.filter((name) => adapter.isRuntimeSelector(name) && !known.has(name));
-}
 
 function validateSearchSelectors<TDocument>(
   config: CollectionConfig<TDocument>,

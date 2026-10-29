@@ -2,11 +2,9 @@ import type * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { ApiV2RuntimeFieldNamespace } from "./metadata";
-import { catalogSchema, type runtimeFieldSchema, type runtimeFieldValuesSchema } from "./schema";
+import { catalogSchema, type runtimeFieldSchema } from "./schema";
 
 export type RuntimeFieldDefinition = v.InferOutput<typeof runtimeFieldSchema>;
-
-export type RuntimeFieldValues = v.InferOutput<typeof runtimeFieldValuesSchema>;
 
 export type RuntimeFieldCatalogPage = Omit<v.InferOutput<typeof catalogSchema>, "fields"> & {
   fields: Readonly<v.InferOutput<typeof catalogSchema>["fields"]>;

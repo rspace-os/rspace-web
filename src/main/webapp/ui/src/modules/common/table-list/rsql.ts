@@ -3,7 +3,7 @@ import { and, cmp, eq, escapeValue, inList, ne, Operation, or, outList } from "r
 import * as v from "valibot";
 import type { FilterOperator, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { filterOperatorsByToken, filterOperatorTokens as tokens } from "@/modules/common/collection/schema";
-import { booleanScalar, dateTimeScalar, numberScalar, stringScalar } from "./schema";
+import { booleanScalar, dateTimeScalar, numberScalar } from "./schema";
 import type { FilterExpression, FilterValue } from "./types";
 
 const operators = new Map<string, FilterOperator>([
@@ -17,10 +17,6 @@ const operators = new Map<string, FilterOperator>([
 
 type ParsedNode = ReturnType<typeof parse>;
 
-export function rsqlOperatorToken(operator: FilterOperator): (typeof tokens)[FilterOperator] {
-  return tokens[operator];
-}
-
 function serializeComparison<TDocument>(
   expression: Extract<FilterExpression<TDocument>, { kind: "comparison" }>,
 ): string {
@@ -31,7 +27,7 @@ function serializeComparison<TDocument>(
   const value = normalizeRsqlScalar(expression.value);
   if (expression.operator === "equals") return cmp(expression.field, eq(value)).toString();
   if (expression.operator === "notEquals") return cmp(expression.field, ne(value)).toString();
-  return cmp(expression.field, new Operation(escapeValue(value), rsqlOperatorToken(expression.operator))).toString();
+  return cmp(expression.field, new Operation(escapeValue(value), tokens[expression.operator])).toString();
 }
 
 function serializeNode<TDocument>(expression: FilterExpression<TDocument>, isRoot: boolean): string {
@@ -59,7 +55,7 @@ function typedScalar<TDocument>(
   if (operator === "exists" || field.type === "boolean") return parseScalar(booleanScalar, value);
   if (field.type === "number") return parseScalar(numberScalar, value);
   if (field.type === "dateTime") return parseScalar(dateTimeScalar, value);
-  return parseScalar(stringScalar, value);
+  return value;
 }
 
 function comparison<TDocument>(

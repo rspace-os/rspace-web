@@ -45,7 +45,7 @@ export type CollectionPage<TDocument> = {
   rowCount: number;
 };
 
-export type CollectionFetchContext = {
+type CollectionFetchContext = {
   signal: AbortSignal;
 };
 

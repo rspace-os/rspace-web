@@ -3,7 +3,6 @@ import type {
   CollectionTranslationKey,
   FieldConfig,
   FieldName,
-  FilterOperator,
   ResolvedCollectionConfig,
   RuntimeNamespaceSummary,
 } from "@/modules/common/collection/config";
@@ -43,9 +42,7 @@ export type ApiV2RuntimeFilterField<TDocument> = {
   namespace: ApiV2RuntimeFieldNamespace;
   responseField: FieldName<TDocument>;
   definition: RuntimeFieldDefinition;
-  operators: readonly FilterOperator[];
   wireOperators: readonly ApiV2FilterOperator[];
-  supportsWildcards: boolean;
 };
 
 export type ApiV2FilterFields<TDocument> = {
@@ -58,10 +55,7 @@ export type ApiV2FilterFields<TDocument> = {
   /** All fields suitable for a filter configuration. Derived fields have `list: false`. */
   fields: readonly FieldConfig<TDocument>[];
   virtualFields: ReadonlySet<FieldName<TDocument>>;
-  runtimeSelectors: ReadonlyMap<
-    FieldName<TDocument>,
-    { operators: readonly FilterOperator[]; supportsWildcards: boolean }
-  >;
+  runtimeSelectors: ReadonlySet<FieldName<TDocument>>;
   catalogSelectors: ApiV2CollectionMetadata<TDocument>["filtering"]["selectors"];
   runtimeSources: readonly RuntimeNamespaceSummary[];
 };
@@ -276,9 +270,7 @@ function derivedRuntimeFields<TDocument>(
           namespace,
           responseField,
           definition,
-          operators,
           wireOperators,
-          supportsWildcards: definition.supportsWildcards,
         },
       ];
     }),
@@ -324,20 +316,16 @@ export function createApiV2FilterFields<TDocument>({
     }
     runtimeNames.add(name);
   }
-  const runtimeSelectors = new Map(
-    runtimeDerivedFields.map(
-      ({ field, operators, supportsWildcards }) => [field.name, { operators, supportsWildcards }] as const,
-    ),
-  );
+  const runtimeSelectors = new Set(runtimeDerivedFields.map(({ field }) => field.name));
   const virtualFields = new Set<FieldName<TDocument>>([
     ...identityFields.map((field) => field.name),
     ...relationshipFields.map(({ field }) => field.name),
     ...runtimeSelectors.keys(),
   ]);
   const catalogSelectors = Object.fromEntries(
-    runtimeDerivedFields.map(({ field, wireOperators, supportsWildcards }) => [
+    runtimeDerivedFields.map(({ field, wireOperators, definition }) => [
       String(field.name),
-      { operators: wireOperators, wildcards: supportsWildcards },
+      { operators: wireOperators, wildcards: definition.supportsWildcards },
     ]),
   ) as ApiV2FilterFields<TDocument>["catalogSelectors"];
   const runtimeSources = (metadata.runtimeFields ?? [])

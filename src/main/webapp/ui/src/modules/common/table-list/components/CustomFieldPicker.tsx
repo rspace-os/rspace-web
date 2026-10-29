@@ -21,7 +21,7 @@ import {
 const SEARCH_LIMIT = 20;
 const MINIMUM_TERM = 2;
 
-export type RuntimeFieldSourceGroup = {
+type RuntimeFieldSourceGroup = {
   key: string;
   viaLabel: string;
   sources: readonly RuntimeNamespaceSummary[];
@@ -53,24 +53,20 @@ export function CustomFieldPicker({
   sources,
   authScope,
   ariaLabel,
-  hint,
   chosenLabel,
   chosenSelector,
   known,
   onSelect,
   isDefinitionAvailable = () => true,
-  fetchImpl,
 }: {
   sources: readonly RuntimeNamespaceSummary[];
   authScope?: string | number;
   ariaLabel: string;
-  hint?: string;
-  chosenLabel: string | undefined;
+  chosenLabel?: string;
   chosenSelector?: string;
   known: readonly { namespace: string; definitions: readonly RuntimeFieldDefinition[] }[];
   onSelect: (namespace: string, definition: RuntimeFieldDefinition) => void;
   isDefinitionAvailable?: (definition: RuntimeFieldDefinition) => boolean;
-  fetchImpl?: typeof globalThis.fetch;
 }) {
   const { t } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
@@ -98,7 +94,7 @@ export function CustomFieldPicker({
           source,
           page: await fetchRuntimeFieldCatalog(
             { catalog: source.catalog },
-            { search: term.trim(), limit: SEARCH_LIMIT, headers, signal, fetch: fetchImpl },
+            { search: term.trim(), limit: SEARCH_LIMIT, headers, signal },
           ),
         })),
       );
@@ -189,7 +185,6 @@ export function CustomFieldPicker({
           </ComboboxList>
         </ComboboxContent>
       </Combobox>
-      {hint ? <p className="mt-1 text-[10px] text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
