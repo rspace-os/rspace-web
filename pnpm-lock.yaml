@@ -193,7 +193,7 @@ overrides:
   miew-react>miew: 0.12.0
   '@sa11y/vitest>vitest': 5.0.5
 
-packageExtensionsChecksum: sha256-xr/d/E45xCdSQB8hv/OuR8kU03L7TxBOAqLOH+08JkA=
+packageExtensionsChecksum: sha256-Be6i+U+c2s7bcEaz4ujBIcl/oPKt5eyyl4Ibxe025zA=
 
 importers:
 
@@ -12073,6 +12073,7 @@ snapshots:
       '@lexical/rich-text': 0.40.0
       '@lexical/selection': 0.40.0
       '@mui/material': 5.18.0(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
+      assert: 2.1.0
       cfb: 1.2.2
       clsx: 1.2.1
       dpdm: 4.3.0

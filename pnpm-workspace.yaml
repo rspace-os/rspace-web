@@ -44,6 +44,12 @@ packageExtensions:
   ketcher-standalone:
     dependencies:
       events: 3.3.0
+  # Without `assert`, Vite stubs the Node builtin and Ketcher throws on its
+  # first assert(), e.g. when adding an opened file to the canvas. 3.20.0
+  # imports assert from ketcher-core instead.
+  ketcher-react:
+    dependencies:
+      assert: 2.1.0
 
 allowBuilds:
   lefthook: true
