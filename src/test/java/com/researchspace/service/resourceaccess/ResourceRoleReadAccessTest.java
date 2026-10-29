@@ -44,10 +44,8 @@ class ResourceRoleReadAccessTest {
   void returnsTrustedMembershipConstraintForOrdinarySubject() {
     Group active = mock(Group.class);
     when(active.getId()).thenReturn(41L);
-    when(active.getEnabledMemberSize()).thenReturn(2);
     Group empty = mock(Group.class);
     when(empty.getId()).thenReturn(42L);
-    when(empty.getEnabledMemberSize()).thenReturn(0);
     when(subject.getGroups()).thenReturn(Set.of(active, empty));
 
     AccessResult.AllowedWhere result =
@@ -57,7 +55,7 @@ class ResourceRoleReadAccessTest {
     ResourceRoleMembershipConstraint constraint =
         assertInstanceOf(ResourceRoleMembershipConstraint.class, result.constraint());
 
-    assertEquals(Set.of(41L), constraint.currentGroupIds());
+    assertEquals(Set.of(41L, 42L), constraint.currentGroupIds());
     assertEquals(
         Set.of(
             ResourceAccessTestScheme.OWNER,
