@@ -26,6 +26,11 @@ describe("getAppConfig", () => {
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
+  it.each(["o'brien@uni.ac.uk", "admin@localhost"])("accepts RFC help email %s", async (deploymentHelpEmail) => {
+    server.use(http.get("/api/v2/config", () => HttpResponse.json({ ...DEFAULT_APP_CONFIG, deploymentHelpEmail })));
+    await expect(getAppConfig()).resolves.toMatchObject({ deploymentHelpEmail });
+  });
+
   it("accepts nullable deployment metadata", async () => {
     const response = {
       version: "2.99.1",
