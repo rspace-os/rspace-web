@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
@@ -260,7 +261,7 @@ public class ApiV2ControllerAdvice {
     if (status == null) {
       return problem(HttpStatus.INTERNAL_SERVER_ERROR, "errors.api.v2.unexpected");
     }
-    return withHeaders(problem(status, messageKeyFor(status)), ex.getHeaders());
+    return withHeaders(problem(status, ApiV2ErrorCodes.messageKeyFor(status)), ex.getHeaders());
   }
 
   @ExceptionHandler(Exception.class)
@@ -280,24 +281,8 @@ public class ApiV2ControllerAdvice {
       log.debug("Mapping Spring MVC {} to {}", ex.getClass().getSimpleName(), declared);
     }
     return withHeaders(
-        problem(declared, messageKeyFor(declared)), ((ErrorResponse) ex).getHeaders());
-  }
-
-  private static String messageKeyFor(HttpStatus status) {
-    if (status.is5xxServerError()) {
-      return "errors.api.v2.unexpected";
-    }
-    return switch (status) {
-      case NOT_FOUND -> "errors.api.v2.notFound";
-      case METHOD_NOT_ALLOWED -> "errors.api.v2.methodNotAllowed";
-      case NOT_ACCEPTABLE -> "errors.api.v2.notAcceptable";
-      case UNSUPPORTED_MEDIA_TYPE -> "errors.api.v2.unsupportedMediaType";
-      case UNAUTHORIZED -> "errors.api.v2.authenticationRequired";
-      case FORBIDDEN -> "errors.api.v2.forbidden";
-      case TOO_MANY_REQUESTS -> "errors.api.v2.tooManyRequests";
-      case BAD_REQUEST -> "errors.api.v2.invalidRequest";
-      default -> "errors.api.v2.requestRejected";
-    };
+        problem(declared, ApiV2ErrorCodes.messageKeyFor(declared)),
+        ((ErrorResponse) ex).getHeaders());
   }
 
   private static ResponseEntity<ApiV2Problem> withHeaders(
