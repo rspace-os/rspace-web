@@ -7519,6 +7519,9 @@ export default interface Resources {
           "edited": "Edited List of Materials {0}.",
           "itemsAdded": "Added inventory items: {0}.",
           "itemsRemoved": "Removed inventory items: {0}."
+        },
+        "sampleRequest": {
+          "sent": "To user: {0}"
         }
       },
       "identifier": {

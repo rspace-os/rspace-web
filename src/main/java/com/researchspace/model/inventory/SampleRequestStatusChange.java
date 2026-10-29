@@ -13,7 +13,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-import java.io.Serializable;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
@@ -22,11 +21,9 @@ import lombok.Setter;
 @Entity
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SampleRequestStatusChange implements Serializable {
+public class SampleRequestStatusChange {
 
   public static final int REASON_COLUMN_LENGTH = 2000;
-
-  private static final long serialVersionUID = 1L;
 
   private Long id;
   private SampleRequest sampleRequest;

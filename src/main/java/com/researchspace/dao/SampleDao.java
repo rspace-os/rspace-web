@@ -38,9 +38,7 @@ public interface SampleDao extends SampleEntityDao<Sample> {
 
   /**
    * As {@link #getSamplesForUser(PaginationCriteria, Long, String, InventorySearchDeletedOption,
-   * User)}, optionally limited by {@code requestable} and, for a requestable search, by a name
-   * containing {@code query} (case-insensitive). {@code requestable=true} searches every
-   * requestable sample not in the trash, whatever the user's permissions.
+   * User)}, optionally limited to samples with the given {@code requestable} value.
    */
   ISearchResults<Sample> getSamplesForUser(
       PaginationCriteria<Sample> pgCrit,
@@ -48,8 +46,14 @@ public interface SampleDao extends SampleEntityDao<Sample> {
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       Boolean requestable,
-      String query,
       User user);
+
+  /**
+   * Every requestable sample not in the trash, whatever the caller's permissions, optionally
+   * limited to an owner and to names containing {@code query} (case-insensitive).
+   */
+  ISearchResults<Sample> getRequestableSamples(
+      PaginationCriteria<Sample> pgCrit, String ownedBy, String query);
 
   /**
    * Get a global id of a Sample that has a field with given id, or null if there is no such sample.
