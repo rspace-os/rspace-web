@@ -10,7 +10,9 @@ type TooltipIconLinkProps = {
 export function TooltipIconLink({ label, icon, children }: TooltipIconLinkProps) {
   return (
     <Tooltip>
-      <TooltipTrigger render={children}>{icon}</TooltipTrigger>
+      <TooltipTrigger aria-label={label} render={children}>
+        {icon}
+      </TooltipTrigger>
       <TooltipContent role="tooltip" className="rounded-sm">
         {label}
       </TooltipContent>
