@@ -65,7 +65,6 @@ export function AllBookableItemsTable({
           <div className="flex gap-1">
             <TooltipIconLink label={detailsLabel} icon={<EyeIcon aria-hidden="true" />}>
               <Link
-                aria-label={detailsLabel}
                 className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                 data-slot="button"
                 to="/booking/bookable-items/$globalId/{-$tab}"
@@ -75,7 +74,6 @@ export function AllBookableItemsTable({
             {row.capabilities?.canCreateBooking ? (
               <TooltipIconLink label={bookLabel} icon={<CalendarPlusIcon aria-hidden="true" />}>
                 <Link
-                  aria-label={bookLabel}
                   className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                   data-slot="button"
                   to="/booking/calendar/bookings/add"
@@ -89,7 +87,6 @@ export function AllBookableItemsTable({
                 icon={<SettingsIcon aria-hidden="true" />}
               >
                 <Link
-                  aria-label={t("allBookableItems.actions.settings")}
                   className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                   data-slot="button"
                   to="/booking/bookable-items/$globalId/{-$tab}"
