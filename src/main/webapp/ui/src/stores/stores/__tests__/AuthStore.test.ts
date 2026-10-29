@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tokenExpiringIn } from "@/__tests__/helpers/jwt";
 import { server } from "@/__tests__/mswServer";
 import JwtService from "@/common/JwtService";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
 
 beforeEach(() => {
+  resetUiTokenForTests();
   sessionStorage.clear();
   document.getElementById("public_document_view")?.remove();
 });

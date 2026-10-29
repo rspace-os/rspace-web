@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import { clearStoredToken, getStoredToken, saveStoredToken } from "./auth";
+import { clearStoredToken, getStoredToken, replaceUiToken, saveStoredToken } from "./auth";
 
 const recoveries = new Map<string, Promise<string | undefined>>();
 
@@ -80,6 +80,7 @@ async function recoverSession(authorization: string, identityRejected: boolean):
   if (!response.ok) return;
   clearStoredToken();
   saveStoredToken(token);
+  replaceUiToken(token);
   // The server keeps one refresh token per user, so a matching hash means the old token
   // merely expired and requests can safely keep using the page's identity.
   const previousHash = refreshTokenHash(authorization.slice("Bearer ".length));

@@ -1,6 +1,12 @@
 import React from "react";
 import axios from "@/common/axios";
-import { fetchOauthToken, isPublicDocumentView, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
+import {
+  fetchOauthToken,
+  isPublicDocumentView,
+  mintUiToken,
+  saveStoredToken,
+  secondsToExpiry,
+} from "@/modules/common/utils/auth";
 
 const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
 
@@ -64,8 +70,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
       saveStoredToken(newToken);
       return newToken;
     }
-    const response = await axios.post<{ accessToken: string }>("/api/v2/oauth/tokens");
-    return response.data.accessToken;
+    return mintUiToken();
   }
 
   /*
@@ -74,7 +79,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * token so that subsequent calls to `getToken` will use the new one.
    */
   async function refreshToken(): Promise<void> {
-    const newToken = await fetchOauthToken(fetchToken);
+    const newToken = await (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken());
     tokenRef.current = newToken;
     setTimeout(() => {
       void refreshToken();
@@ -88,13 +93,13 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * just return it; thereby ensuring that we don't setup a new
      * `setTimeout` with each call to `getToken`.
      */
-    if (tokenRef.current) return tokenRef.current;
+    if (tokenRef.current) return isPublicDocumentView() ? tokenRef.current : mintUiToken();
 
     /*
      * Mint a token for the current page context instead of reusing the shared
      * session-storage token, which may belong to another browser-session context.
      */
-    const initialToken = await fetchOauthToken(fetchToken);
+    const initialToken = await (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken());
     tokenRef.current = initialToken;
 
     /*
