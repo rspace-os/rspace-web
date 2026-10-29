@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -331,6 +332,37 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
     assertInstanceOf(IllegalArgumentException.class, createResult.getResolvedException());
     assertThat(createResult.getResolvedException().getMessage())
         .contains(String.valueOf(User.DEFAULT_MAXFIELD_LEN));
+  }
+
+  @Test
+  public void stopUserLoginSavesDuringActiveMaintenance() throws Exception {
+    Instant beforeRequest = Instant.now();
+    ScheduledMaintenance maintenance =
+        new ScheduledMaintenance(
+            Date.from(beforeRequest.minus(Duration.ofHours(1))),
+            Date.from(beforeRequest.plus(Duration.ofHours(1))));
+    maintenanceManager.saveScheduledMaintenance(maintenance, sysUser);
+
+    try {
+      MvcResult result =
+          mockMvc
+              .perform(post("/system/maintenance/ajax/stopUserLogin").principal(sysUserPrincipal))
+              .andExpect(status().isOk())
+              .andReturn();
+
+      assertNull(result.getResolvedException());
+      assertEquals("OK", result.getResponse().getContentAsString());
+      ScheduledMaintenance saved = maintenanceManager.getScheduledMaintenance(maintenance.getId());
+      // The database stores maintenance dates at whole-second precision.
+      assertFalse(
+          saved
+              .getStopUserLoginDate()
+              .before(Date.from(beforeRequest.truncatedTo(ChronoUnit.SECONDS))));
+      assertTrue(saved.getStopUserLoginDate().after(saved.getStartDate()));
+      assertFalse(saved.getCanUserLoginNow());
+    } finally {
+      maintenanceManager.removeScheduledMaintenance(maintenance.getId(), sysUser);
+    }
   }
 
   private String tooLongMessage() {
