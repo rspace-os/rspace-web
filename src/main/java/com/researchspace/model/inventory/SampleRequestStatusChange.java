@@ -34,6 +34,7 @@ public class SampleRequestStatusChange implements Serializable {
   private Long createdById;
   private SampleRequestStatus status;
   private String reason;
+  private String reasonKey;
   private Sample transferredSample;
   private Date created = new Date();
 
@@ -96,10 +97,19 @@ public class SampleRequestStatusChange implements Serializable {
     return status;
   }
 
-  /** Set for a rejection, and for a fulfilment made by a transfer. */
+  /** The reason the owner gave for a rejection. */
   @Column(length = REASON_COLUMN_LENGTH)
   public String getReason() {
     return reason;
+  }
+
+  /**
+   * The message key of the reason for a change a transfer made, resolved in the reader's locale
+   * rather than stored as text.
+   */
+  @Column(length = 100)
+  public String getReasonKey() {
+    return reasonKey;
   }
 
   /** The sample this transition fulfilled the request with, if any. */

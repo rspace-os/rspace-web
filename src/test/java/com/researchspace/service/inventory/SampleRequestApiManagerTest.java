@@ -30,6 +30,7 @@ import com.researchspace.model.events.SampleRequestStatusEvent;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import com.researchspace.model.inventory.SampleRequestStatusChange;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
@@ -42,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -238,9 +238,14 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
       ApiSampleRequestStatusChange latest =
           reloaded.getStatusChanges().get(reloaded.getStatusChanges().size() - 1);
       assertEquals(SampleRequestStatus.REJECTED, latest.getStatus());
-      assertTrue(
-          latest.getReason().contains(newOwner.getFirstName() + " " + newOwner.getLastName()),
-          "reason missing new owner's name: " + latest.getReason());
+      assertEquals(
+          messages.getMessage("inventory.sampleRequest.autoRejectedReason"), latest.getReason());
+      // stored as a key, so each reader sees the reason in their own locale
+      List<SampleRequestStatusChange> stored =
+          sampleRequestDao.get(other.getId()).getStatusChanges();
+      SampleRequestStatusChange storedLatest = stored.get(stored.size() - 1);
+      assertEquals("inventory.sampleRequest.autoRejectedReason", storedLatest.getReasonKey());
+      assertNull(storedLatest.getReason());
     }
   }
 
@@ -260,7 +265,8 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
     assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
     assertEquals(sample.getGlobalId(), latest.getTransferredSample().getGlobalId());
-    assertTrue(StringUtils.isNotBlank(latest.getReason()), "auto-fulfilment should say why");
+    assertEquals(
+        messages.getMessage("inventory.sampleRequest.autoFulfilledReason"), latest.getReason());
     assertEquals(
         SampleRequestStatus.FULFILLED,
         sampleRequestApiMgr.getRequestById(recipientsApproved.getId(), owner).getStatus());

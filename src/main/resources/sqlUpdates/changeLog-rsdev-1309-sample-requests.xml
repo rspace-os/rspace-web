@@ -112,6 +112,8 @@
                 <constraints nullable="false"/>
             </column>
             <column name="reason" type="VARCHAR(2000)"/>
+            <!-- instead of reason, for a reason RSpace gives: turned into text when read -->
+            <column name="reasonKey" type="VARCHAR(100)"/>
             <!-- the sample a fulfilment handed over, if recorded -->
             <column name="transferredSample_id" type="BIGINT">
                 <constraints nullable="true" foreignKeyName="fk_srsc_transferredsample"
