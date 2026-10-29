@@ -6,7 +6,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
@@ -21,6 +20,7 @@ export default function TransferOwnershipDialog({
   requestId,
   sampleName,
   requesterFullName,
+  isNewlyCreatedSample,
   subSampleCount,
   otherActiveRequests,
   transferRecipient,
@@ -34,6 +34,14 @@ export default function TransferOwnershipDialog({
   requestId: number;
   sampleName: string;
   requesterFullName: string;
+  /**
+   * True when `sampleName` is a sample the Operations Wizard just created (reached via the
+   * "wizard" radio), rather than the one originally requested (every other route into this
+   * dialog). Swaps the info box to explain the new sample instead of the usual ownership
+   * warning, and the "moved to {requester}'s bench" bullet to name the new sample rather than
+   * generic subsamples.
+   */
+  isNewlyCreatedSample: boolean;
   subSampleCount: number | null;
   otherActiveRequests: Array<OtherActiveSampleRequest> | null;
   transferRecipient: PersonModel | null;
@@ -44,7 +52,6 @@ export default function TransferOwnershipDialog({
   onSubmit: () => void;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
-  const theme = useTheme();
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -53,16 +60,22 @@ export default function TransferOwnershipDialog({
       </DialogTitle>
       <DialogContent>
         <Alert severity="info" sx={{ mb: 2 }}>
-          <TransRichText
-            i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
-            values={{ requester: requesterFullName }}
-          />
+          {isNewlyCreatedSample ? (
+            t("requestsManagement.detail.transferDialog.newSampleHint", { sampleName })
+          ) : (
+            <TransRichText
+              i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
+              values={{ requester: requesterFullName }}
+            />
+          )}
         </Alert>
         <Typography component="p" variant="body1" sx={{ mb: 1 }}>
           {t("requestsManagement.detail.transferDialog.whatWillHappen")}
         </Typography>
         <Box component="ul" sx={{ mt: 0, mb: 2, pl: 3 }}>
-          {subSampleCount !== null && subSampleCount > 1 && (
+          {/* subSampleCount is always the originally requested sample's own count, never the
+              newly created one's - not a sensible bullet to show about a different sample. */}
+          {!isNewlyCreatedSample && subSampleCount !== null && subSampleCount > 1 && (
             <Typography component="li" variant="body2">
               {subSampleCount === 2
                 ? t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferredBoth", {
@@ -75,12 +88,18 @@ export default function TransferOwnershipDialog({
             </Typography>
           )}
           <Typography component="li" variant="body2">
-            {t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", { requester: requesterFullName })}
+            {isNewlyCreatedSample
+              ? t("requestsManagement.detail.transferDialog.bullets.newSampleMoved", {
+                  requester: requesterFullName,
+                })
+              : t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", {
+                  requester: requesterFullName,
+                })}
           </Typography>
           <Typography component="li" variant="body2">
             {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: requestId })}
           </Typography>
-          {otherActiveRequests !== null && otherActiveRequests.length > 0 && (
+          {!isNewlyCreatedSample && otherActiveRequests !== null && otherActiveRequests.length > 0 && (
             <Typography component="li" variant="body2">
               {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
                 count: otherActiveRequests.length,
@@ -112,6 +131,8 @@ export default function TransferOwnershipDialog({
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
         <Button
           variant="contained"
+          color="callToAction"
+          disableElevation
           // transferRequesterPerson === null also disables this: until the requester lookup
           // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
           // searches every user, not just the requester - submitting before then could hand
@@ -120,13 +141,6 @@ export default function TransferOwnershipDialog({
           // the same transfer twice.
           disabled={transferRecipient === null || transferRequesterPerson === null || isProcessingAction}
           onClick={onSubmit}
-          sx={{
-            backgroundColor: darken(theme.palette.primary.main, 0.5),
-            color: "white",
-            "&:hover": {
-              backgroundColor: darken(theme.palette.primary.main, 0.55),
-            },
-          }}
         >
           {t("common:actions.transfer")}
         </Button>

@@ -186,35 +186,10 @@ beforeEach(() => {
 });
 
 // Covers OwnerActionsPanel's Prepare/Transfer Sample button (which of the two labels it shows,
-// and when each is enabled), ChooseMethodDialog, and PrepareSampleDialog. TransferOwnershipDialog's
-// own content and the full prepare-then-transfer outcomes have their own sibling test file.
+// and when each is enabled), and ChooseMethodDialog. TransferOwnershipDialog's own content and the
+// full prepare-then-transfer outcomes have their own sibling test file; what proceeding with the
+// "wizard" radio actually launches is covered in RequestDetailPanel.test.tsx.
 describe("RequestDetailPanel choose method", () => {
-  it("shows the placeholder Operations Wizard step when 'Create a new sample' is chosen", async () => {
-    const user = userEvent.setup();
-    renderPanel(baseRequest({ status: "APPROVED" }));
-    await waitForInitialFetches();
-
-    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
-    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
-    const chooseDialog = screen.getByRole("dialog", {
-      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
-    });
-    await user.click(
-      within(chooseDialog).getByRole("radio", {
-        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
-      }),
-    );
-    await user.click(
-      within(chooseDialog).getByRole("button", {
-        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
-      }),
-    );
-
-    expect(
-      await screen.findByRole("dialog", { name: "inventory:requestsManagement.detail.prepareDialog.title" }),
-    ).toBeInTheDocument();
-  });
-
   it("skips the Choose Sample to Prepare dialog and goes straight to Transfer when inventory.sampleRequests.available is on and inventory.operations.available is off", async () => {
     const user = userEvent.setup();
     deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";

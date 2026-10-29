@@ -14,6 +14,7 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { orderBy } from "es-toolkit";
+import type { TFunction } from "i18next";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,9 +37,30 @@ export type ApiSampleRequestListItem = {
   status: string;
   created: string;
   note: string | null;
-  requester: { id: number; username: string; firstName: string; lastName: string };
+  requester: { id: number; username: string; firstName: string | null; lastName: string | null };
   sample: { id: number; globalId: string; name: string; owner: { id: number } };
 };
+
+/**
+ * Shared by every place a SampleRequest's response names a user by id/username/firstName/
+ * lastName: the requester, and each status change's createdBy. The id is always present, whether
+ * or not that account still exists; a null firstName and lastName together mean the account has
+ * since been deleted - there is then no current name to show, so username is the one field
+ * guaranteed to still meaningfully identify who it was.
+ *
+ * Takes `t` rather than calling useTranslation itself so it can be shared by any caller already
+ * resolving the "inventory" namespace (as every current caller does) regardless of which other
+ * namespaces they also requested - i18next's generated TFunction type is otherwise invariant in
+ * its namespace list, which would make this reject some of those callers for no real reason.
+ */
+export function userDisplayName(
+  person: { id: number; username: string; firstName: string | null; lastName: string | null },
+  t: TFunction<readonly ["inventory", "common"]>,
+): string {
+  return person.firstName === null && person.lastName === null
+    ? t("inventory:requestsManagement.userDeleted", { username: person.username })
+    : `${person.firstName} ${person.lastName}`;
+}
 
 export type RequestsFilter = "all" | "sent" | "received";
 export type StatusFilter = "all" | "active" | "past";
@@ -57,9 +79,20 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
     case "sample":
       return request.sample.id;
     case "requester":
-      // Matches the name shown in the UserDetails chip below, rather than the
-      // underlying id, since that's the value a user sorting this column sees.
-      return `${request.requester.firstName} ${request.requester.lastName}`;
+      // Matches the name shown in the UserDetails chip below, rather than the underlying id,
+      // since that's the value a user sorting this column sees. A deleted account has no current
+      // name (both firstName and lastName come back null) to sort by - comparing a
+      // Number.NEGATIVE_INFINITY sentinel against a name string left the comparator below
+      // inconsistent: `<`/`>` coerce the string operand to NaN, which is neither less than nor
+      // greater than anything, so every deleted-vs-live comparison came out "equal" instead of
+      // grouping deleted accounts to one end as intended. A single string key keeps every
+      // comparison the same (string-to-string) type: an order prefix that always sorts before a
+      // live user's name groups deleted accounts together, and the username (the one field still
+      // guaranteed to identify a deleted account - see userDisplayName above) orders them
+      // consistently against each other.
+      return request.requester.firstName === null && request.requester.lastName === null
+        ? `0:${request.requester.username}`
+        : `1:${request.requester.firstName} ${request.requester.lastName}`;
     case "status":
       return request.status;
     case "submitted":
@@ -77,22 +110,32 @@ function requestMatchesQuery(request: ApiSampleRequestListItem, lowerCaseQuery: 
   const searchableText = [
     request.sample.globalId,
     request.sample.name,
-    `${request.requester.firstName} ${request.requester.lastName}`,
+    // Blank, not "null null", once the requester's account has been deleted - username (below)
+    // still covers searching for them in that case.
+    request.requester.firstName === null || request.requester.lastName === null
+      ? ""
+      : `${request.requester.firstName} ${request.requester.lastName}`,
     request.requester.username,
     request.note ?? "",
   ];
   return searchableText.some((text) => text.toLowerCase().includes(lowerCaseQuery));
 }
 
-function renderColumnCell(request: ApiSampleRequestListItem, column: ColumnKey): React.ReactNode {
+function renderColumnCell(
+  request: ApiSampleRequestListItem,
+  column: ColumnKey,
+  t: TFunction<readonly ["inventory", "common"]>,
+): React.ReactNode {
   if (column === "sample") {
     return <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />;
   }
   if (column === "requester") {
-    return (
+    return request.requester.firstName === null && request.requester.lastName === null ? (
+      userDisplayName(request.requester, t)
+    ) : (
       <UserDetails
         userId={request.requester.id}
-        fullName={`${request.requester.firstName} ${request.requester.lastName}`}
+        fullName={userDisplayName(request.requester, t)}
         position={["bottom", "right"]}
       />
     );
@@ -314,7 +357,7 @@ export default function RequestsList({
                       tabIndex={0}
                       aria-label={t("requestsManagement.rowLabel", {
                         sampleGlobalId: request.sample.globalId,
-                        requester: `${request.requester.firstName} ${request.requester.lastName}`,
+                        requester: userDisplayName(request.requester, t),
                         status: requestStatusLabel(request.status, t),
                       })}
                       onClick={() => onSelect(request)}
@@ -333,9 +376,9 @@ export default function RequestsList({
                         },
                       })}
                     >
-                      <TableCell>{renderColumnCell(request, "sample")}</TableCell>
-                      <TableCell>{renderColumnCell(request, "requester")}</TableCell>
-                      <TableCell>{renderColumnCell(request, adjustableColumn)}</TableCell>
+                      <TableCell>{renderColumnCell(request, "sample", t)}</TableCell>
+                      <TableCell>{renderColumnCell(request, "requester", t)}</TableCell>
+                      <TableCell>{renderColumnCell(request, adjustableColumn, t)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

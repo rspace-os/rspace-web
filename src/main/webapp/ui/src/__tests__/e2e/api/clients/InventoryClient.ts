@@ -45,10 +45,6 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
-  async getSample(sampleId: number): Promise<ApiInventorySample> {
-    return this.requestJson("get", `/api/inventory/v1/samples/${sampleId}`, { action: "getInventorySample" });
-  }
-
   /**
    * Releases an edit lock on an item, if one is held. The lock owner can always release their own
    * lock (see InventoryEditLocksController), and it's a no-op, not an error, if there is none -

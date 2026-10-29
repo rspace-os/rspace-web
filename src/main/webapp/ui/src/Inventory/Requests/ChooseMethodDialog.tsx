@@ -15,18 +15,21 @@ export default function ChooseMethodDialog({
   open,
   preparationMethod,
   onMethodChange,
-  subSampleCount,
-  otherActiveRequestsCount,
-  requesterFullName,
+  warnings,
   onClose,
   onProceed,
 }: {
   open: boolean;
   preparationMethod: "wizard" | "transfer" | null;
   onMethodChange: (method: "wizard" | "transfer") => void;
-  subSampleCount: number | null;
-  otherActiveRequestsCount: number | null;
-  requesterFullName: string;
+  /**
+   * Transfer-specific consequences (multiple subsamples, other active requests) to show the owner
+   * before they proceed - already worded and ordered by the caller (see
+   * RequestDetailPanel's chooseMethodTransferWarnings). Combined into one alert rather than one
+   * each: both warn about consequences of the same "transfer" choice, so showing them as separate
+   * boxes would read as more alarming than warranted.
+   */
+  warnings: Array<string>;
   onClose: () => void;
   onProceed: () => void;
 }): React.ReactNode {
@@ -54,23 +57,25 @@ export default function ChooseMethodDialog({
             label={t("requestsManagement.detail.chooseMethodDialog.transferOption")}
           />
         </RadioGroup>
-        {preparationMethod === "transfer" && subSampleCount !== null && subSampleCount > 1 && (
+        {warnings.length > 0 && (
           <Alert severity="warning" sx={{ mt: 2 }}>
-            {t("requestsManagement.detail.chooseMethodDialog.transferWarning", {
-              count: subSampleCount,
-              requester: requesterFullName,
-            })}
-          </Alert>
-        )}
-        {preparationMethod === "transfer" && otherActiveRequestsCount !== null && otherActiveRequestsCount > 0 && (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            {t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarning")}
+            {warnings.map((warning) => (
+              <Typography key={warning} variant="body2">
+                {warning}
+              </Typography>
+            ))}
           </Alert>
         )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
-        <Button variant="contained" disabled={preparationMethod === null} onClick={onProceed}>
+        <Button
+          variant="contained"
+          color="callToAction"
+          disableElevation
+          disabled={preparationMethod === null}
+          onClick={onProceed}
+        >
           {t("requestsManagement.detail.chooseMethodDialog.proceedButton")}
         </Button>
       </DialogActions>

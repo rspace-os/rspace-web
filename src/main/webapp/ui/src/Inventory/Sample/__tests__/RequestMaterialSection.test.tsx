@@ -246,6 +246,34 @@ describe("RequestMaterialSection", () => {
     );
   });
 
+  test("keeps the Send Request button disabled until the request text box has content.", async () => {
+    const user = userEvent.setup();
+    setCurrentUser(REQUESTER_USERNAME);
+    const sample = makeOwnedSample({ requestable: true, globalId: "SA1" });
+    renderWithProviders(<RequestMaterialSection activeResult={sample} />);
+
+    const requestButton = await screen.findByRole("button", {
+      name: "inventory:sample.requestMaterialSection.requestSampleButton",
+    });
+    await user.click(requestButton);
+
+    const textBox = screen.getByPlaceholderText("inventory:sample.requestMaterialSection.whatYouNeedHelperText");
+    const sendButton = screen.getByRole("button", {
+      name: "inventory:sample.requestMaterialSection.sendRequestButton",
+    });
+    expect(sendButton).toBeDisabled();
+
+    await user.type(textBox, "   ");
+    // Whitespace-only text is not a genuine request description either.
+    expect(sendButton).toBeDisabled();
+
+    await user.type(textBox, "Need 5ml please");
+    expect(sendButton).toBeEnabled();
+
+    await user.clear(textBox);
+    expect(sendButton).toBeDisabled();
+  });
+
   test("a non-owner can send a request for a requestable sample, and the dialog closes on success.", async () => {
     const user = userEvent.setup();
     setCurrentUser(REQUESTER_USERNAME);

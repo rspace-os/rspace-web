@@ -286,6 +286,60 @@ describe("RequestsList Requester column sorting", () => {
     const names = screen.getAllByText(/Zephyr|Anderson/).map((el) => el.textContent);
     expect(names).toEqual(["Amy Anderson", "Zara Zephyr"]);
   });
+
+  test("groups deleted-account requesters consistently, rather than scrambling the order", async () => {
+    const user = userEvent.setup();
+    // Two deleted accounts (sorting against each other, by username, within the deleted group)
+    // interleaved with two live ones (sorting against each other, by name) - the bug this guards
+    // against: comparing the deleted sentinel against a name string coerced the string to NaN,
+    // which is neither less than nor greater than anything, so every deleted-vs-live comparison
+    // came out "equal" instead of grouping deleted accounts to one end, scrambling this order.
+    const requests: Array<ApiSampleRequestListItem> = [
+      {
+        id: 1,
+        status: "PENDING",
+        created: "2026-01-01T10:00:00Z",
+        note: null,
+        requester: { id: 10, username: "del-zed", firstName: null, lastName: null },
+        sample: { id: 1, globalId: "SA1", name: "Sample One", owner: { id: 99 } },
+      },
+      {
+        id: 2,
+        status: "PENDING",
+        created: "2026-01-02T10:00:00Z",
+        note: null,
+        requester: { id: 5, username: "amy", firstName: "Amy", lastName: "Anderson" },
+        sample: { id: 2, globalId: "SA2", name: "Sample Two", owner: { id: 99 } },
+      },
+      {
+        id: 3,
+        status: "PENDING",
+        created: "2026-01-03T10:00:00Z",
+        note: null,
+        requester: { id: 11, username: "del-ann", firstName: null, lastName: null },
+        sample: { id: 3, globalId: "SA3", name: "Sample Three", owner: { id: 99 } },
+      },
+      {
+        id: 4,
+        status: "PENDING",
+        created: "2026-01-04T10:00:00Z",
+        note: null,
+        requester: { id: 1, username: "zara", firstName: "Zara", lastName: "Zephyr" },
+        sample: { id: 4, globalId: "SA4", name: "Sample Four", owner: { id: 99 } },
+      },
+    ];
+    renderList(requests);
+    await waitFor(() => expect(screen.getByText("Zara Zephyr")).toBeInTheDocument());
+
+    await user.click(screen.getByText("inventory:requestsManagement.columns.requester"));
+
+    // Both deleted accounts render the same (cimode) "deleted user" text, so sample globalId -
+    // unique per row - identifies which request is which, rather than the (here indistinguishable)
+    // requester text.
+    const rows = screen.getAllByRole("row").slice(1); // drop the header row
+    const samplesInOrder = rows.map((row) => within(row).getByText(/^SA\d$/).textContent);
+    expect(samplesInOrder).toEqual(["SA3", "SA1", "SA2", "SA4"]);
+  });
 });
 
 describe("RequestsList search filtering", () => {

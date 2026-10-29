@@ -4407,11 +4407,16 @@ export default interface Resources {
         "cancelRequestHint": "Cancel this request if you no longer require this material.",
         "chooseMethodDialog": {
           "body": "Choose how you wish to prepare the sample:",
-          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states. These other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningApproved": "There are other requests against this sample that are in the Approved state - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningApprovedCombined": "There are also other requests against this sample that are in the Approved state - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningCombined": "There are also other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningPending": "There are other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningPendingCombined": "There are also other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
           "proceedButton": "Proceed",
           "title": "Choose Sample to Prepare",
           "transferOption": "Transfer the existing sample and all subsamples",
-          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
+          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to {requester}.",
           "wizardOption": "Create a new sample derived from the existing sample"
         },
         "fields": {
@@ -4458,11 +4463,6 @@ export default interface Resources {
           "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer.",
           "pendingTransferOnly": "Approve the request to transfer a sample, or immediately transfer the sample."
         },
-        "prepareDialog": {
-          "body": "Preparing {subsample} for transfer.",
-          "comingSoon": "Coming soon",
-          "title": "Operations Wizard Step"
-        },
         "prepareSampleButton": "Prepare Sample",
         "rejectButton": "Reject",
         "rejectDialog": {
@@ -4482,8 +4482,10 @@ export default interface Resources {
         },
         "title": "Request {id}: {sampleName}",
         "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
+        "transferCancelledWizardSampleErrorMessage": "Newly created sample {sampleName} could not be transferred as the request has been cancelled. This newly created sample will remain where it was created in your inventory.",
         "transferDialog": {
           "bullets": {
+            "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
             "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
             "requestFulfilled": "Request {id} will be marked as fulfilled",
             "subsamplesMoved": "Subsamples that are currently on your bench will be moved to {requester}'s bench",
@@ -4491,6 +4493,7 @@ export default interface Resources {
             "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
           },
           "heading": "Hand over {sampleName} to {requester}",
+          "newSampleHint": "The new sample {sampleName} has now been created and is currently in your own Inventory. If you Cancel the transfer now it will remain in your Inventory until it has been transferred manually.",
           "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
           "whatWillHappen": "What will happen:"
         },
@@ -4523,7 +4526,8 @@ export default interface Resources {
         "fulfilled": "Fulfilled",
         "pending": "Pending",
         "rejected": "Rejected"
-      }
+      },
+      "userDeleted": "{username} (Deleted)"
     },
     "sample": {
       "alerts": {

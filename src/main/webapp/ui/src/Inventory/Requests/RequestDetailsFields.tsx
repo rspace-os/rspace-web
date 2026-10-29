@@ -8,24 +8,28 @@ import UserDetails from "@/components/UserDetails";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import { isoToLocale } from "@/util/Util";
 import DetailField from "./DetailField";
-import type { ApiSampleRequestListItem } from "./RequestsList";
+import { type ApiSampleRequestListItem, userDisplayName } from "./RequestsList";
 
 /**
  * The Requests detail panel's "Details" section content: the requester, submission date,
  * requested sample, and any note the requester added.
  */
 export default function RequestDetailsFields({ request }: { request: ApiSampleRequestListItem }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   return (
     <HeadingContext level={4}>
       <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
         <DetailField label={t("requestsManagement.detail.fields.requester")}>
-          <UserDetails
-            userId={request.requester.id}
-            fullName={`${request.requester.firstName} ${request.requester.lastName}`}
-            position={["bottom", "right"]}
-          />
+          {request.requester.firstName === null && request.requester.lastName === null ? (
+            userDisplayName(request.requester, t)
+          ) : (
+            <UserDetails
+              userId={request.requester.id}
+              fullName={userDisplayName(request.requester, t)}
+              position={["bottom", "right"]}
+            />
+          )}
         </DetailField>
         <DetailField label={t("requestsManagement.detail.fields.submitted")}>
           {isoToLocale(request.created)}
