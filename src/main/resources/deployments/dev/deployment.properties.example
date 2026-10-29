@@ -25,6 +25,7 @@ api.beta.enabled=true
 
 archive.folder.storagetime=1
 importArchiveFromServer.enabled=true
+importArchiveFromServer.folder=/tmp
 
 sysadmin.delete.user=true
 sysadmin.apikey.generation=true

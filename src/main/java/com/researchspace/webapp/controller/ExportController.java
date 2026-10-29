@@ -56,6 +56,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +73,7 @@ import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -330,7 +334,8 @@ public class ExportController extends BaseController {
 
     @NotNull
     @Size(max = 1024) // in case of 4 byte unicode chars; max path length is 4096 bytes on Linux
-    @jakarta.validation.constraints.Pattern(regexp = "^(/[^;\\*\\?'\"\\./]{1,251})+\\.zip")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^(/[^;\\*\\?'\"\\./\\p{Cntrl}]{1,251})+\\.zip")
     String serverFilePath;
   }
 
@@ -341,6 +346,9 @@ public class ExportController extends BaseController {
       HttpSession session,
       RedirectAttributes ra,
       Principal principal) {
+    if (!properties.isImportArchiveFromServerEnabled()) {
+      throw new AuthorizationException("Importing archives from the server is not enabled");
+    }
     if (errors.hasErrors()) {
       return returnToDashboardPageWithErrorMsg(
           ra,
@@ -354,14 +362,46 @@ public class ExportController extends BaseController {
           IMPORT_FORM_ERROR_ATTR_NAME);
     }
 
-    File file = new File(serverPath.getServerFilePath());
-    if (!file.exists() || !file.canRead()) {
+    String folderSetting = properties.getImportArchiveFromServerFolder();
+    Path importFolder =
+        StringUtils.isBlank(folderSetting)
+            ? null
+            : Paths.get(folderSetting).toAbsolutePath().normalize();
+    if (importFolder == null || !Files.isDirectory(importFolder)) {
       return returnToDashboardPageWithErrorMsg(
           ra,
-          getText(
-              "importExport.import.errors.serverFileUnreadable",
-              new Object[] {serverPath.getServerFilePath()}),
+          getText("importExport.import.errors.serverImportFolderNotSet"),
           IMPORT_FORM_ERROR_ATTR_NAME);
+    }
+    File file = new File(serverPath.getServerFilePath());
+    if (!file.toPath().toAbsolutePath().normalize().startsWith(importFolder)) {
+      return serverFileError(
+          ra,
+          "importExport.import.errors.serverFileOutsideImportFolder",
+          serverPath.getServerFilePath());
+    }
+    if (!file.exists() || !file.canRead()) {
+      return serverFileError(
+          ra, "importExport.import.errors.serverFileUnreadable", serverPath.getServerFilePath());
+    }
+    // a symlink inside the folder must not point outside it; import the resolved file so a link
+    // checked here cannot be repointed later. This relies on only admins being able to write to
+    // the folder, since a local user who can could still swap the file itself.
+    Path resolved;
+    Path realImportFolder;
+    try {
+      resolved = file.toPath().toRealPath();
+      realImportFolder = importFolder.toRealPath();
+    } catch (IOException e) {
+      log.warn("Could not resolve server import path {}: {}", file, e.getMessage());
+      return serverFileError(
+          ra, "importExport.import.errors.serverFileUnreadable", serverPath.getServerFilePath());
+    }
+    if (!resolved.startsWith(realImportFolder)) {
+      return serverFileError(
+          ra,
+          "importExport.import.errors.serverFileOutsideImportFolder",
+          serverPath.getServerFilePath());
     }
     ProgressMonitor progress =
         createProgressMonitor(
@@ -370,7 +410,16 @@ public class ExportController extends BaseController {
             getText("importExport.progress.archive"),
             session);
     return doImport(
-        () -> performFileImport(principal, progress, file), session, ra, progress, principal);
+        () -> performFileImport(principal, progress, resolved.toFile()),
+        session,
+        ra,
+        progress,
+        principal);
+  }
+
+  private String serverFileError(RedirectAttributes ra, String messageKey, String path) {
+    return returnToDashboardPageWithErrorMsg(
+        ra, getText(messageKey, new Object[] {path}), IMPORT_FORM_ERROR_ATTR_NAME);
   }
 
   @SneakyThrows // lets us throw checked exception from a lambda

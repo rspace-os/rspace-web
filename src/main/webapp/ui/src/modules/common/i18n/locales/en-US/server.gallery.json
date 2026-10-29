@@ -1,6 +1,7 @@
 {
   "errors": {
     "gallery": {
+      "unsupportedConversionFormat": "Conversion to the requested format is not supported.",
       "filestore": {
         "validation": {
           "destFilestoreIdRequired": "destFilestoreId is mandatory",

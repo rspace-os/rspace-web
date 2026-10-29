@@ -592,6 +592,11 @@ public class ExportControllerTest {
     violations = validator.validate(path);
     assertThat(violations.size()).isGreaterThan(0);
 
+    for (String withControlChar : toList("/a\u0000b/c.zip", "/a/b\nc.zip")) {
+      path.setServerFilePath(withControlChar);
+      assertThat(validator.validate(path)).isNotEmpty();
+    }
+
     path.setServerFilePath("/fffgggg.png"); // not a zip
     violations = validator.validate(path);
     assertThat(violations.size()).isGreaterThan(0);

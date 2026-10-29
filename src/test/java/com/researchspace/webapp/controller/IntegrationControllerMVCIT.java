@@ -351,7 +351,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .perform(
                 post("/integration/saveAppOptions")
                     .param("appName", "github")
-                    .content(mvcUtils.getAsJsonString(Map.of("EGNYTE_DOMAIN", "org/repo")))
+                    .content(
+                        mvcUtils.getAsJsonString(Map.of("EGNYTE_DOMAIN", "https://org.example")))
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(mockPrincipal))
             .andReturn();

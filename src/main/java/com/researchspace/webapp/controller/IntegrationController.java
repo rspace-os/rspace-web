@@ -32,10 +32,11 @@ import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.preference.Preference;
-import com.researchspace.model.preference.URLPreferenceValidator;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpSession;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,6 +59,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/integration/")
 public class IntegrationController extends BaseController {
+
   /**
    * Gets {@link IntegrationInfo} for the specified integration type.
    *
@@ -162,12 +164,14 @@ public class IntegrationController extends BaseController {
     // the Egnyte and ownCloud/Nextcloud checks below match on the canonical name
     newInfo.setName(upperCase(newInfo.getName(), Locale.ROOT));
 
-    /* for Egnyte integration we verify that passed URL is valid */
+    /* the browser, not the server, talks to the Egnyte domain, so only its shape is checked */
     String error = null;
     if (EGNYTE_APP_NAME.equals(newInfo.getName()) && !MapUtils.isEmpty(newInfo.getOptions())) {
       removeEgnyteTokenFromSession(session);
       String egnyteUrl = (String) newInfo.getOptions().get(EGNYTE_DOMAIN_SETTING);
-      error = new URLPreferenceValidator().connectAndReadUrl(egnyteUrl, null);
+      if (!isEmptyOrWebUrl(egnyteUrl)) {
+        error = "apps.egnyte.errors.invalidDomainUrl";
+      }
     }
     /*
      * ownCloud / Nextcloud can only be enabled when the deployment has been configured with a
@@ -196,11 +200,32 @@ public class IntegrationController extends BaseController {
     return getIntegrationInfo(newInfo.getName());
   }
 
+  static boolean isEmptyOrWebUrl(String url) {
+    if (isBlank(url)) {
+      return true; // clearing the setting is allowed
+    }
+    try {
+      URI uri = new URI(url);
+      // the browser loads this address in an iframe and links, so no javascript: or file: URLs
+      return uri.getHost() != null
+          && ("https".equalsIgnoreCase(uri.getScheme())
+              || "http".equalsIgnoreCase(uri.getScheme()));
+    } catch (URISyntaxException e) {
+      return false;
+    }
+  }
+
   @PostMapping("/saveAppOptions")
   public AjaxReturnObject<IntegrationInfo> saveAppOptions(
       @RequestParam(value = "optionsId", required = false) Long optionsId,
       @RequestParam(value = "appName") String appName,
       @RequestBody Map<String, String> options) {
+    // appName comes from the request and is upper-cased later, so check the Egnyte domain whatever
+    // app is named
+    if (!isEmptyOrWebUrl(options.get(EGNYTE_DOMAIN_SETTING))) {
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("apps.egnyte.errors.invalidDomainUrl")));
+    }
     User subject = userManager.getAuthenticatedUserInSession();
     integrationsHandler.saveAppOptions(optionsId, options, appName, false, subject);
     return getIntegrationInfo(appName);
