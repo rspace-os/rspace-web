@@ -106,7 +106,7 @@ Remote tables (`clientSide={false}`) show an offline notice using React Query's 
 Cached rows remain visible; paused queries resume automatically when the connection returns.
 Do not add per-page browser connectivity listeners or force retries while offline.
 
-See [`UseTableListResult`](../../src/main/webapp/ui/src/modules/common/table-list/state/useTableList.ts)
+See [`UseTableListResult`](../../src/main/webapp/ui/src/modules/common/table-list/hooks/state.ts)
 for the hook's state, update functions and table props.
 
 Any component in the same React owner can read these values. Pass only the required value and function to a child.
@@ -277,10 +277,10 @@ into `filterPicker` on the resolved field. Metadata selects an application-owned
 source; it never supplies a fetch URL. Without picker metadata, existing relationship
 fields retain their `relationTo` lookup. An unregistered source retains typed input.
 
-Register sources in `src/modules/common/relationship-picker/relationshipSources.tsx`,
+Register sources in `src/modules/common/relationship-picker/sources.tsx`,
 or provide a collection's `relationshipSources` override keyed by resource name.
 
-See the [RelationshipSource type](../../src/main/webapp/ui/src/modules/common/relationship-picker/relationshipSources.tsx)
+See the [RelationshipSource type](../../src/main/webapp/ui/src/modules/common/relationship-picker/sources.tsx)
 for source operations and their signatures. Keep option content noninteractive inside the listbox;
 show global IDs as plain text so choosing an option cannot navigate away from an unsaved selection.
 Unknown and inaccessible saved values must produce the same missing result.

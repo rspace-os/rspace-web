@@ -1,4 +1,4 @@
-import type { FilterValue } from "../state/tableListState";
+import type { FilterValue } from "../types";
 
 export type RsqlValue = string | number | boolean;
 

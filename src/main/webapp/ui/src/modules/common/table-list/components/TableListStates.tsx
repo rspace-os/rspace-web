@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
-import { LocalizedTableListError } from "../LocalizedTableListError";
+import { LocalizedTableListError } from "../utils/errors";
 
 export function TableListErrorState({ error }: { error: unknown }) {
   const { t } = useTranslation("common");

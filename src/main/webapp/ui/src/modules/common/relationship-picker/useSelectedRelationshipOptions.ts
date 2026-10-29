@@ -1,10 +1,6 @@
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { cacheScope, canonicalValue, optionCacheKey, sourceList } from "./relationshipOptionCache";
-import type {
-  RelationshipOptionContext,
-  RelationshipOptionWithSource,
-  RelationshipSource,
-} from "./relationshipSources";
+import type { RelationshipOptionContext, RelationshipOptionWithSource, RelationshipSource } from "./sources";
 
 const MAX_RESOLVE_BATCH_SIZE = 100;
 

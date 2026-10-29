@@ -3,16 +3,16 @@ import { useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore } 
 import { useTranslation } from "react-i18next";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
-import { TableListDataTable } from "./components/data-table/TableListDataTable";
-import { topLevelFilterCount } from "./components/filters/filterDrafts";
 import { RestoredViewIssue } from "./components/RestoredViewIssue";
 import { TableListAlertStack, TableListAlertsProvider } from "./components/TableListAlerts";
 import { TableListControlPanel } from "./components/TableListControlPanel";
+import { TableListDataTable } from "./components/TableListDataTable";
 import { TableListHeader } from "./components/TableListHeader";
 import { type TableListControlPanel as ControlPanel, TableListToolbar } from "./components/TableListToolbar";
-import type { TableListProps } from "./state/tableListState";
-import { useTableListAlertsState } from "./state/useTableListAlertsState";
-import { useTableListQueryString } from "./state/useTableListQueryString";
+import { useTableListAlertsState } from "./hooks/alerts";
+import { useTableListQueryString } from "./hooks/urlState";
+import type { TableListProps } from "./types";
+import { topLevelFilterCount } from "./utils/filterDrafts";
 
 export type { TableListAlertItemProps } from "./components/TableListAlerts";
 export {
@@ -29,7 +29,7 @@ export type {
   TableListRowActions,
   TableListSelection,
   TableListSelectionContext,
-} from "./state/tableListState";
+} from "./types";
 
 const subscribeOnline = (onChange: () => void) => onlineManager.subscribe(onChange);
 const getOnline = () => onlineManager.isOnline();

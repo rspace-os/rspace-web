@@ -40,7 +40,7 @@ Without the REST API v2 hook, resolve it yourself:
 
 ```ts
 import { resolveCollectionConfig } from
-  "@/modules/common/collection/resolveCollectionConfig";
+  "@/modules/common/collection/resolveConfig";
 
 const config = resolveCollectionConfig(customExperimentConfig);
 ```
@@ -51,7 +51,7 @@ Keep parameter mapping and response validation in the endpoint module.
 
 ```ts
 import type { CollectionFetcher } from
-  "@/modules/common/table-list/state/tableListState";
+  "@/modules/common/table-list/types";
 
 export const fetchCustomExperiments:
   CollectionFetcher<CustomExperiment> = async (state, { signal }) => {
@@ -141,15 +141,15 @@ Store a zero-based `pageIndex`. The REST API v2 adapter converts it to a one-bas
 
 | # | Guidance |
 | --- | --- |
-| 1. | [Collection configuration](../../src/main/webapp/ui/src/modules/common/collection/collectionConfig.ts) |
-| 2. | [Table state and fetch interface](../../src/main/webapp/ui/src/modules/common/table-list/state/tableListState.ts) |
-| 3. | [Shared table hook](../../src/main/webapp/ui/src/modules/common/table-list/state/useTableList.ts) |
-| 4. | [RSQL query codec](../../src/main/webapp/ui/src/modules/common/table-list/rsql/rsqlCodec.ts) |
-| 5. | [Persisted view codec](../../src/main/webapp/ui/src/modules/common/table-list/state/tableViewState.ts) |
+| 1. | [Collection configuration](../../src/main/webapp/ui/src/modules/common/collection/config.ts) |
+| 2. | [Table state and fetch interface](../../src/main/webapp/ui/src/modules/common/table-list/types.ts) |
+| 3. | [Shared table hook](../../src/main/webapp/ui/src/modules/common/table-list/hooks/state.ts) |
+| 4. | [RSQL query codec](../../src/main/webapp/ui/src/modules/common/table-list/rsql.ts) |
+| 5. | [Persisted view codec](../../src/main/webapp/ui/src/modules/common/table-list/utils/viewStorage.ts) |
 | 6. | [Browser view storage](../../src/main/webapp/ui/src/modules/common/table-list/state/tableViewStorage.ts) |
-| 7. | [REST API v2 metadata reader](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata.ts) |
-| 8. | [REST API v2 adapter](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/createApiV2CollectionAdapter.ts) |
-| 9. | [REST API v2 fetcher](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/createApiV2CollectionFetcher.ts) |
-| 10. | [REST API v2 hook](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/useApiV2TableList.ts) |
-| 11. | [RSQL serialization](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/serializeRsql.ts) |
-| 12. | [REST API v2 Storybook example](../../src/main/webapp/ui/src/modules/common/table-list/TableListApiV2.stories.tsx) |
+| 7. | [REST API v2 metadata reader](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/metadata.ts) |
+| 8. | [REST API v2 adapter](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/adapter.ts) |
+| 9. | [REST API v2 fetcher](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/fetcher.ts) |
+| 10. | [REST API v2 hook](../../src/main/webapp/ui/src/modules/common/table-list/hooks/apiV2TableList.ts) |
+| 11. | [RSQL serialization](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/serializeRsql.ts) |
+| 12. | [REST API v2 Storybook example](../../src/main/webapp/ui/src/modules/common/table-list/TableList.apiV2.stories.tsx) |

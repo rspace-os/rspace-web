@@ -1,13 +1,13 @@
 import * as v from "valibot";
-import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
-import { rsqlSelectors } from "../rsql/rsqlCodec";
-import { columnSelectors } from "./queryStringState";
+import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
+import { rsqlSelectors } from "../rsql";
+import { columnSelectors } from "../utils/queryString";
 import {
   parseTableViewState,
   type StaleViewFields,
   serializeTableViewState,
   type TableViewValues,
-} from "./tableViewState";
+} from "../utils/viewStorage";
 
 const storedSelectorsSchema = v.object({
   where: v.fallback(v.string(), ""),

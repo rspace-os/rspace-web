@@ -1,8 +1,8 @@
-import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
-import type { RuntimeFieldDefinition } from "../adapters/apiV2/runtimeFieldCatalog";
-import type { TableListFeatures } from "../state/tableListState";
-import { TableListFilters } from "./filters/TableListFilters";
+import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
+import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import type { TableListFeatures } from "../types";
 import { TableListColumns } from "./TableListColumns";
+import { TableListFilters } from "./TableListFilters";
 import { TableListSorting } from "./TableListSorting";
 import type { TableListControlPanel as ControlPanel } from "./TableListToolbar";
 

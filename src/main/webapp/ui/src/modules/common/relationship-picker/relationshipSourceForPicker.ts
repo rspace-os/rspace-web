@@ -1,5 +1,5 @@
 import type { RelationshipFilterPicker } from "@/modules/common/collection/relationshipFilterPicker";
-import type { RelationshipSource } from "./relationshipSources";
+import type { RelationshipSource } from "./sources";
 
 export function relationshipSourceForPicker(
   picker: RelationshipFilterPicker,

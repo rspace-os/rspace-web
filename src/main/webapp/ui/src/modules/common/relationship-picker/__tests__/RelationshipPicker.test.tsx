@@ -7,9 +7,9 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import { type RelationshipSource, relationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
+import { type RelationshipSource, relationshipSources } from "@/modules/common/relationship-picker/sources";
 import { useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/useSelectedRelationshipOptions";
-import { listInstruments } from "./relationshipPickerTestFixtures";
+import { listInstruments } from "./fixtures/relationshipPicker";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),

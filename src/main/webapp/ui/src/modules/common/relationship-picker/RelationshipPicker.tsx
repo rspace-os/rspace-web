@@ -1,7 +1,7 @@
 import { type FocusEventHandler, type Ref, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import type { RelationshipOptionAvailabilitySource } from "@/modules/common/relationship-picker/relationshipOptions";
+import type { RelationshipOptionAvailabilitySource } from "@/modules/common/relationship-picker/types";
 import {
   Combobox,
   ComboboxChip,
@@ -17,8 +17,8 @@ import {
 } from "@/modules/common/ui/combobox";
 import { Spinner } from "@/modules/common/ui/spinner";
 import { cn } from "@/modules/common/utils/cn";
-import { useRelationshipOptionAvailability, useRelationshipOptions } from "./relationshipOptionQueries";
-import type { RelationshipOptionWithSource, RelationshipSource } from "./relationshipSources";
+import { useRelationshipOptionAvailability, useRelationshipOptions } from "./queries";
+import type { RelationshipOptionWithSource, RelationshipSource } from "./sources";
 import { useSelectedRelationshipOptions } from "./useSelectedRelationshipOptions";
 
 // Matches the h-8 / text-xs controls a filter row uses. The inner input needs its own rules because
