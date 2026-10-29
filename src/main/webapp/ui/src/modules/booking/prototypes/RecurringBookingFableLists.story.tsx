@@ -10,9 +10,9 @@ import { BookingSummaryCard } from "@/modules/booking/components/BookingSummaryC
 import type { Booking } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
-import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import { useTableList } from "@/modules/common/table-list/state/useTableList";
+import type { CollectionConfig } from "@/modules/common/collection/config";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { Heading } from "@/modules/common/ui/typography";
