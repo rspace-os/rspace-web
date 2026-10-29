@@ -199,14 +199,36 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
     if (accessIds.isEmpty()) {
       return;
     }
-    sessionFactory
-        .getCurrentSession()
+    Session session = sessionFactory.getCurrentSession();
+    // Override legacy eager principal collections: the document only needs the grantee entities.
+    var graph = session.createEntityGraph(ResourceAccess.class);
+    var assignments = graph.addSubgraph("assignments", ResourceRoleAssignment.class);
+    assignments.addSubgraph("user", User.class);
+    assignments.addSubgraph("group", Group.class);
+    session
         .createQuery(
             "select distinct access from ResourceAccess access "
-                + "left join fetch access.assignments where access.id in :accessIds",
+                + "left join fetch access.assignments assignment "
+                + "left join fetch assignment.user left join fetch assignment.group "
+                + "where access.id in :accessIds",
             ResourceAccess.class)
+        .setHint("jakarta.persistence.fetchgraph", graph)
         .setParameter("accessIds", accessIds)
         .getResultList();
+  }
+
+  @Override
+  public Set<Long> availableGroupIds(Collection<Long> groupIds) {
+    if (groupIds.isEmpty()) return Set.of();
+    return Set.copyOf(
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "select distinct membership.group.id from UserGroup membership "
+                    + "where membership.group.id in :groupIds and membership.user.enabled = true",
+                Long.class)
+            .setParameter("groupIds", groupIds)
+            .getResultList());
   }
 
   @Override
