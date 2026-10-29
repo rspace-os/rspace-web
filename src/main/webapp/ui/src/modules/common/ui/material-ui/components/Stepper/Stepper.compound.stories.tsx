@@ -11,6 +11,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Navigation/Stepper/Composition",
+  tags: ["autodocs"],
   component: Stepper,
   parameters: { a11y: { test: "error" } },
   argTypes: { nonLinear: { control: "boolean" }, orientation: { control: false } },

@@ -14,6 +14,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Data Display/List/Composition",
+  tags: ["autodocs"],
   component: List,
   parameters: { a11y: { test: "error" } },
   argTypes: { dense: { control: "boolean" } },
