@@ -4,7 +4,7 @@ import { openDialog } from "./DialogHelpers";
 import { InventoryBatchActionBar } from "./InventoryBatchActionBar";
 import { SearchableResultsTable } from "./SearchableResultsTable";
 
-export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Tags" | "Baskets";
+export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Tags" | "Baskets" | "Requestable";
 
 export type InventoryViewMode = "List" | "Tree" | "Card" | "Grid";
 
@@ -52,7 +52,11 @@ export class InventorySearchPanel {
     await Promise.all([
       this.page.waitForResponse((res) => {
         const url = new URL(res.url());
-        if (!url.pathname.endsWith("/api/inventory/v1/search")) return false;
+        // A Samples search combined with the Requestable filter routes to /samples instead of
+        // /search (see CoreFetcher.setEndpoint), even though it still takes a free-text query.
+        if (!url.pathname.endsWith("/api/inventory/v1/search") && !url.pathname.endsWith("/api/inventory/v1/samples")) {
+          return false;
+        }
         if (res.request().method() !== "GET") return false;
         if (expectedQuery === undefined) return true;
         return url.searchParams.get("query") === expectedQuery;
@@ -78,6 +82,19 @@ export class InventorySearchPanel {
     await this.ensureVisible();
     await this.searchInput.fill(query);
     await this.waitForSearchRequest(() => this.submitButton.click(), query);
+  }
+
+  /**
+   * Like `search()`, but waits for the results-loaded signal instead of a network response keyed
+   * on this exact query. Use this when the fetcher may resolve the query differently than asked
+   * (e.g. an empty exact match is retried internally with a trailing wildcard before the results
+   * settle) - matching the first response would resolve before that retry has actually happened.
+   */
+  async searchAndWaitForLoad(query: string): Promise<void> {
+    await this.ensureVisible();
+    await this.searchInput.fill(query, { timeout: 15_000 });
+    await this.submitButton.click({ timeout: 15_000 });
+    await this.waitForResultsLoaded();
   }
 
   async clearSearch(): Promise<void> {
@@ -158,6 +175,16 @@ export class InventorySearchPanel {
 
   async resultCount(): Promise<string> {
     return this.statusText.innerText();
+  }
+
+  /**
+   * Waits for whatever search request is currently in flight to finish and the results table to
+   * reflect it, regardless of the resulting count. Useful after triggering a fetch by a means
+   * other than `search()`/`goToNextPage()` (e.g. selecting a filter), where those methods'
+   * response-matching wait doesn't apply.
+   */
+  async waitForResultsLoaded(): Promise<void> {
+    await expect(this.statusText).not.toHaveText("Loading...", { timeout: 30_000 });
   }
 
   async goToNextPage(): Promise<void> {

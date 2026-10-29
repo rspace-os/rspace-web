@@ -1032,6 +1032,7 @@ export default interface Resources {
       "pyrat": "9kkeooveia-pyrat-integration",
       "pyratCors": "9kkeooveia-pyrat-integration#cors",
       "raid": "zb4c2c8a4b-raid-integration",
+      "sampleRequests": "ewk2epc69e-sample-requests",
       "search": "e0fngo8a5s-search-inventory",
       "slack": "74r6scvv8g-slack-integration",
       "taggingUsers": "zw6o5uh4qv-tagging-users",
@@ -2527,13 +2528,12 @@ export default interface Resources {
         },
         "locationsImage": {
           "alt": "The marked locations of {name}",
-          "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
           "editLocations": "Edit Locations",
           "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
+          "instructions": "Tap on the image to add a location marker.<br />Tap and hold on a marker, and then drag to adjust the marked location.",
           "label": "Locations Image",
           "noMarkers": "No marked locations yet; click on the image to add a location marker.",
           "setPreviewImage": "Set preview image too?",
-          "tapInstruction": "Tap on the image to add a location marker.",
           "warningNoImage": "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
           "warningNoMarkers": "Click on 'Edit Locations' to add locations and start using the visual container."
         },
@@ -2704,6 +2704,7 @@ export default interface Resources {
     },
     "errors": {
       "expandForMoreDetails": "Expand for more details.",
+      "genericActionError": "An error occurred whilst attempting to process this request: {error}",
       "unknownReason": "Unknown reason."
     },
     "export": {
@@ -3450,11 +3451,13 @@ export default interface Resources {
       "batchEditingItemsTitle": "{label} (Click to {open, select, true {close} other {expand}} list)",
       "collapseAll": "Collapse All",
       "collapseSection": "Collapse section",
+      "collapseSectionNamed": "Collapse {section} section",
       "containersBeingEdited": "Containers being edited",
       "customFields": "Custom Fields",
       "details": "Details",
       "expandAll": "Expand All",
       "expandSection": "Expand section",
+      "expandSectionNamed": "Expand {section} section",
       "identifiers": "Identifiers",
       "information": "Information",
       "itemsBeingEdited": "Items being edited",
@@ -3783,6 +3786,7 @@ export default interface Resources {
         "myBench": "My Bench",
         "navigationLabel": "Inventory Sidebar Navigation",
         "otherActionsLabel": "Other places and action",
+        "requests": "Requests",
         "settings": "Settings"
       }
     },
@@ -4376,6 +4380,151 @@ export default interface Resources {
         "name": "Name"
       }
     },
+    "requestsManagement": {
+      "browserTitle": "Requests | RSpace Inventory",
+      "chips": {
+        "requests": "Requests: {value}",
+        "status": "Status: {value}"
+      },
+      "columns": {
+        "id": "Request ID",
+        "requester": "Requested by",
+        "sample": "Requested Sample",
+        "status": "Status",
+        "submitted": "Date Submitted"
+      },
+      "deepLinkError": "This request could not be found, or you do not have permission to view it.",
+      "detail": {
+        "actionErrors": {
+          "approve": "Failed to approve sample request",
+          "cancel": "Failed to cancel sample request",
+          "fulfil": "Failed to fulfil sample request",
+          "reject": "Failed to reject sample request",
+          "transfer": "Failed to transfer sample ownership"
+        },
+        "approveButton": "Approve",
+        "approvedButton": "✓ Approved",
+        "cancelRequestHint": "Cancel this request if you no longer require this material.",
+        "chooseMethodDialog": {
+          "body": "Choose how you wish to prepare the sample:",
+          "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states. These other requests will be closed automatically when this sample is transferred.",
+          "proceedButton": "Proceed",
+          "title": "Choose Sample to Prepare",
+          "transferOption": "Transfer the existing sample and all subsamples",
+          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
+          "wizardOption": "Create a new sample derived from the existing sample"
+        },
+        "fields": {
+          "additionalNotes": "Notes from requester",
+          "approvedMessage": "This request has been approved by {owner}. The requested materials are now being prepared for transfer to you.",
+          "commentFromApprover": "Additional notes",
+          "loadingLocations": "Loading locations…",
+          "locationColumn": "Location",
+          "noComment": "No additional notes.",
+          "noNotes": "No notes provided.",
+          "noSubsamples": "This sample has no subsamples.",
+          "notInContainer": "Not in a container.",
+          "requester": "Requested by",
+          "sampleLocation": "Sample Locations",
+          "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
+          "sampleLocationTooltip": "Samples are located via their subsamples",
+          "sampleRequested": "Requested Sample",
+          "selectSubsampleGroupLabel": "Select a subsample",
+          "selectSubsampleLabel": "Select {subsample}",
+          "status": "Status",
+          "submitted": "Submitted",
+          "subsampleColumn": "Subsample",
+          "transferredSample": "Transferred Sample"
+        },
+        "fulfilDialog": {
+          "fulfilButton": "Fulfil",
+          "message": "Are you sure you want to fulfil this request without transferring any materials?",
+          "title": "Confirm fulfilment"
+        },
+        "history": {
+          "columns": {
+            "additionalNotes": "Additional Notes",
+            "date": "Date",
+            "status": "Status",
+            "user": "User"
+          },
+          "sectionTitle": "Request History"
+        },
+        "markAsFulfilledButton": "Mark as Fulfilled",
+        "preparationHint": {
+          "approvedNoSelection": "Select a subsample from the list below to prepare the sample for transfer. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "approvedReadyToTransfer": "This sample can now be transferred to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer.",
+          "pendingTransferOnly": "Approve the request to transfer a sample, or immediately transfer the sample."
+        },
+        "prepareDialog": {
+          "body": "Preparing {subsample} for transfer.",
+          "comingSoon": "Coming soon",
+          "title": "Operations Wizard Step"
+        },
+        "prepareSampleButton": "Prepare Sample",
+        "rejectButton": "Reject",
+        "rejectDialog": {
+          "reasonLabel": "Provide a reason for rejecting this request.",
+          "rejectRequestButton": "Reject Request",
+          "title": "Confirm request rejection"
+        },
+        "sections": {
+          "approvalResult": "Request Status",
+          "approveReject": "Actions",
+          "details": "Details"
+        },
+        "statusHelp": {
+          "cancelled": "Closed by the requester. No action available.",
+          "fulfilled": "Closed. The requester can raise a new request from the sample.",
+          "rejected": "Closed. Your reason for rejecting is shown in the history."
+        },
+        "title": "Request {id}: {sampleName}",
+        "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
+        "transferDialog": {
+          "bullets": {
+            "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
+            "requestFulfilled": "Request {id} will be marked as fulfilled",
+            "subsamplesMoved": "Subsamples that are currently on your bench will be moved to {requester}'s bench",
+            "subsamplesTransferred": "All {count} subsamples will be transferred to user {requester}",
+            "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
+          },
+          "heading": "Hand over {sampleName} to {requester}",
+          "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
+          "whatWillHappen": "What will happen:"
+        },
+        "transferSampleButton": "Transfer Sample",
+        "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
+      },
+      "feedback": "{count, plural, one {# sample request found.} other {# sample requests found.}}",
+      "filters": {
+        "requests": {
+          "all": "All",
+          "received": "Received",
+          "sent": "Sent"
+        },
+        "status": {
+          "active": "Open",
+          "all": "All",
+          "past": "Closed"
+        }
+      },
+      "helpTitle": "Info on sample requests.",
+      "landmark": "Requests",
+      "loadError": "Failed to load your sample requests.",
+      "noResults": "No requests found.",
+      "noSelection": "Select a request to see its details.",
+      "pageTitle": "Requests",
+      "rowLabel": "Request for {sampleGlobalId} from {requester}, {status}",
+      "status": {
+        "approved": "Approved",
+        "cancelled": "Cancelled",
+        "fulfilled": "Fulfilled",
+        "pending": "Pending",
+        "rejected": "Rejected"
+      }
+    },
     "sample": {
       "alerts": {
         "updateToLatestFailed": "Updating sample to latest template failed.",
@@ -4493,6 +4642,29 @@ export default interface Resources {
       "imageAlt": "What the sample looks like",
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
+      "requestMaterialSection": {
+        "actionErrors": {
+          "cancel": "Failed to cancel sample request",
+          "send": "Failed to send sample request"
+        },
+        "compactDescription": "{owner} reviews each request before producing material.",
+        "compactTitle": "Request this sample",
+        "dialogTitle": "Request {sampleName}",
+        "notAvailableBody": "The owner has not made this sample requestable.",
+        "notAvailableHeader": "Not available for request",
+        "pendingDescription": "Waiting for {owner} to review your request",
+        "pendingSentText": "Sent {date} - waiting for {owner}",
+        "requestSampleButton": "Request Sample",
+        "reviewText": "Ask {owner} for material from this sample. They review each request and decide what to produce; you will be notified once it is approved or rejected.",
+        "sendRequestButton": "Send Request",
+        "whatYouNeedHelperText": "e.g. 5 µg for transfection of HEK293 cells, needed by 25 Sep",
+        "whatYouNeedLabel": "Describe your request"
+      },
+      "requestsSection": {
+        "description": "Let others request material from this sample. You review every request.",
+        "switchLabel": "Requestable",
+        "title": "Sample requests"
+      },
       "subsamplesSection": {
         "tapToPreview": "Tap one of the {plural} in the search section to preview it below.",
         "title": "{count} {alias}"
@@ -4560,6 +4732,11 @@ export default interface Resources {
           "helperText": "Please enter a unique name, no longer than 32 characters.",
           "invalidLength": "Please enter minimum 1 and maximum 32 characters.",
           "name": "Name"
+        },
+        "requestable": {
+          "label": "Requestable",
+          "no": "All items",
+          "yes": "Requestable only"
         },
         "saveSearch": {
           "defaultName": "New saved search",
@@ -4656,6 +4833,7 @@ export default interface Resources {
         "benchOwner": "Bench Owner: {owner}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
+        "requestable": "Requestable only",
         "status": "Status: {status}",
         "type": "Type: {type}",
         "unknown": "Unknown"

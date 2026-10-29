@@ -11,6 +11,13 @@ type HelpIconProps = {
   title: string;
   size?: "small" | "medium" | "large";
   color?: React.ComponentProps<typeof IconButton>["color"] | "white";
+  /**
+   * Overrides the icon's rendered size to track the font-size of wherever it's placed (e.g.
+   * "inherit" to exactly match surrounding text) instead of one of MUI's fixed `size` presets.
+   * Forwarded directly to HelpIcon's own `fontSize` prop (an ordinary MUI SvgIcon sizing token),
+   * rather than reimplemented as a one-off CSS override.
+   */
+  fontSize?: React.ComponentProps<typeof HelpIcon>["fontSize"];
 };
 
 type AnchorLinkProps = {
@@ -22,10 +29,13 @@ type AnchorLinkProps = {
 
 function IconLink({
   color,
+  flushWithText,
   ...rest
 }: Omit<React.ComponentProps<typeof IconButton>, "color"> &
   AnchorLinkProps & {
     color: React.ComponentProps<typeof IconButton>["color"] | "white";
+    /** Collapses the button's own padding so a font-size-tracking icon sits flush inline with text. */
+    flushWithText: boolean;
   }): React.ReactNode {
   const theme = useTheme();
   const resolvedColor = color === "primary" ? theme.palette.primary.dark : color;
@@ -37,6 +47,7 @@ function IconLink({
         cursor: "pointer",
         transition: "all .15s ease",
         transform: "translateY(-2px)",
+        ...(flushWithText ? { padding: 0 } : {}),
         "&:hover": {
           filter: "brightness(0.9)",
           // have to re-state to prevent ELN's a:hover red style from taking effect
@@ -58,11 +69,21 @@ export default function HelpLinkIcon({
   title,
   size = "small",
   color = "primary",
+  fontSize,
 }: HelpIconProps): React.ReactNode {
   return (
     <CustomTooltip title={title}>
-      <IconLink component="a" href={link} target="_blank" rel="noreferrer" size={size} color={color} aria-label={title}>
-        <HelpIcon />
+      <IconLink
+        component="a"
+        href={link}
+        target="_blank"
+        rel="noreferrer"
+        size={size}
+        color={color}
+        flushWithText={Boolean(fontSize)}
+        aria-label={title}
+      >
+        <HelpIcon fontSize={fontSize} />
       </IconLink>
     </CustomTooltip>
   );

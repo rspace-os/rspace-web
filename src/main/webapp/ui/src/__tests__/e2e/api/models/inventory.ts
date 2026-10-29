@@ -6,6 +6,7 @@ export interface ApiInventorySample extends ApiInventoryRecordInfo {
   sharingMode: ApiInventorySharingMode;
   sharedWith: ApiInventorySharedWith[] | null;
   subSamples: ApiInventorySubSample[];
+  requestable?: boolean;
 }
 
 export type ApiInventorySubSample = ApiInventoryRecordInfo;
@@ -43,7 +44,8 @@ export interface ApiInventoryIdentifierInfo {
 }
 
 export interface ApiInventorySampleUpdateRequest {
-  name: string;
+  name?: string;
+  requestable?: boolean;
 }
 
 export interface ApiInventorySampleRevisions {
