@@ -37,10 +37,6 @@ vi.mock("@/modules/common/app/AppBar", () => {
   return { default: AppBar, PublicAppBar: AppBar };
 });
 
-vi.mock("@/modules/common/stores/userSessionStore", () => ({
-  UserSessionBootstrap: () => null,
-}));
-
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }

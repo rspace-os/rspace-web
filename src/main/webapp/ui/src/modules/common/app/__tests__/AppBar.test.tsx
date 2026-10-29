@@ -279,7 +279,7 @@ describe("AccountMenu", () => {
     const signOut = vi.fn();
     vi.stubGlobal("gapi", { auth2: { getAuthInstance: () => ({ signOut }) } });
     const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
+    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id) });
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     renderAccountMenu(
       <AccountMenu
@@ -307,7 +307,7 @@ describe("AccountMenu", () => {
     vi.stubGlobal("gapi", gapi);
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
+    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id) });
     renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />, sessionStore);
 
     await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
@@ -323,7 +323,7 @@ describe("AccountMenu", () => {
     vi.stubGlobal("gapi", { auth2: { getAuthInstance: () => ({ signOut }) } });
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
+    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id) });
     renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />, sessionStore);
 
     await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
