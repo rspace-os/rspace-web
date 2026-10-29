@@ -19,11 +19,10 @@ import {
   metadataWhereSchema,
 } from "./schema";
 
-export {
-  type ApiV2FilterOperator,
-  type ApiV2PrimitiveFieldType,
-  type ApiV2RuntimeFieldNamespace,
-  apiV2FilterOperators,
+export type {
+  ApiV2FilterOperator,
+  ApiV2PrimitiveFieldType,
+  ApiV2RuntimeFieldNamespace,
 } from "./schema";
 
 export type ApiV2FilterLimits = Omit<ApiV2ParsedFilterMetadata, "selectors"> & {

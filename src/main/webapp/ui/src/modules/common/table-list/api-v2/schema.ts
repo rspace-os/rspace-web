@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import type { FieldConfig } from "@/modules/common/collection/config";
 import {
   type FilterOperatorToken,
   filterOperatorTokens,
@@ -6,9 +7,9 @@ import {
   runtimeFieldValueTypes,
 } from "@/modules/common/collection/schema";
 
-export const apiV2FilterOperators: readonly FilterOperatorToken[] = Object.values(filterOperatorTokens);
+export type ApiV2FilterOperator = FilterOperatorToken;
 
-export type ApiV2FilterOperator = (typeof apiV2FilterOperators)[number];
+const filterOperator = v.picklist(Object.values(filterOperatorTokens));
 
 const positiveInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(1));
 const nonNegativeInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(0));
@@ -33,22 +34,20 @@ const noComposition = {
   allOf: v.optional(v.never()),
   $ref: v.optional(v.never()),
 };
-const scalarSchema = v.object({
-  ...noComposition,
-  type: scalarType,
-  format: v.optional(v.string()),
-  oneOf: v.optional(v.never()),
-});
+const typedEntries = { ...noComposition, format: v.optional(v.string()), oneOf: v.optional(v.never()) };
+const scalarSchema = v.object({ ...typedEntries, type: scalarType });
 
-function primitiveType(type: v.InferOutput<typeof jsonType>, format?: string) {
+type PrimitiveFieldType = Extract<FieldConfig<unknown>["type"], "text" | "number" | "boolean" | "dateTime">;
+
+function primitiveType(type: v.InferOutput<typeof jsonType>, format?: string): PrimitiveFieldType | null {
   switch (type) {
     case "string":
-      return format === "date-time" ? ("dateTime" as const) : ("text" as const);
+      return format === "date-time" ? "dateTime" : "text";
     case "integer":
     case "number":
-      return "number" as const;
+      return "number";
     case "boolean":
-      return "boolean" as const;
+      return "boolean";
     case "object":
     case "array":
       return null;
@@ -57,7 +56,7 @@ function primitiveType(type: v.InferOutput<typeof jsonType>, format?: string) {
 
 const fieldTypeSchema = v.pipe(
   v.union([
-    v.object({ ...noComposition, type: declaredType, format: v.optional(v.string()), oneOf: v.optional(v.never()) }),
+    v.object({ ...typedEntries, type: declaredType }),
     v.object({ ...noComposition, type: v.optional(v.never()), oneOf: v.pipe(v.array(scalarSchema), v.minLength(1)) }),
   ]),
   v.transform((schema) => {
@@ -71,16 +70,13 @@ const fieldTypeSchema = v.pipe(
 
 export type ApiV2PrimitiveFieldType = Exclude<v.InferOutput<typeof fieldTypeSchema>, null>;
 
-const selectorEntries = {
-  schema: fieldTypeSchema,
-  operators: v.array(v.picklist(apiV2FilterOperators)),
-  wildcards: v.boolean(),
-  title: v.optional(v.string()),
-};
 const selectorName = v.pipe(v.string(), v.regex(/^[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)?$/));
 const selectorSchema = v.pipe(
   v.object({
-    ...selectorEntries,
+    schema: fieldTypeSchema,
+    operators: v.array(filterOperator),
+    wildcards: v.boolean(),
+    title: v.optional(v.string()),
     viaTitle: v.optional(v.string()),
     picker: v.optional(relationshipFilterPickerSchema),
   }),
@@ -120,8 +116,8 @@ export type ApiV2RuntimeFieldNamespace = v.InferOutput<typeof runtimeNamespaceSc
 export const metadataRuntimeFieldsSchema = v.optional(v.array(runtimeNamespaceSchema), () => []);
 
 export const metadataDocumentSchema = v.object({
-  paths: v.pipe(objectInput, v.record(v.string(), v.unknown())),
-  components: v.object({ schemas: v.pipe(objectInput, v.record(v.string(), v.unknown())) }),
+  paths: objectInput,
+  components: v.object({ schemas: objectInput }),
 });
 export const metadataOperationSchema = v.object({
   get: v.object({
@@ -144,7 +140,7 @@ export const metadataOperationSchema = v.object({
   }),
 });
 export const metadataReadSchema = v.object({
-  properties: v.pipe(objectInput, v.record(v.string(), v.pipe(objectInput, v.looseObject({})))),
+  properties: v.pipe(objectInput, v.record(v.string(), objectInput)),
 });
 
 /**
@@ -154,14 +150,12 @@ export const metadataReadSchema = v.object({
 export type ApiV2DocumentSchema<TDocument> = v.ObjectSchema<v.ObjectEntries, undefined> &
   v.GenericSchema<unknown, TDocument>;
 
-const filterOperator = v.picklist(apiV2FilterOperators);
-
 export const runtimeFieldSchema = v.object({
   id: v.pipe(v.string(), v.minLength(1)),
   selector: v.pipe(v.string(), v.minLength(1)),
   label: v.string(),
   type: v.picklist(runtimeFieldValueTypes),
-  jsonType: v.picklist(["string", "number", "array"] as const),
+  jsonType: v.picklist(["string", "number", "array"]),
   operators: v.array(filterOperator),
   supportsWildcards: v.boolean(),
   columnSelectable: v.boolean(),
