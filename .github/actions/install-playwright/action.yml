@@ -4,6 +4,9 @@ description: >-
   .deb files from the Actions cache so a slow Ubuntu mirror cannot stall the job.
   Run after `pnpm install`.
 
+# The apt cache is adapted from Lexical's setup-playwright action (MIT licence):
+# https://github.com/meta/lexical/blob/main/.github/actions/setup-playwright/action.yml
+
 inputs:
   browsers:
     description: Space-separated Playwright browser names, e.g. "chromium" or "chromium firefox webkit".
