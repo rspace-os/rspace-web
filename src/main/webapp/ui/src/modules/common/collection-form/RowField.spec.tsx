@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { RenderFieldsPage } from "./pageObjects/RenderFieldsPage";
