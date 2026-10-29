@@ -3,7 +3,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
-import { tableViewStorageKey } from "../../state/tableViewStorage";
+import { tableViewStorageKey } from "../../utils/viewStorage";
 import { ApiV2FilterExpansionStory } from "./ApiV2FilterExpansion.story";
 import { apiV2Page, bookingCataloguePage, runtimeCatalog, runtimeField } from "./mock";
 import { ApiV2FilterExpansionPage } from "./pageObjects/ApiV2FilterExpansionPage";
