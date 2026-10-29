@@ -166,7 +166,7 @@ services:
       RSPACE_BASE_URL: http://localhost:${APP_PORT:-8080}
       # Shared, content-addressed pnpm store (mounted volume) to avoid
       # re-downloading packages across worktrees.
-      npm_config_store_dir: /pnpm-store
+      pnpm_config_store_dir: /pnpm-store
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - node-modules:/rspace/node_modules

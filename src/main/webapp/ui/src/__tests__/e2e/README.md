@@ -5,7 +5,7 @@ tests (`*.api.spec.ts`) that run against a real RSpace instance.
 
 ## Prerequisites
 
-- Node 24 + pnpm (`corepack enable && pnpm install --frozen-lockfile`)
+- Standalone pnpm (`pnpm install --frozen-lockfile`)
 - Playwright browsers: `pnpm exec playwright install --with-deps`
 - A running RSpace instance (local or remote)
 

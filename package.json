@@ -2,7 +2,14 @@
   "name": "rspace-web",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+  "packageManager": "pnpm@12.15.0+sha512.b3951d6d6ff4a9f13dc7cf56cd28d2b8eb37dbcc9c68e52e1e1191873ea9f82a017287ab50baadc5ccc494f036c67c0e47eb13608c2fa36f47711b61ea128e61",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.22.1",
+      "onFail": "download"
+    }
+  },
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
     "postinstall": "node scripts/link-skills.mjs",
@@ -110,7 +117,7 @@
     "@mui/x-data-grid": "9.12.0",
     "@mui/x-date-pickers": "9.12.0",
     "@mui/x-tree-view": "9.12.0",
-    "@scalar/api-reference-react": "0.9.65",
+    "@scalar/api-reference-react": "0.9.82",
     "@stomp/stompjs": "7.3.0",
     "@tanstack/query-core": "5.101.4",
     "@tanstack/react-form": "1.33.5",
@@ -140,7 +147,7 @@
     "mobx-react-lite": "4.1.1",
     "pdfjs-dist": "5.4.296",
     "photoswipe": "5.4.4",
-    "posthog-js": "1.418.10",
+    "posthog-js": "1.438.13",
     "pretty-bytes": "7.1.1",
     "purify-ts": "2.1.4",
     "qr-scanner": "1.4.2",

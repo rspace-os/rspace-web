@@ -34,6 +34,26 @@ Install [Maven 3](https://maven.apache.org/download.cgi) (>=3.8.1).
 Alternatively, you can run builds using the `./mvnw` (Unix/Linux/Mac) or `./mvnw.cmd` (Windows) which installs Maven for you
 if you don't have it already.
 
+### Install pnpm
+
+Maven's frontend build requires standalone pnpm on `PATH`. Maven invokes pnpm
+from `PATH`; it does not install pnpm. The root `package.json` pins Node.js in
+`devEngines.runtime`, and pnpm downloads that Node.js version for installs,
+scripts and Maven builds, checking it against the lockfile.
+
+Install standalone pnpm once by following the [official pnpm installation
+instructions](https://pnpm.io/installation). On macOS and Linux, the installer
+command is:
+
+```bash
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+```
+
+Restart your shell after installation. If a Corepack pnpm shim shadows the
+standalone binary, run `corepack disable pnpm` and make sure the standalone
+pnpm directory is first on `PATH`. The root `package.json` pins the pnpm version;
+pnpm itself honors this pin.
+
 ### Set up Maven toolchain
 
 This enables us to run builds & tests using different JDK versions.
@@ -75,15 +95,19 @@ To run a branch on Java 21 in CI, start the "Lint and Test" or "e2e (mocked)" wo
 ### Enable git hooks (recommended)
 
 Git pre-commit hooks are managed by [lefthook](https://lefthook.dev). Enable
-them once per clone by installing the root dependencies (Node 24 + pnpm via
-corepack required):
+them once per clone by installing the root dependencies (standalone pnpm
+required):
 
 ```bash
-corepack enable pnpm
 pnpm install   # run from the repo root; the prepare script runs `lefthook install`
 ```
 
-This installs a `pre-commit` hook that, on the relevant staged files:
+`pnpm-workspace.yaml` enables `virtualStoreType: global`
+so local worktrees share the virtual store.
+`addMissingPeerTypes` keeps peer type declarations available to TypeScript
+when dependencies live outside the project tree.
+
+The install command sets up a `pre-commit` hook that, on the relevant staged files:
 
 - runs `mvn spotless:check` on staged `*.java` files and **blocks the commit if
   any need reformatting** (run `./mvnw spotless:apply` to fix), and
@@ -146,9 +170,13 @@ mvn clean package -DgenerateReactDist -DskipTests=true \
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
-which installs Node/pnpm locally, runs `pnpm install --frozen-lockfile`, and runs the
-Vite production build, bundling the resulting `dist/` files into the WAR. Without this
-flag the frontend is not built.
+which runs `pnpm install --frozen-lockfile` and the Vite production build using
+Node.js and pnpm from `PATH`, then bundles the resulting `dist/` files into the
+WAR. Without this flag the frontend is not built.
+
+Jenkins frontend builds install the pinned standalone pnpm under the
+workspace's ignored `node/` directory; pnpm then downloads the pinned Node.js.
+The Jenkins agent needs curl, tar and either openssl or sha512sum for this setup.
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
@@ -292,7 +320,6 @@ When `-DreactDevMode=true` is set, Jetty proxies frontend asset requests to a
 local Vite dev server for Hot Module Replacement (HMR). Start the Vite dev
 server in a separate terminal:
 ```bash
-corepack enable
 pnpm install --frozen-lockfile
 pnpm run serve
 ```
