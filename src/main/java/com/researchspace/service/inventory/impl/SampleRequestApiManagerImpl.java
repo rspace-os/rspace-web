@@ -241,14 +241,25 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   private ApiSampleRequest toDetail(SampleRequest request, User user) {
     ApiSampleRequest detail = new ApiSampleRequest(request);
-    detail.setRequester(toApiUser(request.getRequesterUsername(), request.getRequesterId()));
-    detail.setOriginalOwner(toApiUser(request.getOriginalOwner(), request.getOriginalOwnerId()));
+    Map<Long, ApiUser> usersById = new HashMap<>();
+    detail.setRequester(
+        usersById.computeIfAbsent(
+            request.getRequesterId(), id -> toApiUser(request.getRequesterUsername(), id)));
+    detail.setOriginalOwner(
+        usersById.computeIfAbsent(
+            request.getOriginalOwnerId(), id -> toApiUser(request.getOriginalOwner(), id)));
     for (int i = 0; i < detail.getStatusChanges().size(); i++) {
       ApiSampleRequestStatusChange apiChange = detail.getStatusChanges().get(i);
       SampleRequestStatusChange change = request.getStatusChanges().get(i);
-      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername(), change.getCreatedById()));
-      if (change.getReasonKey() != null) {
-        apiChange.setReason(messages.getMessage(change.getReasonKey()));
+      apiChange.setCreatedBy(
+          usersById.computeIfAbsent(
+              change.getCreatedById(), id -> toApiUser(change.getCreatedByUsername(), id)));
+      if (change.isAutoClosed()) {
+        apiChange.setReason(
+            messages.getMessage(
+                change.getStatus() == SampleRequestStatus.FULFILLED
+                    ? AUTO_FULFILLED_REASON
+                    : AUTO_REJECTED_REASON));
       }
       if (change.getTransferredSample() != null) {
         sampleApiManager.setOtherFieldsForOutgoingApiInventoryRecord(
@@ -331,13 +342,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
           toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
       legalTransitionFromOrThrow(transitionsToSettableStatusOrThrow(target), request.getStatus());
-      if (toRequester) {
-        request
-            .recordStatus(actor, target, null, request.getSample())
-            .setReasonKey(AUTO_FULFILLED_REASON);
-      } else {
-        request.recordStatus(actor, target, null).setReasonKey(AUTO_REJECTED_REASON);
-      }
+      request
+          .recordStatus(actor, target, null, toRequester ? request.getSample() : null)
+          .setAutoClosed(true);
       SampleRequest saved = sampleRequestDao.save(request);
       publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));
     }
