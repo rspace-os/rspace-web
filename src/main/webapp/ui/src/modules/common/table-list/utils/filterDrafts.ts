@@ -127,20 +127,6 @@ export function topLevelFilterCount<TDocument>(expression: FilterExpression<TDoc
   return expression.kind === "and" ? expression.children.length : 1;
 }
 
-export function fieldGroups<TDocument>(
-  fields: readonly ResolvedFieldConfig<TDocument>[],
-): readonly { key: string; labelKey: string | null; fields: readonly ResolvedFieldConfig<TDocument>[] }[] {
-  const groups = new Map<string, { key: string; labelKey: string | null; fields: ResolvedFieldConfig<TDocument>[] }>();
-  for (const field of fields) {
-    const labelKey = field.origin?.viaLabel || field.origin?.groupLabelKey || null;
-    const key = labelKey ?? "";
-    const group = groups.get(key) ?? { key, labelKey, fields: [] };
-    group.fields.push(field);
-    groups.set(key, group);
-  }
-  return [...groups.values()];
-}
-
 export type DraftValue = string | readonly string[];
 
 export function scalarValue(value: DraftValue): string {

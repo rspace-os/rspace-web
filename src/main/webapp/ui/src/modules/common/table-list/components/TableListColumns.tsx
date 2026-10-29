@@ -22,7 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVerticalIcon, XIcon } from "lucide-react";
-import { type CSSProperties, type ReactNode, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/labels";
@@ -44,6 +44,11 @@ function sectionOf<TDocument>(layout: Layout<TDocument>, id: UniqueIdentifier): 
   if (layout.shown.includes(id as FieldName<TDocument>)) return "shown";
   if (layout.hidden.includes(id as FieldName<TDocument>)) return "hidden";
   return null;
+}
+
+function dropSection<TDocument>(layout: Layout<TDocument>, over: DragOverEvent["over"]): Section | null {
+  const section = over?.data.current?.section;
+  return section === "shown" || section === "hidden" ? section : over ? sectionOf(layout, over.id) : null;
 }
 
 function sameFields<TDocument>(left: readonly FieldName<TDocument>[], right: readonly FieldName<TDocument>[]) {
@@ -179,22 +184,15 @@ export function TableListColumns<TDocument>({
 }) {
   const { i18n, t } = useTranslation("common");
   const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
-  const availableFields = useMemo(() => config.fields.filter((field) => field.list !== false), [config.fields]);
-  const runtimeSources = useMemo(
-    () =>
-      onSelectRuntimeField === undefined
-        ? []
-        : (config.runtimeSources ?? []).filter((source) => source.columnSelectable),
-    [config.runtimeSources, onSelectRuntimeField],
-  );
-  const runtimeSourceGroups = useMemo(() => groupRuntimeFieldSources(runtimeSources), [runtimeSources]);
-  const propsLayout = useMemo<Layout<TDocument>>(() => {
-    const shown = visibleFields.filter((name) => availableFields.some((field) => field.name === name));
-    return {
-      shown,
-      hidden: availableFields.map((field) => field.name).filter((name) => !shown.includes(name)),
-    };
-  }, [availableFields, visibleFields]);
+  const availableFields = config.fields.filter((field) => field.list !== false);
+  const runtimeSources =
+    onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.columnSelectable);
+  const runtimeSourceGroups = groupRuntimeFieldSources(runtimeSources);
+  const shown = visibleFields.filter((name) => availableFields.some((field) => field.name === name));
+  const propsLayout: Layout<TDocument> = {
+    shown,
+    hidden: availableFields.map((field) => field.name).filter((name) => !shown.includes(name)),
+  };
   const [dragLayout, setDraft] = useState(propsLayout);
   const [activeField, setActiveField] = useState<FieldName<TDocument> | null>(null);
   const draft = activeField === null ? propsLayout : dragLayout;
@@ -205,18 +203,11 @@ export function TableListColumns<TDocument>({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const targetSection = (event: DragOverEvent | DragEndEvent): Section | null => {
-    const section = event.over?.data.current?.section;
-    return section === "shown" || section === "hidden" ? section : event.over ? sectionOf(draft, event.over.id) : null;
-  };
-
   const transfer = ({ active, over }: DragOverEvent) => {
     if (!over) return;
     setDraft((current) => {
       const source = sectionOf(current, active.id);
-      const overSection = over.data.current?.section;
-      const target: Section | null =
-        overSection === "shown" || overSection === "hidden" ? overSection : sectionOf(current, over.id);
+      const target = dropSection(current, over);
       if (!source || !target || source === target) return current;
       const field = active.id as FieldName<TDocument>;
       const sourceFields = current[source].filter((candidate) => candidate !== field);
@@ -229,7 +220,7 @@ export function TableListColumns<TDocument>({
 
   const finishDrag = (event: DragEndEvent) => {
     const section = sectionOf(draft, event.active.id);
-    const target = targetSection(event);
+    const target = dropSection(draft, event.over);
     if (!event.over || !section || !target) {
       setDraft(origin.current);
       setActiveField(null);
@@ -342,7 +333,6 @@ export function TableListColumns<TDocument>({
                   ? t("tableList.filters.customField.option")
                   : t("tableList.filters.customField.optionVia", { via: group.viaLabel })
               }
-              chosenLabel={undefined}
               known={runtimeFieldDefinitions ?? []}
               authScope={runtimeFieldAuthScope}
               isDefinitionAvailable={(definition) => definition.columnSelectable}

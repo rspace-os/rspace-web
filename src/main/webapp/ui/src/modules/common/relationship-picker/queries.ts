@@ -66,13 +66,13 @@ export function useRelationshipOptions({
 }
 
 export function useRelationshipOptionAvailability({
-  source,
+  sourceId,
   options,
   availabilitySource,
   token,
   authScope,
 }: {
-  source: RelationshipSource;
+  sourceId: string;
   options: readonly RelationshipOption[];
   availabilitySource: RelationshipOptionAvailabilitySource | undefined;
   token: string | undefined;
@@ -80,7 +80,7 @@ export function useRelationshipOptionAvailability({
 }) {
   const values = [...new Set(options.map((option) => String(option.value)))].sort();
   const query = useQuery<Readonly<Record<string, UnavailableRelationshipOption>>>({
-    queryKey: [...(availabilitySource?.queryKey ?? []), source.id, ...cacheScope(token, authScope), ...values],
+    queryKey: [...(availabilitySource?.queryKey ?? []), sourceId, ...cacheScope(token, authScope), ...values],
     enabled: availabilitySource !== undefined && values.length > 0,
     staleTime: 15_000,
     gcTime: 5 * 60_000,

@@ -153,12 +153,7 @@ export function RelationshipPicker({
     enabled: showsOptions,
   });
   const availability = useRelationshipOptionAvailability({
-    source: sourceList[0] ?? {
-      id: "none",
-      ownsValue: () => false,
-      search: async () => [],
-      toOption: () => ({ value: "", label: "" }),
-    },
+    sourceId: sourceList[0]?.id ?? "none",
     options,
     availabilitySource,
     token,
@@ -174,15 +169,13 @@ export function RelationshipPicker({
     return shown;
   }, [showsOptions, options, selected]);
   const emptyMessage = showsOptions
-    ? loading
-      ? t("loading")
-      : failed
-        ? t("relationshipPicker.failed")
-        : !hasSearchTerm && browseEmptyMessage !== undefined
-          ? browseEmptyMessage
-          : searchTooShort
-            ? t("relationshipPicker.searchTooShort", { count: minimumSearchLength })
-            : t("relationshipPicker.empty")
+    ? failed
+      ? t("relationshipPicker.failed")
+      : !hasSearchTerm && browseEmptyMessage !== undefined
+        ? browseEmptyMessage
+        : searchTooShort
+          ? t("relationshipPicker.searchTooShort", { count: minimumSearchLength })
+          : t("relationshipPicker.empty")
     : t("relationshipPicker.enterSearchTerm");
   const handleInputValueChange = (nextTerm: string, { reason }: { reason: string }) => {
     if (reason === "input-change") setTerm(nextTerm);

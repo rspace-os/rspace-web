@@ -1,4 +1,4 @@
-import { parseAsString, useQueryStates } from "nuqs";
+import { useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as v from "valibot";
 import { rsqlSelectors } from "../rsql";
@@ -10,7 +10,7 @@ import {
   tableViewStateSchema,
   tableViewStorageKey,
 } from "../utils/viewStorage";
-import { parameterNames, tableIdFor } from "./urlState";
+import { parameterNames, rawViewParsers, tableIdFor } from "./urlState";
 
 type RawView = {
   search: string | null;
@@ -37,22 +37,12 @@ function storedView(key: string): RawView & { malformed?: boolean } {
 /** Read encoded state before parsing so unresolved fields never silently erase saved rules. */
 export function useSavedTableView(slug: string, options: boolean | TableListQueryStringOptions = true) {
   const names = parameterNames(slug, options === false ? true : options);
-  const [url, setUrl] = useQueryStates(
-    {
-      search: parseAsString,
-      where: parseAsString,
-      columns: parseAsString,
-      sort: parseAsString,
-    },
-    { urlKeys: names },
-  );
+  const [url, setUrl] = useQueryStates(rawViewParsers, { urlKeys: names });
   const storageKey = tableViewStorageKey(tableIdFor(slug, options));
   const stored = useMemo(() => storedView(storageKey), [storageKey]);
   const hasUrl = Object.values(url).some((value) => value !== null);
   const [storageAllowed, setStorageAllowed] = useState(!hasUrl);
-  useEffect(() => {
-    if (hasUrl) setStorageAllowed(false);
-  }, [hasUrl]);
+  if (hasUrl && storageAllowed) setStorageAllowed(false);
   const raw = options === false ? emptyView : hasUrl || !storageAllowed ? url : stored;
   const selectors = [
     ...(raw.where === null ? [] : rsqlSelectors(raw.where)),

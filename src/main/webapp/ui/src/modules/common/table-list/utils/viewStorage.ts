@@ -2,7 +2,14 @@ import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/config";
 import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
-import { columnSelectors, parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryString";
+import {
+  columnSelectors,
+  nonDefaultColumns,
+  nonDefaultSorting,
+  parseColumns,
+  parseSorting,
+  serializeColumns,
+} from "./queryString";
 
 export const tableViewStateSchema = v.object({
   v: v.literal(1),
@@ -30,32 +37,24 @@ export function serializeTableViewState<TDocument>(
   values: TableViewValues<TDocument>,
   config: ResolvedCollectionConfig<TDocument>,
 ): string | null {
-  const columns =
-    serializeColumns(values.columns) === serializeColumns(config.defaultColumns)
-      ? null
-      : serializeColumns(values.columns);
+  const columns = nonDefaultColumns(values.columns, config.defaultColumns);
   const state: TableViewState = {
     v: 1,
     search: values.search || null,
     where: values.where === null ? null : serializeRsqlExpression(values.where),
     columns,
     ...(columns === null ? {} : { defaults: serializeColumns(config.defaultColumns) }),
-    sort:
-      serializeSorting(values.sort) === serializeSorting(config.defaultSort ?? [])
-        ? null
-        : serializeSorting(values.sort),
+    sort: nonDefaultSorting(values.sort, config.defaultSort ?? []),
   };
   return state.search === null && state.where === null && state.columns === null && state.sort === null
     ? null
     : JSON.stringify(state);
 }
 
-export type StaleViewFields = StaleFieldPolicy;
-
 export function parseTableViewState<TDocument>(
   serialized: string,
   config: ResolvedCollectionConfig<TDocument>,
-  stale?: StaleViewFields,
+  stale?: StaleFieldPolicy,
 ): TableViewValues<TDocument> | null {
   try {
     const result = v.safeParse(tableViewStateSchema, JSON.parse(serialized));
@@ -88,7 +87,7 @@ function savedColumns<TDocument>(
   columns: string,
   defaults: string,
   config: ResolvedCollectionConfig<TDocument>,
-  stale?: StaleViewFields,
+  stale?: StaleFieldPolicy,
 ): readonly FieldName<TDocument>[] {
   const saved = parseColumns(columns, config, stale);
   if (saved === null) return config.defaultColumns;
@@ -125,18 +124,13 @@ export function removeStoredTableView(key: string): void {
 export function loadStoredTableView<TDocument>(
   key: string,
   config: ResolvedCollectionConfig<TDocument>,
-  stale?: StaleViewFields,
+  stale?: StaleFieldPolicy,
 ): TableViewValues<TDocument> | null {
-  try {
-    const serialized = readStoredTableView(key);
-    if (serialized === null) return null;
-    const values = parseTableViewState(serialized, config, stale);
-    if (values === null) removeStoredTableView(key);
-    return values;
-  } catch {
-    // Browser privacy settings must not prevent the table from loading.
-    return null;
-  }
+  const serialized = readStoredTableView(key);
+  if (serialized === null) return null;
+  const values = parseTableViewState(serialized, config, stale);
+  if (values === null) removeStoredTableView(key);
+  return values;
 }
 
 export function saveStoredTableView<TDocument>(

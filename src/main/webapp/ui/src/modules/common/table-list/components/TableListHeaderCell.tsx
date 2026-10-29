@@ -18,18 +18,17 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
   header,
   resizeId,
   resizeOffset,
-  translate,
   selectAllControl,
   onResize,
 }: {
   header: Header<typeof tableListFeatures, TDocument, unknown>;
   resizeId: string;
   resizeOffset: number;
-  translate: (key: string) => string;
   selectAllControl: ReactNode;
   onResize: (columnId: string, size: number) => void;
 }) {
-  const { t } = useTranslation("common");
+  const { i18n, t } = useTranslation("common");
+  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
   const direction = header.column.getIsSorted();
   const meta = header.column.columnDef.meta;
   const label = meta ? fieldLabel(meta, translate) : header.column.id;

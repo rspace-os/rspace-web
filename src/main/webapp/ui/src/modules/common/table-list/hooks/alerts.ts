@@ -38,7 +38,7 @@ function focusAndFollow(root: Element, find: () => HTMLElement | undefined) {
   const observer = new MutationObserver(() => {
     if (target.isConnected) return;
     observer.disconnect();
-    if (document.activeElement === null || document.activeElement === document.body) find()?.focus();
+    if (focusIsLost()) find()?.focus();
   });
   observer.observe(root, { childList: true, subtree: true });
   window.setTimeout(() => observer.disconnect(), 1000);

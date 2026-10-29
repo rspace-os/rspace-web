@@ -82,7 +82,6 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   const { i18n, t } = useTranslation("common");
   const cardViewLabel = t("tableList.cardView", { collection: collectionLabel });
   const resizeId = useId();
-  const translate = useCallback((key: string) => (i18n.exists(key) ? t(key as never) : key), [i18n, t]);
   const listFields = useMemo(() => config.fields.filter((field) => field.list !== false), [config.fields]);
   const visibleFields = features.columns === false ? config.defaultColumns : features.columns.value;
   const visibleSet = useMemo(() => new Set(visibleFields), [visibleFields]);
@@ -99,7 +98,6 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     hasSelection,
     onRowOpen,
     sortingEnabled,
-    translate,
     uiColumns,
   });
 
@@ -371,7 +369,6 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
                       resizeOffset={
                         columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0
                       }
-                      translate={translate}
                       selectAllControl={selection ? selectAllPage : undefined}
                       onResize={resizeColumn}
                     />
@@ -409,13 +406,13 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
       ) : null}
       {!renderRows && cardPresentation !== false ? (
         <div className={presentationClass(cardPresentation)}>
-          {status === "error" ? (
+          {status === "error" || (status !== "loading" && rowModel.rows.length === 0) ? (
             <section aria-label={cardViewLabel} className={reserveEmptyRows ? "min-h-90 py-3" : "min-h-40 py-3"}>
-              <TableListErrorState error={error} />
-            </section>
-          ) : status !== "loading" && rowModel.rows.length === 0 ? (
-            <section aria-label={cardViewLabel} className={reserveEmptyRows ? "min-h-90 py-3" : "min-h-40 py-3"}>
-              <TableListEmptyState description={emptyDescription} />
+              {status === "error" ? (
+                <TableListErrorState error={error} />
+              ) : (
+                <TableListEmptyState description={emptyDescription} />
+              )}
             </section>
           ) : (
             <TableListCardGrid

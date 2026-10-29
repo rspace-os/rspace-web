@@ -22,6 +22,15 @@ async function resolveValue<T>(value: T | (() => T | Promise<T>) | undefined): P
   return typeof value === "function" ? (value as () => T | Promise<T>)() : value;
 }
 
+export async function requestHeaders<TDocument>(
+  options: ApiV2CollectionFetchOptions<TDocument> = {},
+): Promise<Headers> {
+  const headers = new Headers(await resolveValue(options.headers));
+  const token = await resolveValue(options.token);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return headers;
+}
+
 export function projectedState<TDocument>(
   adapter: ApiV2CollectionAdapter<TDocument>,
   state: CollectionQueryState<TDocument>,
@@ -58,10 +67,8 @@ export function createApiV2CollectionFetcher<TDocument>(
   const endpoint = options.endpoint ?? `/api/v2/${adapter.metadata.resourceName}`;
   const request = options.fetch ?? fetchWithUiToken;
   return async (state, { signal }) => {
-    const headers = new Headers(await resolveValue(options.headers));
+    const headers = await requestHeaders(options);
     headers.set("X-Requested-With", "XMLHttpRequest");
-    const token = await resolveValue(options.token);
-    if (token) headers.set("Authorization", `Bearer ${token}`);
     const requestState = projectedState(adapter, state, options.projection ?? "visible");
     const selected = adapter.selectedFields(requestState);
     const parameters = apiV2CollectionRequestParams(
