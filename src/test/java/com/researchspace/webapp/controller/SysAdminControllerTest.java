@@ -23,6 +23,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
@@ -36,6 +37,7 @@ import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,6 +90,34 @@ public class SysAdminControllerTest {
     assertThrows(IllegalStateException.class, () -> ctrller.removeUserAccount(2L));
     Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
+  }
+
+  @Test
+  public void formsAndTemplatesUsageIsReturned() {
+    sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+    when(properties.getDeleteUser()).thenReturn(Boolean.TRUE.toString());
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
+    when(delMgr.getFormsAndTemplatesUsage(2L)).thenReturn(new FormsAndTemplatesUsage(true, false));
+
+    assertEquals(new FormsAndTemplatesUsage(true, false), ctrller.getFormsAndTemplatesUsage(2L));
+  }
+
+  @Test
+  public void formsAndTemplatesUsageRequiresSetDeploymentProperty() {
+    when(properties.getDeleteUser()).thenReturn(Boolean.FALSE.toString());
+
+    assertThrows(IllegalStateException.class, () -> ctrller.getFormsAndTemplatesUsage(2L));
+    Mockito.verifyNoInteractions(delMgr);
+  }
+
+  @Test
+  public void formsAndTemplatesUsageRequiresSysadmin() {
+    User pi = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
+    when(properties.getDeleteUser()).thenReturn(Boolean.TRUE.toString());
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(pi);
+
+    assertThrows(AuthorizationException.class, () -> ctrller.getFormsAndTemplatesUsage(2L));
+    Mockito.verifyNoInteractions(delMgr);
   }
 
   @Test

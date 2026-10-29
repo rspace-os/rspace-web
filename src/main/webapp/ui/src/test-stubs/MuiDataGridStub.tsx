@@ -58,6 +58,7 @@ type DataGridStubProps<Row> = {
 type GridApi = {
   exportDataAsCsv: () => void;
   autosizeColumns: (options?: unknown) => Promise<void>;
+  setRows: (rows: Array<unknown>) => void;
 };
 
 const GridApiContext = React.createContext<React.MutableRefObject<GridApi | null> | null>(null);
@@ -141,6 +142,7 @@ export const useGridApiRef = () =>
   React.useRef<GridApi>({
     exportDataAsCsv: () => {},
     autosizeColumns: () => Promise.resolve(),
+    setRows: () => {},
   });
 
 export const useGridApiContext = () => {
@@ -150,6 +152,7 @@ export const useGridApiContext = () => {
       current: {
         exportDataAsCsv: () => {},
         autosizeColumns: () => Promise.resolve(),
+        setRows: () => {},
       },
     }
   );
@@ -194,13 +197,22 @@ export const GridToolbarColumnsButton = () => {
 
 export const ColumnsPanelTrigger = GridToolbarColumnsButton;
 
-export const GridToolbarExportContainer = ({ children }: { children: React.ReactNode }) => {
+export const GridToolbarExportContainer = ({
+  children,
+  slotProps,
+}: {
+  children: React.ReactNode;
+  slotProps?: { button?: { disabled?: boolean; startIcon?: React.ReactNode } };
+}) => {
   // Stub renders the trigger and menu items inline without an open/close toggle
   // because the toolbar slot in real usage is re-created on each parent render,
   // which would unmount any local state in jsdom tests.
   return (
     <div>
-      <button type="button">{EXPORT_LABEL}</button>
+      <button type="button" disabled={slotProps?.button?.disabled}>
+        {slotProps?.button?.startIcon}
+        {EXPORT_LABEL}
+      </button>
       <MenuList>{children}</MenuList>
     </div>
   );
@@ -228,8 +240,12 @@ export function DataGrid<Row>({
     current: {
       exportDataAsCsv: () => {},
       autosizeColumns: () => Promise.resolve(),
+      setRows: () => {},
     },
   };
+  // like the real grid, export reads the rows the grid holds: setRows replaces them until the rows prop changes
+  const heldRows = React.useRef({ prop: rows, rows });
+  if (heldRows.current.prop !== rows) heldRows.current = { prop: rows, rows };
 
   const selectedIds = toSelectedIds(rowSelectionModel);
   const effectiveColumnVisibility = {
@@ -250,14 +266,16 @@ export function DataGrid<Row>({
         options?.getRowsToExport?.() ??
         (selectedRowIds.size > 0
           ? Array.from(selectedRowIds)
-          : rows.map((row, rowIndex) => (getRowId ? getRowId(row) : rowIndex)));
+          : heldRows.current.rows.map((row, rowIndex) => (getRowId ? getRowId(row) : rowIndex)));
       const columnsToExport = (options?.allColumns ? allColumns : visibleColumns)
         .filter((column) => column.field)
         .map((column) => ({
           ...column,
           field: column.field as string,
         }));
-      const exportedRows = rows.filter((row, rowIndex) => rowIdsToExport.includes(getRowId ? getRowId(row) : rowIndex));
+      const exportedRows = heldRows.current.rows.filter((row, rowIndex) =>
+        rowIdsToExport.includes(getRowId ? getRowId(row) : rowIndex),
+      );
       const lines = [
         columnsToExport.map((column) => escapeCsv(column.headerName ?? column.field)).join(","),
         ...exportedRows.map((row) =>
@@ -268,6 +286,9 @@ export function DataGrid<Row>({
       window.URL.createObjectURL(blob);
     },
     autosizeColumns: () => Promise.resolve(),
+    setRows: (newRows) => {
+      heldRows.current.rows = newRows as Array<Row>;
+    },
   };
 
   const toggleRow = (id: GridId, checked: boolean) => {

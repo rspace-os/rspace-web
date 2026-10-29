@@ -15,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.TransferService;
@@ -52,6 +53,14 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
 
   private @Autowired @Qualifier("formTransferService") TransferService formTransferService;
   private @Autowired @Qualifier("templateTransferService") TransferService templateTransferService;
+
+  @Override
+  public FormsAndTemplatesUsage getFormsAndTemplatesUsage(Long userToDeleteId) {
+    User toDelete = userDao.get(userToDeleteId);
+    return new FormsAndTemplatesUsage(
+        formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete),
+        recordDao.hasUserSharedTemplatesUsedByOtherUsers(toDelete));
+  }
 
   @Override
   public ServiceOperationResult<User> removeUser(

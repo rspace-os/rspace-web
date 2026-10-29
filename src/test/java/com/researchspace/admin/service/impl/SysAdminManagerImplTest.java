@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.admin.service.UserUsageInfo;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.DatabaseUsageByUserGroupByResult;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
@@ -15,6 +16,9 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.sort.UserSort;
+import com.researchspace.testutils.TestFactory;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +61,27 @@ public class SysAdminManagerImplTest {
 
     assertNotNull(results);
     verify(fileDao).getTotalFileUsageForAllUsers(pgCrit);
+  }
+
+  @Test
+  public void fileUsageOrderKeepsUsageOrderAndSkipsUnknownUsers() {
+    PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
+    pgCrit.setOrderBy(UserSort.FILE_USAGE.key());
+    Map<String, DatabaseUsageByUserGroupByResult> usage = new LinkedHashMap<>();
+    usage.put("b", new DatabaseUsageByUserGroupByResult("b", 300));
+    usage.put("a", new DatabaseUsageByUserGroupByResult("a", 200));
+    usage.put("ghost", new DatabaseUsageByUserGroupByResult("ghost", 100));
+    when(fileDao.getCountOfUsersWithFilesInFileSystem()).thenReturn(3L);
+    when(fileDao.getTotalFileUsageForAllUsers(pgCrit)).thenReturn(usage);
+    when(userDao.getUsersByUsernames(usage.keySet()))
+        .thenReturn(List.of(TestFactory.createAnyUser("a"), TestFactory.createAnyUser("b")));
+    when(recordDao.getTotalRecordsForUsers(any(), any())).thenReturn(Map.of());
+
+    ISearchResults<UserUsageInfo> results = sysAdminManager.getUserUsageInfo(sysadmin, pgCrit);
+
+    assertEquals(
+        List.of("b", "a"),
+        results.getResults().stream().map(i -> i.getUserInfo().getUsername()).toList());
   }
 
   @Test

@@ -55,4 +55,12 @@ public interface UserDeletionManager {
    */
   ServiceOperationResult<User> isUserRemovable(
       Long userToDeleteId, UserDeletionPolicy policy, User subject);
+
+  /**
+   * Tells whether other users' documents use the user's forms or templates; removing the user
+   * transfers those to the sysadmin removing them.
+   *
+   * @param userToDeleteId ID of user who would be deleted
+   */
+  FormsAndTemplatesUsage getFormsAndTemplatesUsage(Long userToDeleteId);
 }
