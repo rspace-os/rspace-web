@@ -16,6 +16,26 @@ export type TableListControlPanel = "filters" | "sorting" | "columns";
 
 const remoteSearchDebounceMs = 300;
 
+function CountBadge({
+  count,
+  className = "ml-0.5",
+  ariaHidden,
+}: {
+  count: number;
+  className?: string;
+  ariaHidden?: true;
+}) {
+  const { i18n } = useTranslation("common");
+  return (
+    <span
+      aria-hidden={ariaHidden}
+      className={cn(className, "rounded-sm bg-foreground px-1 text-[10px] text-background")}
+    >
+      {formatNumber(count, i18n.resolvedLanguage ?? i18n.language)}
+    </span>
+  );
+}
+
 function SearchRecordsInput({
   value,
   collectionLabel,
@@ -130,7 +150,7 @@ export function TableListToolbar<TDocument>({
   onReset: () => void;
   resetView?: () => void;
 }) {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   const [searchResetSignal, setSearchResetSignal] = useState(0);
   const resetLabel = t("tableList.actions.resetToDefaults");
   const visibleColumns = features.columns === false ? config.defaultColumns : features.columns.value;
@@ -227,11 +247,7 @@ export function TableListToolbar<TDocument>({
           >
             <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
             {t("tableList.toolbar.filters")}
-            {filterCount > 0 ? (
-              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-                {formatNumber(filterCount, i18n.resolvedLanguage ?? i18n.language)}
-              </span>
-            ) : null}
+            {filterCount > 0 ? <CountBadge count={filterCount} /> : null}
           </Button>
         ) : null}
         {features.sorting !== false ? (
@@ -250,11 +266,7 @@ export function TableListToolbar<TDocument>({
           >
             <ArrowDownUpIcon aria-hidden="true" data-icon="inline-start" />
             {t("tableList.toolbar.sorting")}
-            {sortingCount > 0 ? (
-              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-                {formatNumber(sortingCount, i18n.resolvedLanguage ?? i18n.language)}
-              </span>
-            ) : null}
+            {sortingCount > 0 ? <CountBadge count={sortingCount} /> : null}
           </Button>
         ) : null}
         {features.columns !== false ? (
@@ -272,11 +284,7 @@ export function TableListToolbar<TDocument>({
           >
             <Columns3Icon aria-hidden="true" data-icon="inline-start" />
             {t("tableList.toolbar.columns")}
-            {columnsChanged ? (
-              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-                {formatNumber(visibleColumnCount, i18n.resolvedLanguage ?? i18n.language)}
-              </span>
-            ) : null}
+            {columnsChanged ? <CountBadge count={visibleColumnCount} /> : null}
           </Button>
         ) : null}
         {viewChanged ? (
@@ -328,7 +336,7 @@ function FiltersMenu({
   panelOpen: boolean;
   onOpenPanel: () => void;
 }) {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const appliedCount = filterButtons.buttons.filter(({ pressed }) => pressed).length + filterCount;
   return (
@@ -349,11 +357,7 @@ function FiltersMenu({
       >
         <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
         {t("tableList.toolbar.filters")}
-        {appliedCount > 0 ? (
-          <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-            {formatNumber(appliedCount, i18n.resolvedLanguage ?? i18n.language)}
-          </span>
-        ) : null}
+        {appliedCount > 0 ? <CountBadge count={appliedCount} /> : null}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 gap-3 p-3">
         <fieldset className="flex flex-col gap-3">
@@ -387,7 +391,6 @@ function FiltersMenu({
 }
 
 function FilterSwitch({ button }: { button: TableListFilterButtons["buttons"][number] }) {
-  const { i18n } = useTranslation("common");
   const id = useId();
   return (
     <div className="flex items-start justify-between gap-3">
@@ -396,11 +399,7 @@ function FilterSwitch({ button }: { button: TableListFilterButtons["buttons"][nu
         <span id={`${id}-label`} className="flex items-center gap-1.5 font-medium [&_svg]:size-3.5">
           {button.icon}
           {button.label}
-          {button.count === undefined ? null : (
-            <span aria-hidden="true" className="rounded-sm bg-foreground px-1 text-[10px] text-background">
-              {formatNumber(button.count, i18n.resolvedLanguage ?? i18n.language)}
-            </span>
-          )}
+          {button.count === undefined ? null : <CountBadge count={button.count} ariaHidden className="" />}
         </span>
         {button.description ? (
           <span id={`${id}-description`} className="block text-xs text-muted-foreground">
@@ -420,7 +419,6 @@ function FilterSwitch({ button }: { button: TableListFilterButtons["buttons"][nu
 }
 
 function FilterButton({ button }: { button: TableListFilterButtons["buttons"][number] }) {
-  const { i18n } = useTranslation("common");
   const descriptionId = useId();
   const props = {
     type: "button",
@@ -433,11 +431,7 @@ function FilterButton({ button }: { button: TableListFilterButtons["buttons"][nu
     <>
       {button.icon}
       {button.label}
-      {button.count === undefined ? null : (
-        <span aria-hidden="true" className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-          {formatNumber(button.count, i18n.resolvedLanguage ?? i18n.language)}
-        </span>
-      )}
+      {button.count === undefined ? null : <CountBadge count={button.count} ariaHidden />}
     </>
   );
   if (!button.description) return <Button {...props}>{content}</Button>;
