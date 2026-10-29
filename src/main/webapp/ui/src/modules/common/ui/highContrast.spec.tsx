@@ -188,7 +188,7 @@ describe.skipIf(server.browser !== "chromium")("high contrast", () => {
     await emulateForcedColors();
     render(
       <Combobox items={["Apple", "Banana"]}>
-        <ComboboxInput aria-label="Fruit" />
+        <ComboboxInput aria-label="Fruit" triggerLabel="Show fruit" />
         <ComboboxContent>
           <ComboboxList>
             <ComboboxItem value={labels.apple}>{labels.apple}</ComboboxItem>
