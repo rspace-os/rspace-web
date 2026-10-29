@@ -25,6 +25,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SampleRequestApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import jakarta.ws.rs.NotFoundException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -308,8 +309,13 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
       sampleApiMgr.changeApiSampleOwner(toOutsider, owner);
       releaseSecond.countDown();
 
-      // the owner gave the sample away, so may no longer transfer it
-      assertThrows(ExecutionException.class, () -> second.get(60, TimeUnit.SECONDS));
+      // the owner gave the sample away, so can no longer see it; with innodb_snapshot_isolation
+      // (MariaDB 11.6+) the locked re-read is refused instead
+      ExecutionException refused =
+          assertThrows(ExecutionException.class, () -> second.get(60, TimeUnit.SECONDS));
+      assertTrue(
+          refused.getCause() instanceof NotFoundException || hasSqlErrorCode(refused, 1020),
+          () -> "unexpected refusal: " + refused.getCause());
       assertEquals(
           outsider.getUsername(),
           sampleApiMgr.getApiSampleById(sampleId, outsider).getOwner().getUsername());

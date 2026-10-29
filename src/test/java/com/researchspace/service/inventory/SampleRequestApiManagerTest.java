@@ -1030,6 +1030,24 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void fulfilByTransfer_ofASampleTheCallerCannotRead_isNotFoundAndChangesNothing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User stranger = createAndSaveUserIfNotExists(getRandomAlphabeticString("stranger"));
+    initialiseContentWithEmptyContent(stranger);
+    ApiSampleWithFullSubSamples strangersSample = createBasicSampleForUser(stranger);
+
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            sampleRequestApiMgr.fulfilByTransfer(
+                raised.getId(), strangersSample.getGlobalId(), owner));
+    assertEquals(stranger.getUsername(), ownerOf(strangersSample));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
+  }
+
+  @Test
   public void fulfilByTransfer_ofASampleTheRequesterOwns_isRefused() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
     ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(owner);
