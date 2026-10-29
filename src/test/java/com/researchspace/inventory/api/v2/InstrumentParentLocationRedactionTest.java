@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,13 +41,11 @@ class InstrumentParentLocationRedactionTest {
     Instrument unreadable = InstrumentResourceOperationsTest.instrument(3L);
     Instrument missing = InstrumentResourceOperationsTest.instrument(4L);
     Instrument stale = InstrumentResourceOperationsTest.instrument(5L);
-    when(manager.getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L, 5L)))
+    when(manager.getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L, 5L), actor))
         .thenReturn(
             Map.of(
                 1L, new InstrumentParentLocationSummary(10L, "Readable", ContainerType.LIST),
-                2L, new InstrumentParentLocationSummary(10L, "Readable", ContainerType.LIST),
-                3L, new InstrumentParentLocationSummary(20L, "Unreadable", ContainerType.LIST)));
-    when(manager.getReadableParentContainerIds(Set.of(10L, 20L), actor)).thenReturn(Set.of(10L));
+                2L, new InstrumentParentLocationSummary(10L, "Readable", ContainerType.LIST)));
 
     Map<Object, Map<String, Object>> overrides =
         operations.readOverrides(
@@ -57,18 +57,14 @@ class InstrumentParentLocationRedactionTest {
     assertMasked(overrides.get(3L));
     assertMasked(overrides.get(4L));
     assertMasked(overrides.get(5L));
-    verify(manager).getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L, 5L));
-    verify(manager).getReadableParentContainerIds(Set.of(10L, 20L), actor);
+    verify(manager).getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L, 5L), actor);
+    verify(manager, never()).getReadableParentContainerIds(any(), any());
   }
 
   @Test
   void doesNotAddLocationFieldsThatTheRequestDidNotSelect() {
     Instrument instrument = InstrumentResourceOperationsTest.instrument(1L);
-    when(manager.getParentLocationSummaries(Set.of(1L)))
-        .thenReturn(
-            Map.of(
-                1L, new InstrumentParentLocationSummary(20L, "Hidden parent", ContainerType.LIST)));
-    when(manager.getReadableParentContainerIds(Set.of(20L), actor)).thenReturn(Set.of());
+    when(manager.getParentLocationSummaries(Set.of(1L), actor)).thenReturn(Map.of());
     Map<String, Object> overrides = operations.readOverrides(List.of(instrument), actor).get(1L);
     ResourceRenderer renderer =
         new ResourceRenderer(new ResourceRegistry(List.of(ApiV2InstrumentResource.DESCRIPTION)));

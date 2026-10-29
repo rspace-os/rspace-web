@@ -164,16 +164,11 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
 
   private Map<Object, Map<String, Object>> locationOverrides(Set<Long> instrumentIds, User actor) {
     Map<Long, InstrumentParentLocationSummary> locations =
-        instrumentManager.getParentLocationSummaries(instrumentIds);
-    Set<Long> parentIds =
-        locations.values().stream()
-            .map(InstrumentParentLocationSummary::containerId)
-            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-    Set<Long> readable = instrumentManager.getReadableParentContainerIds(parentIds, actor);
+        instrumentManager.getParentLocationSummaries(instrumentIds, actor);
     Map<Object, Map<String, Object>> overrides = new LinkedHashMap<>();
     for (Long instrumentId : instrumentIds) {
       InstrumentParentLocationSummary location = locations.get(instrumentId);
-      boolean show = isReadableParent(location == null ? null : location.containerId(), readable);
+      boolean show = location != null;
       Map<String, Object> values = new LinkedHashMap<>();
       values.put("parentContainerName", show ? location.containerName() : null);
       values.put(

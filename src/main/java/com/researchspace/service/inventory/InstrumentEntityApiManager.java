@@ -194,8 +194,12 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableInstruments(ResourceRequest request, User user);
 
-  /** Returns current immediate parent-container data keyed by instrument ID. */
-  Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(Set<Long> instrumentIds);
+  /**
+   * Returns immediate parent-container summaries keyed by instrument ID, omitting instruments whose
+   * parent container the user cannot read.
+   */
+  Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
+      Set<Long> instrumentIds, User user);
 
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
