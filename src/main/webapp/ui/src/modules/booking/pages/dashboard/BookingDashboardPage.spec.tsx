@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
