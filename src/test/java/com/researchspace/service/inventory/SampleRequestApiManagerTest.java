@@ -946,8 +946,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
     assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
     assertEquals(sample.getGlobalId(), latest.getTransferredSample().getGlobalId());
-    assertEquals(
-        messages.getMessage("inventory.sampleRequest.autoFulfilledReason"), latest.getReason());
+    assertNull(latest.getReason());
     assertEquals(requester.getUsername(), ownerOf(sample));
     assertEquals(
         SampleRequestStatus.REJECTED,

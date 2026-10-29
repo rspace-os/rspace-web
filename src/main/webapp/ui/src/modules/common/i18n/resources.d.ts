@@ -7530,7 +7530,7 @@ export default interface Resources {
         "label": "List of materials"
       },
       "sampleRequest": {
-        "autoFulfilledReason": "This request was fulfilled by transferring a sample to the requester.",
+        "autoFulfilledReason": "This request was fulfilled by transferring the sample to the requester.",
         "autoRejectedReason": "This request was rejected because the sample was transferred to another user. If you still need it, make a new request to the new owner."
       }
     }
