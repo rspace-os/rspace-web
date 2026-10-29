@@ -32,5 +32,8 @@ public interface ResourceAccessDao {
   /** Initializes assignments for a page of access aggregates in one query. */
   void loadAssignments(Collection<Long> accessIds);
 
+  /** Returns the ids of assigned groups that have at least one enabled member, in one query. */
+  Set<Long> availableGroupIds(Collection<Long> groupIds);
+
   void flush();
 }

@@ -132,6 +132,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       return resource.inheritedDocument(protectedEntity, subject, resolved).asInherited();
     }
     ResourceAccess access = resource.access(protectedEntity);
+    gateway.loadAssignments(List.of(access.getId()));
     ResolvedResourceAccess resolved = resolver.resolve(access, subject);
     requireRead(resolved);
     requireCapability(resolved, resource.viewAccessCapability());
@@ -567,10 +568,20 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       ResourceAccess access,
       User subject,
       ResolvedResourceAccess resolved) {
+    gateway.loadAssignments(List.of(access.getId()));
     Map<Long, Set<Long>> assignedGroupIdsByUser = gateway.assignedUserGroupIds(access);
+    Set<Long> availableGroupIds =
+        gateway.availableGroupIds(
+            access.getAssignments().stream()
+                .filter(assignment -> assignment.getGroup() != null)
+                .map(assignment -> assignment.getGroup().getId())
+                .collect(Collectors.toSet()));
     List<ResourceAccessAssignmentDocument> assignments =
         access.getAssignments().stream()
-            .map(assignment -> assignmentDocument(access, assignment, assignedGroupIdsByUser))
+            .map(
+                assignment ->
+                    assignmentDocument(
+                        access, assignment, assignedGroupIdsByUser, availableGroupIds))
             .toList();
     return new ResourceAccessDocument(
         access.getSchemeKey(),
@@ -582,7 +593,8 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   private ResourceAccessAssignmentDocument assignmentDocument(
       ResourceAccess access,
       ResourceRoleAssignment assignment,
-      Map<Long, Set<Long>> assignedGroupIdsByUser) {
+      Map<Long, Set<Long>> assignedGroupIdsByUser,
+      Set<Long> availableGroupIds) {
     Object id =
         switch (assignment.getGranteeKind()) {
           case USER -> assignment.getUser() == null ? null : assignment.getUser().getId();
@@ -593,7 +605,8 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
         switch (assignment.getGranteeKind()) {
           case USER -> assignment.getUser() != null && assignment.getUser().isEnabled();
           case GROUP ->
-              assignment.getGroup() != null && assignment.getGroup().getEnabledMemberSize() > 0;
+              assignment.getGroup() != null
+                  && availableGroupIds.contains(assignment.getGroup().getId());
           case AUDIENCE -> true;
         };
     ResolvedResourceAccess granteeAccess = ResolvedResourceAccess.none();

@@ -95,6 +95,138 @@ class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase
   }
 
   @Test
+  void assignmentDocumentsAndPageResolutionUseConstantQueries() throws Exception {
+    List<String> extraUsers = new ArrayList<>();
+    List<Long> extraGroups = new ArrayList<>();
+    for (int index = 0; index < 4; index++) {
+      User member = createAndSaveUser(getRandomName(10));
+      initUser(member);
+      extraUsers.add(member.getUsername());
+      extraGroups.add(createGroupForPiAndUsers(piUser, new User[] {member}).getId());
+    }
+    long smallCount = documentQueryCount();
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            transaction -> {
+              ResourceAccess access =
+                  sessionFactory.getCurrentSession().find(ResourceAccess.class, resourceAccessId);
+              for (int index = 0; index < extraUsers.size(); index++) {
+                access.addAssignment(
+                    ResourceRoleAssignment.forUser(
+                        ResourceAccessTestScheme.VIEWER,
+                        userMgr.getUserByUsername(extraUsers.get(index))));
+                access.addAssignment(
+                    ResourceRoleAssignment.forGroup(
+                        ResourceAccessTestScheme.VIEWER, grpMgr.getGroup(extraGroups.get(index))));
+              }
+              accessDao.flush();
+            });
+    assertEquals(
+        smallCount, documentQueryCount(), "document query count must not grow per assignee");
+  }
+
+  private long documentQueryCount() {
+    return new TransactionTemplate(getTxMger())
+        .execute(
+            transaction -> {
+              var session = sessionFactory.getCurrentSession();
+              User owner = userMgr.getUserByUsername(outgoingOwnerUsername);
+              // Caller memberships and roles are outside assignment loading.
+              owner.getGroups().size();
+              owner.getRoles().size();
+              ResourceAccess access = session.find(ResourceAccess.class, resourceAccessId);
+              var statistics = sessionFactory.getStatistics();
+              boolean enabled = statistics.isStatisticsEnabled();
+              statistics.setStatisticsEnabled(true);
+              try {
+                statistics.clear();
+                ResourceAccessDocument document =
+                    accessManager.get(
+                        accessAdapter(resourceAccessId, access), resourceAccessId, owner);
+                long count = statistics.getPrepareStatementCount();
+                for (var assignment : document.assignments()) {
+                  var grantee = assignment.grantee();
+                  assertTrue(grantee.available());
+                  var original =
+                      access.getAssignments().stream()
+                          .filter(row -> row.getGranteeKey().equals(grantee.key()))
+                          .findFirst()
+                          .orElseThrow();
+                  assertEquals(original.getNameSnapshot(), grantee.name());
+                  assertEquals(original.getDetailSnapshot(), grantee.detail());
+                  assertEquals(original.getRoleKey(), assignment.role());
+                  assertEquals(original.getGranteeKind(), grantee.kind());
+                  switch (original.getGranteeKind()) {
+                    case USER -> {
+                      assertEquals(original.getUser().getId(), grantee.id());
+                      assertEquals(
+                          Optional.of(
+                              original.getRoleKey().equals(ResourceAccessTestScheme.OWNER)
+                                  ? ResourceAccessTestScheme.OWNER
+                                  : ResourceAccessTestScheme.EDITOR),
+                          grantee.effectiveRole());
+                      if (original.getRoleKey().equals(ResourceAccessTestScheme.OWNER)) {
+                        assertEquals(
+                            List.of(
+                                new com.researchspace.model.resourceaccess.ResourceRoleSource(
+                                    com.researchspace.model.resourceaccess.ResourceRoleSourceKind
+                                        .DIRECT,
+                                    original.getRoleKey(),
+                                    original.getGranteeKey(),
+                                    original.getNameSnapshot()),
+                                new com.researchspace.model.resourceaccess.ResourceRoleSource(
+                                    com.researchspace.model.resourceaccess.ResourceRoleSourceKind
+                                        .AUDIENCE,
+                                    ResourceAccessTestScheme.EDITOR,
+                                    "audience:all-users",
+                                    "All users")),
+                            grantee.roleSources());
+                      } else {
+                        assertEquals(
+                            java.util.Set.of(
+                                com.researchspace.model.resourceaccess.ResourceRoleSourceKind
+                                    .DIRECT,
+                                com.researchspace.model.resourceaccess.ResourceRoleSourceKind.GROUP,
+                                com.researchspace.model.resourceaccess.ResourceRoleSourceKind
+                                    .AUDIENCE),
+                            grantee.roleSources().stream()
+                                .map(
+                                    com.researchspace.model.resourceaccess.ResourceRoleSource::kind)
+                                .collect(Collectors.toSet()));
+                      }
+                    }
+                    case GROUP -> {
+                      assertEquals(original.getGroup().getId(), grantee.id());
+                      assertEquals(Optional.empty(), grantee.effectiveRole());
+                      assertEquals(List.of(), grantee.roleSources());
+                    }
+                    case AUDIENCE -> {
+                      assertEquals(ResourceAudience.ALL_USERS.name(), grantee.id());
+                      assertEquals(Optional.empty(), grantee.effectiveRole());
+                      assertEquals(List.of(), grantee.roleSources());
+                    }
+                  }
+                }
+                session.clear();
+                ResourceAccess fresh = session.find(ResourceAccess.class, resourceAccessId);
+                statistics.clear();
+                accessManager.resolveAll(List.of(fresh), owner);
+                for (var row : fresh.getAssignments()) {
+                  if (row.getUser() != null) row.getUser().isEnabled();
+                  if (row.getGroup() != null) row.getGroup().getDisplayName();
+                }
+                assertEquals(
+                    1L,
+                    statistics.getPrepareStatementCount(),
+                    "page assignment hydration is one query");
+                return count;
+              } finally {
+                statistics.setStatisticsEnabled(enabled);
+              }
+            });
+  }
+
+  @Test
   void distinctResourcesCanGrantToEachOtherWithinTheSameGroup() throws Exception {
     Long[] ids =
         new TransactionTemplate(getTxMger())
