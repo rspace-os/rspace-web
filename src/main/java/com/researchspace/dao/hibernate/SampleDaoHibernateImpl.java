@@ -12,9 +12,12 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.search.mapper.orm.Search;
@@ -54,6 +57,17 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       User user) {
+    return getSamplesForUser(pgCrit, parentTemplateId, ownedBy, deletedItemsOption, null, user);
+  }
+
+  @Override
+  public ISearchResults<Sample> getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      Long parentTemplateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      Boolean requestable,
+      User user) {
 
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
@@ -63,6 +77,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     String ownedByAndPermittedItemsQueryFragment =
         getOwnedByAndPermittedItemsSqlQueryFragment(
             ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    String requestableQueryFragment = requestable == null ? "" : "and requestable=:requestable ";
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
@@ -88,10 +103,14 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                 "select count(s) from Sample s where "
                     + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
+                    + requestableQueryFragment
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
     if (limitByParentTemplate) {
       countQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (requestable != null) {
+      countQueryBase.setParameter("requestable", requestable);
     }
     Query<Long> countQueryWithParams =
         addQueryParams(
@@ -108,6 +127,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                 FROM_SAMPLE_WHERE
                     + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
+                    + requestableQueryFragment
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
                 Sample.class)
@@ -115,6 +135,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .setMaxResults(maxResult);
     if (limitByParentTemplate) {
       samplePageQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (requestable != null) {
+      samplePageQueryBase.setParameter("requestable", requestable);
     }
     Query<Sample> samplePageQueryWithParams =
         addQueryParams(
@@ -126,6 +149,64 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             userGroupsUniqueNames);
     List<Sample> pageOfSamples = samplePageQueryWithParams.list();
     return new SearchResultsImpl<>(pageOfSamples, pgCrit, allSamplesCount);
+  }
+
+  @Override
+  public ISearchResults<Sample> getRequestableSamples(
+      PaginationCriteria<Sample> pgCrit, String ownedBy, String query) {
+    if (pgCrit == null) {
+      pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
+    }
+    // a trashed sample cannot be requested, so it is never listed
+    StringBuilder where =
+        new StringBuilder(
+                connectSqlConditionsWithAnd(
+                    getDeletedSqlFragmentForInventoryRecord(InventorySearchDeletedOption.EXCLUDE),
+                    " type(s) = Sample "))
+            .append("and requestable=true ");
+    if (StringUtils.isNotEmpty(ownedBy)) {
+      where.append("and owner.username=:ownedBy ");
+    }
+    if (StringUtils.isNotBlank(query)) {
+      // '!' escapes % and _ in the user's text, see nameContainsPattern
+      where.append("and lower(editInfo.name) like :nameQuery escape '!' ");
+    }
+
+    Query<Long> countQuery =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery("select count(s) from Sample s where " + where, Long.class);
+    long allSamplesCount = bindRequestableSearch(countQuery, ownedBy, query).getSingleResult();
+    if (allSamplesCount == 0) {
+      return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
+    }
+    Query<Sample> pageQuery =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                FROM_SAMPLE_WHERE + where + getOrderBySqlFragmentForInventoryRecord(pgCrit),
+                Sample.class)
+            .setFirstResult(pgCrit.getFirstResultIndex())
+            .setMaxResults(pgCrit.getResultsPerPage());
+    List<Sample> pageOfSamples = bindRequestableSearch(pageQuery, ownedBy, query).list();
+    return new SearchResultsImpl<>(pageOfSamples, pgCrit, allSamplesCount);
+  }
+
+  private static <T> Query<T> bindRequestableSearch(Query<T> q, String ownedBy, String query) {
+    if (StringUtils.isNotEmpty(ownedBy)) {
+      q.setParameter("ownedBy", ownedBy);
+    }
+    if (StringUtils.isNotBlank(query)) {
+      q.setParameter("nameQuery", nameContainsPattern(query));
+    }
+    return q;
+  }
+
+  /** A LIKE pattern matching names that contain the text, with % and _ taken literally. */
+  private static String nameContainsPattern(String text) {
+    String escaped =
+        text.toLowerCase(Locale.ROOT).replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    return "%" + escaped + "%";
   }
 
   @Override
@@ -223,5 +304,15 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .setParameter("owner", owner)
             .getSingleResult();
     return count > 0;
+  }
+
+  @Override
+  public Sample getWithSharedLock(Long id) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from Sample where id = :id", Sample.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_READ)
+        .uniqueResult();
   }
 }
