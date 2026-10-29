@@ -6,6 +6,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import Paper from "@mui/material/Paper";
 import TextField, { textFieldClasses } from "@mui/material/TextField";
+import { useForkRef } from "@mui/material/utils";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -23,9 +24,10 @@ import type { BarcodeInput } from "../../components/BarcodeScanner/BarcodeScanne
 
 type FormArgs = {
   handleSearch: (query: string) => void;
+  inputRef?: React.Ref<HTMLInputElement>;
 };
 
-const Form = observer(({ handleSearch }: FormArgs) => {
+const Form = observer(({ handleSearch, inputRef: parentInputRef }: FormArgs) => {
   const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const { useNavigate } = useContext(NavigateContext);
@@ -67,6 +69,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
   };
 
   const { inputRef, textTooWide } = useIsTextWiderThanField();
+  const htmlInputRef = useForkRef(inputRef, parentInputRef);
 
   return (
     <Box
@@ -143,7 +146,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
               ? t("search.controls.searchbar.scanPlaceholder")
               : t("search.controls.searchbar.search"),
             type: "search",
-            ref: inputRef,
+            ref: htmlInputRef,
           },
         }}
       />
@@ -165,9 +168,10 @@ const Form = observer(({ handleSearch }: FormArgs) => {
 
 type SearchbarArgs = {
   handleSearch: (query: string) => void;
+  inputRef?: React.Ref<HTMLInputElement>;
 };
 
-function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
+function Searchbar({ handleSearch, inputRef }: SearchbarArgs): React.ReactNode {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Box
@@ -197,7 +201,7 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
           }}
           elevation={0}
         >
-          <Form handleSearch={handleSearch} />
+          <Form handleSearch={handleSearch} inputRef={inputRef} />
         </Paper>
       </Box>
     </Box>

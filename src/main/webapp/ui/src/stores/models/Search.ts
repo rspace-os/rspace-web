@@ -132,6 +132,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   selectionLimit: Infinity,
   onlyAllowSelectingEmptyLocations: false,
   dragAndDropDisabled: false,
+  hideNavigateToContents: false,
 };
 
 /**

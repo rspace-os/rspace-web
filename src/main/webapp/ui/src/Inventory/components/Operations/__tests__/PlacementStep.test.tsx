@@ -43,6 +43,7 @@ vi.mock("../../../Search/SearchView", async () => {
           data-testid="picker-pick"
           aria-label="Pick"
           data-active={(search as Search).activeResult?.name ?? ""}
+          data-hide-navigate={String((search as Search).uiConfig.hideNavigateToContents)}
           onClick={() => void pick()}
         />
       );
@@ -90,6 +91,11 @@ describe("PlacementStep", () => {
     for (const name of ["Type", "Owner", "Bench", "Status", "Tags"])
       expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
     expect(screen.queryByText(/^(Type|Status):/)).not.toBeInTheDocument();
+  });
+
+  it("does not offer navigation into a result's contents, which would replace the results with that container's listing", () => {
+    renderStep({ mode: "container", container: null });
+    expect(screen.getByTestId("picker-pick")).toHaveAttribute("data-hide-navigate", "true");
   });
 
   it("lets the user switch the results between tree and list", async () => {
@@ -327,6 +333,13 @@ describe("PlacementStep", () => {
     it("moves focus from the closed search to the button that reopens it", async () => {
       await pick(gridBox());
       expect(await screen.findByRole("button", { name: "Change container" })).toHaveFocus();
+    });
+
+    it("moves focus from Change container to the reopened search box", async () => {
+      const { user } = await pick(gridBox());
+      expect(await screen.findByRole("button", { name: "Change container" })).toHaveFocus();
+      await user.keyboard("{Enter}");
+      expect(screen.getByRole("searchbox")).toHaveFocus();
     });
 
     it("leaves focus alone when the step opens with a container already picked", () => {

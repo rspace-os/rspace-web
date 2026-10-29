@@ -294,14 +294,26 @@ enforced there too (Perform is blocked with the reason shown).
    "Leave on my workbench" is always one click and is the step's skip. "Choose a
    location" shows a search box, a list/tree view toggle and the results over the step's
    own `Search`, never the global `moveStore` and not the shared `InventoryPicker`, whose
-   type, status, owner and basket controls and parameter chips are not wanted here. Once a
+   type, status, owner and basket controls and parameter chips are not wanted here. The tree
+   view's "Navigate to container" button is hidden (`uiConfig.hideNavigateToContents`): the
+   results are the containers on offer, and drilling into one would replace them with its
+   contents. In the tree view Space selects the focused container, and Enter selects a leaf
+   and expands a container that has sub-containers. Once a
    container that can be used is picked, the search gives way to its name and a "Change
-   container" button, so the grid follows directly on a short screen. One destination per run. A grid container also shows its content grid,
+   container" button, so the grid follows directly on a short screen. A pick made from the
+   search moves focus to Change container, and Change container moves it back to the search
+   box. One destination per run. A grid container also shows its content grid,
    in which the user picks one empty location per new subsample (the selection limit is
    the count; lowering the count on the Amounts step drops surplus locations from the
-   end). The grid is selection-only: drag-and-drop is off while the wizard uses it, and Escape clears the
-   selection without closing the wizard (close it with Cancel, or Escape after tabbing out of
-   the grid). A list container needs no locations. `placementBlocker` (`placement.ts`) gates
+   end). The grid is selection-only: drag-and-drop is off while the wizard uses it
+   (`uiConfig.dragAndDropDisabled`, also set by the Move dialog destination panel and the
+   Create dialog location picker). Its keys follow the WAI-ARIA grid multi-select model:
+   arrows move focus only, Space toggles the focused location (empty-only and the selection
+   limit apply, and a polite live region says why when Space selects nothing: the location
+   is occupied or the limit is reached), Shift+Arrow adds the range from the anchor to the
+   locations picked before it (they count towards the limit), and Escape clears the
+   selection without closing the wizard (close it with Cancel, or Escape after tabbing out
+   of the grid). A list container needs no locations. `placementBlocker` (`placement.ts`) gates
    Next and shows why: loading, trashed, no edit permission, an image container (not
    supported yet), the workbench itself, a container that cannot hold subsamples, fewer
    free locations than new subsamples (with the free count), grid locations still to
@@ -412,6 +424,17 @@ fields in the wizard is deferred.
   `src/test/resources/inventory/fieldNameUniquenessCases.json` is the only thing tying
   them together: `FieldNameUniquenessParityTest` and `buildOperationRequest.test.ts` both
   assert it, so changing the rule on one side alone turns the other red.
+
+### End-to-end tests
+
+The Playwright suite drives the Location step in
+`src/main/webapp/ui/src/__tests__/e2e/specs/inventory/operationsPlacement.e2e.ts`, the
+selection-only grid in the Move and Create dialogs in `gridKeyboardSelection.e2e.ts`, and the
+placement API in `specs/api/inventoryPlacement.api.spec.ts`. Wizard tests request the
+`flowOperationsEnabled` fixture, which sets `inventory.operations.available` to `ALLOWED` for
+that test and restores it, and run as a fresh `dynamicUserTest` account because remembered
+process values change where the wizard opens. Run them from the repo root with
+`E2E_BROWSER=chromium RSPACE_BASE_URL=<stack URL> pnpm run test-e2e --reporter=list <spec>`.
 
 ### Placing the new subsamples
 
