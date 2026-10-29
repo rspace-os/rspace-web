@@ -93,8 +93,8 @@ describe("VersionHistoryDialog", () => {
     await waitFor(() => {
       expect(screen.getByRole("table")).toBeInTheDocument();
     });
-    expect(rowFor(3)).toHaveTextContent(CURRENT);
-    expect(rowFor(2)).not.toHaveTextContent(CURRENT);
+    expect(rowFor(3)).toMatchTextContent(CURRENT);
+    expect(rowFor(2)).not.toMatchTextContent(CURRENT);
   });
 
   test("shows each version's own filename, which need not match the live one", async () => {
@@ -107,8 +107,8 @@ describe("VersionHistoryDialog", () => {
       expect(screen.getByRole("table")).toBeInTheDocument();
     });
     const rows = screen.getAllByRole("row").slice(1);
-    expect(rows[0]).toHaveTextContent("final.png");
-    expect(rows[1]).toHaveTextContent("first-draft.tiff");
+    expect(rows[0]).toMatchTextContent("final.png");
+    expect(rows[1]).toMatchTextContent("first-draft.tiff");
   });
 
   test("shows who changed each version, when, and how big it was", async () => {
@@ -125,7 +125,7 @@ describe("VersionHistoryDialog", () => {
       expect(screen.getByRole("table")).toBeInTheDocument();
     });
     const row = screen.getAllByRole("row")[1];
-    expect(row).toHaveTextContent("Bob Jones");
+    expect(row).toMatchTextContent("Bob Jones");
     expect(within(row).getByText(/918 B/)).toBeInTheDocument();
   });
 
@@ -177,9 +177,9 @@ describe("VersionHistoryDialog", () => {
     await waitFor(() => {
       expect(screen.getByRole("table")).toBeInTheDocument();
     });
-    expect(rowFor(3)).toHaveTextContent(CURRENT);
-    expect(rowFor(1)).toHaveTextContent(VIEWING);
-    expect(rowFor(1)).not.toHaveTextContent(CURRENT);
+    expect(rowFor(3)).toMatchTextContent(CURRENT);
+    expect(rowFor(1)).toMatchTextContent(VIEWING);
+    expect(rowFor(1)).not.toMatchTextContent(CURRENT);
   });
 
   test("an item with no recorded history says so rather than showing an empty table", async () => {
@@ -201,7 +201,7 @@ describe("VersionHistoryDialog", () => {
     await waitFor(() => {
       expect(screen.getByRole("alert")).toBeInTheDocument();
     });
-    expect(screen.getByRole("alert")).toHaveTextContent(/Could not load version history|Request failed/);
+    expect(screen.getByRole("alert")).toMatchTextContent(/Could not load version history|Request failed/);
   });
 
   test("a 200 carrying an error envelope is shown as an error, not as an empty history", async () => {

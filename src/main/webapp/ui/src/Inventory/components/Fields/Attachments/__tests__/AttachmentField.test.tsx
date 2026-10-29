@@ -28,7 +28,7 @@ const renderWithDeploymentProperties = (ui: React.ReactElement) =>
       {ui}
     </DeploymentPropertyContext.Provider>,
   );
-const expectLabel = (text: string) => (container: HTMLElement) => expect(container).toHaveTextContent(text);
+const expectLabel = (text: string) => (container: HTMLElement) => expect(container).toMatchTextContent(text);
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), undefined);
 const activeResult = new ContainerModel(new MemoisedFactory(), {
@@ -112,7 +112,7 @@ describe("AttachmentField", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("inventory:fields.attachments.alert.body");
+        expect(container).toMatchTextContent("inventory:fields.attachments.alert.body");
       });
     });
     describe('value = "foo"', () => {
@@ -128,7 +128,7 @@ describe("AttachmentField", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).not.toHaveTextContent("inventory:fields.attachments.alert.body");
+        expect(container).not.toMatchTextContent("inventory:fields.attachments.alert.body");
       });
     });
   });
@@ -203,7 +203,7 @@ describe("AttachmentField", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("image.png");
+        expect(container).toMatchTextContent("image.png");
       });
     });
   });

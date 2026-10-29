@@ -3,7 +3,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { describe, expect, test } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { CallableSnippetPreview } from "./CallableSnippetPreview";
