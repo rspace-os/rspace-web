@@ -4,7 +4,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-  <!-- PRE-STACK SCHEMA CHANGE: Index ExtraField names, deletion flags and subtypes for discovery and hydration. -->
+  <!-- PRE-STACK SCHEMA CHANGE: Index ExtraField names, deletion flags and subtypes for exact-name hydration lookups. -->
   <changeSet id="extra-field-name-index" author="tchoi-rs" context="run">
     <preConditions onFail="MARK_RAN">
       <not>
@@ -12,10 +12,11 @@
       </not>
     </preConditions>
     <comment>
-      PRE-STACK SCHEMA CHANGE: Index ExtraField names, deletion flags and subtypes for discovery and hydration.
-      On 100,000 instruments and 2,000,000 value rows, runtime-field discovery and hydration
-      use the name prefix, deletion flag and subtype to avoid scanning ExtraField.
+      PRE-STACK SCHEMA CHANGE: Index ExtraField names, deletion flags and subtypes for exact-name hydration lookups.
+      Hydrating a runtime field by its exact name uses the name prefix, deletion flag and subtype,
+      so a selective name does not scan ExtraField; broader discovery queries do not use this index.
       The plain name predicate lets MariaDB use the prefix index beside the exact HEX identity.
+      The cost is a modest write overhead on ExtraField.
     </comment>
     <sql>
       CREATE INDEX ix_extrafield_name_deleted ON ExtraField (name(128), deleted, DTYPE)
