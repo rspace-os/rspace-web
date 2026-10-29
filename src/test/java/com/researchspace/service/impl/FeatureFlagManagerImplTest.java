@@ -75,12 +75,12 @@ class FeatureFlagManagerImplTest {
   void reconcileWithoutBaselineRowReportsDefinitionDefault() {
     when(manifestLoader.loadDefinitions()).thenReturn(List.of(testFlag()));
     when(propertiesLoader.loadForcedValues(Set.of(FLAG))).thenReturn(Map.of());
-    when(featureFlagDao.getBaselineValues()).thenReturn(Map.of());
+    when(featureFlagDao.getBaselineValues()).thenReturn(Map.of("newerReleaseFlag", true));
 
     featureFlagManager.reconcileOnStartup();
 
-    verify(featureFlagDao).deleteBaselinesNotIn(Set.of(FLAG));
-    verify(featureFlagDao).deleteOverridesNotIn(Set.of(FLAG));
+    verify(featureFlagDao, never()).deleteBaselinesNotIn(any());
+    verify(featureFlagDao, never()).deleteOverridesNotIn(any());
     FeatureFlagResource state = resource(null);
     assertFalse(state.isValue());
     assertEquals(FeatureFlagSource.DEFAULT.name(), state.getSource());

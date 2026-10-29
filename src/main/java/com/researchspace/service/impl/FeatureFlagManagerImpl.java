@@ -81,15 +81,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     }
     Map<String, Boolean> forcedValues = propertiesLoader.loadForcedValues(definitions.keySet());
 
-    int deletedBaselines = featureFlagDao.deleteBaselinesNotIn(definitions.keySet());
-    int deletedOverrides = featureFlagDao.deleteOverridesNotIn(definitions.keySet());
-    if (deletedBaselines > 0 || deletedOverrides > 0) {
-      log.info(
-          "Cleaned up retired feature flags: {} baseline rows, {} user override rows",
-          deletedBaselines,
-          deletedOverrides);
-    }
-
     runtime =
         new RuntimeFeatureFlags(definitions, featureFlagDao.getBaselineValues(), forcedValues);
   }
