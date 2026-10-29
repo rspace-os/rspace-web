@@ -3,7 +3,7 @@ import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/book
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
-import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 export type BookingEventPeriod = "upcoming" | "past";

@@ -3,10 +3,10 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { useTableList } from "@/modules/common/table-list/state/useTableList";
+import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import {

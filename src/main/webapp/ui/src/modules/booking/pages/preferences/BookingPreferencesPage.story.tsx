@@ -15,7 +15,7 @@ import { isPlainDate } from "@/modules/booking/domain/bookingTime";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
-import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
 
 /** Fetches preferences so reload persistence is observable. */

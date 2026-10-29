@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Booking } from "@/modules/booking/domain/booking";
-import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import type { CollectionConfig } from "@/modules/common/collection/config";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useTableList } from "@/modules/common/table-list/state/useTableList";
+import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList } from "@/modules/common/table-list/TableList";
 import { Button } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";

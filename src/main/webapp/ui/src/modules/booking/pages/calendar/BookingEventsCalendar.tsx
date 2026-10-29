@@ -12,9 +12,9 @@ import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTim
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { addCalendarDays, sliceAcrossZonedDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
-import { useTableList } from "@/modules/common/table-list/state/useTableList";
+import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
