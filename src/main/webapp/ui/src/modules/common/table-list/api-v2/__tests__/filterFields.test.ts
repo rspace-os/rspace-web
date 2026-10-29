@@ -1,3 +1,4 @@
+import type * as v from "valibot";
 import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 
 setupRealAppI18n();
@@ -11,18 +12,13 @@ import {
   bookingRelationshipsSchema as documentSchema,
   ownerlessDocumentSchema as ownerlessSchema,
 } from "../../__tests__/fixtures/schema";
-import type { FilterExpression } from "../../types";
+import type { CollectionQueryState, FilterExpression } from "../../types";
 import { createApiV2CollectionAdapter } from "../adapter";
 import { apiV2CollectionRequestParams } from "../fetcher";
 import { enrichApiV2FilterConfig } from "../filterFields";
 import type { ApiV2CollectionMetadata } from "../metadata";
 
-type RelationshipValue = {
-  relationTo: "instruments";
-  value: { id: number; name: string; deleted: boolean; label?: string; floor?: number };
-};
-
-type Booking = { id: string; target: RelationshipValue; room: RelationshipValue };
+type Booking = v.InferOutput<typeof documentSchema>;
 
 /**
  * Two relationships, and the config declares each one exactly once. Nothing here names a target's
@@ -89,6 +85,16 @@ const metadata: ApiV2CollectionMetadata<Booking> = {
   },
   pagination: { defaultLimit: 10, maximumLimit: 100 },
 };
+
+function state(overrides: Partial<CollectionQueryState<Booking>> = {}): CollectionQueryState<Booking> {
+  return {
+    filters: { search: "", expression: null },
+    sorting: [],
+    page: { pageIndex: 0, pageSize: 10 },
+    visibleFields: ["target"],
+    ...overrides,
+  };
+}
 
 describe("filter selectors derived from published relationship targets", () => {
   const getAdapter = () =>
@@ -175,9 +181,11 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(getDerived().find((field) => field.name === "target.name")?.capabilities.supportsWildcards).toBe(true);
   });
 
-  it("uses the target field's published primitive type", () => {
-    expect(getDerived().find((field) => field.name === "target.deleted")?.type).toBe("boolean");
-    expect(getDerived().find((field) => field.name === "room.floor")?.type).toBe("number");
+  it.each([
+    ["target.deleted", "boolean"],
+    ["room.floor", "number"],
+  ])("uses the published primitive type of %s", (name, type) => {
+    expect(getDerived().find((field) => field.name === name)?.type).toBe(type);
   });
 
   it("derives and serializes relationship filters whose owners are not configured", () => {
@@ -386,22 +394,8 @@ describe("filter selectors derived from published relationship targets", () => {
       form: false,
     });
     expect(targetName?.capabilities.filterOperators).toEqual(["contains"]);
-    expect(
-      built.selectedFields({
-        filters: { search: "", expression: null },
-        sorting: [],
-        page: { pageIndex: 0, pageSize: 10 },
-        visibleFields: ["target.name"] as never,
-      }),
-    ).toEqual(["id", "room", "target"]);
-    expect(
-      built.requiredDepth({
-        filters: { search: "", expression: null },
-        sorting: [],
-        page: { pageIndex: 0, pageSize: 10 },
-        visibleFields: ["target.name"] as never,
-      }),
-    ).toBe(1);
+    expect(built.selectedFields(state({ visibleFields: ["target.name"] as never }))).toEqual(["id", "room", "target"]);
+    expect(built.requiredDepth(state({ visibleFields: ["target.name"] as never }))).toBe(1);
   });
 
   it("normalizes known picker operands before serialization and rejects malformed identities", () => {
@@ -577,12 +571,7 @@ describe("filter selectors derived from published relationship targets", () => {
 
   it("uses a published relationship field in the search expression", () => {
     const searchable = adapterWithSearch(["target.name"]);
-    const params = searchable.toSearchParams({
-      filters: { search: "scope", expression: null },
-      sorting: [],
-      page: { pageIndex: 0, pageSize: 10 },
-      visibleFields: ["target"],
-    });
+    const params = searchable.toSearchParams(state({ filters: { search: "scope", expression: null } }));
 
     expect(params.get("where")).toBe("target.name=contains=scope");
   });

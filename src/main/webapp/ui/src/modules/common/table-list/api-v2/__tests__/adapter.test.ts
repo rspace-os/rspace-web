@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { runtimeDocumentSchema as documentSchema } from "../../__tests__/fixtures/schema";
+import { definition } from "../../__tests__/fixtures/tableList";
 import type { CollectionQueryState } from "../../types";
 import { createApiV2CollectionAdapter } from "../adapter";
 import { apiV2CollectionRequestParams } from "../fetcher";
@@ -58,23 +59,6 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
   ],
   pagination: { defaultLimit: 20, maximumLimit: 100 },
 };
-
-function definition(overrides: Partial<RuntimeFieldDefinition> = {}): RuntimeFieldDefinition {
-  return {
-    id: "SF104",
-    selector: "customFields.SF104",
-    label: "Hazard class",
-    type: "text",
-    jsonType: "string",
-    operators: ["==", "!=", "=in=", "=out=", "=contains=", "=like=", "=exists="],
-    supportsWildcards: false,
-    columnSelectable: true,
-    sortable: false,
-    source: { id: "IT9", label: "Cell line template" },
-    options: [],
-    ...overrides,
-  };
-}
 
 const temperature = definition({
   id: "SF108",

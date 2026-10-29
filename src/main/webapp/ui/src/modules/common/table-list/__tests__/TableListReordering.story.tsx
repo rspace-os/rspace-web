@@ -4,6 +4,7 @@ import type { FieldName, SortRule } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { TableList } from "../TableList";
 import type { FilterExpression, FilterState } from "../types";
+import { tableViewStorageKey } from "../utils/viewStorage";
 
 type ReorderingRecord = {
   id: string;
@@ -59,7 +60,7 @@ const rows: readonly ReorderingRecord[] = [
   { id: "2", title: "Beta", owner: "Grace", score: 4, enabled: false, modifiedAt: "2026-08-02" },
 ];
 
-export const reorderingStorageKey = "rspace.tableList.reordering-browser.view";
+export const reorderingStorageKey = tableViewStorageKey("reordering-browser");
 export const reorderingWhere = Array.from({ length: 12 }, (_, index) => `title==rule-${index + 1}`).join(";");
 
 const initialExpression: FilterExpression<ReorderingRecord> = {

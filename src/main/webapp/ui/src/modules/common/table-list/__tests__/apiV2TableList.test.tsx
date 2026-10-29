@@ -4,17 +4,17 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
-import { Suspense, useState } from "react";
+import { type ComponentProps, Suspense, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
 import { useApiV2RuntimeFields } from "../api-v2/queries";
-import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
 import { useApiV2TableList } from "../hooks/apiV2TableList";
 import { TableList } from "../TableList";
 import { tableListDocumentSchema as documentSchema } from "./fixtures/schema";
+import { definition } from "./fixtures/tableList";
 
 type Instrument = {
   id: number;
@@ -77,23 +77,6 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
   pagination: { defaultLimit: 20, maximumLimit: 100 },
 };
 
-function definition(overrides: Partial<RuntimeFieldDefinition> = {}): RuntimeFieldDefinition {
-  return {
-    id: "SF104",
-    selector: "customFields.SF104",
-    label: "Hazard class",
-    type: "text",
-    jsonType: "string",
-    operators: ["==", "!=", "=in=", "=out=", "=contains=", "=like=", "=exists="],
-    supportsWildcards: false,
-    columnSelectable: true,
-    sortable: false,
-    source: { id: "IT9", label: "Cell line template" },
-    options: [],
-    ...overrides,
-  };
-}
-
 function Harness({
   scope = 1,
   tableOptions,
@@ -121,6 +104,14 @@ function Providers({ children, searchParams = "" }: { children: React.ReactNode;
     </QueryClientProvider>
   );
 }
+function renderHarness(searchParams = "", props: ComponentProps<typeof Harness> = {}) {
+  return render(
+    <Providers searchParams={searchParams}>
+      <Harness {...props} />
+    </Providers>,
+  );
+}
+
 function collectionHandler(requests: string[]) {
   return http.get("/api/v2/instruments", ({ request }) => {
     requests.push(new URL(request.url).searchParams.get("where") ?? "");
@@ -192,10 +183,7 @@ describe("API v2 saved views", () => {
     const requests: string[] = [];
     const missing = "customFields.SF999==missing";
     const requestedMissing = vi.fn();
-    let finish: (() => void) | undefined;
-    const pending = new Promise<void>((resolve) => {
-      finish = resolve;
-    });
+    const { promise: pending, resolve: finish } = Promise.withResolvers<void>();
     server.use(
       collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", async ({ request }) => {
@@ -232,7 +220,7 @@ describe("API v2 saved views", () => {
     });
     await waitFor(() => expect(requestedMissing).toHaveBeenCalledOnce());
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
-    finish?.();
+    finish();
     expect(await screen.findByRole("alert")).toHaveTextContent(missing);
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
     expect(new URLSearchParams(history.location.search).get("instruments.where")).toBe(missing);
@@ -362,11 +350,7 @@ describe("API v2 saved views", () => {
       collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", () => catalog()),
     );
-    render(
-      <Providers>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness();
     await screen.findByRole("cell", { name: "Centrifuge" });
     expect(requests.length).toBeGreaterThan(0);
     expect(requests.every((request) => request === where)).toBe(true);
@@ -374,10 +358,7 @@ describe("API v2 saved views", () => {
 
   it("waits for runtime definitions before requesting the filtered collection", async () => {
     const requests: string[] = [];
-    let finish: (() => void) | undefined;
-    const pending = new Promise<void>((resolve) => {
-      finish = resolve;
-    });
+    const { promise: pending, resolve: finish } = Promise.withResolvers<void>();
     const requested = vi.fn();
     server.use(
       collectionHandler(requests),
@@ -387,14 +368,10 @@ describe("API v2 saved views", () => {
         return catalog();
       }),
     );
-    render(
-      <Providers searchParams={params(where)}>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness(params(where));
     await waitFor(() => expect(requested).toHaveBeenCalledOnce());
     expect(requests).toEqual([]);
-    finish?.();
+    finish();
     await screen.findByRole("cell", { name: "Centrifuge" });
     expect(requests).toEqual([where]);
   });
@@ -406,11 +383,7 @@ describe("API v2 saved views", () => {
       collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", () => catalog([])),
     );
-    render(
-      <Providers searchParams={params(where)}>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness(params(where));
     expect(await screen.findByRole("alert")).toHaveTextContent(where);
     expect(requests).toEqual([]);
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
@@ -422,11 +395,7 @@ describe("API v2 saved views", () => {
     const user = userEvent.setup();
     const requests: string[] = [];
     server.use(collectionHandler(requests));
-    render(
-      <Providers searchParams={params(invalidTarget)}>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness(params(invalidTarget));
     expect(await screen.findByRole("alert")).toHaveTextContent(invalidTarget);
     expect(requests).toEqual([]);
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
@@ -441,11 +410,7 @@ describe("API v2 saved views", () => {
     const stored = JSON.stringify({ v: 1, search: null, where: invalidList, columns: null, sort: null });
     window.localStorage.setItem("rspace.tableList.instruments.view", stored);
     server.use(collectionHandler(requests));
-    render(
-      <Providers>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness();
     expect(await screen.findByRole("alert")).toHaveTextContent(invalidList);
     expect(requests).toEqual([]);
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
@@ -465,11 +430,7 @@ describe("API v2 saved views", () => {
         fail ? new HttpResponse(null, { status: 503 }) : catalog(),
       ),
     );
-    render(
-      <Providers searchParams={params(where)}>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness(params(where));
     expect(await screen.findByRole("alert")).toHaveTextContent(where);
     expect(requests).toEqual([]);
     fail = false;
@@ -482,11 +443,7 @@ describe("API v2 saved views", () => {
     const requests: string[] = [];
     window.localStorage.setItem("rspace.tableList.instruments.view", "{broken");
     server.use(collectionHandler(requests));
-    render(
-      <Providers>
-        <Harness />
-      </Providers>,
-    );
+    renderHarness();
     await screen.findByRole("alert");
     expect(requests).toEqual([]);
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe("{broken");

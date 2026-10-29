@@ -1,31 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-  fetchRuntimeFieldCatalog,
-  fetchRuntimeFieldDefinitions,
-  type RuntimeFieldDefinition,
-} from "../runtimeFieldCatalog";
+import { definition } from "../../__tests__/fixtures/tableList";
+import { fetchRuntimeFieldCatalog, fetchRuntimeFieldDefinitions } from "../runtimeFieldCatalog";
 
 const namespace = {
   catalog: "/api/v2/instruments/fields/customFields",
   catalogMaximumIds: 50,
 };
-
-function definition(overrides: Partial<RuntimeFieldDefinition> = {}): RuntimeFieldDefinition {
-  return {
-    id: "SF104",
-    selector: "customFields.SF104",
-    label: "Hazard class",
-    type: "text",
-    jsonType: "string",
-    operators: ["==", "!=", "=in=", "=out=", "=contains=", "=like=", "=exists="],
-    supportsWildcards: false,
-    columnSelectable: true,
-    sortable: false,
-    source: { id: "IT9", label: "Cell line template" },
-    options: [],
-    ...overrides,
-  };
-}
 
 describe("fetchRuntimeFieldCatalog", () => {
   it("validates and returns the actor-scoped catalog", async () => {

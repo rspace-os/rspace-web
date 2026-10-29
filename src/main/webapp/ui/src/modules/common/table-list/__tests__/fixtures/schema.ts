@@ -10,7 +10,7 @@ export const testRecordSchema = v.object({
   capability: v.optional(v.boolean()),
 });
 
-export const expandedRelationshipSchema = v.object({
+const expandedRelationshipSchema = v.object({
   relationTo: v.literal("instruments"),
   value: v.object({
     id: v.number(),

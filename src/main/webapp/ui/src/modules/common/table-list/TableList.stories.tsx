@@ -9,14 +9,7 @@ import { useTableList } from "./hooks/state";
 import { TableList } from "./TableList";
 import type { FilterState, PageState, TableListVariant } from "./types";
 
-export type ResearchRecord = {
-  id: string;
-  title: string;
-  owner: string;
-  score: number;
-  enabled: boolean;
-  modifiedAt: string;
-};
+export type ResearchRecord = v.InferOutput<typeof researchRecordSchema>;
 
 export const researchRecordSchema = v.object({
   id: v.string(),

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { TableListReorderingPage } from "./pageObjects/TableListReorderingPage";
 import { reorderingStorageKey, reorderingWhere, TableListReorderingStory } from "./TableListReordering.story";
 
+const reorderedFilters = [...Array.from({ length: 11 }, (_, index) => `rule-${index + 2}`), "rule-1"].join(",");
 const initialFilters = Array.from({ length: 12 }, (_, index) => `rule-${index + 1}`).join(",");
 
 function storedView(): { columns: string | null; sort: string | null; where: string | null } | null {
@@ -179,15 +180,12 @@ describe("TableList drag and drop", () => {
     await table.moveMouseTo(table.filterHandle(12), 16);
     await table.finishMouseDrag();
 
-    await expect
-      .poll(() => table.filterDraftOrder())
-      .toBe([...Array.from({ length: 11 }, (_, index) => `rule-${index + 2}`), "rule-1"].join(","));
+    await expect.poll(() => table.filterDraftOrder()).toBe(reorderedFilters);
 
     await expect.element(table.filterState).toHaveTextContent(initialFilters);
     await expect.element(table.commitCounts).toHaveTextContent("0,0,0");
     await table.applyFilters();
 
-    const reorderedFilters = [...Array.from({ length: 11 }, (_, index) => `rule-${index + 2}`), "rule-1"].join(",");
     await expect.poll(() => table.text(table.filterState)).toBe(reorderedFilters);
     await expect.element(table.commitCounts).toHaveTextContent("1,0,0");
   });
