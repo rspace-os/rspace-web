@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
@@ -125,6 +125,36 @@ const params = (rule: string) => new URLSearchParams({ "instruments.where": rule
 afterEach(() => window.localStorage.clear());
 
 describe("API v2 saved views", () => {
+  it("keeps the adapter stable across rerenders after changing caller scope", async () => {
+    server.use(collectionHandler([]));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result, rerender } = renderHook(
+      ({ scope }) =>
+        useApiV2TableList({
+          resourceName: "instruments",
+          config,
+          documentSchema,
+          metadata,
+          request: { token: "test-token", authScope: scope },
+          table: { queryString: false },
+        }),
+      {
+        initialProps: { scope: 1 },
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={client}>
+            <Suspense fallback={null}>{children}</Suspense>
+          </QueryClientProvider>
+        ),
+      },
+    );
+    await waitFor(() => expect(result.current?.tableProps.rows).toHaveLength(1));
+    rerender({ scope: 2 });
+    await waitFor(() => expect(result.current.tableProps.status).toBe("idle"));
+    const adapter = result.current.adapter;
+    rerender({ scope: 2 });
+    expect(result.current.adapter).toBe(adapter);
+  });
+
   it("blocks rehydration when a catalogue changes to an unapproved URL", async () => {
     const user = userEvent.setup();
     const catalogRequests = vi.fn();

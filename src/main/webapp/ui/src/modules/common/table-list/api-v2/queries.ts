@@ -7,6 +7,8 @@ import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./run
 
 type Selection = { namespace: string; definition: RuntimeFieldDefinition };
 
+const emptySelections: readonly Selection[] = [];
+
 /**
  * Caller-dependent definitions shared by collection and custom-endpoint filter controls.
  * Check `pending` and `error` before treating an empty `missing` list as authoritative.
@@ -43,9 +45,9 @@ export function useApiV2RuntimeFields<TDocument>({
   ]);
   const [selection, setSelection] = useState<{ scope: string; fields: readonly Selection[] }>({
     scope: selectionScope,
-    fields: [],
+    fields: emptySelections,
   });
-  const selected = selection.scope === selectionScope ? selection.fields : [];
+  const selected = selection.scope === selectionScope ? selection.fields : emptySelections;
   if (namespaces.length > 0 && typeof request?.token === "function" && request.authScope === undefined) {
     throw new Error("Runtime field token callbacks require an authScope");
   }
@@ -99,7 +101,7 @@ export function useApiV2RuntimeFields<TDocument>({
   const selectRuntimeField = useCallback(
     (namespace: string, definition: RuntimeFieldDefinition) => {
       setSelection((current) => {
-        const fields = current.scope === selectionScope ? current.fields : [];
+        const fields = current.scope === selectionScope ? current.fields : emptySelections;
         return {
           scope: selectionScope,
           fields: [
