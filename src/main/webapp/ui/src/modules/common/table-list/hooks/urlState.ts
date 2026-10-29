@@ -4,10 +4,25 @@ import type { ResolvedCollectionConfig } from "@/modules/common/collection/confi
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { parseRsqlExpression, serializeRsqlExpression } from "../rsql";
 import type { TableListFeatures, TableListQueryStringOptions } from "../types";
-import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";
+import {
+  nonDefaultColumns,
+  nonDefaultSorting,
+  parseColumns,
+  parseSorting,
+  serializeColumns,
+  serializeFilters,
+  serializeSorting,
+} from "../utils/queryString";
 import { loadStoredTableView, saveStoredTableView, tableViewStorageKey } from "../utils/viewStorage";
 
 const emptySorting = [] as const;
+
+export const rawViewParsers = {
+  search: parseAsString,
+  where: parseAsString,
+  columns: parseAsString,
+  sort: parseAsString,
+};
 
 type RestoringState = Partial<Record<"filters" | "columns" | "sorting", string>>;
 
@@ -48,15 +63,7 @@ export function useTableListQueryString<TDocument>(
   const stale = useMemo(() => (preserveInvalid ? undefined : staleFieldPolicy(config)), [config, preserveInvalid]);
   // All readers of these nuqs keys use strings. Its shared state broadcasts parsed values,
   // so mixing a raw reader and typed parsers would pass arrays/ASTs into the raw reader.
-  const [rawQueryState, setRawQueryState] = useQueryStates(
-    {
-      search: parseAsString,
-      where: parseAsString,
-      columns: parseAsString,
-      sort: parseAsString,
-    },
-    { history: "replace", urlKeys: names },
-  );
+  const [rawQueryState, setRawQueryState] = useQueryStates(rawViewParsers, { history: "replace", urlKeys: names });
   const parsedQueryState = useMemo(
     () => ({
       search: rawQueryState.search,
@@ -81,18 +88,8 @@ export function useTableListQueryString<TDocument>(
       setRawQueryState({
         search: next.search,
         where: next.where === undefined ? undefined : next.where === null ? null : serializeRsqlExpression(next.where),
-        columns:
-          next.columns === undefined
-            ? undefined
-            : serializeColumns(next.columns) === serializeColumns(config.defaultColumns)
-              ? null
-              : serializeColumns(next.columns),
-        sort:
-          next.sort === undefined
-            ? undefined
-            : serializeSorting(next.sort) === serializeSorting(defaultSort)
-              ? null
-              : serializeSorting(next.sort),
+        columns: next.columns === undefined ? undefined : nonDefaultColumns(next.columns, config.defaultColumns),
+        sort: next.sort === undefined ? undefined : nonDefaultSorting(next.sort, defaultSort),
       }),
     [setRawQueryState, config.defaultColumns, defaultSort],
   );

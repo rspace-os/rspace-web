@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FilterOperator, ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/config";
 import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/labels";
@@ -29,7 +29,6 @@ import {
   comparisonNodes,
   type DraftRule,
   defaultOperator,
-  fieldGroups,
   isActive,
   namespaceForSentinel,
   parsedValue,
@@ -80,23 +79,14 @@ export function TableListFilters<TDocument>({
   onClose: () => void;
 }) {
   const { i18n, t } = useTranslation("common");
-  const fields = useMemo(
-    () =>
-      // A filter-only field is hidden from the columns but must still be offered here. That is how
-      // a selector derived from a relationship target, such as target.name, reaches the panel.
-      config.fields.filter(
-        (field) => field.capabilities.filterOperators.length > 0 && (field.list !== false || field.form === false),
-      ),
-    [config.fields],
+  // Filter-only fields must still be offered even though they are hidden from columns.
+  const fields = config.fields.filter(
+    (field) => field.capabilities.filterOperators.length > 0 && (field.list !== false || field.form === false),
   );
-  const groups = useMemo(() => fieldGroups(fields), [fields]);
-  const runtimeSources = useMemo(
-    () =>
-      onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.filterable),
-    [config.runtimeSources, onSelectRuntimeField],
-  );
-  const runtimeSourceGroups = useMemo(() => groupRuntimeFieldSources(runtimeSources), [runtimeSources]);
-  const shownColumns = useMemo(() => new Set<string>((visibleFields ?? []).map(String)), [visibleFields]);
+  const runtimeSources =
+    onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.filterable);
+  const runtimeSourceGroups = groupRuntimeFieldSources(runtimeSources);
+  const shownColumns = new Set<string>(visibleFields ?? []);
   const offersColumns = onShowColumn !== undefined && visibleFields !== undefined;
   // Shared parent tracks keep field, operator, value, optional-column and remove-control widths aligned across rows.
   const rowColumns = offersColumns
@@ -118,15 +108,13 @@ export function TableListFilters<TDocument>({
   // as i18n keys; otherwise a composed label such as "Bookable item: Name" is misread as a
   // namespace-qualified key and loses its relationship prefix.
   const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
-  const fieldOptions: FilterSelectOption[] = groups.flatMap((group) =>
-    group.fields
-      .filter((candidate) => candidate.origin?.namespace === undefined)
-      .map((candidate) => ({
-        value: String(candidate.name),
-        label: fieldOptionLabel(candidate, translate),
-        groupLabelKey: group.labelKey,
-      })),
-  );
+  const fieldOptions: FilterSelectOption[] = fields
+    .filter((candidate) => candidate.origin?.namespace === undefined)
+    .map((candidate) => ({
+      value: candidate.name,
+      label: fieldOptionLabel(candidate, translate),
+      groupLabelKey: candidate.origin?.viaLabel || candidate.origin?.groupLabelKey || null,
+    }));
   for (const group of runtimeSourceGroups) {
     fieldOptions.push({
       value: sentinelFor(group.key),

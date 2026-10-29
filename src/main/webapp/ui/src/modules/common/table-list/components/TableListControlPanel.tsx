@@ -26,17 +26,9 @@ export function TableListControlPanel<TDocument>({
   }[];
   onClose: () => void;
 }) {
-  if (
-    !activePanel ||
-    (activePanel === "filters" && features.filtering === false) ||
-    (activePanel === "columns" && features.columns === false) ||
-    (activePanel === "sorting" && features.sorting === false)
-  )
-    return null;
-
-  return (
-    <div className="border-b py-3">
-      {activePanel === "filters" && features.filtering !== false ? (
+  const panel = (() => {
+    if (activePanel === "filters" && features.filtering !== false)
+      return (
         <TableListFilters
           key={JSON.stringify(features.filtering.value.expression)}
           config={config}
@@ -68,8 +60,9 @@ export function TableListControlPanel<TDocument>({
           }}
           onClose={onClose}
         />
-      ) : null}
-      {activePanel === "columns" && features.columns !== false ? (
+      );
+    if (activePanel === "columns" && features.columns !== false)
+      return (
         <TableListColumns
           config={config}
           visibleFields={features.columns.value}
@@ -79,8 +72,9 @@ export function TableListControlPanel<TDocument>({
           runtimeFieldAuthScope={runtimeFieldAuthScope}
           onClose={onClose}
         />
-      ) : null}
-      {activePanel === "sorting" && features.sorting !== false ? (
+      );
+    if (activePanel === "sorting" && features.sorting !== false)
+      return (
         <TableListSorting
           config={config}
           sorting={features.sorting.value}
@@ -91,7 +85,8 @@ export function TableListControlPanel<TDocument>({
           }}
           onClose={onClose}
         />
-      ) : null}
-    </div>
-  );
+      );
+    return null;
+  })();
+  return panel ? <div className="border-b py-3">{panel}</div> : null;
 }

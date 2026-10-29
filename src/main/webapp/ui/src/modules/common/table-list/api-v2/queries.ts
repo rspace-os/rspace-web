@@ -1,7 +1,7 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
-import type { ApiV2CollectionFetchOptions } from "./fetcher";
+import { type ApiV2CollectionFetchOptions, requestHeaders } from "./fetcher";
 import { type ApiV2CollectionMetadata, fetchApiV2CollectionMetadata } from "./metadata";
 import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
@@ -67,9 +67,7 @@ export function useApiV2RuntimeFields<TDocument>({
     ],
     enabled: unresolved.length > 0,
     queryFn: async ({ signal }) => {
-      const token = typeof request?.token === "function" ? await request.token() : request?.token;
-      const headers = new Headers(typeof request?.headers === "function" ? await request.headers() : request?.headers);
-      if (token) headers.set("Authorization", `Bearer ${token}`);
+      const headers = await requestHeaders(request);
       return Promise.all(
         namespaces.map(async (namespace) => ({
           namespace: namespace.namespace,

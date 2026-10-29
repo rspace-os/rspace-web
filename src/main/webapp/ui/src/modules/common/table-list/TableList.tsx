@@ -125,8 +125,9 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                 {t("tableList.offline")}
               </p>
             ) : null}
-            {restoredViewIssue ? <RestoredViewIssue issue={restoredViewIssue} /> : null}
-            {!restoredViewIssue ? (
+            {restoredViewIssue ? (
+              <RestoredViewIssue issue={restoredViewIssue} />
+            ) : (
               <>
                 <TableListToolbar
                   config={config}
@@ -168,7 +169,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                   emptyDescription={emptyDescription}
                 />
               </>
-            ) : null}
+            )}
           </div>
         </section>
         {activeRowAction && activeRow && rowActions

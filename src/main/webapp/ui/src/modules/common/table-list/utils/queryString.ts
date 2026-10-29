@@ -107,3 +107,19 @@ export function columnSelectors(serialized: string): readonly string[] {
     return [];
   }
 }
+
+export function nonDefaultColumns<TDocument>(
+  columns: readonly FieldName<TDocument>[],
+  defaults: readonly FieldName<TDocument>[],
+): string | null {
+  const serialized = serializeColumns(columns);
+  return serialized === serializeColumns(defaults) ? null : serialized;
+}
+
+export function nonDefaultSorting<TDocument>(
+  sorting: readonly SortRule<TDocument>[],
+  defaults: readonly SortRule<TDocument>[],
+): string | null {
+  const serialized = serializeSorting(sorting);
+  return serialized === serializeSorting(defaults) ? null : serialized;
+}
