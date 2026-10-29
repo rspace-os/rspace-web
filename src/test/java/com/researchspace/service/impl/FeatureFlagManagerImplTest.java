@@ -141,11 +141,9 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
-  void invalidDevModeIsRejectedWhenCapabilityIsEvaluated() {
-    featureFlagManager = createManager("invalid", "false");
-
-    assertThrows(
-        IllegalStateException.class, () -> featureFlagManager.canUseDevtools(user("user", 10L)));
+  void invalidDevModeIsRejectedAtConstruction() {
+    assertThrows(IllegalStateException.class, () -> createManager("invalid", "false"));
+    assertThrows(IllegalStateException.class, () -> createManager("invalid", "false", "prod"));
   }
 
   @Test

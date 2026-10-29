@@ -41,7 +41,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   private final FeatureFlagManifestLoader manifestLoader;
   private final FeatureFlagPropertiesLoader propertiesLoader;
   private final ApplicationEventPublisher events;
-  private final String devModeEnabled;
+  private final Boolean devModeEnabled;
   private final String reactDevMode;
   private final String activeProfiles;
 
@@ -60,7 +60,10 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     this.manifestLoader = manifestLoader;
     this.propertiesLoader = propertiesLoader;
     this.events = events;
-    this.devModeEnabled = devModeEnabled;
+    this.devModeEnabled =
+        devModeEnabled == null || devModeEnabled.isBlank()
+            ? null
+            : FeatureFlagBooleanParser.parse(devModeEnabled, "dev.mode.enabled");
     this.reactDevMode = reactDevMode;
     this.activeProfiles = activeProfiles;
   }
@@ -259,10 +262,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
         !profiles.contains("prod")
             && (Boolean.parseBoolean(reactDevMode)
                 || profiles.stream().anyMatch(DEVELOPMENT_PROFILES::contains));
-    boolean enabled =
-        devModeEnabled == null || devModeEnabled.isBlank()
-            ? developmentSystem
-            : FeatureFlagBooleanParser.parse(devModeEnabled, "dev.mode.enabled");
+    boolean enabled = devModeEnabled == null ? developmentSystem : devModeEnabled;
     return enabled && developmentSystem;
   }
 
