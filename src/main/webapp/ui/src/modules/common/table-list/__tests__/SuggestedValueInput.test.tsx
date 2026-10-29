@@ -13,12 +13,10 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 
 const relationshipOptions = vi.hoisted(() => vi.fn());
 
-vi.mock("@/modules/common/relationship-picker/queries", () => ({
+vi.mock("@/modules/common/relationship-picker/queries", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/modules/common/relationship-picker/queries")>()),
   useRelationshipOptions: (args: unknown) => relationshipOptions(args),
   useRelationshipOptionAvailability: () => ({ unavailable: {}, checking: false, failed: false }),
-}));
-
-vi.mock("@/modules/common/relationship-picker/useSelectedRelationshipOptions", () => ({
   useSelectedRelationshipOptions: () => [],
 }));
 

@@ -1,5 +1,6 @@
 import { cmp, eq, escapeValue, Operation } from "rsql-builder";
 import { is } from "valibot";
+import type { RelationshipFilterPicker } from "@/modules/common/collection/schema";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import type { RelationshipOption } from "@/modules/common/relationship-picker/types";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
@@ -194,3 +195,11 @@ export function granteeRelationshipSource(resource: string, resourceId: number):
  * target at once needs a different backend query, not a longer registry.
  */
 export const relationshipSources: Readonly<Record<string, RelationshipSource>> = { instruments };
+
+export function relationshipSourceForPicker(
+  picker: RelationshipFilterPicker,
+  sources: Readonly<Record<string, RelationshipSource>>,
+): RelationshipSource | undefined {
+  const source = sources[picker.resource];
+  return source?.globalIdPrefix === picker.globalIdPrefix ? source : undefined;
+}

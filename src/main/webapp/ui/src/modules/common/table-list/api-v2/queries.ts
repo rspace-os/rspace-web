@@ -1,6 +1,6 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
-import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import type { ApiV2CollectionFetchOptions } from "./fetcher";
 import { type ApiV2CollectionMetadata, fetchApiV2CollectionMetadata } from "./metadata";
 import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./runtimeFieldCatalog";

@@ -18,7 +18,7 @@ import {
 import { Trash2Icon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig, SortDirection, SortRule } from "@/modules/common/collection/config";
-import { fieldLabel } from "@/modules/common/collection/config";
+import { fieldLabel } from "@/modules/common/collection/labels";
 import { Button } from "@/modules/common/ui/button";
 import { SortableControlRow } from "./SortableControlRow";
 

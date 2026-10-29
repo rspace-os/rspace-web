@@ -2,10 +2,14 @@ import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as v from "valibot";
 import { rsqlSelectors } from "../rsql";
-import { readStoredTableView, removeStoredTableView, tableViewStorageKey } from "../state/tableViewStorage";
 import type { TableListQueryStringOptions } from "../types";
 import { columnSelectors } from "../utils/queryString";
-import { tableViewStateSchema } from "../utils/viewStorage";
+import {
+  readStoredTableView,
+  removeStoredTableView,
+  tableViewStateSchema,
+  tableViewStorageKey,
+} from "../utils/viewStorage";
 import { parameterNames, tableIdFor } from "./urlState";
 
 type RawView = {

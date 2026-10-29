@@ -4,9 +4,13 @@ import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { ApiV2CollectionMetadata } from "./api-v2/metadata";
 import { useApiV2TableList } from "./hooks/apiV2TableList";
-import { researchRecordSchema as documentSchema } from "./stories/schemas";
 import { TableList } from "./TableList";
-import { type ResearchRecord, storyConfig, storyRecords } from "./TableList.stories";
+import {
+  researchRecordSchema as documentSchema,
+  type ResearchRecord,
+  storyConfig,
+  storyRecords,
+} from "./TableList.stories";
 
 // Production modules read this object from the generated API V2 OpenAPI metadata.
 const metadata: ApiV2CollectionMetadata<ResearchRecord> = {

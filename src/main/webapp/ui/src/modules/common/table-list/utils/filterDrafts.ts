@@ -5,14 +5,13 @@ import type {
   ResolvedFieldConfig,
   SearchSelector,
 } from "@/modules/common/collection/config";
-import { listValue, scalarValue } from "../components/filters/filterValue";
 import type { FilterExpression, FilterValue } from "../types";
 
 export type DraftRule<TDocument> = {
   id: number;
   field: SearchSelector<TDocument>;
   operator: FilterOperator;
-  value: string | readonly string[];
+  value: DraftValue;
   original?: { field: SearchSelector<TDocument>; value: FilterValue };
 };
 
@@ -140,4 +139,16 @@ export function fieldGroups<TDocument>(
     groups.set(key, group);
   }
   return [...groups.values()];
+}
+
+export type DraftValue = string | readonly string[];
+
+export function scalarValue(value: DraftValue): string {
+  return typeof value === "string" ? value : (value[0] ?? "");
+}
+
+export function listValue(value: DraftValue): readonly string[] {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? [] : [trimmed];
 }

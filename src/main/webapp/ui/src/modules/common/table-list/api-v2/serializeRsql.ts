@@ -1,5 +1,4 @@
-import { rsqlOperatorToken, serializeRsqlExpression } from "../rsql";
-import { normalizeRsqlList, normalizeRsqlScalar } from "../rsql/rsqlValue";
+import { normalizeRsqlList, normalizeRsqlScalar, rsqlOperatorToken, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
 import type { ApiV2FilterLimits, ApiV2FilterOperator } from "./metadata";
 
