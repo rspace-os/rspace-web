@@ -149,9 +149,6 @@ export default defineConfig({
       provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      // Vitest 5 defaults to exact, case-sensitive locator text. Keep Vitest 4's
-      // substring matching until a follow-up moves the specs to exact matching.
-      locators: { exact: false },
       instances: browsers.map((browser) => ({ browser })),
     },
   },
