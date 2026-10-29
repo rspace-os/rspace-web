@@ -7,6 +7,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import java.util.List;
 
 /** For DAO operations specific to Inventory {@link Sample} (not templates). */
@@ -98,4 +99,7 @@ public interface SampleDao extends SampleEntityDao<Sample> {
    * ownership change waits for this transaction instead of interleaving with it. Null if absent.
    */
   Sample getWithSharedLock(Long id);
+
+  /** Re-reads a loaded sample or template, row-locked until the transaction ends. */
+  void refreshForUpdate(SampleEntity sample);
 }
