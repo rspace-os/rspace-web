@@ -26,3 +26,14 @@ test("instrument resolution rejects failures other than a missing record", async
     "Relationship option request failed with status 403",
   );
 });
+
+test.each([
+  ["null", null],
+  ["malformed envelope", { docs: "invalid" }],
+])("instrument search returns no results for a %s body", async (_, body) => {
+  server.use(http.get("/api/v2/instruments", () => HttpResponse.json(body)));
+
+  await expect(
+    relationshipSources.instruments.search("microscope", "token", new AbortController().signal),
+  ).resolves.toEqual([]);
+});

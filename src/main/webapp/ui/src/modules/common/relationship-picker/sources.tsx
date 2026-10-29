@@ -102,8 +102,8 @@ const instruments: RelationshipSource = {
         : cmp("id", eq(id)).toString(),
     );
     const response = await instrumentRequest(`/api/v2/instruments?${params}`, token, signal);
-    const body = (await response.json()) as { docs?: unknown };
-    return Array.isArray(body.docs) ? body.docs : [];
+    const body: unknown = await response.json();
+    return is(RelationshipSearchResponseSchema, body) ? body.docs : [];
   },
   resolve: async (value, token, signal) => {
     const id = databaseIdFromGlobalId(value, "IN");
