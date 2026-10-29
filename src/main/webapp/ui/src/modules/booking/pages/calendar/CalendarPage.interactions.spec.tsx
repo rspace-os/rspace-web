@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
