@@ -93,6 +93,7 @@ function chromeRoutes() {
   });
   return rootRoute.addChildren([
     createRoute({ getParentRoute: () => rootRoute, path: "/plain", component: paragraph(plainRouteText) }),
+    createRoute({ getParentRoute: () => rootRoute, path: "/about", component: paragraph("About") }),
     sidebarRoute.addChildren([
       createRoute({ getParentRoute: () => sidebarRoute, path: "/", component: paragraph(sidebarRouteText) }),
       createRoute({ getParentRoute: () => sidebarRoute, path: "/details", component: paragraph("Nested destination") }),
@@ -217,6 +218,14 @@ describe("route chrome", () => {
 });
 
 describe("route sidebar state", () => {
+  it.each(["ctrlKey", "metaKey"])("leaves %s+B available on /about", async (modifier) => {
+    renderShell("/about");
+    expect(await screen.findByText("About")).toBeVisible();
+    const event = new KeyboardEvent("keydown", { key: "b", [modifier]: true, bubbles: true, cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it("opens on entry and removes the empty sidebar when leaving", async () => {
     const router = renderShell("/plain");
     expect(await screen.findByText(plainRouteText)).toBeVisible();
