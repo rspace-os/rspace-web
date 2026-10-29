@@ -32,6 +32,10 @@ public interface ResourceAccessManager {
   /**
    * Atomically promotes the incoming user to direct Owner and removes the outgoing user's direct
    * Owner assignment. A lower outgoing direct role and every unrelated assignment are preserved.
+   *
+   * <p>Callers must authorize the incoming owner using their domain's ownership-transfer rules.
+   * This method checks principal availability but does not require the recipient to be in the
+   * caller's resource-access directory scope.
    */
   <T, ID> void transferDirectOwnership(
       ProtectedResourceAccess<T, ID> resource,
