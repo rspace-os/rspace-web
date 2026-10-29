@@ -194,8 +194,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     invPermissions.assertUserCanTransferInventoryRecord(sample, user);
 
     // recorded before the transfer, so its closing of open requests leaves this one alone
-    String reason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
-    request.recordStatus(user, SampleRequestStatus.FULFILLED, reason, sample);
+    request
+        .recordStatus(user, SampleRequestStatus.FULFILLED, null, sample)
+        .setReasonKey(AUTO_FULFILLED_REASON);
     SampleRequest saved = sampleRequestDao.save(request);
     publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
     ApiSample transfer = new ApiSample();
