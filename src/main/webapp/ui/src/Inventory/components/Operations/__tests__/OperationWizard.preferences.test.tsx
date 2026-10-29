@@ -389,7 +389,7 @@ describe("OperationWizard with the real preference hook", () => {
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.click(screen.getByTestId("pick-mill"));
-    await waitFor(() => expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.placement/));
+    await waitFor(() => expect(document.querySelector('[aria-current="step"]')).toMatchTextContent(/step\.placement/));
     expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
   });
 

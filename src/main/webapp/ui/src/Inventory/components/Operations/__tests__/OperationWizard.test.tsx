@@ -1761,7 +1761,7 @@ describe("OperationWizard remembered placement", () => {
     const onClose = vi.fn();
     await openRememberedDerive(user, onClose);
 
-    await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+    await waitFor(() => expect(currentStep()).toMatchTextContent(/step\.placement/));
     expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
     expect(nextButton()).toBeDisabled();
     expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
@@ -1785,11 +1785,11 @@ describe("OperationWizard remembered placement", () => {
     serveContainer(gridBox);
     const user = userEvent.setup();
     await openRememberedDerive(user);
-    await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+    await waitFor(() => expect(currentStep()).toMatchTextContent(/step\.placement/));
     expect(screen.queryByRole("button", { name: /actions\.back/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
-    expect(currentStep()).toHaveTextContent(/step\.details/);
+    expect(currentStep()).toMatchTextContent(/step\.details/);
     expect(screen.queryByTestId("confirm")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /wizard\.reviewEdit/i })).not.toBeInTheDocument();
     expect(backButton()).toBeInTheDocument();
@@ -1807,7 +1807,7 @@ describe("OperationWizard remembered placement", () => {
 
     await waitFor(() => expect(getTemplate).toHaveBeenCalled());
     await containerArrived(served);
-    expect(currentStep()).toHaveTextContent(/step\.details/);
+    expect(currentStep()).toMatchTextContent(/step\.details/);
   });
 
   it("does not jump to Location once the user has moved on before the container arrives", async () => {
@@ -1818,7 +1818,7 @@ describe("OperationWizard remembered placement", () => {
 
     await user.click(nextButton()); // details -> template, before the container has loaded
     await containerArrived(served);
-    expect(currentStep()).toHaveTextContent(/step\.template/);
+    expect(currentStep()).toMatchTextContent(/step\.template/);
   });
 
   it.each([
@@ -1833,7 +1833,7 @@ describe("OperationWizard remembered placement", () => {
       const user = userEvent.setup();
       await openRememberedDerive(user);
 
-      await waitFor(() => expect(currentStep()).toHaveTextContent(/step\.placement/));
+      await waitFor(() => expect(currentStep()).toMatchTextContent(/step\.placement/));
       expect(screen.getByText(/placement\.rememberedUnavailable/)).toBeInTheDocument();
       expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
       expect(nextButton()).toBeDisabled();

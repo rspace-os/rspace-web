@@ -215,12 +215,12 @@ describe("PlacementStep", () => {
 
   it("tells the user how many locations are free when the container is too full", () => {
     renderStep({ mode: "container", container: gridBox(3) }, 2);
-    expect(screen.getByRole("alert")).toHaveTextContent("Only 1 of the 2 locations needed are free.");
+    expect(screen.getByRole("alert")).toMatchTextContent("Only 1 of the 2 locations needed are free.");
   });
 
   it("says the container has no free location when one is needed and it is full", () => {
     renderStep({ mode: "container", container: gridBox(4) }, 1);
-    expect(screen.getByRole("alert")).toHaveTextContent("This container has no free location.");
+    expect(screen.getByRole("alert")).toMatchTextContent("This container has no free location.");
   });
 
   it("asks for the remaining grid locations and shows the grid to pick them in", () => {
@@ -267,7 +267,7 @@ describe("PlacementStep", () => {
 
   it("rejects an image container, which this step does not support yet", () => {
     renderStep({ mode: "container", container: makeMockContainer({ cType: "IMAGE" }) });
-    expect(screen.getByRole("alert")).toHaveTextContent(/Image containers are not supported/);
+    expect(screen.getByRole("alert")).toMatchTextContent(/Image containers are not supported/);
   });
 
   describe("once a container is picked", () => {
@@ -319,7 +319,7 @@ describe("PlacementStep", () => {
 
     it("keeps the search open when the container cannot be used, so the user can pick another", async () => {
       await pick(makeMockContainer({ name: "Gel", cType: "IMAGE" }));
-      expect(await screen.findByRole("alert")).toHaveTextContent(/Image containers are not supported/);
+      expect(await screen.findByRole("alert")).toMatchTextContent(/Image containers are not supported/);
       expect(screen.getByRole("searchbox")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Change container" })).not.toBeInTheDocument();
     });
