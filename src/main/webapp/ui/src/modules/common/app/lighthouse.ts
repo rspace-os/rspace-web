@@ -176,6 +176,15 @@ export function useLighthouseSdk(livechatProperties: LivechatProperties | undefi
       },
     });
 
+    if (!document.getElementById(LIGHTHOUSE_SCRIPT_ID)) {
+      const script = document.createElement("script");
+      script.id = LIGHTHOUSE_SCRIPT_ID;
+      script.src = LIGHTHOUSE_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
     if (isLighthouseReady()) {
       setLighthouseReady(true);
     }
