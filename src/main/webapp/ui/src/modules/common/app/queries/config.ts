@@ -36,22 +36,17 @@ export const appConfigQueryKeys = {
 };
 
 export async function getAppConfig(): Promise<AppConfig> {
-  try {
-    const response = await fetch("/api/v2/config", {
-      method: "GET",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
+  const response = await fetch("/api/v2/config", {
+    method: "GET",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
 
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
 
-    const data: unknown = await response.json();
-    return parseOrThrow(AppConfigResponseSchema, data);
-  } catch (error) {
-    console.warn("Could not read app configuration", error);
-    return DEFAULT_APP_CONFIG;
-  }
+  const data: unknown = await response.json();
+  return parseOrThrow(AppConfigResponseSchema, data);
 }
 
 export function useAppConfigQuery() {
