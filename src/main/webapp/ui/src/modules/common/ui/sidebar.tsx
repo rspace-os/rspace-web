@@ -41,6 +41,7 @@ function useSidebar() {
 
 function SidebarProvider({
   defaultOpen = true,
+  keyboardShortcut = true,
   open: openProp,
   onOpenChange: setOpenProp,
   className,
@@ -49,6 +50,7 @@ function SidebarProvider({
   ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean;
+  keyboardShortcut?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -77,7 +79,14 @@ function SidebarProvider({
   }, [isMobile, setOpen, setOpenMobile]);
 
   React.useEffect(() => {
+    if (!keyboardShortcut) return;
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+      )
+        return;
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         toggleSidebar();
@@ -86,7 +95,7 @@ function SidebarProvider({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
+  }, [keyboardShortcut, toggleSidebar]);
 
   const state = open ? "expanded" : "collapsed";
 
