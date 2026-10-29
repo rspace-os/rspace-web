@@ -12,6 +12,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 class FeatureFlagPropertiesLoaderTest {
 
@@ -24,10 +26,24 @@ class FeatureFlagPropertiesLoaderTest {
   }
 
   @Test
-  void missingFileHasNoForcedValues() {
+  void missingExplicitFileFailsStartup() {
     FeatureFlagPropertiesLoader loader =
         loaderReading("classpath:deployments/does-not-exist.properties");
 
+    assertThrows(IllegalStateException.class, () -> loader.loadForcedValues(KNOWN));
+  }
+
+  @Test
+  void missingDefaultFileHasNoForcedValues() {
+    ResourceLoader resources =
+        new DefaultResourceLoader() {
+          @Override
+          public Resource getResource(String location) {
+            assertEquals("classpath:deployments/feature-flags.properties", location);
+            return super.getResource("classpath:deployments/does-not-exist.properties");
+          }
+        };
+    FeatureFlagPropertiesLoader loader = new FeatureFlagPropertiesLoader(resources, "");
     assertTrue(loader.loadForcedValues(KNOWN).isEmpty());
   }
 
