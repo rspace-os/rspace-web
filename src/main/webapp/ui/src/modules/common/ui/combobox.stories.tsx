@@ -87,7 +87,13 @@ function MultipleExample() {
     <Combobox items={fruits} multiple>
       <ComboboxChips ref={anchor}>
         <ComboboxValue>
-          {(value: string[]) => value.map((item) => <ComboboxChip key={item}>{item}</ComboboxChip>)}
+          {(value: string[]) =>
+            value.map((item) => (
+              <ComboboxChip key={item} removeLabel={`Remove ${item}`}>
+                {item}
+              </ComboboxChip>
+            ))
+          }
         </ComboboxValue>
         <ComboboxChipsInput placeholder="Add fruit..." />
       </ComboboxChips>
