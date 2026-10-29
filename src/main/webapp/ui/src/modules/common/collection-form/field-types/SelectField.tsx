@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { type SelectOption, selectOptionText } from "@/modules/common/collection/config";
+import type { SelectOption } from "@/modules/common/collection/config";
+import { selectOptionText } from "@/modules/common/collection/utils";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/modules/common/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/modules/common/ui/radio-group";
 import { controlAttributes } from "../controlAttributes";
