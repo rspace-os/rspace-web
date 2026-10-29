@@ -42,7 +42,7 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor }}
-          java-version: ${{ inputs.java_version }}
+          java-version: ${{ matrix.java-version }}
           cache: maven
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
@@ -58,7 +58,7 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR (frontend + backend)
-        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ inputs.java_version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR
         uses: actions/upload-artifact@v7.0.1
         with:
@@ -67,20 +67,22 @@ jobs:
           retention-days: 1
 
   e2e:
-    name: e2e (${{ inputs.java_version }}, ${{ matrix.project }}, ${{ matrix.shard }}${{ matrix.cloud && ', cloud' || '' }})
+    name: e2e (${{ matrix.java-version }}, ${{ matrix.suite.project }}, ${{ matrix.suite.shard }}${{ matrix.suite.cloud && ', cloud' || '' }})
     needs: build
     runs-on: ubuntu-latest
     env:
-      E2E_CLOUD: ${{ matrix.cloud && 'true' || 'false' }}
+      E2E_CLOUD: ${{ matrix.suite.cloud && 'true' || 'false' }}
 
     timeout-minutes: 90
     strategy:
       fail-fast: false
       # Each job holds a runner for its whole run, including ~5 minutes of setup,
       # so short suites share a job: mobile runs with the API specs, and one
-      # community job runs every desktop browser.
+      # community job runs every desktop browser. Suites are objects so that each
+      # one runs for every Java version.
       matrix:
-        include:
+        java-version: ["${{ inputs.java_version }}"]
+        suite:
           - { project: chromium, shard: 1, shards: 2, browsers: chromium, select: chromium }
           - { project: chromium, shard: 2, shards: 2, browsers: chromium, select: chromium }
           - { project: firefox, shard: 1, shards: 2, browsers: firefox, select: firefox }
@@ -131,7 +133,7 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor }}
-          java-version: ${{ inputs.java_version }}
+          java-version: ${{ matrix.java-version }}
           cache: maven
 
       - name: Set up pnpm
@@ -276,7 +278,7 @@ jobs:
           nohup ./mvnw jetty:run-war \
             -DskipTests=true -Dmaven.war.skip=true \
             -Dtimestamp=${{ github.run_id }} \
-            -Djava-version=${{ inputs.java_version }} -Djava-vendor=${{ inputs.java_vendor }} \
+            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
             -Denvironment=drop-recreate-db \
             -Dspring.profiles.active=run \
             -DreactDevMode=false \
@@ -299,7 +301,7 @@ jobs:
 
       # Mock-mode MinIO, SFTP, Samba and iRODS for specs/system/config/filestores.
       - name: Start filestore servers
-        if: inputs.mode == 'mock' && contains(fromJSON('["chromium", "firefox", "webkit"]'), matrix.project)
+        if: inputs.mode == 'mock' && contains(fromJSON('["chromium", "firefox", "webkit"]'), matrix.suite.project)
         run: |
           src/main/webapp/ui/src/__tests__/e2e/scripts/start-filestore-servers.sh >> "$GITHUB_ENV"
 
@@ -308,7 +310,7 @@ jobs:
       - name: Install Playwright browsers
         uses: ./.github/actions/install-playwright
         with:
-          browsers: ${{ matrix.browsers }}
+          browsers: ${{ matrix.suite.browsers }}
 
       - name: Wait for RSpace readiness
         run: |
@@ -321,10 +323,10 @@ jobs:
           done
           echo "::error::RSpace did not become ready in time"; tail -100 /tmp/jetty.log; exit 1
 
-      - name: Run e2e (${{ inputs.mode }} / ${{ matrix.project }} / shard ${{ matrix.shard }})
+      - name: Run e2e (${{ inputs.mode }} / ${{ matrix.suite.project }} / shard ${{ matrix.suite.shard }})
         env:
           RSPACE_SYSADMIN_PASSWORD: "sysWisc23!"
-          E2E_BROWSER: ${{ matrix.select }}
+          E2E_BROWSER: ${{ matrix.suite.select }}
           FIELDMARK_API_KEY: ${{ inputs.mode == 'real' && secrets.FIELDMARK_API_KEY || '' }}
           ZENODO_API_KEY: ${{ inputs.mode == 'real' && secrets.ZENODO_API_KEY || '' }}
           BIOPORTAL_API_KEY: ${{ inputs.mode == 'real' && secrets.BIOPORTAL_API_KEY || '' }}
@@ -358,7 +360,7 @@ jobs:
           E2E_REAL_IRODS_URL: ${{ inputs.mode == 'real' && 'irods-test.researchspace.com' || '' }}
           E2E_REAL_IRODS_USERNAME: ${{ inputs.mode == 'real' && secrets.E2E_REAL_IRODS_USERNAME || '' }}
           E2E_REAL_IRODS_PASSWORD: ${{ inputs.mode == 'real' && secrets.E2E_REAL_IRODS_PASSWORD || '' }}
-        run: pnpm run test-e2e --shard=${{ matrix.shard }}/${{ matrix.shards }}
+        run: pnpm run test-e2e --shard=${{ matrix.suite.shard }}/${{ matrix.suite.shards }}
 
       - name: Dump server log on failure
         if: failure()
@@ -369,7 +371,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: jetty-log-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: jetty-log-${{ inputs.mode }}-${{ matrix.suite.cloud && 'cloud' || 'standard' }}-${{ matrix.suite.project }}-${{ matrix.suite.shard }}
           path: |
             /tmp/jetty.log
             httpRequests.log
@@ -379,7 +381,7 @@ jobs:
         if: always() && inputs.mode == 'mock'
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.suite.cloud && 'cloud' || 'standard' }}-${{ matrix.suite.project }}-${{ matrix.suite.shard }}
           # Playwright writes its report and traces beside the root package.json;
           # only the JUnit file, which the config names explicitly, is under ui/.
           path: |
@@ -393,6 +395,6 @@ jobs:
         if: always() && inputs.mode == 'real'
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.suite.cloud && 'cloud' || 'standard' }}-${{ matrix.suite.project }}-${{ matrix.suite.shard }}
           path: src/main/webapp/ui/e2e-junit.xml
           retention-days: 14
