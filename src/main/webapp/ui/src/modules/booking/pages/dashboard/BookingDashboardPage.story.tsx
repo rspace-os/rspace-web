@@ -18,7 +18,7 @@ import {
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
-import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
 import BookingPage from "../BookingPage";
 import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 import BookingDashboardPage from "./BookingDashboardPage";
