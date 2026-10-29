@@ -88,6 +88,7 @@ export default function AppShell() {
       key={renderSidebar === undefined ? "without-route-sidebar" : "with-route-sidebar"}
       className="flex-col"
       defaultOpen={Boolean(renderSidebar)}
+      keyboardShortcut={renderSidebar !== undefined}
       style={{ "--app-header-height": "calc(3rem + 3px)" } as React.CSSProperties}
     >
       <HeadContent />
