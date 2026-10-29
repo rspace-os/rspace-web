@@ -20,17 +20,22 @@ public class FeatureFlagPropertiesLoader {
 
   private final ResourceLoader resourceLoader;
   private final String location;
+  private final boolean explicitLocation;
 
   public FeatureFlagPropertiesLoader(
       ResourceLoader resourceLoader,
       @Value("${featureFlags.properties.location:}") String location) {
     this.resourceLoader = resourceLoader;
+    this.explicitLocation = location != null && !location.isBlank();
     this.location = location == null || location.isBlank() ? DEFAULT_LOCATION : location.trim();
   }
 
   public Map<String, Boolean> loadForcedValues(Set<String> knownFlagNames) {
     Resource resource = resourceLoader.getResource(normaliseLocation(location));
     if (!resource.exists()) {
+      if (explicitLocation) {
+        throw new IllegalStateException("Feature flag properties file does not exist: " + location);
+      }
       return Map.of();
     }
 
