@@ -1,5 +1,8 @@
+import Intercom from "@intercom/messenger-js-sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { callLighthouse, configureLighthouse, showLighthouse } from "@/modules/common/app/lighthouse";
+
+vi.mock("@intercom/messenger-js-sdk", () => ({ default: vi.fn() }));
 
 type PartialLighthouse = Partial<Record<"hide" | "show" | "showButton" | "hideButton", () => void>>;
 
@@ -20,6 +23,14 @@ describe("Lighthouse SDK manager", () => {
     window.open = originalOpen;
     setTestLighthouse(originalLighthouse);
     vi.restoreAllMocks();
+  });
+
+  it("starts anonymous livechat without claiming a user identity", () => {
+    configureLighthouse({
+      livechatProperties: { livechatEnabled: true, livechatServerKey: "app-key" },
+      onReady: vi.fn(),
+    });
+    expect(Intercom).toHaveBeenCalledWith({ app_id: "app-key", hide_default_launcher: true });
   });
 
   it("ignores missing Lighthouse methods without throwing", () => {
@@ -63,7 +74,6 @@ describe("Lighthouse SDK manager", () => {
     configureLighthouse({
       livechatProperties: {
         livechatEnabled: false,
-        currentUser: "user1a",
       },
       onReady: vi.fn(),
     });

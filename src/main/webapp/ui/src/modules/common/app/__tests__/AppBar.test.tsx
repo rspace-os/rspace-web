@@ -176,7 +176,6 @@ describe("NewAppBar (MSW-driven)", () => {
     expect(useLighthouseSdk).toHaveBeenCalledWith({
       livechatEnabled: true,
       livechatServerKey: "server-key",
-      currentUser: "ada",
     });
   });
 
@@ -201,7 +200,7 @@ describe("HelpMenu", () => {
     render(
       <HelpMenu
         helpLinks={[{ label: "Local help", url: "https://help.example.com" }]}
-        livechatProperties={{ livechatEnabled: false, currentUser: "ada" }}
+        livechatProperties={{ livechatEnabled: false }}
       />,
     );
 

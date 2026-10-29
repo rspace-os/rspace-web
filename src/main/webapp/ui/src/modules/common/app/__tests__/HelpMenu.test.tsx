@@ -36,7 +36,7 @@ describe("HelpMenu fallback", () => {
       setTestLighthouse(undefined);
 
       const user = userEvent.setup();
-      render(<HelpMenu helpLinks={helpLinks} livechatProperties={{ livechatEnabled: false, currentUser: "ada" }} />);
+      render(<HelpMenu helpLinks={helpLinks} livechatProperties={{ livechatEnabled: false }} />);
 
       const helpButton = screen.getByRole("button", { name: "common:helpDocs.openHelp" });
       if (clickDocumentationItem) {

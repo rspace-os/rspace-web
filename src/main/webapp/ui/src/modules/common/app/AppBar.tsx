@@ -125,7 +125,6 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
           livechatProperties={{
             livechatEnabled: currentUser.livechat.enabled,
             livechatServerKey: currentUser.livechat.serverKey ?? undefined,
-            currentUser: currentUser.username,
           }}
         />
       </div>
