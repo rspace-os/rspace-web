@@ -92,7 +92,7 @@ describe("Layout2x1", () => {
               <Layout2x1 colLeft="foo" colRight="foo" />
             </storesContext.Provider>,
           );
-          expect(container).toHaveTextContent("foo");
+          expect(container).toMatchTextContent("foo");
         }),
       );
     });

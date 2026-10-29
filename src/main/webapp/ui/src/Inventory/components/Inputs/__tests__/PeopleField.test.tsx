@@ -42,7 +42,7 @@ describe("PeopleField", () => {
           <PeopleField onSelection={() => {}} label="foo" recipient={null} />
         </Alerts>,
       );
-      expect(await screen.findByRole("alert")).toHaveTextContent("some error message");
+      expect(await screen.findByRole("alert")).toMatchTextContent("some error message");
     } finally {
       restoreConsole();
     }

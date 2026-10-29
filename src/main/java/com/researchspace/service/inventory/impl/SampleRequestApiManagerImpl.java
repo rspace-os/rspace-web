@@ -78,6 +78,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private record Transition(
       SampleRequestStatus from, SampleRequestStatus to, Actor actor, boolean reasonRequired) {}
 
+  private static final String AUTO_FULFILLED_REASON = "inventory.sampleRequest.autoFulfilledReason";
+  private static final String AUTO_REJECTED_REASON = "inventory.sampleRequest.autoRejectedReason";
+
   /** Every transition a user can make; PENDING is only written when a request is raised. */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -286,6 +289,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       ApiSampleRequestStatusChange apiChange = detail.getStatusChanges().get(i);
       SampleRequestStatusChange change = request.getStatusChanges().get(i);
       apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername(), change.getCreatedById()));
+      if (change.getReasonKey() != null) {
+        apiChange.setReason(messages.getMessage(change.getReasonKey()));
+      }
       if (change.getTransferredSample() != null) {
         sampleApiManager.setOtherFieldsForOutgoingApiInventoryRecord(
             apiChange.getTransferredSample(), change.getTransferredSample(), user);
@@ -366,10 +372,6 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public void closeActiveRequestsForTransferredSample(Long sampleId, User actor, User newOwner) {
-    String rejectedReason =
-        messages.getMessage(
-            "inventory.sampleRequest.autoRejectedReason", new Object[] {newOwner.getFullName()});
-    String fulfilledReason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
       boolean toRequester = request.isRequester(newOwner);
       SampleRequestStatus target =
@@ -377,9 +379,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       // a PI or admin of the owner's group may transfer too, so only legality is checked
       legalTransitionFromOrThrow(transitionsToSettableStatusOrThrow(target), request.getStatus());
       if (toRequester) {
-        request.recordStatus(actor, target, fulfilledReason, request.getSample());
+        request
+            .recordStatus(actor, target, null, request.getSample())
+            .setReasonKey(AUTO_FULFILLED_REASON);
       } else {
-        request.recordStatus(actor, target, rejectedReason);
+        request.recordStatus(actor, target, null).setReasonKey(AUTO_REJECTED_REASON);
       }
       SampleRequest saved = sampleRequestDao.save(request);
       publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));

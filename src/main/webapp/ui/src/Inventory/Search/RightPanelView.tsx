@@ -82,6 +82,8 @@ function RightPanelView(): ReactNode {
   const { t } = useTranslation("inventory");
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
+  const isSingleColumnLayoutRef = React.useRef(isSingleColumnLayout);
+  isSingleColumnLayoutRef.current = isSingleColumnLayout;
   const mainContentRef = useLandmark("Details Panel");
 
   React.useEffect(() => {
@@ -89,7 +91,9 @@ function RightPanelView(): ReactNode {
       if (!searchStore.activeResult && searchStore.search.filteredResults.length && !isSingleColumnLayout) {
         try {
           await searchStore.search.setActiveResult();
-          uiStore.setVisiblePanel("right");
+          // The user may have hidden the right panel while the record loaded;
+          // switching panels now would hide the search results they are using.
+          if (!isSingleColumnLayoutRef.current) uiStore.setVisiblePanel("right");
         } catch (e) {
           if (e instanceof UserCancelledAction) return;
           throw e;

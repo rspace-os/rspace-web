@@ -25,7 +25,7 @@ describe("UnitSelect", () => {
 
   it("renders empty for the unset-unit marker instead of an out-of-range value", () => {
     render(<UnitSelect categories={["volume"]} value={0} handleChange={() => undefined} />);
-    expect(screen.getByRole("combobox")).toHaveTextContent(/^[​\s]*$/);
+    expect(screen.getByRole("combobox")).toMatchTextContent(/^[​\s]*$/);
   });
 
   it("keeps the unit id when selecting its translated label", async () => {
