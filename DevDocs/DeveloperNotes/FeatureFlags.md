@@ -41,9 +41,12 @@ defaults are not copied into the database. An explicit user override reports
 as `USER_OVERRIDE` even when it matches the baseline; clearing it is the only
 way to return to the baseline. Baseline changes do not alter user overrides.
 
-Startup reconciles the database with the manifest and removes state for retired
-flags. It fails for an invalid manifest, invalid properties entry, or failed
-reconciliation. Code must not evaluate flags before reconciliation finishes.
+Startup loads the flags declared in the manifest and preserves unknown database
+rows, so rolling back to an older release does not delete newer flags' baselines
+or user overrides. Retire a flag with an explicit Liquibase changeset under
+`src/main/resources/sqlUpdates/`, using context `run`, that deletes its baseline
+and user override rows. Startup fails for an invalid manifest, invalid properties
+entry, or failed reconciliation. Code must not evaluate flags before reconciliation finishes.
 Retired names may be reused later, but not in adjacent releases.
 
 Baseline values stay in memory after startup. Writes update the database
