@@ -1,5 +1,6 @@
 package com.researchspace.model.booking;
 
+import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.INHERITED;
 import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
@@ -50,10 +51,14 @@ public record ApiV2BookingConfigurationResource(
             title = "Booking target",
             description = "Instrument to which this booking configuration applies.")
         ResourceReference<BookableTargetType, Long> target,
-    @ApiV2ResourceField(description = "Whether bookings are enabled for the target.")
+    @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
+            description = "Whether bookings are enabled for the target.")
         boolean enabled,
     @ApiV2ResourceField(
             createAccess = NEVER,
+            updateAccess = INHERITED,
             description = "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.")
         BookingConfigurationState state,
     @ApiV2ResourceField(
@@ -66,20 +71,35 @@ public record ApiV2BookingConfigurationResource(
             example = "Europe/Berlin")
         String timezone,
     @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
             description = "Allowed wall-clock booking increment in minutes.",
             example = "5")
         long slotGranularityMinutes,
     @ApiV2ResourceMember(factory = "openingHoursField") List<BookingOpeningHoursEntry> openingHours,
-    @ApiV2ResourceField(description = "Unavailable minutes before a booking.", example = "15")
+    @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
+            description = "Unavailable minutes before a booking.",
+            example = "15")
         long bufferBeforeMinutes,
-    @ApiV2ResourceField(description = "Unavailable minutes after a booking.", example = "15")
+    @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
+            description = "Unavailable minutes after a booking.",
+            example = "15")
         long bufferAfterMinutes,
     @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
             description =
                 "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
             example = "120")
         long maxBookingDurationMinutes,
-    @ApiV2ResourceField(description = "Whether overlapping bookings are permitted.")
+    @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
+            description = "Whether overlapping bookings are permitted.")
         boolean allowDoubleBooking,
     @ApiV2ResourceField(
             createAccess = NEVER,
