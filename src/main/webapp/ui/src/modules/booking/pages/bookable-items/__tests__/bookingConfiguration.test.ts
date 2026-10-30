@@ -16,13 +16,16 @@ const configuration = {
   configurationVersion: 0,
   state: "ACTIVE",
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: {
       id: 123,
       name: "Confocal microscope",
       deleted: false,
-      parentContainerName: "Imaging lab",
-      parentContainerGlobalId: "IC456",
+      parentContainer: {
+        relationTo: "containers",
+        globalId: "IC456",
+        value: { id: 456, globalId: "IC456", name: "Imaging lab" },
+      },
     },
     globalId: "IN123",
   },
@@ -51,45 +54,42 @@ describe("booking configuration reads", () => {
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("where")).toBe("target==IN123");
-    expect(url.searchParams.get("depth")).toBe("1");
+    expect(url.searchParams.get("depth")).toBe("2");
     expect(url.searchParams.get("limit")).toBe("2");
   });
 
-  it("fills location from the readable Inventory item when the relationship projection omits it", async () => {
-    let locationRequest: Request | undefined;
-    server.use(
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(
-          collectionPage(
-            [
-              {
-                ...configuration,
-                target: {
-                  ...configuration.target,
-                  value: { id: 123, name: "Confocal microscope", deleted: false },
+  it.each([configuration.target.value.parentContainer, null])(
+    "reads expanded or unreadable parent in one request",
+    async (parentContainer) => {
+      const requests: URL[] = [];
+      server.use(
+        http.get("/api/v2/booking-configurations", ({ request }) => {
+          requests.push(new URL(request.url));
+          return HttpResponse.json(
+            collectionPage(
+              [
+                {
+                  ...configuration,
+                  target: { ...configuration.target, value: { ...configuration.target.value, parentContainer } },
                 },
-              },
-            ],
-            2,
-          ),
-        ),
-      ),
-      http.get("/api/v2/instruments/123", ({ request }) => {
-        locationRequest = request;
-        return HttpResponse.json({
-          parentContainerName: "Imaging lab",
-          parentContainerGlobalId: "IC456",
-        });
-      }),
-    );
-
-    await expect(fetchBookingConfigurationDetailsByTarget("IN123", "token")).resolves.toMatchObject({
-      target: { value: { parentContainerName: "Imaging lab", parentContainerGlobalId: "IC456" } },
-    });
-    const url = new URL(locationRequest?.url ?? "http://localhost");
-    expect(url.searchParams.get("fields[instruments]")).toBe("parentContainerName,parentContainerGlobalId");
-    expect(locationRequest?.headers.get("Authorization")).toBe("Bearer token");
-  });
+              ],
+              2,
+            ),
+          );
+        }),
+        http.get("/api/v2/instruments/123", () => {
+          throw new Error("Configuration detail must use the expanded relationship");
+        }),
+      );
+      await expect(fetchBookingConfigurationDetailsByTarget("IN123", "token")).resolves.toMatchObject({
+        target: { value: { parentContainer } },
+      });
+      expect(requests).toHaveLength(1);
+      expect(requests[0].searchParams.get("depth")).toBe("2");
+      expect(requests[0].searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted,parentContainer");
+      expect(requests[0].searchParams.get("fields[containers]")).toBe("id,globalId,name");
+    },
+  );
 
   it("escapes target values through the RSQL serializer", async () => {
     server.use(
@@ -141,7 +141,7 @@ describe("booking configuration schedules", () => {
   ];
 
   it("validates and canonicalizes the complete schedule on create and replacement update", () => {
-    const input = { ...configuration, target: { relationTo: "booking-instruments", value: 123 }, openingHours };
+    const input = { ...configuration, target: { relationTo: "instruments", value: 123 }, openingHours };
     expect(v.parse(BookingConfigurationInputSchema, input).openingHours).toEqual(openingHours.toReversed());
     expect(v.parse(BookingConfigurationUpdateInputSchema, input).openingHours).toEqual(openingHours.toReversed());
     expect(

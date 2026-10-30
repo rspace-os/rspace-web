@@ -25,14 +25,20 @@ export const BookingConfigurationSchema = v.pipe(
     configurationVersion: v.number(),
     target: v.nullable(
       v.object({
-        relationTo: v.literal("booking-instruments"),
+        relationTo: v.literal("instruments"),
         value: v.object({
           id: v.number(),
           name: v.string(),
           deleted: v.boolean(),
-          // Supplied by the catalogue adapter; the collection API may omit them.
-          parentContainerName: v.optional(v.nullable(v.string())),
-          parentContainerGlobalId: v.optional(v.nullable(v.string())),
+          parentContainer: v.optional(
+            v.nullable(
+              v.object({
+                relationTo: v.literal("containers"),
+                globalId: v.string(),
+                value: v.object({ id: v.number(), globalId: v.string(), name: v.string() }),
+              }),
+            ),
+          ),
         }),
         globalId: v.string(),
       }),
@@ -84,7 +90,7 @@ export type BookingConfiguration = v.InferOutput<typeof BookingConfigurationSche
 export const BookingConfigurationInputSchema = v.pipe(
   v.object({
     target: v.object({
-      relationTo: v.literal("booking-instruments"),
+      relationTo: v.literal("instruments"),
       value: v.number(),
     }),
     enabled: v.boolean(),

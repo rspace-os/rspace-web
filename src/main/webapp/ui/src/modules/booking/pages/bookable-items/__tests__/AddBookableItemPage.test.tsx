@@ -171,7 +171,7 @@ describe("AddBookableItemPage", () => {
       await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
       await waitFor(() =>
         expect(saved).toMatchObject({
-          target: { relationTo: "booking-instruments", value: 456 },
+          target: { relationTo: "instruments", value: 456 },
           openingHours: expect.arrayContaining([{ dayOfWeek: 1, start: "09:00", end: "17:00" }]),
         }),
       );
@@ -208,7 +208,7 @@ describe("AddBookableItemPage", () => {
     );
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(saved).toMatchObject({ target: { relationTo: "booking-instruments", value: 456 } });
+    expect(saved).toMatchObject({ target: { relationTo: "instruments", value: 456 } });
   });
 
   it("treats a blank relationship control as an empty selection", async () => {
@@ -250,7 +250,7 @@ describe("AddBookableItemPage", () => {
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
     expect(authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(requestBody).toEqual({
-      target: { relationTo: "booking-instruments", value: 123 },
+      target: { relationTo: "instruments", value: 123 },
       enabled: true,
       slotGranularityMinutes: 5,
       openingHours: settings.openingHours,
@@ -336,7 +336,7 @@ describe("AddBookableItemPage", () => {
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
     expect(attempts).toBe(2);
     expect(requestBodies[1]).toMatchObject({
-      target: { relationTo: "booking-instruments", value: 123 },
+      target: { relationTo: "instruments", value: 123 },
       openingHours: [{ ...settings.openingHours[0], start: "09:00" }, settings.openingHours[1]],
     });
   });
@@ -370,7 +370,7 @@ describe("AddBookableItemPage", () => {
     server.use(
       targetsHandler(),
       availabilityHandler(() =>
-        conflict ? [{ id: 9, target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" } }] : [],
+        conflict ? [{ id: 9, target: { relationTo: "instruments", value: 123, globalId: "IN123" } }] : [],
       ),
       http.post("/api/v2/booking-configurations", () => {
         conflict = true;

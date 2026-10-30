@@ -1,4 +1,3 @@
-import * as v from "valibot";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
@@ -6,16 +5,13 @@ import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { type BookingConfiguration, BookingConfigurationSchema } from "./bookingConfigurationSchema";
 
-const InstrumentLocationSchema = v.object({
-  parentContainerName: v.nullable(v.string()),
-  parentContainerGlobalId: v.nullable(v.string()),
-});
-
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 const bookingConfigurationReadParameters = {
-  depth: "1",
+  depth: "2",
+  "fields[instruments]": "id,globalId,name,deleted,parentContainer",
+  "fields[containers]": "id,globalId,name",
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
@@ -28,38 +24,6 @@ export class BookingConfigurationRequestError extends Error {
 /** No readable booking configuration exists for a target. */
 class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
-}
-
-async function withLocation(
-  configuration: BookingConfiguration,
-  token: string,
-  signal?: AbortSignal,
-): Promise<BookingConfiguration> {
-  if (!configuration.target) return configuration;
-  const target = configuration.target.value;
-  if (target.parentContainerName && target.parentContainerGlobalId) return configuration;
-  const parameters = new URLSearchParams({
-    "fields[instruments]": "parentContainerName,parentContainerGlobalId",
-  });
-  let response: Response;
-  try {
-    response = await fetchWithUiToken(`/api/v2/instruments/${target.id}?${parameters}`, {
-      headers: apiV2Headers(token),
-      signal,
-    });
-  } catch (error) {
-    if (signal?.aborted) throw error;
-    return configuration;
-  }
-  if (!response.ok) return configuration;
-  const location = parseOrThrow(InstrumentLocationSchema, (await response.json()) as unknown);
-  return {
-    ...configuration,
-    target: {
-      ...configuration.target,
-      value: { ...target, ...location },
-    },
-  };
 }
 
 export async function fetchBookingConfigurationByTarget(
@@ -80,7 +44,7 @@ export async function fetchBookingConfigurationDetailsByTarget(
   token: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
-  return withLocation(await fetchBookingConfigurationByTarget(globalId, token, signal), token, signal);
+  return fetchBookingConfigurationByTarget(globalId, token, signal);
 }
 
 /** Returns a readable configuration for one Inventory target, or null when none is visible. */

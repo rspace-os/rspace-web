@@ -108,7 +108,7 @@ function targetSelection(input: unknown): TargetSelection {
     return { type: "empty" };
   }
   if (typeof input !== "object" || !("relationTo" in input) || !("value" in input)) return { type: "unsupported" };
-  return input.relationTo === "booking-instruments" && typeof input.value === "number"
+  return input.relationTo === "instruments" && typeof input.value === "number"
     ? { type: "instrument", id: input.value }
     : { type: "unsupported" };
 }
@@ -178,9 +178,7 @@ function AddBookableItemForm({
   const form = useForm({
     schema: BookingConfigurationInputSchema,
     initialInput: {
-      ...(initialTargetId === undefined
-        ? {}
-        : { target: { relationTo: "booking-instruments", value: initialTargetId } }),
+      ...(initialTargetId === undefined ? {} : { target: { relationTo: "instruments", value: initialTargetId } }),
       enabled: true,
       slotGranularityMinutes: defaults.slotGranularityMinutes,
       openingHours: defaults.openingHours.map((entry) => ({ ...entry })),
@@ -234,9 +232,7 @@ function AddBookableItemForm({
             onChange={(globalId) => {
               const id = databaseId(bookingConfigurationTargetSource, globalId);
               targetField.onChange(
-                id === null
-                  ? { relationTo: undefined, value: undefined }
-                  : { relationTo: "booking-instruments", value: id },
+                id === null ? { relationTo: undefined, value: undefined } : { relationTo: "instruments", value: id },
               );
             }}
             disabled={createMutation.isPending}

@@ -81,8 +81,8 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
             fixture.target.globalId.toLocaleLowerCase().includes(query)) &&
           (!target || fixture.target.globalId === target) &&
           (locations.length === 0 ||
-            (fixture.target.value.parentContainerGlobalId !== null &&
-              locations.includes(fixture.target.value.parentContainerGlobalId))),
+            (fixture.target.value.parentContainer?.globalId !== undefined &&
+              locations.includes(fixture.target.value.parentContainer?.globalId))),
       );
       const start = (page - 1) * pageSize;
       return HttpResponse.json({
@@ -103,10 +103,10 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
           effectiveRole: fixture.effectiveRole,
           capabilities: fixture.capabilities,
           location:
-            fixture.target.value.parentContainerName && fixture.target.value.parentContainerGlobalId
+            fixture.target.value.parentContainer?.value.name && fixture.target.value.parentContainer?.globalId
               ? {
-                  name: fixture.target.value.parentContainerName,
-                  globalId: fixture.target.value.parentContainerGlobalId,
+                  name: fixture.target.value.parentContainer?.value.name,
+                  globalId: fixture.target.value.parentContainer?.globalId,
                 }
               : null,
         })),
@@ -123,8 +123,8 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       const locations = Array.from(
         new Map(
           bookableItemFixtures.flatMap((fixture) => {
-            const globalId = fixture.target.value.parentContainerGlobalId;
-            const name = fixture.target.value.parentContainerName;
+            const globalId = fixture.target.value.parentContainer?.globalId;
+            const name = fixture.target.value.parentContainer?.value.name;
             return globalId && name ? [[globalId, { globalId, name }] as const] : [];
           }),
         ).values(),
