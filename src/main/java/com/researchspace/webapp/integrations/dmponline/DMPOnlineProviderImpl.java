@@ -34,13 +34,22 @@ public class DMPOnlineProviderImpl implements DMPOnlineProvider {
   private static String URL_DMP_PLANS;
 
   public DMPOnlineProviderImpl() {
-    this.restTemplate = timeoutBoundedRestTemplate();
+    this(CONNECT_TIMEOUT, READ_TIMEOUT);
+  }
+
+  DMPOnlineProviderImpl(Duration connectTimeout, Duration readTimeout) {
+    this.restTemplate = timeoutBoundedRestTemplate(connectTimeout, readTimeout);
   }
 
   static RestTemplate timeoutBoundedRestTemplate() {
+    return timeoutBoundedRestTemplate(CONNECT_TIMEOUT, READ_TIMEOUT);
+  }
+
+  private static RestTemplate timeoutBoundedRestTemplate(
+      Duration connectTimeout, Duration readTimeout) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setConnectTimeout(CONNECT_TIMEOUT);
-    factory.setReadTimeout(READ_TIMEOUT);
+    factory.setConnectTimeout(connectTimeout);
+    factory.setReadTimeout(readTimeout);
     return new RestTemplate(factory);
   }
 
