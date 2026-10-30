@@ -93,14 +93,14 @@ public class ApiV2CrudController {
       @PathVariable String resource,
       @PathVariable String namespace,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
-      @RequestParam(required = false) String search,
+      @RequestParam(name = "q", required = false) String q,
       @RequestParam(required = false) String ids,
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "" + RuntimeFieldCatalogQuery.DEFAULT_LIMIT) int limit) {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.LIST);
     requireNamespace(registration, namespace);
-    RuntimeFieldCatalogQuery query = catalogQuery(search, ids, page, limit);
+    RuntimeFieldCatalogQuery query = catalogQuery(q, ids, page, limit);
     RuntimeFieldCatalogPage catalog =
         registration.runtimeFieldCatalog(subject(caller), namespace, query);
     Map<String, Object> body = new LinkedHashMap<>();
@@ -121,8 +121,7 @@ public class ApiV2CrudController {
     }
   }
 
-  private static RuntimeFieldCatalogQuery catalogQuery(
-      String search, String ids, int page, int limit) {
+  private static RuntimeFieldCatalogQuery catalogQuery(String q, String ids, int page, int limit) {
     Set<String> requested =
         ids == null
             ? Set.of()
@@ -139,7 +138,7 @@ public class ApiV2CrudController {
           "errors.api.v2.runtimeFields.query.invalid", RuntimeFieldCatalogQuery.MAX_LIMIT);
     }
     try {
-      return new RuntimeFieldCatalogQuery(search, requested, page, limit);
+      return new RuntimeFieldCatalogQuery(q, requested, page, limit);
     } catch (IllegalArgumentException ex) {
       throw new ApiV2BadRequestException("errors.api.v2.runtimeFields.page.invalid");
     }
