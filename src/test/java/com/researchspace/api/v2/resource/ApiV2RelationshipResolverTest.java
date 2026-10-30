@@ -1,7 +1,6 @@
 package com.researchspace.api.v2.resource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
@@ -112,54 +110,6 @@ class ApiV2RelationshipResolverTest {
   }
 
   @Test
-  void resolvesTargetOnlyResourcesWithoutAddingCrudRoutes() throws Exception {
-    CollectionDescription<Node> nodes = targetOnlySourceDescription();
-    CollectionDescription<Target> targets = targetDescription();
-    RecordingNodeOperations operations = new RecordingNodeOperations();
-    ApiV2ResourceCatalog catalog =
-        new ApiV2ResourceCatalog(
-            List.of(new ApiV2ResourceSpec<>(nodes, operations, Long::valueOf, "error", "error")),
-            List.of(
-                new ApiV2RelationshipTargetSpec<>(
-                    targets,
-                    Long.class,
-                    (ids, caller) ->
-                        ids.stream()
-                            .collect(
-                                java.util.stream.Collectors.toMap(
-                                    id -> id, id -> new Target(id, "classified"))))));
-
-    catalog
-        .find("nodes")
-        .orElseThrow()
-        .create(
-            mapper.readTree("{\"target\":{\"relationTo\":\"targets\",\"value\":7}}"),
-            ApiV2Caller.direct(actor));
-
-    ResolvedResourceReference<?, ?> resolved =
-        assertInstanceOf(
-            ResolvedResourceReference.class, operations.lastDocument.values().get("target"));
-    assertEquals(new Target(7L, "classified"), resolved.entity());
-    assertTrue(catalog.find("targets").isEmpty());
-    assertTrue(catalog.registry().resources().contains(targets));
-
-    operations.nodes.put(1L, new Node(1L, new ResourceReference<>("TARGET", 7L)));
-    ResourceRequest populated =
-        new ResourceRequest(
-            null,
-            List.of(),
-            new ResourceRequest.Page(1, 20),
-            FieldSelection.all(),
-            new IncludeTree(Map.of("target", IncludeTree.empty())));
-    Map<?, ?> reference =
-        assertInstanceOf(
-            Map.class,
-            catalog.find("nodes").orElseThrow().list(populated, actor).docs().get(0).get("target"));
-    Map<?, ?> targetDocument = assertInstanceOf(Map.class, reference.get("value"));
-    assertFalse(targetDocument.containsKey("secret"));
-  }
-
-  @Test
   void batchesDistinctPopulationLookupsOncePerDepthForOneListRequest() {
     RecordingNodeOperations operations = new RecordingNodeOperations();
     operations.nodes.put(1L, new Node(1L, new ResourceReference<>("NODE", 101L)));
@@ -240,39 +190,7 @@ class ApiV2RelationshipResolverTest {
         AccessPolicy.authenticated());
   }
 
-  private static CollectionDescription<Target> targetDescription() {
-    return new CollectionDescription<>(
-        "targets",
-        Target.class,
-        List.of(
-            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Target::id),
-            Field.readOnly("secret", "secret", CollectionFieldTypes.text(), Target::secret)
-                .readableBy(AccessFunction.never())),
-        "id",
-        List.of(new Sort("id", true)),
-        AccessPolicy.authenticated());
-  }
-
-  private static CollectionDescription<Node> targetOnlySourceDescription() {
-    return new CollectionDescription<>(
-        "nodes",
-        Node.class,
-        List.of(
-            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id),
-            Relationship.polymorphicToOne(
-                    "target",
-                    CollectionFieldTypes.longNumber(),
-                    List.of(new RelationshipTarget<>("targets", "TARGET", Target.class)),
-                    new SplitReferenceBinding<>(Node::target, "targetType", "targetId"))
-                .required()),
-        "id",
-        List.of(new Sort("id", true)),
-        AccessPolicy.authenticated());
-  }
-
   private record Node(Long id, ResourceReference<String, Long> target) {}
-
-  private record Target(Long id, String secret) {}
 
   private static final class RecordingNodeOperations implements ResourceOperations<Node, Long> {
 

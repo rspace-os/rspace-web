@@ -16,6 +16,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
@@ -36,6 +37,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 /** Generic access-document routes contributed only by registered protected resources. */
 @RestController
+@Hidden // Concrete resource access paths are documented by ApiV2OpenApiResourceAccessDocs.
 @RequestMapping("/api/v2")
 public class ResourceAccessController {
 

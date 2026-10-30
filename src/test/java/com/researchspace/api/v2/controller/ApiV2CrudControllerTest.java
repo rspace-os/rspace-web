@@ -312,7 +312,7 @@ class ApiV2CrudControllerTest {
     ScheduledMaintenance maintenance = futureMaintenance(2, "Planned database upgrade");
     maintenance.setId(42L);
     when(maintenanceManager.countResources(any(ResourceRequest.class), any())).thenReturn(3L);
-    when(maintenanceManager.getResource(42L, null)).thenReturn(Optional.of(maintenance));
+    stubPage(List.of(maintenance), 1);
 
     mockMvc
         .perform(get(ENDPOINT + "/count").param("where", "message==*upgrade*"))
@@ -475,6 +475,7 @@ class ApiV2CrudControllerTest {
 
     ScheduledMaintenance updated = futureMaintenance(3, null);
     updated.setId(42L);
+    stubPage(List.of(updated), 1);
     when(maintenanceManager.updateResource(eq(42L), any(ParsedDocument.class), eq(user)))
         .thenReturn(Optional.of(updated));
     mockMvc
