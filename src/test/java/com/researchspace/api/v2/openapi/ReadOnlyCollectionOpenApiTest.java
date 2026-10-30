@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.openapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -57,6 +58,44 @@ class ReadOnlyCollectionOpenApiTest {
           document.getPaths().get(path).readOperationsMap().keySet());
     }
     assertNull(document.getPaths().get("/api/v2/users/bulk"));
+  }
+
+  @Test
+  void publishesOptionalAndCappedTotalsForEveryCollection() {
+    var catalog =
+        new ApiV2ResourceCatalog(
+            List.of(
+                resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
+                resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of())));
+    JsonNode document =
+        Json31.mapper().valueToTree(new ApiV2OpenApiGenerator(catalog, "API", "2.0.0").generate());
+    for (String resource : List.of("containers", "instruments")) {
+      JsonNode list = document.at("/paths/~1api~1v2~1" + resource + "/get");
+      JsonNode totals = parameter(list.path("parameters"), "totals");
+      assertEquals("boolean", totals.at("/schema/type").asText());
+      assertFalse(totals.at("/schema/default").asBoolean(true));
+      assertFalse(totals.path("required").asBoolean());
+      for (String suffix : List.of("", "~1count")) {
+        JsonNode parameters =
+            document.at("/paths/~1api~1v2~1" + resource + suffix + "/get/parameters");
+        JsonNode max = parameter(parameters, "max");
+        assertEquals("integer", max.at("/schema/type").asText());
+        assertEquals(1, max.at("/schema/minimum").asInt());
+        assertEquals(10000, max.at("/schema/maximum").asInt());
+        assertFalse(max.path("required").asBoolean());
+      }
+      JsonNode schema = list.at("/responses/200/content/application~1json/schema");
+      assertFalse(schema.path("required").toString().contains("totalDocs"));
+      assertFalse(schema.path("required").toString().contains("totalPages"));
+      assertEquals("boolean", schema.at("/properties/totalIsLowerBound/type").asText());
+      assertTrue(schema.at("/properties/totalDocs").isObject());
+      assertTrue(schema.at("/properties/totalPages").isObject());
+    }
+    assertEquals(
+        "boolean",
+        document
+            .at("/components/schemas/ApiV2CountResult/properties/totalIsLowerBound/type")
+            .asText());
   }
 
   @Test
@@ -247,7 +286,7 @@ class ReadOnlyCollectionOpenApiTest {
         Long::valueOf,
         "errors.api.v2.invalidRequest",
         "errors.api.v2.invalidRequest",
-        Set.of(ResourceOperation.LIST),
+        Set.of(ResourceOperation.LIST, ResourceOperation.COUNT),
         Map.of(),
         Map.of(),
         CollectionMutationLimits.DEFAULT,

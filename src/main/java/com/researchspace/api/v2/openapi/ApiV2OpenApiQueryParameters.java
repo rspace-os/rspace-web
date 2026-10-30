@@ -167,6 +167,23 @@ final class ApiV2OpenApiQueryParameters {
       parameters.add(sort);
       parameters.add(pageParameter());
       parameters.add(limitParameter());
+      parameters.add(
+          parameter(
+              "totals",
+              "query",
+              false,
+              ordered("type", "boolean", "default", false),
+              "Include totalDocs and totalPages. Defaults to false."));
+    }
+    if (operation == ResourceOperation.LIST || operation == ResourceOperation.COUNT) {
+      parameters.add(
+          parameter(
+              "max",
+              "query",
+              false,
+              ordered("type", "integer", "minimum", 1, "maximum", 10000),
+              "Cap requested totals at max. When exceeded, totalIsLowerBound is true and"
+                  + " totalPages is omitted. On list routes, requires totals=true."));
     }
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
