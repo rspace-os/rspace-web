@@ -2,6 +2,8 @@ package com.researchspace.booking.api.v2;
 
 import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2Problem;
+import com.researchspace.api.v2.controller.BookingDurationWords;
+import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
@@ -12,6 +14,8 @@ import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.service.MessageSourceUtils;
+import java.util.Locale;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -50,7 +54,23 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
 
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+    String code = ex.reason().errorCode();
+    if (ex.maximumDurationMinutes().isEmpty()) {
+      return problem(HttpStatus.BAD_REQUEST, code);
+    }
+    long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
+    Locale locale = LocaleContextHolder.getLocale();
+    String detail =
+        messages.getMessage(
+            code,
+            new Object[] {BookingDurationWords.format(maximumMinutes, messages, locale)},
+            locale);
+    return ApiV2Problem.response(
+        HttpStatus.BAD_REQUEST,
+        detail,
+        code,
+        detail,
+        ApiV2Problem.Extensions.maximumDuration(maximumMinutes));
   }
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)
@@ -76,6 +96,15 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   @ExceptionHandler(BookingNotificationSubscriptionConflictException.class)
   public ResponseEntity<ApiV2Problem> handleBookingNotificationSubscriptionConflict() {
     return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingNotifications.subscriptionConflict");
+  }
+
+  @Override
+  @ExceptionHandler(ApiV2ResourceException.class)
+  public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
+    if (ex.getCause() instanceof BookingPolicyException policy) {
+      return handleBookingPolicy(policy);
+    }
+    return super.handleResourceException(ex);
   }
 
   private ResponseEntity<ApiV2Problem> problem(HttpStatus status, String messageKey) {

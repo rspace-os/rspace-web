@@ -12,14 +12,14 @@ import java.util.Locale;
  * hours and minutes and joined as a unit list. It follows the booking form's {@code
  * formatDurationMinutes}, so a problem detail names a limit exactly as the form does.
  */
-final class BookingDurationWords {
+public final class BookingDurationWords {
 
   private static final long MINUTES_PER_HOUR = 60;
   private static final long MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
 
   private BookingDurationWords() {}
 
-  static String format(long totalMinutes, MessageSourceUtils messages, Locale locale) {
+  public static String format(long totalMinutes, MessageSourceUtils messages, Locale locale) {
     List<String> parts = new ArrayList<>();
     addPart(parts, "duration.days", totalMinutes / MINUTES_PER_DAY, messages, locale);
     addPart(

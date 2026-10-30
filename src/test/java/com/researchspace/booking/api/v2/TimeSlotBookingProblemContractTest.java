@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingBufferConflictException;
@@ -46,14 +45,14 @@ class TimeSlotBookingProblemContractTest {
           mock(TimeSlotBookingManager.class),
           mock(FeatureFlagManager.class),
           ApiV2TimeSlotBookingResource.DESCRIPTION);
-  private ApiV2ControllerAdvice advice;
+  private BookingApiV2ControllerAdvice advice;
 
   @BeforeEach
   void setUp() {
     LocaleContextHolder.setLocale(Locale.US);
     MessageSourceUtils messages = new MessageSourceUtils();
     messages.setMessageSource(new JsonMessageSource());
-    advice = new ApiV2ControllerAdvice(messages);
+    advice = new BookingApiV2ControllerAdvice(messages);
   }
 
   @AfterEach
