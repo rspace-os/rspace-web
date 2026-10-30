@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { tokenExpiringIn } from "@/__tests__/helpers/jwt";
 import { server } from "@/__tests__/mswServer";
 import JwtService from "@/common/JwtService";
@@ -14,10 +14,34 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   document.getElementById("public_document_view")?.remove();
 });
 
 describe("AuthStore", () => {
+  it.each([429, 500])("keeps the page when token minting fails with %s", async (status) => {
+    const location = { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" };
+    vi.stubGlobal("location", location);
+    server.use(http.post("/api/v2/oauth/tokens", () => new HttpResponse(null, { status })));
+    const authStore = new AuthStore({} as RootStore);
+
+    await expect(authStore.refreshAuthentication()).rejects.toMatchObject({ response: { status } });
+
+    expect(window.location).toBe(location);
+    expect(location.href).toBe("http://localhost:3000/inventory");
+    expect(authStore.isSynchronizing).toBe(false);
+  });
+
+  it("redirects on an authentication failure", async () => {
+    vi.stubGlobal("location", { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" });
+    server.use(http.post("/api/v2/oauth/tokens", () => new HttpResponse(null, { status: 401 })));
+    const authStore = new AuthStore({} as RootStore);
+
+    await authStore.refreshAuthentication();
+
+    expect(window.location.href).toBe("/login");
+  });
+
   it("mints a fresh session-bound token on authenticated initialization", async () => {
     JwtService.saveToken(tokenExpiringIn(3600));
     const freshToken = tokenExpiringIn(3600);
