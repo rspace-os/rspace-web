@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { describe, expect, test } from "vitest";
 import { PHISHING_DESCRIPTION } from "@/__tests__/mocks/inventoryRichTextMocks";
 import { sanitizeInventoryRichText } from "../inventoryRichText";
@@ -75,6 +76,7 @@ describe("sanitizeInventoryRichText", () => {
     ["text colour", '<p><span style="color: #e03e2d;">a</span></p>'],
     ["alignment", '<p style="text-align: center;">a</p>'],
     ["indentation", '<p style="padding-left: 40px;">a</p>'],
+    ["upper-case style names", '<p><span style="COLOR: red; TEXT-DECORATION: line-through;">a</span></p>'],
     ["superscript and subscript", "<p>10<sup>-3</sup> M, H<sub>2</sub>O</p>"],
     ["strikethrough", "<p><s>a</s> <del>b</del></p>"],
     ["a link", '<p><a href="https://example.org/a" title="Example">a</a></p>'],
@@ -82,6 +84,7 @@ describe("sanitizeInventoryRichText", () => {
     ["a link to an RSpace page", '<p><a href="/inventory/search?query=a">a</a></p>'],
     ["a bulleted list", "<ul><li>a</li><li>b</li></ul>"],
     ["a numbered list", "<ol><li>a</li><li>b</li></ol>"],
+    ["list numbering", '<ol start="4" reversed="" type="a"><li value="7">a</li></ol>'],
     ["a nested list", "<ul><li>a<ul><li>b</li></ul></li></ul>"],
     ["entities", "<p>a&nbsp;b &amp; c</p>"],
   ])("keeps %s unchanged", (_name, html) => {
@@ -94,5 +97,11 @@ describe("sanitizeInventoryRichText", () => {
 
   test("returns an empty string for an empty description", () => {
     expect(sanitizeInventoryRichText("")).toBe("");
+  });
+
+  test("leaves styles alone where other pages use DOMPurify", () => {
+    expect(DOMPurify.sanitize('<span style="position: fixed;">a</span>')).toBe(
+      '<span style="position: fixed;">a</span>',
+    );
   });
 });

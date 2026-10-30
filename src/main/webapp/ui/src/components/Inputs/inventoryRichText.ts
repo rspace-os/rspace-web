@@ -27,7 +27,7 @@ const ALLOWED_TAGS = [
   "ol",
   "li",
 ];
-const ALLOWED_ATTR = ["href", "target", "rel", "title", "style"];
+const ALLOWED_ATTR = ["href", "target", "rel", "title", "style", "start", "reversed", "type", "value"];
 // None of these can load a URL or move text over the page, so a naive split on ";" is safe.
 const ALLOWED_STYLES = ["background-color", "color", "text-decoration", "text-align", "padding-left"];
 
@@ -36,7 +36,7 @@ purify.addHook("uponSanitizeAttribute", (_node, data) => {
   if (data.attrName !== "style") return;
   data.attrValue = data.attrValue
     .split(";")
-    .filter((declaration) => ALLOWED_STYLES.includes(declaration.split(":")[0].trim()))
+    .filter((declaration) => ALLOWED_STYLES.includes(declaration.split(":")[0].trim().toLowerCase()))
     .map((declaration) => `${declaration.trim()};`)
     .join(" ");
   data.keepAttr = data.attrValue !== "";
