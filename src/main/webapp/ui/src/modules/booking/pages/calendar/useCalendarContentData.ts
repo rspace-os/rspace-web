@@ -108,8 +108,8 @@ export function useCalendarContentData() {
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
   const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
   const dates = calendarDates(selectedDate, view);
-  const calendarStart = zonedDayBounds(dates[0], preferences.timeZone).start;
-  const calendarEnd = zonedDayBounds(dates.at(-1) ?? dates[0], preferences.timeZone).end;
+  const start = zonedDayBounds(dates[0], preferences.timeZone).start;
+  const end = zonedDayBounds(dates.at(-1) ?? dates[0], preferences.timeZone).end;
   const itemRuntimeFields = useApiV2RuntimeFields<BookingConfiguration>({
     resourceName: "booking-configurations",
     selectors: itemWhere ? rsqlSelectors(itemWhere) : [],
@@ -217,8 +217,8 @@ export function useCalendarContentData() {
     calendarSearch,
     itemWhereParameter ?? "",
     eventWhereParameter ?? "",
-    calendarStart,
-    calendarEnd,
+    start,
+    end,
     mineOnly,
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
@@ -236,8 +236,8 @@ export function useCalendarContentData() {
         token,
         currentUser.id,
         state,
-        calendarStart,
-        calendarEnd,
+        start,
+        end,
         itemWhereParameter,
         eventWhereParameter,
         calendarSearch,
@@ -251,8 +251,8 @@ export function useCalendarContentData() {
           {
             q: calendarSearch,
             where: itemWhereParameter,
-            calendarStart,
-            calendarEnd,
+            start,
+            end,
             eventWhere: eventWhereParameter,
             page: state.page.pageIndex + 1,
             pageSize: state.page.pageSize,
