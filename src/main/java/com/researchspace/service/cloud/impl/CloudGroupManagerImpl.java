@@ -38,12 +38,7 @@ public class CloudGroupManagerImpl implements CloudGroupManager {
       initializer.init(toPromote.getId());
     }
 
-    for (Group grp : toPromote.getGroups()) {
-      if (grp.isCollaborationGroup()) {
-        // Don't remove from collabGroup
-        groupManager.setRoleForUser(grp.getId(), toPromote.getId(), RoleInGroup.PI.name(), subject);
-      }
-    }
+    groupManager.setPiRoleInCollaborationGroups(toPromote);
 
     /** In cloud environment, we just promote an user to PI by just updating the ROLE. */
     toPromote = userManager.get(toPromote.getId());

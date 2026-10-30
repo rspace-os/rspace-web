@@ -1,8 +1,11 @@
 package com.researchspace.service.cloud;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.properties.IMutablePropertyHolder;
@@ -55,5 +58,24 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     assertThrows(
         AuthorizationException.class,
         () -> grpPermUtils.assertLeaveGroupPermissions(piUsername, subject, group));
+  }
+
+  @Test
+  public void collabGroupLabAdminCanSelfRemoveOnCommunity() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(0);
+    logoutAndLoginAs(tg1.getPi());
+    Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
+    User labAdmin = tg1.u1();
+    grpMgr.addUserToGroup(labAdmin.getUsername(), collabGroup.getId(), RoleInGroup.DEFAULT);
+    logoutAndLoginAs(tg1.getPi());
+    grpMgr.setRoleForUser(
+        collabGroup.getId(), labAdmin.getId(), RoleInGroup.RS_LAB_ADMIN.name(), tg1.getPi());
+
+    propertyHolder.setCloud("true");
+    logoutAndLoginAs(labAdmin);
+    grpMgr.removeUserFromGroup(labAdmin.getUsername(), collabGroup.getId(), labAdmin);
+
+    assertFalse(grpMgr.getGroup(collabGroup.getId()).hasMember(labAdmin));
   }
 }

@@ -32,17 +32,14 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
 
   @Override
   public boolean subjectCanAlterGroupRole(Group group, User subject, User toChange) {
+    if (group.isCollaborationGroup()) {
+      return subjectIsPIOrAdmin(group, subject);
+    }
     boolean canAlter = false;
     if (permissionUtils.isPermitted(group, PermissionType.WRITE, subject)) {
       if (subjectIsPIOrAdmin(group, subject)) {
         canAlter = true;
       }
-    }
-    // if a user who is already in a collab group is creating his own lab group,
-    // it's OK to promote him to PI in collab group
-    // note: this is maybe too loose, there should be constraints on collab group as well.
-    if (group.isCollaborationGroup()) {
-      canAlter = true;
     }
     if (group.isProjectGroup() && subject.hasRoleInGroup(group, RoleInGroup.GROUP_OWNER)) {
       canAlter = true;

@@ -134,6 +134,15 @@ public interface GroupManager {
    */
   void setRoleForUser(long groupId, Long userId, String role, User subject);
 
+  /**
+   * Gives the user the PI role in every collaboration group they belong to, without a permission
+   * check. Only for Community self-service PI promotion, where the user is not yet a PI in those
+   * groups and the caller has already authorised the promotion.
+   *
+   * @param toPromote the user being promoted to PI
+   */
+  void setPiRoleInCollaborationGroups(User toPromote);
+
   /** Gets paginated listing of groups */
   ISearchResults<Group> list(User subject, PaginationCriteria<Group> pagCrit);
 

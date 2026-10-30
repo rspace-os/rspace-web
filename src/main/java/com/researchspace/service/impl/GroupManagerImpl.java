@@ -67,6 +67,7 @@ import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.GroupInvitation.Invitee;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserView;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNotSharedException;
@@ -135,6 +136,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired RecordManager recordManager;
   private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired RaIDDao raidDao;
+  private @Autowired IPropertyHolder properties;
 
   private @Autowired IContentInitialiserUtils contentUtils;
 
@@ -291,7 +293,12 @@ public class GroupManagerImpl implements GroupManager {
     UserGroup ug = grp.getUserGroupForUser(userToRemove);
     // if user is a lab admin in this group (RSPAC-1116)
     if (ug != null && ug.isAdminRole()) {
-      setRoleForUser(grp.getId(), userToRemove.getId(), RoleInGroup.DEFAULT.toString(), subject);
+      if (isSelfServiceLeave(uname, subject, grp)) {
+        // already authorised by assertLeaveGroupPermissions (RSPAC-1662)
+        changeRoleInGroup(grp, userToRemove, RoleInGroup.DEFAULT);
+      } else {
+        setRoleForUser(grp.getId(), userToRemove.getId(), RoleInGroup.DEFAULT.toString(), subject);
+      }
     }
 
     grp.removeMember(userToRemove);
@@ -304,6 +311,10 @@ public class GroupManagerImpl implements GroupManager {
     groupMembershipEventDao.save(
         new GroupMembershipEvent(userToRemove, grp, GroupEventType.REMOVE));
     return grp;
+  }
+
+  private boolean isSelfServiceLeave(String uname, User subject, Group grp) {
+    return subject.getUsername().equals(uname) && (properties.isCloud() || grp.isProjectGroup());
   }
 
   private void removeCommunalFolderFromParent(Folder communalGrp, String uname) {
@@ -901,7 +912,6 @@ public class GroupManagerImpl implements GroupManager {
   public void setRoleForUser(long groupId, Long userid, String roleStr, User subject) {
     RoleInGroup role = RoleInGroup.valueOf(roleStr);
     Group group = getGroup(groupId);
-    Set<UserGroup> ugs = group.getUserGroups();
     User toChange = userDao.get(userid);
     if (!groupPermUtils.subjectCanAlterGroupRole(group, subject, toChange)) {
       throw new AuthorizationException(
@@ -911,8 +921,20 @@ public class GroupManagerImpl implements GroupManager {
                 subject.getUsername(), toChange.getUsername(), group.getDisplayName()
               }));
     }
+    changeRoleInGroup(group, toChange, role);
+  }
 
-    for (UserGroup ug : ugs) {
+  @Override
+  public void setPiRoleInCollaborationGroups(User toPromote) {
+    for (Group grp : toPromote.getGroups()) {
+      if (grp.isCollaborationGroup()) {
+        changeRoleInGroup(getGroup(grp.getId()), toPromote, RoleInGroup.PI);
+      }
+    }
+  }
+
+  private void changeRoleInGroup(Group group, User toChange, RoleInGroup role) {
+    for (UserGroup ug : group.getUserGroups()) {
       if (ug.getUser().getUsername().equals(toChange.getUsername())) {
 
         if (isPiDemotion(role, ug)) {
