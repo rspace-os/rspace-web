@@ -7,8 +7,17 @@ describe("booking response intervals", () => {
     const summary = {
       id: 17,
       target: {
-        relationTo: "booking-instruments",
-        value: { id: 34, name: "Spectrometer", deleted: false },
+        relationTo: "instruments",
+        value: {
+          id: 34,
+          name: "Spectrometer",
+          deleted: false,
+          parentContainer: {
+            relationTo: "containers",
+            value: { id: 12, globalId: "IC12", name: "Lab" },
+            globalId: "IC12",
+          },
+        },
         globalId: "IN34",
       },
       timezone: "Europe/Berlin",
