@@ -20,7 +20,7 @@ export type RuntimeFieldCatalogRequest = {
   headers?: HeadersInit;
 };
 
-/** Application-owned routes, including catalogs delegated by target-only resources. */
+/** Published runtime field catalog routes. */
 export function validateRuntimeFieldCatalogUrl(catalog: string): void {
   if (catalog !== "/api/v2/instruments/fields/customFields" && catalog !== "/api/v2/instruments/fields/extraFields") {
     throw new Error("Unsupported runtime field catalog route");
