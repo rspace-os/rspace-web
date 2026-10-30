@@ -8,13 +8,16 @@ const privatePurpose = "PRIVATE_PURPOSE_SHOULD_NEVER_RENDER";
 const busyBooking = bookingListDocument({
   id: 81,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: {
       id: 42,
       name: "Confocal microscope",
       deleted: false,
-      parentContainerName: null,
-      parentContainerGlobalId: null,
+      parentContainer: {
+        relationTo: "containers",
+        globalId: "IC23",
+        value: { id: 23, globalId: "IC23", name: "Imaging suite" },
+      },
     },
     globalId: "IN42",
   },
@@ -32,6 +35,7 @@ describe("BookingSummaryCard", () => {
     render(<BookingSummaryCard booking={busyBooking} timeZone="Europe/Berlin" />);
 
     expect(screen.getByRole("article")).toHaveAccessibleName("Confocal microscopeIN42");
+    expect(screen.getByText("Imaging suite")).toBeInTheDocument();
     expect(screen.queryByText(privatePurpose)).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });

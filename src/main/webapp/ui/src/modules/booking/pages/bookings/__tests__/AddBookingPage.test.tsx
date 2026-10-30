@@ -273,7 +273,7 @@ describe("AddBookingPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
     expect(body).toEqual({
-      target: { relationTo: "booking-instruments", value: 123 },
+      target: { relationTo: "instruments", value: 123 },
       start: "2026-10-19T07:00:00Z",
       end: "2026-10-19T07:05:00Z",
       purpose: "Microscopy run",

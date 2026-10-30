@@ -56,7 +56,7 @@ function scheduleBooking({ id, targetId, name }: { id: number; targetId: string;
     id,
     version: 0,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       globalId: targetId,
       value: { id, name, deleted: false },
     },
