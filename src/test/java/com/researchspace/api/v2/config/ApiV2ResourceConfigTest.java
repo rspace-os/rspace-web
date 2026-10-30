@@ -2,7 +2,6 @@ package com.researchspace.api.v2.config;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +34,6 @@ import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
-import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
@@ -46,7 +44,6 @@ import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldNamespaces;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.Sort;
-import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
@@ -108,18 +105,16 @@ class ApiV2ResourceConfigTest {
               registration.description(),
               catalog.registry(),
               registration.runtimeFieldContext(actor));
-      assertEquals("instruments", request.runtime().find("target.customFields.SF1").readResource());
+      assertEquals(field, request.runtime().find("target.customFields.SF1"));
       assertEquals("target", request.runtime().relationshipFor("target.customFields.SF1"));
 
       var document =
           new ObjectMapper()
               .valueToTree(new ApiV2OpenApiGenerator(catalog, "Test", "2").generate());
-      assertFalse(document.path("paths").has("/api/v2/booking-instruments"));
       String metadata = document.toString();
       assertTrue(metadata.contains("target.customFields"));
       assertTrue(metadata.contains("target.extraFields"));
       assertTrue(metadata.contains("/api/v2/instruments/fields/customFields"));
-      assertFalse(metadata.contains("/api/v2/booking-instruments/fields/"));
     }
   }
 

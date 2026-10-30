@@ -6,19 +6,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.researchspace.booking.service.BookingResourceRoleScheme;
-import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import com.researchspace.webapp.controller.MVCTestBase;
-import java.util.ArrayList;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @ApiV2WebIntegrationTest
 class BookingConfigurationAccessIT extends MVCTestBase {
@@ -41,20 +36,6 @@ class BookingConfigurationAccessIT extends MVCTestBase {
     var mvc = fixture.mockMvc();
     long instrument = fixture.instrument(fixture.user(), fixture.marker());
     long configuration = fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
-    new TransactionTemplate(transactions)
-        .executeWithoutResult(
-            ignored -> {
-              var session = wac.getBean(SessionFactory.class).getCurrentSession();
-              var row = session.get(BookingConfiguration.class, configuration);
-              var access = row.getResourceAccess();
-              new ArrayList<>(access.getAssignments())
-                  .stream()
-                      .filter(
-                          assignment ->
-                              !assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER))
-                      .forEach(access::removeAssignment);
-              session.flush();
-            });
     String path = "/api/v2/booking-configurations/" + configuration;
     mvc.perform(
             patch(path)

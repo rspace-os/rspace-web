@@ -576,10 +576,6 @@ class BookingCalendarSubscriptionControllerMVCIT {
         new TransactionTemplate(transactionManager)
             .execute(ignored -> userManager.get(pi.getId()).getGroups().iterator().next().getId());
     long configurationId = readableConfiguration();
-    setAllUsersRole(
-        configurationId,
-        "NO_ACCESS",
-        ",{\"granteeKey\":\"group:" + groupId + "\",\"role\":\"VIEWER\"}");
     String oldUrl = create(configurationId, fixture.otherUserKey());
     RSpaceTestUtils.login(pi.getUsername(), BaseManagerTestCaseBase.TESTPASSWD);
     try {

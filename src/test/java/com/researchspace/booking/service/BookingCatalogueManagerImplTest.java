@@ -166,7 +166,6 @@ class BookingCatalogueManagerImplTest {
     when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
-    when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
 
     search(request, null, 3, 7);
 
