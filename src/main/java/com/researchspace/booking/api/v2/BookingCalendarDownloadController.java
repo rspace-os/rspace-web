@@ -52,12 +52,12 @@ public class BookingCalendarDownloadController {
         @ApiResponse(
             responseCode = "200",
             description = "The generated calendar file.",
-            content = @Content(mediaType = "text/calendar", schema = @Schema(type = "string")),
+            content = @Content(mediaType = "text/calendar", schema = @Schema(types = "string")),
             headers = {
               @Header(
                   name = "Cache-Control",
-                  schema = @Schema(type = "string", allowableValues = "private, no-store")),
-              @Header(name = "Content-Disposition", schema = @Schema(type = "string"))
+                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
+              @Header(name = "Content-Disposition", schema = @Schema(types = "string"))
             }),
         @ApiResponse(
             responseCode = "406",

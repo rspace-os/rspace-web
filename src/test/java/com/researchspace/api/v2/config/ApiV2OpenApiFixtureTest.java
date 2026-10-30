@@ -1,6 +1,8 @@
 package com.researchspace.api.v2.config;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -165,6 +167,7 @@ class ApiV2OpenApiFixtureTest {
             "/api/v2/booking-configurations/{configurationId}/calendar-subscription",
             "/api/v2/users/me/booking-calendar-subscription",
             "/api/v2/bookings/{bookingId}/calendar-file")) {
+      assertTrue(paths.has(path), path);
       for (JsonNode operation : paths.path(path)) {
         assertTrue(operation.path("responses").has("404"), path);
         assertFalse(operation.path("responses").has("403"), path);
