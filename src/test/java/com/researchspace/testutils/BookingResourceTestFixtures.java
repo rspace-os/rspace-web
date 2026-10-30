@@ -13,6 +13,9 @@ import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.inventory.Instrument;
 import java.util.Date;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public final class BookingResourceTestFixtures {
 

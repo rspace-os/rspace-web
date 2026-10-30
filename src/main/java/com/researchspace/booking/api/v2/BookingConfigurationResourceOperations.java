@@ -142,7 +142,13 @@ public final class BookingConfigurationResourceOperations
                         Map.entry("maxBookingDurationMinutes", 120),
                         Map.entry("allowDoubleBooking", false),
                         Map.entry(
-                            "target", Map.of("relationTo", com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME, "value", 123))))
+                            "target",
+                            Map.of(
+                                "relationTo",
+                                com.researchspace.inventory.model.ApiV2InstrumentResource
+                                    .RESOURCE_NAME,
+                                "value",
+                                123))))
                 .build()),
         Map.of(
             ResourceOperation.CREATE,
