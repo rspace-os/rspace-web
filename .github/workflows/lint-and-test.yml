@@ -90,7 +90,9 @@ jobs:
               - '.github/workflows/**'
 
   openapi-base-fixture:
-    if: github.event_name == 'pull_request'
+    # Stacked PRs target other stack branches and change the unreleased contract on purpose;
+    # breaking changes matter once the contract is on main.
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
