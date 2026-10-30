@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -316,17 +315,16 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   private MeasuredResponse request(String path, List<Long> ids, String fields) throws Exception {
-    MeasuredResponse response =
-        measuredRequest(
-            get(path)
-                .header("apiKey", fixture.userKey())
-                .param("where", path.equals(INSTRUMENTS) ? idFilter(ids) : targetFilter(ids))
-                .param("depth", path.equals(INSTRUMENTS) ? "1" : "2")
-                .param("fields[containers]", "id,name,globalId")
-                .param("fields[instruments]", path.equals(INSTRUMENTS) ? fields : "id,name")
-                .param("limit", "100")
-                .param("fields[" + path.substring("/api/v2/".length()) + "]", fields),
-            path.equals(INSTRUMENTS));
+    var request =
+        get(path)
+            .header("apiKey", fixture.userKey())
+            .param("where", path.equals(INSTRUMENTS) ? idFilter(ids) : targetFilter(ids))
+            .param("depth", path.equals(INSTRUMENTS) ? "1" : "2")
+            .param("fields[containers]", "id,name,globalId")
+            .param("limit", "100")
+            .param("fields[" + path.substring("/api/v2/".length()) + "]", fields);
+    if (!path.equals(INSTRUMENTS)) request.param("fields[instruments]", "id,name");
+    MeasuredResponse response = measuredRequest(request, path.equals(INSTRUMENTS));
     assertEquals(ids.size(), response.body().path("docs").size());
     return response;
   }
@@ -347,7 +345,8 @@ class InstrumentParentLocationQueryCountMVCIT {
       MockHttpServletRequestBuilder request, boolean scalarInstrumentRead) throws Exception {
     clearSession();
     statistics.clear();
-    MvcResult result = mockMvc.perform(request).andExpect(status().isOk()).andReturn();
+    MvcResult result = mockMvc.perform(request).andReturn();
+    assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
     if (scalarInstrumentRead) {
       assertNoInventoryHydration();
     }

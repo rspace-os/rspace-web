@@ -288,9 +288,9 @@ class ApiV2RelationshipContractMVCIT {
     }
 
     @Test
-    @DisplayName("a target filter uses the safe Booking projection without Inventory access")
-    void aTargetFilterUsesTheSafeBookingProjection() throws Exception {
-      long id = fixture.bookingConfiguration(instrumentId, "UTC");
+    @DisplayName("a target filter excludes unreadable Inventory instruments")
+    void aTargetFilterExcludesUnreadableInventoryInstruments() throws Exception {
+      fixture.bookingConfiguration(instrumentId, "UTC");
 
       mockMvc
           .perform(
@@ -298,8 +298,7 @@ class ApiV2RelationshipContractMVCIT {
                   .header("apiKey", fixture.otherUserKey())
                   .param("where", "target.name=contains=" + fixture.marker()))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.totalDocs").value(1))
-          .andExpect(jsonPath("$.docs[0].id").value(id));
+          .andExpect(jsonPath("$.totalDocs").value(0));
     }
 
     @Test
@@ -533,8 +532,8 @@ class ApiV2RelationshipContractMVCIT {
           .perform(
               get(CONFIGURATIONS + "/" + id + "/audit")
                   .header("apiKey", sysadminKey)
-                  .param("dateFrom", "2020-01-01T00:00:00Z")
-                  .param("dateTo", "2026-01-01T00:00:00Z"))
+                  .param("start", "2020-01-01T00:00:00Z")
+                  .param("end", "2026-01-01T00:00:00Z"))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON))
           .andExpect(jsonPath("$.code").value("errors.api.v2.audit.range.tooWide"));
@@ -549,8 +548,8 @@ class ApiV2RelationshipContractMVCIT {
           .perform(
               get(CONFIGURATIONS + "/" + id + "/audit")
                   .header("apiKey", sysadminKey)
-                  .param("dateFrom", "2026-01-01T00:00:00Z")
-                  .param("dateTo", "2026-03-01T00:00:00Z"))
+                  .param("start", "2026-01-01T00:00:00Z")
+                  .param("end", "2026-03-01T00:00:00Z"))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").isNumber());
     }
@@ -564,8 +563,8 @@ class ApiV2RelationshipContractMVCIT {
           .perform(
               get(CONFIGURATIONS + "/" + id + "/audit")
                   .header("apiKey", sysadminKey)
-                  .param("dateFrom", "2026-06-01T00:00:00Z")
-                  .param("dateTo", "2026-01-01T00:00:00Z"))
+                  .param("start", "2026-06-01T00:00:00Z")
+                  .param("end", "2026-01-01T00:00:00Z"))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }

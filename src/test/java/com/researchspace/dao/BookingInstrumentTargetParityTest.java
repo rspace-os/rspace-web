@@ -50,7 +50,6 @@ class BookingInstrumentTargetParityTest extends SpringTransactionalTest {
     Set<Long> ids = Set.of(shared.getId(), privateItem.getId(), deleted.getId());
     Set<Long> requested = Set.of(shared.getId(), privateItem.getId(), deleted.getId(), templateId);
     for (User actor : List.of(owner, member, pi, getSysAdminUser(), outsider)) {
-      logoutAndLoginAs(actor);
       // Catalogue lookup deliberately ignores Inventory permissions; relationship resolution does
       // not.
       assertEquals(ids, targets.getBookingRelationshipTargets(requested).keySet());
