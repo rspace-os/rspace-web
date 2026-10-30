@@ -81,6 +81,7 @@ describe("AllBookableItemsPage", () => {
     expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
     expect(screen.queryByText("Electron microscope")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^Filters/ }));
+    expect(await screen.findByRole("combobox", { name: "Value for filter 3" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Remove filter 4" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
     expect(router.state.location.search.where).toBe(original);

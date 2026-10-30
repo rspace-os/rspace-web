@@ -52,7 +52,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
       {
         name: "target",
         type: "relationship",
-        relationTo: "booking-instruments",
+        relationTo: "instruments",
         hasMany: false,
         labelKey: "booking:bookableItems.fields.target",
         capabilities: { sortable: false, filterOperators: ["equals"], supportsWildcards: false },
