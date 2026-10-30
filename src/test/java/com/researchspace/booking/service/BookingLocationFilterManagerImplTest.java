@@ -16,15 +16,13 @@ import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingLocationResource;
+import com.researchspace.model.booking.BookingLocationRelationship;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
-import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RsqlFilterParser;
-import com.researchspace.model.inventory.Container;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +89,7 @@ class BookingLocationFilterManagerImplTest {
         .thenReturn(Set.of());
 
     assertEquals(
-        ApiV2BookingLocationResource.noTarget(),
+        BookingLocationRelationship.noTarget(),
         resolve(comparison("location", Operator.EQUAL, reference(99L))));
     assertEquals(
         targets(Operator.NOT_IN, -1L),
@@ -249,21 +247,6 @@ class BookingLocationFilterManagerImplTest {
                 .parse("location==BE7"));
   }
 
-  @Test
-  void restoresOnlyReadableLocationsKeepingTheWorkbenchGlobalId() {
-    when(instruments.getBookingCatalogueLocations(null, Set.of(7L, 12L), 1, 2, caller))
-        .thenReturn(
-            new ResourcePage<>(
-                List.of(
-                    new BookingCatalogueLocation(
-                        7L, "WB reader", Container.ContainerType.WORKBENCH)),
-                1));
-
-    assertEquals(
-        java.util.Map.of(7L, new ApiV2BookingLocationResource.Location(7L, "BE7", "WB reader")),
-        manager.findReadableLocations(Set.of(7L, 12L), caller));
-  }
-
   private FilterExpression resolve(FilterExpression filter) {
     return manager.resolveLocations(ResourceRequest.unpaged(filter), caller).filter();
   }
@@ -273,7 +256,7 @@ class BookingLocationFilterManagerImplTest {
   }
 
   private static ResourceReference<String, Long> reference(long id) {
-    return new ResourceReference<>(ApiV2BookingLocationResource.RESOURCE_NAME, id);
+    return new ResourceReference<>(BookingLocationRelationship.RESOURCE_NAME, id);
   }
 
   private static FilterExpression targets(Operator operator, Long... ids) {

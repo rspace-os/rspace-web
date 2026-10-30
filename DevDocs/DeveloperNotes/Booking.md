@@ -234,7 +234,7 @@ than one batch of IDs.
 Location is a single-target relationship with a global-ID prefix, so it publishes a `picker` like
 `target` does. Clients derive the filter field, its operators, and its picker from metadata.
 
-`booking-configurations` declares a filter-only `location` relationship to `booking-locations`
+`booking-configurations` declares a filter-only `location` relationship to `containers`
 (`IC` prefix). The Calendar event filter description declares it too, because the Calendar reuses
 item filters as event filters. A bookable item's location is the immediate parent of its target
 Instrument. Booking does not store the parent. `BookingLocationFilterManager` therefore rewrites each
@@ -258,7 +258,8 @@ following paths rewrite location filters:
 
 An unreadable Container contributes no items, exactly like one that does not exist, for rows and
 totals. Workbenches share the Container ID space, so `IC<workbench ID>` names a workbench, while
-`BE…` is rejected as an unsupported prefix. Responses render `location: null`; the catalogue item's
+`BE…` is rejected as an unsupported prefix. Configurations render `location: null`. Booking events render a `containers` reference at depth 0,
+expanded through the container read policy at depth 1 or greater, or null when unreadable. The catalogue item's
 `location` member carries the readable location.
 
 A top-level AND location rule, as written by every filter builder,

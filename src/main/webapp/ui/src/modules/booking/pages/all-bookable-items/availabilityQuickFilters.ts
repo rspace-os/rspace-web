@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
 import {
   type CatalogueAvailability,
   type CatalogueAvailabilityWindow,
@@ -6,11 +7,13 @@ import {
 } from "@/modules/booking/domain/bookingCatalogue";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { FilterExpression } from "@/modules/common/table-list/types";
-import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 
 export type AvailabilityQuickFilter = CatalogueAvailability;
-export type AllBookableItem = BookingConfiguration & { target: (NonNullable<BookingConfiguration["target"]> & { location?: BookingCatalogueItem["location"] }) | null; availability?: AvailabilityQuickFilter };
+export type AllBookableItem = BookingConfiguration & {
+  target: (NonNullable<BookingConfiguration["target"]> & { location?: BookingCatalogueItem["location"] }) | null;
+  availability?: AvailabilityQuickFilter;
+};
 
 type Comparison = Extract<FilterExpression<AllBookableItem>, { kind: "comparison" }>;
 

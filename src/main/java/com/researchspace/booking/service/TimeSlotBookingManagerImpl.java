@@ -416,12 +416,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
           accesses.put(configuration.getId(), configuration);
         });
     Map<Long, ResolvedResourceAccess> resolved = accessManager.resolveAll(accesses.values(), actor);
-    Map<Long, BookingCatalogueLocation> locations =
-        bookingInstruments.getReadableParentLocationSummaries(
+    var targets =
+        bookingInstruments.getBookingSummaries(
             bookings.stream()
                 .map(booking -> booking.getBookingConfiguration().getTarget().id())
-                .collect(Collectors.toSet()),
-            actor);
+                .collect(Collectors.toSet()));
     for (TimeSlotBooking booking : bookings) {
       booking.getRequester().getUsername();
       booking.getRequester().getFullName();
@@ -450,10 +449,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               && booking.getBookingConfiguration().getState() == BookingConfigurationState.ACTIVE,
           canCancel,
           currentRole);
-      BookingCatalogueLocation location =
-          locations.get(booking.getBookingConfiguration().getTarget().id());
-      booking.prepareLocation(
-          location == null ? null : BookingLocationFilterManagerImpl.location(location));
+      var target = targets.get(booking.getBookingConfiguration().getTarget().id());
+      booking.prepareLocation(target == null ? null : target.parentContainerId());
     }
   }
 

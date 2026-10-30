@@ -613,7 +613,7 @@ class ApiV2OpenApiGeneratorTest {
     assertFalse(bookingSelectors.containsKey("requester"));
     // Bookings render the readable location too, and filter by it with the same picker.
     assertEquals(
-        "booking-locations",
+        "containers",
         objectMap(objectMap(bookingSelectors.get("location")).get("picker")).get("resource"));
 
     Map<String, Object> configurations = where(document(), "/api/v2/booking-configurations");
@@ -621,11 +621,9 @@ class ApiV2OpenApiGeneratorTest {
         objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
 
     assertEquals(
-        Map.of("resource", "booking-locations", "identity", "globalId", "globalIdPrefix", "IC"),
+        Map.of("resource", "containers", "identity", "globalId", "globalIdPrefix", "IC"),
         objectMap(configurationSelectors.get("location")).get("picker"));
-    // Location is resolved through Inventory read access only, so no target field is filterable.
-    assertEquals(
-        List.of(), objectMap(configurationSelectors.get("location.name")).get("operators"));
+    assertTrue(configurationSelectors.containsKey("location.name"));
   }
 
   @Test

@@ -113,7 +113,7 @@ public class TimeSlotBooking implements Serializable {
   private transient boolean preparedCanEdit;
   private transient boolean preparedCanCancel;
   private transient boolean preparedCanViewConfiguration;
-  private transient ApiV2BookingLocationResource.Location preparedLocation;
+  private transient Long preparedLocation;
 
   public TimeSlotBooking() {}
 
@@ -184,16 +184,16 @@ public class TimeSlotBooking implements Serializable {
   }
 
   /**
-   * Prepares the bookable item's immediate parent Container, already limited to one the actor may
-   * read. It is shown only while the configuration is visible.
+   * Prepares the bookable item's immediate parent ID. The containers registration checks read
+   * access when rendering. It is shown only while the configuration is visible.
    */
-  public void prepareLocation(ApiV2BookingLocationResource.Location location) {
+  public void prepareLocation(Long location) {
     preparedLocation = location;
   }
 
-  /** Returns the prepared readable parent Container when the configuration is visible. */
+  /** Returns the prepared parent ID when the configuration is visible. */
   @Transient
-  public ApiV2BookingLocationResource.Location getVisibleLocation() {
+  public Long getVisibleLocation() {
     return preparedCanViewConfiguration ? preparedLocation : null;
   }
 

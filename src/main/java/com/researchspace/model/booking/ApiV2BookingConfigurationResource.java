@@ -213,7 +213,7 @@ public record ApiV2BookingConfigurationResource(
   }
 
   private static Relationship<BookingConfiguration> locationRelationship() {
-    return ApiV2BookingLocationResource.relationship();
+    return BookingLocationRelationship.relationship();
   }
 
   private static Field<BookingConfiguration, ?> openingHoursField() {

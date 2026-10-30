@@ -183,7 +183,6 @@ export function allDayBookableItemCandidates() {
 function bookedItem(item: (typeof bookableItemFixtures)[number]) {
   const { parentContainer, ...value } = item.target.value;
   return { target: { ...item.target, value }, location: parentContainer };
-
 }
 
 export const sampleBookingEvents = [

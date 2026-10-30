@@ -37,7 +37,7 @@ const document = {
     globalId: "IN123",
   },
   location: {
-    relationTo: "booking-locations",
+    relationTo: "containers",
     value: { id: 456, globalId: "IC456", name: "Imaging lab" },
     globalId: "IC456",
   },

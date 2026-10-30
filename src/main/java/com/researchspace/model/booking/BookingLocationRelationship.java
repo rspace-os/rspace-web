@@ -25,7 +25,7 @@ import java.util.function.Function;
  * the Container ID space and their {@code BE} global ID, so a workbench is filtered as {@code
  * IC<id>} too.
  */
-public final class ApiV2BookingLocationResource {
+public final class BookingLocationRelationship {
 
   public static final String RESOURCE_NAME = "containers";
   public static final String GLOBAL_ID_PREFIX = "IC";
@@ -38,9 +38,6 @@ public final class ApiV2BookingLocationResource {
    * the Booking rewrite fails instead of matching rows by an unrelated column.
    */
   static final String UNREWRITTEN_PROPERTY = "locationFilterRequiresBookingRewrite";
-
-  /** Scalar view of one readable parent Container. */
-  public record Location(Long id, String globalId, String name) {}
 
   /** The filter-only relationship that a Booking collection publishes as {@code location}. */
   public static <T> Relationship<T> relationship() {
@@ -57,11 +54,11 @@ public final class ApiV2BookingLocationResource {
    * parent, prepared per caller, or null where the caller may not read it. Filters are rewritten
    * exactly as for {@link #relationship()}.
    */
-  public static <T> Relationship<T> renderedRelationship(Function<T, Location> preparedLocation) {
+  public static <T> Relationship<T> renderedRelationship(Function<T, Long> preparedLocation) {
     return relationship(
         row -> {
-          Location location = preparedLocation.apply(row);
-          return location == null ? null : new ResourceReference<>(RESOURCE_NAME, location.id());
+          Long location = preparedLocation.apply(row);
+          return location == null ? null : new ResourceReference<>(RESOURCE_NAME, location);
         },
         "The bookable item's immediate Inventory parent Container or workbench, rendered and"
             + " matched only where the caller may read it; otherwise null. Address a workbench as"
@@ -95,5 +92,5 @@ public final class ApiV2BookingLocationResource {
     return new FilterExpression.Comparison("target.value", Operator.IN, List.of(-1L), false);
   }
 
-  private ApiV2BookingLocationResource() {}
+  private BookingLocationRelationship() {}
 }

@@ -1,6 +1,5 @@
 import type { Booking, BookingListDocument } from "@/modules/booking/domain/booking";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
-import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import i18n from "@/modules/common/i18n";
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 
