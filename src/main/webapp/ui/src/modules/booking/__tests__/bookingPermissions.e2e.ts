@@ -229,7 +229,7 @@ test.describe("Independent booking hours release acceptance", { tag: tags.INVENT
     await test.step("closing a previously bookable weekday rejects a real booking", async () => {
       const date = Temporal.PlainDate.from(futureDate(14));
       const bookingInput = (day: Temporal.PlainDate) => ({
-        target: { relationTo: "booking-instruments", value: instrument.id },
+        target: { relationTo: "instruments", value: instrument.id },
         start: day.toZonedDateTime({ timeZone: configuration.timezone, plainTime: "10:00" }).toInstant().toString(),
         end: day.toZonedDateTime({ timeZone: configuration.timezone, plainTime: "11:00" }).toInstant().toString(),
         purpose: uniqueName("e2e-closed-weekday"),
