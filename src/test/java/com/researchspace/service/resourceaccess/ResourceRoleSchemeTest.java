@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,7 @@ class ResourceRoleSchemeTest {
 
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(strings = {"OWNER", "MANAGER"})
-  void rejectsAudienceOnAdministrativeRoles(String administrativeRole) {
+  void acceptsAudienceOnAdministrativeRolesWhenSchemeAllowsIt(String administrativeRole) {
     ResourceRoleScheme scheme =
         new TestScheme(roles(), validCapabilities(), Set.of("OWNER")) {
           @Override
@@ -25,7 +26,25 @@ class ResourceRoleSchemeTest {
                 : TestScheme.PEOPLE;
           }
         };
-    assertThrows(IllegalArgumentException.class, scheme::validate);
+    assertDoesNotThrow(scheme::validate);
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"OWNER", "MANAGER"})
+  void rejectsFixedAudienceOnRoleThatDoesNotAllowAudiences(String administrativeRole) {
+    ResourceRoleScheme scheme =
+        new TestScheme(roles(), validCapabilities(), Set.of("OWNER")) {
+          @Override
+          public Map<ResourceAudience, Set<String>> fixedAudienceRoles() {
+            return Map.of(ResourceAudience.ALL_USERS, Set.of(administrativeRole));
+          }
+        };
+
+    IllegalArgumentException error = assertThrows(IllegalArgumentException.class, scheme::validate);
+
+    assertEquals(
+        "Fixed audience role must allow AUDIENCE grantees: " + administrativeRole,
+        error.getMessage());
   }
 
   @Test

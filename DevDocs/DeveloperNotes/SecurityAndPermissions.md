@@ -173,7 +173,8 @@ Owner as its highest role, Manager immediately below Owner, and monotonic capabi
 higher role includes every lower role's capabilities. One highest effective role is selected from
 direct, active-group, dynamic-audience, and implicit sources; a lower direct role is not a deny.
 
-Each role declares its accepted grantee kinds. Self-removal deletes only the caller's direct
+Each scheme declares the accepted grantee kinds for every role, including Owner and Manager.
+Self-removal deletes only the caller's direct
 assignment and must preserve the scheme's required persisted roles.
 
 Every aggregate retains at least one persisted Owner assignment. Only the manage-owners capability
