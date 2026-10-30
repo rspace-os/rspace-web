@@ -6,6 +6,9 @@ import com.researchspace.booking.api.v2.BookingCalendarSubscriptionController.Cr
 import com.researchspace.booking.api.v2.BookingCalendarSubscriptionController.StatusDocument;
 import com.researchspace.booking.service.BookingCalendarManager;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,10 +32,24 @@ public class UserBookingCalendarSubscriptionController {
 
   @GetMapping
   @Operation(
+      tags = "booking-calendar-subscriptions",
       operationId = "getUserBookingCalendarSubscription",
       summary = "Get the caller's booking calendar subscription",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Current subscription status."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Current subscription status.",
+            headers = {
+              @Header(
+                  name = "Cache-Control",
+                  schema = @Schema(type = "string", allowableValues = "private, no-store")),
+              @Header(name = "ETag", ref = "#/components/headers/ETag")
+            }),
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
       })
@@ -44,15 +61,34 @@ public class UserBookingCalendarSubscriptionController {
 
   @PostMapping
   @Operation(
+      tags = "booking-calendar-subscriptions",
       operationId = "createOrReplaceUserBookingCalendarSubscription",
       summary = "Create or replace the caller's booking calendar subscription",
       responses = {
-        @ApiResponse(responseCode = "200", description = "The new subscription URL."),
+        @ApiResponse(responseCode = "400", description = "Invalid If-Match."),
+        @ApiResponse(responseCode = "409", description = "The subscription changed."),
+        @ApiResponse(responseCode = "428", description = "If-Match is required."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "The new subscription URL.",
+            headers = {
+              @Header(
+                  name = "Cache-Control",
+                  schema = @Schema(type = "string", allowableValues = "private, no-store")),
+              @Header(name = "ETag", ref = "#/components/headers/ETag")
+            }),
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
       })
   public ResponseEntity<CreatedDocument> createOrReplace(
-      @RequestHeader(name = "If-Match", required = false) String ifMatch,
+      @Parameter(required = true, description = "Strong ETag from the latest subscription status.")
+          @RequestHeader(name = "If-Match", required = false)
+          String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     String expectedEtag =
         ApiV2ConditionalRequest.parseStrongEtag(
@@ -64,10 +100,22 @@ public class UserBookingCalendarSubscriptionController {
 
   @DeleteMapping
   @Operation(
+      tags = "booking-calendar-subscriptions",
       operationId = "revokeUserBookingCalendarSubscription",
       summary = "Revoke the caller's booking calendar subscription",
       responses = {
-        @ApiResponse(responseCode = "204", description = "The subscription is inactive."),
+        @ApiResponse(
+            responseCode = "204",
+            description = "The subscription is inactive.",
+            headers =
+                @Header(
+                    name = "Cache-Control",
+                    schema = @Schema(type = "string", allowableValues = "private, no-store"))),
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
       })

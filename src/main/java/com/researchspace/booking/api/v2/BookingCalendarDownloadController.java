@@ -3,6 +3,9 @@ package com.researchspace.booking.api.v2;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingCalendarManager;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import java.util.Locale;
@@ -39,13 +42,28 @@ public class BookingCalendarDownloadController {
 
   @GetMapping
   @Operation(
+      tags = "booking-calendar-subscriptions",
       operationId = "downloadBookingCalendarFile",
       summary = "Download a booking as a calendar file",
       description =
           "Returns one confirmed booking as an iCalendar attachment, shaped by the caller's "
               + "visibility of it. No subscription is created or changed.",
       responses = {
-        @ApiResponse(responseCode = "200", description = "The generated calendar file."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "The generated calendar file.",
+            content = @Content(mediaType = "text/calendar", schema = @Schema(type = "string")),
+            headers = {
+              @Header(
+                  name = "Cache-Control",
+                  schema = @Schema(type = "string", allowableValues = "private, no-store")),
+              @Header(name = "Content-Disposition", schema = @Schema(type = "string"))
+            }),
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(
