@@ -117,7 +117,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
       User actor,
       Function<T, FieldSelection> fieldsForRow,
       DocumentDecorator<T> decorator) {
-    return list(request, actor, fieldsForRow, decorator, false);
+    return list(request, actor, fieldsForRow, decorator, false, null);
   }
 
   public ApiV2ListResult<Map<String, Object>> list(
@@ -125,7 +125,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
       User actor,
       Function<T, FieldSelection> fieldsForRow,
       DocumentDecorator<T> decorator,
-      boolean totals) {
+      boolean totals,
+      Integer max) {
     return invoke(
         ResourceOperation.LIST,
         () -> {
@@ -145,7 +146,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
                   readContext(actor));
           decorator.decorate(page.resources(), documents);
           return ApiV2ListResult.counted(
-              documents, page.total(), request.page().size(), request.page().number(), totals);
+                  documents, page.total(), request.page().size(), request.page().number(), totals)
+              .capped(max);
         });
   }
 
@@ -166,7 +168,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
       User actor,
       Function<Object, FieldSelection> fieldsForId,
       ReadDocumentDecorator decorator) {
-    return listReadDocuments(request, actor, fieldsForId, decorator, false);
+    return listReadDocuments(request, actor, fieldsForId, decorator, false, null);
   }
 
   public ApiV2ListResult<Map<String, Object>> listReadDocuments(
@@ -174,7 +176,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
       User actor,
       Function<Object, FieldSelection> fieldsForId,
       ReadDocumentDecorator decorator,
-      boolean totals) {
+      boolean totals,
+      Integer max) {
     return invoke(
         ResourceOperation.LIST,
         () -> {
@@ -185,7 +188,9 @@ public final class ApiV2CrudDispatcher<T, ID> {
           Long total =
               slice == null
                   ? Long.valueOf(page.total())
-                  : totals ? Long.valueOf(operations.count(request, actor)) : null;
+                  : totals
+                      ? Long.valueOf(operations.count(request.withCountMax(max), actor))
+                      : null;
           List<Map<String, Object>> documents =
               renderer.renderReadDocuments(
                   resources,
@@ -198,13 +203,15 @@ public final class ApiV2CrudDispatcher<T, ID> {
           decorator.decorate(resources, documents);
           return slice == null
               ? ApiV2ListResult.counted(
-                  documents, total, request.page().size(), request.page().number(), totals)
+                      documents, total, request.page().size(), request.page().number(), totals)
+                  .capped(max)
               : ApiV2ListResult.slice(
                   documents,
                   total,
                   request.page().size(),
                   request.page().number(),
-                  slice.hasNext());
+                  slice.hasNext(),
+                  max);
         });
   }
 
@@ -248,8 +255,13 @@ public final class ApiV2CrudDispatcher<T, ID> {
   }
 
   public ApiV2CountResult count(ResourceRequest request, User actor) {
+    return count(request, actor, null);
+  }
+
+  public ApiV2CountResult count(ResourceRequest request, User actor, Integer max) {
     return invoke(
-        ResourceOperation.COUNT, () -> new ApiV2CountResult(operations.count(request, actor)));
+        ResourceOperation.COUNT,
+        () -> ApiV2CountResult.of(operations.count(request.withCountMax(max), actor), max));
   }
 
   public Map<String, Object> get(ID id, ResourceRequest request, User actor) {

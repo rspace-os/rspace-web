@@ -5735,6 +5735,87 @@ export default interface Resources {
       "allFields": {
         "required": "Please fill in all the fields."
       },
+      "api": {
+        "pagination": {
+          "limit": {
+            "max": "Limit must not exceed {value}.",
+            "min": "Limit must be 1 or greater."
+          },
+          "page": {
+            "min": "Page must be 1 or greater."
+          }
+        },
+        "v2": {
+          "authenticationRequired": "Authentication is required.",
+          "bulk": {
+            "filter": {
+              "required": "A where filter is required for bulk operations."
+            },
+            "limit": "The bulk operation exceeds the allowed batch size for this operation."
+          },
+          "count": {
+            "max": {
+              "max": "Max must not exceed {value}.",
+              "min": "Max must be 1 or greater."
+            }
+          },
+          "delete": {
+            "permanent": {
+              "unsupported": "This resource does not support permanent deletion."
+            }
+          },
+          "depth": {
+            "max": "Depth must not exceed {value}.",
+            "min": "Depth must be 0 or greater.",
+            "range": "Depth must be between 0 and {0}."
+          },
+          "forbidden": "You do not have permission to perform this action.",
+          "invalidRequest": "The request contains an invalid value.",
+          "methodNotAllowed": "This HTTP method is not supported for this resource.",
+          "missingParameter": "A required request parameter is missing.",
+          "notAcceptable": "The requested response content type is not available.",
+          "notFound": "The requested resource was not found.",
+          "query": {
+            "complexity": "The query is too complex.",
+            "field": "The query contains an unsupported field.",
+            "operator": "The query contains an unsupported operator.",
+            "syntax": "The RSQL expression is invalid.",
+            "value": "The query contains an invalid value."
+          },
+          "requestRejected": "The request could not be processed.",
+          "resourceAccess": {
+            "assignmentLimit": "A resource can have at most 100 named user or group assignments.",
+            "duplicateGrantee": "Each user or group can have only one direct role.",
+            "forbidden": "You do not have permission to manage access to this resource.",
+            "ifMatchRequired": "The current access version is required.",
+            "invalidGrantee": "The selected user or group is no longer available.",
+            "invalidRole": "The selected role is not valid for this resource.",
+            "ownerRequired": "At least one direct Owner must remain.",
+            "selfRemovalRequiresLeave": "Use the leave action to remove your own direct access.",
+            "stale": "Access changed after this page was loaded. Review the latest access before saving again."
+          },
+          "runtimeFields": {
+            "ids": {
+              "limit": "A request must not name more than {0} custom fields."
+            },
+            "page": {
+              "invalid": "The page number is out of range."
+            },
+            "projection": {
+              "limit": "A request must not select more than {0} custom field values."
+            },
+            "query": {
+              "invalid": "The custom field request is invalid. The page size must be between 1 and {0}."
+            }
+          },
+          "tooManyRequests": "Too many requests. Please try again later.",
+          "unexpected": "An unexpected error occurred.",
+          "unsupportedMediaType": "This content type is not supported for this resource.",
+          "where": {
+            "length": "The where expression must not exceed {0} characters."
+          }
+        }
+      },
       "authorization": {
         "apiError": "Authorisation error",
         "audit": {
@@ -5991,6 +6072,11 @@ export default interface Resources {
     "requestType": {
       "passwordReminder": "password reminder",
       "usernameReminder": "username reminder"
+    },
+    "resourceAccess": {
+      "audiences": {
+        "allUsers": "All users"
+      }
     },
     "resourceType": {
       "community": "Community",

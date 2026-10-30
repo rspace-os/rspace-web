@@ -76,6 +76,12 @@
         "where": {
           "length": "The where expression must not exceed {0} characters."
         },
+        "count": {
+          "max": {
+            "min": "Max must be 1 or greater.",
+            "max": "Max must not exceed {value}."
+          }
+        },
         "depth": {
           "range": "Depth must be between 0 and {0}.",
           "min": "Depth must be 0 or greater.",

@@ -131,6 +131,11 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
 
   public ApiV2ListResult<Map<String, Object>> list(
       ResourceRequest request, User caller, boolean totals) {
+    return list(request, caller, totals, null);
+  }
+
+  public ApiV2ListResult<Map<String, Object>> list(
+      ResourceRequest request, User caller, boolean totals, Integer max) {
     ResourceRequest authorized = authorize(Operation.READ, caller, request);
     if (operations.usesReadDocuments()) {
       return crud.listReadDocuments(
@@ -141,7 +146,8 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
                   new AccessContext(caller, Operation.READ, description.resourceName(), id),
                   authorized.fields()),
           runtimeReadDocumentValues(authorized, caller),
-          totals);
+          totals,
+          max);
     }
     return crud.list(
         authorized,
@@ -155,7 +161,8 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
                     description.idValue(entity)),
                 authorized.fields()),
         runtimeValues(authorized, caller),
-        totals);
+        totals,
+        max);
   }
 
   public List<RuntimeCollectionFields<T>> runtimeFields() {
@@ -264,7 +271,11 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public ApiV2CountResult count(ResourceRequest request, User caller) {
-    return crud.count(authorize(Operation.READ, caller, request), caller);
+    return count(request, caller, null);
+  }
+
+  public ApiV2CountResult count(ResourceRequest request, User caller, Integer max) {
+    return crud.count(authorize(Operation.READ, caller, request), caller, max);
   }
 
   public Map<String, Object> get(String rawId, ResourceRequest request, User caller) {

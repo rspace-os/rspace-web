@@ -6,6 +6,7 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,8 +44,8 @@ public interface ResourceOperations<T, ID> {
   }
 
   /** Returns a count-free scalar slice, or null when only counted pages are supported. */
-  default com.researchspace.model.collection.ResourceSlice<Map<String, Object>>
-      findReadDocumentSlice(ResourceRequest request, User subject) {
+  default ResourceSlice<Map<String, Object>> findReadDocumentSlice(
+      ResourceRequest request, User subject) {
     return null;
   }
 

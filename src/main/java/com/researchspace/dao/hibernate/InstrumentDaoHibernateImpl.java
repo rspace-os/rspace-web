@@ -14,6 +14,7 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
@@ -83,12 +84,12 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
-  public com.researchspace.model.collection.ResourceSlice<InstrumentReadSummary>
-      getReadableResourceSummarySlice(ResourceRequest request, AccessResult access) {
+  public ResourceSlice<InstrumentReadSummary> getReadableResourceSummarySlice(
+      ResourceRequest request, AccessResult access) {
     if (access.isDenied()) {
-      return new com.researchspace.model.collection.ResourceSlice<>(List.of(), false);
+      return new ResourceSlice<>(List.of(), false);
     }
-    com.researchspace.model.collection.ResourceSlice<InstrumentScalarRow> rows =
+    ResourceSlice<InstrumentScalarRow> rows =
         COLLECTION_QUERY.projectedSlice(
             criteriaBuilderFactory(),
             getSession(),
@@ -97,7 +98,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             RelationshipReadAccess.none(),
             InstrumentScalarRow.class,
             List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
-    return new com.researchspace.model.collection.ResourceSlice<>(
+    return new ResourceSlice<>(
         rows.resources().stream()
             .map(
                 row ->

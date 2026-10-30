@@ -11,7 +11,28 @@ public record ResourceRequest(
     Page page,
     ResourceFieldSelections fieldSelections,
     IncludeTree includes,
-    RuntimeFieldSelection runtime) {
+    RuntimeFieldSelection runtime,
+    Integer countMax) {
+
+  /** Preserves the unbounded request contract for existing collection callers. */
+  public ResourceRequest(
+      FilterExpression filter,
+      QueryConstraint serverConstraint,
+      List<Sort> sort,
+      Page page,
+      ResourceFieldSelections fieldSelections,
+      IncludeTree includes,
+      RuntimeFieldSelection runtime) {
+    this(filter, serverConstraint, sort, page, fieldSelections, includes, runtime, null);
+  }
+
+  /** Applies a bound only to explicit count operations, leaving counted pages unchanged. */
+  public ResourceRequest withCountMax(Integer max) {
+    if (max != null && (max < 1 || max > 10000))
+      throw new IllegalArgumentException("Invalid count bound");
+    return new ResourceRequest(
+        filter, serverConstraint, sort, page, fieldSelections, includes, runtime, max);
+  }
 
   public record Page(int number, int size) {
 
@@ -117,7 +138,8 @@ public record ResourceRequest(
         serverConstraint == null
             ? constraint
             : new QueryConstraint.And(List.of(serverConstraint, constraint));
-    return new ResourceRequest(filter, combined, sort, page, fieldSelections, includes, runtime);
+    return new ResourceRequest(
+        filter, combined, sort, page, fieldSelections, includes, runtime, countMax);
   }
 
   private static boolean containsConstraint(QueryConstraint current, QueryConstraint candidate) {

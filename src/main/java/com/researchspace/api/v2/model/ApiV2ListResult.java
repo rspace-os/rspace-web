@@ -1,29 +1,49 @@
 package com.researchspace.api.v2.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.researchspace.model.collection.PageOffsets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public record ApiV2ListResult<T>(
     List<T> docs,
-    @io.swagger.v3.oas.annotations.media.Schema(
-            requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED,
+    @Schema(
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
             description = "Present only when totals=true.")
-        @com.fasterxml.jackson.annotation.JsonInclude(
-            com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         Long totalDocs,
     int limit,
     int page,
     long pagingCounter,
-    @io.swagger.v3.oas.annotations.media.Schema(
-            requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED,
+    @Schema(
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
             description = "Present only when totals=true.")
-        @com.fasterxml.jackson.annotation.JsonInclude(
-            com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         Integer totalPages,
     boolean hasPrevPage,
     boolean hasNextPage,
     Integer prevPage,
-    Integer nextPage) {
+    Integer nextPage,
+    @Schema(description = "True when the requested total exceeds max.")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Boolean totalIsLowerBound) {
+  /** Caps metadata without changing navigation derived from the page query. */
+  public ApiV2ListResult<T> capped(Integer max) {
+    if (totalDocs == null) return this;
+    boolean capped = max != null && totalDocs > max;
+    return new ApiV2ListResult<>(
+        docs,
+        capped ? max.longValue() : totalDocs,
+        limit,
+        page,
+        pagingCounter,
+        capped ? null : totalPages,
+        hasPrevPage,
+        hasNextPage,
+        prevPage,
+        nextPage,
+        capped);
+  }
 
   /** Builds a page whose navigation can be derived without a count. */
   public static <T> ApiV2ListResult<T> slice(
@@ -40,7 +60,27 @@ public record ApiV2ListResult<T>(
         hasPrev,
         hasNext,
         hasPrev ? page - 1 : null,
-        hasNext ? page + 1 : null);
+        hasNext ? page + 1 : null,
+        null);
+  }
+
+  public static <T> ApiV2ListResult<T> slice(
+      List<T> docs, Long total, int limit, int page, boolean hasNext, Integer max) {
+    boolean capped = total != null && max != null && total > max;
+    var navigation = slice(docs, capped ? null : total, limit, page, hasNext);
+    if (total == null) return navigation;
+    return new ApiV2ListResult<>(
+        docs,
+        capped ? max.longValue() : total,
+        limit,
+        page,
+        navigation.pagingCounter(),
+        navigation.totalPages(),
+        navigation.hasPrevPage(),
+        hasNext,
+        navigation.prevPage(),
+        navigation.nextPage(),
+        capped);
   }
 
   public static <T> ApiV2ListResult<T> counted(
@@ -56,7 +96,8 @@ public record ApiV2ListResult<T>(
         totals ? counted.hasPrevPage() : page > 1,
         counted.hasNextPage(),
         totals ? counted.prevPage() : page > 1 ? page - 1 : null,
-        counted.nextPage());
+        counted.nextPage(),
+        null);
   }
 
   public static <T> ApiV2ListResult<T> of(List<T> docs, long totalDocs, int limit, int page) {
@@ -74,6 +115,7 @@ public record ApiV2ListResult<T>(
         hasPrev,
         hasNext,
         hasPrev ? page - 1 : null,
-        hasNext ? page + 1 : null);
+        hasNext ? page + 1 : null,
+        null);
   }
 }

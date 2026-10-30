@@ -12,6 +12,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentReadSummary;
@@ -191,8 +192,8 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
       ResourceRequest request, User user);
 
   /** Reads a count-free scalar window under the ordinary read policy. */
-  com.researchspace.model.collection.ResourceSlice<InstrumentReadSummary>
-      getReadableInstrumentSummarySlice(ResourceRequest request, User user);
+  ResourceSlice<InstrumentReadSummary> getReadableInstrumentSummarySlice(
+      ResourceRequest request, User user);
 
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableInstruments(ResourceRequest request, User user);
