@@ -86,8 +86,8 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
 
 export type BookingCatalogueSearch = {
   q?: string;
-  calendarStart?: string;
-  calendarEnd?: string;
+  start?: string;
+  end?: string;
   eventWhere?: string;
   where?: string;
   target?: string;
@@ -117,10 +117,10 @@ function buildBookingCatalogueRequest(search: BookingCatalogueSearch, token: str
   if (search.capability) parameters.set("capability", search.capability);
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
-  if (search.calendarStart) parameters.set("calendarStart", search.calendarStart);
-  if (search.calendarEnd) parameters.set("calendarEnd", search.calendarEnd);
+  if (search.start) parameters.set("start", search.start);
+  if (search.end) parameters.set("end", search.end);
   if (search.eventWhere) parameters.set("eventWhere", search.eventWhere);
-  const endpoint = search.calendarStart ? "/api/v2/booking-catalogue/calendar" : "/api/v2/booking-catalogue";
+  const endpoint = search.start ? "/api/v2/booking-catalogue/calendar" : "/api/v2/booking-catalogue";
   return {
     url: `${endpoint}?${parameters.toString()}`,
     headers: apiV2Headers(token),
