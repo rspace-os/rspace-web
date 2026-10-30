@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchivalImportConfig;
@@ -67,6 +69,8 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Optional;
@@ -617,6 +621,135 @@ public class ExportControllerTest {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     Validator validator = factory.getValidator();
     return validator;
+  }
+
+  @Test
+  public void serverImportRefusedWhenDisabled() {
+    when(properties.isImportArchiveFromServerEnabled()).thenReturn(false);
+    assertThrows(AuthorizationException.class, () -> importFromServer("/a/b/c.zip"));
+    verifyNoInteractions(exImportMgr);
+  }
+
+  @Test
+  public void serverImportRefusedWithoutUsableFolder() {
+    when(properties.isImportArchiveFromServerEnabled()).thenReturn(true);
+    String notConfigured =
+        messages.getMessage("importExport.import.errors.serverImportNotConfigured");
+    for (String folderSetting : toList("", new File(folder, "missing").getAbsolutePath())) {
+      when(properties.getImportArchiveFromServerFolder()).thenReturn(folderSetting);
+      assertEquals("redirect:/import/archiveImport", importFromServer("/a/b/c.zip"));
+      assertEquals(notConfigured, flashedImportError());
+    }
+    verifyNoInteractions(exImportMgr);
+  }
+
+  @Test
+  public void serverImportRefusesFileOutsideFolder() throws Exception {
+    setUpServerImportFolder();
+    Path outside = Files.createFile(folder.toPath().resolve("outside.zip"));
+    // a missing file gets the same answer as an existing one, so the endpoint cannot be used to
+    // learn which files exist on the server
+    Path missingOutside = folder.toPath().resolve("missing.zip");
+
+    for (Path path : toList(outside, missingOutside)) {
+      importFromServer(path.toString());
+      assertEquals(outsideFolderMsg(path.toString()), flashedImportError());
+    }
+    verifyNoInteractions(exImportMgr);
+  }
+
+  @Test
+  public void serverImportRefusesMissingOrUnreadableFileInsideFolder() throws Exception {
+    Path importFolder = setUpServerImportFolder();
+    File unreadable = Files.createFile(importFolder.resolve("unreadable.zip")).toFile();
+    unreadable.setReadable(false);
+    assumeFalse(unreadable.canRead(), "running as a user that can read any file");
+
+    for (Path path : toList(importFolder.resolve("missing.zip"), unreadable.toPath())) {
+      importFromServer(path.toString());
+      assertEquals(
+          messages.getMessage(
+              "importExport.import.errors.serverFileUnreadable", new Object[] {path.toString()}),
+          flashedImportError());
+    }
+    verifyNoInteractions(exImportMgr);
+  }
+
+  @Test
+  public void serverImportRefusesLinkInsideFolderToFileOutsideIt() throws Exception {
+    Path importFolder = setUpServerImportFolder();
+    Path outside = Files.createFile(folder.toPath().resolve("outside.zip"));
+    Path link = Files.createSymbolicLink(importFolder.resolve("link.zip"), outside);
+
+    importFromServer(link.toString());
+    assertEquals(outsideFolderMsg(link.toString()), flashedImportError());
+    verifyNoInteractions(exImportMgr);
+  }
+
+  @Test
+  public void serverImportImportsResolvedFileInsideFolder() throws Exception {
+    // a configured folder reached through a link, so the typed and resolved paths differ on
+    // every platform
+    Path realFolder = Files.createDirectory(folder.toPath().resolve("real"));
+    Path importFolder = setUpServerImportFolderLinkedTo(realFolder);
+    Path archive = Files.createFile(realFolder.resolve("archive.zip"));
+    when(principal.getName()).thenReturn("user1a");
+    when(exImportMgr.importArchive(
+            eq(archive.toRealPath().toFile()),
+            eq("user1a"),
+            any(ArchivalImportConfig.class),
+            any(ProgressMonitor.class),
+            any(ImportStrategy.class)))
+        .thenReturn(new ImportArchiveReport());
+
+    assertEquals(
+        "redirect:/import/archiveImportReport",
+        importFromServer(importFolder.resolve("archive.zip").toString()));
+  }
+
+  @Test
+  public void serverImportRefusesPathThatOnlyReachesFolderAfterResolvingLinks() throws Exception {
+    Path realFolder = Files.createDirectory(folder.toPath().resolve("real"));
+    setUpServerImportFolderLinkedTo(realFolder);
+    Path archive = Files.createFile(realFolder.resolve("archive.zip"));
+
+    importFromServer(archive.toString());
+    assertEquals(outsideFolderMsg(archive.toString()), flashedImportError());
+    verifyNoInteractions(exImportMgr);
+  }
+
+  private Path setUpServerImportFolder() throws Exception {
+    return configureServerImportFolder(Files.createDirectory(folder.toPath().resolve("imports")));
+  }
+
+  private Path setUpServerImportFolderLinkedTo(Path realFolder) throws Exception {
+    return configureServerImportFolder(
+        Files.createSymbolicLink(folder.toPath().resolve("imports"), realFolder));
+  }
+
+  private Path configureServerImportFolder(Path importFolder) {
+    when(properties.isImportArchiveFromServerEnabled()).thenReturn(true);
+    when(properties.getImportArchiveFromServerFolder()).thenReturn(importFolder.toString());
+    return importFolder;
+  }
+
+  private String importFromServer(String path) {
+    ServerPath serverPath = new ServerPath();
+    serverPath.setServerFilePath(path);
+    redirectAttributesMap = new RedirectAttributesModelMap();
+    return exportController.importArchive(
+        serverPath, errors, session, redirectAttributesMap, principal);
+  }
+
+  private Object flashedImportError() {
+    return redirectAttributesMap
+        .getFlashAttributes()
+        .get(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
+  }
+
+  private String outsideFolderMsg(String path) {
+    return messages.getMessage(
+        "importExport.import.errors.serverFileOutsideImportFolder", new Object[] {path});
   }
 
   @Test

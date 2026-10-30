@@ -393,101 +393,25 @@ public class ExportControllerMVCIT extends MVCTestBase {
     User anyUser = createInitAndLoginAnyUser();
     final String SERVER_PATH = "serverFilePath";
     final String SERVER_IMPORT_URL = "/export/importServerArchive";
-    final String ARCHIVE_IMPORT_VIEW = "/import/archiveImport";
-    final String ARCHIVE_REPORT_VIEW = "/import/archiveImportReport";
     File realFile = RSpaceTestUtils.getResource("archives/v1-35.zip");
     boolean wasEnabled = propertyHolder.isImportArchiveFromServerEnabled();
     String previousFolder = propertyHolder.getImportArchiveFromServerFolder();
     Path importFolder = Files.createTempDirectory("serverImport");
-    File outside = Files.createTempFile("archiveTest", "v1-35.zip").toFile();
     try {
-      // the endpoint is closed when the feature is off, whatever the path
-      propertyHolder.setImportArchiveFromServerEnabled("false");
-      MvcResult disabled =
-          mockMvc
-              .perform(
-                  post(SERVER_IMPORT_URL)
-                      .principal(anyUser::getUsername)
-                      .param(SERVER_PATH, "/a/b/c.zip"))
-              .andReturn();
-      assertAuthorizationException(disabled);
-
       propertyHolder.setImportArchiveFromServerEnabled("true");
-      // enabled but no import folder configured
-      propertyHolder.setImportArchiveFromServerFolder("");
-      mockMvc
-          .perform(
-              post(SERVER_IMPORT_URL)
-                  .principal(anyUser::getUsername)
-                  .param(SERVER_PATH, "/a/b/c.zip"))
-          .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
-          .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-
       propertyHolder.setImportArchiveFromServerFolder(importFolder.toString());
-      // invalid syntax
+      // a real archive at a path the ServerPath rules refuse, so this fails if @Valid stops
+      // being applied to the request
+      File refused = importFolder.resolve("bad;name.zip").toFile();
+      FileUtils.copyFile(realFile, refused);
       mockMvc
           .perform(
               post(SERVER_IMPORT_URL)
                   .principal(anyUser::getUsername)
-                  .param(SERVER_PATH, "invalid*"))
+                  .param(SERVER_PATH, refused.getAbsolutePath()))
           .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
-          .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-      // a missing file outside the folder gets the same answer as an existing one, so the
-      // endpoint cannot be used to learn which files exist on the server
-      String missingOutside = outside.toPath().resolveSibling("missingArchive.zip").toString();
-      mockMvc
-          .perform(
-              post(SERVER_IMPORT_URL)
-                  .principal(anyUser::getUsername)
-                  .param(SERVER_PATH, missingOutside))
-          .andExpect(
-              flash()
-                  .attribute(
-                      IMPORT_FORM_ERROR_ATTR_NAME,
-                      getMsgFromResourceBundler(
-                          "importExport.import.errors.serverFileOutsideImportFolder",
-                          missingOutside)))
-          .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-      // a readable archive outside the import folder
-      FileUtils.copyFile(realFile, outside);
-      mockMvc
-          .perform(
-              post(SERVER_IMPORT_URL)
-                  .principal(anyUser::getUsername)
-                  .param(SERVER_PATH, outside.getAbsolutePath()))
-          .andExpect(
-              flash()
-                  .attribute(
-                      IMPORT_FORM_ERROR_ATTR_NAME,
-                      getMsgFromResourceBundler(
-                          "importExport.import.errors.serverFileOutsideImportFolder",
-                          outside.getAbsolutePath())))
-          .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-      // a link inside the folder to an archive outside it
-      Path link = Files.createSymbolicLink(importFolder.resolve("link.zip"), outside.toPath());
-      mockMvc
-          .perform(
-              post(SERVER_IMPORT_URL)
-                  .principal(anyUser::getUsername)
-                  .param(SERVER_PATH, link.toString()))
-          .andExpect(
-              flash()
-                  .attribute(
-                      IMPORT_FORM_ERROR_ATTR_NAME,
-                      getMsgFromResourceBundler(
-                          "importExport.import.errors.serverFileOutsideImportFolder",
-                          link.toString())))
-          .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-      // missing file inside the folder
-      mockMvc
-          .perform(
-              post(SERVER_IMPORT_URL)
-                  .principal(anyUser::getUsername)
-                  .param(SERVER_PATH, importFolder.resolve("nonexistentZip.zip").toString()))
-          .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
-          .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
+          .andExpect(redirectedUrl("/import/archiveImport"));
 
-      // actually imports
       File inside = importFolder.resolve("v1-35.zip").toFile();
       FileUtils.copyFile(realFile, inside);
       mockMvc
@@ -496,12 +420,11 @@ public class ExportControllerMVCIT extends MVCTestBase {
                   .principal(anyUser::getUsername)
                   .param(SERVER_PATH, inside.getAbsolutePath()))
           .andExpect(flash().attributeCount(0))
-          .andExpect(redirectedUrl(ARCHIVE_REPORT_VIEW));
+          .andExpect(redirectedUrl("/import/archiveImportReport"));
     } finally {
       propertyHolder.setImportArchiveFromServerEnabled(Boolean.toString(wasEnabled));
       propertyHolder.setImportArchiveFromServerFolder(previousFolder);
       FileUtils.deleteQuietly(importFolder.toFile());
-      FileUtils.deleteQuietly(outside);
     }
   }
 
