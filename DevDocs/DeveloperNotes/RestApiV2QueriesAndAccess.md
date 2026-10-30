@@ -28,3 +28,9 @@ access or access through an active immediate child Container, Instrument or SubS
 Role visibility applies to the container itself, not its children. System administrators
 can read every active container, including workbenches. The query compiler uses correlated
 subqueries so filtering, totals and pagination use the same rule.
+
+Instrument location is the nullable `parentContainer` to-one relationship to
+`containers`, bound to `parentLocation.container.id`. Use relationship expansion
+to read its name and global ID. An authorization-aware target resolver returns
+no target for an unreadable container, which renders the relationship as `null`.
+Instrument scalar summaries no longer include parent location data.

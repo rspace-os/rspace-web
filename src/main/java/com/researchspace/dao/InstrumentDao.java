@@ -9,7 +9,6 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
 import java.util.Map;
@@ -40,13 +39,6 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
 
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableResources(ResourceRequest request, AccessResult access);
-
-  /** Returns current immediate parent-container data for the requested instruments. */
-  Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(Set<Long> instrumentIds);
-
-  /** Returns current immediate parent data only where the caller may read the parent Container. */
-  Map<Long, InstrumentParentLocationSummary> getReadableParentLocationSummaries(
-      Set<Long> instrumentIds, User caller);
 
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
