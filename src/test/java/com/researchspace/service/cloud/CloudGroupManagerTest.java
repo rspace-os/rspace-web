@@ -25,6 +25,7 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
 
   private @Autowired IGroupPermissionUtils grpPermUtils;
   private @Autowired IMutablePropertyHolder propertyHolder;
+  private @Autowired CloudGroupManager cloudGroupManager;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -77,5 +78,25 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     grpMgr.removeUserFromGroup(labAdmin.getUsername(), collabGroup.getId(), labAdmin);
 
     assertFalse(grpMgr.getGroup(collabGroup.getId()).hasMember(labAdmin));
+  }
+
+  @Test
+  public void promotionToCollabGroupPiRefusedForAnotherNonAdminUser() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(1);
+    logoutAndLoginAs(tg1.getPi());
+    Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
+    User member = tg1.u1();
+    grpMgr.addUserToGroup(member.getUsername(), collabGroup.getId(), RoleInGroup.DEFAULT);
+
+    User other = tg2.u1();
+    logoutAndLoginAs(other);
+    User toPromote = userMgr.get(member.getId());
+    assertThrows(
+        AuthorizationException.class, () -> cloudGroupManager.promoteUserToPI(toPromote, other));
+
+    assertEquals(
+        RoleInGroup.DEFAULT,
+        grpMgr.getGroup(collabGroup.getId()).getUserGroupForUser(member).getRoleInGroup());
   }
 }

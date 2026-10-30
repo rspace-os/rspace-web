@@ -919,7 +919,13 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   @Override
-  public void setPiRoleInCollaborationGroups(User toPromote) {
+  public void setPiRoleInCollaborationGroups(User toPromote, User subject) {
+    if (!(subject.getId().equals(toPromote.getId()) || subject.hasAdminRole())) {
+      throw new AuthorizationException(
+          String.format(
+              "%s cannot give %s the PI role in their collaboration groups",
+              subject.getUsername(), toPromote.getUsername()));
+    }
     for (Group grp : toPromote.getGroups()) {
       if (grp.isCollaborationGroup()) {
         changeRoleInGroup(getGroup(grp.getId()), toPromote, RoleInGroup.PI);
