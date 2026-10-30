@@ -119,8 +119,23 @@ class ApiV2ResourceConfigTest {
   }
 
   @Test
+  void endpointCatalogCollectsContributedSpecs() throws Exception {
+    try (AnnotationConfigApplicationContext context = newContext()) {
+      context.registerBean(
+          com.researchspace.api.v2.resource.ApiV2EndpointSpec.class,
+          () ->
+              new com.researchspace.api.v2.resource.ApiV2EndpointSpec(
+                  Object.class, com.researchspace.model.collection.AccessFunction.anyone()));
+      context.register(ApiV2ResourceConfig.class);
+      context.refresh();
+      var endpoint = new HandlerMethod(new Object(), Object.class.getMethod("toString"));
+      assertTrue(context.getBean(ApiV2EndpointCatalog.class).isPublic(endpoint));
+    }
+  }
+
+  @Test
   void genericMutationsRequireAuthenticationBeforeRequestBodyBinding() {
-    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog();
+    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog(List.of());
     ApiV2CrudController controller = new ApiV2CrudController(mock(ApiV2ResourceCatalog.class));
     HandlerMethod create = handler(controller, "create");
     HandlerMethod list = handler(controller, "list");

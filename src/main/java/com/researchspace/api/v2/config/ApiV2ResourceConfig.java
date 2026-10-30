@@ -1,7 +1,6 @@
 package com.researchspace.api.v2.config;
 
 import com.researchspace.api.v2.controller.ApiV2CrudController;
-import com.researchspace.api.v2.controller.BookingCalendarController;
 import com.researchspace.api.v2.controller.ConfigV2Controller;
 import com.researchspace.api.v2.controller.OAuthTokensV2Controller;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
@@ -47,20 +46,22 @@ public class ApiV2ResourceConfig {
   }
 
   @Bean
-  ApiV2EndpointCatalog apiV2EndpointCatalog() {
-    return new ApiV2EndpointCatalog(
-        List.of(
-            // Reads may be public for resources such as maintenance notices. Every mutation
-            // requires authentication before Spring materializes its request body; the resource
-            // policy subsequently applies the more specific role/row authorization.
-            new ApiV2EndpointSpec(ApiV2CrudController.class, CRUD_ENDPOINT_ACCESS),
-            new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()),
-            new ApiV2EndpointSpec(BookingCalendarController.class, AccessFunction.authenticated()),
-            new ApiV2EndpointSpec(
-                OAuthTokensV2Controller.class,
-                AccessFunction.authenticated(),
-                ApiV2AuthenticationMode.BROWSER_SESSION),
-            new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
+  ApiV2EndpointCatalog apiV2EndpointCatalog(List<ApiV2EndpointSpec> contributions) {
+    var specs =
+        new java.util.ArrayList<>(
+            List.of(
+                // Reads may be public for resources such as maintenance notices. Every mutation
+                // requires authentication before Spring materializes its request body; the resource
+                // policy subsequently applies the more specific role/row authorization.
+                new ApiV2EndpointSpec(ApiV2CrudController.class, CRUD_ENDPOINT_ACCESS),
+                new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()),
+                new ApiV2EndpointSpec(
+                    OAuthTokensV2Controller.class,
+                    AccessFunction.authenticated(),
+                    ApiV2AuthenticationMode.BROWSER_SESSION),
+                new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
+    specs.addAll(contributions);
+    return new ApiV2EndpointCatalog(specs);
   }
 
   @Bean

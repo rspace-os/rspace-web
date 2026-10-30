@@ -1,16 +1,16 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
-import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
-import com.researchspace.booking.api.v2.BookingControllerSupport;
 import com.researchspace.booking.service.BookingCalendarSearchManager;
 import com.researchspace.booking.service.BookingCatalogueManager;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.CollectionDescription;
@@ -21,6 +21,8 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.service.FeatureFlagManager;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -69,6 +71,18 @@ public class BookingCalendarController {
   }
 
   @GetMapping("/booking-catalogue/calendar")
+  @Operation(
+      operationId = "searchCalendarCatalogue",
+      summary = "Search bookable instruments in a calendar interval",
+      tags = "booking-calendar",
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Matching calendar results."),
+        @ApiResponse(responseCode = "400"),
+        @ApiResponse(responseCode = "401"),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
+        @ApiResponse(responseCode = "429"),
+        @ApiResponse(responseCode = "500")
+      })
   public BookingCatalogueManager.Page items(
       @RequestParam Instant calendarStart,
       @RequestParam Instant calendarEnd,
@@ -92,6 +106,18 @@ public class BookingCalendarController {
   }
 
   @GetMapping("/booking-calendar/events")
+  @Operation(
+      operationId = "searchCalendarEvents",
+      summary = "Search visible calendar events",
+      tags = "booking-calendar",
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Matching calendar results."),
+        @ApiResponse(responseCode = "400"),
+        @ApiResponse(responseCode = "401"),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
+        @ApiResponse(responseCode = "429"),
+        @ApiResponse(responseCode = "500")
+      })
   public ApiV2ListResult<Map<String, Object>> events(
       @RequestParam Instant start,
       @RequestParam Instant end,
@@ -123,7 +149,8 @@ public class BookingCalendarController {
             .map(target -> (Object) target.id())
             .collect(Collectors.toSet());
     var targets =
-        resources.find(ApiV2InstrumentResource.RESOURCE_NAME)
+        resources
+            .find(ApiV2InstrumentResource.RESOURCE_NAME)
             .orElseThrow()
             .resolveReadable(targetIds, caller.subject());
     List<Map<String, Object>> documents =
