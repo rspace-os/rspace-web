@@ -5,6 +5,9 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import java.util.List;
@@ -12,6 +15,12 @@ import java.util.Set;
 
 /** For DAO operations on Inventory Container. */
 public interface ContainerDao extends GenericDao<Container, Long> {
+
+  /** Returns a database-filtered page under the supplied container read constraint. */
+  ResourcePage<Container> getReadableResources(ResourceRequest request, AccessResult access);
+
+  /** Counts containers matching the request and container read constraint. */
+  long countReadableResources(ResourceRequest request, AccessResult access);
 
   /**
    * Get top-level non-deleted containers visible to the current user.
