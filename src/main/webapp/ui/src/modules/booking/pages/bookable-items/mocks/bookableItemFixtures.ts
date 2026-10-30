@@ -44,13 +44,16 @@ export const bookableItemFixtures = [
     state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: {
         id: 123,
         name: "Confocal microscope",
         deleted: false,
-        parentContainerName: "Imaging lab",
-        parentContainerGlobalId: "IC456",
+        parentContainer: {
+          relationTo: "containers",
+          globalId: "IC456",
+          value: { id: 456, globalId: "IC456", name: "Imaging lab" },
+        },
       },
       globalId: "IN123",
     },
@@ -69,13 +72,16 @@ export const bookableItemFixtures = [
     state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: {
         id: 124,
         name: "Electron microscope",
         deleted: false,
-        parentContainerName: "Workbench",
-        parentContainerGlobalId: "BE457",
+        parentContainer: {
+          relationTo: "containers",
+          globalId: "BE457",
+          value: { id: 457, globalId: "BE457", name: "Workbench" },
+        },
       },
       globalId: "IN124",
     },
@@ -90,13 +96,16 @@ export const bookableItemFixtures = [
     state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: {
         id: 125,
         name: "Mass spectrometer",
         deleted: false,
-        parentContainerName: "Mass spectrometry lab",
-        parentContainerGlobalId: "IC458",
+        parentContainer: {
+          relationTo: "containers",
+          globalId: "IC458",
+          value: { id: 458, globalId: "IC458", name: "Mass spectrometry lab" },
+        },
       },
       globalId: "IN125",
     },
@@ -111,15 +120,14 @@ export const bookableItemFixtures = [
     state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: {
         id: 126,
         name: "Flow cytometer",
         deleted: false,
         // The API uses the same null pair for an unreadable parent as it does
         // for a parent that has since been deleted.
-        parentContainerName: null,
-        parentContainerGlobalId: null,
+        parentContainer: null,
       },
       globalId: "IN126",
     },
@@ -134,13 +142,16 @@ export const bookableItemFixtures = [
     state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: {
         id: 127,
         name: "Microplate reader",
         deleted: false,
-        parentContainerName: "Screening lab",
-        parentContainerGlobalId: "IC459",
+        parentContainer: {
+          relationTo: "containers",
+          globalId: "IC459",
+          value: { id: 459, globalId: "IC459", name: "Screening lab" },
+        },
       },
       globalId: "IN127",
     },
