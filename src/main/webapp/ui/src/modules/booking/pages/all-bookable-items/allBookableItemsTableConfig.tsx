@@ -44,10 +44,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
                 idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
                 size="xs"
               >
-                <InventoryLocationLink
-                  name={row.target.location?.name}
-                  globalId={row.target.location?.globalId}
-                />
+                <InventoryLocationLink name={row.target.location?.name} globalId={row.target.location?.globalId} />
               </InventoryItem>
             ) : (
               <UnknownItem size="xs" />
