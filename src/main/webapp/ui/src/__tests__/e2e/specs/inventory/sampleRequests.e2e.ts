@@ -555,8 +555,9 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await expect(dialogHeading).toContainText("Bob Requests");
       await expect(dialog.getByRole("alert")).toContainText("Bob Requests");
 
-      const recipientCombobox = dialog.getByRole("combobox");
-      await expect(recipientCombobox).toHaveValue(new RegExp(`\\(${bob.username}\\)`));
+      // The recipient field is a read-only chip (no dropdown/combobox of its own - see
+      // TransferOwnershipDialog.tsx) showing who the sample will be handed to.
+      await expect(dialog.getByRole("button", { name: "Bob Requests" })).toBeVisible();
 
       const toasts = new ToastsComponent(session.page);
       await dialog.getByRole("button", { name: "Transfer", exact: true }).click();
@@ -635,8 +636,9 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await expect(dialogHeading).toContainText("Bob Requests");
       await expect(dialog.getByRole("alert")).toContainText("Bob Requests");
 
-      const recipientCombobox = dialog.getByRole("combobox");
-      await expect(recipientCombobox).toHaveValue(new RegExp(`\\(${bob.username}\\)`));
+      // The recipient field is a read-only chip (no dropdown/combobox of its own - see
+      // TransferOwnershipDialog.tsx) showing who the sample will be handed to.
+      await expect(dialog.getByRole("button", { name: "Bob Requests" })).toBeVisible();
 
       const toasts = new ToastsComponent(session.page);
       await dialog.getByRole("button", { name: "Transfer", exact: true }).click();
@@ -739,8 +741,9 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await expect(otherRequestsBullet).toContainText("Carol Requests");
       await expect(otherRequestsBullet).not.toContainText("Bob Requests");
 
-      const recipientCombobox = dialog.getByRole("combobox");
-      await expect(recipientCombobox).toHaveValue(new RegExp(`\\(${bob.username}\\)`));
+      // The recipient field is a read-only chip (no dropdown/combobox of its own - see
+      // TransferOwnershipDialog.tsx) showing who the sample will be handed to.
+      await expect(dialog.getByRole("button", { name: "Bob Requests" })).toBeVisible();
 
       const toasts = new ToastsComponent(session.page);
       await dialog.getByRole("button", { name: "Transfer", exact: true }).click();

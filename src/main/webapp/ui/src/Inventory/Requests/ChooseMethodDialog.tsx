@@ -10,6 +10,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import type { PreparationMethod } from "./types";
 
 export default function ChooseMethodDialog({
   open,
@@ -22,8 +23,8 @@ export default function ChooseMethodDialog({
   onProceed,
 }: {
   open: boolean;
-  preparationMethod: "wizard" | "transfer" | null;
-  onMethodChange: (method: "wizard" | "transfer") => void;
+  preparationMethod: PreparationMethod | null;
+  onMethodChange: (method: PreparationMethod) => void;
   subSampleCount: number | null;
   otherActiveRequestsCount: number | null;
   requesterFullName: string;
@@ -39,10 +40,7 @@ export default function ChooseMethodDialog({
         <Typography variant="body1" sx={{ mb: 2 }}>
           {t("requestsManagement.detail.chooseMethodDialog.body")}
         </Typography>
-        <RadioGroup
-          value={preparationMethod ?? ""}
-          onChange={(_, value) => onMethodChange(value as "wizard" | "transfer")}
-        >
+        <RadioGroup value={preparationMethod ?? ""} onChange={(_, value) => onMethodChange(value as PreparationMethod)}>
           <FormControlLabel
             value="wizard"
             control={<Radio />}

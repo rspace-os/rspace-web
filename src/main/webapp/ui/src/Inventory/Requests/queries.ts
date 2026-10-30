@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import ApiService from "@/common/InvApiService";
 import type { ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
-import type { ApiSampleRequestListItem, RequestsFilter, StatusFilter } from "./RequestsList";
+import type { ApiSampleRequestListItem, RequestsFilter, StatusFilter } from "./sampleRequest";
 
 const ACTIVE_STATUSES = "PENDING,APPROVED";
 const PAST_STATUSES = "REJECTED,FULFILLED,CANCELLED";
@@ -86,7 +86,7 @@ export function useSampleRequestDetailQuery(requestId: number | null) {
   });
 }
 
-export type OtherActiveSampleRequest = { id: number; requesterName: string };
+export type OtherActiveSampleRequest = { id: number; requester: { firstName: string; lastName: string } };
 
 /**
  * Other PENDING/APPROVED requests against the same sample, excluding `excludeRequestId` - backs
@@ -97,6 +97,9 @@ export type OtherActiveSampleRequest = { id: number; requesterName: string };
  * requests against the same sample would otherwise share one cache entry keyed on sampleId alone,
  * so opening one just after another could briefly show the previous request's own result,
  * including that request incorrectly appearing in its own "will be rejected" list.
+ *
+ * Returns each other request's raw requester name parts rather than a formatted display string -
+ * that's cosmetic formatting for whichever caller renders it to decide, not this query.
  */
 export function useOtherActiveSampleRequestsQuery(sampleId: number | null, excludeRequestId: number) {
   return useQuery({
@@ -107,14 +110,8 @@ export function useOtherActiveSampleRequestsQuery(sampleId: number | null, exclu
         status: "PENDING,APPROVED",
         pageSize: "100",
       });
-      return ApiService.query<{ requests: Array<{ id: number; requester: { firstName: string; lastName: string } }> }>(
-        "sampleRequests",
-        params,
-      ).then(
-        ({ data }): Array<OtherActiveSampleRequest> =>
-          data.requests
-            .filter((r) => r.id !== excludeRequestId)
-            .map((r) => ({ id: r.id, requesterName: `${r.requester.firstName} ${r.requester.lastName}` })),
+      return ApiService.query<{ requests: Array<OtherActiveSampleRequest> }>("sampleRequests", params).then(
+        ({ data }): Array<OtherActiveSampleRequest> => data.requests.filter((r) => r.id !== excludeRequestId),
       );
     },
     enabled: sampleId !== null,

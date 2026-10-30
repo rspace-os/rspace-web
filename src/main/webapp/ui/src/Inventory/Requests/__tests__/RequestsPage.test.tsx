@@ -8,8 +8,8 @@ import { server } from "@/__tests__/mswServer";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import NavigateContext from "@/stores/contexts/Navigate";
 import materialTheme from "@/theme";
-import type { ApiSampleRequestListItem } from "../RequestsList";
 import RequestsPage from "../RequestsPage";
+import type { ApiSampleRequestListItem } from "../sampleRequest";
 
 // ApiServiceBase gates every call behind `when(() => !getRootStore().authStore.isSynchronizing)`
 // (see ApiServiceBase.ts) - without this, the real ApiService code backing MSW's handlers below
@@ -19,9 +19,8 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({ authStore: { isSynchronizing: false } }),
 }));
 
-// RequestDetailPanel has its own extensive mocking needs (useWhoAmI, useStores, PeopleField,
-// etc.) that are irrelevant here; this suite only needs to see which `request` prop RequestsPage
-// actually hands it.
+// RequestDetailPanel has its own extensive mocking needs (useWhoAmI, useStores, etc.) that are
+// irrelevant here; this suite only needs to see which `request` prop RequestsPage actually hands it.
 const receivedRequest = vi.fn();
 vi.mock("../RequestDetailPanel", () => ({
   __esModule: true,

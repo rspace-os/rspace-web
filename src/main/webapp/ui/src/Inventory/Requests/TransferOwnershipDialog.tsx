@@ -1,50 +1,49 @@
 import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
+import Autocomplete, { autocompleteClasses } from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
+import InputAdornment from "@mui/material/InputAdornment";
 import { darken, useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import UserDetails from "@/components/UserDetails";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import type PersonModel from "@/stores/models/PersonModel";
-import PeopleField from "../components/Inputs/PeopleField";
-import type { OtherActiveSampleRequest } from "./queries";
 
 export default function TransferOwnershipDialog({
   open,
   requestId,
   sampleName,
+  requesterId,
   requesterFullName,
   subSampleCount,
   otherActiveRequests,
-  transferRecipient,
-  transferRequesterPerson,
   isProcessingAction,
-  onRecipientChange,
   onClose,
   onSubmit,
 }: {
   open: boolean;
   requestId: number;
   sampleName: string;
+  requesterId: number;
   requesterFullName: string;
   subSampleCount: number | null;
-  otherActiveRequests: Array<OtherActiveSampleRequest> | null;
-  transferRecipient: PersonModel | null;
-  transferRequesterPerson: PersonModel | null;
+  otherActiveRequests: Array<{ id: number; requesterName: string }> | null;
   isProcessingAction: boolean;
-  onRecipientChange: (person: PersonModel | null) => void;
   onClose: () => void;
   onSubmit: () => void;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
+  // The only option this read-only field will ever show, matching PeopleField's own
+  // "restrictToUser" pattern of narrowing its options down to exactly one.
+  const requesterOption = { label: requesterFullName };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -61,27 +60,21 @@ export default function TransferOwnershipDialog({
         <Typography component="p" variant="body1" sx={{ mb: 1 }}>
           {t("requestsManagement.detail.transferDialog.whatWillHappen")}
         </Typography>
-        <Box component="ul" sx={{ mt: 0, mb: 2, pl: 3 }}>
+        <Typography component="ul" variant="body2" sx={{ mt: 0, mb: 2, pl: 3 }}>
           {subSampleCount !== null && subSampleCount > 1 && (
-            <Typography component="li" variant="body2">
-              {subSampleCount === 2
-                ? t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferredBoth", {
-                    requester: requesterFullName,
-                  })
-                : t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferred", {
-                    count: subSampleCount,
-                    requester: requesterFullName,
-                  })}
-            </Typography>
+            <li>
+              {t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferred", {
+                count: subSampleCount,
+                requester: requesterFullName,
+              })}
+            </li>
           )}
-          <Typography component="li" variant="body2">
+          <li>
             {t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", { requester: requesterFullName })}
-          </Typography>
-          <Typography component="li" variant="body2">
-            {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: requestId })}
-          </Typography>
+          </li>
+          <li>{t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: requestId })}</li>
           {otherActiveRequests !== null && otherActiveRequests.length > 0 && (
-            <Typography component="li" variant="body2">
+            <li>
               {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
                 count: otherActiveRequests.length,
                 names: formatList(
@@ -89,22 +82,61 @@ export default function TransferOwnershipDialog({
                   i18n.resolvedLanguage ?? i18n.language,
                 ),
               })}
-            </Typography>
+            </li>
           )}
-        </Box>
+        </Typography>
+        {/* There is only ever one legal recipient (the requester) - the backend itself always
+            transfers to them regardless of anything picked here (see
+            useTransferSampleOwnershipMutation's doc comment in ./mutations.ts). Styled to match
+            the editable recipient field used elsewhere (PeopleField, as seen when transferring a
+            Sample directly from the Inventory UI), but read-only and with no dropdown of its own -
+            there's nothing to choose. The chip itself is the same UserDetails component used
+            elsewhere (e.g. RequestDetailsFields' requester field), so it still pops up the same
+            details popover on click. */}
         <FormControl component="fieldset" fullWidth>
-          <PeopleField
-            onSelection={(person) => onRecipientChange(person as PersonModel | null)}
-            label={t("contextMenu.transfer.dialog.recipientLabel")}
-            recipient={transferRecipient}
-            restrictToUser={transferRequesterPerson ?? undefined}
-            // Kept separate from transferRecipient (see its declaration in RequestDetailPanel):
-            // clearing the field back to an unrestricted search must not lift this restriction.
-            // The requester is looked up asynchronously (see openTransferDialog there), so
-            // restrictToUser above is only set on a later render. disableAutoOpen is true from
-            // this dialog's very first render, avoiding a race against the field's autoFocus
-            // where openOnFocus would still read as unrestricted.
-            disableAutoOpen
+          <Autocomplete
+            options={[requesterOption]}
+            value={requesterOption}
+            getOptionLabel={(option) => option.label}
+            readOnly
+            disableClearable
+            forcePopupIcon={false}
+            size="small"
+            sx={{ maxWidth: 500, [`& .${autocompleteClasses.option}`]: { cursor: "default" } }}
+            renderValue={(_value, getItemProps) => {
+              // className carries the spacing MUI gives a chip-like item inside this box;
+              // UserDetails renders its own Chip internally, so only that much is reusable here.
+              const { className } = getItemProps();
+              return (
+                <span className={className}>
+                  <UserDetails userId={requesterId} fullName={requesterFullName} position={["bottom", "right"]} />
+                </span>
+              );
+            }}
+            renderInput={({ slotProps: inputSlotProps, ...rest }) => (
+              <TextField
+                {...rest}
+                variant="outlined"
+                slotProps={{
+                  ...inputSlotProps,
+                  input: {
+                    ...inputSlotProps?.input,
+                    // The chip itself is inputSlotProps.input.startAdornment, computed by
+                    // Autocomplete from renderValue above - prepend the label rather than
+                    // replacing it.
+                    startAdornment: (
+                      <>
+                        <InputAdornment position="start">
+                          {" "}
+                          {t("contextMenu.transfer.dialog.recipientLabel")}
+                        </InputAdornment>
+                        {inputSlotProps?.input?.startAdornment}
+                      </>
+                    ),
+                  },
+                }}
+              />
+            )}
           />
         </FormControl>
       </DialogContent>
@@ -112,13 +144,8 @@ export default function TransferOwnershipDialog({
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
         <Button
           variant="contained"
-          // transferRequesterPerson === null also disables this: until the requester lookup
-          // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
-          // searches every user, not just the requester - submitting before then could hand
-          // the sample to whoever was picked during that window instead. isProcessingAction
-          // disables it while the transfer itself is in flight, so a double-click can't submit
-          // the same transfer twice.
-          disabled={transferRecipient === null || transferRequesterPerson === null || isProcessingAction}
+          // Prevents a double-click from submitting the same transfer twice.
+          disabled={isProcessingAction}
           onClick={onSubmit}
           sx={{
             backgroundColor: darken(theme.palette.primary.main, 0.5),

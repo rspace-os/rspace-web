@@ -2,10 +2,16 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
-import { darken, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import {
+  approveButtonSx,
+  approvedDisabledButtonSx,
+  markAsFulfilledButtonSx,
+  rejectButtonSx,
+} from "./actionButtonStyles";
 
 /**
  * The sample owner's approve/reject/prepare/fulfil action row for the Requests detail panel,
@@ -51,19 +57,7 @@ export default function OwnerActionsPanel({
           <Button
             variant="outlined"
             disabled={!isActionableState}
-            sx={
-              isActionableState
-                ? {
-                    "&&": {
-                      ...theme.palette.sampleRequestActions.reject,
-                      "&:hover": {
-                        borderColor: darken(theme.palette.sampleRequestActions.reject.borderColor, 0.2),
-                        backgroundColor: theme.palette.sampleRequestStatus.rejected,
-                      },
-                    },
-                  }
-                : undefined
-            }
+            sx={isActionableState ? rejectButtonSx(theme) : undefined}
             onClick={onReject}
           >
             {t("requestsManagement.detail.rejectButton")}
@@ -73,16 +67,9 @@ export default function OwnerActionsPanel({
             disabled={status !== "PENDING" || isProcessingAction}
             sx={
               status === "PENDING"
-                ? {
-                    "&&": {
-                      ...theme.palette.sampleRequestActions.approve,
-                      "&:hover": {
-                        backgroundColor: darken(theme.palette.sampleRequestActions.approve.backgroundColor, 0.15),
-                      },
-                    },
-                  }
+                ? approveButtonSx(theme)
                 : status === "APPROVED"
-                  ? { "&&": theme.palette.sampleRequestActions.approvedDisabled }
+                  ? approvedDisabledButtonSx(theme)
                   : undefined
             }
             onClick={onApprove}
@@ -94,18 +81,7 @@ export default function OwnerActionsPanel({
           <Button
             variant="contained"
             disabled={!prepareSampleEnabled}
-            sx={
-              prepareSampleEnabled
-                ? {
-                    "&&": {
-                      ...theme.palette.sampleRequestActions.approve,
-                      "&:hover": {
-                        backgroundColor: darken(theme.palette.sampleRequestActions.approve.backgroundColor, 0.15),
-                      },
-                    },
-                  }
-                : undefined
-            }
+            sx={prepareSampleEnabled ? approveButtonSx(theme) : undefined}
             onClick={onPrepareOrTransfer}
           >
             {skipChooseMethodDialog
@@ -115,19 +91,7 @@ export default function OwnerActionsPanel({
           <Button
             variant="outlined"
             disabled={status !== "APPROVED"}
-            sx={
-              status === "APPROVED"
-                ? {
-                    "&&": {
-                      ...theme.palette.sampleRequestActions.markAsFulfilled,
-                      "&:hover": {
-                        borderColor: darken(theme.palette.sampleRequestActions.markAsFulfilled.borderColor, 0.2),
-                        backgroundColor: theme.palette.sampleRequestStatus.fulfilled,
-                      },
-                    },
-                  }
-                : undefined
-            }
+            sx={status === "APPROVED" ? markAsFulfilledButtonSx(theme) : undefined}
             onClick={onMarkFulfilled}
           >
             {t("requestsManagement.detail.markAsFulfilledButton")}

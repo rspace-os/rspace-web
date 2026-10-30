@@ -4,12 +4,13 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { darken, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { rejectButtonSx } from "./actionButtonStyles";
 
 export default function RejectRequestDialog({
   open,
@@ -56,19 +57,7 @@ export default function RejectRequestDialog({
         <Button
           variant="outlined"
           disabled={!reason.trim() || isProcessingAction}
-          sx={
-            reason.trim()
-              ? {
-                  "&&": {
-                    ...theme.palette.sampleRequestActions.reject,
-                    "&:hover": {
-                      borderColor: darken(theme.palette.sampleRequestActions.reject.borderColor, 0.2),
-                      backgroundColor: theme.palette.sampleRequestStatus.rejected,
-                    },
-                  },
-                }
-              : undefined
-          }
+          sx={reason.trim() ? rejectButtonSx(theme) : undefined}
           onClick={onConfirm}
         >
           {t("requestsManagement.detail.rejectDialog.rejectRequestButton")}

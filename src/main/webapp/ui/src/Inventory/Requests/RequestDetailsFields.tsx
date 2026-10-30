@@ -8,7 +8,7 @@ import UserDetails from "@/components/UserDetails";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import { isoToLocale } from "@/util/Util";
 import DetailField from "./DetailField";
-import type { ApiSampleRequestListItem } from "./RequestsList";
+import type { ApiSampleRequestListItem } from "./sampleRequest";
 
 /**
  * The Requests detail panel's "Details" section content: the requester, submission date,
