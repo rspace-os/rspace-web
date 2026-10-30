@@ -914,3 +914,15 @@ and compare its routes and responses when moving controllers or documentation.
 
 Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are
 introduced in the layers that first require them.
+
+## API v2 conventions
+
+Every list returns `{docs: [...]}`. Paged lists add paging members; bounded lookups
+return `docs` alone (D4).
+
+Writes requiring a current version use `ETag` on reads and `If-Match` on writes,
+without a body version. Missing headers return 428, stale versions return 412,
+and business conflicts return 409 (D5).
+
+Free-text search uses `q`. Time windows use inclusive `start` and exclusive `end` (D6).
+A feature switched off returns 404 for reads and writes (D7).
