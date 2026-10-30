@@ -16,6 +16,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
+import com.researchspace.booking.api.v2.BookingApiV2ControllerAdvice;
+import com.researchspace.booking.api.v2.BookingNotificationSubscriptionController;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Status;
@@ -59,7 +61,7 @@ class BookingNotificationSubscriptionControllerTest {
         BookingNotificationSubscriptionController.BulkReplacement.class);
     mvc =
         MockMvcBuilders.standaloneSetup(new BookingNotificationSubscriptionController(manager))
-            .setControllerAdvice(new ApiV2ControllerAdvice(messages()))
+            .setControllerAdvice(new BookingApiV2ControllerAdvice(messages()))
             .setMessageConverters(jsonConverter, new WebConfig.YamlJackson2HttpMessageConverter())
             .build();
   }
@@ -141,7 +143,8 @@ class BookingNotificationSubscriptionControllerTest {
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"configurationIds\":[12,13]}"))
-        .andExpect(status().isOk());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.docs").isArray());
     mvc.perform(
             put(SUBSCRIPTIONS)
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)

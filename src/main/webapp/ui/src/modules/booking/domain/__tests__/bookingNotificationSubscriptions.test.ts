@@ -42,7 +42,7 @@ describe("booking notification subscriptions", () => {
       }),
       http.put("/api/v2/users/me/booking-notification-subscriptions", async ({ request }) => {
         bulkBody = await request.json();
-        return HttpResponse.json([subscription(7, true, 1), subscription(8, true, 1)]);
+        return HttpResponse.json({ docs: [subscription(7, true, 1), subscription(8, true, 1)] });
       }),
       http.delete("/api/v2/users/me/booking-notification-subscriptions", () => {
         deleted = true;

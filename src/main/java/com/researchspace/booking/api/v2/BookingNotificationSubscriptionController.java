@@ -1,4 +1,4 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
@@ -41,6 +41,8 @@ public class BookingNotificationSubscriptionController {
   public record BulkReplacement(
       @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds,
       @NotNull Boolean enabled) {}
+
+  public record StatusList(List<Status> docs) {}
 
   public record UnsubscribeResult(int updatedCount) {}
 
@@ -113,10 +115,11 @@ public class BookingNotificationSubscriptionController {
       responses = {
         @ApiResponse(responseCode = "200", description = "Current personal subscriptions.")
       })
-  public List<Status> lookup(
+  public StatusList lookup(
       @Valid @RequestBody Lookup body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return manager.getMany(body.configurationIds(), caller.subject(), caller.actor());
+    return new StatusList(
+        manager.getMany(body.configurationIds(), caller.subject(), caller.actor()));
   }
 
   @PutMapping(value = SUBSCRIPTIONS, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -129,11 +132,12 @@ public class BookingNotificationSubscriptionController {
       responses = {
         @ApiResponse(responseCode = "200", description = "Saved personal subscriptions.")
       })
-  public List<Status> replaceMany(
+  public StatusList replaceMany(
       @Valid @RequestBody BulkReplacement body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return manager.replaceMany(
-        body.configurationIds(), body.enabled(), caller.subject(), caller.actor());
+    return new StatusList(
+        manager.replaceMany(
+            body.configurationIds(), body.enabled(), caller.subject(), caller.actor()));
   }
 
   @DeleteMapping(SUBSCRIPTIONS)

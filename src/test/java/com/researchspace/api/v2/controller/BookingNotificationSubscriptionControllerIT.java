@@ -60,7 +60,7 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
     setBookingEnabled(false);
     mockMvc
         .perform(get(DEFAULTS).header("apiKey", fixture.userKey()))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isNotFound());
   }
 
   @Test
