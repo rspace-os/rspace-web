@@ -45,7 +45,10 @@ import org.junit.jupiter.api.Test;
 class ApiV2RuntimeFieldParserTest {
 
   private static final ResourceRegistry REGISTRY =
-      new ResourceRegistry(List.of(ApiV2InstrumentResource.DESCRIPTION));
+      new ResourceRegistry(
+          List.of(
+              ApiV2InstrumentResource.DESCRIPTION,
+              com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION));
 
   private record InstrumentHolder(Long id, Instrument target) {}
 
@@ -67,7 +70,11 @@ class ApiV2RuntimeFieldParserTest {
           "id",
           List.of(new Sort("id", true)));
   private static final ResourceRegistry HOLDER_REGISTRY =
-      new ResourceRegistry(List.of(HOLDERS, ApiV2InstrumentResource.DESCRIPTION));
+      new ResourceRegistry(
+          List.of(
+              HOLDERS,
+              ApiV2InstrumentResource.DESCRIPTION,
+              com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION));
   private static final User READER = new User("reader");
   private static final User STRANGER = new User("stranger");
 

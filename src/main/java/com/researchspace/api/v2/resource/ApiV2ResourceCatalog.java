@@ -3,6 +3,7 @@ package com.researchspace.api.v2.resource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RuntimeCollectionFields;
+import com.researchspace.service.ResourceMutationManager;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,11 @@ public final class ApiV2ResourceCatalog {
   private final Map<String, ApiV2ResourceRegistration<?, ?>> resources;
 
   public ApiV2ResourceCatalog(List<ApiV2ResourceSpec<?, ?>> specs) {
+    this(specs, new ResourceMutationManager());
+  }
+
+  public ApiV2ResourceCatalog(
+      List<ApiV2ResourceSpec<?, ?>> specs, ResourceMutationManager mutations) {
     Objects.requireNonNull(specs, "Resource specs");
     registry = new ResourceRegistry(specs.stream().map(ApiV2ResourceSpec::description).toList());
     Map<String, ApiV2ResourceRegistration<?, ?>> registrations = new LinkedHashMap<>();
@@ -24,7 +30,7 @@ public final class ApiV2ResourceCatalog {
     ApiV2RelationshipResolver resolver =
         new ApiV2RelationshipResolver(name -> Optional.ofNullable(targets.get(name)));
     specs.stream()
-        .map(spec -> bind(spec, registry, resolver, this::runtimeFieldsOf))
+        .map(spec -> bind(spec, registry, resolver, this::runtimeFieldsOf, mutations))
         .forEach(
             registration -> {
               registrations.put(registration.resourceName(), registration);
@@ -58,8 +64,10 @@ public final class ApiV2ResourceCatalog {
       ApiV2ResourceSpec<T, ID> spec,
       ResourceRegistry registry,
       ApiV2RelationshipResolver resolver,
-      Function<String, List<RuntimeCollectionFields<?>>> providersByResource) {
-    return spec.bind(registry, resolver, providersByResource);
+      Function<String, List<RuntimeCollectionFields<?>>> providersByResource,
+      ResourceMutationManager mutations) {
+    return new ApiV2ResourceRegistration<>(
+        spec, registry, resolver, providersByResource, mutations);
   }
 
   private static void putUnique(

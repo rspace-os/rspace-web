@@ -20,6 +20,7 @@ import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRenderer.TargetKey;
 import com.researchspace.model.collection.ResourceRenderer.TargetResolver;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.service.ResourceMutationManager;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -35,6 +36,7 @@ import java.util.function.Supplier;
 /** Shared CRUD mechanics for REST v2 collection endpoints. */
 public final class ApiV2CrudDispatcher<T, ID> {
 
+  private final ResourceMutationManager mutations;
   private final CollectionDescription<T> description;
   private final ResourceOperations<T, ID> operations;
   private final ResourceRenderer renderer;
@@ -59,6 +61,23 @@ public final class ApiV2CrudDispatcher<T, ID> {
       ResourceOperations<T, ID> operations,
       ApiV2RelationshipResolver relationshipResolver,
       BiFunction<ResourceOperation, RuntimeException, RuntimeException> errorTranslator) {
+    this(
+        description,
+        registry,
+        operations,
+        relationshipResolver,
+        errorTranslator,
+        new ResourceMutationManager());
+  }
+
+  ApiV2CrudDispatcher(
+      CollectionDescription<T> description,
+      ResourceRegistry registry,
+      ResourceOperations<T, ID> operations,
+      ApiV2RelationshipResolver relationshipResolver,
+      BiFunction<ResourceOperation, RuntimeException, RuntimeException> errorTranslator,
+      ResourceMutationManager mutations) {
+    this.mutations = mutations;
     this.description = description;
     this.operations = operations;
     this.relationshipResolver = relationshipResolver;
@@ -295,10 +314,12 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return invoke(
         ResourceOperation.UPDATE,
         () ->
-            operations
-                .update(id, document, expectedVersion, scope, caller)
-                .map(resource -> document(resource, selection, caller.subject()))
-                .orElseThrow(NotFoundException::new));
+            mutations.execute(
+                () ->
+                    operations
+                        .update(id, document, expectedVersion, scope, caller)
+                        .map(resource -> document(resource, selection, caller.subject()))
+                        .orElseThrow(NotFoundException::new)));
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
@@ -327,18 +348,20 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return invoke(
         ResourceOperation.DELETE,
         () ->
-            operations
-                .delete(id, options, scope, caller)
-                .map(
-                    result ->
-                        result
-                            .resource()
-                            .map(
-                                resource ->
-                                    ResourceDeleteResult.retained(
-                                        document(resource, selection, caller.subject())))
-                            .orElseGet(ResourceDeleteResult::permanentlyDeleted))
-                .orElseThrow(NotFoundException::new));
+            mutations.execute(
+                () ->
+                    operations
+                        .delete(id, options, scope, caller)
+                        .map(
+                            result ->
+                                result
+                                    .resource()
+                                    .map(
+                                        resource ->
+                                            ResourceDeleteResult.retained(
+                                                document(resource, selection, caller.subject())))
+                                    .orElseGet(ResourceDeleteResult::permanentlyDeleted))
+                        .orElseThrow(NotFoundException::new)));
   }
 
   public ApiV2BulkResult<Map<String, Object>> deleteMany(

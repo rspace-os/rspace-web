@@ -30,6 +30,7 @@ import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldContext;
 import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.service.ResourceMutationManager;
 import com.researchspace.service.resourceaccess.RemoveSelfResourceAccess;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
@@ -72,6 +73,15 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       ResourceRegistry registry,
       ApiV2RelationshipResolver relationshipResolver,
       Function<String, List<RuntimeCollectionFields<?>>> providersByResource) {
+    this(spec, registry, relationshipResolver, providersByResource, new ResourceMutationManager());
+  }
+
+  ApiV2ResourceRegistration(
+      ApiV2ResourceSpec<T, ID> spec,
+      ResourceRegistry registry,
+      ApiV2RelationshipResolver relationshipResolver,
+      Function<String, List<RuntimeCollectionFields<?>>> providersByResource,
+      ResourceMutationManager mutations) {
     this.providersByResource =
         providersByResource == null ? name -> List.of() : providersByResource;
     this.spec = Objects.requireNonNull(spec, "Resource spec");
@@ -86,7 +96,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     }
     crud =
         new ApiV2CrudDispatcher<>(
-            description, registry, operations, relationshipResolver, spec::translate);
+            description, registry, operations, relationshipResolver, spec::translate, mutations);
     runtimeProjection =
         new ApiV2RuntimeFieldProjection<>(description, spec, this.providersByResource);
   }
