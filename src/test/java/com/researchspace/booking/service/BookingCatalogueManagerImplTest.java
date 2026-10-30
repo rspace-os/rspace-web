@@ -205,7 +205,9 @@ class BookingCatalogueManagerImplTest {
             any(ResourceRequest.class), same(caller), same(ownership)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
-    when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
+
+    when(bookingInstruments.getReadableParentLocationSummaries(Set.of(), caller))
+        .thenReturn(Map.of());
 
     search(ResourceRequest.unpaged(null), null, true, 2, 20);
 
@@ -228,7 +230,9 @@ class BookingCatalogueManagerImplTest {
             any(ResourceRequest.class), same(subject), any(RsqlCollectionQuery.Predicate.class)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
-    when(instruments.getReadableParentLocationSummaries(Set.of(), subject)).thenReturn(Map.of());
+
+    when(bookingInstruments.getReadableParentLocationSummaries(Set.of(), subject))
+        .thenReturn(Map.of());
 
     BookingCatalogueManagerImpl managerWithRealItemQuery =
         new BookingCatalogueManagerImpl(
