@@ -182,6 +182,21 @@ class TimeSlotBookingProblemContractTest {
         body);
   }
 
+  @Test
+  void missingDayEndHasTheSameBodyThroughCollectionOperations() throws Exception {
+    BookingPolicyException failure =
+        BookingPolicyException.dayEndMissing(
+            LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"));
+    assertEquals(
+        body(advice.handleBookingPolicy(failure)),
+        body(
+            advice.handleResourceException(
+                translate(
+                    operations.timeSlotBookingApiV2Resource(),
+                    ResourceOperation.CREATE,
+                    failure))));
+  }
+
   /** Round-trips through text so numbers compare by value, as a client would parse them. */
   private JsonNode body(ResponseEntity<ApiV2Problem> response) throws Exception {
     return json.readTree(json.writeValueAsString(response.getBody()));
