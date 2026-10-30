@@ -140,7 +140,12 @@ class ApiV2DocumentParserTest {
       entity = RegistryDocument.class,
       id = "id",
       auditFields = false)
-  private record RegistryResource(@ApiV2ResourceField Long id, @ApiV2ResourceField String name) {}
+  private record RegistryResource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          String name) {}
 
   public static final class RegistryDocument {
     public Long getId() {
