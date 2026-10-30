@@ -78,7 +78,7 @@ public class ApiV2CrudController {
             registration.description(),
             registration.registry(),
             registration.runtimeFieldContext(user));
-    return registration.list(request, user, query.isTotals());
+    return registration.list(request, user, query.isTotals(), query.getMax());
   }
 
   /**
@@ -182,7 +182,8 @@ public class ApiV2CrudController {
   public ApiV2CountResult count(
       @PathVariable String resource,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
-      @RequestParam(required = false) String where) {
+      @RequestParam(required = false) String where,
+      @Valid @ModelAttribute ApiV2CollectionQuery query) {
     User user = subject(caller);
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.COUNT);
@@ -192,7 +193,8 @@ public class ApiV2CrudController {
             registration.description(),
             registration.registry(),
             registration.runtimeFieldContext(user)),
-        user);
+        user,
+        query.getMax());
   }
 
   @GetMapping("/{resource}/{id}")

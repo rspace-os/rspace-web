@@ -29,6 +29,7 @@ import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
@@ -70,6 +71,23 @@ class ApiV2ScalarReadTest {
 
   private final ResourceOperations<Item, Long> operations = mock(ResourceOperations.class);
   private final User actor = new User("reader");
+
+  @Test
+  void supportedSliceCountsOnlyWhenTotalsAreRequested() {
+    when(operations.usesReadDocuments()).thenReturn(true);
+    when(operations.findReadDocumentSlice(any(), eq(actor)))
+        .thenReturn(new ResourceSlice<>(List.of(Map.of("id", 7L, "name", "one")), true));
+    var registration = register(List.of());
+    var request = ResourceRequest.unpaged(null);
+    var result = registration.list(request, actor);
+    org.junit.jupiter.api.Assertions.assertNull(result.totalDocs());
+    org.junit.jupiter.api.Assertions.assertTrue(result.hasNextPage());
+    verify(operations, never()).count(any(), any());
+    verify(operations, never()).findReadDocuments(any(), any());
+    when(operations.count(any(), eq(actor))).thenReturn(5L);
+    assertEquals(5L, registration.list(request, actor, true).totalDocs());
+    verify(operations).count(any(), eq(actor));
+  }
 
   @Test
   void listUsesOnlyScalarDocumentsAndBatchesRuntimeValuesFromTheAuthorizedPageIds() {

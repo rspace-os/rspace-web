@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
@@ -115,10 +116,10 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
   }
 
   @Override
-  public com.researchspace.model.collection.ResourceSlice<Map<String, Object>>
-      findReadDocumentSlice(ResourceRequest request, User actor) {
+  public ResourceSlice<Map<String, Object>> findReadDocumentSlice(
+      ResourceRequest request, User actor) {
     var slice = instrumentManager.getReadableInstrumentSummarySlice(request, actor);
-    return new com.researchspace.model.collection.ResourceSlice<>(
+    return new ResourceSlice<>(
         slice.resources().stream().map(InstrumentResourceOperations::readDocument).toList(),
         slice.hasNext());
   }

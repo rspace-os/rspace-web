@@ -695,7 +695,14 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     FilterExpression filter =
         request.filter() == null ? self : new FilterExpression.And(List.of(self, request.filter()));
     return new ResourceRequest(
-        filter, request.sort(), request.page(), request.fieldSelections(), request.includes());
+        filter,
+        request.serverConstraint(),
+        request.sort(),
+        request.page(),
+        request.fieldSelections(),
+        request.includes(),
+        request.runtime(),
+        request.countMax());
   }
 
   private static void requireActor(User actor) {

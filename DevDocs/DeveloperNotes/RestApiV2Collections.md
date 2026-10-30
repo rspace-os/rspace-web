@@ -568,3 +568,8 @@ Use `hasNextPage` and `nextPage` to traverse results. Without totals, `prevPage`
 available on every page after page 1, including pages past the end. Instruments
 fetch a scalar window plus one row to determine whether another page exists;
 resources without a scalar slice retain their counted query internally.
+
+`/count` and lists with `totals=true` accept `max` from 1 to 10,000. When more
+rows match, `totalDocs` equals `max`, `totalIsLowerBound` is true, and `totalPages`
+is omitted. Navigation still follows the actual page. An exact total reports
+`totalIsLowerBound: false`. A list without totals omits that member too.

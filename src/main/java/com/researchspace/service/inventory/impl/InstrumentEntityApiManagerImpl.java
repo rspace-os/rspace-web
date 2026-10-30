@@ -26,6 +26,7 @@ import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
@@ -1053,8 +1054,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   @Override
-  public com.researchspace.model.collection.ResourceSlice<InstrumentReadSummary>
-      getReadableInstrumentSummarySlice(ResourceRequest request, User user) {
+  public ResourceSlice<InstrumentReadSummary> getReadableInstrumentSummarySlice(
+      ResourceRequest request, User user) {
     return instrumentDao.getReadableResourceSummarySlice(request, readAccess(user));
   }
 
