@@ -25,6 +25,34 @@ const ALL_DAY = {
 } satisfies OpeningSchedule;
 
 describe("ZonedBookingWindowFields", () => {
+  it.each([
+    ["HOURS", 180, "2026-08-17", "09:00", "2026-08-17", "12:00", "4 hours", "3 hours", true],
+    ["MINUTES", 15, "2026-08-17", "09:07", "2026-08-17", "09:30", "23 minutes", "15 minutes", false],
+    ["DAYS", 2880, "2026-08-17", "09:00", "2026-08-19", "13:00", "2 days, 4 hours", "2 days", false],
+    ["HOURS", 180, "2026-03-28", "12:00", "2026-03-29", "12:00", "23 hours", "3 hours", false],
+  ] as const)(
+    "names the rejected %s length",
+    async (unit, minutes, startDate, startTime, endDate, endTime, length, increment, edit) => {
+      await renderWithRealI18n(
+        <StatefulFields
+          displayTimezone="Europe/Berlin"
+          schedulingTimezone="Europe/Berlin"
+          slotGranularityMinutes={minutes}
+          incrementUnit={unit}
+          alignToIncrement={false}
+          maxBookingDurationMinutes={0}
+          {...ALL_DAY}
+          initial={{ startDate, startTime, endDate, endTime }}
+        />,
+        { resources: { booking: bookingEnglish }, defaultNS: "booking" },
+      );
+      if (edit) fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "08:00" } });
+      expect(
+        screen.getByText((text) => text.includes(`This booking lasts ${length}.`) && text.includes(increment)),
+      ).toBeVisible();
+    },
+  );
+
   it.each(["compact", "comfortable"] as const)(
     "keeps the %s date input focused while its date is replaced",
     async (density) => {
@@ -1040,6 +1068,7 @@ describe("validateBookingWindow weekly opening hours", () => {
 
     const oneMinuteOver = validate(window("2026-06-01", "00:00", "2027-06-02", "00:01"));
     expect(oneMinuteOver.maximumDurationInvalid).toBe(true);
+    expect(oneMinuteOver.elapsedMinutes).toBe(MAX_BOOKING_DURATION_MINUTES + 1);
     expect(oneMinuteOver.maximumDurationLimitMinutes).toBe(MAX_BOOKING_DURATION_MINUTES);
 
     // A multi-century draft would otherwise walk tens of thousands of dates, or throw from the enumerator.

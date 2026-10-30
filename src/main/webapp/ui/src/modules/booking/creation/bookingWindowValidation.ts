@@ -104,12 +104,12 @@ export function validateBookingWindow(
     maxBookingDurationMinutes > 0
       ? Math.min(maxBookingDurationMinutes, MAX_BOOKING_DURATION_MINUTES)
       : MAX_BOOKING_DURATION_MINUTES;
-  const maximumDurationInvalid = Boolean(
-    result.window &&
-      Temporal.Instant.from(result.window.end).epochMilliseconds -
-        Temporal.Instant.from(result.window.start).epochMilliseconds >
-        maximumDurationLimitMinutes * 60_000,
-  );
+  const elapsedMinutes = result.window
+    ? (Temporal.Instant.from(result.window.end).epochMilliseconds -
+        Temporal.Instant.from(result.window.start).epochMilliseconds) /
+      60_000
+    : undefined;
+  const maximumDurationInvalid = elapsedMinutes !== undefined && elapsedMinutes > maximumDurationLimitMinutes;
   const openingInvalid = Boolean(
     enforceOpeningHours &&
       result.window &&
@@ -121,6 +121,7 @@ export function validateBookingWindow(
   return {
     ...result,
     window: resolvedWindow,
+    elapsedMinutes,
     rule,
     incrementViolation: violation,
     missingDayEnd,
