@@ -169,11 +169,14 @@ class BookingLocationFilterManagerImplTest {
     FilterExpression location = comparison("location", Operator.EQUAL, reference(12L));
     BookingLocationFilterManagerImpl realQueryManager =
         new BookingLocationFilterManagerImpl(
-            instruments, instrumentReadAccess, new BookingLocationQuery());
+            instruments,
+            instrumentReadAccess,
+            new BookingLocationQuery(
+                mock(com.researchspace.service.inventory.ContainerReadAccess.class)));
 
     for (User deniedCaller : new User[] {null, disabled, locked}) {
       assertEquals(
-          "1 = 0",
+          RsqlCollectionQuery.FALSE_EXPRESSION,
           realQueryManager
               .resolveLocations(ResourceRequest.unpaged(location), deniedCaller, path)
               .restriction()

@@ -1,30 +1,14 @@
 package com.researchspace.booking.dao;
 
-import static com.researchspace.inventory.model.InventoryReadFilters.OWNER_USERNAME;
-import static com.researchspace.inventory.model.InventoryReadFilters.SHARING_ACL;
-import static com.researchspace.inventory.model.InventoryReadFilters.SHARING_MODE;
-
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
-import com.researchspace.inventory.model.InventoryReadFilters;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
-import com.researchspace.model.collection.AccessFunction;
-import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionFieldTypes;
-import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.InternalFilter;
-import com.researchspace.model.collection.Sort;
-import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.ContainerLocation;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
-import com.researchspace.model.inventory.SubSample;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,21 +29,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class BookingLocationQuery {
 
-  private static final List<InternalFilter> SUB_SAMPLE_READ_FILTERS =
-      List.of(
-          new InternalFilter(OWNER_USERNAME, "sample.owner.username", CollectionFieldTypes.text()),
-          new InternalFilter(
-              SHARING_MODE,
-              "sample.sharingMode",
-              CollectionFieldTypes.enumeration(InventorySharingMode.class)),
-          new InternalFilter(SHARING_ACL, "sample.sharingACL.acl", CollectionFieldTypes.text()));
+  private final com.researchspace.service.inventory.ContainerReadAccess containers;
 
-  private static final CollectionDescription<Container> CONTAINERS =
-      readRuleDescription(Container.class, InventoryReadFilters.ALL);
+  public BookingLocationQuery(com.researchspace.service.inventory.ContainerReadAccess containers) {
+    this.containers = containers;
+  }
+
   private static final CollectionDescription<Instrument> INSTRUMENTS =
-      readRuleDescription(Instrument.class, InventoryReadFilters.ALL);
-  private static final CollectionDescription<SubSample> SUB_SAMPLES =
-      readRuleDescription(SubSample.class, SUB_SAMPLE_READ_FILTERS);
+      com.researchspace.inventory.model.ApiV2InstrumentResource.DESCRIPTION;
 
   /**
    * Whether the configuration target at {@code targetPath} is readable by {@code caller} and is
@@ -102,32 +79,18 @@ public class BookingLocationQuery {
                 new Subquery(
                     Instrument.class, target, targetRead.expression(), targetRead.subqueries())));
 
-    List<Predicate> readable = new ArrayList<>();
-    readable.add(
-        new RsqlCollectionQuery(CONTAINERS, parent + ".container", name + "Direct")
-            .translateTrusted(readConstraint));
-    for (ChildKind kind : ChildKind.values()) {
-      String child = name + kind.suffix;
-      Predicate childRead =
-          new RsqlCollectionQuery(kind.description, child + "." + kind.property, child + "Read")
-              .translateTrusted(editConstraint);
-      readable.add(
-          new Predicate(
-              "EXISTS " + child,
-              childRead.parameters(),
-              Map.of(
-                  child,
-                  new Subquery(
-                      ContainerLocation.class,
-                      child,
-                      child
-                          + ".container.id = "
-                          + parent
-                          + ".container.id AND ("
-                          + childRead.expression()
-                          + ")",
-                      childRead.subqueries()))));
-    }
+    var access =
+        containers.check(
+            new com.researchspace.model.collection.AccessContext(
+                caller,
+                com.researchspace.model.collection.AccessContext.Operation.READ,
+                "containers"));
+    Predicate readable =
+        new RsqlCollectionQuery(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                parent + ".container",
+                name + "ParentRead")
+            .translateTrusted(access.constraintOrEmpty().orElseThrow());
     Predicate named = null;
     if (containerIds != null) {
       named =
@@ -144,7 +107,7 @@ public class BookingLocationQuery {
                 Map.of(name + "TargetType", BookableTargetType.INSTRUMENT)),
             named,
             new Predicate(parent + ".container.deleted = false", Map.of()),
-            Predicate.or(readable.toArray(Predicate[]::new)));
+            readable);
     return Predicate.and(
         readableTarget,
         new Predicate(
@@ -157,37 +120,5 @@ public class BookingLocationQuery {
                     parent,
                     parentRead.expression(),
                     parentRead.subqueries()))));
-  }
-
-  private enum ChildKind {
-    CONTAINER("ChildContainer", "storedContainer", CONTAINERS),
-    INSTRUMENT("ChildInstrument", "storedInstrument", INSTRUMENTS),
-    SUB_SAMPLE("ChildSubSample", "storedSubSample", SUB_SAMPLES);
-
-    private final String suffix;
-    private final String property;
-    private final CollectionDescription<?> description;
-
-    ChildKind(String suffix, String property, CollectionDescription<?> description) {
-      this.suffix = suffix;
-      this.property = property;
-      this.description = description;
-    }
-  }
-
-  /** The fields the Inventory read rule tests, and nothing a caller could filter on. */
-  private static <T extends InventoryRecord> CollectionDescription<T> readRuleDescription(
-      Class<T> type, List<InternalFilter> readFilters) {
-    return new CollectionDescription<>(
-        "booking-location-" + type.getSimpleName(),
-        type,
-        List.<Field<T, ?>>of(
-            Field.<T, Long>readOnly("id", "id", CollectionFieldTypes.longNumber(), T::getId),
-            Field.<T, Boolean>readOnly(
-                "deleted", "deleted", CollectionFieldTypes.bool(), T::isDeleted)),
-        "id",
-        List.of(new Sort("id", true)),
-        AccessPolicy.readOnly(AccessFunction.authenticated()),
-        readFilters);
   }
 }
