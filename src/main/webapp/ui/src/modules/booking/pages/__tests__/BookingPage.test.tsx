@@ -82,14 +82,14 @@ function renderAt(
           ),
     ),
     http.get("/api/v2/booking-configuration-targets", () =>
-      HttpResponse.json(
-        Array.from({ length: eligibleTargets }, (_, index) => ({
+      HttpResponse.json({
+        docs: Array.from({ length: eligibleTargets }, (_, index) => ({
           id: 500 + index,
           globalId: `IN${500 + index}`,
           name: `Unconfigured instrument ${index + 1}`,
           deleted: false,
         })),
-      ),
+      }),
     ),
     http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),

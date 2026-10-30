@@ -531,11 +531,7 @@ class ApiV2FilterExpansionMVCIT {
 
   private long parentId(long instrumentId) {
     return transactions.execute(
-        ignored ->
-            instrumentDao
-                .getParentLocationSummaries(Set.of(instrumentId))
-                .get(instrumentId)
-                .containerId());
+        ignored -> instrumentDao.get(instrumentId).getParentLocation().getContainer().getId());
   }
 
   private void makeContainerPrivate(long containerId) {
