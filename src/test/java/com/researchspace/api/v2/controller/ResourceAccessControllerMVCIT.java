@@ -243,13 +243,13 @@ class ResourceAccessControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-settings/access-grantees")
-                .queryParam("query", "us")
+                .queryParam("q", "us")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isForbidden());
     mockMvc
         .perform(
             get("/api/v2/booking-settings/access-grantees")
-                .queryParam("query", "us")
+                .queryParam("q", "us")
                 .header("apiKey", fixture.sysadminKey()))
         .andDo(ResourceAccessControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk());

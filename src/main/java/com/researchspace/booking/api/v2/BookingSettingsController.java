@@ -314,7 +314,7 @@ public final class BookingSettingsController {
       })
   public ResourceGranteeDirectoryDocument accessGrantees(
       @Parameter(description = "Case-insensitive search text.", schema = @Schema(minLength = 2))
-          @RequestParam
+          @RequestParam(name = "q")
           String query,
       @Parameter(
               description = "Maximum results to return.",

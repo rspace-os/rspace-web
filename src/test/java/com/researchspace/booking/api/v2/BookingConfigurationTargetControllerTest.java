@@ -28,7 +28,7 @@ class BookingConfigurationTargetControllerTest {
     var result =
         mvc.perform(
                 MockMvcRequestBuilders.get("/api/v2/booking-configuration-targets")
-                    .param("query", "ab")
+                    .param("q", "ab")
                     .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.docs[0].id").value(1))
