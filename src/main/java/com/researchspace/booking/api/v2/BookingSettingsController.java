@@ -20,7 +20,7 @@ import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -302,7 +302,9 @@ public final class BookingSettingsController {
       summary = "Search eligible default-access grantees",
       tags = "booking-directories",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Eligible users and groups."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Eligible users and groups in docs, without paging metadata."),
         @ApiResponse(responseCode = "400"),
         @ApiResponse(responseCode = "401"),
         @ApiResponse(responseCode = "403", description = "Sysadmin access is required."),
@@ -310,7 +312,7 @@ public final class BookingSettingsController {
         @ApiResponse(responseCode = "429"),
         @ApiResponse(responseCode = "500")
       })
-  public List<ResourceGranteeDirectoryEntry> accessGrantees(
+  public ResourceGranteeDirectoryDocument accessGrantees(
       @Parameter(description = "Case-insensitive search text.", schema = @Schema(minLength = 2))
           @RequestParam
           String query,
@@ -321,10 +323,11 @@ public final class BookingSettingsController {
           int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     requireEnabledRead(caller.subject());
-    return directoryManager.searchForSettings(
-        ResourceAccessController.validateQuery(query),
-        ResourceAccessController.validateLimit(limit),
-        caller.subject());
+    return new ResourceGranteeDirectoryDocument(
+        directoryManager.searchForSettings(
+            ResourceAccessController.validateQuery(query),
+            ResourceAccessController.validateLimit(limit),
+            caller.subject()));
   }
 
   @PatchMapping(value = "/admin", consumes = MediaType.APPLICATION_JSON_VALUE)

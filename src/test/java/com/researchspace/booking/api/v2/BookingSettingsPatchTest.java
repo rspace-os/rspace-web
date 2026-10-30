@@ -98,6 +98,21 @@ class BookingSettingsPatchTest {
   }
 
   @Test
+  void wrapsTheSettingsGranteeDirectoryInDocs() throws Exception {
+    when(directoryManager.searchForSettings("ab", 20, user)).thenReturn(List.of());
+    var result =
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/api/v2/booking-settings/access-grantees")
+                    .param("query", "ab")
+                    .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.docs").isEmpty())
+            .andReturn();
+    assertEquals(1, mapper.readTree(result.getResponse().getContentAsString()).size());
+  }
+
+  @Test
   void disabledBookingHidesSettingsWrites() throws Exception {
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, user)).thenReturn(false);
     messageSource.addMessage("errors.api.v2.notFound", Locale.ENGLISH, "Not found.");
