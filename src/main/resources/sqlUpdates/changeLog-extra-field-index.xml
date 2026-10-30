@@ -35,6 +35,9 @@
       On 100,000 instruments and 2,000,000 value rows, correlated runtime-field filters
       probe each owning instrument, then the name prefix and deletion flag.
       The plain name equality lets MariaDB use all three indexed columns.
+      Its leading column overlaps the existing foreign-key index FK_ExtraField_to_InstrEntity.
+      That index is kept deliberately: it belongs to the released schema, and dropping it is a
+      separate schema change. This composite index could back the foreign key if it is dropped later.
     </comment>
     <sql>
       CREATE INDEX ix_extrafield_instr_name
