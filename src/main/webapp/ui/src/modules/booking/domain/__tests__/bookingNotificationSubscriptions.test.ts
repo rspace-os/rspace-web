@@ -29,7 +29,7 @@ describe("booking notification subscriptions", () => {
     server.use(
       http.get("/api/v2/users/me/booking-notification-preferences", ({ request }) => {
         expect(request.headers.get("Authorization")).toBe("Bearer token");
-        return HttpResponse.json({ autoSubscribeOwnedItems: true });
+        return HttpResponse.json({ notifyOwnActions: true, autoSubscribeOwnedItems: true });
       }),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         preferencesBody = (await request.json()) as { autoSubscribeOwnedItems: boolean };
@@ -50,9 +50,12 @@ describe("booking notification subscriptions", () => {
       }),
     );
 
-    expect(await fetchBookingNotificationPreferences("token")).toEqual({ autoSubscribeOwnedItems: true });
-    await replaceBookingNotificationPreferences({ autoSubscribeOwnedItems: false }, "token");
-    expect(preferencesBody).toEqual({ autoSubscribeOwnedItems: false });
+    expect(await fetchBookingNotificationPreferences("token")).toEqual({
+      notifyOwnActions: true,
+      autoSubscribeOwnedItems: true,
+    });
+    await replaceBookingNotificationPreferences({ notifyOwnActions: true, autoSubscribeOwnedItems: false }, "token");
+    expect(preferencesBody).toEqual({ notifyOwnActions: true, autoSubscribeOwnedItems: false });
     expect(await fetchBookingNotificationSubscription(7, "token")).toEqual(subscription(7));
     expect(await replaceBookingNotificationSubscription(7, true, 0, "token")).toEqual(subscription(7, true, 1));
     expect(itemBody).toEqual({ enabled: true, version: 0 });

@@ -147,6 +147,17 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     super.tearDown();
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void ownBookingEmailFollowsOwnerPreference(boolean emailEnabled) throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    BookingSetup setup = createBookingSetup(owner, "Own booking email " + getRandomName(6));
+    setRecipientPreferences(owner, true, emailEnabled, "UTC");
+    createBooking(setup, owner);
+    assertSingleNotification(owner, "UTC");
+    assertEquals(emailEnabled ? 1 : 0, emailCapture.deliveries().size());
+  }
+
   @Test
   void deliversToOwnerBookerAndViewerWithEachUsersEventEmailAndTimezonePreferences()
       throws Exception {
@@ -179,14 +190,14 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     assertSingleNotification(booker, "America/Los_Angeles");
     assertSingleNotification(viewer, "Asia/Tokyo");
     assertNoNotification(eventDisabled);
-    assertNoNotification(actor);
+    assertSingleNotification(actor, "UTC");
 
     assertEquals(
-        Set.of(owner.getEmail(), booker.getEmail()),
+        Set.of(owner.getEmail(), booker.getEmail(), actor.getEmail()),
         emailCapture.deliveries().stream()
             .flatMap(delivery -> delivery.addresses().stream())
             .collect(Collectors.toSet()));
-    assertEquals(2, emailCapture.deliveries().size());
+    assertEquals(3, emailCapture.deliveries().size());
     assertTrue(
         emailCapture.deliveries().stream()
             .anyMatch(delivery -> delivery.notificationMessage().contains("Europe/Berlin")));
@@ -352,6 +363,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     setRecipientPreferences(globalPreferenceAfterSnapshot, true, true, "Asia/Tokyo");
     setRecipientPreferences(revokedAfterSnapshot, true, true, "Europe/Paris");
 
+    setRecipientPreferences(owner, true, true, "UTC");
     CountDownLatch firstSelectReturned = new CountDownLatch(1);
     CountDownLatch allowPermissionResolution = new CountDownLatch(1);
     installRecipientSelectPause(
@@ -399,6 +411,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
       changes.get(30, TimeUnit.SECONDS);
       assertEquals(
           Set.of(
+              owner.getId(),
               unsubscribedAfterSnapshot.getId(),
               globalPreferenceAfterSnapshot.getId(),
               revokedAfterSnapshot.getId()),

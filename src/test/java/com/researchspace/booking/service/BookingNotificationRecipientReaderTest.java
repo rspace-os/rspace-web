@@ -11,10 +11,12 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookableItemNotificationSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.time.Clock;
@@ -25,6 +27,8 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class BookingNotificationRecipientReaderTest {
 
@@ -94,6 +98,47 @@ class BookingNotificationRecipientReaderTest {
             NotificationType.NOTIFICATION_BOOKING_CANCELLED,
             99L,
             requester.getId()));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "owner,NOTIFICATION_BOOKING_CREATED,true,true,true,1",
+    "owner,NOTIFICATION_BOOKING_CANCELLED,true,true,true,1",
+    "subscriber,NOTIFICATION_BOOKING_CREATED,true,true,true,1",
+    "owner,NOTIFICATION_BOOKING_CREATED,false,true,true,0",
+    "owner,NOTIFICATION_BOOKING_CANCELLED,false,true,true,0",
+    "owner,NOTIFICATION_BOOKING_CREATED,true,false,true,0",
+    "owner,NOTIFICATION_BOOKING_CANCELLED,true,false,true,0",
+    "owner,NOTIFICATION_BOOKING_CREATED,true,true,false,0"
+  })
+  void ownActionsRespectSubscriptionAndEventPreferences(
+      String name,
+      NotificationType event,
+      boolean ownActions,
+      boolean wantsEvent,
+      boolean subscribed,
+      int expected) {
+    User actor = user(name, 7L);
+    assertEquals(
+        "true", actor.getValueForPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS).getValue());
+    actor.setPreference(
+        new UserPreference(
+            Preference.BOOKING_NOTIFY_OWN_ACTIONS, actor, Boolean.toString(ownActions)));
+    Preference eventPreference =
+        event == NotificationType.NOTIFICATION_BOOKING_CREATED
+            ? Preference.NOTIFICATION_BOOKING_CREATED_PREF
+            : Preference.NOTIFICATION_BOOKING_CANCELLED_PREF;
+    actor.setPreference(new UserPreference(eventPreference, actor, Boolean.toString(wantsEvent)));
+    var candidates =
+        subscribed
+            ? List.of(subscriptionFor(actor))
+            : List.<BookableItemNotificationSubscription>of();
+    when(subscriptions.findEnabledByInstrument(INSTRUMENT_ID)).thenReturn(candidates);
+    when(permissions.resolve(any(BookableTargetReference.class), eq(actor)))
+        .thenReturn(readableAccess());
+    assertEquals(
+        expected,
+        reader.selectRecipients(INSTRUMENT_ID, event, actor.getId(), actor.getId()).size());
   }
 
   private BookableItemNotificationSubscription subscriptionFor(User user) {

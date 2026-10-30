@@ -31,7 +31,8 @@ public class BookingNotificationSubscriptionController {
   private static final String SUBSCRIPTIONS = "/users/me/booking-notification-subscriptions";
   private static final String ITEM = "/booking-configurations/{id}/notification-subscription";
 
-  public record PreferenceReplacement(@NotNull Boolean autoSubscribeOwnedItems) {}
+  public record PreferenceReplacement(
+      @NotNull Boolean autoSubscribeOwnedItems, @NotNull Boolean notifyOwnActions) {}
 
   public record SubscriptionReplacement(@NotNull Boolean enabled, @NotNull @Min(-1) Long version) {}
 
@@ -55,7 +56,7 @@ public class BookingNotificationSubscriptionController {
   @GetMapping(PREFERENCES)
   @Operation(
       operationId = "getMyBookingNotificationPreferences",
-      summary = "Get the caller's default for new owned bookable instruments",
+      summary = "Get the caller's booking notification preferences",
       responses = {
         @ApiResponse(responseCode = "200", description = "Current automatic subscription default.")
       })
@@ -67,7 +68,7 @@ public class BookingNotificationSubscriptionController {
   @PutMapping(value = PREFERENCES, consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "replaceMyBookingNotificationPreferences",
-      summary = "Change the automatic subscription default without changing existing subscriptions",
+      summary = "Change personal notification preferences without changing existing subscriptions",
       responses = {
         @ApiResponse(responseCode = "200", description = "Saved automatic subscription default.")
       })
@@ -75,7 +76,7 @@ public class BookingNotificationSubscriptionController {
       @Valid @RequestBody PreferenceReplacement body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     return manager.replacePreferences(
-        body.autoSubscribeOwnedItems(), caller.subject(), caller.actor());
+        body.autoSubscribeOwnedItems(), body.notifyOwnActions(), caller.subject(), caller.actor());
   }
 
   @GetMapping(ITEM)

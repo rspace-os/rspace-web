@@ -33,6 +33,7 @@ function registerHandlers() {
     }),
     http.get("/api/v2/users/me/booking-notification-preferences", () =>
       HttpResponse.json({
+        notifyOwnActions: true,
         autoSubscribeOwnedItems: true,
       }),
     ),

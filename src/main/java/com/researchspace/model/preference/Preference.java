@@ -249,7 +249,14 @@ public enum Preference {
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.UI,
-      "userProfile.message.bookingAutoSubscribe");
+      "userProfile.message.bookingAutoSubscribe"),
+
+  /** Whether subscribers receive notifications about booking events they cause. */
+  BOOKING_NOTIFY_OWN_ACTIONS(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.UI,
+      "userProfile.message.bookingOwnActions");
 
   private String defaultValue;
   private SettingsType prefType;

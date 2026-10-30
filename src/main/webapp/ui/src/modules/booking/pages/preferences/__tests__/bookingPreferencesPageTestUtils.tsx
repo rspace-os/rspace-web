@@ -11,7 +11,7 @@ export function useDefaultBookingPreferencesHandlers() {
   server.use(
     http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
     http.get("/api/v2/users/me/booking-notification-preferences", () =>
-      HttpResponse.json({ autoSubscribeOwnedItems: false }),
+      HttpResponse.json({ notifyOwnActions: true, autoSubscribeOwnedItems: false }),
     ),
     http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) =>
       HttpResponse.json(await request.json()),

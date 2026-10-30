@@ -97,6 +97,31 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
   }
 
   @Test
+  void ownActionPreferenceDefaultsTrueIsRequiredAndPersists() throws Exception {
+    mockMvc
+        .perform(get(DEFAULTS).header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.notifyOwnActions").value(true));
+    mockMvc
+        .perform(
+            put(DEFAULTS)
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"autoSubscribeOwnedItems\":true}"))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            put(DEFAULTS)
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":false}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(get(DEFAULTS).header("apiKey", fixture.userKey()))
+        .andExpect(jsonPath("$.notifyOwnActions").value(false));
+  }
+
+  @Test
   void readableAdminCanManageOnlyTheirOwnSubscription() throws Exception {
     long id =
         fixture.bookingConfiguration(
@@ -145,7 +170,7 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
             put(DEFAULTS)
                 .header("apiKey", key)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":false}"))
+                .content("{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":false}"))
         .andExpect(status().isOk());
     long second =
         fixture.bookingConfiguration(fixture.instrument(fixture.user(), "New instrument"), "UTC");
