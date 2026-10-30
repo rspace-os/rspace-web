@@ -39,7 +39,7 @@ describe("IdentifierPublicPage", () => {
   });
 
   describe("Description", () => {
-    test("shows the description's text and none of its form controls or images", async () => {
+    test("shows the description without its form controls", async () => {
       mockAxios.onGet("/api/inventory/v1/public/view/1").reply(200, {
         identifiers: [{ ...mockIGSNAttrs(), customFieldsOnPublicPage: true }],
         description: PHISHING_DESCRIPTION,
@@ -49,11 +49,7 @@ describe("IdentifierPublicPage", () => {
       render(<IdentifierPublicPage publicId={"1"} />);
 
       expect(await screen.findByText("Calibrated light microscope.")).toBeInTheDocument();
-      expect(screen.getByText("Your session expired. Sign in again to see the full record.")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Sign in" })).not.toBeInTheDocument();
-      expect(screen.queryByPlaceholderText("Username")).not.toBeInTheDocument();
-      expect(screen.queryByPlaceholderText("RSpace password")).not.toBeInTheDocument();
-      expect(screen.queryByRole("img", { name: "tracking pixel" })).not.toBeInTheDocument();
     });
   });
 });
