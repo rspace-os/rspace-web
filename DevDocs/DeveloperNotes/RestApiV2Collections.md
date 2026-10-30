@@ -825,3 +825,31 @@ The v1 Audit Trail page and v2 audit search share the audit line format, includi
 containing `#`, operate-as usernames, empty descriptions, and the legacy `COPY` action.
 V1 skips malformed lines and retains its lenient timestamp parsing in the JVM default zone.
 V2 rejects malformed audit lines and uses strict, zone-aware timestamps.
+
+V2 first authorizes access to the requested record, including lifecycle-hidden records only
+when the resource's audit operations allow it. It filters historical payloads to fields the
+caller can read now. Descriptions are omitted by default. A resource may override
+`ResourceOperations.auditDescriptionsSafe()` only when all its historical descriptions are safe
+for every reader. Text search follows the same field and description rules, so hidden values
+cannot be discovered through matching or counts. V1 retains its existing actor-directory search
+and payload/description behavior. V2 exposes only completed UTC days and returns `503` rather
+than silently skipping unreadable or malformed eligible audit lines.
+
+Both readers use `AuditLogLineFormat` for anchored line syntax, username characters, empty
+descriptions and legacy action names. They deliberately differ in malformed-line and timestamp
+policy. V1's `LogLineParser` skips invalid lines and parses dates leniently in the JVM default
+zone. V2's `ApiV2AuditStrictSearch` rejects clock gaps and malformed audit lines. During a DST
+overlap it checks record, actor, action and visible text first. A matching event returns `503`
+only if its two candidate instants differ on inclusion in the requested interval. Otherwise it
+uses the earlier instant. File boundaries use the earliest first and latest last candidate so
+an ambiguous boundary cannot hide a matching event.
+
+V2 scans are limited by `api.v2.audit.concurrentScans` with a default of 2; excess requests return
+`503` immediately. `api.v2.audit.cacheEntries` defaults to 32 and `api.v2.audit.cacheSeconds` to 10;
+either may be zero to disable caching. The cache stores at most the bounded scan result per entry,
+not pages. Keys include the interval, resource audit identity, filters, caller, current actor
+visibility, readable search fields, description permission and file manifest. Every request
+rechecks record and field access and actor visibility before reuse. File identity, size or
+modification-time changes invalidate reuse. Failed, retried and over-ceiling scans are not cached.
+Successful searches, including cache hits and empty results, emit an audit `SEARCH` event only
+after snapshot validation succeeds.
