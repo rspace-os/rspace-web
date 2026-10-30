@@ -216,6 +216,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
       throws Exception {
     User owner = createInitAndLoginAnyUser();
     User requester = createInitAndLoginAnyUser();
+    userMgr.setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
     BookingSetup setup = createBookingSetup(owner, "Cancellation requester " + getRandomName(6));
     Group bookerGroup = createGroupForUsersWithDefaultPi(owner, requester);
     shareWithBookersOnly(setup.instrumentId(), bookerGroup);
@@ -254,6 +255,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
       RequesterIneligibility ineligibility) throws Exception {
     User owner = createInitAndLoginAnyUser();
     User requester = createInitAndLoginAnyUser();
+    userMgr.setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
     BookingSetup setup = createBookingSetup(owner, "Ineligible requester " + getRandomName(6));
     Group bookerGroup = createGroupForUsersWithDefaultPi(owner, requester);
     shareWithBookersOnly(setup.instrumentId(), bookerGroup);
@@ -282,6 +284,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
   void usesFreshDetachedPreferencesWhenOuterBookingSessionHasOldRecipientValues() throws Exception {
     User owner = createInitAndLoginAnyUser();
     User subscriber = createInitAndLoginAnyUser();
+    userMgr.setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
     BookingSetup setup = createBookingSetup(owner, "Detached notification " + getRandomName(6));
     Group bookerGroup = createGroupForUsersWithDefaultPi(owner, subscriber);
     shareWithBookersOnly(setup.instrumentId(), bookerGroup);
