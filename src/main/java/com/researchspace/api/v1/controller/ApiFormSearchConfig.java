@@ -19,8 +19,8 @@ public class ApiFormSearchConfig extends ApiSearchConfig {
   public static final int MAX_QUERY_LENGTH = 2000;
 
   @Size(min = 2, max = MAX_QUERY_LENGTH, message = "{validation.search.queryLengthRange}")
-  // at least 2 continuous letter characters
-  @Pattern(regexp = ".*\\w{2}.*")
+  // at least 2 consecutive word characters, in any script (?U = UNICODE_CHARACTER_CLASS)
+  @Pattern(regexp = "(?U).*\\w{2}.*")
   private String query;
 
   @Pattern(regexp = "(mine)|(all)")

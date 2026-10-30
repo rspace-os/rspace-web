@@ -12,6 +12,10 @@ You can find our official changelog at https://documentation.researchspace.com/a
 - RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct. With a valid client, the grant now answers a username with the ordinary invalid-credentials response, at the cost of one password check, after `oauth.passwordGrant.maxFailures` wrong passwords (default 5) within `oauth.passwordGrant.failureWindowSeconds` (default 600), until the window passes. Administrators see a block in the security log. The count is held in memory and does not touch the account's login-page lockout. Unknown usernames are answered after one password check, so for ordinary accounts their response time is close to that of a wrong password.
 - ISSUE-1135 the minimum length of a search term is now configurable: `search.sysadmin.minTermLength` (default 5) and `search.user.minTermLength` (default 2) apply to Workspace and Inventory searches, in RSpace and through the API; 0 or less disables the check. Lower them on CJK installations, where two-character terms are common.
 
+### ELN Bugfix
+
+- ISSUE-1135 fix `GET /api/v1/forms?query=` rejecting queries written in non-Latin scripts such as Japanese
+
 # 2.27.0 2026-10-02
 
 ### ELN Features
