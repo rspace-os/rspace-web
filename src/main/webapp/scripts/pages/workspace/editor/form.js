@@ -1,11 +1,5 @@
 var fieldId = -1;
 var LISTFORMS_BY_MODFICATIONDATE_DESC = "/workspace/editor/form/list?orderBy=modificationDate&sortOrder=DESC&userFormsOnly=true";
-function createEditDeleteButtons(id) {
-  var data = { id: id };
-  var template = $('#editDeleteButtonTemplate').html();
-  var toolbarHTML = Mustache.render(template, data);
-  return toolbarHTML;
-}
 
 function initChangeFormIconDialog() {
   $('#changeFormIconDialog').dialog({
@@ -292,11 +286,20 @@ function disableInputs() {
   $("#structuredDocument :radio").attr('disabled', true);
   $("#structuredDocument :checkbox[class!='alwaysActive']").attr('disabled', 'disabled');
   $("#structuredDocument :text").attr('disabled', 'disabled');
+  $("#structuredDocument :password").attr('disabled', 'disabled');
 }
 
 function initNonEditableTinyMCE() {
+  initReadOnlyTinyMCE($('textarea.tinymce'));
+}
+
+function initReadOnlyTinyMCE(textareas) {
+  var textareas$ = $(textareas);
+  if (textareas$.length === 0) {
+    return;
+  }
   $(function () {
-    $('textarea.tinymce').tinymce({
+    textareas$.tinymce({
       selector: "",
       theme: "silver",
       width: "800px",
@@ -312,6 +315,38 @@ function initNonEditableTinyMCE() {
       branding: false,
       readonly: 1,
     });
+  });
+}
+
+function appendCreatedFieldRow(data) {
+  var jqxhr = $.get(createURL("/workspace/editor/form/ajax/getFieldRow"), {
+    fieldId: data.id
+  }, function (rowHtml) {
+    var row$ = $(rowHtml).filter("tr.field");
+    if (row$.length === 0) {
+      row$ = $(rowHtml).find("tr.field");
+    }
+    if (row$.length === 0) {
+      apprise(RS.msg("legacyjs.workspace.form.genericError"));
+      return;
+    }
+    $("#field_" + data.id).remove();
+    var tableBody$ = $('#structuredDocument > tbody').first();
+    if (tableBody$.length === 0) {
+      tableBody$ = $('#structuredDocument');
+    }
+    tableBody$.append(row$);
+    disableInputs();
+    if (row$.attr("name") == "date") {
+      loadDatePicker(row$);
+    } else if (row$.attr("name") == "time") {
+      loadTimePicker(row$);
+    }
+    initReadOnlyTinyMCE(row$.find("textarea.tinymce"));
+  });
+
+  jqxhr.fail(function () {
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
   });
 }
 
@@ -951,14 +986,7 @@ function getValidationErrorString(errorList) {
 }
 
 function addNumberCode(data) {
-  //  var defaultValue = "";
-  //  if (data.defaultNumberValue != null) {
-  //    defaultValue = data.defaultNumberValue;
-  //  }
-  var template = $('#createNumberRowTemplate').html();
-  var partial = { editDeleteButtonTemplate: $('#editDeleteButtonTemplate').html() };
-  var newrow = Mustache.render(template, data, partial);
-  $('#structuredDocument > tbody:last').append(newrow);
+  appendCreatedFieldRow(data);
 }
 
 function saveEditedNumberField(fieldId) {
@@ -1044,21 +1072,7 @@ function addStringField() {
 }
 
 function addStringCode(data) {
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  var newrow = "<tr  id=\"field_" + data.id + "\"  name=\"string\" class=\"field\"><td name=\"fieldName\" class=\"field-name\">" +
-    RS.escapeHtml(data.name) + "<span class='field-type-enum'> (" + data.type + ")</span>" + mandatoryAsterisk + "</td><td class=\"field-value\">" +
-    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + "<button class=\"editButton btn btn-default\" onclick=\"editField(" + data.id + ")\">" + RS.msg("legacyjs.workspace.form.editButton") + "</button>" +
-    "<button class=\"deleteButton btn btn-default\" onclick=\"deleteField(" + data.id + ")\">" + RS.msg("legacyjs.workspace.form.deleteButton") + "</button>" + "</td></tr><tr><td class=\"field-value-inner\">";
-  if (data.ifPassword) {
-    newrow = newrow + "<input  readOnly='true' type=\"password\" id=\"" + data.id + "\" name=\"fieldData\" value=\"" + RS.escapeHtml(data.defaultStringValue) + "\"/>";
-  } else {
-    newrow = newrow + "<input readOnly='true' type=\"text\" id=\"" + data.id + "\" name=\"fieldData\" value=\"" + RS.escapeHtml(data.defaultStringValue) + "\"/>";
-  }
-
-  newrow = newrow + "<input type=\"hidden\" name=\"defaultValue\" value=\"" + RS.escapeHtml(data.defaultStringValue) + "\"/>" +
-    "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/>" + "<input type=\"hidden\" name=\"isPassword\" value=\"" +
-    data.ifPassword + "\"/>" + "<input type=\"hidden\" name=\"fieldId\" value=\"" + data.id + "\"/>" + "</td></tr></table></td></tr>";
-  $('#structuredDocument > tbody:last').append(newrow);
+  appendCreatedFieldRow(data);
 }
 
 function editStringCode(data) {
@@ -1141,7 +1155,6 @@ function addTextField() {
       }
 
       $("#field-editor").dialog('close');
-      initSpecificTinyMCE(data.data.id);
     }, "json");
   jqxhr.fail(function () {
     $('#field-loading').hide();
@@ -1151,15 +1164,7 @@ function addTextField() {
 }
 
 function addTextCode(data) {
-
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  var newrow = "<tr  id=\"field_" + data.id + "\"  name=\"text\" class=\"field\">" +
-    "<td  name=\"fieldName\" class=\"field-name\">" + RS.escapeHtml(data.name) + "<span class=\"field-type-enum\"> (" + data.type + ")</span>" + mandatoryAsterisk + "</td>" +
-    "<td class=\"field-value\">" + "<table>" + "<tr>" + "<td class=\"icon-field bootstrap-custom-flat\">" + createEditDeleteButtons(data.id) + "</td>" + "</tr>" +
-    "<tr>" + "<td class=\"field-value-inner\">" + "<textarea  readonly='true' id=\"textfield_" + data.id + "\" name=\"fieldRtfData\" class=\"tinymce\">" +
-    RS.escapeHtml(data.defaultValue) + "</textarea>" + "<input type=\"hidden\" name=\"fieldId\" value=\"" + data.id + "\"/>" + "</td>" + "</tr>" + "</table>" +
-    "</td>" + "</tr>";
-  $('#structuredDocument > tbody:last').append(newrow);
+  appendCreatedFieldRow(data);
 }
 
 function saveEditedTextField(fieldId) {
@@ -1235,29 +1240,7 @@ function addRadioField() {
 }
 
 function addRadioCode(data) {
-
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  var newrow = "<tr  id=\"field_" + data.id + "\"  name=\"radio\" class=\"field\"><td name=\"fieldName\" class=\"field-name\">" +
-    RS.escapeHtml(data.name) + "<span class='field-type-enum'> (" + data.type + ")</span>" + mandatoryAsterisk + "</td><td class=\"field-value\">" +
-    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + createEditDeleteButtons(data.id) + "</td></tr><tr><td class=\"field-value-inner\">" +
-    "<ul id=\"radioFieldsFinal\">";
-
-  $.each(data.radioOptionAsList, function (i, val) {
-    if (val == data.defaultRadioOption) {
-      newrow = newrow + "<li><input id=\"" + data.id + "\" disabled='disabled' type=\"radio\" name=\"fieldDefaultRadioFinal_" +
-        data.id + "\" value=\"" + val + "\" checked> <input type=\"hidden\" name=\"fieldRadioFinal_" +
-        data.id + "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</li>";
-    } else {
-      newrow = newrow + "<li><input id=\"" + data.id + "\"  disabled='disabled' type=\"radio\" name=\"fieldDefaultRadioFinal_" +
-        data.id + "\" value=\"" + val + "\"> <input type=\"hidden\" name=\"fieldRadioFinal_" +
-        data.id + "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</li>";
-    }
-  });
-
-  newrow = newrow + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/> <input type=\"hidden\" name=\"fieldId\" value=\"" +
-    data.id + "\"/></ul></td></tr></table></td></tr>";
-
-  $('#structuredDocument > tbody:last').append(newrow);
+  appendCreatedFieldRow(data);
 }
 
 function saveEditedRadioField(fieldId) {
@@ -1383,39 +1366,7 @@ function addChoiceField() {
 }
 
 function addChoiceCode(data) {
-
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  var newrow = "<tr  id=\"field_" + data.id + "\" name=\"choice\"  class=\"field\"><td name=\"fieldName\" class=\"field-name\">" +
-    RS.escapeHtml(data.name) + "<span class='field-type-enum'> (" + data.type + ")</span>" + mandatoryAsterisk + "</td><td class=\"field-value\">" +
-    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + createEditDeleteButtons(data.id) + "</td></tr><tr><td class=\"field-value-inner\">" +
-    "<ul id=\"choiceFieldsFinal\">";
-
-  var isSelected = false;
-
-  $.each(data.choiceOptionAsList,
-    function (i, val) {
-      isSelected = false;
-      $.each(data.defaultChoiceOptionAsList, function (j,
-        selected) {
-        if (val == selected) {
-          isSelected = true;
-        }
-      });
-
-      if (isSelected) {
-        newrow = newrow + "<li><input id=\"" + data.id + "\" disabled='disabled'  type=\"checkbox\" name=\"fieldSelectedChoicesFinal_" +
-          data.id + "\"  value=\"" + val + "\"  checked><input type=\"hidden\" name=\"fieldChoicesFinal_" + data.id + "\" value=\"" + val + "\">" +
-          RS.escapeHtml(val) + "</li>";
-      } else {
-        newrow = newrow + "<li><input id=\"" + data.id + "\" disabled='disabled' type=\"checkbox\"  name=\"fieldSelectedChoicesFinal_" +
-          data.id + "\"  value=\"" + val + "\"><input type=\"hidden\" name=\"fieldChoicesFinal_" + data.id + "\" value=\"" + val + "\">" +
-          RS.escapeHtml(val) + "</li>";
-      }
-    });
-
-  newrow = newrow + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/> <input type=\"hidden\" name=\"fieldId\" value=\"" +
-    data.id + "\"/> </ul></td></tr></table></td></tr>";
-  $('#structuredDocument > tbody:last').append(newrow);
+  appendCreatedFieldRow(data);
 }
 
 function saveEditedChoiceField(fieldId) {
@@ -1516,69 +1467,7 @@ function addDateField() {
 }
 
 function addDateCode(data) {
-
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  var newrow = "<tr  id=\"field_" + data.id + "\" name=\"date\" class=\"field\"><td name=\"fieldName\" class=\"field-name\">" +
-    RS.escapeHtml(data.name) + "<span class='field-type-enum'> (" + data.type + ")</span>" + mandatoryAsterisk + "</td><td class=\"field-value\">" +
-    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + createEditDeleteButtons(data.id) + "</td></tr><tr><td class=\"field-value-inner\">" + "<input id=\"" +
-    data.id + "\"  name=\"dateField_" + data.id + "\"  readOnly='true' type=\"text\"  value=\"" + data.defaultDateAsString + "\"/>" +
-    "<input type=\"hidden\" name=\"format_" + data.id + "\" value=\"" + data.format + "\"/>" + "<input type=\"hidden\" name=\"minValue\" value=\"" +
-    data.minValue + "\"/>" + "<input type=\"hidden\" name=\"maxValue\" value=\"" + data.maxValue + "\"/>" + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/>" +
-    "<input type=\"hidden\" name=\"fieldId\" value=\"" + data.id + "\"/>";
-
-  newrow = newrow + "</ul></td></tr></table></td></tr>";
-
-  $('#structuredDocument > tbody:last').append(newrow);
-
-  var dateformat = data.format;
-  if (dateformat == "dd/MM/yyyy") {
-    dateformat = "dd/mm/yy";
-  }
-  if (dateformat == "dd MM yyyy") {
-    dateformat = "dd mm yy";
-  }
-  if (dateformat == "dd-MM-yyyy") {
-    dateformat = "dd-mm-yy";
-  }
-  if (dateformat == "dd MMM yyyy") {
-    dateformat = "dd M yy";
-  }
-  if (dateformat == "yyyy/MM/dd") {
-    dateformat = "yy/mm/dd";
-  }
-  if (dateformat == "yyyy MM dd") {
-    dateformat = "yy mm dd";
-  }
-  if (dateformat == "yyyy-MM-dd") {
-    dateformat = "yy-mm-dd";
-  }
-  if (dateformat == "yyyy MMM dd") {
-    dateformat = "yy M dd";
-  }
-
-  if (data.minValue > 0 && data.maxValue > 0) {
-    $("#" + data.id + ".datepicker").datepicker({
-      dateFormat: dateformat,
-      minDate: new Date(data.minValue),
-      maxDate: new Date(data.maxValue)
-    });
-  } else if (data.minValue > 0 && data.maxValue === 0) {
-    $("#" + data.id + ".datepicker").datepicker({
-      dateFormat: dateformat,
-      minDate: new Date(data.minValue)
-
-    });
-  } else if (data.minValue === 0 && data.maxValue > 0) {
-    $("#" + data.id + ".datepicker").datepicker({
-      dateFormat: dateformat,
-      maxDate: new Date(data.maxValue)
-
-    });
-  } else {
-    $("#" + data.id + ".datepicker").datepicker({
-      dateFormat: dateformat
-    });
-  }
+  appendCreatedFieldRow(data);
 }
 
 function saveEditedDateField(fieldId) {
@@ -1657,53 +1546,7 @@ function addTimeField() {
 }
 
 function addTimeCode(data) {
-
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  var newrow = "<tr  id=\"field_" + data.id + "\" name=\"time\" class=\"field\"><td name=\"fieldName\" class=\"field-name\">" +
-    RS.escapeHtml(data.name) + "<span class='field-type-enum'> (" + data.type + ")</span>" + mandatoryAsterisk + "</td><td class=\"field-value\">" +
-    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + createEditDeleteButtons(data.id) + "</td></tr><tr><td class=\"field-value-inner\">" + "<input id=\"" +
-    data.id + "\"  name=\"timeField_" + data.id + "\"  readOnly='true' type=\"text\"  value=\"" + data.defaultTimeAsString + "\" />" +
-    "<input type=\"hidden\" name=\"defaultTime\" value=\"" + data.defaultTime + "\"/>" + "<input type=\"hidden\" name=\"format_" + data.id + "\" value=\"" +
-    data.timeFormat + "\"/>" + "<input type=\"hidden\" name=\"minTime\" value=\"" + data.minTime + "\"/>" + "<input type=\"hidden\" name=\"maxTime\" value=\"" +
-    data.maxTime + "\"/>" + "<input type=\"hidden\" name=\"minHour\" value=\"" + data.minHour + "\"/>" + "<input type=\"hidden\" name=\"minMinutes\" value=\"" +
-    data.minMinutes + "\"/>" + "<input type=\"hidden\" name=\"maxHour\" value=\"" + data.maxHour + "\"/>" + "<input type=\"hidden\" name=\"maxMinutes\" value=\"" +
-    data.maxMinutes + "\"/>" + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/>" + "<input type=\"hidden\" name=\"fieldId\" value=\"" + data.id + "\"/>";
-
-  newrow = newrow + "</ul></td></tr></table></td></tr>";
-
-  $('#structuredDocument > tbody:last').append(newrow);
-
-  var timeformat;
-  if (data.timeFormat == "hh:mm a") {
-    timeformat = true;
-
-  } else {
-    timeformat = false;
-  }
-
-  if (data.minTime > 0 && data.maxTime > 0) {
-    $("#" + data.id + ".timepicker").timepicker({
-      ampm: timeformat,
-      minDate: new Date(1970, 01, 02, data.minHour, data.minMinutes),
-      maxDate: new Date(1970, 01, 02, data.maxHour, data.maxMinutes),
-    });
-  } else if (data.minTime > 0 && data.maxTime === 0) {
-    $("#" + data.id + ".timepicker").timepicker({
-      ampm: timeformat,
-      minDate: new Date(1970, 01, 02, data.minHour, data.minMinutes)
-
-    });
-  } else if (data.minTime === 0 && data.maxTime > 0) {
-    $("#" + data.id + ".timepicker").timepicker({
-      ampm: timeformat,
-      maxDate: new Date(1970, 01, 02, data.maxHour, data.maxMinutes)
-
-    });
-  } else {
-    $("#" + data.id + ".timepicker").timepicker({
-      ampm: timeformat
-    });
-  }
+  appendCreatedFieldRow(data);
 }
 
 function saveEditedTimeField(fieldId) {
@@ -1949,27 +1792,26 @@ function loadRecord(record) {
 function saveForm() {
 
   RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
-  $.ajaxSetup({
-    async: false
-  });
+  saveFormTag().always(function () {
+    var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveForm"), {
+      templateId: recordId
+    }, function (success) {
+      if (success.data !== null) {
+        wasAutosaved = false;
+        RS.unblockPage();
+        window.location.assign(createURL(LISTFORMS_BY_MODFICATIONDATE_DESC));
+      } else if (success.errorMsg !== null) {
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(success.errorMsg)));
+        RS.unblockPage();
+      } else {
+        RS.unblockPage();
+      }
+    }, "json");
 
-  saveFormTag();
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveForm"), {
-    templateId: recordId
-  }, function (success) {
-    if (success.data !== null) {
-      var parentRecordId = success.data;
-      wasAutosaved = false;
-      $.ajaxSetup({
-        async: true
-      });
+    jqxhr.fail(function () {
       RS.unblockPage();
-      window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
-    }
-  }, "json");
-
-  jqxhr.fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormAction"), true, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormAction"), true, jqxhr);
+    });
   });
 }
 
@@ -2314,6 +2156,7 @@ var saveFormTag = function saveTmpTag() {
   jqxhr.fail(function () {
     RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormTagsAction"), false, jqxhr);
   });
+  return jqxhr;
 };
 
 function parseRadioOptions(text, { isCSV }) {

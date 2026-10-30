@@ -14,7 +14,6 @@
 	<meta name="heading" content="<spring:message code='form.editor.metaHeading'/>"/>
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
-<jsp:include page="formMustacheTemplates.html" />
 <p style="visibility:hidden;">Text</p>
 
 <axt:toolbar hideSearch="true">
@@ -127,29 +126,7 @@
 	</tr>
 	<input type="hidden" name="timestamp" value="${template.modificationDate}"/>
 	 <c:forEach var="field" items="${template.fieldForms}">
-	 	<c:choose>
-	 		<c:when test="${field['class'].name eq 'com.researchspace.model.field.NumberFieldForm'}">
-				 <%@ include file="include/numberFieldForm.jsp"%>
-			</c:when>
-			<c:when test="${field['class'].name eq 'com.researchspace.model.field.StringFieldForm'}">
-				 <%@ include file="include/stringFieldForm.jsp"%>
-			</c:when>
-			<c:when test="${field['class'].name eq 'com.researchspace.model.field.TextFieldForm'}">
-				 <%@ include file="include/textFieldForm.jsp"%>
-			</c:when>
-			<c:when test="${field['class'].name eq 'com.researchspace.model.field.RadioFieldForm'}">
-				 <%@ include file="include/radioFieldForm.jsp"%>
-			</c:when>
-			<c:when test="${field['class'].name eq 'com.researchspace.model.field.ChoiceFieldForm'}">
-				 <%@ include file="include/choiceFieldForm.jsp"%>
-			</c:when>
-			<c:when test="${field['class'].name eq 'com.researchspace.model.field.DateFieldForm'}">
-				 <%@ include file="include/dateFieldForm.jsp"%>
-			</c:when>
-				<c:when test="${field['class'].name eq 'com.researchspace.model.field.TimeFieldForm'}">
-				 <%@ include file="include/timeFieldForm.jsp"%>
-			</c:when>
-	 	</c:choose>
+		<%@ include file="include/fieldFormRow.jsp"%>
        </c:forEach>
 </table>
 
