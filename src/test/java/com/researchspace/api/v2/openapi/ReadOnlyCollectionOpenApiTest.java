@@ -31,6 +31,7 @@ import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.PathItem;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -96,6 +97,47 @@ class ReadOnlyCollectionOpenApiTest {
         document
             .at("/components/schemas/ApiV2CountResult/properties/totalIsLowerBound/type")
             .asText());
+  }
+
+  @Test
+  void publishesMissingIfMatchResponseOnlyForVersionedWrites() {
+    String requiredCode = "errors.api.v2.resourceAccess.ifMatchRequired";
+    for (boolean versioned : List.of(false, true)) {
+      @SuppressWarnings("unchecked")
+      ResourceOperations<User, Long> operations = mock(ResourceOperations.class);
+      if (versioned) {
+        when(operations.ifMatchRequiredCode()).thenReturn(Optional.of(requiredCode));
+        when(operations.deleteRequiresIfMatch()).thenReturn(true);
+      }
+      var spec =
+          new ApiV2ResourceSpec<>(
+              ApiV2UserResource.DESCRIPTION,
+              operations,
+              Long::valueOf,
+              "errors.api.v2.invalidRequest",
+              "errors.api.v2.invalidRequest",
+              Set.of(ResourceOperation.READ, ResourceOperation.UPDATE, ResourceOperation.DELETE),
+              Map.of());
+      JsonNode document =
+          Json31.mapper()
+              .valueToTree(
+                  new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "API", "2.0.0")
+                      .generate());
+      JsonNode path = document.at("/paths/~1api~1v2~1users~1{id}");
+      assertFalse(path.at("/get/responses").has("428"));
+      for (String method : List.of("patch", "delete")) {
+        JsonNode operation = path.path(method);
+        assertEquals(versioned, operation.path("responses").has("428"));
+        if (versioned) {
+          assertTrue(
+              parameter(operation.path("parameters"), "If-Match").path("required").asBoolean());
+          JsonNode example =
+              operation.at("/responses/428/content/application~1problem+json/example");
+          assertEquals(428, example.path("status").asInt());
+          assertEquals(requiredCode, example.path("code").asText());
+        }
+      }
+    }
   }
 
   @Test

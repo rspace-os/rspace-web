@@ -243,8 +243,7 @@ public final class ApiV2OpenApiGenerator {
             resourceSchemas,
             resource.registry(),
             runtimeFieldsExtension(resource));
-    if ((operation == ResourceOperation.UPDATE && resource.ifMatchRequiredCode().isPresent())
-        || (operation == ResourceOperation.DELETE && resource.deleteRequiresIfMatch())) {
+    if (requiresIfMatch(resource, operation)) {
       parameters.add(
           parameter(
               "If-Match",
@@ -338,6 +337,12 @@ public final class ApiV2OpenApiGenerator {
     return ApiV2OpenApiQueryParameters.parameter(name, location, required, schema, description);
   }
 
+  private static boolean requiresIfMatch(
+      ApiV2ResourceRegistration<?, ?> resource, ResourceOperation operation) {
+    return (operation == ResourceOperation.UPDATE && resource.ifMatchRequiredCode().isPresent())
+        || (operation == ResourceOperation.DELETE && resource.deleteRequiresIfMatch());
+  }
+
   private static Map<String, Object> responses(
       ApiV2ResourceRegistration<?, ?> resource,
       ResourceOperation operation,
@@ -399,6 +404,16 @@ public final class ApiV2OpenApiGenerator {
     responses.put("406", responseRef("NotAcceptable"));
     if (operation == ResourceOperation.BULK_UPDATE || operation == ResourceOperation.BULK_DELETE) {
       responses.put("422", responseRef("BulkLimit"));
+    }
+    if (requiresIfMatch(resource, operation)) {
+      responses.put(
+          "428",
+          problemResponse(
+              "A strong If-Match header is required.",
+              428,
+              resource
+                  .ifMatchRequiredCode()
+                  .orElse(ApiV2ErrorCodes.messageKeyFor(HttpStatus.PRECONDITION_REQUIRED))));
     }
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
