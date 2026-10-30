@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -28,6 +29,7 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessCallerCapabilities;
@@ -36,6 +38,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import com.researchspace.webapp.config.WebConfig.YamlJackson2HttpMessageConverter;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +69,29 @@ class ResourceAccessControllerTest {
   void setUp() {
     when(user.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     maintenance = maintenanceSpec(maintenanceManager);
+  }
+
+  @Test
+  void wrapsBoundedGranteeSearchInDocs() throws Exception {
+    AccessMvc fixture = accessMvc();
+    when(fixture.directoryManager().searchForResource(any(), any(), any(), eq(20), eq(user)))
+        .thenReturn(
+            List.of(
+                new ResourceGranteeDirectoryEntry(
+                    ResourceGranteeKind.USER, 7L, "user:7", "Ada", "ada")));
+    String json =
+        fixture
+            .mockMvc()
+            .perform(
+                get(ACCESS_ENDPOINT + "/grantees")
+                    .param("q", "Ada")
+                    .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, fixture.caller()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.docs[0].key").value("user:7"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    assertEquals(1, new ObjectMapper().readTree(json).size());
   }
 
   @Test
