@@ -97,7 +97,7 @@ class ApiV2AuditLogTest {
     query.setStart(Date.from(Instant.parse("2025-12-01T00:00:00Z")));
     query.setEnd(Date.from(Instant.parse("2026-01-02T23:59:59.999Z")));
     query.setActions(new HashSet<>(Set.of(AuditAction.WRITE)));
-    query.setSearch("PayloadMarker");
+    query.setQ("PayloadMarker");
 
     var page = auditLog.search(resource, "7", query, actor);
 

@@ -38,7 +38,7 @@ class ApiV2AuditOpenApiTest {
     Operation operation = document.getPaths().get("/api/v2/users/{id}/audit").getGet();
     Parameter search =
         operation.getParameters().stream()
-            .filter(parameter -> "search".equals(parameter.getName()))
+            .filter(parameter -> "q".equals(parameter.getName()))
             .findFirst()
             .orElse(null);
 
@@ -61,7 +61,7 @@ class ApiV2AuditOpenApiTest {
             "id",
             "start",
             "end",
-            "search",
+            "q",
             "actions",
             "snapshotDate",
             "snapshotFingerprint",

@@ -375,6 +375,7 @@ Every later page sends both values unchanged. The response's `totalDocs` is the 
 events for that snapshot. To request a minimal page when only the total is needed, use
 `GET /api/v2/widgets/{id}/audit?limit=1` and read `totalDocs`.
 
+Use `q` for case-insensitive literal text search on an audit route.
 A search covers at most 183 days. Wider windows return `400` and
 `errors.api.v2.audit.range.tooWide` to avoid truncated results that look complete. Page longer
 periods one window at a time. With no dates, the server uses the last 183 days.

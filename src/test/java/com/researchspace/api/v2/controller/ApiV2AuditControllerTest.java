@@ -123,7 +123,7 @@ class ApiV2AuditControllerTest {
     mockMvc
         .perform(
             get("/api/v2/users/7/audit")
-                .param("search", "PagedMarker")
+                .param("q", "PagedMarker")
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
         .andExpect(status().isOk());
     ArgumentCaptor<Request> request = ArgumentCaptor.forClass(Request.class);

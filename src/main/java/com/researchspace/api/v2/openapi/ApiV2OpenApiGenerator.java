@@ -592,7 +592,7 @@ public final class ApiV2OpenApiGenerator {
                 + " final millisecond of a UTC day includes that day."));
     parameters.add(
         parameter(
-            "search",
+            "q",
             "query",
             false,
             ordered("type", "string", "maxLength", 255),
