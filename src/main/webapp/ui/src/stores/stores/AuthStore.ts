@@ -83,9 +83,13 @@ export default class AuthStore {
         }),
       )
       .then(() => {})
-      .catch(() => {
-        // @ts-expect-error I can update the location by assigning a string to it
-        window.location = "/login";
+      .catch((error: unknown) => {
+        this.isSynchronizing = false;
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        throw error;
       });
   }
 
