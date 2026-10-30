@@ -127,7 +127,9 @@ class ApiV2ScalarReadTest {
     verify(operations, never()).find(any(), any());
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(operations).findReadDocuments(captured.capture(), eq(actor));
-    assertEquals(server, captured.getValue().serverConstraint());
+    assertEquals(
+        new QueryConstraint.And(List.of(server, ROW_ACCESS)),
+        captured.getValue().serverConstraint());
     assertEquals(request.page(), captured.getValue().page());
     assertEquals(request.sort(), captured.getValue().sort());
     assertEquals(request.runtime(), captured.getValue().runtime());

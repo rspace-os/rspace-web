@@ -174,7 +174,7 @@ These policy fields are independent:
 
 | Policy field | Operation |
 | --- | --- |
-| `readAccess` | List, count, read by ID, and relationship resolution. |
+| `readAccess` | List, count, read by ID, relationship resolution, and the visible scope of updates/deletes. |
 | `createAccess` | Single create and bulk create. |
 | `updateAccess` | Single update and bulk update. |
 | `deleteAccess` | A hard delete, including an explicitly selected permanent single delete. |
@@ -187,7 +187,9 @@ opt into both on the same canonical item URI only when an explicit request optio
 state; retrying an ordinary soft-delete request must remain safe.
 
 An access function can return a row constraint. The framework combines it with the client filter
-for list, count, read by ID, and bulk operations. Unreadable rows return 404.
+for list, count, read by ID, and bulk operations. Updates and deletes intersect READ and write
+constraints. Single writes select `id AND scope` inside the mutation transaction; no match returns
+404. Equal restrictions from managers are de-duplicated.
 
 ### Resource-role protected collections
 

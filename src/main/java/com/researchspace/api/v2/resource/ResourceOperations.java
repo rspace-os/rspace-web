@@ -120,6 +120,19 @@ public interface ResourceOperations<T, ID> {
     return update(id, document, caller);
   }
 
+  /** Checks the authorized ID scope and updates within one transaction. */
+  @org.springframework.transaction.annotation.Transactional
+  default Optional<T> update(
+      ID id,
+      ParsedDocument document,
+      Long expectedVersion,
+      ResourceRequest scope,
+      ApiV2Caller caller) {
+    if (scope != null && find(scope, caller.subject()).resources().isEmpty())
+      return Optional.empty();
+    return update(id, document, expectedVersion, caller);
+  }
+
   /** Read-document field used for a strong ETag, or empty for an unversioned resource. */
   default Optional<String> versionField() {
     return Optional.empty();
@@ -160,6 +173,15 @@ public interface ResourceOperations<T, ID> {
       throw readOnly("permanently delete");
     }
     return delete(id, caller).map(ResourceDeleteResult::retained);
+  }
+
+  /** Checks the authorized ID scope and deletes within one transaction. */
+  @org.springframework.transaction.annotation.Transactional
+  default Optional<ResourceDeleteResult<T>> delete(
+      ID id, ResourceDeleteOptions options, ResourceRequest scope, ApiV2Caller caller) {
+    if (scope != null && find(scope, caller.subject()).resources().isEmpty())
+      return Optional.empty();
+    return delete(id, options, caller);
   }
 
   default List<T> deleteMany(ResourceRequest request, ApiV2Caller caller) {

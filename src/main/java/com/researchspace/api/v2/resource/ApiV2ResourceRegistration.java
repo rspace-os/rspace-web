@@ -263,7 +263,9 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       return crud.getReadDocument(
           id, authorized, caller, runtimeReadDocumentValues(authorized, caller));
     }
-    return crud.get(id, narrowed, caller, runtimeValues(narrowed, caller));
+    ResourceRequest authorized =
+        access.constraintOrEmpty().map(narrowed::restrict).orElse(narrowed);
+    return crud.get(id, authorized, caller, runtimeValues(authorized, caller));
   }
 
   public Optional<String> documentEtag(Map<String, Object> document) {
@@ -329,13 +331,15 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       String rawId, JsonNode body, Long expectedVersion, ApiV2Caller caller) {
     User subject = subject(caller);
     ID id = parseId(rawId);
-    AccessContext context = authorizeWrite(Operation.UPDATE, subject, id);
+    AccessContext context =
+        new AccessContext(subject, Operation.UPDATE, description.resourceName(), id);
+    ResourceRequest scope = authorizeWith(context, ResourceRequest.unpaged(idFilter(id)));
     ParsedDocument document =
         ApiV2DocumentParser.parse(
             body, description, WriteOperation.UPDATE, spec.updateErrorKey(), context);
     document = resolve(document, subject, context, spec.updateErrorKey(), false);
     return crud.update(
-        id, document, expectedVersion, caller, narrowFields(context, FieldSelection.all()));
+        id, document, expectedVersion, caller, narrowFields(context, FieldSelection.all()), scope);
   }
 
   Map<String, Object> update(String rawId, JsonNode body, ApiV2Caller caller) {
@@ -366,8 +370,9 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         options.permanent() || !operations.deleteIsSoft()
             ? Operation.DELETE
             : Operation.SOFT_DELETE;
-    AccessContext context = authorizeWrite(operation, subject, id);
-    return crud.delete(id, options, caller, narrowFields(context, FieldSelection.all()));
+    AccessContext context = new AccessContext(subject, operation, description.resourceName(), id);
+    ResourceRequest scope = authorizeWith(context, ResourceRequest.unpaged(idFilter(id)));
+    return crud.delete(id, options, caller, narrowFields(context, FieldSelection.all()), scope);
   }
 
   public ApiV2BulkResult<Map<String, Object>> deleteMany(
@@ -484,21 +489,33 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
    * The single place collection and field access are enforced at the HTTP boundary.
    *
    * <p>Order matters. Field access is checked against the caller's own query first, then the policy
-   * decision is made. Row constraints remain the service's responsibility so a resource is not
-   * narrowed twice when the same manager also serves non-HTTP callers.
+   * decision is made. The read constraint bounds every query; equal manager restrictions are
+   * de-duplicated by ResourceRequest.restrict.
    */
   private ResourceRequest authorize(Operation operation, User caller, ResourceRequest request) {
     AccessContext context = new AccessContext(caller, operation, description.resourceName());
-    decide(context, operation);
+    AccessResult result = decide(context, operation);
     rejectUnreadableQueryFields(context, request);
-    return narrowSelection(context, request);
+    ResourceRequest narrowed = narrowSelection(context, request);
+    return result.constraintOrEmpty().map(narrowed::restrict).orElse(narrowed);
   }
 
   private ResourceRequest authorizeWith(AccessContext context, ResourceRequest request) {
     AccessResult result = decide(context, context.operation());
     rejectUnreadableQueryFields(context, request);
     ResourceRequest narrowed = narrowSelection(context, request);
-    return result.constraintOrEmpty().map(narrowed::restrict).orElse(narrowed);
+    ResourceRequest authorized =
+        result.constraintOrEmpty().map(narrowed::restrict).orElse(narrowed);
+    AccessContext readContext =
+        new AccessContext(
+            context.user(), Operation.READ, description.resourceName(), context.targetId());
+    AccessResult read = decide(readContext, Operation.READ);
+    return read.constraintOrEmpty().map(authorized::restrict).orElse(authorized);
+  }
+
+  private FilterExpression idFilter(ID id) {
+    return new FilterExpression.Comparison(
+        description.idField(), Operator.EQUAL, List.of(id), false);
   }
 
   /**
