@@ -39,10 +39,7 @@ function ResourceHeader({ resource }: { resource: BookingCalendarResource }) {
       idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
       size="xs"
     >
-      <InventoryLocationLink
-        name={resourceLocation(resource)?.name}
-        globalId={resourceLocation(resource)?.globalId}
-      />
+      <InventoryLocationLink name={resourceLocation(resource)?.name} globalId={resourceLocation(resource)?.globalId} />
     </InventoryItem>
   );
 }
