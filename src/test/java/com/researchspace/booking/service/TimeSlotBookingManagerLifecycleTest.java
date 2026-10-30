@@ -32,7 +32,6 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Container;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Date;
 import java.util.List;
@@ -151,12 +150,10 @@ class TimeSlotBookingManagerLifecycleTest {
     TimeSlotBooking unreadable = booking(2L, 13L, actor);
     when(bookingDao.getReadableResources(any(), any()))
         .thenReturn(new ResourcePage<>(List.of(stored, unreadable), 2));
-    when(instrumentDao.getReadableParentLocationSummaries(Set.of(12L, 13L), actor))
+    when(fixture.bookingInstruments.getReadableParentLocationSummaries(Set.of(12L, 13L), actor))
         .thenReturn(
             Map.of(
-                12L,
-                new InstrumentParentLocationSummary(
-                    7L, "Cold room", Container.ContainerType.LIST)));
+                12L, new BookingCatalogueLocation(7L, "Cold room", Container.ContainerType.LIST)));
 
     List<TimeSlotBooking> prepared =
         manager.getBookings(ResourceRequest.unpaged(null), actor).resources();

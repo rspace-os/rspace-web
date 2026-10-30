@@ -25,6 +25,7 @@ public interface BookingInstrumentQueryDao {
   /** Returns readable immediate parent locations for catalogue rows. */
   Map<Long, BookingCatalogueLocation> getReadableParentLocationSummaries(
       Set<Long> instrumentIds, User caller);
+
   /**
    * As {@link #getBookingCatalogueLocations(String, int, int, User)}, restricted to the given
    * parent Container IDs when {@code containerIds} is not null. Containers and workbenches share

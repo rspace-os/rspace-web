@@ -40,7 +40,6 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
@@ -111,9 +110,7 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(Map.of(101L, instrument));
     when(bookingInstruments.getReadableParentLocationSummaries(Set.of(101L), caller))
         .thenReturn(
-            Map.of(
-                101L,
-                new BookingCatalogueLocation(44L, "Workbench", ContainerType.WORKBENCH)));
+            Map.of(101L, new BookingCatalogueLocation(44L, "Workbench", ContainerType.WORKBENCH)));
 
     BookingCatalogueManager.Page result =
         search(
@@ -213,8 +210,7 @@ class BookingCatalogueManagerImplTest {
     when(bookingInstruments.getBookingCatalogueLocations(null, Set.of(7L), 1, 20, caller))
         .thenReturn(
             new ResourcePage<>(
-                List.of(
-                    new InstrumentParentLocationSummary(7L, "WB reader", ContainerType.WORKBENCH)),
+                List.of(new BookingCatalogueLocation(7L, "WB reader", ContainerType.WORKBENCH)),
                 1));
 
     BookingCatalogueManager.LocationPage byGlobalId =

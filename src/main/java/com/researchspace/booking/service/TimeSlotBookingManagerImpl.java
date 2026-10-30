@@ -32,7 +32,6 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.booking.service.BookingCatalogueLocation;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import jakarta.persistence.OptimisticLockException;
