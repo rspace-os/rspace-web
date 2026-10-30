@@ -1,10 +1,14 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { bookingInstrumentSource } from "../bookingRelationshipSource";
+import { bookingInstrumentSource, bookingRelationshipSources } from "../bookingRelationshipSource";
 
 const signal = () => new AbortController().signal;
 describe("booking relationship source", () => {
+  it("overrides the instruments picker with the booking items source", () => {
+    expect(bookingRelationshipSources).toHaveProperty("instruments", bookingInstrumentSource);
+    expect(bookingInstrumentSource.id).toBe("items");
+  });
   it("resolves archived targets through configurations without using inventory access", async () => {
     server.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {

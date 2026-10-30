@@ -22,7 +22,7 @@ const validId = (value: string) => databaseIdFromGlobalId(value, "IN") !== null;
 
 /** Booking access owns discovery and reference resolution through configurations. */
 export const bookingInstrumentSource: RelationshipSource = {
-  id: "booking-instruments",
+  id: "items",
   globalIdPrefix: "IN",
   ownsValue: validId,
   search: async (term, token, signal) => {
@@ -72,4 +72,4 @@ export const bookingInstrumentSource: RelationshipSource = {
   },
 };
 
-export const bookingRelationshipSources = { "booking-instruments": bookingInstrumentSource };
+export const bookingRelationshipSources = { instruments: bookingInstrumentSource };
