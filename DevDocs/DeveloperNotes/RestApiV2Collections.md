@@ -296,3 +296,11 @@ For scalar readers that do not need totals, `projectedSlice` returns a `Resource
 It requests one extra row at the original page offset with counting disabled, trims that
 row, and reports `hasNext`. Offsets beyond Blaze's integer limit return an empty slice
 without querying. `page` and `projectedPage` retain their counted-page behavior.
+
+The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is
+needed to preserve sort order. On the seeded 100k-row benchmark with the PI access
+rule, MariaDB `ANALYZE FORMAT=JSON` for 21 rows examined 35 index entries and stopped
+without a filesort, taking 0.22 ms. Without the index it scanned 100,000 rows and
+sorted 90,002 active rows, taking 92.40 ms. These single warm-query measurements
+justify the access path, rather than a latency guarantee. The temporary benchmark
+index was removed after measurement.

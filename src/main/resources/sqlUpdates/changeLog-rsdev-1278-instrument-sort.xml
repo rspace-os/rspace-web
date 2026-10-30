@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+  <changeSet id="rsdev-1278-instrument-default-sort" author="tchoi-rs" context="run">
+    <comment>
+      Support active instrument pages ordered by name and ID. On the seeded 100k-row
+      benchmark, MariaDB ANALYZE examined 35 index entries for 21 readable rows,
+      replacing a full scan and filesort despite the access rule's OR predicates.
+      Full name keys preserve ordering; a prefix key would still require a filesort.
+    </comment>
+    <createIndex tableName="InstrumentEntity" indexName="ix_instrument_type_deleted_name_id">
+      <column name="DTYPE"/>
+      <column name="deleted"/>
+      <column name="name"/>
+      <column name="id"/>
+    </createIndex>
+    <rollback>
+      <dropIndex tableName="InstrumentEntity" indexName="ix_instrument_type_deleted_name_id"/>
+    </rollback>
+  </changeSet>
+</databaseChangeLog>
