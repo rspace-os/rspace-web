@@ -72,6 +72,8 @@ export function bookingHandlers(
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),
     http.get("/api/v2/bookings", ({ request }) => {
       const url = new URL(request.url);
+      if (url.searchParams.get("fields[instruments]") !== "id,globalId,name,deleted")
+        return new HttpResponse(null, { status: 400 });
       onListRequest(url);
       const source = docs ?? [upcomingBooking, pastBooking];
       return apiV2CollectionResponse(

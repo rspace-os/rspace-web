@@ -238,6 +238,7 @@ function BookingEventContent() {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
   };
   const eventName = document.target.value.name;
+  const location = document.target.value.parentContainer;
   const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
 
   return (
@@ -273,14 +274,8 @@ function BookingEventContent() {
             ) : undefined
           }
         >
-          {document.canViewConfiguration &&
-          document.target.value.parentContainerName &&
-          document.target.value.parentContainerGlobalId ? (
-            <InventoryLocationLink
-              name={document.target.value.parentContainerName}
-              globalId={document.target.value.parentContainerGlobalId}
-              compact
-            />
+          {document.canViewConfiguration && location && typeof location.value === "object" ? (
+            <InventoryLocationLink name={location.value.name} globalId={location.globalId} compact />
           ) : null}
         </InventoryItem>
         <div

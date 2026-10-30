@@ -43,7 +43,14 @@ describe("booking API", () => {
     const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
     server.use(
       http.get("/api/v2/bookings/41", ({ request }) => {
-        requests.push({ method: request.method, url: new URL(request.url) });
+        const url = new URL(request.url);
+        if (
+          url.searchParams.get("depth") !== "2" ||
+          url.searchParams.get("fields[instruments]") !== "id,globalId,name,deleted,parentContainer" ||
+          url.searchParams.get("fields[containers]") !== "id,globalId,name"
+        )
+          return new HttpResponse(null, { status: 400 });
+        requests.push({ method: request.method, url });
         return HttpResponse.json(document);
       }),
       http.post("/api/v2/bookings", async ({ request }) => {
@@ -71,7 +78,7 @@ describe("booking API", () => {
     expect(
       requests.map((request) => [request.method, request.url.pathname, request.url.searchParams.get("depth")]),
     ).toEqual([
-      ["GET", "/api/v2/bookings/41", "1"],
+      ["GET", "/api/v2/bookings/41", "2"],
       ["POST", "/api/v2/bookings", "1"],
       ["PATCH", "/api/v2/bookings/41", "1"],
     ]);
@@ -85,6 +92,8 @@ describe("booking API", () => {
     expect(requests[0].url.searchParams.get("fields[bookings]")).toBe(
       "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
     );
+    expect(requests[0].url.searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted,parentContainer");
+    expect(requests[0].url.searchParams.get("fields[containers]")).toBe("id,globalId,name");
     expect(requests[2].url.pathname).toBe("/api/v2/bookings/41");
   });
 
