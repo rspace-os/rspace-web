@@ -55,7 +55,7 @@ function configuration({
     id: 456,
     configurationVersion: 0,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: { id: 123, name: "Confocal microscope", deleted: false },
       globalId,
     },
