@@ -109,6 +109,9 @@ public final class CollectionQueryExecutor<T> {
       RelationshipReadAccess targets,
       List<String> fetchPaths) {
     CriteriaBuilder<T> query = query(factory, session, request, restriction, targets);
+    if (request.page().offset() > Integer.MAX_VALUE) {
+      return new ResourcePage<>(List.of(), totalMatching(query));
+    }
     fetchPaths.forEach(path -> query.fetch(alias + "." + path));
     return paged(query, request);
   }
@@ -263,11 +266,9 @@ public final class CollectionQueryExecutor<T> {
     }
   }
 
-  /** Uses the page count because Blaze's root-count query fails when there are no restrictions. */
+  /** Counts on the unpaginated builder without selecting an entity or its graph. */
   private long totalMatching(CriteriaBuilder<?> query) {
-    orderById(query);
-    // Blaze's inline count can miscount filters containing correlated relationship subqueries.
-    return query.page(0, 1).withInlineCountQuery(false).getResultList().getTotalSize();
+    return query.getCountQuery().getSingleResult();
   }
 
   private void applySort(CriteriaBuilder<?> query, Sort sort) {
