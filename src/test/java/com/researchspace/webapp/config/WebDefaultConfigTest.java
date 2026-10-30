@@ -14,11 +14,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.researchspace.api.v2.controller.BookingDisplayPreferencesController;
-import com.researchspace.api.v2.controller.BookingNotificationSubscriptionController;
-import com.researchspace.api.v2.controller.BookingSettingsController;
 import com.researchspace.api.v2.json.ApiV2JsonBody;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
+import com.researchspace.booking.api.v2.BookingDisplayPreferencesController;
+import com.researchspace.booking.api.v2.BookingNotificationSubscriptionController;
+import com.researchspace.booking.api.v2.BookingSettingsController;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
@@ -143,6 +143,12 @@ class WebDefaultConfigTest {
   void productionConverterRegistersEveryFixedShapeApiV2Body() throws Exception {
     WebConfig config = new WebConfig();
     config.defaultConfig = new WebDefaultConfig();
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        config,
+        "jsonBodyTypes",
+        List.of(
+            new com.researchspace.booking.api.v2.BookingApiV2JsonConfiguration()
+                .strictRequestBodyTypes()));
     MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
     config.extendMessageConverters(new ArrayList<>(List.of(converter)));
 
