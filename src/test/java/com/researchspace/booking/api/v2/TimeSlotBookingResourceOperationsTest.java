@@ -28,12 +28,12 @@ import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.BookingResourceTestFixtures;
+import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -176,12 +176,12 @@ class TimeSlotBookingResourceOperationsTest {
     assertEquals(Optional.empty(), operations.findById(1L, actor));
     assertEquals(Optional.empty(), operations.findByIdForAudit(1L, actor));
     assertThrows(
-        AuthorizationException.class,
+        NotFoundException.class,
         () ->
             operations.create(
                 new ParsedDocument(WriteOperation.CREATE, Map.of()), ApiV2Caller.direct(actor)));
     assertThrows(
-        AuthorizationException.class,
+        NotFoundException.class,
         () -> operations.update(1L, ParsedDocument.update(Map.of()), ApiV2Caller.direct(actor)));
     verifyNoInteractions(manager);
   }

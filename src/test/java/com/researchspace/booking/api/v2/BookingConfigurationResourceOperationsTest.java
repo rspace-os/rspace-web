@@ -28,6 +28,7 @@ import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.BookingResourceTestFixtures;
+import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -171,16 +171,14 @@ class BookingConfigurationResourceOperationsTest {
     assertEquals(0, operations.count(request, actor));
     assertEquals(Optional.empty(), operations.findById(42L, actor));
     ApiV2Caller caller = ApiV2Caller.direct(actor);
-    assertThrows(AuthorizationException.class, () -> operations.create(document, caller));
+    assertThrows(NotFoundException.class, () -> operations.create(document, caller));
+    assertThrows(NotFoundException.class, () -> operations.createMany(List.of(document), caller));
+    assertThrows(NotFoundException.class, () -> operations.update(42L, document, caller));
+    assertThrows(NotFoundException.class, () -> operations.updateMany(request, document, caller));
     assertThrows(
-        AuthorizationException.class, () -> operations.createMany(List.of(document), caller));
-    assertThrows(AuthorizationException.class, () -> operations.update(42L, document, caller));
-    assertThrows(
-        AuthorizationException.class, () -> operations.updateMany(request, document, caller));
-    assertThrows(
-        AuthorizationException.class,
+        NotFoundException.class,
         () -> operations.delete(42L, new ResourceDeleteOptions(0L, false), caller));
-    assertThrows(AuthorizationException.class, () -> operations.deleteMany(request, caller));
+    assertThrows(NotFoundException.class, () -> operations.deleteMany(request, caller));
     verifyNoInteractions(manager);
   }
 

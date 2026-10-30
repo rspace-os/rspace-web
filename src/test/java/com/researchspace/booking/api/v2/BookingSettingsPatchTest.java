@@ -98,6 +98,14 @@ class BookingSettingsPatchTest {
   }
 
   @Test
+  void disabledBookingHidesSettingsWrites() throws Exception {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, user)).thenReturn(false);
+    messageSource.addMessage("errors.api.v2.notFound", Locale.ENGLISH, "Not found.");
+    mockMvc.perform(patchRequest("{}")).andExpect(status().isNotFound());
+    verifyNoInteractions(manager);
+  }
+
+  @Test
   void rejectsYamlSettingsPatchBodies() throws Exception {
     messageSource.addMessage(
         "errors.api.v2.unsupportedMediaType", Locale.ENGLISH, "Unsupported media type.");
