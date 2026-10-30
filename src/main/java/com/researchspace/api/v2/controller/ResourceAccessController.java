@@ -15,6 +15,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
@@ -100,7 +101,7 @@ public class ResourceAccessController {
   }
 
   @GetMapping("/{resource}/{id}/access/grantees")
-  public List<ResourceGranteeDirectoryEntry> grantees(
+  public ResourceGranteeDirectoryDocument grantees(
       @PathVariable String resource,
       @PathVariable String id,
       @RequestParam String q,
@@ -108,7 +109,8 @@ public class ResourceAccessController {
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
     ApiV2ResourceRegistration<?, ?> registration = requireRegistration(resource);
-    return search(registration, id, validateQuery(q), validateLimit(limit), requireCaller(caller));
+    return new ResourceGranteeDirectoryDocument(
+        search(registration, id, validateQuery(q), validateLimit(limit), requireCaller(caller)));
   }
 
   private <T, ID> List<ResourceGranteeDirectoryEntry> search(

@@ -23,6 +23,18 @@ class ApiV2OpenApiResourceAccessDocsTest {
     JsonNode operation = granteeSearchOperation();
     assertEquals("q", operation.at("/parameters/1/name").asText());
     assertEquals("query", operation.at("/parameters/1/in").asText());
+    assertEquals(
+        "#/components/schemas/ResourceGranteeDirectoryDocument",
+        operation.at("/responses/200/content/application~1json/schema/$ref").asText());
+    Map<String, Object> schemas = new LinkedHashMap<>();
+    ApiV2OpenApiResourceAccessDocs.addResourceAccessSchemas(schemas);
+    JsonNode directory =
+        new ObjectMapper().valueToTree(schemas).path("ResourceGranteeDirectoryDocument");
+    assertEquals("array", directory.at("/properties/docs/type").asText());
+    assertEquals(
+        "#/components/schemas/ResourceGranteeDirectoryEntry",
+        directory.at("/properties/docs/items/$ref").asText());
+    assertEquals(1, directory.path("properties").size());
   }
 
   @SuppressWarnings("unchecked")

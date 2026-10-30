@@ -18,7 +18,7 @@ import com.researchspace.model.collection.ResourceSchema;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccessRequest;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -74,7 +74,7 @@ final class ApiV2OpenApiResourceAccessDocs {
   static void addResourceAccessSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ReplaceResourceAccessRequest.class, schemas);
   }
 
@@ -220,7 +220,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     } else {
       Map<String, Object> schema =
           operationKind == ResourceAccessOperation.SEARCH
-              ? ordered("type", "array", "items", ref("ResourceGranteeDirectoryEntry"))
+              ? ref("ResourceGranteeDirectoryDocument")
               : ref("ResourceAccessDocument");
       Map<String, Object> success =
           ordered(

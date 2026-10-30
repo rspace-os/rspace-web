@@ -251,6 +251,8 @@ Access routes are enabled by the resource's `ResourceAccessSpec`:
 | `DELETE .../{id}/access/me` | Removes the caller's direct assignment subject to service-layer leave rules. |
 | `GET .../{id}/access/grantees` | Searches assignable principals with `q` (at least two characters) and optional `limit` (1–50, default 20) within the resource's assignment-management capability. |
 
+The bounded grantee lookup returns `{docs: [...]}` without paging metadata.
+
 Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
 are private and must not be cached. OpenAPI includes the routes only for registered access support.
 
