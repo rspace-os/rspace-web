@@ -2,7 +2,6 @@ package com.researchspace.api.v2.resource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,7 +122,7 @@ class ApiV2ResourceAccessTest {
 
   @Test
   @DisplayName("a read policy constraint is not reclassified as a caller filter")
-  void policyConstraintRemainsTheResourceOperationsResponsibility() {
+  void policyConstraintIsPassedToResourceOperations() {
     FilterExpression ownRows =
         new FilterExpression.Comparison("id", Operator.EQUAL, List.of(7L), false);
     FilterExpression callerFilter =
@@ -139,7 +138,7 @@ class ApiV2ResourceAccessTest {
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(operations).find(captor.capture(), any(User.class));
     assertEquals(callerFilter, captor.getValue().filter());
-    assertNull(captor.getValue().serverConstraint());
+    assertEquals(ownRows, captor.getValue().serverConstraint());
   }
 
   /**
@@ -229,11 +228,12 @@ class ApiV2ResourceAccessTest {
                 AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
                 AccessFunction.anyone()));
     User actor = user(false);
-    when(operations.findById(9L, actor)).thenReturn(Optional.empty());
+    when(operations.find(any(), any())).thenReturn(new ResourcePage<>(List.of(), 0));
 
     assertThrows(NotFoundException.class, () -> widgets.get("9", request(null, List.of()), actor));
 
-    verify(operations).findById(9L, actor);
+    verify(operations).find(any(), any());
+    verify(operations, never()).findById(any(), any());
   }
 
   @Test
@@ -273,22 +273,33 @@ class ApiV2ResourceAccessTest {
   }
 
   @Test
-  @DisplayName("a row constraint on a single-row write fails closed rather than going unenforced")
-  void rowConstraintOnSingleRowWriteFailsClosed() {
+  @DisplayName("a row constraint on a single-row write reaches the scoped update")
+  void rowConstraintOnSingleRowWriteReachesScopedUpdate() {
     FilterExpression ownRows =
         new FilterExpression.Comparison("id", Operator.EQUAL, List.of(7L), false);
     ApiV2ResourceRegistration<Widget, Long> widgets =
         register(
-            describe(
+            new CollectionDescription<>(
+                "widgets",
+                Widget.class,
+                secretWritableBy(AccessFunction.anyone()).fields(),
+                "id",
+                List.of(new Sort("id", true)),
                 new AccessPolicy(
                     AccessFunction.authenticated(),
                     AccessFunction.authenticated(),
                     documented(context -> AccessResult.allowedWhere(ownRows)),
                     AccessFunction.authenticated(),
-                    AccessFunction.authenticated()),
-                AccessFunction.anyone()));
+                    AccessFunction.authenticated())));
 
-    assertThrows(IllegalStateException.class, () -> widgets.update("9", null, caller(user(false))));
+    assertThrows(
+        NotFoundException.class, () -> widgets.update("9", secretBody(), caller(user(false))));
+    ArgumentCaptor<ResourceRequest> scope = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(operations).update(any(), any(), nullable(Long.class), scope.capture(), any());
+    assertEquals(
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(9L), false),
+        scope.getValue().filter());
+    assertEquals(ownRows, scope.getValue().serverConstraint());
     verify(operations, never()).update(any(), any(), nullable(Long.class), any());
   }
 
@@ -318,7 +329,8 @@ class ApiV2ResourceAccessTest {
             AccessPolicy.authenticated());
     Widget saved = new Widget(7L, "hunter2");
     when(operations.create(any(), any())).thenReturn(saved);
-    when(operations.delete(any(), any(ResourceDeleteOptions.class), any()))
+    when(operations.delete(
+            any(), any(ResourceDeleteOptions.class), any(ResourceRequest.class), any()))
         .thenReturn(Optional.of(ResourceDeleteResult.retained(saved)));
     ApiV2ResourceRegistration<Widget, Long> registration = register(widgets);
     User actor = user(true);
@@ -354,7 +366,7 @@ class ApiV2ResourceAccessTest {
                     && (context.user().hasRole(Role.SYSTEM_ROLE)
                         || context.targets(context.user().getId())));
     ApiV2ResourceRegistration<Widget, Long> widgets = register(secretWritableBy(sysadminOrSelf));
-    when(operations.update(any(), any(), nullable(Long.class), any()))
+    when(operations.update(any(), any(), nullable(Long.class), any(ResourceRequest.class), any()))
         .thenReturn(Optional.of(new Widget(7L, "changed")));
 
     User owner = user(false);
