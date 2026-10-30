@@ -117,7 +117,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(get(CONFIGURATIONS + "/" + id).header("apiKey", fixture.userKey()))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.target.relationTo").value("booking-instruments"))
+          .andExpect(jsonPath("$.target.relationTo").value("instruments"))
           .andExpect(jsonPath("$.target.value").value(instrumentId))
           .andExpect(jsonPath("$.target.globalId").value("IN" + instrumentId));
     }
@@ -137,26 +137,22 @@ class ApiV2RelationshipContractMVCIT {
                   .header("apiKey", fixture.userKey())
                   .param("depth", "1"))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.target.relationTo").value("booking-instruments"))
+          .andExpect(jsonPath("$.target.relationTo").value("instruments"))
           .andExpect(jsonPath("$.target.globalId").value("IN" + instrumentId))
           .andExpect(jsonPath("$.target.value.id").value(instrumentId))
           .andExpect(jsonPath("$.target.value.name").value(Matchers.containsString("Confocal")));
     }
 
     @Test
-    @DisplayName("Booking access returns only the safe target reference without Inventory access")
-    void bookingAccessReturnsSafeTargetReferenceWithoutInventoryAccess() throws Exception {
+    @DisplayName("Booking access hides targets without Inventory access")
+    void bookingAccessHidesTargetWithoutInventoryAccess() throws Exception {
       long id = fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
 
       mockMvc
           .perform(get(CONFIGURATIONS + "/" + id).header("apiKey", fixture.otherUserKey()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.id").value(id))
-          .andExpect(jsonPath("$.target.relationTo").value("booking-instruments"))
-          .andExpect(jsonPath("$.target.value").value(instrumentId))
-          .andExpect(jsonPath("$.target.globalId").value("IN" + instrumentId))
-          .andExpect(jsonPath("$.target.owner").doesNotExist())
-          .andExpect(jsonPath("$.target.parentContainerName").doesNotExist());
+          .andExpect(jsonPath("$.target").isEmpty());
 
       mockMvc
           .perform(
@@ -187,7 +183,7 @@ class ApiV2RelationshipContractMVCIT {
           "{\"value\":123}", // no relationTo
           "{\"relationTo\":\"instruments\"}", // no value
           "{\"relationTo\":\"maintenances\",\"value\":1}", // resource type not accepted
-          "{\"relationTo\":\"booking-instruments\",\"value\":999999999}", // no such target
+          "{\"relationTo\":\"instruments\",\"value\":999999999}", // no such target
         })
     @DisplayName("a malformed or unresolvable reference is a validation error naming the field")
     void aMalformedReferenceIsAValidationError(String target) throws Exception {
@@ -212,7 +208,7 @@ class ApiV2RelationshipContractMVCIT {
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(
                       """
-                      {"enabled":true,"target":{"relationTo":"booking-instruments","value":%d,"globalId":"IN%d"}}\
+                      {"enabled":true,"target":{"relationTo":"instruments","value":%d,"globalId":"IN%d"}}\
                       """
                           .formatted(instrumentId, instrumentId + 7)))
           .andExpect(status().isBadRequest())
@@ -260,7 +256,7 @@ class ApiV2RelationshipContractMVCIT {
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(
                       """
-                      {"enabled":true,"target":{"relationTo":"booking-instruments","value":"%d"}}\
+                      {"enabled":true,"target":{"relationTo":"instruments","value":"%d"}}\
                       """
                           .formatted(instrumentId)))
           .andExpect(status().isBadRequest())

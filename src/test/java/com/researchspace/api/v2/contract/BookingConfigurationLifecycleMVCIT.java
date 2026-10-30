@@ -222,7 +222,7 @@ class BookingConfigurationLifecycleMVCIT {
     Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
     String body =
         """
-        {"target":{"relationTo":"booking-instruments","value":%d},"start":"%s","end":"%s"}
+        {"target":{"relationTo":"instruments","value":%d},"start":"%s","end":"%s"}
         """
             .formatted(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
     MvcResult result =

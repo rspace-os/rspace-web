@@ -4,12 +4,9 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,10 +42,5 @@ public class BookingConfigurationTargetManagerImpl implements BookingConfigurati
                     instrument.getName(),
                     instrument.isDeleted()))
         .toList();
-  }
-
-  @Override
-  public Map<Long, Instrument> resolveRelationshipTargets(Set<Long> instrumentIds) {
-    return instrumentDao.getBookingRelationshipTargets(instrumentIds);
   }
 }

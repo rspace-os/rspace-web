@@ -274,8 +274,8 @@ class BookingConfigurationLifecycleTest {
     manager.archiveConfigurations(request, actor, actor);
 
     verify(dao).lockResources(eq(request), eq(limit), access.capture());
-    assertFalse(access.getValue().result("booking-instruments").isDenied());
-    assertTrue(access.getValue().result("booking-instruments").constraintOrEmpty().isEmpty());
+    assertFalse(access.getValue().result("instruments").isDenied());
+    assertTrue(access.getValue().result("instruments").constraintOrEmpty().isEmpty());
   }
 
   private BookingConfiguration configuration(long id, long targetId) {

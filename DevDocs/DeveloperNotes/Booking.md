@@ -114,3 +114,9 @@ booking and maintenance event. Maintenance requires `CREATE_BLOCKOUT`, exposed a
 closed weekdays, increment/alignment and the item maximum, but retains the absolute cap.
 
 Booking Owners and Managers hold the maintenance capability.
+
+Booking target references name the Inventory `instruments` resource, with stored kind
+`INSTRUMENT` and global-ID prefix `IN`. Inventory read access and soft deletion apply
+when resolving those references. A caller with booking access but no Inventory access
+receives a null target. Expanded reads select the instrument fields they need with
+`fields[instruments]`; parent locations expand through `parentContainer` to `containers`.

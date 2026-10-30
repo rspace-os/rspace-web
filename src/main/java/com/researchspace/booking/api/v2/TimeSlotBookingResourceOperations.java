@@ -131,7 +131,11 @@ public final class TimeSlotBookingResourceOperations
                 .requestExample(
                     Map.of(
                         "target",
-                        Map.of("relationTo", com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME, "value", 123),
+                        Map.of(
+                            "relationTo",
+                            com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME,
+                            "value",
+                            123),
                         "start",
                         "2026-10-25T07:30:00Z",
                         "end",

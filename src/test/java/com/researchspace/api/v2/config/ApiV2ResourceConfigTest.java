@@ -17,7 +17,6 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
-import com.researchspace.booking.api.v2.BookingInstrumentRelationshipOperations;
 import com.researchspace.booking.api.v2.TimeSlotBookingResourceOperations;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.config.BookingTimeConfig;
@@ -81,8 +80,8 @@ class ApiV2ResourceConfigTest {
       assertEquals(
           List.of(
               "booking-configurations",
-              "booking-instruments",
               "bookings",
+              "containers",
               "instruments",
               "maintenances",
               "users"),
@@ -109,8 +108,8 @@ class ApiV2ResourceConfigTest {
       assertEquals(
           List.of(
               "booking-configurations",
-              "booking-instruments",
               "bookings",
+              "containers",
               "instruments",
               "maintenances",
               "users",
@@ -120,9 +119,9 @@ class ApiV2ResourceConfigTest {
               .sorted()
               .toList());
       assertEquals(
-          6,
+          7,
           context.getBeansOfType(ApiV2ResourceSpec.class).size(),
-          "the five built-in route specs plus the contributed one");
+          "the six built-in route specs plus the contributed one");
       assertNotNull(context.getBean(ApiV2CrudController.class));
     }
   }
@@ -144,6 +143,9 @@ class ApiV2ResourceConfigTest {
 
   static AnnotationConfigApplicationContext newContext() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    context.registerBean(
+        com.researchspace.service.ResourceMutationManager.class,
+        com.researchspace.service.ResourceMutationManager::new);
     context.registerBean(MaintenanceManager.class, () -> mock(MaintenanceManager.class));
     context.registerBean(UserManager.class, () -> mock(UserManager.class));
     context.registerBean(FeatureFlagManager.class, () -> mock(FeatureFlagManager.class));
@@ -163,6 +165,15 @@ class ApiV2ResourceConfigTest {
     when(customFields.namespace()).thenReturn(RuntimeFieldNamespaces.CUSTOM_FIELDS);
     when(customFields.projectsThroughRelationship()).thenReturn(true);
     context.registerBean(InstrumentCustomFieldManager.class, () -> customFields);
+    context.registerBean(
+        com.researchspace.service.inventory.ContainerReadManager.class,
+        () -> mock(com.researchspace.service.inventory.ContainerReadManager.class));
+    context.registerBean(
+        com.researchspace.service.inventory.ContainerReadAccess.class,
+        () ->
+            new com.researchspace.service.inventory.ContainerReadAccess(
+                mock(InventoryPermissionUtils.class)));
+    context.register(com.researchspace.inventory.api.v2.ContainerResourceOperations.class);
     context.registerBean(ExtraFieldDao.class, () -> mock(ExtraFieldDao.class));
     context.registerBean(
         InstrumentReadAccess.class,
@@ -180,7 +191,6 @@ class ApiV2ResourceConfigTest {
     context.register(
         BookingTimeConfig.class,
         BookingConfigurationResourceOperations.class,
-        BookingInstrumentRelationshipOperations.class,
         TimeSlotBookingResourceOperations.class,
         InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,

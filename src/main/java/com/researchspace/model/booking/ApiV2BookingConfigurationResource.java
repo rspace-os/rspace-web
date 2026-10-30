@@ -2,6 +2,7 @@ package com.researchspace.model.booking;
 
 import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2RelationshipTarget;
@@ -21,7 +22,6 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
-import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;

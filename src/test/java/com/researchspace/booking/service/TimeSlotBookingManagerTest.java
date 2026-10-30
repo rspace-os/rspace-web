@@ -12,7 +12,6 @@ import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -70,9 +69,9 @@ class TimeSlotBookingManagerTest {
         .thenReturn(
             new ResourceRegistry(
                 List.of(
+                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                     ApiV2TimeSlotBookingResource.DESCRIPTION,
                     ApiV2BookingConfigurationResource.DESCRIPTION,
-                    ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
                     ApiV2UserResource.DESCRIPTION)));
     when(bookingDao.saveAndFlush(any(TimeSlotBooking.class)))

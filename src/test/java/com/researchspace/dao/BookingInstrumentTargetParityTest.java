@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.Constants;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
-import com.researchspace.booking.service.BookingConfigurationTargetManager;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
@@ -16,13 +15,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class BookingInstrumentTargetParityTest extends SpringTransactionalTest {
   private final InstrumentDao instruments;
-  private final BookingConfigurationTargetManager targets;
+  private final BookingInstrumentQueryDao targets;
   private final ApiV2ResourceCatalog resources;
 
   @Autowired
   BookingInstrumentTargetParityTest(
       InstrumentDao instruments,
-      BookingConfigurationTargetManager targets,
+      BookingInstrumentQueryDao targets,
       ApiV2ResourceCatalog resources) {
     this.instruments = instruments;
     this.targets = targets;
@@ -52,12 +51,21 @@ class BookingInstrumentTargetParityTest extends SpringTransactionalTest {
     Set<Long> requested = Set.of(shared.getId(), privateItem.getId(), deleted.getId(), templateId);
     for (User actor : List.of(owner, member, pi, getSysAdminUser(), outsider)) {
       logoutAndLoginAs(actor);
+      // Catalogue lookup deliberately ignores Inventory permissions; relationship resolution does
+      // not.
+      assertEquals(ids, targets.getBookingRelationshipTargets(requested).keySet());
+      Set<Long> expected =
+          actor.equals(outsider)
+              ? Set.of()
+              : actor.equals(member)
+                  ? Set.of(shared.getId())
+                  : Set.of(shared.getId(), privateItem.getId());
       assertEquals(
-          targets.resolveRelationshipTargets(ids).keySet(),
+          expected,
           resources
               .find("instruments")
               .orElseThrow()
-              .resolveReadable(Set.copyOf(ids), actor)
+              .resolveReadable(Set.copyOf(requested), actor)
               .keySet(),
           actor.getUsername());
     }

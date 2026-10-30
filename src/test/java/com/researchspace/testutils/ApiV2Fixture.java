@@ -321,7 +321,7 @@ public final class ApiV2Fixture {
     enableBookings();
     String body =
         """
-        {"enabled":true,"target":{"relationTo":"booking-instruments","value":%d}}\
+        {"enabled":true,"target":{"relationTo":"instruments","value":%d}}\
         """
             .formatted(instrumentId);
     long id = idOf(postJson("/api/v2/booking-configurations", body, apiKey));
@@ -334,7 +334,7 @@ public final class ApiV2Fixture {
     enableBookings();
     String body =
         """
-        {"target":{"relationTo":"booking-instruments","value":%d},"start":"%s","end":"%s"}\
+        {"target":{"relationTo":"instruments","value":%d},"start":"%s","end":"%s"}\
         """
             .formatted(instrumentId, start, end);
     long id = idOf(postJson("/api/v2/bookings", body, userKey()));

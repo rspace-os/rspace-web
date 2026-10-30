@@ -8,9 +8,9 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -95,11 +95,11 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             ignored -> access == null ? AccessResult.allowed() : AccessResult.allowedWhere(access));
     var bookingTarget =
         new CollectionDescription<>(
-            ApiV2BookingInstrumentResource.RESOURCE_NAME,
+            ApiV2InstrumentResource.RESOURCE_NAME,
             Instrument.class,
-            ApiV2BookingInstrumentResource.DESCRIPTION.fields(),
-            ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
-            ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
+            ApiV2InstrumentResource.DESCRIPTION.fields(),
+            ApiV2InstrumentResource.DESCRIPTION.idField(),
+            ApiV2InstrumentResource.DESCRIPTION.defaultSort(),
             AccessPolicy.readOnly(readAccess));
     return new ResourceRegistry(
         List.of(

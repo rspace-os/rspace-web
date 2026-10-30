@@ -14,7 +14,6 @@ import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
@@ -595,9 +594,9 @@ class RsqlCollectionQueryTest {
         RelationshipReadAccess.unrestricted(
             new ResourceRegistry(
                 List.of(
+                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                     description,
                     ApiV2UserResource.DESCRIPTION,
-                    ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION)));
 
     Predicate result =

@@ -133,7 +133,11 @@ public final class BookingConfigurationResourceOperations
                         "allowDoubleBooking",
                         false,
                         "target",
-                        Map.of("relationTo", com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME, "value", 123)))
+                        Map.of(
+                            "relationTo",
+                            com.researchspace.inventory.model.ApiV2InstrumentResource.RESOURCE_NAME,
+                            "value",
+                            123)))
                 .build()),
         Map.of(
             ResourceOperation.CREATE,

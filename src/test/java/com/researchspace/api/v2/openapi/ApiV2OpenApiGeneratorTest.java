@@ -22,7 +22,6 @@ import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
@@ -156,15 +155,6 @@ class ApiV2OpenApiGeneratorTest {
             "update-error",
             Set.of(),
             Map.of());
-    ApiV2ResourceSpec<Instrument, Long> bookingInstruments =
-        new ApiV2ResourceSpec<>(
-            ApiV2BookingInstrumentResource.DESCRIPTION,
-            operationsMock(),
-            Long::valueOf,
-            "create-error",
-            "update-error",
-            Set.of(),
-            Map.of());
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(
@@ -175,7 +165,14 @@ class ApiV2OpenApiGeneratorTest {
                     timeSlotBookings,
                     featureFlags,
                     instruments,
-                    bookingInstruments)),
+                    new ApiV2ResourceSpec<>(
+                        com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                        operationsMock(),
+                        Long::valueOf,
+                        "create-error",
+                        "update-error",
+                        Set.of(),
+                        Map.of()))),
             "Test API",
             "2.0.0");
   }
@@ -190,7 +187,7 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
-  void generatesConcretePathsAndKeepsTargetOnlyResourcesSchemaOnly() {
+  void generatesConcretePathsForExposedOperations() {
     Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
 
@@ -216,7 +213,7 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> schemas = schemas(document);
     assertTrue(schemas.containsKey("InstrumentsRead"));
     assertTrue(schemas.containsKey("InstrumentsReference"));
-    assertFalse(schemas.containsKey("InstrumentsCreate"));
+    assertTrue(schemas.containsKey("InstrumentsCreate"));
   }
 
   @Test
@@ -322,18 +319,10 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
-  void marksTemporaryInstrumentLocationFieldsDeprecatedAndNullable() {
-    Map<String, Object> instrumentProperties =
+  void documentsInstrumentParentAsAContainerRelationship() {
+    Map<String, Object> properties =
         objectMap(objectMap(schemas(document()).get("InstrumentsRead")).get("properties"));
-
-    for (String field : List.of("parentContainerName", "parentContainerGlobalId")) {
-      Map<String, Object> location = objectMap(instrumentProperties.get(field));
-      assertEquals(true, location.get("deprecated"));
-      assertTrue(
-          String.valueOf(location.get("description"))
-              .contains("future parentContainer relationship"));
-      assertTrue(((List<?>) location.get("type")).contains("null"));
-    }
+    assertTrue(properties.containsKey("parentContainer"));
   }
 
   @Test
@@ -522,7 +511,7 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> targetReference = objectMap(targetOutputVariants.get(0));
     List<?> targetReferenceParts = (List<?>) targetReference.get("allOf");
     assertEquals(
-        "#/components/schemas/BookingInstrumentsReference",
+        "#/components/schemas/InstrumentsReference",
         objectMap(targetReferenceParts.get(0)).get("$ref"));
     Map<String, Object> targetReferenceProperties =
         objectMap(objectMap(targetReferenceParts.get(1)).get("properties"));
@@ -563,8 +552,8 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         List.of(
             "id",
-            "dateFrom",
-            "dateTo",
+            "start",
+            "end",
             "search",
             "actions",
             "snapshotDate",
