@@ -142,6 +142,9 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
     http.get(/\/api\/v2\/booking-catalogue(?:\/calendar)?$/, ({ request }) => {
       onCollectionRequest(request);
       const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^(availability|calendar)(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
       const target = url.searchParams.get("target");
       const where = url.searchParams.get("where");
@@ -194,9 +197,13 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       return HttpResponse.json(bookingCataloguePage(items, page, pageSize, matching.length));
     }),
     // Pages with events of their own classify items; these fixtures have none to count.
-    http.get("/api/v2/booking-catalogue/availability-counts", () =>
-      HttpResponse.json({ availableNow: 0, freeLaterToday: 0 }),
-    ),
+    http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
+      const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^availability(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
+      return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
+    }),
     http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") ?? "1");

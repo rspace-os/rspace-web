@@ -64,8 +64,12 @@ public class BookingCatalogueController {
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,
       @RequestParam(defaultValue = "false") boolean mine,
       @RequestParam(required = false) String availability,
-      @RequestParam(required = false) Instant availabilityStart,
-      @RequestParam(required = false) Instant availabilityEnd,
+      @io.swagger.v3.oas.annotations.Parameter(description = "Inclusive interval start.")
+          @RequestParam(required = false)
+          Instant start,
+      @io.swagger.v3.oas.annotations.Parameter(description = "Exclusive interval end.")
+          @RequestParam(required = false)
+          Instant end,
       @RequestParam(required = false) Instant now,
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
@@ -77,7 +81,7 @@ public class BookingCatalogueController {
             : BookingCatalogueManager.Availability.fromValue(availability)
                 .orElseThrow(BookingCatalogueController::invalidAvailability);
     BookingCatalogueManager.AvailabilityWindow window =
-        category == null ? null : window(availabilityStart, availabilityEnd, now);
+        category == null ? null : window(start, end, now);
     return manager.search(
         query,
         target,
@@ -106,8 +110,12 @@ public class BookingCatalogueController {
       @RequestParam(name = "location", required = false) List<String> locations,
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,
       @RequestParam(defaultValue = "false") boolean mine,
-      @RequestParam(required = false) Instant availabilityStart,
-      @RequestParam(required = false) Instant availabilityEnd,
+      @io.swagger.v3.oas.annotations.Parameter(description = "Inclusive interval start.")
+          @RequestParam(required = false)
+          Instant start,
+      @io.swagger.v3.oas.annotations.Parameter(description = "Exclusive interval end.")
+          @RequestParam(required = false)
+          Instant end,
       @RequestParam(required = false) Instant now,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
@@ -119,7 +127,7 @@ public class BookingCatalogueController {
         locations == null ? List.of() : locations,
         capability,
         mine,
-        window(availabilityStart, availabilityEnd, now),
+        window(start, end, now),
         caller.subject());
   }
 

@@ -130,8 +130,8 @@ function appendItemFilters(parameters: URLSearchParams, search: CatalogueSearch)
 }
 
 function appendAvailabilityWindow(parameters: URLSearchParams, window: CatalogueAvailabilityWindow) {
-  parameters.set("availabilityStart", window.start);
-  parameters.set("availabilityEnd", window.end);
+  parameters.set("start", window.start);
+  parameters.set("end", window.end);
   parameters.set("now", window.now);
 }
 
