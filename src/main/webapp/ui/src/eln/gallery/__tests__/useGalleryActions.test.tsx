@@ -73,7 +73,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("This is a test error message.");
+      expect(toast).toMatchTextContent("This is a test error message.");
     });
     test("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
@@ -93,7 +93,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("This is a test error message.");
+      expect(toast).toMatchTextContent("This is a test error message.");
     });
   });
   describe("deleteFiles", () => {
@@ -159,7 +159,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("This is a test error message.");
+      expect(toast).toMatchTextContent("This is a test error message.");
     });
     test("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
@@ -179,7 +179,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("This is a test error message.");
+      expect(toast).toMatchTextContent("This is a test error message.");
     });
   });
   describe("moveFiles", () => {
@@ -247,7 +247,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("This is a test error message.");
+      expect(toast).toMatchTextContent("This is a test error message.");
     });
     test("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
@@ -267,7 +267,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("This is a test error message.");
+      expect(toast).toMatchTextContent("This is a test error message.");
     });
   });
   describe("changeDescription", () => {
@@ -333,7 +333,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("gallery:actions.description.updateSuccess");
+      expect(toast).toMatchTextContent("gallery:actions.description.updateSuccess");
     });
     test("exceptionMessage error response format should result in error toast", async () => {
       const user = userEvent.setup();
@@ -353,8 +353,8 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("gallery:actions.description.updateFailed");
-      expect(toast).toHaveTextContent("Something went wrong: description too long, should be max 250 chars");
+      expect(toast).toMatchTextContent("gallery:actions.description.updateFailed");
+      expect(toast).toMatchTextContent("Something went wrong: description too long, should be max 250 chars");
     });
   });
 });

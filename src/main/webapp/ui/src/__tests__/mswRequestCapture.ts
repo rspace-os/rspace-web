@@ -1,4 +1,4 @@
-import { http } from "msw";
+import { http } from "msw/http";
 import { server } from "@/__tests__/mswServer";
 
 type Method = "get" | "post" | "put" | "delete";

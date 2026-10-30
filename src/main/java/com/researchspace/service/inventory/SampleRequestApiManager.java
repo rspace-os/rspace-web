@@ -77,7 +77,7 @@ public interface SampleRequestApiManager {
    *
    * @param sampleId the sample whose active requests should be closed
    * @param actor attributed as who made the change; the person who performed the transfer
-   * @param newOwner whose own requests are fulfilled, and who is named in the rejection reason
+   * @param newOwner whose own requests are fulfilled
    */
   void closeActiveRequestsForTransferredSample(Long sampleId, User actor, User newOwner);
 }

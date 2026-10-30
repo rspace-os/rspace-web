@@ -78,6 +78,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private record Transition(
       SampleRequestStatus from, SampleRequestStatus to, Actor actor, boolean reasonRequired) {}
 
+  private static final String AUTO_FULFILLED_REASON = "inventory.sampleRequest.autoFulfilledReason";
+  private static final String AUTO_REJECTED_REASON = "inventory.sampleRequest.autoRejectedReason";
+
   /** Every transition a user can make; PENDING is only written when a request is raised. */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -191,8 +194,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     invPermissions.assertUserCanTransferInventoryRecord(sample, user);
 
     // recorded before the transfer, so its closing of open requests leaves this one alone
-    String reason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
-    request.recordStatus(user, SampleRequestStatus.FULFILLED, reason, sample);
+    request.recordStatus(user, SampleRequestStatus.FULFILLED, null, sample);
     SampleRequest saved = sampleRequestDao.save(request);
     publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
     ApiSample transfer = new ApiSample();
@@ -280,12 +282,26 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   private ApiSampleRequest toDetail(SampleRequest request, User user) {
     ApiSampleRequest detail = new ApiSampleRequest(request);
-    detail.setRequester(toApiUser(request.getRequesterUsername(), request.getRequesterId()));
-    detail.setOriginalOwner(toApiUser(request.getOriginalOwner(), request.getOriginalOwnerId()));
+    Map<Long, ApiUser> usersById = new HashMap<>();
+    detail.setRequester(
+        usersById.computeIfAbsent(
+            request.getRequesterId(), id -> toApiUser(request.getRequesterUsername(), id)));
+    detail.setOriginalOwner(
+        usersById.computeIfAbsent(
+            request.getOriginalOwnerId(), id -> toApiUser(request.getOriginalOwner(), id)));
     for (int i = 0; i < detail.getStatusChanges().size(); i++) {
       ApiSampleRequestStatusChange apiChange = detail.getStatusChanges().get(i);
       SampleRequestStatusChange change = request.getStatusChanges().get(i);
-      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername(), change.getCreatedById()));
+      apiChange.setCreatedBy(
+          usersById.computeIfAbsent(
+              change.getCreatedById(), id -> toApiUser(change.getCreatedByUsername(), id)));
+      if (change.isAutoClosed()) {
+        apiChange.setReason(
+            messages.getMessage(
+                change.getStatus() == SampleRequestStatus.FULFILLED
+                    ? AUTO_FULFILLED_REASON
+                    : AUTO_REJECTED_REASON));
+      }
       if (change.getTransferredSample() != null) {
         sampleApiManager.setOtherFieldsForOutgoingApiInventoryRecord(
             apiChange.getTransferredSample(), change.getTransferredSample(), user);
@@ -366,21 +382,15 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public void closeActiveRequestsForTransferredSample(Long sampleId, User actor, User newOwner) {
-    String rejectedReason =
-        messages.getMessage(
-            "inventory.sampleRequest.autoRejectedReason", new Object[] {newOwner.getFullName()});
-    String fulfilledReason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
       boolean toRequester = request.isRequester(newOwner);
       SampleRequestStatus target =
           toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
       legalTransitionFromOrThrow(transitionsToSettableStatusOrThrow(target), request.getStatus());
-      if (toRequester) {
-        request.recordStatus(actor, target, fulfilledReason, request.getSample());
-      } else {
-        request.recordStatus(actor, target, rejectedReason);
-      }
+      request
+          .recordStatus(actor, target, null, toRequester ? request.getSample() : null)
+          .setAutoClosed(true);
       SampleRequest saved = sampleRequestDao.save(request);
       publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));
     }

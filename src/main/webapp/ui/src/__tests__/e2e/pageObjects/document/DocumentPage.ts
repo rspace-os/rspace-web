@@ -178,7 +178,13 @@ export class DocumentPage extends BasePage {
     await waitForWorkspaceAnimations(this.page);
   }
 
+  /**
+   * Reopens the document in view mode. The server reopens a document in edit mode while this session
+   * still holds its edit lock, and the editor's unload handler that releases it is unreliable (see
+   * leaveWithoutSaving), so the lock is released here first.
+   */
   async reload(): Promise<void> {
+    await this.releaseEditLock(this.getId());
     await this.page.goto(this.page.url().split("?")[0]);
     await this.isLoaded();
   }
@@ -199,6 +205,10 @@ export class DocumentPage extends BasePage {
     } finally {
       this.page.off("dialog", handleDialog);
     }
+    await this.releaseEditLock(id);
+  }
+
+  private async releaseEditLock(id: number): Promise<void> {
     const response = await this.page.request.post("/workspace/editor/structuredDocument/ajax/unlockrecord", {
       form: { id: String(id) },
     });

@@ -2,6 +2,7 @@ package com.researchspace.inv.audit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -11,6 +12,7 @@ import com.researchspace.model.events.SampleRequestStatusEvent;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,7 @@ public class SampleRequestAuditTrailTest {
   @Captor ArgumentCaptor<GenericEvent> loggedEvent;
 
   @Mock AuditTrailService auditTrail;
+  @Mock MessageSourceUtils messages;
   @InjectMocks SampleRequestAuditTrail listener;
 
   User owner = TestFactory.createAnyUser("owner");
@@ -47,11 +50,14 @@ public class SampleRequestAuditTrailTest {
   @Test
   public void raisedRequestDescriptionNamesTheUserAsked() {
     SampleRequest request = requestInStatus(SampleRequestStatus.PENDING, requester);
+    when(messages.getMessage(
+            "inventory.audit.sampleRequest.sent", new Object[] {owner.getUsername()}))
+        .thenReturn("To user: " + owner.getUsername());
 
     listener.sampleRequestStatusRecorded(new SampleRequestStatusEvent(request, requester));
 
     verify(auditTrail).notify(loggedEvent.capture());
-    assertEquals("to user: " + owner.getUsername(), loggedEvent.getValue().getDescription());
+    assertEquals("To user: " + owner.getUsername(), loggedEvent.getValue().getDescription());
   }
 
   @ParameterizedTest

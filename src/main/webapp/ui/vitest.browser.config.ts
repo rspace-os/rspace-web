@@ -4,9 +4,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
+import { msw } from "msw/vite";
 import type { Alias, Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
-import { BrowserTestSequencer } from "./src/__tests__/browserLifecycle/sequencer.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -84,7 +84,9 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
-  plugins: [react(), tinymceAssetsPlugin()],
+  // worker-only serves /mockServiceWorker.js from the installed msw.
+  // browserMocks.ts calls setupWorker itself.
+  plugins: [react(), tinymceAssetsPlugin(), msw({ mode: "worker-only" })],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the
@@ -96,10 +98,6 @@ export default defineConfig({
     tsconfigPaths: true,
     alias: browserAliases,
   },
-  // Serve the MSW service worker from a test-only directory at the server root
-  // (so worker.start({ url: "/mockServiceWorker.js" }) resolves) without
-  // creating an app-level public/ dir that vite build would copy into the WAR.
-  publicDir: resolveFromRoot("src/__tests__/msw"),
   // Use a dedicated optimizer/cache dir distinct from the jsdom config's default
   // (`node_modules/.vite`). Otherwise running `pnpm run test` (jsdom) and
   // `pnpm run test-browser` concurrently would have both Vite servers writing
@@ -130,16 +128,15 @@ export default defineConfig({
   test: {
     include: ["**/?*.spec.{ts,tsx}"],
     exclude: [...configDefaults.exclude, "src/__tests__/e2e/**"],
-    setupFiles: ["./src/__tests__/browserWorkerRegistration.ts", "./src/__tests__/browserSetup.ts"],
-    sequence: { setupFiles: "list", sequencer: BrowserTestSequencer },
+    setupFiles: ["./src/__tests__/browserSetup.ts"],
     testTimeout: 20000,
     // Real-browser component tests carry inherent timing flakiness, especially
     // on Firefox/WebKit under full-suite load. Retries mean an occasional
     // first-attempt timing miss does not fail the run; a test that fails every
     // attempt is a real failure.
     retry: 2,
-    // Registration renewal must finish before the next file starts. Keep files
-    // serial within each browser; the CI matrix provides engine parallelism.
+    // Every file shares one origin-level MSW service worker registration. Keep
+    // files serial within each browser; the CI matrix provides engine parallelism.
     fileParallelism: false,
     // In CI, additionally emit a JUnit report so the per-browser matrix job can
     // publish results (mirrors the jsdom `vitest-tests` job). Each CI job sets

@@ -1,5 +1,5 @@
 import { waitFor } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";

@@ -1,4 +1,5 @@
-import { HttpResponse, http, type RequestHandler } from "msw";
+import type { RequestHandler } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 /*
  * Default MSW handlers for the global app-shell endpoints that fire on render

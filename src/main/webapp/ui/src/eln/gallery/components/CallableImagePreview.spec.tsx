@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import {
@@ -114,7 +114,7 @@ describe("CallableImagePreview", () => {
        * We verify the caption container is visible and contains the expected text.
        */
       await expect.element(preview.caption).toBeVisible();
-      await expect.element(preview.caption).toHaveTextContent("Test Image Caption");
+      await expect.element(preview.caption).toMatchTextContent("Test Image Caption");
     });
 
     test("Should handle empty captions", async () => {

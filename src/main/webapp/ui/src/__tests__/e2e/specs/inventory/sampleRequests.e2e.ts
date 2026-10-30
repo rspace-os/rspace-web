@@ -1091,8 +1091,9 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await session.requestsPage.openRequest(carolRequestId);
       await expect(session.requestsPage.statusChip("Rejected")).toBeVisible();
       const reason = session.requestsPage.detailField("Additional notes");
-      await expect(reason).toContainText("rejected because the sample was transferred");
-      await expect(reason).toContainText("Bob Requests");
+      await expect(reason).toContainText(
+        "This request was rejected because the sample was transferred to another user. If you still need it, make a new request to the new owner.",
+      );
       await session.close();
     });
   });

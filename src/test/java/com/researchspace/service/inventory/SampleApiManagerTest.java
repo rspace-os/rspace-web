@@ -1379,7 +1379,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     assertThat(permittedActionsOf(sample, owner)).contains(change);
     assertThat(permittedActionsOf(sample, pi)).contains(change);
-    // member may only edit, outsider may do neither, sysadmin may only transfer
+    // member may only edit, outsider may do neither, sysadmin may only read
     assertThat(permittedActionsOf(sample, member)).doesNotContain(change);
     assertThat(permittedActionsOf(sample, outsider)).doesNotContain(change);
     assertThat(permittedActionsOf(sample, getSysAdminUser())).doesNotContain(change);
