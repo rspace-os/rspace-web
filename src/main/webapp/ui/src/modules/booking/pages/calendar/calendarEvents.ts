@@ -29,8 +29,10 @@ async function fetchPage(
     sort: "start,id",
     page: String(page),
     limit: "100",
-    depth: "1",
+    depth: "2",
     "fields[bookings]": CALENDAR_BOOKING_FIELDS,
+    "fields[instruments]": "id,globalId,name,deleted,parentContainer",
+    "fields[containers]": "id,globalId,name",
   });
   const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },

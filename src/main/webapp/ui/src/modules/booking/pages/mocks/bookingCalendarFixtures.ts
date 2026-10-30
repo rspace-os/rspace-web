@@ -7,8 +7,14 @@ const target = (id: number, name: string, location?: { name: string; globalId: s
     id,
     name,
     deleted: false,
-    parentContainerName: location === null ? null : (location?.name ?? `${name} room`),
-    parentContainerGlobalId: location === null ? null : (location?.globalId ?? `IC${id}`),
+    parentContainer:
+      location === null
+        ? null
+        : {
+            relationTo: "containers" as const,
+            globalId: location?.globalId ?? `IC${id}`,
+            value: { id, name: location?.name ?? `${name} room`, globalId: location?.globalId ?? `IC${id}` },
+          },
   },
 });
 

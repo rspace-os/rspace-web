@@ -42,6 +42,7 @@ async function fetchPage(
     limit: "100",
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
+    "fields[instruments]": "id,globalId,name,deleted",
   });
   const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },

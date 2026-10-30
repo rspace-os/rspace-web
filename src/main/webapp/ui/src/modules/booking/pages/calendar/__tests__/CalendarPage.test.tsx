@@ -1,12 +1,12 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import {
   renderCalendar,
   restoreCalendarScrollTo,
@@ -19,6 +19,33 @@ beforeEach(() => setupCalendarBookableItems());
 afterAll(() => restoreCalendarScrollTo());
 
 describe("CalendarPage", () => {
+  it.each(["resources", "time-grid", "agenda"])("renders relationship locations in %s", async (layout) => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking, otherBooking]))),
+    );
+    const user = userEvent.setup();
+    await renderCalendar("/booking/calendar?date=2026-08-17");
+    await user.click(await screen.findByRole("button", { name: "Week" }));
+    if (layout !== "resources")
+      await user.click(screen.getByRole("button", { name: layout === "agenda" ? "Agenda" : "Time grid" }));
+    const own = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+    await user.click(within(own).getByRole("button"));
+    expect(
+      within(await screen.findByRole("dialog")).getByRole("link", { name: "Confocal microscope room" }),
+    ).toHaveAttribute("href", "/globalId/IC123");
+    await user.keyboard("{Escape}");
+    const other = screen.getByRole("article", { name: /Electron microscope · Grace Hopper/ });
+    await user.click(within(other).getByRole("button"));
+    expect(within(await screen.findByRole("dialog")).getByRole("link", { name: "Workbench" })).toHaveAttribute(
+      "href",
+      "/globalId/BE124",
+    );
+    await user.keyboard("{Escape}");
+    if (layout === "resources") expect(screen.getByRole("link", { name: "Imaging lab" })).toBeVisible();
+  });
+
   it("offers a retry when booking events cannot be loaded", async () => {
     let requests = 0;
     server.use(

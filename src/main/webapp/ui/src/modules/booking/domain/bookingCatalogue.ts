@@ -61,12 +61,11 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
     configurationVersion: item.configurationVersion,
     target: {
       relationTo: "instruments" as const,
+      location: item.location,
       value: {
         id: item.targetId,
         name: item.name,
         deleted: false,
-        parentContainerName: item.location?.name ?? null,
-        parentContainerGlobalId: item.location?.globalId ?? null,
       },
       globalId: item.globalId,
     },

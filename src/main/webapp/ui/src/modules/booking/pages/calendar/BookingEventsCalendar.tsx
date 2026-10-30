@@ -27,7 +27,15 @@ export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
 export const calendarViews = ["day", "week", "month"] as const;
 export type CalendarView = (typeof calendarViews)[number];
-export type BookingCalendarResource = BookingListDocument["target"];
+export type BookingCalendarResource = BookingListDocument["target"] & {
+  location?: { name: string; globalId: string } | null;
+};
+
+function resourceLocation(resource: BookingCalendarResource) {
+  if (resource.location !== undefined) return resource.location ?? undefined;
+  const parent = resource.value.parentContainer?.value;
+  return typeof parent === "object" && parent !== null ? parent : undefined;
+}
 
 const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
@@ -150,13 +158,7 @@ function useScrollToToday(date: string, view: CalendarView, today: string) {
 function toTimelineEvent(event: BookingListDocument, date: string, timezone: string): DayTimelineEvent {
   const slice = sliceAcrossZonedDay(event.start, event.end, date, timezone);
   if (event.privacy === "busy") return { id: String(event.id), kind: "booking", privacy: "busy", ...slice };
-  const location =
-    event.target.value.parentContainerName != null && event.target.value.parentContainerGlobalId != null
-      ? {
-          name: event.target.value.parentContainerName,
-          globalId: event.target.value.parentContainerGlobalId,
-        }
-      : undefined;
+  const location = resourceLocation(event.target);
   if (event.kind === "MAINTENANCE") {
     return {
       id: String(event.id),
@@ -511,8 +513,8 @@ function ResourceSchedule({
                       size="xs"
                     >
                       <InventoryLocationLink
-                        name={resource.value.parentContainerName}
-                        globalId={resource.value.parentContainerGlobalId}
+                        name={resourceLocation(resource)?.name}
+                        globalId={resourceLocation(resource)?.globalId}
                       />
                     </InventoryItem>
                   </header>
@@ -553,8 +555,8 @@ function ResourceSchedule({
                     size="xs"
                   >
                     <InventoryLocationLink
-                      name={resource.value.parentContainerName}
-                      globalId={resource.value.parentContainerGlobalId}
+                      name={resourceLocation(resource)?.name}
+                      globalId={resourceLocation(resource)?.globalId}
                     />
                   </InventoryItem>
                 </div>
