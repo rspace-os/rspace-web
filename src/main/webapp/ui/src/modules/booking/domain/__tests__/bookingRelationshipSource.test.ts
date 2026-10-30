@@ -13,7 +13,7 @@ describe("booking relationship source", () => {
     server.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const params = new URL(request.url).searchParams;
-        expect(params.get("where")).toBe("target==IN42");
+        expect(params.get("where")).toBe("target=in=(IN42)");
         expect(params.get("depth")).toBe("1");
         expect(params.get("limit")).toBe("1");
         return HttpResponse.json({
@@ -21,10 +21,8 @@ describe("booking relationship source", () => {
         });
       }),
     );
-    await expect(bookingInstrumentSource.resolve?.("IN42", "token", signal())).resolves.toEqual({
-      id: 42,
-      globalId: "IN42",
-      name: "Archived centrifuge",
+    await expect(bookingInstrumentSource.resolveMany?.(["IN42"], "token", signal())).resolves.toEqual({
+      IN42: { id: 42, globalId: "IN42", name: "Archived centrifuge" },
     });
   });
   it("restores archived targets in one bounded target=in request", async () => {
