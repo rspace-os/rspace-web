@@ -54,7 +54,6 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
       catalogMaximumLimit: 200,
       catalogMaximumIds: 50,
       via: "",
-      viaResource: "",
     },
   ],
   pagination: { defaultLimit: 20, maximumLimit: 100 },
@@ -231,7 +230,6 @@ describe("runtime custom fields", () => {
           columnSelectable: false,
           maximumProjections: 0,
           via: "target",
-          viaResource: "instruments",
         },
       ],
     };
@@ -257,7 +255,6 @@ describe("runtime custom fields", () => {
           columnSelectable: true,
           maximumProjections: 50,
           via: "target",
-          viaResource: "instruments",
         },
       ],
     };

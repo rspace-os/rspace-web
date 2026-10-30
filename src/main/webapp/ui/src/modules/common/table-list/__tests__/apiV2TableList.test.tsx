@@ -71,7 +71,6 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
       catalogMaximumLimit: 200,
       catalogMaximumIds: 50,
       via: "",
-      viaResource: "",
     },
   ],
   pagination: { defaultLimit: 20, maximumLimit: 100 },

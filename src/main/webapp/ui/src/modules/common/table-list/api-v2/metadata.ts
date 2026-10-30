@@ -66,7 +66,7 @@ function runtimeFieldNamespaces(declared: unknown, resourceName: string): ApiV2R
   const descriptors = parseAt(metadataRuntimeFieldsSchema, declared, `${resourceName} runtime fields`);
   const namespaces = new Set<string>();
   for (const descriptor of descriptors) {
-    const { namespace, catalog, via, viaResource } = descriptor;
+    const { namespace, catalog, via } = descriptor;
     if (namespaces.has(namespace)) throw new Error(`Duplicate runtime field namespace ${namespace}`);
     namespaces.add(namespace);
     validateRuntimeFieldCatalogUrl(catalog);
@@ -74,10 +74,7 @@ function runtimeFieldNamespaces(declared: unknown, resourceName: string): ApiV2R
       throw new Error(`Runtime field namespace ${namespace} does not match its catalog`);
     }
     const parts = namespace.split(".");
-    if (
-      (parts.length === 1 && (via !== "" || viaResource !== "")) ||
-      (parts.length === 2 && (via !== parts[0] || !/^[a-z][a-z0-9-]*$/.test(viaResource)))
-    ) {
+    if ((parts.length === 1 && via !== "") || (parts.length === 2 && via !== parts[0])) {
       throw new Error(`Runtime field namespace ${namespace} has an unsupported relationship source`);
     }
   }

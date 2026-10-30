@@ -92,7 +92,6 @@ function runtimeNamespace(): Record<string, unknown> {
     catalogMaximumLimit: 200,
     catalogMaximumIds: 100,
     via: "",
-    viaResource: "",
   };
 }
 
@@ -135,7 +134,6 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
     "columnSelectable",
     "sortable",
     "via",
-    "viaResource",
     "catalogDefaultLimit",
     "catalogMaximumLimit",
     "catalogMaximumIds",
@@ -340,7 +338,6 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 100,
         via: "",
-        viaResource: "",
       },
     ];
 
@@ -357,7 +354,6 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 100,
         via: "",
-        viaResource: "",
       },
     ]);
   });
@@ -371,7 +367,6 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
         catalog: "/api/v2/instruments/fields/customFields",
         responseField: "",
         via: "target",
-        viaResource: "instruments",
         filterable: true,
         columnSelectable: false,
         sortable: false,
@@ -386,36 +381,10 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
 
     expect(namespace?.namespace).toBe("target.customFields");
     expect(namespace?.via).toBe("target");
-    expect(namespace?.viaResource).toBe("instruments");
     expect(namespace?.columnSelectable).toBe(false);
   });
 
-  it("accepts the booking instrument alias when it delegates to the instrument catalog", () => {
-    const delegated = structuredClone(openApi);
-    const where = whereParameter(delegated);
-    where["x-rspace-runtime-fields"] = [
-      {
-        namespace: "target.customFields",
-        catalog: "/api/v2/instruments/fields/customFields",
-        responseField: "",
-        via: "target",
-        viaResource: "booking-instruments",
-        filterable: true,
-        columnSelectable: false,
-        sortable: false,
-        maximumProjections: 0,
-        catalogDefaultLimit: 50,
-        catalogMaximumLimit: 200,
-        catalogMaximumIds: 100,
-      },
-    ];
-
-    const [namespace] = apiV2CollectionMetadataFromOpenApi<TestRecord>(delegated, "records").runtimeFields ?? [];
-
-    expect(namespace?.viaResource).toBe("booking-instruments");
-  });
-
-  it("rejects runtime namespaces that do not match their delegated catalog", () => {
+  it("rejects runtime namespaces that do not match their catalog", () => {
     const mismatched = structuredClone(openApi);
     const where = whereParameter(mismatched);
     where["x-rspace-runtime-fields"] = [
@@ -424,7 +393,6 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
         catalog: "/api/v2/instruments/fields/customFields",
         responseField: "",
         via: "target",
-        viaResource: "booking-instruments",
         filterable: true,
         columnSelectable: false,
         sortable: false,
