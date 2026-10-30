@@ -63,6 +63,7 @@ public record ApiV2BookingConfigurationResource(
         BookingConfigurationState state,
     @ApiV2ResourceField(
             property = "timeZone",
+            createAccess = INHERITED,
             updateAccess = NEVER,
             maxLength = 255,
             description =
