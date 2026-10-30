@@ -4,6 +4,7 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -102,8 +103,9 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.userKey())
+                .header("If-Match", "\"" + version + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body(version, true)))
+                .content(body(true)))
         .andExpect(status().isForbidden());
   }
 
@@ -117,19 +119,18 @@ class BookingSettingsControllerMVCIT {
 
   @Test
   void rejectsInvalidOpeningHoursThroughTheSharedCodec() throws Exception {
-    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
-
     mockMvc
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"openingHours":[{"dayOfWeek":1,"start":"8:00","end":"17:00"}],
-                     "configurationVersion":%d}
-                    """
-                        .formatted(version)))
+                    {"openingHours":[{"dayOfWeek":1,"start":"8:00","end":"17:00"}]}
+                    """))
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.code").value("errors.api.v2.bookingConfiguration.openingHours.invalid"));
@@ -137,19 +138,18 @@ class BookingSettingsControllerMVCIT {
 
   @Test
   void rejectsAnInvalidCustomTimezone() throws Exception {
-    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
-
     mockMvc
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"timezoneMode":"CUSTOM","customTimezone":"Not/A_Timezone",
-                     "configurationVersion":%d}
-                    """
-                        .formatted(version)))
+                    {"timezoneMode":"CUSTOM","customTimezone":"Not/A_Timezone"}
+                    """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
   }
@@ -160,26 +160,27 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header("If-Match", "\"" + -1 + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"configurationVersion\":-1}"))
+                .content("{}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
   }
 
   @Test
   void rejectsAMaximumThatDoesNotAlignWithGranularity() throws Exception {
-    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
-
     mockMvc
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"maxBookingDurationMinutes":7,"configurationVersion":%d}
-                    """
-                        .formatted(version)))
+                    {"maxBookingDurationMinutes":7}
+                    """))
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.code").value("errors.api.v2.bookingConfiguration.maximumDuration.invalid"));
@@ -191,6 +192,9 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{"))
         .andExpect(status().isBadRequest())
@@ -207,8 +211,11 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body(version, requested)))
+                .content(body(requested)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.allowDoubleBooking").value(requested))
         .andExpect(jsonPath("$.configurationVersion").value(version + 1));
@@ -226,12 +233,14 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"maxBookingDurationMinutes":60,"configurationVersion":%d}
-                    """
-                        .formatted(before.getConfigurationVersion())))
+                    {"maxBookingDurationMinutes":60}
+                    """))
         .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.maxBookingDurationMinutes").value(60));
@@ -246,6 +255,8 @@ class BookingSettingsControllerMVCIT {
     mockMvc
         .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
+        .andExpect(header().string("ETag", "\"" + before.getConfigurationVersion() + "\""))
+        .andExpect(header().string("Cache-Control", "no-store, no-transform, private"))
         .andExpect(jsonPath("$.availabilityWindowStart").isString())
         .andExpect(jsonPath("$.availabilityWindowEnd").isString())
         .andExpect(jsonPath("$.timezoneMode").isString())
@@ -257,6 +268,7 @@ class BookingSettingsControllerMVCIT {
     mockMvc
         .perform(get("/api/v2/booking-settings/admin").header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
+        .andExpect(header().string("ETag", "\"" + before.getConfigurationVersion() + "\""))
         .andExpect(jsonPath("$.defaultSharedWith").isString())
         .andExpect(jsonPath("$.selectedAccessGrantees").isArray())
         .andExpect(jsonPath("$.configurationVersion").isNumber());
@@ -265,14 +277,15 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header(
+                    "If-Match",
+                    "\"" + settingsManager.getDefaults(sysadmin).getConfigurationVersion() + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
                     {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
-                     "timezoneMode":"CUSTOM","customTimezone":"America/New_York",
-                     "configurationVersion":%d}
-                    """
-                        .formatted(before.getConfigurationVersion())))
+                     "timezoneMode":"CUSTOM","customTimezone":"America/New_York"}
+                    """))
         .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.availabilityWindowStart").value("09:00"))
@@ -289,7 +302,7 @@ class BookingSettingsControllerMVCIT {
   }
 
   @Test
-  void rejectsAStaleVersionWithConflict() throws Exception {
+  void rejectsAStaleVersionWithPreconditionFailed() throws Exception {
     BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
     long version = before.getConfigurationVersion();
 
@@ -297,17 +310,19 @@ class BookingSettingsControllerMVCIT {
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header("If-Match", "\"" + version + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body(version, !before.isAllowDoubleBooking())))
+                .content(body(!before.isAllowDoubleBooking())))
         .andExpect(status().isOk());
 
     mockMvc
         .perform(
             patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
+                .header("If-Match", "\"" + version + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body(version, before.isAllowDoubleBooking())))
-        .andExpect(status().isConflict())
+                .content(body(before.isAllowDoubleBooking())))
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingConfiguration.stale"));
   }
 
@@ -318,11 +333,11 @@ class BookingSettingsControllerMVCIT {
         .orElseThrow();
   }
 
-  private static String body(long version, boolean allowDoubleBooking) {
+  private static String body(boolean allowDoubleBooking) {
     return """
-    {"allowDoubleBooking":%s,"configurationVersion":%d}
+    {"allowDoubleBooking":%s}
     """
-        .formatted(allowDoubleBooking, version);
+        .formatted(allowDoubleBooking);
   }
 
   private static void failOnUnexpectedServerError(MvcResult result) throws Exception {

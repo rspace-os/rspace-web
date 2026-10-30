@@ -120,3 +120,9 @@ Booking target references name the Inventory `instruments` resource, with stored
 when resolving those references. A caller with booking access but no Inventory access
 receives a null target. Expanded reads select the instrument fields they need with
 `fields[instruments]`; parent locations expand through `parentContainer` to `containers`.
+
+Booking settings GET responses (including `/admin`) return an `ETag`. PATCH
+`/api/v2/booking-settings/admin` requires that tag in `If-Match`, with no body
+version: missing tags return 428, malformed tags 400, and stale tags 412.
+Successful PATCH responses include the updated tag. Shared conditional-request
+parsing accepts known compression-proxy tag alterations.

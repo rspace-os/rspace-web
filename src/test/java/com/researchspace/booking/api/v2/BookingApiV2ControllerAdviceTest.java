@@ -69,7 +69,7 @@ class BookingApiV2ControllerAdviceTest {
   void stale() {
     String key = "errors.api.v2.bookingConfiguration.stale";
     register(key);
-    check(advice.handleStaleBookingSettings(), HttpStatus.CONFLICT, key);
+    check(advice.handleStaleBookingSettings(), HttpStatus.PRECONDITION_FAILED, key);
   }
 
   @Test

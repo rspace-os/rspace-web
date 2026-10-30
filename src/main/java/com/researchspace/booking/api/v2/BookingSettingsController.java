@@ -4,6 +4,7 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2ConditionalRequest;
 import com.researchspace.api.v2.controller.ResourceAccessController;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
@@ -22,6 +23,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,7 +31,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.NotFoundException;
@@ -39,11 +40,14 @@ import java.time.ZoneId;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -182,9 +186,7 @@ public final class BookingSettingsController {
       @Size(max = 255, message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
           String customTimezone,
       BookingDefaultSharedWith defaultSharedWith,
-      List<String> selectedGranteeKeys,
-      @NotNull @Min(value = 0, message = "{errors.api.v2.invalidRequest}")
-          Long configurationVersion) {
+      List<String> selectedGranteeKeys) {
 
     @AssertTrue(message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
     public boolean isCustomTimezoneValid() {
@@ -253,14 +255,22 @@ public final class BookingSettingsController {
       description =
           "Returns scheduling defaults for future bookable items and account display fallbacks.",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Current booking defaults."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Current booking defaults.",
+            headers =
+                @Header(
+                    name = "ETag",
+                    description = "Current settings version.",
+                    schema = @Schema(type = "string"))),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
-  public SettingsDocument get(
+  public ResponseEntity<SettingsDocument> get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     requireEnabledRead(caller.subject());
-    return SettingsDocument.from(manager.getDefaults(caller.subject()), institutionClock);
+    var defaults = manager.getDefaults(caller.subject());
+    return versioned(defaults, SettingsDocument.from(defaults, institutionClock));
   }
 
   @GetMapping("/admin")
@@ -270,15 +280,21 @@ public final class BookingSettingsController {
       responses = {
         @ApiResponse(
             responseCode = "200",
-            description = "Current Booking administration settings."),
+            description = "Current Booking administration settings.",
+            headers =
+                @Header(
+                    name = "ETag",
+                    description = "Current settings version.",
+                    schema = @Schema(type = "string"))),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Sysadmin access is required."),
         @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
-  public AdminSettingsDocument getAdmin(
+  public ResponseEntity<AdminSettingsDocument> getAdmin(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     requireEnabledRead(caller.subject());
-    return AdminSettingsDocument.from(manager.getAdminDefaults(caller.subject()), institutionClock);
+    var defaults = manager.getAdminDefaults(caller.subject());
+    return versioned(defaults, AdminSettingsDocument.from(defaults, institutionClock));
   }
 
   @GetMapping("/access-grantees")
@@ -322,24 +338,36 @@ public final class BookingSettingsController {
         @ApiResponse(responseCode = "200", description = "Updated booking defaults."),
         @ApiResponse(responseCode = "400", description = "The resulting settings are invalid."),
         @ApiResponse(
-            responseCode = "409",
+            responseCode = "412",
             description = "The settings changed since they were read."),
+        @ApiResponse(responseCode = "428", description = "If-Match is required."),
         @ApiResponse(responseCode = "403", description = "Sysadmin access is required.")
       })
-  public AdminSettingsDocument patchAdmin(
+  public ResponseEntity<AdminSettingsDocument> patchAdmin(
       @Valid @RequestBody SettingsPatch patch,
+      @Parameter(description = "ETag from the settings GET; required for writes.", required = true)
+          @RequestHeader(name = HttpHeaders.IF_MATCH, required = false)
+          String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     requireEnabledMutation(caller.subject());
-    return AdminSettingsDocument.from(
+    var defaults =
         manager.updateDefaults(
             patch.schedulingPatch(),
             patch.displayPatch(),
             patch.defaultSharedWith(),
             patch.selectedGranteeKeys(),
-            patch.configurationVersion(),
+            ApiV2ConditionalRequest.parseVersion(
+                ifMatch, "errors.api.v2.bookingConfiguration.ifMatchRequired"),
             caller.subject(),
-            caller.actor()),
-        institutionClock);
+            caller.actor());
+    return versioned(defaults, AdminSettingsDocument.from(defaults, institutionClock));
+  }
+
+  private static <T> ResponseEntity<T> versioned(BookingConfigurationDefaults defaults, T body) {
+    return ResponseEntity.ok()
+        .eTag("\"" + defaults.getConfigurationVersion() + "\"")
+        .header(HttpHeaders.CACHE_CONTROL, "no-transform")
+        .body(body);
   }
 
   private void requireEnabledRead(User actor) {
