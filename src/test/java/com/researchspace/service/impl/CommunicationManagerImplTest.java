@@ -106,6 +106,17 @@ public class CommunicationManagerImplTest {
     assertTrue(mgr.notified);
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  void originatorDeliveryRequiresExplicitOptIn(boolean includeOriginator) {
+    var config = notificationConfig(false, originator);
+    config.setIncludeOriginator(includeOriginator);
+    mgr.notify(originator, null, config, "message");
+    var saved = ArgumentCaptor.forClass(Notification.class);
+    verify(commDao).save(saved.capture());
+    assertEquals(includeOriginator ? 1 : 0, saved.getValue().getRecipients().size());
+  }
+
   @Test
   public void notificationSideEffectsWaitForCommitAndRunOnce() {
     User recipientTwo = TestFactory.createAnyUser("recipientTwo");

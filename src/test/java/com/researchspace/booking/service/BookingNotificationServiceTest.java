@@ -95,6 +95,7 @@ class BookingNotificationServiceTest {
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
     assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(recipient), config.getValue().getNotificationTargetsOverride());
+    assertTrue(config.getValue().isIncludeOriginator());
     // CommunicationManager mutates this set before persisting recipients.
     config.getValue().getNotificationTargetsOverride().remove(actor);
     BookingNotificationData data =
@@ -143,6 +144,7 @@ class BookingNotificationServiceTest {
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
     assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(recipient), config.getValue().getNotificationTargetsOverride());
+    assertTrue(config.getValue().isIncludeOriginator());
   }
 
   @Test
