@@ -37,7 +37,6 @@ import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
@@ -1059,29 +1058,9 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   @Override
-  public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
-      Set<Long> instrumentIds, User user) {
-    Map<Long, InstrumentParentLocationSummary> summaries =
-        instrumentDao.getParentLocationSummaries(instrumentIds);
-    Set<Long> parentIds =
-        summaries.values().stream()
-            .map(InstrumentParentLocationSummary::containerId)
-            .collect(java.util.stream.Collectors.toSet());
-    Set<Long> readable = getReadableParentContainerIds(parentIds, user);
-    return summaries.entrySet().stream()
-        .filter(entry -> readable.contains(entry.getValue().containerId()))
-        .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  @Override
   public Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
       Set<Long> instrumentIds, User user) {
     return instrumentDao.getReadableSummaries(instrumentIds, user);
-  }
-
-  @Override
-  public Set<Long> getReadableParentContainerIds(Set<Long> containerIds, User user) {
-    return containerDao.getReadableActiveContainerIds(containerIds, user);
   }
 
   private AccessResult readAccess(User user) {

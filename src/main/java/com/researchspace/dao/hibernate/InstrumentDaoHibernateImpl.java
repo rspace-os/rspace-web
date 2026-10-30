@@ -72,10 +72,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             List.of("id", "editInfo.name", "deleted"));
     return new ResourcePage<>(
         rows.resources().stream()
-            .map(
-                row ->
-                    new InstrumentReadSummary(
-                        row.instrumentId(), row.name(), row.deleted(), null, null, null))
+            .map(row -> new InstrumentReadSummary(row.instrumentId(), row.name(), row.deleted()))
             .toList(),
         rows.total());
   }
