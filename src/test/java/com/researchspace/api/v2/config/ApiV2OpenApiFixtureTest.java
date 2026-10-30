@@ -1,12 +1,16 @@
 package com.researchspace.api.v2.config;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.openapi.ApiV2TestHandlerMappings;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import io.swagger.v3.core.util.Json31;
 import java.io.IOException;
@@ -17,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -47,15 +52,26 @@ class ApiV2OpenApiFixtureTest {
     }
   }
 
+  @Test
+  void generatedDocumentIncludesAnnotatedBookingRoutes() throws IOException {
+    assertTrue(
+        MAPPER.readTree(generatedDocument()).path("paths").has("/api/v2/booking-settings/admin"));
+  }
+
   private static String generatedDocument() throws IOException {
-    try (var context = ApiV2ResourceConfigTest.newContext()) {
+    try (var context = ApiV2ResourceConfigTest.newContext();
+        var handlers = ApiV2TestHandlerMappings.newContext()) {
       context.register(ApiV2ResourceConfig.class);
       context.refresh();
       var catalog = context.getBean(ApiV2ResourceCatalog.class);
       JsonNode document =
           Json31.mapper()
               .valueToTree(
-                  new ApiV2OpenApiGenerator(catalog, "RSpace REST API v2", "2.0.0").generate());
+                  new ApiV2OpenApiDocumentService(
+                          new ApiV2OpenApiGenerator(catalog, "RSpace REST API v2", "2.0.0"),
+                          context.getBean(ApiV2EndpointCatalog.class),
+                          () -> Stream.of(ApiV2TestHandlerMappings.mapping(handlers)))
+                      .generate());
       return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(sorted(document)) + "\n";
     }
   }
