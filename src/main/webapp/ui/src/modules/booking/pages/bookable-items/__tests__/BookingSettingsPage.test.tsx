@@ -73,7 +73,9 @@ describe("BookingSettingsPage", () => {
     };
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(fullDaySettings, { headers: { ETag: '"0"' } })),
+      http.get("/api/v2/booking-settings/admin", () =>
+        HttpResponse.json(fullDaySettings, { headers: { ETag: '"0"' } }),
+      ),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         expect(request.headers.get("If-Match")).toBe('"0"');
         submitted = (await request.json()) as Record<string, unknown>;

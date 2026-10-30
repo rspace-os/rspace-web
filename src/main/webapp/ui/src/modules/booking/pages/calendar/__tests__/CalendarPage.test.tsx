@@ -20,9 +20,9 @@ afterAll(() => restoreCalendarScrollTo());
 describe("CalendarPage", () => {
   it.each(["resources", "time-grid", "agenda"])("renders relationship locations in %s", async (layout) => {
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking, otherBooking]))),
+      http.get("/api/v2/booking-calendar/events", () =>
+        HttpResponse.json(collectionResponse([ownBooking, otherBooking])),
+      ),
     );
     const user = userEvent.setup();
     await renderCalendar("/booking/calendar?date=2026-08-17");
