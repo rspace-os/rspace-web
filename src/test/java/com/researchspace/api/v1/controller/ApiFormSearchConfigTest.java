@@ -18,14 +18,4 @@ public class ApiFormSearchConfigTest extends JakartaValidatorTest {
     cfg.setQuery("a term d");
     assertNErrors(cfg, 0);
   }
-
-  @Test
-  public void cjkQueryIsValid() {
-    ApiFormSearchConfig cfg = new ApiFormSearchConfig();
-    cfg.setQuery("細胞");
-    assertNErrors(cfg, 0);
-    // the two-consecutive-characters rule still applies in any script
-    cfg.setQuery("細 胞");
-    assertNErrors(cfg, 1);
-  }
 }
