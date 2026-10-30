@@ -116,7 +116,7 @@ export function CalendarSubscriptionPopover({
       setFocusGoogle(true);
     },
     onError: async (error) => {
-      if (error instanceof ApiV2ProblemError && error.status === 409) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         const refreshed = await status.refetch();
         if (!openRef.current) return;
         setConfirming(null);
@@ -136,7 +136,6 @@ export function CalendarSubscriptionPopover({
       }
       if (!openRef.current) return;
       setConfirming(null);
-      if (error instanceof ApiV2ProblemError && error.status === 412) await status.refetch();
       setFocusGoogle(true);
     },
   });

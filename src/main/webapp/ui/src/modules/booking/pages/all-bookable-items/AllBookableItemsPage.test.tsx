@@ -49,6 +49,8 @@ function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
     name: target.value.name,
     timezone: configuration.timezone,
     slotGranularityMinutes: configuration.slotGranularityMinutes,
+    incrementUnit: configuration.incrementUnit,
+    alignToIncrement: configuration.alignToIncrement,
     openingHours: configuration.openingHours,
     bufferBeforeMinutes: configuration.bufferBeforeMinutes,
     bufferAfterMinutes: configuration.bufferAfterMinutes,

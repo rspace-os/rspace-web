@@ -377,7 +377,7 @@ describe("CalendarSubscriptionPopover", () => {
         return refreshResponse.promise;
       }),
       http.post(`${path}/rotate`, () =>
-        HttpResponse.json({ status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" }, { status: 409 }),
+        HttpResponse.json({ status: 412, code: "errors.api.v2.bookingCalendar.subscriptionConflict" }, { status: 412 }),
       ),
     );
     renderPopover();
