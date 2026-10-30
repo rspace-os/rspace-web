@@ -67,8 +67,8 @@ const parsedAvailabilityBookings = v.parse(v.array(BookingSchema), availabilityB
 
 /** The server's quick-filter category for one catalogue item, from the client's own interval helpers. */
 function catalogueAvailability(item: BookingCatalogueItem, url: URL) {
-  const start = url.searchParams.get("availabilityStart") ?? "";
-  const end = url.searchParams.get("availabilityEnd") ?? "";
+  const start = url.searchParams.get("start") ?? "";
+  const end = url.searchParams.get("end") ?? "";
   const row = calendarAvailabilityRow(item);
   if (!row) return "unavailable-today";
   const bounds = {
@@ -90,7 +90,7 @@ function catalogueAvailability(item: BookingCatalogueItem, url: URL) {
 async function catalogueCandidates(url: URL): Promise<BookingCatalogueItem[]> {
   const candidates = new URL(url);
   candidates.pathname = "/api/v2/booking-catalogue";
-  for (const name of ["availability", "availabilityStart", "availabilityEnd", "now"]) {
+  for (const name of ["availability", "start", "end", "now"]) {
     candidates.searchParams.delete(name);
   }
   candidates.searchParams.set("page", "1");
@@ -119,6 +119,9 @@ export function bookingPagesHandlers(): RequestHandler[] {
     // The server classifies availability; these apply it to the plain catalogue handler's matches.
     http.get("/api/v2/booking-catalogue/availability-counts", async ({ request }) => {
       const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^availability(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
       const categories = (await catalogueCandidates(url)).map((item) => catalogueAvailability(item, url));
       return HttpResponse.json({
         availableNow: categories.filter((category) => category === "available-now").length,
@@ -127,6 +130,9 @@ export function bookingPagesHandlers(): RequestHandler[] {
     }),
     http.get("/api/v2/booking-catalogue", async ({ request }) => {
       const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^availability(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
       const availability = url.searchParams.get("availability");
       if (!availability) return undefined;
       const matching = (await catalogueCandidates(url)).filter(

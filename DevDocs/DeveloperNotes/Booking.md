@@ -205,7 +205,7 @@ caller's availability window:
 
 | Parameter | Meaning |
 | --- | --- |
-| `availabilityStart`, `availabilityEnd` | Today's window `[start, end)` as instants, at most two days long |
+| `start`, `end` | Today's window `[start, end)` as instants, at most two days long |
 | `now` | The instant to classify; defaults to the server clock |
 
 The client derives the window from today's date and the availability-window preference in its

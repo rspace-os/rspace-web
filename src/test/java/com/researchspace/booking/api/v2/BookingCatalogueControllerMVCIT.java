@@ -276,8 +276,8 @@ class BookingCatalogueControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-catalogue/availability-counts")
-                .queryParam("availabilityStart", "2099-01-02T00:00:00Z")
-                .queryParam("availabilityEnd", "2099-01-01T00:00:00Z")
+                .queryParam("start", "2099-01-02T00:00:00Z")
+                .queryParam("end", "2099-01-01T00:00:00Z")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isBadRequest());
   }
@@ -365,8 +365,8 @@ class BookingCatalogueControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-catalogue/calendar")
-                .queryParam("calendarStart", "2099-05-05T00:00:00Z")
-                .queryParam("calendarEnd", "2099-05-06T00:00:00Z")
+                .queryParam("start", "2099-05-05T00:00:00Z")
+                .queryParam("end", "2099-05-06T00:00:00Z")
                 .queryParam("q", fixture.marker())
                 .queryParam("eventWhere", where)
                 .header("apiKey", apiKey))
@@ -382,8 +382,8 @@ class BookingCatalogueControllerMVCIT {
       availabilityWindow(
           org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request) {
     return request
-        .queryParam("availabilityStart", "2099-01-01T00:00:00Z")
-        .queryParam("availabilityEnd", "2099-01-02T00:00:00Z")
+        .queryParam("start", "2099-01-01T00:00:00Z")
+        .queryParam("end", "2099-01-02T00:00:00Z")
         .queryParam("now", "2099-01-01T10:30:00Z");
   }
 

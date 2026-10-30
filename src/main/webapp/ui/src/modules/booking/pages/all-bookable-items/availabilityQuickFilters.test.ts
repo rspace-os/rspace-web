@@ -128,8 +128,8 @@ describe("availability quick filters", () => {
       where: "target.name=contains=scope",
       mine: "true",
       type: "INSTRUMENT",
-      availabilityStart: "2026-08-17T08:00:00Z",
-      availabilityEnd: "2026-08-17T18:00:00Z",
+      start: "2026-08-17T08:00:00Z",
+      end: "2026-08-17T18:00:00Z",
       now: "2026-08-17T09:00:00.000Z",
     });
   });

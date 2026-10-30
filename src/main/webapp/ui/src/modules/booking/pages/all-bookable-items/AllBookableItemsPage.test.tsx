@@ -235,7 +235,9 @@ describe("AllBookableItemsPage", () => {
       server.use(...bookableItemsHandlers(() => undefined));
       server.use(
         http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-        http.get("/api/v2/booking-catalogue", () => HttpResponse.json({ items: [item], page: 1, pageSize: 20, total: 1, facets: { types: ["INSTRUMENT"] } })),
+        http.get("/api/v2/booking-catalogue", () =>
+          HttpResponse.json({ items: [item], page: 1, pageSize: 20, total: 1, facets: { types: ["INSTRUMENT"] } }),
+        ),
         http.get("/api/v2/bookings", () =>
           HttpResponse.json({
             ...collectionPage(
@@ -842,7 +844,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(available).toHaveTextContent("Available now1"));
     expect(later).toHaveTextContent("Free later1");
     // The counts describe today at the page clock's minute, not the displayed 20 August.
-    expect(countRequests[0].searchParams.get("availabilityStart")?.startsWith("2026-08-17T")).toBe(true);
+    expect(countRequests[0].searchParams.get("start")?.startsWith("2026-08-17T")).toBe(true);
     expect(countRequests[0].searchParams.get("now")).toBe("2026-08-17T08:30:00.000Z");
     for (const link of screen.getAllByRole("link", { name: "Book" })) {
       expect(link.getAttribute("href")).toContain("date=2026-08-20");
