@@ -460,9 +460,20 @@ final class ApiV2OpenApiQueryParameters {
       String description) {
     Set<String> reachable = new LinkedHashSet<>();
     reachable.add(resource.name());
-    resource
-        .relationships()
-        .forEach(relationship -> reachable.addAll(relationship.targetResources()));
+    List<ResourceSchema> pending = new ArrayList<>();
+    pending.add(resource);
+    for (int index = 0; index < pending.size(); index++) {
+      for (RelationshipSchema relationship : pending.get(index).relationships()) {
+        for (String targetName : relationship.targetResources()) {
+          if (reachable.add(targetName)) {
+            ResourceSchema target = resourceSchemas.get(targetName);
+            if (target != null) {
+              pending.add(target);
+            }
+          }
+        }
+      }
+    }
     Map<String, Object> properties = new LinkedHashMap<>();
     Map<String, Object> allowedFields = new LinkedHashMap<>();
     reachable.forEach(

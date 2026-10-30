@@ -80,6 +80,43 @@ class ReadOnlyCollectionOpenApiTest {
   }
 
   @Test
+  void publishesFieldsetsForNestedRelationshipTargets() {
+    CollectionDescription<InstrumentSource> description =
+        new CollectionDescription<>(
+            "sources",
+            InstrumentSource.class,
+            List.<ResourceMember<InstrumentSource>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), InstrumentSource::id),
+                Relationship.referenceToOne(
+                    "instrument",
+                    "instruments",
+                    CollectionFieldTypes.longNumber(),
+                    com.researchspace.model.inventory.Instrument.class,
+                    InstrumentSource::instrument,
+                    com.researchspace.model.inventory.Instrument::getId,
+                    "id")),
+            "id",
+            List.of(new Sort("id", true)));
+    JsonNode document =
+        Json31.mapper()
+            .valueToTree(
+                new ApiV2OpenApiGenerator(
+                        new ApiV2ResourceCatalog(
+                            List.of(
+                                resourceSpec(description, List.of()),
+                                resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()),
+                                resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()))),
+                        "API",
+                        "2.0.0")
+                    .generate());
+    for (String name : List.of("fields", "exclude")) {
+      JsonNode fieldset = parameter(document.at("/paths/~1api~1v2~1sources/get/parameters"), name);
+      assertTrue(fieldset.at("/schema/properties/containers").isObject());
+      assertTrue(fieldset.path("x-rspace-allowed-fields").has("containers"));
+    }
+  }
+
+  @Test
   void publishesFilterEnumsAndOmitsWriteConstraints() {
     CollectionDescription<Gadget> description =
         new CollectionDescription<>(
@@ -223,6 +260,9 @@ class ReadOnlyCollectionOpenApiTest {
   }
 
   private record Gadget(Long id, Phase phase, Phase previous, String code) {}
+
+  private record InstrumentSource(
+      Long id, com.researchspace.model.inventory.Instrument instrument) {}
 
   private record NamespaceTarget(Long id) {}
 
