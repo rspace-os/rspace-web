@@ -123,6 +123,36 @@ class BookingApiV2ControllerAdviceTest {
         BookingConfigurationLifecycleException.MESSAGE_KEY);
   }
 
+  @Test
+  void genericEventOperationsPreservePolicyBodies() {
+    var operations =
+        new TimeSlotBookingResourceOperations(
+            org.mockito.Mockito.mock(TimeSlotBookingManager.class),
+            org.mockito.Mockito.mock(com.researchspace.service.FeatureFlagManager.class),
+            com.researchspace.model.booking.ApiV2TimeSlotBookingResource.DESCRIPTION);
+    var spec = operations.timeSlotBookingApiV2Resource();
+    var shared =
+        new com.researchspace.api.v2.controller.ApiV2ControllerAdvice(
+            new MessageSourceUtils(source));
+    for (var operation :
+        java.util.List.of(
+            com.researchspace.api.v2.resource.ResourceOperation.CREATE,
+            com.researchspace.api.v2.resource.ResourceOperation.UPDATE)) {
+      for (var reason : BookingPolicyException.Reason.values()) {
+        register(reason.errorCode());
+        var mapping =
+            spec.errorMappings().get(operation).stream()
+                .filter(error -> error.exceptionType() == BookingPolicyException.class)
+                .findFirst()
+                .orElseThrow();
+        check(
+            shared.handleResourceException(mapping.translate(new BookingPolicyException(reason))),
+            HttpStatus.BAD_REQUEST,
+            reason.errorCode());
+      }
+    }
+  }
+
   private void register(String key) {
     source.addMessage(key, Locale.getDefault(), "Detail " + key);
   }

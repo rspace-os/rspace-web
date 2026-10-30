@@ -140,10 +140,6 @@ public final class ApiV2OpenApiGenerator {
                         .name(resource.resourceName())
                         .description(
                             "Operations on the " + resource.resourceName() + " collection.")));
-    tags.add(
-        new Tag()
-            .name("booking-directories")
-            .description("Search bounded Booking access principals and creation targets."));
     return new OpenAPI()
         .openapi("3.1.0")
         .info(
