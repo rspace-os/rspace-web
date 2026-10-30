@@ -312,6 +312,16 @@ public class InventoryPermissionUtils {
   }
 
   /**
+   * Whether the user may change a sample's requestable flag: they must be able to both edit it and
+   * change its access permissions, so a PI cannot change it on a member's private sample.
+   */
+  public boolean canUserChangeRequestable(InventoryRecord record, User user) {
+    return record.isSample()
+        && canUserEditInventoryRecord(record, user)
+        && canUserChangeAccessPermissions(record, user);
+  }
+
+  /**
    * Ownership control (CONTEXT.md): the owner, or a PI / Lab Admin of a group the owner belongs to.
    */
   public boolean canUserChangeAccessPermissions(InventoryRecord record, User user) {
@@ -355,6 +365,9 @@ public class InventoryPermissionUtils {
     }
     if (!isLockedInstrumentTemplate(invRec) && canUserChangeAccessPermissions(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
+    }
+    if (canUserChangeRequestable(invRec, user)) {
+      apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_REQUESTABLE);
     }
   }
 

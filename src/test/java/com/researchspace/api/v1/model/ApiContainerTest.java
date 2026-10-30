@@ -69,7 +69,7 @@ public class ApiContainerTest extends SpringTransactionalTest {
     containerWithJustGlobalViewProperties.setGlobalId(apiContainer.getGlobalId());
     containerWithJustGlobalViewProperties.setType(apiContainer.getType());
     containerWithJustGlobalViewProperties.setName(apiContainer.getName());
-    containerWithJustGlobalViewProperties.setOwner(apiContainer.getOwner());
+    containerWithJustGlobalViewProperties.setOwner(apiContainer.getOwner().publicDataCopy());
     containerWithJustGlobalViewProperties.setPermittedActions(apiContainer.getPermittedActions());
     containerWithJustGlobalViewProperties.setLinks(apiContainer.getLinks());
     // lists explicitly nullified
