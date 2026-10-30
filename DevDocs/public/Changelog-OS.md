@@ -34,6 +34,10 @@ You can find our official changelog at https://documentation.researchspace.com/a
   - API: `POST /api/v1/users` (sysadmin user creation, `ApiUserPost`) now accepts passwords up to 128 characters
   - Passwords longer than 128 characters are refused at login without being checked; the only way to hold one is a historic CSV import, and such a user needs an administrator password reset.
 
+### ELN Bugfix
+
+- ISSUE-1135 fix `GET /api/v1/forms?query=` rejecting queries written in non-Latin scripts such as Japanese
+
 # 2.27.0 2026-10-02
 
 ### ELN Features
