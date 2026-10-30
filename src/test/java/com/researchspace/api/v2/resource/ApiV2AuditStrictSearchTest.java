@@ -70,6 +70,31 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void irrelevantAmbiguousBoundaryDoesNotFailAndWholeOverlapIsIncluded() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("25 Oct 2026 02:30:00,000", "BC9")
+            + "\n"
+            + event("25 Oct 2026 02:30:00,000", "BC1")
+            + "\n");
+    var scanner = search(ReadObserver.NONE, ZoneId.of("Europe/Berlin"));
+    assertEquals(
+        1,
+        scanner
+            .search(
+                request(
+                    Instant.parse("2026-10-25T00:00:00Z"), Instant.parse("2026-10-25T02:00:00Z")))
+            .size());
+    write("RSLogs.txt", event("25 Oct 2026 02:30:00,000", "BC9") + "\n");
+    assertTrue(
+        scanner
+            .search(
+                request(
+                    Instant.parse("2026-10-25T01:00:00Z"), Instant.parse("2026-10-25T02:00:00Z")))
+            .isEmpty());
+  }
+
+  @Test
   void hiddenDescriptionsCannotMatchText() throws IOException {
     write(
         "RSLogs.txt",

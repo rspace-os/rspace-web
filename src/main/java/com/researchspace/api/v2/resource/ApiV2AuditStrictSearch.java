@@ -193,8 +193,8 @@ public final class ApiV2AuditStrictSearch {
     if (firstBoundary.isEmpty()) {
       return false;
     }
-    Instant first = parseBoundaryTimestamp(firstBoundary.get(), file);
-    Instant last = parseBoundaryTimestamp(lastNonblankLine(file), file);
+    Instant first = parseBoundaryTimestamp(firstBoundary.get(), file, false);
+    Instant last = parseBoundaryTimestamp(lastNonblankLine(file), file, true);
     return last.compareTo(request.fromInclusive()) >= 0
         && first.compareTo(request.toExclusive()) < 0;
   }
@@ -294,13 +294,14 @@ public final class ApiV2AuditStrictSearch {
     return one.array()[0];
   }
 
-  private Instant parseBoundaryTimestamp(BoundaryLine boundary, FileManifest file) {
+  private Instant parseBoundaryTimestamp(BoundaryLine boundary, FileManifest file, boolean latest) {
     Matcher matcher = LOG_LINE_TIMESTAMP.matcher(boundary.content());
     if (!matcher.find()) {
       throw failure(file.safeName(), boundary.lineNumber(), null);
     }
     try {
-      return timestamp(matcher.group(1));
+      List<Instant> candidates = timestamps(matcher.group(1));
+      return candidates.get(latest ? candidates.size() - 1 : 0);
     } catch (DateTimeException ex) {
       throw failure(file.safeName(), boundary.lineNumber(), ex);
     }
@@ -323,7 +324,7 @@ public final class ApiV2AuditStrictSearch {
           continue;
         }
         Optional<ParsedLine> parsed = parseAuditLine(line, file, lineNumber);
-        if (parsed.isPresent() && matches(parsed.get(), request, restricted)) {
+        if (parsed.isPresent() && matches(parsed.get(), request, restricted, file, lineNumber)) {
           results.add(parsed.get().result());
           if (results.size() > request.ceiling()) {
             return;
@@ -351,7 +352,8 @@ public final class ApiV2AuditStrictSearch {
     }
     var parsed = fields.get();
     try {
-      Instant timestamp = timestamp(parsed.timestamp());
+      List<Instant> candidates = timestamps(parsed.timestamp());
+      Instant timestamp = candidates.get(0);
       AuditDomain domain = AuditDomain.valueOf(parsed.domain());
       AuditAction action = AuditAction.valueOf(parsed.action());
       AuditData data = AuditData.fromJson(parsed.data());
@@ -367,6 +369,7 @@ public final class ApiV2AuditStrictSearch {
       return Optional.of(
           new ParsedLine(
               timestamp,
+              candidates,
               domain,
               action,
               parsed.username(),
@@ -376,24 +379,42 @@ public final class ApiV2AuditStrictSearch {
     }
   }
 
-  private Instant timestamp(String value) {
+  private List<Instant> timestamps(String value) {
     LocalDateTime localTimestamp = LocalDateTime.parse(value.trim(), TIMESTAMP_FORMAT);
     List<ZoneOffset> validOffsets = logZone.getRules().getValidOffsets(localTimestamp);
-    if (validOffsets.size() != 1) {
-      throw new DateTimeException("Audit timestamp does not identify one instant");
+    if (validOffsets.isEmpty()) {
+      throw new DateTimeException("Audit timestamp falls in a clock gap");
     }
-    return localTimestamp.toInstant(validOffsets.get(0));
+    return validOffsets.stream().map(localTimestamp::toInstant).sorted().toList();
   }
 
   private static boolean matches(
-      ParsedLine line, Request request, AuditTrailSearchElement restricted) {
-    return line.timestamp().compareTo(request.fromInclusive()) >= 0
-        && line.timestamp().compareTo(request.toExclusive()) < 0
-        && restricted.getDomains().contains(line.domain())
-        && restricted.getActions().contains(line.action())
-        && identifierMatches(line, request)
-        && actorMatches(restricted, line.username())
-        && textMatches(line, request);
+      ParsedLine line,
+      Request request,
+      AuditTrailSearchElement restricted,
+      FileManifest file,
+      int lineNumber) {
+    if (!restricted.getDomains().contains(line.domain())
+        || !restricted.getActions().contains(line.action())
+        || !identifierMatches(line, request)
+        || !actorMatches(restricted, line.username())
+        || !textMatches(line, request)) {
+      return false;
+    }
+    boolean included = inWindow(line.timestamp(), request);
+    if (line.candidates().stream()
+        .anyMatch(candidate -> inWindow(candidate, request) != included)) {
+      throw failure(
+          file.safeName(),
+          lineNumber,
+          new DateTimeException("Ambiguous audit timestamp affects inclusion"));
+    }
+    return included;
+  }
+
+  private static boolean inWindow(Instant timestamp, Request request) {
+    return !timestamp.isBefore(request.fromInclusive())
+        && timestamp.isBefore(request.toExclusive());
   }
 
   private static boolean identifierMatches(ParsedLine line, Request request) {
@@ -739,6 +760,7 @@ public final class ApiV2AuditStrictSearch {
 
   private record ParsedLine(
       Instant timestamp,
+      List<Instant> candidates,
       AuditDomain domain,
       AuditAction action,
       String username,
