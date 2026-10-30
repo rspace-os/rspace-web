@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.openapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,6 +41,32 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 class ApiV2OpenApiAnnotationMergerTest {
+
+  @Test
+  void rejectsUndocumentedV2HandlersButSkipsHiddenAndUnrelatedHandlers() throws Exception {
+    var generator = new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "API", "2.0.0");
+    var endpoints = new ApiV2EndpointCatalog(List.of());
+    var handlerMapping = mock(RequestMappingHandlerMapping.class);
+    var handler = new HandlerMethod(new UndocumentedController(), "missing");
+    var mapping = RequestMappingInfo.paths("/api/v2/missing").methods(RequestMethod.GET).build();
+    when(handlerMapping.getHandlerMethods()).thenReturn(Map.of(mapping, handler));
+    var documents =
+        new ApiV2OpenApiDocumentService(generator, endpoints, () -> Stream.of(handlerMapping));
+    var error = assertThrows(IllegalStateException.class, documents::generate);
+    assertTrue(error.getMessage().contains("missing"));
+    var hidden = new HandlerMethod(new UndocumentedController(), "hidden");
+    var unrelated = RequestMappingInfo.paths("/api/v1/missing").methods(RequestMethod.GET).build();
+    when(handlerMapping.getHandlerMethods())
+        .thenReturn(Map.of(mapping, hidden, unrelated, handler));
+    assertTrue(objectMap(documents.generate().get("paths")).isEmpty());
+  }
+
+  private static final class UndocumentedController {
+    public void missing() {}
+
+    @io.swagger.v3.oas.annotations.Hidden
+    public void hidden() {}
+  }
 
   @Test
   void mergesConcretePublicControllerMetadataIntoTheGeneratedDocument() throws Exception {

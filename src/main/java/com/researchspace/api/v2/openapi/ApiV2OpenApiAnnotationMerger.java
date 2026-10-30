@@ -9,6 +9,7 @@ import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.Explode;
@@ -64,13 +65,25 @@ final class ApiV2OpenApiAnnotationMerger {
     Map<String, Object> schemas = mutableObjectMap(components.get("schemas"));
     for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
       HandlerMethod handler = entry.getValue();
+      if (entry.getKey().getPatternValues().stream()
+          .noneMatch(path -> path.equals("/api/v2") || path.startsWith("/api/v2/"))) {
+        continue;
+      }
+      if (AnnotatedElementUtils.hasAnnotation(handler.getMethod(), Hidden.class)
+          || AnnotatedElementUtils.hasAnnotation(handler.getBeanType(), Hidden.class)) {
+        continue;
+      }
       Operation metadata =
           AnnotatedElementUtils.findMergedAnnotation(handler.getMethod(), Operation.class);
-      if (metadata == null || metadata.hidden()) {
+      if (metadata == null) {
+        throw new IllegalStateException(
+            "API v2 handler needs @Operation or @Hidden: " + handler.getMethod().toGenericString());
+      }
+      if (metadata.hidden()) {
         continue;
       }
       for (String path : entry.getKey().getPatternValues()) {
-        if (!path.startsWith("/api/v2")) {
+        if (!path.equals("/api/v2") && !path.startsWith("/api/v2/")) {
           continue;
         }
         for (RequestMethod method : entry.getKey().getMethodsCondition().getMethods()) {
