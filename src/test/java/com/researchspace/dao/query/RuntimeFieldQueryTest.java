@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
@@ -75,7 +76,7 @@ class RuntimeFieldQueryTest {
     return RelationshipReadAccess.forActor(
         new ResourceRegistry(
             List.of(
-                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                ApiV2ContainerResource.DESCRIPTION,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
                 new CollectionDescription<>(
@@ -254,19 +255,17 @@ class RuntimeFieldQueryTest {
   @EnumSource(
       value = Operator.class,
       names = {"EQUAL", "NOT_EQUAL", "EXISTS"})
-  void delegatedRuntimePredicatesRequireSourceReadAccessIncludingMissingValues(Operator operator) {
-    ResolvedRuntimeField original = field("SF104", RuntimeFieldValueType.TEXT);
-    ResolvedRuntimeField delegated =
-        new ResolvedRuntimeField(original.definition(), original.binding(), "instruments");
-    String selector = "target." + delegated.selector();
+  void relationshipRuntimePredicatesRequireTargetReadAccessIncludingMissingValues(
+      Operator operator) {
+    ResolvedRuntimeField resolved = field("SF104", RuntimeFieldValueType.TEXT);
+    String selector = "target." + resolved.selector();
     RuntimeFieldSelection selection =
-        new RuntimeFieldSelection(
-            Map.of(selector, delegated), Set.of(), Map.of(selector, "target"));
+        new RuntimeFieldSelection(Map.of(selector, resolved), Set.of(), Map.of(selector, "target"));
     FilterExpression comparison =
         new FilterExpression.Comparison(
             selector, operator, List.of(operator == Operator.EXISTS ? false : "BSL-2"), false);
     var actor = new User("reader");
-    var source =
+    var target =
         ApiV2InstrumentResource.description(
             AccessFunction.documented(
                 "Only one item",
@@ -278,16 +277,16 @@ class RuntimeFieldQueryTest {
     var registry =
         new ResourceRegistry(
             List.of(
+                ApiV2ContainerResource.DESCRIPTION,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                source));
+                target));
     var translator = new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "cfg");
     Predicate predicate =
         translator.translate(
             comparison, RelationshipReadAccess.forActor(registry, actor), selection);
     assertTrue(predicate.parameters().containsValue(42L));
-    assertEquals(3, predicate.subqueries().size());
+    assertEquals(2, predicate.subqueries().size());
     assertTrue(
         predicate.subqueries().values().stream()
             .anyMatch(
@@ -295,8 +294,21 @@ class RuntimeFieldQueryTest {
                     query.entityType() == Instrument.class
                         && query.whereExpression().contains(".id = cfg.target.id")
                         && query.whereExpression().contains(".id = :")));
-    Predicate unavailableSource = translator.translate(comparison, targetAccess(), selection);
-    assertTrue(unavailableSource.expression().contains("1 = 0"));
+    var deniedTarget =
+        ApiV2InstrumentResource.description(
+            AccessFunction.documented(
+                "No items", Set.of(), ignored -> AccessResult.denied(AccessPolicy.FORBIDDEN)));
+    var deniedRegistry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2ContainerResource.DESCRIPTION,
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                deniedTarget));
+    Predicate unreadableTarget =
+        translator.translate(
+            comparison, RelationshipReadAccess.forActor(deniedRegistry, actor), selection);
+    assertTrue(unreadableTarget.expression().contains("1 = 0"));
   }
 
   @Test
