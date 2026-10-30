@@ -68,8 +68,8 @@ describe("UserCalendarSubscription", () => {
       http.post(`${path}/rotate`, () => {
         active = false;
         return HttpResponse.json(
-          { status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" },
-          { status: 409 },
+          { status: 412, code: "errors.api.v2.bookingCalendar.subscriptionConflict" },
+          { status: 412 },
         );
       }),
     );
