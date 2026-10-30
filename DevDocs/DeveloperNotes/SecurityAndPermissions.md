@@ -194,7 +194,8 @@ scope and literal wildcard escaping used by the shared directory.
 
 Access replacement changes the complete direct-assignment set atomically and checks the
 aggregate version for optimistic concurrency. Assignment snapshots retain enough identity text
-for audit after a principal is hard-deleted, but snapshots never grant access. Availability,
+for audit after a principal is hard-deleted, but snapshots never grant access. Access documents
+resolve fixed-audience labels in the reader's locale; audit events retain the stored snapshots. Availability,
 disabled-user status, group membership, and effective Owner health are derived from live identity
 state. Consequently, required Owner rows may remain while no effective Owner exists; a sysadmin
 can locate and repair this state. User and group lifecycle changes do not fan out to rewrite every
