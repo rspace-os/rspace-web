@@ -35,6 +35,8 @@ import java.util.Map;
 import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class CollectionQueryExecutorTest {
 
@@ -171,6 +173,67 @@ class CollectionQueryExecutorTest {
 
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
+    verify(projection, never()).page(0, 1);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "1,0,false",
+    "1,1,false",
+    "1,2,false",
+    "1,3,true",
+    "2,3,true",
+    "3,2,false",
+    "3,1,false",
+    "4,0,false"
+  })
+  void projectedSliceUsesOneExtraRowWithoutCounting(int pageNumber, int rowCount, boolean hasNext) {
+    CriteriaBuilder<WidgetRow> projection = scalarQuery();
+    PaginatedCriteriaBuilder<WidgetRow> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<WidgetRow> rows = erasedMock(PagedList.class);
+    var values =
+        java.util.stream.IntStream.range(0, rowCount)
+            .mapToObj(i -> new WidgetRow((long) i, "Row " + i))
+            .toList();
+    when(projection.page((pageNumber - 1) * 2, 3)).thenReturn(paginated);
+    when(paginated.withCountQuery(false)).thenReturn(paginated);
+    when(paginated.getResultList()).thenReturn(rows);
+    when(rows.size()).thenReturn(rowCount);
+    when(rows.subList(0, Math.min(rowCount, 2)))
+        .thenReturn(values.subList(0, Math.min(rowCount, 2)));
+
+    var result =
+        executor.projectedSlice(
+            factory,
+            session,
+            request(null, List.of(new Sort("displayName", false)), pageNumber, 2),
+            null,
+            RelationshipReadAccess.none(),
+            WidgetRow.class,
+            List.of("entityId", "name"));
+
+    assertEquals(values.subList(0, Math.min(rowCount, 2)), result.resources());
+    assertEquals(hasNext, result.hasNext());
+    verify(projection).orderBy("item.name", false);
+    verify(projection, never()).getCountQuery();
+    verify(rows, never()).getTotalSize();
+  }
+
+  @Test
+  void projectedSliceOverflowRunsNeitherPageNorCount() {
+    CriteriaBuilder<WidgetRow> projection = scalarQuery();
+    var result =
+        executor.projectedSlice(
+            factory,
+            session,
+            request(null, List.of(), Integer.MAX_VALUE, 2),
+            null,
+            RelationshipReadAccess.none(),
+            WidgetRow.class,
+            List.of("entityId", "name"));
+    assertEquals(List.of(), result.resources());
+    assertEquals(false, result.hasNext());
+    verify(projection, never()).getCountQuery();
     verify(projection, never()).page(0, 1);
   }
 
