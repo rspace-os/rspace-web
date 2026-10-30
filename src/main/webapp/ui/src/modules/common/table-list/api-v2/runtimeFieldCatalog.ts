@@ -36,7 +36,7 @@ export async function fetchRuntimeFieldCatalog(
   headers.set("X-Requested-With", "XMLHttpRequest");
   const parameters = new URLSearchParams();
   if (request.ids && request.ids.length > 0) parameters.set("ids", request.ids.join(","));
-  else if (request.search) parameters.set("search", request.search);
+  else if (request.search) parameters.set("q", request.search);
   if (request.page !== undefined) parameters.set("page", String(request.page));
   if (request.limit !== undefined) parameters.set("limit", String(request.limit));
   const query = parameters.toString();

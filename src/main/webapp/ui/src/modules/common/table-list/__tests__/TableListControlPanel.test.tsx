@@ -92,12 +92,12 @@ describe("TableList control panel", () => {
     queryClient.setQueryData(queryKeys.oauthToken(true), "test-token");
     server.use(
       http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
-        expect(new URL(request.url).searchParams.get("search")).toBe("cab");
+        expect(new URL(request.url).searchParams.get("q")).toBe("cab");
         expect(request.headers.get("Authorization")).toBe("Bearer test-token");
         return HttpResponse.json({ fields: [], hasMore: false, page: 1, limit: 20 });
       }),
       http.get("/api/v2/instruments/fields/extraFields", ({ request }) => {
-        expect(new URL(request.url).searchParams.get("search")).toBe("cab");
+        expect(new URL(request.url).searchParams.get("q")).toBe("cab");
         expect(request.headers.get("Authorization")).toBe("Bearer test-token");
         return HttpResponse.json({ fields: [extraDefinition], hasMore: false, page: 1, limit: 20 });
       }),
