@@ -26,6 +26,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -46,6 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -76,8 +79,11 @@ public final class ApiV2AuditStrictSearch {
   private final ZoneId logZone;
   private final AuditTrailActorVisibility actorVisibility;
   private final ReadObserver observer;
+  private final Semaphore scanSlots;
+  private final int cacheEntries;
+  private final long cacheNanos;
+  private final Map<CacheKey, CachedScan> cache = new LinkedHashMap<>(16, 0.75f, true);
 
-  @Autowired
   public ApiV2AuditStrictSearch(
       @Value("${logging.dir:.}") String loggingDirectory,
       AuditTrailActorVisibility actorVisibility) {
@@ -89,12 +95,48 @@ public final class ApiV2AuditStrictSearch {
         ReadObserver.NONE);
   }
 
+  @Autowired
+  public ApiV2AuditStrictSearch(
+      @Value("${logging.dir:.}") String loggingDirectory,
+      AuditTrailActorVisibility actorVisibility,
+      @Value("${api.v2.audit.concurrentScans:2}") int concurrentScans,
+      @Value("${api.v2.audit.cacheEntries:32}") int cacheEntries,
+      @Value("${api.v2.audit.cacheSeconds:10}") int cacheSeconds) {
+    this(
+        Path.of(loggingDirectory),
+        "RSLogs",
+        ZoneId.systemDefault(),
+        actorVisibility,
+        ReadObserver.NONE,
+        concurrentScans,
+        cacheEntries,
+        cacheSeconds);
+  }
+
   ApiV2AuditStrictSearch(
       Path logDirectory,
       String filePrefix,
       ZoneId logZone,
       AuditTrailActorVisibility actorVisibility,
       ReadObserver observer) {
+    this(logDirectory, filePrefix, logZone, actorVisibility, observer, 2, 32, 10);
+  }
+
+  ApiV2AuditStrictSearch(
+      Path logDirectory,
+      String filePrefix,
+      ZoneId logZone,
+      AuditTrailActorVisibility actorVisibility,
+      ReadObserver observer,
+      int concurrentScans,
+      int cacheEntries,
+      int cacheSeconds) {
+    if (concurrentScans < 1 || cacheEntries < 0 || cacheSeconds < 0) {
+      throw new IllegalArgumentException("Invalid audit scan or cache limits");
+    }
+    this.scanSlots = new Semaphore(concurrentScans);
+    this.cacheEntries = cacheEntries;
+    this.cacheNanos = TimeUnit.SECONDS.toNanos(cacheSeconds);
     this.logDirectory = logDirectory;
     this.filePrefix = filePrefix;
     this.logZone = logZone;
@@ -118,21 +160,57 @@ public final class ApiV2AuditStrictSearch {
       return List.of();
     }
 
-    StrictReadException firstFailure;
-    try {
-      return attempt(request, restricted, 1);
-    } catch (StrictReadException ex) {
-      firstFailure = ex;
+    // Bound file enumeration and cache lookups too, so saturation never creates a waiting queue.
+    if (!scanSlots.tryAcquire()) {
+      throw failure("audit-capacity", 0, null);
     }
     try {
-      return attempt(request, restricted, 2);
-    } catch (StrictReadException ex) {
-      throw new StrictReadException(ex.getSafeFile(), ex.getLineNumber(), firstFailure);
+      var manifest = enumerate();
+      CacheKey key =
+          new CacheKey(
+              request.fromInclusive(),
+              request.toExclusive(),
+              Set.copyOf(restricted.getDomains()),
+              Set.copyOf(restricted.getActions()),
+              request.oid(),
+              request.actor().getId(),
+              request.actor().getUsername(),
+              Set.copyOf(restricted.getUsernames()),
+              request.bypassActorDirectory(),
+              request.ceiling(),
+              request.search(),
+              request.searchableFields(),
+              request.relatedIdentifierFields(),
+              request.descriptionsSafe(),
+              manifest);
+      synchronized (cache) {
+        cache
+            .entrySet()
+            .removeIf(entry -> System.nanoTime() - entry.getValue().created() >= cacheNanos);
+        CachedScan hit = cache.get(key);
+        if (hit != null) {
+          return hit.results();
+        }
+      }
+      StrictReadException firstFailure;
+      try {
+        return attempt(request, restricted, 1, key);
+      } catch (StrictReadException ex) {
+        firstFailure = ex;
+      }
+      try {
+        // A retried scan may have a different manifest. Do not cache it under the original key.
+        return attempt(request, restricted, 2, null);
+      } catch (StrictReadException ex) {
+        throw new StrictReadException(ex.getSafeFile(), ex.getLineNumber(), firstFailure);
+      }
+    } finally {
+      scanSlots.release();
     }
   }
 
   private List<AuditTrailSearchResult> attempt(
-      Request request, AuditTrailSearchElement restricted, int attemptNumber) {
+      Request request, AuditTrailSearchElement restricted, int attemptNumber, CacheKey key) {
     Map<Path, FileManifest> manifest = enumerate();
     observer.afterManifest(attemptNumber, List.copyOf(manifest.values()));
     List<AuditTrailSearchResult> results = new ArrayList<>();
@@ -148,8 +226,40 @@ public final class ApiV2AuditStrictSearch {
     }
     observer.afterRead(attemptNumber, List.copyOf(manifest.values()));
     certify(manifest, request);
-    return List.copyOf(results);
+    List<AuditTrailSearchResult> completed = List.copyOf(results);
+    if (key != null
+        && key.manifest().equals(manifest)
+        && manifest.equals(enumerate())
+        && cacheEntries > 0
+        && cacheNanos > 0) {
+      synchronized (cache) {
+        cache.put(key, new CachedScan(System.nanoTime(), completed));
+        while (cache.size() > cacheEntries) {
+          cache.remove(cache.keySet().iterator().next());
+        }
+      }
+    }
+    return completed;
   }
+
+  private record CacheKey(
+      Instant from,
+      Instant to,
+      Set<AuditDomain> domains,
+      Set<AuditAction> actions,
+      String oid,
+      Long actorId,
+      String actorName,
+      Set<String> visibleActors,
+      boolean bypassDirectory,
+      int ceiling,
+      String text,
+      Set<String> searchableFields,
+      Set<String> relatedFields,
+      boolean safeDescriptions,
+      Map<Path, FileManifest> manifest) {}
+
+  private record CachedScan(long created, List<AuditTrailSearchResult> results) {}
 
   private Map<Path, FileManifest> enumerate() {
     Map<Path, FileManifest> manifests = new LinkedHashMap<>();
@@ -178,7 +288,7 @@ public final class ApiV2AuditStrictSearch {
                 canonical.getFileName().toString(),
                 attributes.fileKey(),
                 attributes.size(),
-                attributes.lastModifiedTime().toMillis()));
+                attributes.lastModifiedTime()));
       }
       return manifests;
     } catch (StrictReadException ex) {
@@ -506,7 +616,7 @@ public final class ApiV2AuditStrictSearch {
         throw failure(before.safeName(), 0, null);
       }
       if (after.size() == before.size()) {
-        if (after.modifiedMillis() != before.modifiedMillis()) {
+        if (!after.modifiedTime().equals(before.modifiedTime())) {
           throw failure(before.safeName(), 0, null);
         }
         continue;
@@ -537,7 +647,7 @@ public final class ApiV2AuditStrictSearch {
       }
       BasicFileAttributes finalAttributes = attributes(after.path());
       if (finalAttributes.size() != after.size()
-          || finalAttributes.lastModifiedTime().toMillis() != after.modifiedMillis()
+          || !finalAttributes.lastModifiedTime().equals(after.modifiedTime())
           || !Objects.equals(finalAttributes.fileKey(), after.fileKey())) {
         throw failure(after.safeName(), 0, null);
       }
@@ -733,7 +843,8 @@ public final class ApiV2AuditStrictSearch {
     }
   }
 
-  record FileManifest(Path path, String safeName, Object fileKey, long size, long modifiedMillis) {}
+  record FileManifest(
+      Path path, String safeName, Object fileKey, long size, FileTime modifiedTime) {}
 
   interface ReadObserver {
     ReadObserver NONE = new ReadObserver() {};

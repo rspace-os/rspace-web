@@ -203,6 +203,62 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void configuredCacheBoundEvictsOlderQueries() throws IOException {
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    AtomicInteger scans = new AtomicInteger();
+    var scanner =
+        new ApiV2AuditStrictSearch(
+            directory,
+            "RSLogs",
+            ZoneOffset.UTC,
+            visibility,
+            new ReadObserver() {
+              @Override
+              public void afterManifest(int attempt, List<FileManifest> files) {
+                scans.incrementAndGet();
+              }
+            },
+            1,
+            1,
+            10);
+    scanner.search(request(10));
+    scanner.search(request(10));
+    assertEquals(1, scans.get());
+    scanner.search(request(10, "item"));
+    scanner.search(request(10));
+    assertEquals(3, scans.get());
+  }
+
+  @Test
+  void cacheReusesScansButRechecksVisibilityAndFileChanges() throws IOException {
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    AtomicInteger scans = new AtomicInteger();
+    var restricted = new com.researchspace.service.audit.search.AuditTrailSearchElement();
+    restricted.setDomains(java.util.EnumSet.of(AuditDomain.UNKNOWN));
+    restricted.setActions(java.util.EnumSet.of(AuditAction.CREATE));
+    restricted.setUsernames(Set.of("alice"));
+    visibility = Mockito.mock(AuditTrailActorVisibility.class);
+    Mockito.when(visibility.restrict(Mockito.any(), Mockito.eq(sysadmin))).thenReturn(restricted);
+    var scanner =
+        search(
+            new ReadObserver() {
+              @Override
+              public void afterManifest(int attempt, List<FileManifest> files) {
+                scans.incrementAndGet();
+              }
+            });
+    assertEquals(1, scanner.search(request(10)).size());
+    assertEquals(1, scanner.search(request(10)).size());
+    assertEquals(1, scans.get());
+    restricted.setUsernames(Set.of("another-user"));
+    assertTrue(scanner.search(request(10)).isEmpty());
+    assertEquals(2, scans.get());
+    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n\n");
+    assertTrue(scanner.search(request(10)).isEmpty());
+    assertEquals(3, scans.get());
+  }
+
+  @Test
   void searchesOnTheSameInstanceCanReadConcurrently() throws Exception {
     write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
     CountDownLatch entered = new CountDownLatch(2);
@@ -228,6 +284,7 @@ class ApiV2AuditStrictSearchTest {
       var first = executor.submit(() -> search.search(request(10)));
       var second = executor.submit(() -> search.search(request(10)));
       assertTrue(entered.await(5, TimeUnit.SECONDS), "Both searches should enter independently");
+      assertThrows(StrictReadException.class, () -> search.search(request(10)));
       release.countDown();
       assertEquals(1, first.get(5, TimeUnit.SECONDS).size());
       assertEquals(1, second.get(5, TimeUnit.SECONDS).size());
