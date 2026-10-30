@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
@@ -29,6 +30,7 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.PermissionType;
@@ -158,6 +160,54 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     createBooking(setup, owner);
     assertSingleNotification(owner, "UTC");
     assertEquals(emailEnabled ? 1 : 0, emailCapture.deliveries().size());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void ownBookingRestoreFollowsOwnActionPreference(boolean notifyOwnActions) throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    BookingSetup setup = createBookingSetup(owner, "Own booking restore " + getRandomName(6));
+    setRecipientPreferences(owner, true, false, "UTC");
+    TimeSlotBooking booking = createBooking(setup, owner);
+    TimeSlotBooking cancelled =
+        bookingManager
+            .updateBooking(
+                booking.getId(),
+                new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+                booking.getVersion(),
+                owner,
+                owner)
+            .orElseThrow();
+    List<Notification> before =
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, owner, CREATED);
+    assertEquals(1, before.size());
+    if (!notifyOwnActions) {
+      userMgr.setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
+    }
+
+    bookingManager
+        .updateBooking(
+            booking.getId(),
+            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CONFIRMED),
+            cancelled.getVersion(),
+            owner,
+            owner)
+        .orElseThrow();
+
+    List<Notification> after =
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, owner, CREATED);
+    List<Notification> restored =
+        after.stream()
+            .filter(notification -> !notification.getId().equals(before.get(0).getId()))
+            .toList();
+    assertEquals(notifyOwnActions ? 1 : 0, restored.size());
+    if (notifyOwnActions) {
+      assertTrue(restored.get(0).getNotificationMessage().contains("was restored"));
+      assertTrue(
+          assertInstanceOf(
+                  BookingNotificationData.class, restored.get(0).getNotificationDataObject())
+              .isRestored());
+    }
   }
 
   @Test

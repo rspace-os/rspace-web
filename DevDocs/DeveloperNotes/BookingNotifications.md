@@ -28,6 +28,7 @@ The My Profile email preference still gates every email, including requester can
 The requester override bypasses only the event preference in notification creation; it never
 bypasses `BROADCAST_NOTIFICATIONS_BY_EMAIL` in the email broadcaster.
 Subscribers receive notifications about their own booking creations and cancellations by default.
+Restoring your own cancelled booking follows the same rule and uses the restored message.
 The Booking-only `BOOKING_NOTIFY_OWN_ACTIONS` preference can disable these self-action notifications.
 Enabled subscription, matching event preference, active account, Booking access and target read access
 still apply; email follows `BROADCAST_NOTIFICATIONS_BY_EMAIL`. A requester cancelling their own
