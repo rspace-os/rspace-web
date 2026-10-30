@@ -138,7 +138,7 @@ describe("ResourceAccessEditor", () => {
       http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document(3, [owner, second]))),
       http.get("/api/v2/test-collections/9/access/grantees", () => {
         directoryRequests += 1;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ docs: [] });
       }),
       http.put("/api/v2/test-collections/9/access", () => {
         mutationRequests += 1;
@@ -175,7 +175,7 @@ describe("ResourceAccessEditor", () => {
       ),
       http.get("/api/v2/test-collections/9/access/grantees", () => {
         mutationRequests += 1;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ docs: [] });
       }),
       http.put("/api/v2/test-collections/9/access", () => {
         mutationRequests += 1;
@@ -217,10 +217,12 @@ describe("ResourceAccessEditor", () => {
     server.use(
       http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document())),
       http.get("/api/v2/test-collections/9/access/grantees", () =>
-        HttpResponse.json([
-          { kind: "USER", id: 11, key: "user:11", name: "Ada Owner", detail: "ada" },
-          { kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" },
-        ]),
+        HttpResponse.json({
+          docs: [
+            { kind: "USER", id: 11, key: "user:11", name: "Ada Owner", detail: "ada" },
+            { kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" },
+          ],
+        }),
       ),
       http.put("/api/v2/test-collections/9/access", async ({ request }) => {
         putRequest = request;
@@ -258,7 +260,7 @@ describe("ResourceAccessEditor", () => {
   it("keeps a row staged for removal visible until it is saved, and can restore it", async () => {
     server.use(
       http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document(3, [owner, second]))),
-      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json([])),
+      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json({ docs: [] })),
     );
     const user = userEvent.setup();
     editor();
@@ -278,7 +280,7 @@ describe("ResourceAccessEditor", () => {
   it("blocks removing the last owner but keeps the reason reachable", async () => {
     server.use(
       http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document())),
-      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json([])),
+      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json({ docs: [] })),
     );
     editor();
     await screen.findByRole("table");
@@ -455,7 +457,9 @@ describe("ResourceAccessEditor", () => {
         );
       }),
       http.get("/api/v2/test-collections/9/access/grantees", () =>
-        HttpResponse.json([{ kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" }]),
+        HttpResponse.json({
+          docs: [{ kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" }],
+        }),
       ),
       http.put("/api/v2/test-collections/9/access", ({ request }) => {
         putCount += 1;
