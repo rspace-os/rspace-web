@@ -31,6 +31,7 @@ public class NotificationConfig {
         CommunicationNotifyPolicy.ALWAYS_NOTIFY,
         false,
         false,
+        false,
         notificationTargetsOverride);
   }
 
@@ -58,6 +59,9 @@ public class NotificationConfig {
    * email preferences.
    */
   private boolean notificationEventPreferenceOverride;
+
+  /** Whether explicitly selected recipients may include the originator; defaults to false. */
+  private boolean includeOriginator;
 
   @Builder.Default private Set<User> notificationTargetsOverride = new HashSet<>();
 }

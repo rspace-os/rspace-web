@@ -65,6 +65,7 @@ public class BookingNotificationService {
       NotificationConfig config = new NotificationConfig();
       config.setNotificationType(notificationType);
       config.setBroadcast(true);
+      config.setIncludeOriginator(true);
       config.setPolicyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY);
       config.setRecordAuthorisationRequired(false);
       config.setNotificationTargetsOverride(new java.util.HashSet<>(Set.of(recipient.user())));

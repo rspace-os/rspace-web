@@ -224,6 +224,7 @@ class ApiV2PreHandlerProblemResolverTest {
         .getResponse();
   }
 
+  @org.springframework.context.annotation.Profile("never-active-outside-standalone-mockmvc")
   @RestController
   @Profile("never-active-outside-standalone-mockmvc")
   static class BodyController {
