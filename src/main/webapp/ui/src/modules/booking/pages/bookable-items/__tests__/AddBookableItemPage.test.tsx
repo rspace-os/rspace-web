@@ -41,8 +41,10 @@ const settings = {
 
 function targetsHandler(onRequest: (url: URL) => void = () => undefined, targets: readonly unknown[] = [confocal]) {
   return http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+    const parameters = new URL(request.url).searchParams;
+    if (!parameters.has("q") || parameters.has("query")) return new HttpResponse(null, { status: 400 });
     onRequest(new URL(request.url));
-    return HttpResponse.json(targets);
+    return HttpResponse.json({ docs: targets });
   });
 }
 
@@ -127,9 +129,9 @@ describe("AddBookableItemPage", () => {
     let saved: unknown;
     server.use(
       http.get("/api/v2/booking-configuration-targets", ({ request }) =>
-        new URL(request.url).searchParams.get("query") === "IN123"
+        new URL(request.url).searchParams.get("q") === "IN123"
           ? new HttpResponse(null, { status: 503 })
-          : HttpResponse.json([spare]),
+          : HttpResponse.json({ docs: [spare] }),
       ),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", async ({ request }) => {
@@ -151,7 +153,7 @@ describe("AddBookableItemPage", () => {
     const response = Promise.withResolvers<void>();
     server.use(
       http.get("/api/v2/booking-configuration-targets", async ({ request }) => {
-        if (new URL(request.url).searchParams.get("query") !== "IN123") return HttpResponse.json([spare]);
+        if (new URL(request.url).searchParams.get("q") !== "IN123") return HttpResponse.json({ docs: [spare] });
         requested.resolve();
         await response.promise;
         return new HttpResponse(null, { status: 503 });
@@ -359,7 +361,7 @@ describe("AddBookableItemPage", () => {
     expect(await screen.findByRole("button", { name: "common:relationshipPicker.clear" })).toBeVisible();
 
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
-    expect(targetRequests.some((request) => request.searchParams.get("query") === "Conf")).toBe(true);
+    expect(targetRequests.some((request) => request.searchParams.get("q") === "Conf")).toBe(true);
 
     await expectAccessible(container);
   });
