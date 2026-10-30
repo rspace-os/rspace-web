@@ -14,6 +14,7 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ class GroupPermissionUtilsUnitTest {
 
   @Mock private IPermissionUtils permissionUtils;
   @Mock private CommunityDao communityDao;
+  @Mock private IPropertyHolder properties;
 
   @InjectMocks private GroupPermissionUtils groupPermUtils;
 
@@ -105,6 +107,18 @@ class GroupPermissionUtilsUnitTest {
 
     assertFalse(groupPermUtils.subjectCanAlterGroupRole(group, commAdmin, member));
     verifyNoInteractions(permissionUtils);
+  }
+
+  @Test
+  void selfServiceLeaveIsOnlyForYourselfOnCloudOrInAProjectGroup() {
+    when(properties.isCloud()).thenReturn(true);
+    assertTrue(groupPermUtils.isSelfServiceLeave(member.getUsername(), member, group));
+    assertFalse(groupPermUtils.isSelfServiceLeave(member.getUsername(), pi, group));
+
+    when(properties.isCloud()).thenReturn(false);
+    assertFalse(groupPermUtils.isSelfServiceLeave(member.getUsername(), member, group));
+    group.setGroupType(GroupType.PROJECT_GROUP);
+    assertTrue(groupPermUtils.isSelfServiceLeave(member.getUsername(), member, group));
   }
 
   private Community communityWithId(Long id) {

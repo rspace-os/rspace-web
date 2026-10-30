@@ -137,8 +137,7 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
 
   public User assertLeaveGroupPermissions(String leaveCandidateUsername, User subject, Group grp) {
     // RSPAC-1662 lets users self-remove
-    if (subject.getUsername().equals(leaveCandidateUsername)
-        && (properties.isCloud() || grp.isProjectGroup())
+    if (isSelfServiceLeave(leaveCandidateUsername, subject, grp)
         && !grp.isOnlyGroupPi(leaveCandidateUsername)) {
       return loadUser(leaveCandidateUsername);
     }
@@ -153,6 +152,12 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
       throwAuthException(subject, "errors.authorization.failure.removePiFromGroup");
     }
     return userToRemove;
+  }
+
+  @Override
+  public boolean isSelfServiceLeave(String leaveCandidateUsername, User subject, Group grp) {
+    return subject.getUsername().equals(leaveCandidateUsername)
+        && (properties.isCloud() || grp.isProjectGroup());
   }
 
   private User loadUser(String leaveCandidateUsername) {
