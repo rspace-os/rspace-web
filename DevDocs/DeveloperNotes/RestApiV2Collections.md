@@ -795,8 +795,9 @@ handling while limiting documents to 10 MiB, strings to 2 MiB, token counts to
 100,000 and nesting depth to 100. The shared MVC mapper and other endpoints'
 `JsonNode` bindings keep their existing configuration.
 
-Register each fixed-shape request record in the single `ApiV2JsonMappers.register`
-call in `WebConfig.extendMessageConverters` at the layer that introduces it.
+Contribute each fixed-shape request record in an `ApiV2JsonBodyTypes` bean at the
+layer that introduces it. `WebConfig.extendMessageConverters` collects these beans
+and passes all their types to `ApiV2JsonMappers.register`.
 The error advice reads that converter registration to identify strict bodies.
 
 Fixed-shape request records use strict binding: unknown fields and scalar
@@ -856,3 +857,31 @@ modification-time changes invalidate reuse unless append certification proves th
 event is outside the snapshot. This allows reuse after recording the search itself. Failed, retried and over-ceiling scans are not cached.
 Successful searches, including cache hits and empty results, emit an audit `SEARCH` event only
 after snapshot validation succeeds.
+
+## Adding a feature to v2
+
+Shared `api/v2` code never names a feature; features register errors, endpoint specs,
+JSON body types and docs through the v2 hooks. `WebConfig` follows the same rule.
+`ApiV2FeatureIsolationTest` enforces it against source identifiers and string literals.
+
+Feature controllers live in their feature package. Add that package to the dispatcher
+context's component scan in `dispatcher-servlet.xml`; the root context scan alone does
+not register MVC request mappings.
+
+H1 (errors): scope feature advice with `@ControllerAdvice(basePackages = "<feature package>")`
+and order it ahead of the shared advice. Inherit the shared transport handlers so generic
+binding, authentication and unexpected failures keep the v2 problem contract. For resource
+operations served by the generic CRUD controller, contribute `ApiV2ErrorMapping` entries
+through `ApiV2ResourceSpec`; package-scoped advice cannot handle those operations.
+
+H4 (JSON bodies): expose an `ApiV2JsonBodyTypes` bean containing the feature's strict
+request records. `WebConfig` accepts these beans through Spring injection and registers
+all contributed types on each JSON converter. Do not add feature imports to `WebConfig`.
+
+H5 (docs): document feature routes with `@Operation` and `@ApiResponse` on their
+controllers. The merged `/api/v2/openapi.json` includes those declarations; do not add
+feature paths, error keys or tags to `ApiV2OpenApiGenerator`. Verify the merged document
+and compare its routes and responses when moving controllers or documentation.
+
+Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are
+introduced in the layers that first require them.
