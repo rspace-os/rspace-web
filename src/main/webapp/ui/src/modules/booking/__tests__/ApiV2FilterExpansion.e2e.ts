@@ -58,7 +58,7 @@ async function createBookingConfiguration(
     headers: { apiKey },
     data: {
       enabled: true,
-      target: { relationTo: "booking-instruments", value: instrumentId },
+      target: { relationTo: "instruments", value: instrumentId },
     },
   });
   expect(response.ok(), await response.text()).toBe(true);

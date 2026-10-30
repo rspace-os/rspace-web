@@ -27,7 +27,7 @@ export const filterExpansionMetadata: ApiV2CollectionMetadata<BookingConfigurati
       target: {
         operators: ["==", "=in="],
         wildcards: false,
-        picker: { resource: "booking-instruments", identity: "globalId", globalIdPrefix: "IN" },
+        picker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
       },
       enabled: { operators: ["==", "!=", "=out="], wildcards: false },
       state: { operators: ["==", "!=", "=in=", "=out="], wildcards: false },
@@ -59,7 +59,7 @@ export const filterExpansionMetadata: ApiV2CollectionMetadata<BookingConfigurati
       catalogMaximumLimit: 200,
       catalogMaximumIds: 1,
       via: "target",
-      viaResource: "booking-instruments",
+      viaResource: "instruments",
     },
   ],
   pagination: { defaultLimit: 20, maximumLimit: 100 },
