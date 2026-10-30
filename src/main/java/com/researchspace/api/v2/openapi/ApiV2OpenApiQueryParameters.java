@@ -69,7 +69,7 @@ final class ApiV2OpenApiQueryParameters {
         namespaces.add(
             runtimeNamespace(
                 namespace,
-                catalogUrl(catalog.runtimeFieldSourceOf(targetName), targetNamespace),
+                catalogUrl(targetName, targetNamespace),
                 relationship.name(),
                 targetName,
                 projectable));
@@ -110,7 +110,7 @@ final class ApiV2OpenApiQueryParameters {
         "catalogMaximumIds",
         RuntimeFieldCatalogQuery.MAX_IDS,
         "catalogSearchParameter",
-        "search",
+        "q",
         "catalogIdsParameter",
         "ids");
   }

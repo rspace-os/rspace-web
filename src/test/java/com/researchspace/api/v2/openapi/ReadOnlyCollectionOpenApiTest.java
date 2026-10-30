@@ -12,6 +12,8 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
@@ -55,6 +57,26 @@ class ReadOnlyCollectionOpenApiTest {
           document.getPaths().get(path).readOperationsMap().keySet());
     }
     assertNull(document.getPaths().get("/api/v2/users/bulk"));
+  }
+
+  @Test
+  void publishesContainersAndInstrumentParentRelationship() {
+    JsonNode document =
+        Json31.mapper()
+            .valueToTree(
+                new ApiV2OpenApiGenerator(
+                        new ApiV2ResourceCatalog(
+                            List.of(
+                                resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
+                                resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()))),
+                        "API",
+                        "2.0.0")
+                    .generate());
+    assertTrue(document.at("/paths/~1api~1v2~1containers/get").isObject());
+    JsonNode properties = document.at("/components/schemas/InstrumentsRead/properties");
+    String relationship = properties.path("parentContainer").toString();
+    assertTrue(relationship.contains("\"const\":\"containers\""), relationship);
+    assertTrue(relationship.contains("#/components/schemas/ContainersRead"), relationship);
   }
 
   @Test
@@ -158,7 +180,9 @@ class ReadOnlyCollectionOpenApiTest {
     assertEquals("target.customFields", relationshipNamespace.path("namespace").asText());
     assertEquals(
         "/api/v2/targets/fields/customFields", relationshipNamespace.path("catalog").asText());
+    assertEquals("q", relationshipNamespace.path("catalogSearchParameter").asText());
     JsonNode ownNamespace = targetWhere.at("/x-rspace-runtime-fields/0");
+    assertEquals("q", ownNamespace.path("catalogSearchParameter").asText());
     assertEquals("customFields", ownNamespace.path("namespace").asText());
     assertEquals("/api/v2/targets/fields/customFields", ownNamespace.path("catalog").asText());
   }
