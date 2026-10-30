@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -65,6 +66,28 @@ class ResourceAccessControllerTest {
   void setUp() {
     when(user.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     maintenance = maintenanceSpec(maintenanceManager);
+  }
+
+  @Test
+  void searchesGranteesWithQ() throws Exception {
+    AccessMvc fixture = accessMvc();
+    fixture
+        .mockMvc()
+        .perform(
+            get(ACCESS_ENDPOINT + "/grantees")
+                .param("q", "  Ada  ")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, fixture.caller()))
+        .andExpect(status().isOk());
+    verify(fixture.directoryManager())
+        .searchForResource(any(), eq(1L), eq("Ada"), eq(20), eq(user));
+
+    fixture
+        .mockMvc()
+        .perform(
+            get(ACCESS_ENDPOINT + "/grantees")
+                .param("query", "Ada")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, fixture.caller()))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -249,7 +272,7 @@ class ResourceAccessControllerTest {
             .setMessageConverters(converter, new YamlJackson2HttpMessageConverter())
             .setValidator(validator)
             .build();
-    return new AccessMvc(accessMockMvc, accessManager, ApiV2Caller.direct(user));
+    return new AccessMvc(accessMockMvc, accessManager, directoryManager, ApiV2Caller.direct(user));
   }
 
   @SuppressWarnings("unchecked")
@@ -267,7 +290,10 @@ class ResourceAccessControllerTest {
   }
 
   private record AccessMvc(
-      MockMvc mockMvc, ResourceAccessManager accessManager, ApiV2Caller caller) {}
+      MockMvc mockMvc,
+      ResourceAccessManager accessManager,
+      ResourceAccessDirectoryManager directoryManager,
+      ApiV2Caller caller) {}
 
   private record InvalidAccessBody(String json, String field, String reason) {}
 }

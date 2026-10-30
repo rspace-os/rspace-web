@@ -249,7 +249,7 @@ Access routes are enabled by the resource's `ResourceAccessSpec`:
 | `GET .../{id}/access` | Reads the access document and its `ETag`; requires the resource's view-access capability. |
 | `PUT .../{id}/access` | Atomically replaces all direct assignments using matching `If-Match`; requires assignment-management capability. A stale version returns `412`. |
 | `DELETE .../{id}/access/me` | Removes the caller's direct assignment subject to service-layer leave rules. |
-| `GET .../{id}/access/grantees` | Searches assignable principals within the resource's assignment-management capability. |
+| `GET .../{id}/access/grantees` | Searches assignable principals with `q` (at least two characters) and optional `limit` (1–50, default 20) within the resource's assignment-management capability. |
 
 Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
 are private and must not be cached. OpenAPI includes the routes only for registered access support.

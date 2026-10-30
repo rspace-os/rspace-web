@@ -103,13 +103,12 @@ public class ResourceAccessController {
   public List<ResourceGranteeDirectoryEntry> grantees(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestParam String query,
+      @RequestParam String q,
       @RequestParam(defaultValue = "20") int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
     ApiV2ResourceRegistration<?, ?> registration = requireRegistration(resource);
-    return search(
-        registration, id, validateQuery(query), validateLimit(limit), requireCaller(caller));
+    return search(registration, id, validateQuery(q), validateLimit(limit), requireCaller(caller));
   }
 
   private <T, ID> List<ResourceGranteeDirectoryEntry> search(
