@@ -455,7 +455,13 @@ public class ExportControllerMVCIT extends MVCTestBase {
               post(SERVER_IMPORT_URL)
                   .principal(anyUser::getUsername)
                   .param(SERVER_PATH, outside.getAbsolutePath()))
-          .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
+          .andExpect(
+              flash()
+                  .attribute(
+                      IMPORT_FORM_ERROR_ATTR_NAME,
+                      getMsgFromResourceBundler(
+                          "importExport.import.errors.serverFileOutsideImportFolder",
+                          outside.getAbsolutePath())))
           .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
       // a link inside the folder to an archive outside it
       Path link = Files.createSymbolicLink(importFolder.resolve("link.zip"), outside.toPath());
@@ -464,7 +470,13 @@ public class ExportControllerMVCIT extends MVCTestBase {
               post(SERVER_IMPORT_URL)
                   .principal(anyUser::getUsername)
                   .param(SERVER_PATH, link.toString()))
-          .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
+          .andExpect(
+              flash()
+                  .attribute(
+                      IMPORT_FORM_ERROR_ATTR_NAME,
+                      getMsgFromResourceBundler(
+                          "importExport.import.errors.serverFileOutsideImportFolder",
+                          link.toString())))
           .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
       // missing file inside the folder
       mockMvc

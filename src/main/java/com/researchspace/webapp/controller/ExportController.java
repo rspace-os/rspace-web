@@ -347,7 +347,7 @@ public class ExportController extends BaseController {
       RedirectAttributes ra,
       Principal principal) {
     if (!properties.isImportArchiveFromServerEnabled()) {
-      throw new AuthorizationException("Importing archives from the server is not enabled");
+      throw new AuthorizationException(getText("importExport.import.errors.serverImportDisabled"));
     }
     if (errors.hasErrors()) {
       return returnToDashboardPageWithErrorMsg(
@@ -368,9 +368,12 @@ public class ExportController extends BaseController {
             ? null
             : Paths.get(folderSetting).toAbsolutePath().normalize();
     if (importFolder == null || !Files.isDirectory(importFolder)) {
+      log.warn(
+          "Server archive import refused: importArchiveFromServer.folder is {}",
+          importFolder == null ? "not set" : "not a folder: " + importFolder);
       return returnToDashboardPageWithErrorMsg(
           ra,
-          getText("importExport.import.errors.serverImportFolderNotSet"),
+          getText("importExport.import.errors.serverImportNotConfigured"),
           IMPORT_FORM_ERROR_ATTR_NAME);
     }
     File file = new File(serverPath.getServerFilePath());

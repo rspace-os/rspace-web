@@ -10149,7 +10149,8 @@ export default interface Resources {
           "invalidServerPath": "File {0} is not a valid archive path on the server - must be a readable .zip file{1}",
           "serverFileOutsideImportFolder": "File {0} is not inside the folder configured for server imports.",
           "serverFileUnreadable": "File {0} either does not exist, or cannot be read.",
-          "serverImportFolderNotSet": "Importing archives from the server needs importArchiveFromServer.folder to be set."
+          "serverImportDisabled": "Importing archives from the server is not enabled.",
+          "serverImportNotConfigured": "Importing archives from the server is not configured correctly. Please contact your System Admin."
         },
         "findFile": "Find your file",
         "report": {
