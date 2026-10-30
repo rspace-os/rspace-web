@@ -53,13 +53,13 @@ const BookingTargetSchema = v.object({
 });
 
 async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
-  const parameters = new URLSearchParams({ query, limit: "20" });
+  const parameters = new URLSearchParams({ q: query, limit: "20" });
   const response = await fetchWithUiToken(`/api/v2/booking-configuration-targets?${parameters}`, {
     headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     signal,
   });
   if (!response.ok) throw new Error(`Booking target search failed with status ${response.status}`);
-  return parseOrThrow(v.array(BookingTargetSchema), (await response.json()) as unknown);
+  return parseOrThrow(v.object({ docs: v.array(BookingTargetSchema) }), (await response.json()) as unknown).docs;
 }
 
 const bookingConfigurationTargetSource: RelationshipSource = {
