@@ -50,7 +50,7 @@ class BookingConfigurationTargetControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", fixture.marker())
+                .queryParam("q", fixture.marker())
                 .header("apiKey", fixture.userKey()))
         .andDo(BookingConfigurationTargetControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
@@ -61,7 +61,7 @@ class BookingConfigurationTargetControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", fixture.marker())
+                .queryParam("q", fixture.marker())
                 .header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs[*].id", hasItem((int) owned)))
@@ -71,7 +71,7 @@ class BookingConfigurationTargetControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", fixture.marker())
+                .queryParam("q", fixture.marker())
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs[*].id", not(hasItem((int) owned))));
@@ -80,18 +80,18 @@ class BookingConfigurationTargetControllerMVCIT {
   @Test
   void validatesAuthenticationQueryAndLimit() throws Exception {
     mockMvc
-        .perform(get("/api/v2/booking-configuration-targets").queryParam("query", "ab"))
+        .perform(get("/api/v2/booking-configuration-targets").queryParam("q", "ab"))
         .andExpect(status().isUnauthorized());
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", "x")
+                .queryParam("q", "x")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isBadRequest());
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", "ab")
+                .queryParam("q", "ab")
                 .queryParam("limit", "51")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isBadRequest());
@@ -105,7 +105,7 @@ class BookingConfigurationTargetControllerMVCIT {
       mockMvc
           .perform(
               get("/api/v2/booking-configuration-targets")
-                  .queryParam("query", prefix + owned)
+                  .queryParam("q", prefix + owned)
                   .header("apiKey", fixture.userKey()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.docs[*].id", hasItem((int) owned)));
@@ -113,14 +113,14 @@ class BookingConfigurationTargetControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", "IN" + other)
+                .queryParam("q", "IN" + other)
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty());
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", "IN" + other)
+                .queryParam("q", "IN" + other)
                 .header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs[*].id", hasItem((int) other)));
@@ -128,14 +128,14 @@ class BookingConfigurationTargetControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", "IN" + owned)
+                .queryParam("q", "IN" + owned)
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty());
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
-                .queryParam("query", "IN" + "9".repeat(30))
+                .queryParam("q", "IN" + "9".repeat(30))
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty());

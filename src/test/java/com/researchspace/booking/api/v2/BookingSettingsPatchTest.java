@@ -104,7 +104,7 @@ class BookingSettingsPatchTest {
         mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/api/v2/booking-settings/access-grantees")
-                    .param("query", "ab")
+                    .param("q", "ab")
                     .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.docs").isEmpty())
