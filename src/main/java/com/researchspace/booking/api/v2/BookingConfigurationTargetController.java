@@ -35,7 +35,7 @@ public class BookingConfigurationTargetController {
         @ApiResponse(responseCode = "200", description = "Eligible Instrument summaries."),
         @ApiResponse(responseCode = "400"),
         @ApiResponse(responseCode = "401"),
-        @ApiResponse(responseCode = "403"),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "429"),
         @ApiResponse(responseCode = "500")
       })

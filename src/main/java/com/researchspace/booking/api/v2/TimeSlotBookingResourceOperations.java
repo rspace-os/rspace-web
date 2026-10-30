@@ -29,12 +29,12 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -239,7 +239,7 @@ public final class TimeSlotBookingResourceOperations
 
   private void requireEnabled(User subject) {
     if (!enabled(subject)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new NotFoundException();
     }
   }
 }

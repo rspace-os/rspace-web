@@ -115,6 +115,13 @@ class BookingSettingsControllerMVCIT {
     mockMvc
         .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings/admin")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isNotFound());
   }
 
   @Test

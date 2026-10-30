@@ -38,7 +38,6 @@ import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.List;
-import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -306,7 +305,8 @@ public final class BookingSettingsController {
         @ApiResponse(responseCode = "200", description = "Eligible users and groups."),
         @ApiResponse(responseCode = "400"),
         @ApiResponse(responseCode = "401"),
-        @ApiResponse(responseCode = "403"),
+        @ApiResponse(responseCode = "403", description = "Sysadmin access is required."),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "429"),
         @ApiResponse(responseCode = "500")
       })
@@ -341,6 +341,7 @@ public final class BookingSettingsController {
             responseCode = "412",
             description = "The settings changed since they were read."),
         @ApiResponse(responseCode = "428", description = "If-Match is required."),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "403", description = "Sysadmin access is required.")
       })
   public ResponseEntity<AdminSettingsDocument> patchAdmin(
@@ -349,7 +350,7 @@ public final class BookingSettingsController {
           @RequestHeader(name = HttpHeaders.IF_MATCH, required = false)
           String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledMutation(caller.subject());
+    requireEnabledRead(caller.subject());
     var defaults =
         manager.updateDefaults(
             patch.schedulingPatch(),
@@ -373,12 +374,6 @@ public final class BookingSettingsController {
   private void requireEnabledRead(User actor) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
       throw new NotFoundException();
-    }
-  }
-
-  private void requireEnabledMutation(User actor) {
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }
 }

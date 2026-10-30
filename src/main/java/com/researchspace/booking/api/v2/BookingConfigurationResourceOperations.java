@@ -34,6 +34,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
+import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.util.EnumSet;
 import java.util.List;
@@ -215,7 +216,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public BookingConfiguration create(ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException();
+      throw new NotFoundException();
     }
     return manager.createConfiguration(create(document), caller.subject(), caller.actor());
   }
@@ -223,7 +224,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public List<BookingConfiguration> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException();
+      throw new NotFoundException();
     }
     return manager.createConfigurations(
         documents.stream().map(this::create).toList(), caller.subject(), caller.actor());
@@ -233,7 +234,7 @@ public final class BookingConfigurationResourceOperations
   public Optional<BookingConfiguration> update(
       Long id, ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new NotFoundException();
     }
     return manager.updateConfiguration(id, patch(document), caller.subject(), caller.actor());
   }
@@ -242,7 +243,7 @@ public final class BookingConfigurationResourceOperations
   public Optional<BookingConfiguration> update(
       Long id, ParsedDocument document, Long expectedVersion, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException();
+      throw new NotFoundException();
     }
     return manager.updateConfiguration(
         id,
@@ -281,7 +282,7 @@ public final class BookingConfigurationResourceOperations
   public List<BookingConfiguration> updateMany(
       ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new NotFoundException();
     }
     return manager.updateConfigurations(request, patch(document), caller.subject(), caller.actor());
   }
@@ -290,7 +291,7 @@ public final class BookingConfigurationResourceOperations
   public Optional<ResourceDeleteResult<BookingConfiguration>> delete(
       Long id, ResourceDeleteOptions options, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new NotFoundException();
     }
     long expectedVersion =
         Objects.requireNonNull(options.expectedVersion(), "Expected configuration version");
@@ -310,7 +311,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public List<BookingConfiguration> deleteMany(ResourceRequest request, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new NotFoundException();
     }
     return manager.archiveConfigurations(request, caller.subject(), caller.actor());
   }

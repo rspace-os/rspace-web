@@ -126,3 +126,6 @@ Booking settings GET responses (including `/admin`) return an `ETag`. PATCH
 version: missing tags return 428, malformed tags 400, and stale tags 412.
 Successful PATCH responses include the updated tag. Shared conditional-request
 parsing accepts known compression-proxy tag alterations.
+
+When Booking is disabled, settings writes and configuration and booking writes
+return 404, as do the feature-specific directory and catalogue reads.

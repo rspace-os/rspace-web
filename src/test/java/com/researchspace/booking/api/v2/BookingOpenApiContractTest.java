@@ -48,7 +48,7 @@ class BookingOpenApiContractTest {
       assertTrue(paths.has("/api/v2/booking-configuration-targets"));
       var responses = paths.path("/api/v2/booking-settings/admin").path("patch").path("responses");
       assertEquals(
-          java.util.Set.of("200", "400", "403", "412", "428"),
+          java.util.Set.of("200", "400", "403", "404", "412", "428"),
           mapper.convertValue(responses, java.util.Map.class).keySet());
       String snapshot = System.getProperty("featureOpenApiSnapshot");
       if (snapshot != null) {
