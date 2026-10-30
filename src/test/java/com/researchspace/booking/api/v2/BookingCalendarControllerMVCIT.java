@@ -80,8 +80,8 @@ class BookingCalendarControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-catalogue/calendar")
-                .queryParam("calendarStart", "2026-09-20T00:00:00Z")
-                .queryParam("calendarEnd", "2026-09-21T00:00:00Z")
+                .queryParam("start", "2026-09-20T00:00:00Z")
+                .queryParam("end", "2026-09-21T00:00:00Z")
                 .queryParam("where", "password==secret")
                 .queryParam("eventWhere", "password==secret")
                 .header("apiKey", fixture.userKey()))
@@ -101,8 +101,8 @@ class BookingCalendarControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-catalogue/calendar")
-                .queryParam("calendarStart", "2026-09-21T00:00:00Z")
-                .queryParam("calendarEnd", "2026-09-20T00:00:00Z")
+                .queryParam("start", "2026-09-21T00:00:00Z")
+                .queryParam("end", "2026-09-20T00:00:00Z")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isBadRequest());
     mockMvc
@@ -233,8 +233,8 @@ class BookingCalendarControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/booking-catalogue/calendar")
-                .queryParam("calendarStart", "2099-01-01T00:00:00Z")
-                .queryParam("calendarEnd", "2099-01-02T00:00:00Z")
+                .queryParam("start", "2099-01-01T00:00:00Z")
+                .queryParam("end", "2099-01-02T00:00:00Z")
                 .queryParam(
                     "eventWhere",
                     "privacy==full;timezone==\""

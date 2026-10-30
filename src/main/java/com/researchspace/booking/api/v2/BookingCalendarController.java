@@ -22,6 +22,7 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.service.FeatureFlagManager;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -84,8 +85,8 @@ public class BookingCalendarController {
         @ApiResponse(responseCode = "500")
       })
   public BookingCatalogueManager.Page items(
-      @RequestParam Instant calendarStart,
-      @RequestParam Instant calendarEnd,
+      @Parameter(description = "Inclusive interval start.") @RequestParam Instant start,
+      @Parameter(description = "Exclusive interval end.") @RequestParam Instant end,
       @RequestParam(required = false) String where,
       @RequestParam(required = false) String eventWhere,
       @RequestParam(required = false) @Size(max = 255) String q,
@@ -93,13 +94,13 @@ public class BookingCalendarController {
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
-    validateInterval(calendarStart, calendarEnd);
+    validateInterval(start, end);
     return catalogue.searchCalendar(
         q,
         filtered("booking-configurations", where, new ApiV2FieldsetQuery(), caller),
         filteredCalendarEvents(eventWhere, new ApiV2FieldsetQuery(), caller),
-        calendarStart,
-        calendarEnd,
+        start,
+        end,
         page,
         limit,
         caller.subject());
@@ -119,8 +120,8 @@ public class BookingCalendarController {
         @ApiResponse(responseCode = "500")
       })
   public ApiV2ListResult<Map<String, Object>> events(
-      @RequestParam Instant start,
-      @RequestParam Instant end,
+      @Parameter(description = "Inclusive interval start.") @RequestParam Instant start,
+      @Parameter(description = "Exclusive interval end.") @RequestParam Instant end,
       @RequestParam(required = false) String where,
       @RequestParam(required = false) @Size(max = 255) String q,
       @RequestParam(defaultValue = "1") @Min(1) int page,
