@@ -6,7 +6,6 @@ import com.researchspace.api.v2.controller.OAuthTokensV2Controller;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
-import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.model.collection.AccessFunction;
@@ -28,10 +27,8 @@ public class ApiV2ResourceConfig {
                   : AccessFunction.authenticated().check(context));
 
   @Bean
-  ApiV2ResourceCatalog apiV2ResourceCatalog(
-      List<ApiV2ResourceSpec<?, ?>> specs,
-      List<ApiV2RelationshipTargetSpec<?, ?>> relationshipTargets) {
-    return new ApiV2ResourceCatalog(specs, relationshipTargets);
+  ApiV2ResourceCatalog apiV2ResourceCatalog(List<ApiV2ResourceSpec<?, ?>> specs) {
+    return new ApiV2ResourceCatalog(specs);
   }
 
   /** Shares the catalog's validated relationship graph with collection persistence adapters. */
