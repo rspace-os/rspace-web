@@ -605,8 +605,8 @@ describe("Calendar page", () => {
                 effectiveRole: confocal.effectiveRole,
                 capabilities: confocal.capabilities,
                 location: {
-                  name: confocal.target.value.parentContainerName,
-                  globalId: confocal.target.value.parentContainerGlobalId,
+                  name: confocal.target.value.parentContainer?.value?.name,
+                  globalId: confocal.target.value.parentContainer?.globalId,
                 },
               },
             ],

@@ -65,7 +65,7 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE", privacy: "full" | "bu
     id: 41,
     version: 0,
     target: {
-      relationTo: "booking-instruments" as const,
+      relationTo: "instruments" as const,
       value: { id: 123, name: "Confocal microscope", deleted: false },
       globalId: "IN123",
     },

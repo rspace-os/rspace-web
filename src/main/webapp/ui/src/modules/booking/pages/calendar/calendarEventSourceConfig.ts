@@ -23,7 +23,7 @@ export const calendarEventSourceConfig = {
     {
       name: "target",
       type: "relationship",
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       hasMany: false,
       labelKey: "booking:calendar.fields.target" satisfies CollectionTranslationKey,
       capabilities: { filterOperators: [] },
