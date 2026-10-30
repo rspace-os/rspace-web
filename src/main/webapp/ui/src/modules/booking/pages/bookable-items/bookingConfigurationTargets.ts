@@ -16,11 +16,11 @@ export const MINIMUM_TARGET_QUERY_LENGTH = 2;
 export async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
   const parameters = new URLSearchParams({ limit: "20" });
   // The API rejects a non-blank query shorter than two characters.
-  if (query.trim().length >= MINIMUM_TARGET_QUERY_LENGTH) parameters.set("query", query.trim());
+  if (query.trim().length >= MINIMUM_TARGET_QUERY_LENGTH) parameters.set("q", query.trim());
   const response = await fetchWithUiToken(`/api/v2/booking-configuration-targets?${parameters}`, {
     headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     signal,
   });
   if (!response.ok) throw await parseApiV2Problem(response);
-  return parseOrThrow(v.array(BookingTargetSchema), (await response.json()) as unknown);
+  return parseOrThrow(v.object({ docs: v.array(BookingTargetSchema) }), (await response.json()) as unknown).docs;
 }

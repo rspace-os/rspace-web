@@ -11,7 +11,10 @@ public interface ContainerReadManager {
   /** Returns the database-filtered visible page. */
   ResourcePage<Container> find(ResourceRequest request, User actor);
 
-  /** Projects visible containers without loading their Inventory aggregates. */
+  /**
+   * Projects a bounded batch of visible containers for relationship expansion without a count. The
+   * returned total is the number of projected rows.
+   */
   ResourcePage<ContainerReadSummary> findSummaries(ResourceRequest request, User actor);
 
   /** Counts visible containers matching the request. */

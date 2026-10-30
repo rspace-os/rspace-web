@@ -102,6 +102,7 @@ public class BookingCatalogueController {
    * so a client needs no rows to label the filters.
    */
   @GetMapping("/availability-counts")
+  @Operation(summary = "Count bookable items by current availability")
   public BookingCatalogueManager.AvailabilityCounts countAvailability(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(required = false) String target,

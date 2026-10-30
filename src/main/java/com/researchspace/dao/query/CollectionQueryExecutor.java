@@ -180,8 +180,10 @@ public final class CollectionQueryExecutor<T> {
     var selection = query.selectNew(resultType);
     properties.forEach(property -> selection.with(alias + "." + property));
     selection.end();
-    return query.setFirstResult((int) request.page().offset())
-        .setMaxResults(request.page().size()).getResultList();
+    return query
+        .setFirstResult((int) request.page().offset())
+        .setMaxResults(request.page().size())
+        .getResultList();
   }
 
   private <R> ResourcePage<R> paged(CriteriaBuilder<R> query, ResourceRequest request) {
