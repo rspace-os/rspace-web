@@ -12,9 +12,9 @@ import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.service.MessageSourceUtils;
-import java.util.Locale;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Locale;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -58,11 +58,17 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
     Locale locale = LocaleContextHolder.getLocale();
     if (ex.missingDayEnd().isPresent()) {
       BookingPolicyException.MissingDayEnd missing = ex.missingDayEnd().get();
-      String detail = messages.getMessage(code, new Object[] {
-          missing.time().format(DateTimeFormatter.ofPattern("HH:mm")),
-          missing.date().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)),
-          missing.zone().getId()
-      }, locale);
+      String detail =
+          messages.getMessage(
+              code,
+              new Object[] {
+                missing.time().format(DateTimeFormatter.ofPattern("HH:mm")),
+                missing
+                    .date()
+                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)),
+                missing.zone().getId()
+              },
+              locale);
       return ApiV2Problem.response(HttpStatus.BAD_REQUEST, detail, code, detail);
     }
     if (ex.maximumDurationMinutes().isEmpty()) {

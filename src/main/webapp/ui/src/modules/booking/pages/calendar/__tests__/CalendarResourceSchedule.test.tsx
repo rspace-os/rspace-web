@@ -7,14 +7,13 @@ import { CalendarResourceSchedule } from "../CalendarResourceSchedule";
 import type { BookingCalendarResource } from "../calendarLayoutUtils";
 
 const resource = {
-  relationTo: "booking-instruments",
+  relationTo: "instruments",
   globalId: "IN123",
   value: {
     id: 123,
     name: "Confocal microscope",
     deleted: false,
-    parentContainerName: null,
-    parentContainerGlobalId: null,
+    parentContainer: null,
   },
 } satisfies BookingCalendarResource;
 

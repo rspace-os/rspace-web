@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
-import type { CatalogueAvailability, CatalogueAvailabilityWindow } from "@/modules/booking/domain/bookingCatalogue";
+import type {
+  BookingCatalogueItem,
+  CatalogueAvailability,
+  CatalogueAvailabilityWindow,
+} from "@/modules/booking/domain/bookingCatalogue";
 import { bookingCatalogueAvailabilityCountsQuery } from "@/modules/booking/domain/bookingCatalogue";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";

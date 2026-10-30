@@ -491,12 +491,13 @@ class BookingSettingsControllerMVCIT {
     patchDefaults(
             """
             {"slotGranularityMinutes":1440,"incrementUnit":"HOURS","alignToIncrement":true,
-             "openingHours":%s,"maxBookingDurationMinutes":0,"configurationVersion":%d}
+             "openingHours":%s,"maxBookingDurationMinutes":0}
             """
                 .formatted(
                     com.researchspace.model.booking.BookingOpeningHoursCodec.openingHoursJson(
                         BookingSchedulingSettings.DEFAULT_OPENING_HOURS),
-                    version))
+                    version),
+            version)
         .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.slotGranularityMinutes").value(1440))
@@ -507,16 +508,16 @@ class BookingSettingsControllerMVCIT {
 
     patchDefaults(
             """
-            {"incrementUnit":"DAYS","configurationVersion":%d}
-            """
-                .formatted(version + 1))
+            {"incrementUnit":"DAYS"}
+            """,
+            version + 1)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.incrementUnit").value("DAYS"));
     patchDefaults(
             """
-            {"allowDoubleBooking":true,"configurationVersion":%d}
-            """
-                .formatted(version + 2))
+            {"allowDoubleBooking":true}
+            """,
+            version + 2)
         .andExpect(status().isOk());
 
     mockMvc
@@ -532,9 +533,9 @@ class BookingSettingsControllerMVCIT {
 
     patchDefaults(
             """
-            {"openingHours":[{"dayOfWeek":1,"start":"00:00","end":"24:00"}],"configurationVersion":%d}
-            """
-                .formatted(version + 3))
+            {"openingHours":[{"dayOfWeek":1,"start":"00:00","end":"24:00"}]}
+            """,
+            version + 3)
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.code").value("errors.api.v2.bookingConfiguration.granularity.invalid"));
@@ -547,9 +548,10 @@ class BookingSettingsControllerMVCIT {
     for (String invalid : new String[] {"\"WEEKS\"", "\"days\"", "\"\"", "1", "true"}) {
       patchDefaults(
               """
-              {"incrementUnit":%s,"configurationVersion":%d}
+              {"incrementUnit":%s}
               """
-                  .formatted(invalid, version))
+                  .formatted(invalid),
+              version)
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     }

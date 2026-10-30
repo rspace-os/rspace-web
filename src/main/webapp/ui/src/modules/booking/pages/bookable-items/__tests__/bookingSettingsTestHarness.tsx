@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
+import { expect } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import BookingSettingsPage from "../BookingSettingsPage";
 
@@ -37,13 +38,17 @@ export function serveBookingSettings(
   const submitted: Record<string, unknown>[] = [];
   let current = createBookingSettingsFixture(initial);
   server.use(
-    http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
+    http.get("/api/v2/booking-settings/admin", () =>
+      HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+    ),
     http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+      expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
       const body = (await request.json()) as Record<string, unknown>;
+      expect(body).not.toHaveProperty("configurationVersion");
       submitted.push(body);
       if (!saveSucceeds()) return HttpResponse.json({ status: 500 }, { status: 500 });
       current = { ...current, ...body, configurationVersion: current.configurationVersion + 1 };
-      return HttpResponse.json(current);
+      return HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } });
     }),
   );
   return submitted;

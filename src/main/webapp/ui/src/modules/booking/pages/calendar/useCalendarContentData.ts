@@ -272,17 +272,7 @@ export function useCalendarContentData() {
   const calendarCatalogueOptions = (state: CollectionQueryState<BookingConfiguration>) =>
     calendarBookingCatalogueQuery(
       identityScope,
-      [
-        state,
-        start,
-        end,
-        itemWhereParameter,
-        eventWhereParameter,
-        calendarSearch,
-        myItemsOnly,
-        target,
-        filtersBlocked,
-      ],
+      [state, start, end, itemWhereParameter, eventWhereParameter, calendarSearch, myItemsOnly, target, filtersBlocked],
       {
         q: calendarSearch,
         totals: true,

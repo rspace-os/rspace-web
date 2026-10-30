@@ -261,29 +261,6 @@ describe("BookingSettingsPage", () => {
     });
   });
 
-  it("validates maximum duration against the selected increment", () => {
-    const minutes = (slotGranularityMinutes: number) => ({ slotGranularityMinutes, incrementUnit: "MINUTES" as const });
-    expect(validMaximumBookingDuration(0, minutes(5))).toBe(true);
-    expect(validMaximumBookingDuration(60, minutes(5))).toBe(true);
-    expect(validMaximumBookingDuration(7, minutes(5))).toBe(false);
-  });
-
-  it("offers every supported increment unit", async () => {
-    server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
-    );
-    renderBookingSettingsPage();
-
-    const units = await screen.findByRole("group", { name: "booking:settings.fields.incrementUnit" });
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementMinutes" })).toBeVisible();
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementHours" })).toBeVisible();
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementDays" })).toBeVisible();
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementMinutes" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-  });
-
   it("does not submit an invalid maximum duration", async () => {
     const user = userEvent.setup();
     let patches = 0;

@@ -85,6 +85,8 @@ public record ApiV2BookingConfigurationResource(
             example = "15")
         long slotGranularityMinutes,
     @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
             description =
                 "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts"
                     + " calendar days in the scheduling timezone, so a booking ends at its start's"
@@ -93,6 +95,8 @@ public record ApiV2BookingConfigurationResource(
             example = "MINUTES")
         BookingIncrementUnit incrementUnit,
     @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
             description =
                 "Whether booking starts must fall on the increment counted from local midnight."
                     + " The stored value is ignored for DAYS and for increments of 1440 minutes or"

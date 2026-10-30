@@ -213,7 +213,7 @@ describe("booking configuration Days maximum", () => {
   it.each(["UTC", "Australia/Lord_Howe", "Antarctica/Troll"])("applies the same floor in %s", (timezone) => {
     const create = (maxBookingDurationMinutes: number) =>
       v.safeParse(BookingConfigurationInputSchema, {
-        target: { relationTo: "booking-instruments", value: 123 },
+        target: { relationTo: "instruments", value: 123 },
         enabled: true,
         timezone,
         slotGranularityMinutes: 1440,

@@ -123,7 +123,7 @@ function renderEventNotice(initialEntry: string, sourceSearchStr: string, includ
     event: {
       id: 41,
       start: "2026-10-05T09:00:00Z",
-      target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" },
+      target: { relationTo: "instruments", value: 123, globalId: "IN123" },
     },
     message: "Booking saved",
     timeZone: "UTC",
