@@ -28,12 +28,8 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import LoaderCircular from "@/components/LoadingCircular";
-import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
 import PIDINSTlogo from "../../assets/graphics/PIDINST.svg";
@@ -677,7 +673,7 @@ type IdentifierPublicPageArgs = {
   publicId: string;
 };
 
-const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode => {
+export const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode => {
   const { t } = useTranslation("public");
   const [fetching, setFetching] = useState(false);
   const [publicData, setPublicData] = useState<{
@@ -763,26 +759,5 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode
     </ThemeProvider>
   );
 };
-
-window.addEventListener("load", (_e) => {
-  const domContainer = document.getElementById("identifierPublicPage");
-  const location = window.location;
-  /**
-   * expected path is `/public/inventory/${rsPublicId}`
-   * rsPublicId is also included in the fetched response.data
-   *
-   */
-  const rsPublicId = location.pathname.split("/")[3];
-  if (domContainer) {
-    const root = createRoot(domContainer);
-    root.render(
-      <MuiCssLayerProvider>
-        <I18nRoot namespaces={["public"]} fallback={<LoaderCircular />}>
-          <IdentifierPublicPage publicId={rsPublicId} />
-        </I18nRoot>
-      </MuiCssLayerProvider>,
-    );
-  }
-});
 
 export default observer(IdentifierPublicPage);

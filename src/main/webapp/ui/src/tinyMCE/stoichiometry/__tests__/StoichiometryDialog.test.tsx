@@ -10,7 +10,7 @@ import axios from "@/common/axios";
 import "@/__tests__/__mocks__/matchMedia";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/useOauthToken";
-import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
+import StoichiometryDialogRoot from "../StoichiometryDialogRoot";
 import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
@@ -251,7 +251,7 @@ describe("StoichiometryDialog", () => {
 
   it("auto-creates the stoichiometry table on open when requested", async () => {
     render(
-      <StoichiometryDialogEntrypoint
+      <StoichiometryDialogRoot
         open
         onClose={() => {}}
         chemId={12345}

@@ -25,6 +25,7 @@ import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
 import { parseInteger } from "@/util/parsers";
 import Result from "@/util/result";
+import type { TinyMcePluginEditor } from "../types";
 import ColumnVisibilitySettings from "./ColumnVisibilitySettings";
 import ColumnVisibilitySettingsButton from "./ColumnVisibilitySettingsButton";
 import { AnimalState, AnimalType, ErrorReason, Order, Sex } from "./Enums";
@@ -32,6 +33,12 @@ import ErrorView from "./ErrorView";
 import Filter from "./Filter";
 import FilterButton from "./FilterButton";
 import ResultsTable from "./ResultsTable";
+
+export type PyratDialogProps = {
+  editor: TinyMcePluginEditor;
+  open: boolean;
+  onClose: () => void;
+};
 
 function useAuthenticatedServers() {
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -527,8 +534,7 @@ function PyratListing({
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export default function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClose: any }) {
+export default function PyratDialog({ editor, open, onClose }: PyratDialogProps) {
   const [selectedServer, setSelectedServer] = React.useState<PyratServer | null>(null);
   const servers = useAuthenticatedServers();
   const { t } = useTranslation(["apps", "common", "workspace"]);

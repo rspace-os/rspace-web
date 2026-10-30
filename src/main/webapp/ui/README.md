@@ -9,6 +9,15 @@ The [Vite config](./vite.config.ts) defines multiple entry points for these
 different application parts -- see the `bundleEntries` object for the complete
 list of bundles and their purposes.
 
+Keep entry files mount-only: they find their DOM container, call `createRoot`,
+and render inline JSX, but define no components and export nothing. Put
+components and shared types in their own modules. Every entry that renders
+React, and nothing else, is named `*Entrypoint.tsx`, where Biome rejects
+component definitions. A component defined in an entry makes it a Fast Refresh
+boundary, so a hot update re-executes it and mounts React twice. Entries that
+only expose functions to legacy scripts, such as `legacyI18n.ts` and
+`GalleryUtilsEntrypoint.ts`, render nothing and stay plain `.ts`.
+
 The root [package.json](../../../package.json) defines the dependencies and
 scripts for development, testing, and building the application.
 

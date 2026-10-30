@@ -1,12 +1,8 @@
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 import React, { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import Analytics from "../../components/Analytics";
 
 const KetcherDialog = React.lazy(() => import("../../components/Ketcher/KetcherDialog"));
 
@@ -147,25 +143,5 @@ export const KetcherViewer = (): React.ReactNode => {
     </React.Suspense>
   );
 };
-
-document.addEventListener("DOMContentLoaded", () => {
-  window.addEventListener("OPEN_KETCHER_VIEWER", () => {
-    const rootDocument = window.top?.document ?? document;
-    const wrapperDiv = rootDocument.getElementById("tinymce-ketcher");
-
-    if (wrapperDiv instanceof HTMLElement) {
-      const root = createRoot(wrapperDiv);
-      root.render(
-        <Analytics>
-          <MuiCssLayerProvider>
-            <I18nRoot namespaces={["common"]}>
-              <KetcherViewer />
-            </I18nRoot>
-          </MuiCssLayerProvider>
-        </Analytics>,
-      );
-    }
-  });
-});
 
 export default KetcherViewer;
