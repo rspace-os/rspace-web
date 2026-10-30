@@ -123,7 +123,7 @@ rejected as state transitions. Client draft and uncertain-write handling are doc
 
 ## Booking Calendar query scope
 
-`GET /api/v2/booking-catalogue/calendar` accepts `calendarStart`, `calendarEnd`,
+`GET /api/v2/booking-catalogue/calendar` accepts `start` (inclusive), `end` (exclusive),
 `where` for item predicates, `eventWhere` for event predicates, `q`, `page`, and `limit`.
 It resolves runtime fields through the same registered resource contexts as ordinary
 collections. A correlated event EXISTS applies visibility, confirmed/nondeleted state,
