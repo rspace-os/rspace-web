@@ -373,7 +373,7 @@ class BookingConfigurationLifecycleMVCIT {
 
   private String configurationDocument(long instrumentId) {
     return """
-    {"enabled":true,"timezone":"UTC","target":{"relationTo":"booking-instruments","value":%d}}
+    {"enabled":true,"timezone":"UTC","target":{"relationTo":"instruments","value":%d}}
     """
         .formatted(instrumentId);
   }
