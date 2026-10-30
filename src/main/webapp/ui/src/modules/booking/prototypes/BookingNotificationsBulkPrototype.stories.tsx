@@ -9,6 +9,7 @@ import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/avail
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { bookableItemFixtures } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
+import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { TableList, type TableListFilterButtons } from "@/modules/common/table-list/TableList";
@@ -49,8 +50,8 @@ const bookingWindows: Record<
 const instruments: Instrument[] = bookableItemFixtures.map((item) => ({
   id: item.target.globalId,
   name: item.target.value.name,
-  location: item.target.value.parentContainerName,
-  locationId: item.target.value.parentContainerGlobalId,
+  location: resourceLocation(item.target)?.name ?? null,
+  locationId: resourceLocation(item.target)?.globalId ?? null,
   timezone: item.timezone,
   quickFilter: quickFilterByInstrument[item.target.globalId],
 }));
