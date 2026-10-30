@@ -156,7 +156,14 @@ public final class BookingConfigurationResourceOperations
             ResourceOperation.DELETE,
             updateErrors,
             ResourceOperation.BULK_UPDATE,
-            writeErrors),
+            Stream.concat(
+                    writeErrors.stream(),
+                    updateErrors.stream()
+                        .filter(
+                            error ->
+                                error.exceptionType()
+                                    == BookingConfigurationLifecycleException.class))
+                .toList()),
         ApiV2BookingConfigurationResource.MUTATION_LIMITS,
         List.of(),
         Optional.of(

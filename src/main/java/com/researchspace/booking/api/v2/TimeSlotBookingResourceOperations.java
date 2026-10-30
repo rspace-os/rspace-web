@@ -12,6 +12,7 @@ import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
+import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
 import com.researchspace.booking.service.BookingWindowException;
@@ -70,6 +71,12 @@ public final class TimeSlotBookingResourceOperations
   ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookingApiV2Resource() {
     List<ApiV2ErrorMapping> commonErrors =
         List.of(
+            ApiV2ErrorMapping.withErrorCode(
+                BookingPolicyException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.booking.granularity",
+                "The interval violates the scheduling policy.",
+                exception -> exception.reason().errorCode()),
             ApiV2ErrorMapping.of(
                 BookingWindowException.class,
                 HttpStatus.BAD_REQUEST,

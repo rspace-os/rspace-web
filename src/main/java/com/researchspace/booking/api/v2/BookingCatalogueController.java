@@ -4,6 +4,8 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.booking.service.BookingCatalogueManager;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -29,6 +31,18 @@ public class BookingCatalogueController {
   }
 
   @GetMapping
+  @Operation(
+      operationId = "searchBookingCatalogue",
+      summary = "Search the Booking catalogue",
+      tags = "booking-catalogue",
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Matching bookable instruments."),
+        @ApiResponse(responseCode = "400"),
+        @ApiResponse(responseCode = "401"),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
+        @ApiResponse(responseCode = "429"),
+        @ApiResponse(responseCode = "500")
+      })
   public BookingCatalogueManager.Page search(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(required = false) String target,
@@ -56,6 +70,20 @@ public class BookingCatalogueController {
   }
 
   @GetMapping("/locations")
+  @Operation(
+      operationId = "searchBookingCatalogueLocations",
+      summary = "Search Booking catalogue locations",
+      tags = "booking-catalogue",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Locations containing bookable instruments."),
+        @ApiResponse(responseCode = "400"),
+        @ApiResponse(responseCode = "401"),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
+        @ApiResponse(responseCode = "429"),
+        @ApiResponse(responseCode = "500")
+      })
   public BookingCatalogueManager.LocationPage searchLocations(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(name = "type", required = false) List<String> targetTypes,
