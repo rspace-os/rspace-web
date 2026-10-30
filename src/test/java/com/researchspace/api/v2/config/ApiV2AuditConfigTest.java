@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch;
+import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Clock;
 import java.time.Instant;
@@ -19,6 +20,7 @@ class ApiV2AuditConfigTest {
   void auditLogUsesItsUtcClockWhenAnotherClockBeanExists() {
     try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
       context.register(ApiV2AuditConfig.class, ApiV2AuditLog.class);
+      context.registerBean(AuditTrailService.class, () -> mock(AuditTrailService.class));
       context.registerBean(ResourceAccessManager.class, () -> mock(ResourceAccessManager.class));
       context.registerBean(
           ApiV2AuditStrictSearch.class, () -> new ApiV2AuditStrictSearch(".", null));
