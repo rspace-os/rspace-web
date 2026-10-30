@@ -291,8 +291,8 @@ public class GroupManagerImpl implements GroupManager {
     UserGroup ug = grp.getUserGroupForUser(userToRemove);
     // if user is a lab admin in this group (RSPAC-1116)
     if (ug != null && ug.isAdminRole()) {
-      if (groupPermUtils.isSelfServiceLeave(uname, subject, grp)) {
-        // already authorised by assertLeaveGroupPermissions (RSPAC-1662)
+      if (groupPermUtils.isSelfServiceLeave(uname, subject, grp) || grp.isCollaborationGroup()) {
+        // already authorised by assertLeaveGroupPermissions
         changeRoleInGroup(grp, userToRemove, RoleInGroup.DEFAULT);
       } else {
         setRoleForUser(grp.getId(), userToRemove.getId(), RoleInGroup.DEFAULT.toString(), subject);

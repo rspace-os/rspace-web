@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -122,6 +123,24 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     Group collab = createCollabGroupWithLabMembers(tg1, tg2);
     User sysadmin = logoutAndLoginAsSysAdmin();
     assertCollabRolesCanBeAltered(collab, tg1.u1(), sysadmin);
+  }
+
+  @Test
+  public void labAdminInCollabGroupCanRemoveAnotherLabAdmin() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(1);
+    Group collab = createCollabGroupWithLabMembers(tg1, tg2);
+    User labAdmin = tg1.u1();
+    User otherLabAdmin = tg2.u1();
+    for (User u : new User[] {labAdmin, otherLabAdmin}) {
+      grpMgr.setRoleForUser(
+          collab.getId(), u.getId(), RoleInGroup.RS_LAB_ADMIN.name(), tg1.getPi());
+    }
+
+    logoutAndLoginAs(labAdmin);
+    grpMgr.removeUserFromGroup(otherLabAdmin.getUsername(), collab.getId(), labAdmin);
+
+    assertFalse(grpMgr.getGroup(collab.getId()).hasMember(otherLabAdmin));
   }
 
   private Group createCollabGroupWithLabMembers(TestGroup tg1, TestGroup tg2) {
