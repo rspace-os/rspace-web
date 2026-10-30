@@ -85,7 +85,7 @@ the same way.
 
 A collection can publish caller-specific runtime fields. Each field kind
 has a namespace, provider, identity scheme, and catalog route:
-`/api/v2/{resource}/fields/{namespace}`. Clients must use the published catalog routes instead of constructing them.
+`/api/v2/{resource}/fields/{namespace}`. Use `q` for free-text catalog search. Clients must use the published catalog routes instead of constructing them.
 
 Instruments publish two:
 
