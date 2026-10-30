@@ -44,7 +44,7 @@ public class InventorySearchInputValidatorTest {
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     input = new WorkspaceSearchConfig();
-    validator = new InventorySearchInputValidator(user);
+    validator = new InventorySearchInputValidator(user, 2, 5);
   }
 
   @Test
@@ -135,7 +135,7 @@ public class InventorySearchInputValidatorTest {
     // sysadmin must be >=5 chars RSPAC-907 unless tag option RSPAC-468
     cfg =
         createSearchConfig(sysadmin, new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"a234"});
-    validator = new InventorySearchInputValidator(sysadmin);
+    validator = new InventorySearchInputValidator(sysadmin, 2, 5);
     validator.validate(cfg, errors);
     assertTrue(errors.hasGlobalErrors());
     cfg = createSearchConfig(sysadmin, new String[] {TAG_SEARCH_OPTION}, new String[] {"a234"});
@@ -145,11 +145,11 @@ public class InventorySearchInputValidatorTest {
 
     // unless it's a user (owner) search, where short names are fine (as long as more than 1 char)
     cfg = createSearchConfig(sysadmin, new String[] {OWNER_SEARCH_OPTION}, new String[] {"dude"});
-    validator = new InventorySearchInputValidator(sysadmin);
+    validator = new InventorySearchInputValidator(sysadmin, 2, 5);
     validator.validate(cfg, errors);
     assertFalse(errors.hasGlobalErrors());
     cfg = createSearchConfig(sysadmin, new String[] {OWNER_SEARCH_OPTION}, new String[] {"G"});
-    validator = new InventorySearchInputValidator(sysadmin);
+    validator = new InventorySearchInputValidator(sysadmin, 2, 5);
     validator.validate(cfg, errors);
     assertTrue(errors.hasGlobalErrors());
 
@@ -157,5 +157,21 @@ public class InventorySearchInputValidatorTest {
     cfg = createSearchConfig(sysadmin, new String[] {TAG_SEARCH_OPTION}, new String[] {"a2345*"});
     validator.validate(cfg, errors);
     assertTrue(errors.hasGlobalErrors());
+  }
+
+  @Test
+  public void sysadminFloorFollowsTheConfiguredValue() {
+    User sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+    SearchConfig fourChars =
+        createSearchConfig(sysadmin, new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"a234"});
+
+    Errors errors = reinitializeErrors();
+    new InventorySearchInputValidator(sysadmin, 2, 2).validate(fourChars, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    errors = reinitializeErrors();
+    new InventorySearchInputValidator(sysadmin, 2, 7).validate(fourChars, errors);
+    assertEquals("errors.searchTermMinLength", errors.getGlobalError().getCode());
+    assertEquals(7, errors.getGlobalError().getArguments()[0]);
   }
 }

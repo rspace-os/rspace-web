@@ -975,7 +975,12 @@ public class WorkspaceController extends BaseController {
       WorkspaceListingConfig input,
       User subject) {
     ErrorList errors =
-        inputValidator.validateAndGetErrorList(input, new WorkspaceSearchInputValidator(subject));
+        inputValidator.validateAndGetErrorList(
+            input,
+            new WorkspaceSearchInputValidator(
+                subject,
+                properties.getUserMinSearchTermLength(),
+                properties.getSysadminMinSearchTermLength()));
     if (errors != null && errors.hasErrorMessages()) {
       request.setAttribute("ajax.errors", errors);
       response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());

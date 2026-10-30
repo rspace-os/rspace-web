@@ -44,7 +44,7 @@ public class WorkspaceSearchInputValidatorTest {
   }
 
   private WorkspaceSearchInputValidator createValidator(User user2) {
-    return new WorkspaceSearchInputValidator(user2);
+    return new WorkspaceSearchInputValidator(user2, 2, 5);
   }
 
   @Test
@@ -192,6 +192,72 @@ public class WorkspaceSearchInputValidatorTest {
     cfg = createAdvSearchCfg(new String[] {TAG_SEARCH_OPTION}, new String[] {"a2345*"});
     validator.validate(cfg, errors);
     assertTrue(errors.hasGlobalErrors());
+  }
+
+  @Test
+  public void sysadminFloorFollowsTheConfiguredValue() {
+    User sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+    WorkspaceListingConfig fourChars =
+        createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"a234"});
+
+    Errors errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(sysadmin, 2, 2).validate(fourChars, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(sysadmin, 2, 7).validate(fourChars, errors);
+    assertEquals("errors.searchTermMinLength", errors.getGlobalError().getCode());
+    assertEquals(7, errors.getGlobalError().getArguments()[0]);
+  }
+
+  @Test
+  public void userFloorFollowsTheConfiguredValue() {
+    WorkspaceListingConfig oneChar =
+        createAdvSearchCfg(new String[] {NAME_SEARCH_OPTION}, new String[] {"a"});
+
+    Errors errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(user, 1, 5).validate(oneChar, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(user, 3, 5).validate(oneChar, errors);
+    assertEquals("errors.searchTermMinLength", errors.getGlobalError().getCode());
+    assertEquals(3, errors.getGlobalError().getArguments()[0]);
+  }
+
+  @Test
+  public void aFloorOfZeroDisablesTheLengthCheckButNotTheBlankCheck() {
+    User sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+    WorkspaceSearchInputValidator noFloor = new WorkspaceSearchInputValidator(sysadmin, 0, 0);
+
+    Errors errors = reinitializeErrors();
+    noFloor.validate(
+        createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"a"}), errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    errors = reinitializeErrors();
+    noFloor.validate(
+        createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {" "}), errors);
+    assertEquals("errors.searchTermBlank", errors.getGlobalError().getCode());
+  }
+
+  @Test
+  public void aTwoCharacterCjkTermPassesTheDefaultUserFloor() {
+    WorkspaceListingConfig cell =
+        createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"細胞"});
+
+    Errors errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(user, 2, 5).validate(cell, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    User sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+    errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(sysadmin, 2, 5).validate(cell, errors);
+    assertEquals("errors.searchTermMinLength", errors.getGlobalError().getCode());
+
+    errors = reinitializeErrors();
+    new WorkspaceSearchInputValidator(sysadmin, 2, 2).validate(cell, errors);
+    assertFalse(errors.hasGlobalErrors());
   }
 
   /** Folders and documents search options need to be a list of IDs (Longs separated by commas) */

@@ -74,7 +74,7 @@ paths:
         - $ref: "#/components/parameters/pageNumberParam"
         - $ref: "#/components/parameters/pageSizeParam"
         - $ref: "#/components/parameters/orderByParam"
-        - $ref: "#/components/parameters/queryParam"
+        - $ref: "#/components/parameters/documentsQueryParam"
         - $ref: "#/components/parameters/advancedQueryParam"
         - name: filter
           in: query
@@ -3383,7 +3383,16 @@ components:
       in: query
       description: >
         Global search for a term, works identically to the  simple "All' search
-        in RSpace Workspace. Must be >= 3 characters long.
+        in RSpace Workspace.
+      schema:
+        type: string
+    documentsQueryParam:
+      name: query
+      in: query
+      description: >
+        Global search for a term, works identically to the  simple "All' search
+        in RSpace Workspace. Must be at least 2 characters long (5 for a
+        sysadmin account); an RSpace administrator can change both minimums.
       schema:
         type: string
     advancedQueryParam:
@@ -3395,7 +3404,7 @@ components:
 
         Workspace. Provide the query string in JSON notation, with optional
 
-        `operator` field, and `terms` list. Textual search terms must be >= 3 characters long.
+        `operator` field, and `terms` list. Textual search terms must be at least 2 characters long (5 for a sysadmin account); an RSpace administrator can change both minimums.
 
 
 

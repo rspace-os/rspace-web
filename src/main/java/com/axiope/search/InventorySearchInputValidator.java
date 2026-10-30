@@ -11,8 +11,9 @@ import org.springframework.validation.Errors;
  */
 public class InventorySearchInputValidator extends SearchInputValidator {
 
-  public InventorySearchInputValidator(User subject) {
-    super(subject);
+  public InventorySearchInputValidator(
+      User subject, int userMinTermLength, int sysadminMinTermLength) {
+    super(subject, userMinTermLength, sysadminMinTermLength);
   }
 
   @Override
