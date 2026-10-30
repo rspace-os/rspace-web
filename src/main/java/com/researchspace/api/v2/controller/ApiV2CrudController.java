@@ -78,7 +78,7 @@ public class ApiV2CrudController {
             registration.description(),
             registration.registry(),
             registration.runtimeFieldContext(user));
-    return registration.list(request, user);
+    return registration.list(request, user, query.isTotals());
   }
 
   /**

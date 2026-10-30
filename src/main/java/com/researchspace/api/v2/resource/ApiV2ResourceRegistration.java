@@ -126,6 +126,11 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User caller) {
+    return list(request, caller, false);
+  }
+
+  public ApiV2ListResult<Map<String, Object>> list(
+      ResourceRequest request, User caller, boolean totals) {
     ResourceRequest authorized = authorize(Operation.READ, caller, request);
     if (operations.usesReadDocuments()) {
       return crud.listReadDocuments(
@@ -135,7 +140,8 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
               narrowFields(
                   new AccessContext(caller, Operation.READ, description.resourceName(), id),
                   authorized.fields()),
-          runtimeReadDocumentValues(authorized, caller));
+          runtimeReadDocumentValues(authorized, caller),
+          totals);
     }
     return crud.list(
         authorized,
@@ -148,7 +154,8 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
                     description.resourceName(),
                     description.idValue(entity)),
                 authorized.fields()),
-        runtimeValues(authorized, caller));
+        runtimeValues(authorized, caller),
+        totals);
   }
 
   public List<RuntimeCollectionFields<T>> runtimeFields() {

@@ -42,6 +42,12 @@ public interface ResourceOperations<T, ID> {
     throw new UnsupportedOperationException(getClass().getName() + " has no scalar read documents");
   }
 
+  /** Returns a count-free scalar slice, or null when only counted pages are supported. */
+  default com.researchspace.model.collection.ResourceSlice<Map<String, Object>>
+      findReadDocumentSlice(ResourceRequest request, User subject) {
+    return null;
+  }
+
   /** Counts matching resources after caller-specific values are resolved. */
   long count(ResourceRequest request, User subject);
 

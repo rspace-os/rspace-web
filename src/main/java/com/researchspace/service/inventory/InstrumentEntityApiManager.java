@@ -190,6 +190,10 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   ResourcePage<InstrumentReadSummary> getReadableInstrumentSummaries(
       ResourceRequest request, User user);
 
+  /** Reads a count-free scalar window under the ordinary read policy. */
+  com.researchspace.model.collection.ResourceSlice<InstrumentReadSummary>
+      getReadableInstrumentSummarySlice(ResourceRequest request, User user);
+
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableInstruments(ResourceRequest request, User user);
 

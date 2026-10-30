@@ -117,6 +117,15 @@ public final class ApiV2CrudDispatcher<T, ID> {
       User actor,
       Function<T, FieldSelection> fieldsForRow,
       DocumentDecorator<T> decorator) {
+    return list(request, actor, fieldsForRow, decorator, false);
+  }
+
+  public ApiV2ListResult<Map<String, Object>> list(
+      ResourceRequest request,
+      User actor,
+      Function<T, FieldSelection> fieldsForRow,
+      DocumentDecorator<T> decorator,
+      boolean totals) {
     return invoke(
         ResourceOperation.LIST,
         () -> {
@@ -135,8 +144,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
                   targetResolver,
                   readContext(actor));
           decorator.decorate(page.resources(), documents);
-          return ApiV2ListResult.of(
-              documents, page.total(), request.page().size(), request.page().number());
+          return ApiV2ListResult.counted(
+              documents, page.total(), request.page().size(), request.page().number(), totals);
         });
   }
 
@@ -157,22 +166,45 @@ public final class ApiV2CrudDispatcher<T, ID> {
       User actor,
       Function<Object, FieldSelection> fieldsForId,
       ReadDocumentDecorator decorator) {
+    return listReadDocuments(request, actor, fieldsForId, decorator, false);
+  }
+
+  public ApiV2ListResult<Map<String, Object>> listReadDocuments(
+      ResourceRequest request,
+      User actor,
+      Function<Object, FieldSelection> fieldsForId,
+      ReadDocumentDecorator decorator,
+      boolean totals) {
     return invoke(
         ResourceOperation.LIST,
         () -> {
-          ResourcePage<Map<String, Object>> page = operations.findReadDocuments(request, actor);
+          var slice = operations.findReadDocumentSlice(request, actor);
+          ResourcePage<Map<String, Object>> page =
+              slice == null ? operations.findReadDocuments(request, actor) : null;
+          var resources = slice == null ? page.resources() : slice.resources();
+          Long total =
+              slice == null
+                  ? Long.valueOf(page.total())
+                  : totals ? Long.valueOf(operations.count(request, actor)) : null;
           List<Map<String, Object>> documents =
               renderer.renderReadDocuments(
-                  page.resources(),
+                  resources,
                   description,
                   fieldsForId,
                   request.fieldSelections(),
                   request.includes(),
                   targetResolver(actor),
                   readContext(actor));
-          decorator.decorate(page.resources(), documents);
-          return ApiV2ListResult.of(
-              documents, page.total(), request.page().size(), request.page().number());
+          decorator.decorate(resources, documents);
+          return slice == null
+              ? ApiV2ListResult.counted(
+                  documents, total, request.page().size(), request.page().number(), totals)
+              : ApiV2ListResult.slice(
+                  documents,
+                  total,
+                  request.page().size(),
+                  request.page().number(),
+                  slice.hasNext());
         });
   }
 

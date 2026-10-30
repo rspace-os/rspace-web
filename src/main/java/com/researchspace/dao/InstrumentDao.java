@@ -41,6 +41,10 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
   ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
       ResourceRequest request, AccessResult access);
 
+  /** Reads a count-free scalar window under the ordinary read policy. */
+  com.researchspace.model.collection.ResourceSlice<InstrumentReadSummary>
+      getReadableResourceSummarySlice(ResourceRequest request, AccessResult access);
+
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableResources(ResourceRequest request, AccessResult access);
 

@@ -115,6 +115,15 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
   }
 
   @Override
+  public com.researchspace.model.collection.ResourceSlice<Map<String, Object>>
+      findReadDocumentSlice(ResourceRequest request, User actor) {
+    var slice = instrumentManager.getReadableInstrumentSummarySlice(request, actor);
+    return new com.researchspace.model.collection.ResourceSlice<>(
+        slice.resources().stream().map(InstrumentResourceOperations::readDocument).toList(),
+        slice.hasNext());
+  }
+
+  @Override
   public Optional<Map<Object, Map<String, Object>>> relationshipReadDocuments(
       Set<Long> ids, User actor) {
     Map<Object, Map<String, Object>> documents = new LinkedHashMap<>();
