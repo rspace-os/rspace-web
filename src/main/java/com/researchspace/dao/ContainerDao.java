@@ -10,6 +10,7 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.ContainerReadSummary;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +19,10 @@ public interface ContainerDao extends GenericDao<Container, Long> {
 
   /** Returns a database-filtered page under the supplied container read constraint. */
   ResourcePage<Container> getReadableResources(ResourceRequest request, AccessResult access);
+
+  /** Projects a page under the same container read constraint without hydrating aggregates. */
+  ResourcePage<ContainerReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access);
 
   /** Counts containers matching the request and container read constraint. */
   long countReadableResources(ResourceRequest request, AccessResult access);

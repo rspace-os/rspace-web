@@ -35,9 +35,11 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public record InstrumentNameRow(Long instrumentId, String name) {}
 
-  public record InstrumentReadSummaryRow(Long instrumentId, String name, Boolean deleted) {}
+  public record InstrumentReadSummaryRow(
+      Long instrumentId, String name, Boolean deleted, Long parentContainerId) {}
 
-  public record InstrumentScalarRow(Long instrumentId, String name, Boolean deleted) {}
+  public record InstrumentScalarRow(
+      Long instrumentId, String name, Boolean deleted, Long parentContainerId) {}
 
   private String defaultTemplateOwner;
 
@@ -69,10 +71,13 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
             RelationshipReadAccess.none(),
             InstrumentScalarRow.class,
-            List.of("id", "editInfo.name", "deleted"));
+            List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
     return new ResourcePage<>(
         rows.resources().stream()
-            .map(row -> new InstrumentReadSummary(row.instrumentId(), row.name(), row.deleted()))
+            .map(
+                row ->
+                    new InstrumentReadSummary(
+                        row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
             .toList(),
         rows.total());
   }
@@ -97,6 +102,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .with("instrument.id")
             .with("instrument.editInfo.name")
             .with("instrument.deleted")
+            .with("instrument.parentLocation.container.id")
             .end()
             .whereExpression("instrument.id in :instrumentIds")
             .whereExpression("instrument.deleted = false")
@@ -105,7 +111,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     context.bind(query, null);
     return query
         .getResultStream()
-        .map(row -> new InstrumentReadSummary(row.instrumentId(), row.name(), row.deleted()))
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 

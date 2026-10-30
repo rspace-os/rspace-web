@@ -33,8 +33,9 @@ public interface ResourceOperations<T, ID> {
    *
    * <p>Documents use the collection's public field names and serialized values, including its ID.
    * The renderer applies selection and per-row field access after validating declared values.
-   * Runtime fields are loaded separately from the authorized page IDs. Collections with
-   * relationships retain entity reads; audit and write callers continue using the entity methods.
+   * Runtime fields are loaded separately from the authorized page IDs. To-one relationships supply
+   * target IDs (polymorphic relationships supply ResourceReference values); the renderer batches
+   * and authorizes them through the target registration. Audit and write callers retain entities.
    */
   default ResourcePage<Map<String, Object>> findReadDocuments(
       ResourceRequest request, User subject) {

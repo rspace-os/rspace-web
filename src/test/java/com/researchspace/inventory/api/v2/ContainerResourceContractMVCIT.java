@@ -101,6 +101,18 @@ class ContainerResourceContractMVCIT extends SpringTransactionalTest {
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(owner)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.parentContainer.relationTo").value("containers"))
+        .andExpect(jsonPath("$.parentContainer.globalId").value("IC" + container.getId()))
         .andExpect(jsonPath("$.parentContainer.value.name").value("Visible container"));
+    var parent = containerDao.get(container.getId());
+    parent.setRecordDeleted(true);
+    sessionFactory.getCurrentSession().flush();
+    for (int depth : List.of(0, 1, 2)) {
+      mvc.perform(
+              get("/api/v2/instruments/" + item.getId())
+                  .param("depth", Integer.toString(depth))
+                  .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(owner)))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.parentContainer").doesNotExist());
+    }
   }
 }

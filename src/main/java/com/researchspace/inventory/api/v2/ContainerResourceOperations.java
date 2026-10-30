@@ -74,21 +74,22 @@ public class ContainerResourceOperations implements ResourceOperations<Container
               new ResourceRequest.Page(1, batch.size()),
               FieldSelection.all(),
               IncludeTree.empty());
-      for (Container container : find(request, actor).resources()) {
-        if (ids.contains(container.getId()))
+      for (var container : manager.findSummaries(request, actor).resources()) {
+        if (ids.contains(container.id()))
           documents.put(
-              container.getId(),
+              container.id(),
               Map.of(
                   "id",
-                  container.getId(),
+                  container.id(),
                   "globalId",
-                  container.getGlobalIdentifier(),
+                  (container.containerType() == Container.ContainerType.WORKBENCH ? "BE" : "IC")
+                      + container.id(),
                   "name",
-                  container.getName(),
+                  container.name(),
                   "containerType",
-                  container.getContainerType().name(),
+                  container.containerType().name(),
                   "deleted",
-                  container.isDeleted()));
+                  container.deleted()));
       }
     }
     return Optional.of(documents);
