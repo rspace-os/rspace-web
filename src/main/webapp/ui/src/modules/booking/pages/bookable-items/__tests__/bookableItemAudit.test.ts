@@ -64,8 +64,8 @@ describe("fetchBookingConfigurationAudit", () => {
     const result = await fetchBookingConfigurationAudit({
       configurationId: 7,
       page: 1,
-      dateFrom: "2026-08-01T00:00:00.000Z",
-      dateTo: "2026-08-25T23:59:59.999Z",
+      start: "2026-08-01T00:00:00.000Z",
+      end: "2026-08-26T00:00:00.000Z",
       snapshot: { snapshotDate: "2026-08-25", snapshotFingerprint: fingerprint },
       token: "secret",
     });
@@ -74,8 +74,8 @@ describe("fetchBookingConfigurationAudit", () => {
     expect(Object.fromEntries(url.searchParams)).toEqual({
       page: "2",
       limit: "20",
-      dateFrom: "2026-08-01T00:00:00.000Z",
-      dateTo: "2026-08-25T23:59:59.999Z",
+      start: "2026-08-01T00:00:00.000Z",
+      end: "2026-08-26T00:00:00.000Z",
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,
     });
@@ -151,8 +151,8 @@ describe("audit UTC date ranges", () => {
 
   it("converts an inclusive range to exact source-compatible UTC instants", () => {
     expect(auditRangeToQuery({ from: "2024-02-29", to: "2024-03-01" })).toEqual({
-      dateFrom: "2024-02-29T00:00:00.000Z",
-      dateTo: "2024-03-01T23:59:59.999Z",
+      start: "2024-02-29T00:00:00.000Z",
+      end: "2024-03-02T00:00:00.000Z",
     });
   });
 

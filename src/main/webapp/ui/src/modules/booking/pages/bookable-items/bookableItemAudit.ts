@@ -80,20 +80,20 @@ export function validateAuditDateRange(range: AuditDateRange): AuditDateValidati
   return { valid: true, range, dates: { from, to } };
 }
 
-export function auditRangeToQuery(range: AuditDateRange): { dateFrom: string; dateTo: string } {
+export function auditRangeToQuery(range: AuditDateRange): { start: string; end: string } {
   const validation = validateAuditDateRange(range);
   if (!validation.valid) throw new RangeError("Invalid audit date range");
   const { from, to } = validation.dates;
   return {
-    dateFrom: from.toISOString(),
-    dateTo: new Date(to.getTime() + DAY_MILLISECONDS - 1).toISOString(),
+    start: from.toISOString(),
+    end: new Date(to.getTime() + DAY_MILLISECONDS).toISOString(),
   };
 }
 
 export async function fetchBookingConfigurationAudit(input: {
   configurationId: number;
-  dateFrom?: string;
-  dateTo?: string;
+  start?: string;
+  end?: string;
   page: number;
   snapshot?: AuditSnapshot;
   token: string;
@@ -111,8 +111,8 @@ export async function fetchBookingConfigurationAudit(input: {
     page: String(input.page + 1),
     limit: String(AUDIT_PAGE_SIZE),
   });
-  if (input.dateFrom !== undefined) parameters.set("dateFrom", input.dateFrom);
-  if (input.dateTo !== undefined) parameters.set("dateTo", input.dateTo);
+  if (input.start !== undefined) parameters.set("start", input.start);
+  if (input.end !== undefined) parameters.set("end", input.end);
   if (input.snapshot !== undefined) {
     parameters.set("snapshotDate", input.snapshot.snapshotDate);
     parameters.set("snapshotFingerprint", input.snapshot.snapshotFingerprint);

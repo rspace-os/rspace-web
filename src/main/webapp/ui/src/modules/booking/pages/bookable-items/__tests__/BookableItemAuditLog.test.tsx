@@ -76,8 +76,8 @@ describe("BookableItemAuditLog", () => {
     const parameters = new URL(request?.url ?? "http://invalid").searchParams;
     expect(parameters.get("page")).toBe("1");
     expect(parameters.has("snapshotDate")).toBe(false);
-    expect(parameters.get("dateFrom")?.endsWith("T00:00:00.000Z")).toBe(true);
-    expect(parameters.get("dateTo")?.endsWith("T23:59:59.999Z")).toBe(true);
+    expect(parameters.get("start")?.endsWith("T00:00:00.000Z")).toBe(true);
+    expect(parameters.get("end")?.endsWith("T00:00:00.000Z")).toBe(true);
     expect(screen.getByText("booking:bookableItemDetails.audit.resultsThrough")).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.status.loaded");
     expect(screen.getAllByText("bookings:41")[0]).toBeVisible();
@@ -98,9 +98,9 @@ describe("BookableItemAuditLog", () => {
 
     await user.click(screen.getAllByRole("button", { name: "booking:bookableItemDetails.audit.lastDays" })[0]);
     await waitFor(() => expect(requests).toHaveLength(2));
-    const from = requests[1].searchParams.get("dateFrom");
-    const to = requests[1].searchParams.get("dateTo");
-    expect((Date.parse(to ?? "") - Date.parse(from ?? "") + 1) / 86_400_000).toBe(7);
+    const from = requests[1].searchParams.get("start");
+    const to = requests[1].searchParams.get("end");
+    expect((Date.parse(to ?? "") - Date.parse(from ?? "")) / 86_400_000).toBe(7);
     expect(requests[1].searchParams.has("snapshotDate")).toBe(false);
   });
 
