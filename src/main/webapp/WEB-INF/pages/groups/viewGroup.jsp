@@ -66,7 +66,7 @@
           </c:if>
         </shiro:hasRole>
           <shiro:hasRole name="ROLE_USER">
-              <c:if test="${group.isProjectGroup() and canEdit == true and group.owner == subject}">
+              <c:if test="${group.isProjectGroup() and canEdit == true and roleGroupOwner}">
                   <button id="deleteProjectGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.deleteGroup"/></button>
               </c:if>
           </shiro:hasRole>

@@ -327,7 +327,8 @@
   },
   "form": {
     "choiceOptions": {
-      "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters."
+      "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters.",
+      "label": "Choice options"
     },
     "errors": {
       "createMenuVersionMismatch": "Only the current version of a form can be added to the CreateMenu - this is version {0} of form {1}",

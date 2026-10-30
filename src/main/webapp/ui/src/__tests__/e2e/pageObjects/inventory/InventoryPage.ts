@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import type { ApiInventoryResultType } from "@/__tests__/e2e/api/models/inventoryRecordInfo";
 import { openDialog } from "@/__tests__/e2e/components/inventory/DialogHelpers";
 import { ExportDialogComponent } from "@/__tests__/e2e/components/inventory/ExportDialogComponent";
 import { IdentifierSettingsDialog } from "@/__tests__/e2e/components/inventory/IdentifierSettingsDialog";
@@ -11,7 +12,7 @@ import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObje
 import { BasePage } from "../BasePage";
 import { InventoryImportPage, type InventoryImportRecordType } from "./InventoryImportPage";
 
-type InventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
+export type InventoryRecordPathType = "container" | "sample" | "subsample" | "instrument";
 
 export class InventoryPage extends BasePage {
   readonly path = "/inventory";
@@ -38,17 +39,22 @@ export class InventoryPage extends BasePage {
     await this.isLoaded();
   }
 
-  async openSearch(resultType: InventoryResultType, parentGlobalId?: string): Promise<void> {
+  async openSearch(resultType: ApiInventoryResultType, parentGlobalId?: string): Promise<void> {
     const search = new URLSearchParams({ resultType });
     if (parentGlobalId) search.set("parentGlobalId", parentGlobalId);
     await this.page.goto(`${this.path}/search?${search}`);
     await this.isLoaded();
   }
 
-  async openRecord(resultType: InventoryResultType, name: string): Promise<void> {
+  async openRecord(resultType: ApiInventoryResultType, name: string): Promise<void> {
     await this.openSearch(resultType);
     await this.searchPanel.search(name);
     await this.searchPanel.open(name);
+  }
+
+  async openRecordById(type: InventoryRecordPathType, id: string | number): Promise<void> {
+    await this.page.goto(`${this.path}/${type}/${id}`);
+    await this.isLoaded();
   }
 
   async openInstrument(id: string | number): Promise<void> {

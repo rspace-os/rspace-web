@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 /**
  * Shape of the payload `MsTeamsMessageSender` posts to a Teams Workflows incoming webhook.

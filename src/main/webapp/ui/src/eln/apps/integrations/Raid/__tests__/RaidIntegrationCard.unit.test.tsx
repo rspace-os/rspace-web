@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse } from "msw";
+import { HttpResponse } from "msw/http";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -311,7 +311,8 @@ describe("RaidIntegrationCard", () => {
         variant: "error",
         title: "apps:integrations.raid.alerts.disconnectError",
       });
-      expect(alertArg.message).toContain("Failed to fetch");
+      // MSW 3 rejects with Node's native network TypeError message, not a browser's.
+      expect(alertArg.message).toContain("fetch failed");
       expect(disconnectButton()).toBeVisible();
     });
   });

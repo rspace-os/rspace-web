@@ -73,6 +73,9 @@
       },
       "limit": "(maximum of 10,000 events per download)"
     },
+    "errors": {
+      "listTooLong": "User, group and community lists must be {max} characters or fewer."
+    },
     "filter": {
       "communityPrompt": "Enter a Community to audit",
       "dateRangePrompt": "Date range to audit",

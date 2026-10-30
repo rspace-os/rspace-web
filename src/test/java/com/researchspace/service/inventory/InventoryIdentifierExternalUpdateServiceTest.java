@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -104,13 +103,18 @@ class InventoryIdentifierExternalUpdateServiceTest {
   @BeforeEach
   void setUp() {
     service.setTransactionManager(new NoOpTransactionManager());
-    // The enablement gate sits in front of every push, so it is a precondition of almost every test
-    // here rather than the subject of one. Lenient because the tests that never reach the gate (a
-    // blank record id or state is filtered before it) would otherwise fail as unnecessary stubbing.
-    // The gate itself is asserted by the two tests that switch a provider off.
-    lenient().when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
-    lenient()
-        .when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
+  }
+
+  /**
+   * The enablement gate sits in front of every push, so tests that reach it switch their provider
+   * on here. The gate itself is asserted by the two tests that switch a provider off.
+   */
+  private void b2instEnabled() {
+    when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
+  }
+
+  private void dataCiteEnabled() {
+    when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
         .thenReturn(true);
   }
 
@@ -183,6 +187,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void pushesFromTheRecordWhenTheCallersOwnViewCarriesNoIdentifiers() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -203,6 +208,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void reportsNothingToACallerWhoseViewHasNoIdentifierToDecorate() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -228,6 +234,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void theMetadataRebuildDemandsItsOwnReadOnlyTransaction() {
+    b2instEnabled();
     PlatformTransactionManager txManager = mock(PlatformTransactionManager.class);
     when(txManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
     service.setTransactionManager(txManager);
@@ -283,6 +290,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
   @Test
   void pushesADraftDataCiteDoiThroughThePidinstClient() {
+    dataCiteEnabled();
     expectPayloadBuildAndMessages();
     DataCiteDoi rebuilt = new DataCiteDoi();
     when(rspaceToExternalProviderAdapter.buildDataCiteDoi(
@@ -315,6 +323,11 @@ class InventoryIdentifierExternalUpdateServiceTest {
     "PIDINST_DATACITE,registered"
   })
   void explainsWhyAnIdentifierFrozenByItsStateWasNotPushed(String type, String state) {
+    if (IdentifierType.PIDINST_B2INST.name().equals(type)) {
+      b2instEnabled();
+    } else {
+      dataCiteEnabled();
+    }
     when(messages.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
             invocation ->
@@ -356,7 +369,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
-    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    verifyNoInteractions(
+        b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter, auditer);
     assertNull(doi.getExternalMetadataUpdate());
   }
 
@@ -404,6 +418,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"draft", "created", "submitted", "cancelled", "declined", "expired"})
   void pushesEveryB2instStateThatStillHasAWritableDraft(String state) {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     B2instDoi rebuilt = new B2instDoi();
@@ -430,6 +445,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"DRAFT", "Draft", " draft "})
   void stateComparisonIgnoresCaseAndSurroundingSpace(String state) {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -464,9 +480,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     assertThrows(NotFoundException.class, () -> service.pushMetadataUpdates(saved, user));
 
-    // not verifyNoInteractions: the enablement gate legitimately asks the connector first
-    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
-    verifyNoInteractions(auditer);
+    verifyNoInteractions(b2instConnector, auditer);
   }
 
   /**
@@ -476,6 +490,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void offersTheIdentifiersOwnPublicLandingPageToTheMapping() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -496,6 +511,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void reportsAB2instFailureWithTheProvidersOwnWordsAndDoesNotThrow() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -521,6 +537,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void abbreviatesAnOversizedProviderDetailBeforeItReachesTheUser() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     String oversized = "x".repeat(2000);
@@ -544,6 +561,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void reportsADataCiteFailureWithoutLeakingTheDeveloperMessage() {
+    dataCiteEnabled();
     expectPayloadBuildAndMessages();
     when(rspaceToExternalProviderAdapter.buildDataCiteDoi(
             any(ApiInventoryDOI.class), eq(instrument)))
@@ -565,6 +583,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
   @Test
   void auditsAFailedAttempt() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -659,6 +678,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void pushesOnlyTheEligibleIdentifierOfAMixedSet() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -678,6 +698,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
   /** Success is audited too, not only failure: the audit trail is the record of every attempt. */
   @Test
   void auditsASuccessfulAttempt() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -700,6 +721,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void collapsesWhitespaceAndLineBreaksInTheReason() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -723,6 +745,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    */
   @Test
   void aPayloadRebuildFailureIsReportedOnItsOwnIdentifierAndTheRestStillGo() {
+    b2instEnabled();
     expectPayloadBuildAndMessages();
     expectServerUrl();
     ApiInventoryDOI broken = identifier(IdentifierType.PIDINST_B2INST, "draft", "br-oken01");
@@ -752,8 +775,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
-    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
-    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter, auditer);
     assertNull(
         doi.getExternalMetadataUpdate(),
         "skipped silently, like an identifier of a disabled provider");

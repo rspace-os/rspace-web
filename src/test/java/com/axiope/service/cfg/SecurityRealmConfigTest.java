@@ -4,6 +4,7 @@ import static com.researchspace.auth.ApiRealm.API_REALM_NAME;
 import static com.researchspace.auth.ExternalAuthPassThruRealm.EXT_OAUTH_REAM_NAME;
 import static com.researchspace.auth.SSOPassThruRealm.SSO_REALM_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import com.researchspace.auth.GlobalInitSysadminRealm;
 import com.researchspace.auth.LdapRealm;
@@ -14,20 +15,15 @@ import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.wopi.WopiRealm;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.maintenance.service.MaintenanceManager;
-import com.researchspace.maintenance.service.WhiteListedIPAddressManager;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
-import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.SSOTestContext;
 import com.researchspace.testutils.WithSpringContext;
-import org.apache.shiro.cache.MemoryConstrainedCacheManager;
 import org.apache.shiro.mgt.RealmSecurityManager;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,79 +42,43 @@ public class SecurityRealmConfigTest {
       "securitytest") // needs to  define its own profile so that it doesn't pollute configuration
   // of other tests
   static class MockDependenciesConfig {
-    @Mock UserManager mgr;
-    @Mock MemoryConstrainedCacheManager ehCacheManager;
-    @Mock IPropertyHolder propertyHolder;
-    @Mock WhiteListedIPAddressManager ipMgr;
-    @Mock MaintenanceManager maintenanceMgr;
-    @Mock GroupManager grpMgr;
-    @Mock UserLdapRepo userLdapRepo;
-    @Mock UsernamePasswordCredentialsMatcher credentialsMatcher;
-    @Mock WhiteListIPChecker ipWhitelist;
-
-    @Mock OAuthAppManager oAuthAppManager;
-
-    @Bean
-    MemoryConstrainedCacheManager ehcacheManager() {
-      initMocks();
-      return ehCacheManager;
-    }
-
-    private void initMocks() {
-      MockitoAnnotations.openMocks(MockDependenciesConfig.class);
-    }
-
     @Bean
     UserManager userManager() {
-      initMocks();
-      return mgr;
+      return mock(UserManager.class);
     }
 
     @Bean
     WhiteListIPChecker whiteListIPChecker() {
-      initMocks();
-      return ipWhitelist;
+      return mock(WhiteListIPChecker.class);
     }
 
     @Bean
     GroupManager grpManager() {
-      initMocks();
-      return grpMgr;
+      return mock(GroupManager.class);
     }
 
     @Bean
     IPropertyHolder propertyHolder() {
-      initMocks();
-      return propertyHolder;
-    }
-
-    @Bean
-    WhiteListedIPAddressManager ipMgr() {
-      initMocks();
-      return ipMgr;
+      return mock(IPropertyHolder.class);
     }
 
     @Bean
     MaintenanceManager maintenanceMgr() {
-      initMocks();
-      return maintenanceMgr;
+      return mock(MaintenanceManager.class);
     }
 
     @Bean
     UserLdapRepo userLdapRepo() {
-      initMocks();
-      return userLdapRepo;
+      return mock(UserLdapRepo.class);
     }
 
     @Bean
     UsernamePasswordCredentialsMatcher credentialsMatcher() {
-      initMocks();
-      return credentialsMatcher;
+      return mock(UsernamePasswordCredentialsMatcher.class);
     }
   }
 
   @ActiveProfiles({"prod", "securitytest"})
-  // since updating to Spring 5 order seems important; MockDependencies has to be 1st.
   @ContextConfiguration(
       classes = {
         MockDependenciesConfig.class,

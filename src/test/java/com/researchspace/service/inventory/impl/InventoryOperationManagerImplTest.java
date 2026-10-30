@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -54,6 +53,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 
@@ -70,7 +70,6 @@ class InventoryOperationManagerImplTest {
 
   private InventoryOperationManagerImpl manager;
   private final User user = new User("anyUser");
-  private long nextParentSampleId = 900L;
 
   private static ApiInventoryOperationOriginUpdate origin(Long id, ApiQuantityInfo amountTaken) {
     ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
@@ -81,37 +80,39 @@ class InventoryOperationManagerImplTest {
   }
 
   private SubSample subSampleHolding(String value, int unitId) {
-    return subSampleHolding(value, unitId, nextParentSampleId++);
-  }
-
-  private SubSample subSampleHolding(String value, int unitId, long sampleId) {
     SubSample subSample = mock(SubSample.class);
     when(subSample.getQuantity())
         .thenReturn(value == null ? null : new QuantityInfo(new BigDecimal(value), unitId));
-    SampleEntity parent = mock(SampleEntity.class);
-    lenient().when(parent.getId()).thenReturn(sampleId);
-    lenient().when(subSample.getSample()).thenReturn(parent);
     return subSample;
   }
 
-  private void originHolds(long originId, SubSample subSample) {
+  private void originIsEditable(long originId, SubSample subSample) {
     when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
-    lenient().when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
+  }
+
+  private void originHolds(long originId, SubSample subSample) {
+    originIsEditable(originId, subSample);
+    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
+  }
+
+  /** What performOperation reads back once the operation has run. */
+  private void originReadsBack(long originId) {
     ApiSubSample mapped = new ApiSubSample();
     mapped.setId(originId);
-    lenient().when(subSampleApiMgr.getApiSubSampleById(originId, user)).thenReturn(mapped);
+    when(subSampleApiMgr.getApiSubSampleById(originId, user)).thenReturn(mapped);
   }
 
   @BeforeEach
   void setUp() {
-    org.springframework.context.MessageSource messages =
-        mock(org.springframework.context.MessageSource.class);
-    lenient()
-        .when(messages.getMessage(any(String.class), any(), any(String.class), any()))
-        .thenAnswer(invocation -> invocation.getArgument(2));
+    // LabelResolver passes each key as its own default, so with no messages defined
+    // assertions name the key
     manager =
         new InventoryOperationManagerImpl(
-            sampleApiMgr, subSampleApiMgr, messages, templateConformance, linkTargetResolver);
+            sampleApiMgr,
+            subSampleApiMgr,
+            new StaticMessageSource(),
+            templateConformance,
+            linkTargetResolver);
   }
 
   /** A creating request whose new sample is already stubbed to be created. */
@@ -238,7 +239,7 @@ class InventoryOperationManagerImplTest {
     existing.setId(55L);
     existing.setName(existingName);
     existing.setOperationFieldKey(existingKey);
-    SubSample live = subSampleHolding("2", 3, 1L);
+    SubSample live = subSampleHolding("2", 3);
     when(live.getActiveExtraFields()).thenReturn(List.of(existing));
     ApiInventoryOperationOriginUpdate origin =
         origin(100L, new ApiQuantityInfo(new BigDecimal("2"), 3));
@@ -266,7 +267,7 @@ class InventoryOperationManagerImplTest {
     ExtraField clashing = new ExtraLinkField();
     clashing.setId(55L);
     clashing.setName("  disposed  ");
-    SubSample live = subSampleHolding("2", 3, 1L);
+    SubSample live = subSampleHolding("2", 3);
     when(live.getActiveExtraFields()).thenReturn(List.of(clashing));
     ApiInventoryOperationOriginUpdate origin =
         origin(100L, new ApiQuantityInfo(new BigDecimal("2"), 3));
@@ -718,18 +719,27 @@ class InventoryOperationManagerImplTest {
 
   private static final int ML = RSUnitDef.MILLI_LITRE.getId();
 
-  private void serverBuiltOriginHolds(long originId, String value) {
+  /** An origin as performOperation snapshots it, which is all a rejected request reads. */
+  private SubSample serverBuiltOrigin(long originId, String value) {
     SubSample subSample = subSampleHolding(value, ML);
     // Every mock read happens BEFORE its when(): a mock call inside thenReturn is unfinished
     // stubbing.
     QuantityInfo quantity = subSample.getQuantity();
-    SampleEntity parent = subSample.getSample();
+    SampleEntity parent = mock(SampleEntity.class);
+    when(subSample.getSample()).thenReturn(parent);
     when(subSample.getQuantityInfo()).thenReturn(quantity);
     when(subSample.getGlobalIdentifier()).thenReturn("SS" + originId);
     when(subSample.getName()).thenReturn("Vial");
     when(parent.getActiveFields()).thenReturn(List.of());
     when(parent.getActiveExtraFields()).thenReturn(List.of());
-    originHolds(originId, subSample);
+    originIsEditable(originId, subSample);
+    return subSample;
+  }
+
+  private void serverBuiltOriginHolds(long originId, String value) {
+    SubSample subSample = serverBuiltOrigin(originId, value);
+    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
+    originReadsBack(originId);
   }
 
   // --- zero amounts: what "take nothing" means to each kind of operation ---
@@ -837,6 +847,7 @@ class InventoryOperationManagerImplTest {
     when(subSample.getName()).thenReturn("Orphan vial");
     when(subSample.getSample()).thenReturn(null);
     originHolds(100L, subSample);
+    originReadsBack(100L);
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
 
@@ -914,12 +925,6 @@ class InventoryOperationManagerImplTest {
   void theOriginsAfterComeBackInRequestOrderRegardlessOfProcessingOrder() throws Exception {
     serverBuiltOriginHolds(200L, "5");
     serverBuiltOriginHolds(100L, "5");
-    ApiSubSample after200 = new ApiSubSample();
-    after200.setId(200L);
-    ApiSubSample after100 = new ApiSubSample();
-    after100.setId(100L);
-    when(subSampleApiMgr.getApiSubSampleById(200L, user)).thenReturn(after200);
-    when(subSampleApiMgr.getApiSubSampleById(100L, user)).thenReturn(after100);
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Pooled"));
     ApiInventoryOperationRequests.Pool request =
@@ -960,7 +965,7 @@ class InventoryOperationManagerImplTest {
    */
   @Test
   void aValueRejectionWritesNothing() {
-    serverBuiltOriginHolds(100L, "5");
+    serverBuiltOrigin(100L, "5");
     ApiInventoryOperationRequests.Aliquot request =
         creating(
             new ApiInventoryOperationRequests.Aliquot(),
@@ -989,13 +994,14 @@ class InventoryOperationManagerImplTest {
     passageNumber.setData("9999");
     SubSample subSample = subSampleHolding("5", ML);
     QuantityInfo quantity = subSample.getQuantity();
-    SampleEntity parent = subSample.getSample();
+    SampleEntity parent = mock(SampleEntity.class);
+    when(subSample.getSample()).thenReturn(parent);
     when(subSample.getQuantityInfo()).thenReturn(quantity);
     when(subSample.getGlobalIdentifier()).thenReturn("SS100");
     when(subSample.getName()).thenReturn("Flask");
     when(parent.getActiveFields()).thenReturn(List.of());
     when(parent.getActiveExtraFields()).thenReturn(List.of(passageNumber));
-    originHolds(100L, subSample);
+    originIsEditable(100L, subSample);
 
     BindException rejection =
         assertThrows(
@@ -1019,7 +1025,7 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void anUnreadableDocumentationTargetIsRejectedOnTheFieldTheCallerSentIt() {
-    serverBuiltOriginHolds(100L, "5");
+    serverBuiltOrigin(100L, "5");
     ApiInventoryOperationRequests.Aliquot request =
         creating(
             new ApiInventoryOperationRequests.Aliquot(),

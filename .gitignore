@@ -75,7 +75,7 @@ samples/
 .factorypath
 .java-version
 src/main/webapp/ui/junit.xml
-src/main/webapp/ui/.vitest-reports
+src/main/webapp/ui/.vitest
 src/main/webapp/ui/coverage
 
 # other tooling
@@ -99,4 +99,4 @@ src/main/resources/deployments/dev/deployment.properties
 
 # Lucene index written by the HibernateTest-based model tests (Hibernate Search
 # local-filesystem backend rooted at the test db name)
-hibtest/
+hibtest*/

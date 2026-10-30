@@ -31,8 +31,28 @@ export class TransferDialogComponent {
     await this.page.getByRole("option", { name: new RegExp(`\\(${username}\\)`) }).click();
   }
 
+  /**
+   * Resolves once the transfer has been applied. The dialog closes as soon as Transfer is clicked
+   * while the app sends the request in the background, so the dialog closing proves nothing.
+   */
   async confirmTransfer(): Promise<void> {
-    await clickAndWaitDetached(this.transferButton, this.root);
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) => new URL(res.url()).pathname.endsWith("/api/inventory/v1/bulk") && res.request().method() === "POST",
+      ),
+      clickAndWaitDetached(this.transferButton, this.root),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Transfer failed: ${response.status()} ${await response.text()}`);
+    }
+    const body = (await response.json()) as {
+      status: string;
+      results: Array<{ error: { errors: string[] } | null }>;
+    };
+    if (body.status !== "COMPLETED") {
+      const errors = body.results.flatMap((result) => result.error?.errors ?? []);
+      throw new Error(`Transfer ${body.status}: ${errors.join("; ")}`);
+    }
   }
 
   async cancel(): Promise<void> {

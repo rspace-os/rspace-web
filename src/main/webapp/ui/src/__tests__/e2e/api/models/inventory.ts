@@ -1,10 +1,23 @@
+import type { ApiInventorySharedWith, ApiInventorySharingMode } from "./inventoryContainer";
 import type { ApiInventoryQuantity, ApiInventoryRecordInfo } from "./inventoryRecordInfo";
 
 export interface ApiInventorySample extends ApiInventoryRecordInfo {
+  owner: { username: string };
+  sharingMode: ApiInventorySharingMode;
+  sharedWith: ApiInventorySharedWith[] | null;
   subSamples: ApiInventorySubSample[];
 }
 
-export type ApiInventorySubSample = ApiInventoryRecordInfo;
+export interface ApiInventoryGridLocation {
+  coordX: number;
+  coordY: number;
+}
+
+export interface ApiInventorySubSample extends ApiInventoryRecordInfo {
+  deleted?: boolean;
+  parentContainers?: Array<{ id: number; globalId: string; name: string; cType: string }>;
+  parentLocation?: ApiInventoryGridLocation | null;
+}
 
 export interface ApiInventoryBarcode {
   data: string;
@@ -18,6 +31,12 @@ export interface ApiInventorySampleCreateRequest {
   barcodes?: ApiInventoryBarcode[];
   /** Sets each new subsample's starting quantity, e.g. { numericValue: 10, unitId: 7 } for 10 g. */
   quantity?: ApiInventoryQuantity;
+}
+
+export interface ApiListOfMaterialsCreateRequest {
+  name: string;
+  elnFieldId: number;
+  materials: Array<{ invRec: { id: number; type: "CONTAINER" | "SAMPLE" | "SUBSAMPLE" } }>;
 }
 
 export interface ApiInventoryIdentifierCreateRequest {
@@ -41,7 +60,35 @@ export interface ApiInventorySampleRevisions {
   revisions: Array<{ revisionId: number; revisionType: string; record: { version: number } }>;
 }
 
+export interface ApiInventorySearchResult {
+  totalHits: number;
+  records: ApiInventoryRecordInfo[];
+}
+
+export interface ApiInventoryBulkMoveRecord {
+  id: number;
+  globalId: string;
+  type: "SUBSAMPLE" | "CONTAINER";
+  parentContainers: [{ id: number }];
+  parentLocation?: ApiInventoryGridLocation;
+}
+
+export interface ApiInventoryBulkResult {
+  status: string;
+  successCount: number;
+  errorCount: number;
+  results: Array<{ record: ApiInventoryRecordInfo | null; error: { errors: string[] } | null }>;
+}
+
+export interface ApiInventoryAliquotRequest {
+  origin: { globalId: string; amountTaken: ApiInventoryQuantity };
+  sampleName: string;
+  count: number;
+  eachAmount: ApiInventoryQuantity;
+}
+
 export interface ApiInventorySubSampleMoveRequest {
   parentContainers: [{ id: number }];
-  parentLocation: { coordX: number; coordY: number };
+  /** Required for a grid container, omitted for a list container. */
+  parentLocation?: { coordX: number; coordY: number };
 }

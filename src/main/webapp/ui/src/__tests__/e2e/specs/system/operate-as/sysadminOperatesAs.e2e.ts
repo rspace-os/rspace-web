@@ -26,6 +26,77 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
     expect(await workspace.isOwnerVisible(user.fullName)).toBe(false);
   });
 
+  test("Releasing Operate As invalidates stale UI tokens in every tab", async ({
+    clientSysadmin,
+    flowSysadminGroupAdmin,
+  }) => {
+    const user = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eOperateAsTabs");
+    const { users, workspace } = flowSysadminGroupAdmin;
+    const page1 = workspace.browserPage;
+
+    await users.open();
+    const dialog = await users.clickOperateAs();
+    await dialog.setUser(user.username);
+    await dialog.submit(SYSADMIN.password);
+    await workspace.waitUntilLoaded();
+    await expect(workspace.operateAsBanner).toContainText(user.username);
+
+    const page2 = await page1.context().newPage();
+    try {
+      await page2.goto("/inventory/search?resultType=SAMPLE");
+      const inventorySearch = page2.getByRole("navigation", { name: "Search and Navigation" });
+      await inventorySearch.getByRole("searchbox", { name: "Search" }).waitFor();
+      const staleToken = await page2.evaluate(() => sessionStorage.getItem("id_token"));
+      expect(staleToken).toBeTruthy();
+
+      const staleTokenRejected = page2.waitForResponse(
+        (response) =>
+          response.url().endsWith("/api/v1/userDetails/whoami") &&
+          response.status() === 401 &&
+          response.request().headers().authorization === `Bearer ${staleToken}`,
+      );
+      const page2Reloaded = page2.waitForEvent("load");
+      await workspace.releaseOperateAs();
+      await inventorySearch.getByRole("searchbox", { name: "Search" }).fill("stale token");
+      await inventorySearch.getByRole("button", { name: "Search", exact: true }).first().click();
+      await staleTokenRejected;
+      await page2Reloaded;
+      await inventorySearch.getByRole("searchbox", { name: "Search" }).waitFor();
+      const page2WhoAmI = await page2.evaluate(async () => {
+        const token = sessionStorage.getItem("id_token");
+        const response = await fetch("/api/v1/userDetails/whoami", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        return { token, user: await response.json() };
+      });
+      expect(page2WhoAmI.token).not.toBe(staleToken);
+      expect(page2WhoAmI.user.username).toBe(SYSADMIN.username);
+
+      await page1.reload();
+      await page1.goto("/system");
+      await expect(page1.getByRole("grid", { name: "users" })).toBeVisible();
+
+      const page3 = await page1.context().newPage();
+      try {
+        await page3.goto("/workspace");
+        await page3.getByRole("button", { name: "Templates", exact: true }).waitFor();
+        const page3WhoAmI = await page3.evaluate(async () => {
+          const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken");
+          const { data: token } = await tokenResponse.json();
+          const response = await fetch("/api/v1/userDetails/whoami", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          return response.json();
+        });
+        expect(page3WhoAmI.username).toBe(SYSADMIN.username);
+      } finally {
+        await page3.close();
+      }
+    } finally {
+      await page2.close();
+    }
+  });
+
   test("Operate As rejects a wrong password or an unknown username", async ({
     clientSysadmin,
     flowSysadminGroupAdmin,

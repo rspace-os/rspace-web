@@ -1,19 +1,29 @@
 import type { Locator, Page } from "@playwright/test";
 
 export class MoreActionsMenu<TAction extends string> {
-  private isOpen = false;
+  private readonly menu: Locator;
 
   constructor(
     private readonly page: Page,
     private readonly button: Locator,
-  ) {}
+  ) {
+    this.menu = page.getByRole("menu").filter({ hasNotText: "Skip to Navigation" });
+  }
 
-  async open(): Promise<void> {
-    if (this.isOpen) {
+  async open({ timeout }: { timeout?: number } = {}): Promise<void> {
+    if (await this.menu.isVisible()) {
       return;
     }
-    await this.button.click();
-    this.isOpen = true;
+    await this.button.click({ timeout });
+    await this.menu.waitFor({ state: "visible", timeout });
+  }
+
+  async close({ timeout }: { timeout?: number } = {}): Promise<void> {
+    if (!(await this.menu.isVisible())) {
+      return;
+    }
+    await this.page.keyboard.press("Escape");
+    await this.menu.waitFor({ state: "hidden", timeout });
   }
 
   item(name: TAction): Locator {
@@ -23,7 +33,6 @@ export class MoreActionsMenu<TAction extends string> {
   async click(name: TAction): Promise<void> {
     await this.open();
     await this.item(name).click();
-    this.isOpen = false;
   }
 
   async clickDirectOrFallback(directButton: Locator, name: TAction, directButtonTimeout = 5_000): Promise<void> {

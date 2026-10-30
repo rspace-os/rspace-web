@@ -127,6 +127,18 @@ The design and its trade-offs are in
   the same busy handling and security logging but never substitutes an
   operating-as sysadmin.
 
+### Browser API tokens
+
+UI OAuth tokens require an active browser session and must match its current
+Shiro principal, including the identity selected by Operate As. The username
+match ignores case, because usernames are unique ignoring case and an LDAP
+principal keeps the directory's casing. They cannot restore an expired session. An API request after browser session expiry sends
+the user to login; public document views reload their public URL to restore
+anonymous access. An expired token with an active session can be refreshed for
+the same user without losing page state. Only GET requests retry automatically;
+pending writes fail without replay. API keys and external OAuth clients retain
+their stateless authentication behavior.
+
 ## Authorization
 
 Authorization is configured at several levels:
@@ -213,6 +225,22 @@ a resource, we should be checking for permissions, even if this is
 configured at the URL path level. If permission check returns false,
 it's generally OK to throw an `AuthorisationException`.
 
+#### System-property feature switches
+
+Some features can be switched off by a sysadmin through a system setting,
+for example self-service Lab Groups (`self_service_labgroups`) or Project
+Groups (`allow_project_groups`).
+
+Hiding a menu entry does not switch a feature off, because a user can
+still send the request directly. The controller that performs the action
+should check the setting itself, using `SystemPropertyPermissionManager`.
+
+Use the variant of the check that takes the user, so that settings made by
+community admins are taken into account as well as the sysadmin's.
+
+When the setting is off, throw an `AuthorizationException`, so that the
+attempt is recorded in the security log.
+
 #### Refreshing permissions
 
 Some permissions are dynamic. For example, sharing a record with a user
@@ -231,6 +259,15 @@ Security events and exceptions should be logged by a security logger
 (defined in `log4j2.xml`). By default, any `AuthorizationExceptions` thrown
 out of a controller will be logged correctly using the
 `ControllerExceptionHandler` wired into controllers.
+
+## ZAP pull request scans
+
+`.github/workflows/zap-pr.yml` builds each PR's WAR without secrets.
+`.github/workflows/zap-pr-scan.yml` then scans it from the default branch, so
+changes to the scan take effect only after they merge.
+
+The scan enables production CSRF and CORS settings over the development `csrf.filters.enabled=true` and `api.permissiveCors.enabled=false`
+template. Keep them when changing the scan setup.
 
 ## Sorting paginated listings
 
