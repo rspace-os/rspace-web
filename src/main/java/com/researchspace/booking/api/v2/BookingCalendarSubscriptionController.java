@@ -105,7 +105,6 @@ public class BookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })
   public ResponseEntity<StatusDocument> get(
@@ -150,7 +149,6 @@ public class BookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
         @ApiResponse(responseCode = "409", description = "The item is archived.")
       })
@@ -184,12 +182,10 @@ public class BookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
-        @ApiResponse(
-            responseCode = "409",
-            description = "The item is archived, or the subscription is missing or changed."),
+        @ApiResponse(responseCode = "409", description = "The item is archived."),
         @ApiResponse(responseCode = "400", description = "Invalid If-Match."),
+        @ApiResponse(responseCode = "412", description = "The subscription is missing or changed."),
         @ApiResponse(responseCode = "428", description = "If-Match is required.")
       })
   public ResponseEntity<CreatedDocument> rotate(
@@ -226,7 +222,6 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "204", description = "The subscription is inactive."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })
   public ResponseEntity<Void> revoke(

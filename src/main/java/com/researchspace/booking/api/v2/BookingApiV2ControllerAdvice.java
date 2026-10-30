@@ -88,7 +88,8 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
 
   @ExceptionHandler(UserSubscriptionConflictException.class)
   public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
-    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingCalendar.subscriptionConflict");
+    return problem(
+        HttpStatus.PRECONDITION_FAILED, "errors.api.v2.bookingCalendar.subscriptionConflict");
   }
 
   @ExceptionHandler(BookingNotificationSubscriptionConflictException.class)

@@ -311,7 +311,7 @@ describe("CalendarSubscriptionPopover", () => {
         );
       }),
       http.post(`${path}/rotate`, () =>
-        HttpResponse.json({ status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" }, { status: 409 }),
+        HttpResponse.json({ status: 412, code: "errors.api.v2.bookingCalendar.subscriptionConflict" }, { status: 412 }),
       ),
     );
     renderPopover();
@@ -349,8 +349,8 @@ describe("CalendarSubscriptionPopover", () => {
         // Another tab disconnected the link before this replace arrived.
         active = false;
         return HttpResponse.json(
-          { status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" },
-          { status: 409 },
+          { status: 412, code: "errors.api.v2.bookingCalendar.subscriptionConflict" },
+          { status: 412 },
         );
       }),
       http.post(path, () => {

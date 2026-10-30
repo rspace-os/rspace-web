@@ -566,7 +566,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private void requireFeatureEnabled(User subject) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new BookingCalendarNotFoundException();
     }
   }
 
