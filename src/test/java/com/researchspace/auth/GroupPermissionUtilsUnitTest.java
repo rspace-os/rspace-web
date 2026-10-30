@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.dao.CommunityDao;
+import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.Role;
@@ -13,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +26,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class GroupPermissionUtilsUnitTest {
 
+  private static final Long COMMUNITY_ID = 5L;
+
   @Mock private IPermissionUtils permissionUtils;
+  @Mock private CommunityDao communityDao;
 
   @InjectMocks private GroupPermissionUtils groupPermUtils;
 
@@ -67,13 +73,44 @@ class GroupPermissionUtilsUnitTest {
   }
 
   @Test
-  void sysadminAndCommunityAdminCanAlterCollabGroupRoles() {
+  void sysadminCanAlterCollabGroupRoles() {
     makeCollaborationGroup();
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin1411", Role.SYSTEM_ROLE.getName());
-    User commAdmin = TestFactory.createAnyUserWithRole("admin1411", Role.ADMIN_ROLE.getName());
 
     assertTrue(groupPermUtils.subjectCanAlterGroupRole(group, sysadmin, member));
+    verifyNoInteractions(permissionUtils, communityDao);
+  }
+
+  @Test
+  void communityAdminCanAlterCollabGroupRolesWhenAPiLabIsInTheirCommunity() {
+    makeCollaborationGroup();
+    Group otherPiLab = TestFactory.createAnyGroup(otherPi);
+    otherPiLab.setCommunityId(COMMUNITY_ID);
+    User commAdmin = TestFactory.createAnyUserWithRole("admin1411", Role.ADMIN_ROLE.getName());
+    when(communityDao.listCommunitiesForAdmin(commAdmin.getId()))
+        .thenReturn(List.of(communityWithId(COMMUNITY_ID)));
+
     assertTrue(groupPermUtils.subjectCanAlterGroupRole(group, commAdmin, member));
+    verifyNoInteractions(permissionUtils);
+  }
+
+  @Test
+  void communityAdminCannotAlterCollabGroupRolesWithNoPiLabInTheirCommunity() {
+    makeCollaborationGroup();
+    Group otherPiLab = TestFactory.createAnyGroup(otherPi);
+    otherPiLab.setCommunityId(COMMUNITY_ID + 1);
+    User commAdmin = TestFactory.createAnyUserWithRole("admin1411", Role.ADMIN_ROLE.getName());
+    when(communityDao.listCommunitiesForAdmin(commAdmin.getId()))
+        .thenReturn(List.of(communityWithId(COMMUNITY_ID)));
+
+    assertFalse(groupPermUtils.subjectCanAlterGroupRole(group, commAdmin, member));
+    verifyNoInteractions(permissionUtils);
+  }
+
+  private Community communityWithId(Long id) {
+    Community community = new Community();
+    community.setId(id);
+    return community;
   }
 
   @Test
