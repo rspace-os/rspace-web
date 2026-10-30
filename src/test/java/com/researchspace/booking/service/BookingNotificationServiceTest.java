@@ -146,7 +146,8 @@ class BookingNotificationServiceTest {
             INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
         .thenReturn(
             List.of(
-                new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"), false)));
+                new BookingNotificationRecipient(
+                    recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.H12, false)));
 
     service.notify(booking, actor, notificationType);
 

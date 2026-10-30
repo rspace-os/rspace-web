@@ -344,12 +344,9 @@ class BookingSettingsControllerMVCIT {
           .perform(
               patch("/api/v2/booking-settings/admin")
                   .header("apiKey", fixture.sysadminKey())
+                  .header("If-Match", "\"" + before.getConfigurationVersion() + "\"")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(
-                      """
-                      {"timeFormat":%s,"configurationVersion":%d}
-                      """
-                          .formatted(invalid, before.getConfigurationVersion())))
+                  .content("{\"timeFormat\":%s}".formatted(invalid)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     }

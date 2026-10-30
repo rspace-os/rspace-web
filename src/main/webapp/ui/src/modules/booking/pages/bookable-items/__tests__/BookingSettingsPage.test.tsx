@@ -39,7 +39,9 @@ describe("BookingSettingsPage", () => {
       let current = { ...settings, timeFormat: initial };
       server.use(
         oauthTokenHandler(true),
-        http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } })),
+        http.get("/api/v2/booking-settings/admin", () =>
+          HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+        ),
         http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
           const body = (await request.json()) as Record<string, unknown>;
           expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
