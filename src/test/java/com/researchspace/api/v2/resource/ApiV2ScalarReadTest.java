@@ -120,7 +120,7 @@ class ApiV2ScalarReadTest {
                 Map.of("SF1", "selected")),
             Map.of("id", 8L, "name", "two", "customFields", Map.of())),
         result.docs());
-    assertEquals(5L, result.totalDocs());
+    org.junit.jupiter.api.Assertions.assertNull(result.totalDocs());
     verify(provider, never()).valuesForAuthorizedIds(any(), any(), any());
     verify(provider).valuesForIds(List.of(7L, 8L), Set.of("SF1"), actor);
     verify(provider, never()).values(any(), any(), any());

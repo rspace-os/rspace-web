@@ -25,6 +25,34 @@ class InstrumentQueryCountMVCIT extends SpringTransactionalTest {
   }
 
   @Test
+  void instrumentSliceNavigationAndOptInCount() throws Exception {
+    var owner = createInitAndLoginAnyUser();
+    for (int i = 0; i < 5; i++) createBasicInstrumentForUser(owner, "Slice scope " + i);
+    sessionFactory.getCurrentSession().flush();
+    var mvc = MockMvcBuilders.standaloneSetup(new ApiV2CrudController(catalog)).build();
+    for (int page : List.of(1, 2, 3, 4, Integer.MAX_VALUE)) {
+      var request =
+          get("/api/v2/instruments")
+              .param("where", "name=contains='Slice scope'")
+              .param("limit", "2")
+              .param("page", Integer.toString(page))
+              .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(owner));
+      mvc.perform(request)
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").doesNotExist())
+          .andExpect(jsonPath("$.totalPages").doesNotExist())
+          .andExpect(jsonPath("$.hasNextPage").value(page < 3))
+          .andExpect(jsonPath("$.hasPrevPage").value(page > 1));
+      mvc.perform(request.param("totals", "true"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(5))
+          .andExpect(jsonPath("$.totalPages").value(3))
+          .andExpect(jsonPath("$.hasNextPage").value(page < 3))
+          .andExpect(jsonPath("$.hasPrevPage").value(page > 1 && page <= 3));
+    }
+  }
+
+  @Test
   void listQueryCountDoesNotGrowWithPageSizeAtAnyDepth() throws Exception {
     var owner = createInitAndLoginAnyUser();
     for (int i = 0; i < 5; i++) {

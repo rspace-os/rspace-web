@@ -15,6 +15,11 @@ public class ApiV2CollectionQuery extends ApiV2PaginationCriteria {
 
   private String sort;
 
+  @io.swagger.v3.oas.annotations.media.Schema(
+      description = "Include totalDocs and totalPages. Defaults to false.",
+      defaultValue = "false")
+  private boolean totals;
+
   @Min(value = 0, message = "{errors.api.v2.depth.min}")
   @Max(value = CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH, message = "{errors.api.v2.depth.max}")
   private int depth;

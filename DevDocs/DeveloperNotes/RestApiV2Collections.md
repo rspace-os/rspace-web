@@ -562,3 +562,9 @@ coercions fail, including floating-point tokens such as `15.0` for integral
 fields. Collection field codecs retain their existing numeric rules. Required
 and nullable fields on HTTP records remain governed by their validation
 annotations, so partial settings updates and validation messages are preserved.
+
+Collection lists omit `totalDocs` and `totalPages` unless `totals=true` is supplied.
+Use `hasNextPage` and `nextPage` to traverse results. Without totals, `prevPage` is
+available on every page after page 1, including pages past the end. Instruments
+fetch a scalar window plus one row to determine whether another page exists;
+resources without a scalar slice retain their counted query internally.

@@ -83,6 +83,31 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
+  public com.researchspace.model.collection.ResourceSlice<InstrumentReadSummary>
+      getReadableResourceSummarySlice(ResourceRequest request, AccessResult access) {
+    if (access.isDenied()) {
+      return new com.researchspace.model.collection.ResourceSlice<>(List.of(), false);
+    }
+    com.researchspace.model.collection.ResourceSlice<InstrumentScalarRow> rows =
+        COLLECTION_QUERY.projectedSlice(
+            criteriaBuilderFactory(),
+            getSession(),
+            request,
+            access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+            RelationshipReadAccess.none(),
+            InstrumentScalarRow.class,
+            List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
+    return new com.researchspace.model.collection.ResourceSlice<>(
+        rows.resources().stream()
+            .map(
+                row ->
+                    new InstrumentReadSummary(
+                        row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
+            .toList(),
+        rows.hasNext());
+  }
+
+  @Override
   public long countReadableResources(ResourceRequest request, AccessResult access) {
     return countReadableResources(COLLECTION_QUERY, request, access);
   }
