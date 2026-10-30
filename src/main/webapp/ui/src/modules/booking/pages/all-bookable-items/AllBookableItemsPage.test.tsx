@@ -222,8 +222,8 @@ describe("AllBookableItemsPage", () => {
       http.put("/api/v2/users/me/booking-notification-subscriptions", async ({ request }) => {
         const body = (await request.json()) as { configurationIds: number[]; enabled: boolean };
         updateBody = body;
-        return HttpResponse.json(
-          body.configurationIds.map((configurationId) => ({
+        return HttpResponse.json({
+          docs: body.configurationIds.map((configurationId) => ({
             configurationId,
             enabled: body.enabled,
             version: 1,
@@ -231,7 +231,7 @@ describe("AllBookableItemsPage", () => {
             cancelledEnabled: true,
             emailEnabled: false,
           })),
-        );
+        });
       }),
       ...bookableItemsHandlers(() => undefined),
     );
