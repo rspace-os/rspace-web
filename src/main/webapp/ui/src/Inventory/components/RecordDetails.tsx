@@ -1,9 +1,9 @@
 import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
-import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useContext } from "react";
 import { useTranslation } from "react-i18next";
+import { sanitizeInventoryRichText } from "@/components/Inputs/inventoryRichText";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import DescriptionList from "../../components/DescriptionList";
@@ -107,7 +107,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
                     value: (
                       <span
                         dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(record.recordDetails.description, { ADD_ATTR: ["target"] }),
+                          __html: sanitizeInventoryRichText(record.recordDetails.description),
                         }}
                       ></span>
                     ),
@@ -199,10 +199,6 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
               width: "100%",
               wordBreak: "break-word",
               overflowWrap: "anywhere",
-            },
-            "& dd.below img": {
-              maxWidth: "100%",
-              height: "auto",
             },
           }}
         />
