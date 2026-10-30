@@ -170,7 +170,7 @@ public final class ApiV2AuditLog {
                   actor,
                   resultCeiling,
                   resource.auditBypassesActorDirectory(),
-                  query.getSearch(),
+                  query.getQ(),
                   searchableAuditFields(
                       resource.description(),
                       target.readableFields(),

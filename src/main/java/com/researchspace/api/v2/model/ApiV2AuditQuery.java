@@ -24,7 +24,7 @@ public final class ApiV2AuditQuery extends ApiV2PaginationCriteria {
   private Set<AuditAction> actions = new HashSet<>();
 
   @Size(max = 255)
-  private String search;
+  private String q;
 
   private String snapshotDate;
 
