@@ -575,7 +575,9 @@ class BookingCalendarSubscriptionControllerMVCIT {
     long groupId =
         new TransactionTemplate(transactionManager)
             .execute(ignored -> userManager.get(pi.getId()).getGroups().iterator().next().getId());
-    long configurationId = readableConfiguration();
+    long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
+    setInventorySharingMode(instrumentId, ApiInventorySharingMode.OWNER_GROUPS, fixture.user());
+    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     String oldUrl = create(configurationId, fixture.otherUserKey());
     RSpaceTestUtils.login(pi.getUsername(), BaseManagerTestCaseBase.TESTPASSWD);
     try {
