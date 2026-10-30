@@ -62,6 +62,9 @@ Examples:
 ?fields[widgets]=name,enabled
 ```
 
+The OpenAPI fieldset parameters include nested relationship targets, so a depth-2 read can name
+`fields[instruments]` and `fields[containers]` in the same request.
+
 Responses always contain the ID. Field access rules can hide fields, which clients cannot use in
 `where` or `sort`.
 
