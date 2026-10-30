@@ -295,7 +295,8 @@
         "label": "Notify me when"
       },
       "title": "Messaging and Notification Preferences",
-      "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own"
+      "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own",
+      "bookingOwnActions": "Notify me about my own booking changes"
     },
     "messageSettingsChanged": {
       "confirmation": "Message preferences updated"

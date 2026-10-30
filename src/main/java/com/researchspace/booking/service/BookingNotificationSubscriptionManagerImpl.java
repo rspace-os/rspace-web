@@ -66,17 +66,23 @@ public class BookingNotificationSubscriptionManagerImpl
   @Transactional(readOnly = true)
   public Preferences getPreferences(User subject, User actor) {
     requireAccess(subject, actor);
-    return new Preferences(autoSubscribe(subject));
+    return new Preferences(
+        autoSubscribe(subject), preferenceEnabled(subject, Preference.BOOKING_NOTIFY_OWN_ACTIONS));
   }
 
   @Override
-  public Preferences replacePreferences(boolean autoSubscribeOwnedItems, User subject, User actor) {
+  public Preferences replacePreferences(
+      boolean autoSubscribeOwnedItems, boolean notifyOwnActions, User subject, User actor) {
     requireAccess(subject, actor);
     userManager.setPreference(
         Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS,
         Boolean.toString(autoSubscribeOwnedItems),
         subject.getUsername());
-    return new Preferences(autoSubscribeOwnedItems);
+    userManager.setPreference(
+        Preference.BOOKING_NOTIFY_OWN_ACTIONS,
+        Boolean.toString(notifyOwnActions),
+        subject.getUsername());
+    return new Preferences(autoSubscribeOwnedItems, notifyOwnActions);
   }
 
   @Override

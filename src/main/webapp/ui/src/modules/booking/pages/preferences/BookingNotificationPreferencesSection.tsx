@@ -12,6 +12,7 @@ import {
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
+import { Switch } from "@/modules/common/ui/switch";
 import { Heading } from "@/modules/common/ui/typography";
 import {
   BookingNotificationChoiceFields,
@@ -46,7 +47,9 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
       await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
     },
   });
-  const dirty = isDirty(form);
+  const [ownActions, setOwnActions] = useState<boolean>();
+  const notifyOwnActions = ownActions ?? preferences.notifyOwnActions;
+  const dirty = isDirty(form) || ownActions !== undefined;
   const pending = replace.isPending;
 
   useEffect(() => {
@@ -64,10 +67,12 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         onSubmit={(input) => {
           replace.reset();
           replace.mutate(
-            { autoSubscribeOwnedItems: input.choice === "ON" },
+            { autoSubscribeOwnedItems: input.choice === "ON", notifyOwnActions },
             {
-              onSuccess: (saved) =>
-                reset(form, { initialInput: bookingNotificationChoice(saved.autoSubscribeOwnedItems) }),
+              onSuccess: (saved) => {
+                reset(form, { initialInput: bookingNotificationChoice(saved.autoSubscribeOwnedItems) });
+                setOwnActions(undefined);
+              },
             },
           );
         }}
@@ -78,6 +83,24 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
           descriptionKey="notificationSubscriptions.preferences.autoSubscribe.description"
           disabled={pending}
         />
+        <div className="space-y-2">
+          <label htmlFor="notify-own-actions" className="flex items-center gap-3">
+            <Switch
+              id="notify-own-actions"
+              checked={notifyOwnActions}
+              disabled={pending}
+              aria-describedby="own-actions-help"
+              onCheckedChange={(checked) => {
+                replace.reset();
+                setOwnActions(checked === preferences.notifyOwnActions ? undefined : checked);
+              }}
+            />
+            {t("notificationSubscriptions.preferences.ownActions.label")}
+          </label>
+          <p id="own-actions-help" className="text-sm text-muted-foreground">
+            {t("notificationSubscriptions.preferences.ownActions.description")}
+          </p>
+        </div>
         {replace.isError ? (
           <p role="alert" className="text-sm text-destructive">
             {t("notificationSubscriptions.preferences.saveError")}
@@ -90,6 +113,19 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         ) : null}
         <Button type="submit" size="sm" disabled={pending || !dirty} aria-busy={pending}>
           {t(pending ? "notificationSubscriptions.preferences.saving" : "notificationSubscriptions.preferences.save")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pending || !dirty}
+          onClick={() => {
+            reset(form, { initialInput: bookingNotificationChoice(preferences.autoSubscribeOwnedItems) });
+            setOwnActions(undefined);
+            replace.reset();
+          }}
+        >
+          {t("notificationSubscriptions.preferences.cancel")}
         </Button>
       </Form>
       <div className="space-y-3 rounded-sm border p-4">

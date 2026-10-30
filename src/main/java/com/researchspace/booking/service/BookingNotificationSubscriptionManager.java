@@ -7,7 +7,7 @@ import java.util.List;
 /** Manages personal booking-notification preferences and instrument subscriptions. */
 public interface BookingNotificationSubscriptionManager {
 
-  record Preferences(boolean autoSubscribeOwnedItems) {}
+  record Preferences(boolean autoSubscribeOwnedItems, boolean notifyOwnActions) {}
 
   /**
    * Version -1 means no saved row; nonnegative versions identify persisted rows. {@code enabled} is
@@ -25,8 +25,13 @@ public interface BookingNotificationSubscriptionManager {
   /** Returns the current subject's default for future owned instruments. */
   Preferences getPreferences(User subject, User actor);
 
-  /** Replaces only the current subject's future default. */
-  Preferences replacePreferences(boolean autoSubscribeOwnedItems, User subject, User actor);
+  /**
+   * Replaces the current subject's notification preferences.
+   *
+   * @param notifyOwnActions whether subscribed events caused by the subject notify them
+   */
+  Preferences replacePreferences(
+      boolean autoSubscribeOwnedItems, boolean notifyOwnActions, User subject, User actor);
 
   /** Reads one visible configuration's personal subscription and effective event delivery. */
   Status get(long configurationId, User subject, User actor);

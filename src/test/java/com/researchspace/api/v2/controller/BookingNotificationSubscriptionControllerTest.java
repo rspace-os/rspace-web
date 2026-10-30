@@ -68,21 +68,25 @@ class BookingNotificationSubscriptionControllerTest {
 
   @Test
   void routesDefaultToEffectiveSubjectAndRetainsActor() throws Exception {
-    when(manager.replacePreferences(false, subject, actor)).thenReturn(new Preferences(false));
+    when(manager.replacePreferences(false, false, subject, actor))
+        .thenReturn(new Preferences(false, false));
     mvc.perform(
             put(DEFAULTS)
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":false}"))
+                .content("{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":false}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false));
-    verify(manager).replacePreferences(false, subject, actor);
+    verify(manager).replacePreferences(false, false, subject, actor);
   }
 
   @ParameterizedTest
   @ValueSource(
       strings = {
         "{}",
+        "{\"autoSubscribeOwnedItems\":true}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":null}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":\"false\"}",
         "{\"autoSubscribeOwnedItems\":null}",
         "{\"autoSubscribeOwnedItems\":\"false\"}",
         "{\"autoSubscribeOwnedItems\":0}",

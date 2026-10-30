@@ -115,6 +115,36 @@ class BookingNotificationServiceTest {
     assertEquals(expectedMessage, message.getValue());
   }
 
+  @ParameterizedTest
+  @EnumSource(
+      value = NotificationType.class,
+      names = {"NOTIFICATION_BOOKING_CREATED", "NOTIFICATION_BOOKING_CANCELLED"})
+  void deliversSelfTargetedNotificationToCommunicationManager(NotificationType notificationType) {
+    User actor = user(1L, "actor");
+    User recipient = actor;
+    Instrument instrument = instrument("<Mic & scope>");
+    TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
+    when(recipientReader.selectRecipients(
+            INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
+        .thenReturn(
+            List.of(
+                new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"), false)));
+
+    service.notify(booking, actor, notificationType);
+
+    ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
+    ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), message.capture());
+
+    assertEquals(notificationType, config.getValue().getNotificationType());
+    assertEquals(true, config.getValue().isBroadcast());
+    assertEquals(CommunicationNotifyPolicy.ALWAYS_NOTIFY, config.getValue().getPolicyOverride());
+    assertEquals(false, config.getValue().isRecordAuthorisationRequired());
+    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
+    assertEquals(Set.of(recipient), config.getValue().getNotificationTargetsOverride());
+  }
+
   @Test
   void sendsSeparateMessagesUsingEachSelectedRecipientsZone() {
     User actor = user(1L, "actor");

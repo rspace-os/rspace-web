@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
@@ -26,12 +27,24 @@ describe("BookingPreferencesPage", () => {
         return HttpResponse.json({ updatedCount: 3 });
       }),
     );
-    renderPage();
+    const { container } = renderPage();
 
+    const ownActions = await screen.findByRole("switch", {
+      name: "booking:notificationSubscriptions.preferences.ownActions.label",
+    });
+    expect(ownActions).toBeChecked();
+    expect(ownActions).toHaveAccessibleDescription(
+      "booking:notificationSubscriptions.preferences.ownActions.description",
+    );
+    await expectAccessible(container);
+    await user.click(ownActions);
+    await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.cancel" }));
+    expect(ownActions).toBeChecked();
+    await user.click(ownActions);
     await user.click(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" }));
     await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
     expect(await screen.findByRole("status")).toHaveTextContent("booking:notificationSubscriptions.preferences.saved");
-    expect(saved).toEqual({ autoSubscribeOwnedItems: true });
+    expect(saved).toEqual({ notifyOwnActions: false, autoSubscribeOwnedItems: true });
 
     await user.click(
       screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),

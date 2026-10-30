@@ -913,8 +913,13 @@
         "description": "This applies to new bookable instruments you own. It does not change existing subscriptions.",
         "label": "Automatically subscribe to new instruments I own"
       },
+      "cancel": "Cancel",
       "existingSubscriptions": {
         "description": "Unsubscribe from every instrument. This keeps your automatic default and My Profile settings."
+      },
+      "ownActions": {
+        "description": "Applies to instruments you are subscribed to. Your booking-created and booking-cancelled notification choices still apply.",
+        "label": "Also notify me about bookings I create or cancel myself"
       },
       "save": "Save",
       "saved": "Notification preference saved.",

@@ -85,6 +85,21 @@ class BookingNotificationSubscriptionManagerTest {
   }
 
   @Test
+  void preferencesDefaultOwnActionsOnAndPersistBothChoices() {
+    when(userManager.getPreferenceForUser(owner, Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS))
+        .thenReturn(owner.getValueForPreference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS));
+    when(userManager.getPreferenceForUser(owner, Preference.BOOKING_NOTIFY_OWN_ACTIONS))
+        .thenReturn(owner.getValueForPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS));
+    assertTrue(manager.getPreferences(owner, actor).notifyOwnActions());
+    assertFalse(manager.replacePreferences(true, false, owner, actor).notifyOwnActions());
+    verify(userManager)
+        .setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
+    verify(userManager)
+        .setPreference(
+            Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, "true", owner.getUsername());
+  }
+
+  @Test
   void initializationSnapshotsDefaultOffButNeverOverwritesAnExplicitOptOut() {
     when(userManager.getPreferenceForUser(owner, Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS))
         .thenReturn(

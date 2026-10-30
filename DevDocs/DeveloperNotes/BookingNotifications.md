@@ -27,7 +27,12 @@ turned off. A requester who also subscribes receives just one notification.
 The My Profile email preference still gates every email, including requester cancellations.
 The requester override bypasses only the event preference in notification creation; it never
 bypasses `BROADCAST_NOTIFICATIONS_BY_EMAIL` in the email broadcaster.
-Self-actions, maintenance and rescheduling do not notify. Notification persistence remains
+Subscribers receive notifications about their own booking creations and cancellations by default.
+The Booking-only `BOOKING_NOTIFY_OWN_ACTIONS` preference can disable these self-action notifications.
+Enabled subscription, matching event preference, active account, Booking access and target read access
+still apply; email follows `BROADCAST_NOTIFICATIONS_BY_EMAIL`. A requester cancelling their own
+booking is selected only as a subscriber. Archiving your own instrument retains one cancellation
+notification per cancelled booking. Maintenance and rescheduling do not notify. Notification persistence remains
 inside the booking transaction and external delivery remains after commit.
 
 ## API
@@ -37,10 +42,10 @@ the setting; request bodies never accept a user ID.
 
 | Method | Route | Payload / result |
 | --- | --- | --- |
-| GET / PUT | `/users/me/booking-notification-preferences` | `{autoSubscribeOwnedItems: boolean}` |
+| GET / PUT | `/users/me/booking-notification-preferences` | `{autoSubscribeOwnedItems: boolean, notifyOwnActions: boolean} (both required on PUT)` |
 | GET | `/booking-configurations/{id}/notification-subscription` | Saved subscription, version and effective event delivery |
 | PUT | Same | `{enabled: boolean, version: number}`; stale version returns 409 |
-| POST | `/users/me/booking-notification-subscriptions/lookup` | `{configurationIds: number[]}`; current-user subscription documents |
+| POST | `/users/me/booking-notification-subscriptions/lookup` | `{configurationIds: number[]}`; `{docs: [...]}` current-user subscription documents |
 | PUT | `/users/me/booking-notification-subscriptions` | `{configurationIds: number[], enabled: boolean}`; explicit bulk choice |
 | DELETE | Same | Unsubscribe from all instruments; returns `{updatedCount: number}` |
 
@@ -77,7 +82,7 @@ notification column, per-row toggle, or access-lost panel.
 
 `BookingNotificationService` notifies eligible subscribers after creation and cancellation,
 including archive-triggered cancellations. Maintenance, ordinary edits, repeated cancellations,
-deleted instruments and self-actions do not generate notifications.
+deleted instruments do not generate notifications. Self-actions follow `notifyOwnActions`.
 
 Enabled subscribers are selected in one read-only `REQUIRES_NEW`, `REPEATABLE_READ`
 transaction. The first consistent SELECT establishes eligibility for that event. Preference
@@ -125,3 +130,7 @@ development database. `BookingNotificationSubscriptionLifecycleIT` inherits the 
 Focused coverage lives in `BookingNotificationServiceTest`, the booking manager tests,
 `CommunicationManagerImplTest`, `BookingOwnerNotificationIT`, and
 `UserProfileControllerMVCIT`. The latter two need the configured MariaDB.
+
+The Booking preferences switch “Also notify me about bookings I create or cancel myself”
+uses the notification section’s Save and Cancel controls and Saved status. It applies only
+to subscribed instruments and preserves the created and cancelled event preferences.

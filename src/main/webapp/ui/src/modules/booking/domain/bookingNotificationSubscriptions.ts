@@ -5,6 +5,7 @@ import { requestBooking } from "./booking";
 
 export const BookingNotificationPreferencesSchema = v.strictObject({
   autoSubscribeOwnedItems: v.boolean(),
+  notifyOwnActions: v.boolean(),
 });
 
 export type BookingNotificationPreferences = v.InferOutput<typeof BookingNotificationPreferencesSchema>;

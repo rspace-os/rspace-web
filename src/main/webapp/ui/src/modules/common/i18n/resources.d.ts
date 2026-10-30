@@ -1671,8 +1671,13 @@ export default interface Resources {
           "description": "This applies to new bookable instruments you own. It does not change existing subscriptions.",
           "label": "Automatically subscribe to new instruments I own"
         },
+        "cancel": "Cancel",
         "existingSubscriptions": {
           "description": "Unsubscribe from every instrument. This keeps your automatic default and My Profile settings."
+        },
+        "ownActions": {
+          "description": "Applies to instruments you are subscribed to. Your booking-created and booking-cancelled notification choices still apply.",
+          "label": "Also notify me about bookings I create or cancel myself"
         },
         "save": "Save",
         "saveError": "Your notification preference could not be saved. The last saved choice has been restored.",
@@ -6803,6 +6808,7 @@ export default interface Resources {
         "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own",
         "bookingCancelled": "A booking on an instrument I subscribe to is cancelled",
         "bookingCreated": "A booking is created on an instrument I subscribe to",
+        "bookingOwnActions": "Notify me about my own booking changes",
         "delivery": {
           "label": "Preferred delivery method"
         },

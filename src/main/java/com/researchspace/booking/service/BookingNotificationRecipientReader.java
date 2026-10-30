@@ -69,7 +69,8 @@ public class BookingNotificationRecipientReader {
   }
 
   /**
-   * Selects all enabled subscribers who can currently read the target and want this event.
+   * Selects enabled subscribers who can read the target and want this event. Actors receive their
+   * own events unless their snapshot preference disables own-action notifications.
    *
    * <p>For cancellations by somebody other than the requester, the requester is added when they are
    * active, Booking-enabled, and can still read the target. The requester is selected without their
@@ -113,7 +114,10 @@ public class BookingNotificationRecipientReader {
       if ((includeRequester && Objects.equals(requesterId, recipientId))
           || selectedIds.contains(recipientId)
           || recipient == null
-          || Objects.equals(actorId, recipientId)
+          || (Objects.equals(actorId, recipientId)
+              && !recipient
+                  .getValueForPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS)
+                  .getValueAsBoolean())
           || !eligible(recipient, target)
           || !recipient.wantsNotificationFor(event)) {
         continue;
@@ -145,6 +149,7 @@ public class BookingNotificationRecipientReader {
     if (!requester) {
       recipient.wantsNotificationFor(event);
     }
+    recipient.getValueForPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS).getValue();
     recipient.getValueForPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL).getValue();
     var display = displayPreferences.resolveForNotificationSnapshot(recipient);
     ZoneId displayZone =
