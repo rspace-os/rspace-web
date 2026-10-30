@@ -194,8 +194,8 @@ public final class ApiV2AuditLog {
     validateSnapshotPair(query);
     requireSearchableRange(query);
     Instant now = clock.instant();
-    Instant suppliedFrom = instant(query.getDateFrom());
-    Instant suppliedTo = instant(query.getDateTo());
+    Instant suppliedFrom = instant(query.getStart());
+    Instant suppliedTo = instant(query.getEnd());
     Instant effectiveTo = suppliedTo == null ? now : suppliedTo;
 
     LocalDate latestCompleted = LocalDate.ofInstant(now, ZoneOffset.UTC).minusDays(1);
@@ -254,8 +254,8 @@ public final class ApiV2AuditLog {
   }
 
   private static void requireSearchableRange(ApiV2AuditQuery query) {
-    Date from = query.getDateFrom();
-    Date to = query.getDateTo();
+    Date from = query.getStart();
+    Date to = query.getEnd();
     if (from == null || to == null) {
       return;
     }

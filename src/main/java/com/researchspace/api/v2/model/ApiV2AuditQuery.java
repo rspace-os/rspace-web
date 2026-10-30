@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.model;
 
-import com.researchspace.core.util.DateRangeAdjustable;
 import com.researchspace.model.audittrail.AuditAction;
 import jakarta.validation.constraints.Size;
 import java.util.Date;
@@ -14,13 +13,13 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 /** Filters and pagination for a resource audit log. */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public final class ApiV2AuditQuery extends ApiV2PaginationCriteria implements DateRangeAdjustable {
+public final class ApiV2AuditQuery extends ApiV2PaginationCriteria {
 
   @DateTimeFormat(iso = ISO.DATE_TIME)
-  private Date dateFrom;
+  private Date start;
 
   @DateTimeFormat(iso = ISO.DATE_TIME)
-  private Date dateTo;
+  private Date end;
 
   private Set<AuditAction> actions = new HashSet<>();
 

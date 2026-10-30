@@ -546,15 +546,15 @@ public final class ApiV2OpenApiGenerator {
     result.put("summary", "List audit events for one " + resource.resourceName() + " resource");
     result.put(
         "description",
-        "Returns events from the existing RSpace audit trail. The caller must be authenticated "
-            + "and must be able to read the resource. A resource without audit metadata returns "
-            + "an empty result. The search range is limited to 183 elapsed days. List requests "
-            + "use one-based pagination and a daily bounded-consistency snapshot over the exact "
-            + "half-open interval from dateFrom through midnight after snapshotDate in UTC. The "
-            + "first page selects the latest completed UTC day. Send snapshotDate and "
-            + "snapshotFingerprint together on every later page. A 409 means the result set "
-            + "changed and pagination must restart; a 503 means the server refused to return "
-            + "partial audit data. eventId is deterministic response identity, not a source-log "
+        "Returns events from the existing RSpace audit trail. The caller must be authenticated and"
+            + " must be able to read the resource. A resource without audit metadata returns an"
+            + " empty result. The search range is limited to 183 elapsed days. List requests use"
+            + " one-based pagination and a daily bounded-consistency snapshot over the exact"
+            + " half-open interval from start inclusive to midnight after snapshotDate exclusive in"
+            + " UTC. The first page selects the latest completed UTC day. Send snapshotDate and"
+            + " snapshotFingerprint together on every later page. A 409 means the result set"
+            + " changed and pagination must restart; a 503 means the server refused to return"
+            + " partial audit data. eventId is deterministic response identity, not a source-log "
             + "signature.");
     result.put("tags", List.of(resource.resourceName()));
     result.put("security", AUTHENTICATED_SECURITY);
@@ -576,18 +576,20 @@ public final class ApiV2OpenApiGenerator {
         parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
     parameters.add(
         parameter(
-            "dateFrom",
+            "start",
             "query",
             false,
             ordered("type", "string", "format", "date-time"),
-            "Earliest event time. The server limits the range to 183 days."));
+            "Inclusive earliest event time. The server limits the range to 183 days."));
     parameters.add(
         parameter(
-            "dateTo",
+            "end",
             "query",
             false,
             ordered("type", "string", "format", "date-time"),
-            "Latest event time."));
+            "Requested upper bound used to select the latest completed UTC day. The effective end"
+                + " is midnight after snapshotDate, exclusive. For compatibility, a bound at the"
+                + " final millisecond of a UTC day includes that day."));
     parameters.add(
         parameter(
             "search",

@@ -727,7 +727,7 @@ public final class ApiV2AuditStrictSearch {
     }
 
     @Override
-    public void setDateFrom(Date dateFrom) {}
+    public void setDateFrom(Date ignored) {}
 
     @Override
     public Date getDateTo() {
@@ -735,7 +735,7 @@ public final class ApiV2AuditStrictSearch {
     }
 
     @Override
-    public void setDateTo(Date dateTo) {}
+    public void setDateTo(Date ignored) {}
 
     @Override
     public Set<String> getUsernames() {

@@ -104,6 +104,21 @@ class ApiV2AuditControllerTest {
   }
 
   @Test
+  void bindsInclusiveStartAndSnapshotEnd() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v2/users/7/audit")
+                .param("start", "2026-01-01T00:00:00Z")
+                .param("end", "2026-01-02T23:59:59.999Z")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
+        .andExpect(status().isOk());
+    ArgumentCaptor<Request> request = ArgumentCaptor.forClass(Request.class);
+    verify(strictSearch).search(request.capture());
+    assertEquals(Instant.parse("2026-01-01T00:00:00Z"), request.getValue().fromInclusive());
+    assertEquals(Instant.parse("2026-01-03T00:00:00Z"), request.getValue().toExclusive());
+  }
+
+  @Test
   void bindsSearchForAuditRoute() throws Exception {
     mockMvc
         .perform(

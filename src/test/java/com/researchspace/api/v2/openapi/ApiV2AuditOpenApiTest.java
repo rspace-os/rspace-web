@@ -59,8 +59,8 @@ class ApiV2AuditOpenApiTest {
     assertEquals(
         List.of(
             "id",
-            "dateFrom",
-            "dateTo",
+            "start",
+            "end",
             "search",
             "actions",
             "snapshotDate",
