@@ -104,7 +104,6 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "429", description = "Too many requests."),
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })
   public ResponseEntity<StatusDocument> get(
@@ -138,7 +137,6 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "429", description = "Too many requests."),
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
         @ApiResponse(
             responseCode = "409",
@@ -179,7 +177,6 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "429", description = "Too many requests."),
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })
   public ResponseEntity<Void> revoke(

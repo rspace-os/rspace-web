@@ -483,7 +483,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
-  void managementIsForbiddenWhileBookingIsDisabled() throws Exception {
+  void managementIsNotFoundWhileBookingIsDisabled() throws Exception {
     long configurationId = readableConfiguration();
     setBookingEnabled(false);
     try {

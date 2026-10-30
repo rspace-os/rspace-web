@@ -106,13 +106,12 @@ class ApiV2OpenApiFixtureTest {
     Map<String, Object> post = objectMap(management.get("post"));
     Map<String, Object> delete = objectMap(management.get("delete"));
     assertEquals(
-        Set.of("200", "401", "403", "404", "406", "429", "500"),
-        objectMap(get.get("responses")).keySet());
+        Set.of("200", "401", "404", "406", "429", "500"), objectMap(get.get("responses")).keySet());
     assertEquals(
-        Set.of("200", "400", "401", "403", "404", "406", "409", "428", "429", "500"),
+        Set.of("200", "400", "401", "404", "406", "409", "428", "429", "500"),
         objectMap(post.get("responses")).keySet());
     assertEquals(
-        Set.of("204", "401", "403", "404", "406", "429", "500"),
+        Set.of("204", "401", "404", "406", "429", "500"),
         objectMap(delete.get("responses")).keySet());
 
     Map<String, Object> ifMatch =
@@ -156,6 +155,33 @@ class ApiV2OpenApiFixtureTest {
     assertEquals("uri", objectMap(statusProperties.get("subscriptionUrl")).get("format"));
     assertTrue(createdProperties.containsKey("subscriptionUrl"));
     assertEquals("uri", objectMap(createdProperties.get("subscriptionUrl")).get("format"));
+  }
+
+  @Test
+  void calendarRoutesDocumentFeatureOffAsNotFound() throws IOException {
+    JsonNode paths = MAPPER.readTree(generatedDocument()).path("paths");
+    for (String path :
+        List.of(
+            "/api/v2/booking-configurations/{configurationId}/calendar-subscription",
+            "/api/v2/users/me/booking-calendar-subscription",
+            "/api/v2/bookings/{bookingId}/calendar-file")) {
+      for (JsonNode operation : paths.path(path)) {
+        assertTrue(operation.path("responses").has("404"), path);
+        assertFalse(operation.path("responses").has("403"), path);
+      }
+    }
+    JsonNode download = paths.path("/api/v2/bookings/{bookingId}/calendar-file").path("get");
+    assertEquals("downloadBookingCalendarFile", download.path("operationId").asText());
+    assertEquals(
+        "string",
+        download
+            .path("responses")
+            .path("200")
+            .path("content")
+            .path("text/calendar")
+            .path("schema")
+            .path("type")
+            .asText());
   }
 
   private static Map<String, Object> schemas(Map<String, Object> document) {
