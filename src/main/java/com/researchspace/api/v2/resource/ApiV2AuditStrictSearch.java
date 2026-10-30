@@ -414,7 +414,7 @@ public final class ApiV2AuditStrictSearch {
     HistoricData event = line.result().getEvent();
     return containsIgnoreCase(line.username(), search)
         || containsIgnoreCase(event.getFullName(), search)
-        || containsIgnoreCase(event.getDescription(), search)
+        || (request.descriptionsSafe() && containsIgnoreCase(event.getDescription(), search))
         || containsIgnoreCase(line.action().name(), search)
         || containsData(event.getData().getData(), request.searchableFields(), search);
   }
@@ -582,7 +582,37 @@ public final class ApiV2AuditStrictSearch {
       boolean bypassActorDirectory,
       String search,
       Set<String> searchableFields,
-      Set<String> relatedIdentifierFields) {
+      Set<String> relatedIdentifierFields,
+      boolean descriptionsSafe) {
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory,
+        String search,
+        Set<String> searchableFields,
+        Set<String> relatedIdentifierFields) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          search,
+          searchableFields,
+          relatedIdentifierFields,
+          false);
+    }
 
     public Request(
         Instant fromInclusive,

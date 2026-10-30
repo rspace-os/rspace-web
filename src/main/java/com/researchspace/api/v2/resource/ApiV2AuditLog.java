@@ -175,7 +175,8 @@ public final class ApiV2AuditLog {
                       resource.description(),
                       target.readableFields(),
                       resource.relatedAuditFields()),
-                  resource.relatedAuditIdentifierFields()))
+                  resource.relatedAuditIdentifierFields(),
+                  resource.auditDescriptionsSafe()))
           .stream()
           .map(
               result ->
@@ -183,7 +184,8 @@ public final class ApiV2AuditLog {
                       result,
                       target.readableFields(),
                       resource.description(),
-                      resource.relatedAuditFields()))
+                      resource.relatedAuditFields(),
+                      resource.auditDescriptionsSafe()))
           .toList();
     } catch (ApiV2AuditStrictSearch.StrictReadException ex) {
       throw new ApiV2AuditUnavailableException(ex);
@@ -329,7 +331,8 @@ public final class ApiV2AuditLog {
       AuditTrailSearchResult result,
       FieldSelection readableFields,
       CollectionDescription<?> description,
-      Set<String> relatedAuditFields) {
+      Set<String> relatedAuditFields,
+      boolean descriptionsSafe) {
     HistoricData source = result.getEvent();
     Map<String, Object> payload = new LinkedHashMap<>();
     Set<String> publicNames = new LinkedHashSet<>();
@@ -356,7 +359,7 @@ public final class ApiV2AuditLog {
             source.getFullName(),
             source.getDomain(),
             source.getAction(),
-            source.getDescription(),
+            descriptionsSafe ? source.getDescription() : null,
             Collections.unmodifiableMap(payload),
             targetValue == null ? null : targetValue.toString());
     return withoutId.withEventId(eventId(withoutId));
