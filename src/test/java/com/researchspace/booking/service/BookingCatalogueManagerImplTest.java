@@ -201,7 +201,7 @@ class BookingCatalogueManagerImplTest {
     return new FilterExpression.Comparison(
         "location",
         Operator.EQUAL,
-        List.of(new ResourceReference<>("booking-locations", containerId)),
+        List.of(new ResourceReference<>("containers", containerId)),
         false);
   }
 

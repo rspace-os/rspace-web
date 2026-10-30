@@ -102,7 +102,7 @@ export function BookingEventContent() {
   const refreshBooking = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
   };
-  const location = target?.value.parentContainer;
+  const _location = target?.value.parentContainer;
   const eventName = target?.value.name ?? t("common:values.unknownItem");
   const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
 

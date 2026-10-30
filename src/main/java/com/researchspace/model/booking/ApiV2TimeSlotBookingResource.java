@@ -104,7 +104,7 @@ public final class ApiV2TimeSlotBookingResource {
             Field.readOnly(
                 "end", "endTime", CollectionFieldTypes.instant(), TimeSlotBooking::getEndTime),
             TARGET,
-            ApiV2BookingLocationResource.<TimeSlotBooking>relationship()),
+            BookingLocationRelationship.<TimeSlotBooking>relationship()),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));
@@ -221,7 +221,7 @@ public final class ApiV2TimeSlotBookingResource {
                 CollectionFieldTypes.instant(),
                 TimeSlotBooking::getUpdatedAt),
             TARGET,
-            ApiV2BookingLocationResource.renderedRelationship(TimeSlotBooking::getVisibleLocation)),
+            BookingLocationRelationship.renderedRelationship(TimeSlotBooking::getVisibleLocation)),
         "id",
         List.of(new Sort("start", true), new Sort("id", true)),
         new AccessPolicy(

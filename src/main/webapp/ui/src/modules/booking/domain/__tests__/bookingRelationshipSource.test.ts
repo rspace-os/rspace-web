@@ -69,6 +69,10 @@ describe("booking relationship source", () => {
 });
 
 describe("booking location source", () => {
+  it("uses a catalogue-scoped container source", () => {
+    expect(bookingRelationshipSources.containers).toBe(bookingLocationSource);
+    expect(bookingLocationSource.id).toBe("locations");
+  });
   it("browses readable locations and filters a workbench by its Container ID", async () => {
     let requested: URL | undefined;
     server.use(

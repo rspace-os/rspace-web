@@ -5,7 +5,7 @@ import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.ApiV2BookingLocationResource;
+import com.researchspace.model.booking.BookingLocationRelationship;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
@@ -16,7 +16,6 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,7 +61,7 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
     String names = targetPath.replace('.', '_') + "_location";
     for (FilterExpression conjunct : conjuncts(filter)) {
       if (conjunct instanceof FilterExpression.Comparison comparison
-          && ApiV2BookingLocationResource.isLocationSelector(comparison.field())
+          && BookingLocationRelationship.isLocationSelector(comparison.field())
           && CORRELATED_OPERATORS.contains(comparison.operator())) {
         if (constraints == null) {
           constraints = accessConstraints(caller);
@@ -162,28 +161,13 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
         request.runtime());
   }
 
-  @Override
-  public Map<Long, ApiV2BookingLocationResource.Location> findReadableLocations(
-      Set<Long> ids, User caller) {
-    if (ids.isEmpty()) {
-      return Map.of();
-    }
-    Map<Long, ApiV2BookingLocationResource.Location> locations = new LinkedHashMap<>();
-    instruments
-        .getBookingCatalogueLocations(null, Set.copyOf(ids), 1, ids.size(), caller)
-        .resources()
-        .forEach(summary -> locations.put(summary.id(), location(summary)));
-    return locations;
-  }
-
   /** The public view of one readable parent; a workbench keeps its {@code BE} global ID. */
-  public static ApiV2BookingLocationResource.Location location(BookingCatalogueLocation summary) {
+  public static BookingCatalogueManager.Location location(BookingCatalogueLocation summary) {
     GlobalIdPrefix prefix =
         summary.containerType() == Container.ContainerType.WORKBENCH
             ? GlobalIdPrefix.BE
             : GlobalIdPrefix.IC;
-    return new ApiV2BookingLocationResource.Location(
-        summary.id(), prefix.name() + summary.id(), summary.name());
+    return new BookingCatalogueManager.Location(prefix.name() + summary.id(), summary.name());
   }
 
   private FilterExpression rewrite(
@@ -197,7 +181,7 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
           or.children().stream().map(child -> rewrite(child, caller, resolved)).toList());
     }
     FilterExpression.Comparison comparison = (FilterExpression.Comparison) filter;
-    if (!ApiV2BookingLocationResource.isLocationSelector(comparison.field())) {
+    if (!BookingLocationRelationship.isLocationSelector(comparison.field())) {
       return comparison;
     }
     Operator operator = comparison.operator();
@@ -252,7 +236,7 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
     if (filter instanceof FilterExpression.Or or) {
       return or.children().stream().anyMatch(BookingLocationFilterManagerImpl::mentionsLocation);
     }
-    return ApiV2BookingLocationResource.isLocationSelector(
+    return BookingLocationRelationship.isLocationSelector(
         ((FilterExpression.Comparison) filter).field());
   }
 }

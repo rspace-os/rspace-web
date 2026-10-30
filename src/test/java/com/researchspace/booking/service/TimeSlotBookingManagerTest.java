@@ -70,7 +70,6 @@ class TimeSlotBookingManagerTest {
         .thenReturn(
             new ResourceRegistry(
                 List.of(
-                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                     ApiV2TimeSlotBookingResource.DESCRIPTION,
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,

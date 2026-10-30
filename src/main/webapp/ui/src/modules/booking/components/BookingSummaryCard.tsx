@@ -4,7 +4,6 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatBookingAgendaDateTime } from "@/modules/booking/domain/bookingAgenda";
 import { bookingLocale } from "@/modules/booking/domain/bookingTime";
-import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import type { TableListCardField } from "@/modules/common/table-list/components/TableListCardView";
 import { TableListCard } from "@/modules/common/table-list/components/TableListCardView";
 import { buttonVariants } from "@/modules/common/ui/button";

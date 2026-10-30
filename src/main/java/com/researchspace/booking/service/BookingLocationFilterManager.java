@@ -2,10 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.collection.ResourceRequest;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Resolves the filter-only Booking {@code location} relationship against Inventory read access.
@@ -39,8 +36,4 @@ public interface BookingLocationFilterManager {
    * group is still resolved as a list.
    */
   Resolved resolveLocations(ResourceRequest request, User caller, String targetPath);
-
-  /** Returns the readable locations among {@code ids}, for relationship expansion. */
-  Map<Long, ApiV2BookingLocationResource.Location> findReadableLocations(
-      Set<Long> ids, User caller);
 }
