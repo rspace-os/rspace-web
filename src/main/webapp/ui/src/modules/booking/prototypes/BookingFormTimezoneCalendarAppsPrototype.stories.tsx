@@ -74,7 +74,7 @@ const editBooking: EditableBooking = {
   id: 41,
   version: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     globalId: tokyo.globalId,
     value: { id: 54, name: tokyo.name, deleted: false },
   },

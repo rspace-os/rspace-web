@@ -50,7 +50,7 @@ const editBooking: EditableBooking = {
   id: 41,
   version: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     globalId: item.globalId,
     value: { id: 54, name: item.name, deleted: false },
   },

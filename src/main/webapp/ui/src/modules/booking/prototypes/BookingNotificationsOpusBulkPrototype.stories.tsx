@@ -21,6 +21,7 @@ import {
   bookerBookingAccess,
   sampleBookingEvents,
 } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
+import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import type { CollectionConfig } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -103,7 +104,7 @@ const config = resolveCollectionConfig({
     {
       name: "target",
       type: "relationship",
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       hasMany: false,
       labelKey: "booking:bookableItems.fields.target",
       capabilities: { sortable: false, filterOperators: ["equals"], supportsWildcards: false },
@@ -120,8 +121,8 @@ const config = resolveCollectionConfig({
               size="xs"
             >
               <InventoryLocationLink
-                name={row.target.value.parentContainerName}
-                globalId={row.target.value.parentContainerGlobalId}
+                name={resourceLocation(row.target)?.name}
+                globalId={resourceLocation(row.target)?.globalId}
               />
             </InventoryItem>
           ) : (
@@ -266,14 +267,7 @@ function BulkNotificationsPrototype({ initialSelected }: { initialSelected: read
                   const item = {
                     name: row.target.value.name,
                     globalId: row.target.globalId,
-                    ...(row.target.value.parentContainerName != null && row.target.value.parentContainerGlobalId != null
-                      ? {
-                          location: {
-                            name: row.target.value.parentContainerName,
-                            globalId: row.target.value.parentContainerGlobalId,
-                          },
-                        }
-                      : {}),
+                    location: resourceLocation(row.target),
                   };
                   return (
                     <AvailabilityBar

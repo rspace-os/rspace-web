@@ -36,7 +36,7 @@ export const prototypeDisplayTimezone = "Europe/London";
 
 function bookingTarget(item: BookableItemOption): NonNullable<Booking["target"]> {
   return {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: { id: item.targetId, name: item.name, deleted: false },
     globalId: item.globalId,
   };

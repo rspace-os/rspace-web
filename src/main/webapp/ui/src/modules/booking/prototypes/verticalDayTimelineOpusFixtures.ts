@@ -188,7 +188,7 @@ export function editableBookingFor(value: Scenario): EditableBooking {
     id: ORIGINAL_BOOKING_ID,
     version: 0,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       globalId: value.item.globalId,
       value: { id: value.item.targetId, name: value.item.name, deleted: false },
     },

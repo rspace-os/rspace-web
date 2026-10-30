@@ -35,13 +35,16 @@ export const item: BookableItemOption = {
 };
 
 const target: Booking["target"] = {
-  relationTo: "booking-instruments",
+  relationTo: "instruments",
   value: {
     id: item.targetId,
     name: item.name,
     deleted: false,
-    parentContainerName: "Imaging lab",
-    parentContainerGlobalId: "IC456",
+    parentContainer: {
+      relationTo: "containers",
+      globalId: "IC456",
+      value: { id: 456, name: "Imaging lab", globalId: "IC456" },
+    },
   },
   globalId: item.globalId,
 };
