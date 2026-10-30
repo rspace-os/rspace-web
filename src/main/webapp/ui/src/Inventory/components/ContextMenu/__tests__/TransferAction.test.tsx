@@ -56,7 +56,7 @@ describe("TransferAction", () => {
               configurationVersion: 0,
               state: "ACTIVE",
               target: {
-                relationTo: "booking-instruments",
+                relationTo: "instruments",
                 value: { id: 1, name: "An instrument", deleted: false },
                 globalId: "IN1",
               },
