@@ -499,6 +499,52 @@
         "required" : [ "capabilities", "email", "firstName", "hasPiRole", "hasSysAdminRole", "homeFolderId", "id", "lastName", "livechat", "orcid", "profileImageApiUrl", "profileImageUrl", "session", "username", "workbenchId" ],
         "type" : "object"
       },
+      "ApiV2ListResultMapStringObject" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "additionalProperties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "hasNextPage" : {
+            "type" : "boolean"
+          },
+          "hasPrevPage" : {
+            "type" : "boolean"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "nextPage" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pagingCounter" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "prevPage" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalDocs" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "ApiV2Problem" : {
         "properties" : {
           "code" : {
@@ -2221,7 +2267,7 @@
           "timezone" : {
             "maxLength" : 255,
             "readOnly" : true,
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -3695,6 +3741,95 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/v2/booking-calendar/events" : {
+      "get" : {
+        "operationId" : "searchCalendarEvents",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2ListResultMapStringObject"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search visible calendar events",
+        "tags" : [ "booking-calendar" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/booking-catalogue" : {
       "get" : {
         "operationId" : "searchBookingCatalogue",
@@ -3798,6 +3933,102 @@
         } ],
         "summary" : "Search the Booking catalogue",
         "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-catalogue/calendar" : {
+      "get" : {
+        "operationId" : "searchCalendarCatalogue",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "eventWhere",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Page"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search bookable instruments in a calendar interval",
+        "tags" : [ "booking-calendar" ],
         "x-rspace-operation" : "CUSTOM"
       }
     },
@@ -7891,6 +8122,14 @@
                 },
                 "wildcards" : false
               },
+              "purpose" : {
+                "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+                "schema" : {
+                  "maxLength" : 1000,
+                  "type" : [ "string", "null" ]
+                },
+                "wildcards" : true
+              },
               "requesterId" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
@@ -8515,6 +8754,14 @@
                   "type" : "string"
                 },
                 "wildcards" : false
+              },
+              "purpose" : {
+                "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+                "schema" : {
+                  "maxLength" : 1000,
+                  "type" : [ "string", "null" ]
+                },
+                "wildcards" : true
               },
               "requesterId" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
@@ -14501,6 +14748,9 @@
   }, {
     "description" : "Operations documented by booking-calendar-subscriptions.",
     "name" : "booking-calendar-subscriptions"
+  }, {
+    "description" : "Operations documented by booking-calendar.",
+    "name" : "booking-calendar"
   }, {
     "description" : "Operations documented by booking-catalogue.",
     "name" : "booking-catalogue"
