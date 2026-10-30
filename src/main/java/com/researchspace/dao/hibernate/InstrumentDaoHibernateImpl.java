@@ -185,17 +185,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         relationships);
   }
 
-  private static InstrumentReadSummary toReadSummary(
-      Long id,
-      String name,
-      boolean deleted,
-      Long parentContainerId,
-      String parentContainerName,
-      ContainerType parentContainerType) {
-    return new InstrumentReadSummary(
-        id, name, deleted, parentContainerId, parentContainerName, parentContainerType);
-  }
-
   @Override
   public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
     if (instrumentIds.isEmpty()) {

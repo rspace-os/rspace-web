@@ -88,7 +88,8 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(new ResourcePage<>(List.of(configuration), 2));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of(101L)))
         .thenReturn(Map.of(101L, instrument));
-    when(instruments.getReadableParentLocationSummaries(Set.of(101L), caller)).thenReturn(Map.of());
+    when(bookingInstruments.getReadableParentLocationSummaries(Set.of(101L), caller))
+        .thenReturn(Map.of());
 
     BookingCatalogueManager.Page result =
         manager.search(

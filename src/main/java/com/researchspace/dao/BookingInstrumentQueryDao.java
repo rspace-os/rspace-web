@@ -1,9 +1,9 @@
 package com.researchspace.dao;
 
+import com.researchspace.booking.service.BookingCatalogueLocation;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
 import java.util.Map;
@@ -16,8 +16,12 @@ public interface BookingInstrumentQueryDao {
    * Returns one database-paginated page of immediate parent Containers that are both readable in
    * Inventory and attached to an active, enabled Booking configuration readable by the caller.
    */
-  ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
+  ResourcePage<BookingCatalogueLocation> getBookingCatalogueLocations(
       String query, int page, int limit, User caller, Set<String> readableRoleKeys);
+
+  /** Returns readable immediate parent locations for catalogue rows. */
+  Map<Long, BookingCatalogueLocation> getReadableParentLocationSummaries(
+      Set<Long> instrumentIds, User caller);
 
   /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
   Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
