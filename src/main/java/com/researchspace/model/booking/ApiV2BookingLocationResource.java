@@ -1,17 +1,12 @@
 package com.researchspace.model.booking;
 
-import com.researchspace.model.collection.AccessFunction;
-import com.researchspace.model.collection.AccessPolicy;
-import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
-import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
-import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.List;
 import java.util.function.Function;
@@ -80,7 +75,10 @@ public final class ApiV2BookingLocationResource {
             CollectionFieldTypes.longNumber(),
             List.of(
                 new RelationshipTarget<>(
-                    RESOURCE_NAME, RESOURCE_NAME, GLOBAL_ID_PREFIX, com.researchspace.model.inventory.Container.class)),
+                    RESOURCE_NAME,
+                    RESOURCE_NAME,
+                    GLOBAL_ID_PREFIX,
+                    com.researchspace.model.inventory.Container.class)),
             SplitReferenceBinding.monomorphic(reference, UNREWRITTEN_PROPERTY))
         .writeOnlyOn()
         .allowNull()

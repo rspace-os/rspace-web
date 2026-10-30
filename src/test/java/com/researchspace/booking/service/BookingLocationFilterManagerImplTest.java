@@ -25,7 +25,6 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.inventory.Container;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Map;
@@ -253,7 +252,7 @@ class BookingLocationFilterManagerImplTest {
         .thenReturn(
             new ResourcePage<>(
                 List.of(
-                    new InstrumentParentLocationSummary(
+                    new BookingCatalogueLocation(
                         7L, "WB reader", Container.ContainerType.WORKBENCH)),
                 1));
 

@@ -1,8 +1,7 @@
 package com.researchspace.booking.api.v2;
 
-import com.researchspace.api.v2.controller.ApiV2BadRequestException;
-
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;

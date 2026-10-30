@@ -56,7 +56,8 @@ class TimeSlotBookingProblemContractTest {
             mock(TimeSlotBookingManager.class),
             mock(FeatureFlagManager.class),
             ApiV2TimeSlotBookingResource.DESCRIPTION,
-            messages, mock(BookingLocationFilterManager.class));
+            messages,
+            mock(BookingLocationFilterManager.class));
   }
 
   @AfterEach

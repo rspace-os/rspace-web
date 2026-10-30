@@ -13,7 +13,6 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.Container;
-import com.researchspace.booking.service.BookingCatalogueLocation;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -178,8 +177,7 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
   }
 
   /** The public view of one readable parent; a workbench keeps its {@code BE} global ID. */
-  public static ApiV2BookingLocationResource.Location location(
-      BookingCatalogueLocation summary) {
+  public static ApiV2BookingLocationResource.Location location(BookingCatalogueLocation summary) {
     GlobalIdPrefix prefix =
         summary.containerType() == Container.ContainerType.WORKBENCH
             ? GlobalIdPrefix.BE
