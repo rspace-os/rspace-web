@@ -95,7 +95,7 @@ public class BookingCalendarSubscriptionController {
             headers = {
               @Header(
                   name = "Cache-Control",
-                  schema = @Schema(type = "string", allowableValues = "private, no-store")),
+                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(
@@ -128,7 +128,7 @@ public class BookingCalendarSubscriptionController {
             headers = {
               @Header(
                   name = "Cache-Control",
-                  schema = @Schema(type = "string", allowableValues = "private, no-store")),
+                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(
@@ -170,7 +170,7 @@ public class BookingCalendarSubscriptionController {
             headers =
                 @Header(
                     name = "Cache-Control",
-                    schema = @Schema(type = "string", allowableValues = "private, no-store"))),
+                    schema = @Schema(types = "string", allowableValues = "private, no-store"))),
         @ApiResponse(
             responseCode = "406",
             description = "The requested representation is unavailable."),
