@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2DocumentParser;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
@@ -60,9 +61,10 @@ class ApiV2BookingConfigurationResourceTest {
   private static final ResourceRegistry REGISTRY =
       new ResourceRegistry(
           List.of(
+              com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
               ApiV2BookingConfigurationResource.DESCRIPTION,
               ApiV2UserResource.DESCRIPTION,
-              ApiV2BookingInstrumentResource.DESCRIPTION));
+              ApiV2InstrumentResource.DESCRIPTION));
 
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -208,7 +210,7 @@ class ApiV2BookingConfigurationResourceTest {
                   "bufferAfterMinutes": 20,
                   "maxBookingDurationMinutes": 120,
                   "allowDoubleBooking": true,
-                  "target": {"relationTo": "booking-instruments", "value": 12}
+                  "target": {"relationTo": "instruments", "value": 12}
                 }
                 """),
             ApiV2BookingConfigurationResource.DESCRIPTION,
@@ -341,7 +343,7 @@ class ApiV2BookingConfigurationResourceTest {
         () ->
             ApiV2DocumentParser.parse(
                 mapper.readTree(
-                    "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"booking-instruments\",\"value\":12}}"),
+                    "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"instruments\",\"value\":12}}"),
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 WriteOperation.CREATE,
                 "errors.api.v2.bookingConfiguration.create",

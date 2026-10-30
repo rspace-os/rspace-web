@@ -49,8 +49,7 @@ class InstrumentParentLocationQueryCountMVCIT {
   private static final Instant BOOKING_START = Instant.parse("2035-01-15T09:00:00Z");
   private static final Instant BOOKING_END = Instant.parse("2035-01-15T10:00:00Z");
   private static final String INSTRUMENTS = "/api/v2/instruments";
-  private static final String LOCATION_FIELDS =
-      "id,name,parentContainerName,parentContainerGlobalId";
+  private static final String LOCATION_FIELDS = "id,name,parentContainer";
   private static final String CUSTOM_VALUE = "BSL-2";
   private static final String EXTRA_VALUE = "Imaging lab";
   private static final String INVENTORY_PACKAGE = "com.researchspace.model.inventory.";
@@ -106,7 +105,7 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   @Test
-  void masksParentLocationsAndOmitsThemFromBookingTargets() throws Exception {
+  void masksUnreadableParentsAndNarrowsBookingTargets() throws Exception {
     FixtureRows rows = createRows(5, "Mixed" + fixture.marker());
     assertLocations(request(INSTRUMENTS, rows.instrumentIds(), LOCATION_FIELDS).body(), rows);
     assertParentLocation(
@@ -122,8 +121,7 @@ class InstrumentParentLocationQueryCountMVCIT {
       for (JsonNode document : documents) {
         JsonNode target = document.path("target").path("value");
         assertTrue(target.path("name").isTextual());
-        assertTrue(target.path("parentContainerName").isMissingNode());
-        assertTrue(target.path("parentContainerGlobalId").isMissingNode());
+        assertTrue(target.path("parentContainer").isMissingNode());
       }
     }
 
@@ -131,18 +129,6 @@ class InstrumentParentLocationQueryCountMVCIT {
     instrumentCount(where, null, 5);
     long withoutLocations = instrumentCount(where, null, 5);
     assertEquals(withoutLocations, instrumentCount(where, LOCATION_FIELDS, 5));
-
-    for (String query : List.of("where", "sort")) {
-      var request =
-          get(INSTRUMENTS)
-              .header("apiKey", fixture.userKey())
-              .param(
-                  query,
-                  query.equals("where")
-                      ? "parentContainerName==" + rows.sharedParentName()
-                      : "parentContainerName");
-      mockMvc.perform(request).andExpect(status().isBadRequest());
-    }
   }
 
   @Test
@@ -335,7 +321,9 @@ class InstrumentParentLocationQueryCountMVCIT {
             get(path)
                 .header("apiKey", fixture.userKey())
                 .param("where", path.equals(INSTRUMENTS) ? idFilter(ids) : targetFilter(ids))
-                .param("depth", "1")
+                .param("depth", path.equals(INSTRUMENTS) ? "1" : "2")
+                .param("fields[containers]", "id,name,globalId")
+                .param("fields[instruments]", path.equals(INSTRUMENTS) ? fields : "id,name")
                 .param("limit", "100")
                 .param("fields[" + path.substring("/api/v2/".length()) + "]", fields),
             path.equals(INSTRUMENTS));
@@ -344,7 +332,11 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   private JsonNode singleInstrument(long id, String fields) throws Exception {
-    var request = get(INSTRUMENTS + "/" + id).header("apiKey", fixture.userKey());
+    var request =
+        get(INSTRUMENTS + "/" + id)
+            .header("apiKey", fixture.userKey())
+            .param("depth", "1")
+            .param("fields[containers]", "id,name,globalId");
     if (fields != null) {
       request.param("fields[instruments]", fields);
     }
@@ -417,7 +409,8 @@ class InstrumentParentLocationQueryCountMVCIT {
     assertParentLocation(shared, rows.sharedParentName(), "IC" + rows.sharedParentId());
 
     JsonNode workbench = targetNamed(body, "instrument 0");
-    assertTrue(workbench.get("parentContainerGlobalId").asText().startsWith("BE"));
+    assertTrue(
+        workbench.path("parentContainer").path("value").path("globalId").asText().startsWith("BE"));
 
     assertParentLocation(targetNamed(body, "instrument 3"), null, null);
     assertParentLocation(targetNamed(body, "instrument 4"), null, null);
@@ -425,11 +418,11 @@ class InstrumentParentLocationQueryCountMVCIT {
 
   private static void assertParentLocation(JsonNode document, String name, String globalId) {
     if (name == null) {
-      assertTrue(document.path("parentContainerName").isNull());
-      assertTrue(document.path("parentContainerGlobalId").isNull());
+      assertTrue(document.path("parentContainer").isNull());
     } else {
-      assertEquals(name, document.path("parentContainerName").asText());
-      assertEquals(globalId, document.path("parentContainerGlobalId").asText());
+      assertEquals(name, document.path("parentContainer").path("value").path("name").asText());
+      assertEquals(
+          globalId, document.path("parentContainer").path("value").path("globalId").asText());
     }
   }
 

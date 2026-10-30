@@ -3,8 +3,8 @@ package com.researchspace.booking.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingState;
@@ -157,17 +157,18 @@ class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
     ResourceRegistry registry =
         new ResourceRegistry(
             List.of(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                 ApiV2TimeSlotBookingResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
                 new CollectionDescription<>(
-                    ApiV2BookingInstrumentResource.RESOURCE_NAME,
-                    ApiV2BookingInstrumentResource.DESCRIPTION.entityType(),
+                    ApiV2InstrumentResource.RESOURCE_NAME,
+                    ApiV2InstrumentResource.DESCRIPTION.entityType(),
                     Stream.<ResourceMember<Instrument>>concat(
-                            ApiV2BookingInstrumentResource.DESCRIPTION.fields().stream(),
-                            ApiV2BookingInstrumentResource.DESCRIPTION.relationships().stream())
+                            ApiV2InstrumentResource.DESCRIPTION.fields().stream(),
+                            ApiV2InstrumentResource.DESCRIPTION.relationships().stream())
                         .toList(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
+                    ApiV2InstrumentResource.DESCRIPTION.idField(),
+                    ApiV2InstrumentResource.DESCRIPTION.defaultSort(),
                     AccessPolicy.readOnly(access))));
     return RelationshipReadAccess.forActor(registry, null);
   }

@@ -7,11 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.CollectionQueryLimits;
@@ -130,8 +130,9 @@ class ApiV2QuerySupportTest {
     ResourceRegistry registry =
         new ResourceRegistry(
             List.of(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION));
 
     assertDoesNotThrow(
@@ -147,8 +148,9 @@ class ApiV2QuerySupportTest {
     ResourceRegistry registry =
         new ResourceRegistry(
             List.of(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION));
     User subject = new User("subject");
     subject.setId(73L);

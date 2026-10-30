@@ -3,9 +3,9 @@ package com.researchspace.model.collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -22,8 +22,9 @@ class RsqlTargetFieldParserTest {
   private static final ResourceRegistry REGISTRY =
       new ResourceRegistry(
           List.of(
+              com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
               ApiV2BookingConfigurationResource.DESCRIPTION,
-              ApiV2BookingInstrumentResource.DESCRIPTION,
+              ApiV2InstrumentResource.DESCRIPTION,
               ApiV2UserResource.DESCRIPTION));
 
   private final RsqlFilterParser withTargets =
@@ -124,7 +125,7 @@ class RsqlTargetFieldParserTest {
 
   @Test
   void keepsTheExistingRelationshipSelectorsWorking() {
-    FilterExpression parsed = withTargets.parse("target.relationTo==booking-instruments");
+    FilterExpression parsed = withTargets.parse("target.relationTo==instruments");
 
     assertEquals("target.relationTo", ((FilterExpression.Comparison) parsed).field());
     assertEquals(Operator.EQUAL, ((FilterExpression.Comparison) parsed).operator());

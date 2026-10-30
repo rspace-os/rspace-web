@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
@@ -51,17 +50,18 @@ class RelationshipTargetFilterTest {
     ResourceRegistry registry =
         new ResourceRegistry(
             List.of(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
                 new CollectionDescription<>(
-                    ApiV2BookingInstrumentResource.RESOURCE_NAME,
-                    ApiV2BookingInstrumentResource.DESCRIPTION.entityType(),
+                    ApiV2InstrumentResource.RESOURCE_NAME,
+                    ApiV2InstrumentResource.DESCRIPTION.entityType(),
                     Stream.<ResourceMember<Instrument>>concat(
-                            ApiV2BookingInstrumentResource.DESCRIPTION.fields().stream(),
-                            ApiV2BookingInstrumentResource.DESCRIPTION.relationships().stream())
+                            ApiV2InstrumentResource.DESCRIPTION.fields().stream(),
+                            ApiV2InstrumentResource.DESCRIPTION.relationships().stream())
                         .toList(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
+                    ApiV2InstrumentResource.DESCRIPTION.idField(),
+                    ApiV2InstrumentResource.DESCRIPTION.defaultSort(),
                     AccessPolicy.readOnly(readAccess))));
     return RelationshipReadAccess.forActor(registry, null);
   }
@@ -209,7 +209,11 @@ class RelationshipTargetFilterTest {
             "id",
             List.of(new Sort("id", true)));
     ResourceRegistry registry =
-        new ResourceRegistry(List.of(source, ApiV2InstrumentResource.description(readAccess)));
+        new ResourceRegistry(
+            List.of(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                source,
+                ApiV2InstrumentResource.description(readAccess)));
 
     Predicate compiled =
         new RsqlCollectionQuery(source, "source", "relationshipFilter")

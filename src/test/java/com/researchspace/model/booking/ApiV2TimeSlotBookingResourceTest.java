@@ -66,7 +66,7 @@ class ApiV2TimeSlotBookingResourceTest {
         parse(
             """
             {
-              "target": {"relationTo": "booking-instruments", "value": 12},
+              "target": {"relationTo": "instruments", "value": 12},
               "start": "2026-10-25T00:30:00Z",
               "end": "2026-10-25T02:30:00Z",
               "kind": "MAINTENANCE",
@@ -83,7 +83,7 @@ class ApiV2TimeSlotBookingResourceTest {
         () ->
             parse(
                 """
-                {"target":{"relationTo":"booking-instruments","value":12},
+                {"target":{"relationTo":"instruments","value":12},
                  "start":"2026-10-25T00:30:00Z","end":"2026-10-25T02:30:00Z",
                  "bookedBy":"forged"}
                 """,
