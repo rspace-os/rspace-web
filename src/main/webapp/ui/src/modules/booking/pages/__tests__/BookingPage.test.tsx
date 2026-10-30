@@ -66,9 +66,6 @@ function TestShell() {
 function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady = Promise.resolve()) {
   server.use(
     http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
-    http.get("/api/v2/instruments/123", () =>
-      HttpResponse.json({ parentContainerName: null, parentContainerGlobalId: null }),
-    ),
     http.get("/api/v2/users/me/booking-preferences", async () => {
       await preferencesReady;
       return HttpResponse.json(inheritedBrowserBookingPreferences);

@@ -104,6 +104,7 @@ describe("My Bookings page", () => {
     const upcoming = requests.findLast((request) =>
       request.searchParams.get("where")?.includes("target.name=contains=scope"),
     );
+    expect(upcoming?.searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted");
     expect(upcoming?.searchParams.get("where")).toContain("requesterId==84");
     expect(upcoming?.searchParams.get("where")).toContain("kind==BOOKING");
     expect(upcoming?.searchParams.get("where")).toContain("state==CONFIRMED");

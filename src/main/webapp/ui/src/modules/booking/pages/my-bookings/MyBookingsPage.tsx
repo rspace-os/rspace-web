@@ -26,6 +26,12 @@ import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
+const fetchBookingList: typeof fetch = (input, init = {}) => {
+  const url = new URL(String(input), window.location.origin);
+  url.searchParams.set("fields[instruments]", "id,globalId,name,deleted");
+  return fetchWithUiToken(url.toString(), init);
+};
+
 const UpcomingCountSchema = v.object({ totalDocs: v.number() });
 const projection = {
   fixed: [
@@ -118,6 +124,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     () => ({
       token,
       depth: 1,
+      fetch: fetchBookingList,
       projection,
       baseFilter,
       validateRows: BookingListDocumentTableValidation.validateRows,

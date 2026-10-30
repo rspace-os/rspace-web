@@ -28,8 +28,11 @@ const document = {
       id: 123,
       name: "Confocal microscope",
       deleted: false,
-      parentContainerName: "Imaging lab",
-      parentContainerGlobalId: "IC456",
+      parentContainer: {
+        relationTo: "containers",
+        globalId: "IC456",
+        value: { id: 456, globalId: "IC456", name: "Imaging lab" },
+      },
     },
     globalId: "IN123",
   },
@@ -179,6 +182,21 @@ describe("BookingEventPage", () => {
       "href",
       "/booking/calendar/bookings/41/edit",
     );
+  });
+
+  it("keeps booking details readable when the parent container is unreadable", async () => {
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          target: { ...document.target, value: { ...document.target.value, parentContainer: null } },
+        }),
+      ),
+    );
+    renderPage();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
   });
 
   it("keeps role-lost details readable without configuration capabilities", async () => {
