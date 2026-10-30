@@ -15,6 +15,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** Supplies the standard CRUD routes for every registered REST v2 collection. */
 @RestController
 @RequestMapping("/api/v2")
+@Hidden // Concrete resource paths are documented by ApiV2OpenApiGenerator.
 public class ApiV2CrudController {
 
   private final ApiV2ResourceCatalog resources;

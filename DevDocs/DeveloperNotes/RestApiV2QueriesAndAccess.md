@@ -491,7 +491,11 @@ continues through the normal controller-advice chain. Startup fails if a mapping
 operation that the resource does not expose.
 
 For a concrete controller, use the standard Swagger annotations. These include `@Operation`,
-`@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`.
+`@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`. Every `/api/v2/**` handler
+must declare `@Operation` or be explicitly `@Hidden` on its method or controller. The merger
+rejects undocumented handlers. The generic CRUD controller is hidden because the resource catalog
+generates its concrete paths. `ApiV2OperationCoverageTest` checks the production handler map
+without loading service or database dependencies.
 
 The public OpenAPI endpoint uses the same problem format for invalid supplied credentials and
 exceeded request limits.
