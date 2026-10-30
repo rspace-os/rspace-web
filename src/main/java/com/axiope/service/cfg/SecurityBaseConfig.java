@@ -14,15 +14,21 @@ import com.researchspace.auth.OAuthRealm;
 import com.researchspace.auth.SSOPassThruRealm;
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.auth.SlackRealm;
+import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.auth.wopi.WopiRealm;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.service.SessionControl;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.shiro.authz.permission.PermissionResolver;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +39,42 @@ public abstract class SecurityBaseConfig {
 
   @Autowired protected ApplicationContext context;
   @Autowired protected DeploymentPropertyConfig deploymentPropertyConfig;
+
+  @Value("${login.passwordVerification.maxConcurrent:8}")
+  private int maxConcurrentPasswordVerifications;
+
+  @Value("${login.passwordVerification.maxQueued:32}")
+  private int maxQueuedPasswordVerifications;
+
+  @Value("${login.passwordVerification.waitSeconds:5}")
+  private int passwordVerificationWaitSeconds;
+
+  @Value("${password.anonymousEncode.maxConcurrent:4}")
+  private int maxConcurrentAnonymousEncodes;
+
+  @Bean
+  public RSpacePasswordEncoder passwordEncoder() {
+    return new RSpacePasswordEncoder();
+  }
+
+  @Bean
+  public BoundedPasswordVerifier boundedPasswordVerifier() {
+    return new BoundedPasswordVerifier(
+        passwordEncoder(),
+        maxConcurrentPasswordVerifications,
+        maxQueuedPasswordVerifications,
+        Duration.ofSeconds(passwordVerificationWaitSeconds));
+  }
+
+  @Bean
+  public SentinelPasswordCheck sentinelPasswordCheck() {
+    return new SentinelPasswordCheck(passwordEncoder(), boundedPasswordVerifier());
+  }
+
+  @Bean
+  public NewPasswordEncodeGate newPasswordEncodeGate() {
+    return new NewPasswordEncodeGate(maxConcurrentAnonymousEncodes);
+  }
 
   @Bean
   public PermissionResolver permissionResolver() {

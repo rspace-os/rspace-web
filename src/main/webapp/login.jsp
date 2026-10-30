@@ -81,10 +81,13 @@
     <c:url value='/login' var="loginURL"></c:url>
     <form method="post" id="loginForm" action="${loginURL}" autocomplete="off" class="form-horizontal rs-sign-in-form__body">
       <c:if test="${fn:length(applicationScope['RS_DEPLOY_PROPS']['customLoginContent']) > 0}">
-      <p style="padding: 5px">
-      ${applicationScope['RS_DEPLOY_PROPS']['customLoginContent']}
-      <p/>
-    </c:if>
+        <p style="padding: 5px">
+        ${applicationScope['RS_DEPLOY_PROPS']['customLoginContent']}
+        <p/>
+      </c:if>
+      <c:if test="${param.accountCreatedLoginBusy != null}">
+        <p class="text-info" style="padding: 5px" role="status"><spring:message code="signup.accountCreatedLoginBusy"/></p>
+      </c:if>
       <fieldset>
 
         <div class="form-group col-lg-12 rs-field rs-field--input">
@@ -127,6 +130,11 @@
               <c:when test="${requestScope.checkedExceptionMessage != null}">
                 <div class="rs-tooltip">
                   ${requestScope.checkedExceptionMessage}
+                </div>
+              </c:when>
+              <c:when test="${requestScope.shiroLoginFailure eq 'com.researchspace.auth.password.LoginVerificationBusyException'}">
+                <div class="rs-tooltip">
+                  <spring:message code="errors.login.busy"/>
                 </div>
               </c:when>
               <c:otherwise>

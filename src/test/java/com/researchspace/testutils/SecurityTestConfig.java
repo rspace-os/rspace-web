@@ -50,7 +50,7 @@ public class SecurityTestConfig extends SecurityBaseConfig {
   }
 
   @Bean
-  public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
+  public static LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
     return new LifecycleBeanPostProcessor();
   }
 

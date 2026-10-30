@@ -3,6 +3,7 @@ package com.researchspace.auth;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,11 +14,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.UserSignupException;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -34,6 +37,7 @@ public class LdapRealmTest {
   @Mock private UserManager userManager;
   @Mock private UserLdapRepo userLdapRepo;
   @Mock private IPropertyHolder properties;
+  @Mock private SentinelPasswordCheck sentinelCheck;
 
   @InjectMocks private LdapRealm ldapRealm;
   private String testUsername;
@@ -110,6 +114,17 @@ public class LdapRealmTest {
   }
 
   @Test
+  public void existingInternalUserIsPaddedInsteadOfAskingTheDirectory() throws Exception {
+    when(userManager.userExists(testUsername)).thenReturn(true);
+    when(userManager.getUserByUsername(testUsername)).thenReturn(createAnyUser(testUsername));
+    when(userManager.loginLockKey(testUsername)).thenReturn("test-key");
+
+    assertNull(ldapRealm.doGetAuthenticationInfo(token));
+    verify(sentinelCheck).pad("test-key", "anypass");
+    verifyNoInteractions(userLdapRepo);
+  }
+
+  @Test
   public void testUserNotExistsReturnsNullIfUserSignupNotEnabled() throws Exception {
     when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
     when(userManager.userExists(any())).thenReturn(false);
@@ -125,5 +140,19 @@ public class LdapRealmTest {
     when(properties.isUserSignup()).thenReturn(true);
     AuthenticationInfo authenticationInfo = ldapRealm.doGetAuthenticationInfo(token);
     assertEquals("user1", authenticationInfo.getPrincipals().toString());
+  }
+
+  @Test
+  public void autoSignupFailureSurfacesAsAuthenticationExceptionWithItsMessage() throws Exception {
+    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
+    when(userManager.userExists(any())).thenReturn(false);
+    when(properties.isUserSignup()).thenReturn(true);
+    UserSignupException busy = new UserSignupException("busy");
+    when(userLdapRepo.signupLdapUser(eq(user1sid2))).thenThrow(busy);
+
+    AuthenticationException e =
+        assertThrows(AuthenticationException.class, () -> ldapRealm.doGetAuthenticationInfo(token));
+    assertEquals("busy", e.getMessage());
+    assertInstanceOf(UserSignupException.class, e.getCause());
   }
 }

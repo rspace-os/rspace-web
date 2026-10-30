@@ -24,6 +24,7 @@ import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
@@ -52,7 +53,9 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.BaseManagerTestCaseBase.MockPrincipal;
@@ -313,6 +316,45 @@ public class StructuredDocumentControllerTest {
   }
 
   @NotNull
+  @Test
+  public void busyPasswordCheckOnSigningSaysBusyAndSignsNothing() {
+    RecordSigningManager signingManager = Mockito.mock(RecordSigningManager.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "signingManager", signingManager);
+    StructuredDocument sd = setUpStructuredDocument();
+    sd.setOwner(user);
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
+    when(recordMgr.get(sd.getId())).thenReturn(sd);
+    when(signingManager.isReauthenticated(user, "pw")).thenReturn(ReauthenticationResult.BUSY);
+
+    AjaxReturnObject<SignatureInfo> result =
+        strucDocCtrller.proceedSigning(sd.getId(), "statement", new String[0], "pw", mockPrincipal);
+
+    assertEquals(List.of(busyText()), result.getErrorMsg().getErrorMessages());
+    verify(signingManager, never())
+        .signRecord(anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+  }
+
+  @Test
+  public void busyPasswordCheckOnWitnessingSaysBusyAndWitnessesNothing() {
+    RecordSigningManager signingManager = Mockito.mock(RecordSigningManager.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "signingManager", signingManager);
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(signingManager.isReauthenticated(user, "pw")).thenReturn(ReauthenticationResult.BUSY);
+
+    AjaxReturnObject<SignatureInfo> result =
+        strucDocCtrller.proceedWitnessing(3L, true, null, "pw", mockPrincipal);
+
+    assertEquals(List.of(busyText()), result.getErrorMsg().getErrorMessages());
+    verify(signingManager, never())
+        .updateWitness(anyLong(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+  }
+
+  private static String busyText() {
+    return new MessageSourceUtils(new JsonMessageSource())
+        .getMessage("errors.reauthentication.busy");
+  }
+
   private StructuredDocument setUpStructuredDocument() {
     final StructuredDocument sd = TestFactory.createAnySD();
     sd.setId(3L);

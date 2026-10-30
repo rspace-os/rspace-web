@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.apiutils.BindErrorList;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
@@ -21,6 +22,7 @@ import com.researchspace.service.inventory.InventoryOperationInProgressException
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -57,6 +59,35 @@ class ApiControllerAdviceTest {
     assertEquals(
         "Error fetching notebooks due to the Fieldmark server",
         errorList.getValidationErrors().get(1).getMessage());
+  }
+
+  @Test
+  void busyPasswordCheckMapsTo503WithRetryAfterTheVerifierWait() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    advice.passwordWaitSeconds = 7;
+
+    ResponseEntity<Object> response =
+        advice.handlePasswordCheckBusy(new LoginVerificationBusyException("busy"), null);
+
+    assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+    assertEquals("7", response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
+    assertEquals(
+        "The server is busy; retry after the Retry-After interval.",
+        ((ApiError) response.getBody()).getMessage());
+  }
+
+  @Test
+  void busyPasswordCheckNeverAsksForAnImmediateRetryAndListsNoEmptyError() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    advice.passwordWaitSeconds = 0;
+
+    ResponseEntity<Object> response =
+        advice.handlePasswordCheckBusy(new LoginVerificationBusyException("busy"), null);
+
+    assertEquals("1", response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
+    assertEquals(List.of(), ((ApiError) response.getBody()).getErrors());
   }
 
   @Test

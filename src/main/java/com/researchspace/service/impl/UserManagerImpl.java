@@ -5,7 +5,7 @@ import static java.lang.String.format;
 import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.core.util.CryptoUtils;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.CommunityDao;
@@ -44,9 +44,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.crypto.RandomNumberGenerator;
-import org.apache.shiro.crypto.SecureRandomNumberGenerator;
-import org.apache.shiro.lang.util.ByteSource;
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +61,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
-  private RandomNumberGenerator randNumGen = new SecureRandomNumberGenerator();
   private UserDao userDao;
 
   public UserManagerImpl(@Autowired UserDao userDao) {
@@ -81,6 +77,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired RSpacePasswordEncoder passwordEncoder;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -197,10 +194,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   private void changePassword(String plainText, User user) {
-    final int saltlength = 16;
-    ByteSource salt = randNumGen.nextBytes(saltlength);
-    user.setPassword(CryptoUtils.hashWithSha256inHex(plainText, salt));
-    user.setSalt(salt.toBase64());
+    user.setPassword(passwordEncoder.encode(plainText));
+    user.setSalt(null);
   }
 
   // session may be null if it's api call
@@ -260,6 +255,13 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       return userWithAlias.get().getUsername();
     }
     return null;
+  }
+
+  @Override
+  public String loginLockKey(String submittedUsername) {
+    String trimmed = StringUtils.trimToEmpty(submittedUsername);
+    String found = findUsernameByUsernameOrAlias(trimmed);
+    return userDao.usernameLockKey(found != null ? found : trimmed);
   }
 
   public List<User> getUserByEmail(String userEmail) {
@@ -412,13 +414,15 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   private TokenBasedVerification applyPasswordChange(
       String newPassword, String token, boolean isVerificationPassword) {
     TokenBasedVerification upwChange = userDao.getByToken(token);
-    if (upwChange == null) {
+    if (upwChange == null
+        || !upwChange.isValidLink(token, TokenBasedVerificationType.PASSWORD_CHANGE)) {
       return null;
     }
     List<User> users = userDao.getUserByEmail(upwChange.getEmail());
-    if (users == null || users.isEmpty()) {
+    if (users == null || users.isEmpty() || userDao.claimTokenBasedVerification(token) == 0) {
       return null;
     }
+    upwChange.setResetCompleted(true);
     User toChange = users.get(0);
 
     if (isVerificationPassword) {
@@ -428,8 +432,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       changePassword(newPassword, toChange);
     }
     userDao.save(toChange);
-    setTokenCompleted(upwChange);
-
     return upwChange;
   }
 

@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.model.User;
 import com.researchspace.service.IReauthenticator;
+import com.researchspace.service.ReauthenticationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +12,7 @@ public class LoginPasswordResetHandler extends PasswordChangeHandlerBase {
   private @Autowired IReauthenticator reauthenticator;
 
   @Override
-  protected boolean reauthenticate(User user, String currentPassword) {
+  protected ReauthenticationResult reauthenticate(User user, String currentPassword) {
     return reauthenticator.reauthenticate(user, currentPassword);
   }
 

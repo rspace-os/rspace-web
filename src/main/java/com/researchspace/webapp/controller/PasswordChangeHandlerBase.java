@@ -5,6 +5,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserManager;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -30,9 +31,15 @@ public abstract class PasswordChangeHandlerBase {
       return messages.getMessage("errors.allFields.required");
     }
 
-    if (!reauthenticate(user, currentPassword)) {
-      logAuthenticationFailure(request, user);
-      return messages.getMessage("passwordChange.errors.incorrectCurrentPassword");
+    switch (reauthenticate(user, currentPassword)) {
+      case OK -> {}
+      case BUSY -> {
+        return messages.getMessage("errors.reauthentication.busy");
+      }
+      case WRONG -> {
+        logAuthenticationFailure(request, user);
+        return messages.getMessage("passwordChange.errors.incorrectCurrentPassword");
+      }
     }
 
     String checkPasswordResult =
@@ -54,7 +61,7 @@ public abstract class PasswordChangeHandlerBase {
         RequestUtil.remoteAddr(request));
   }
 
-  protected abstract boolean reauthenticate(User user, String currentPassword);
+  protected abstract ReauthenticationResult reauthenticate(User user, String currentPassword);
 
   protected abstract User encryptAndSavePassword(User user, String newpassword);
 }
