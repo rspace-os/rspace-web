@@ -1,7 +1,7 @@
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 
 const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
-  relationTo: "booking-instruments" as const,
+  relationTo: "instruments" as const,
   globalId: `IN${id}`,
   value: {
     id,

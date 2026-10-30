@@ -60,7 +60,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
     id: item.configurationId,
     configurationVersion: item.configurationVersion,
     target: {
-      relationTo: "booking-instruments" as const,
+      relationTo: "instruments" as const,
       value: {
         id: item.targetId,
         name: item.name,

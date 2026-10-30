@@ -10,7 +10,7 @@ const booking = (id: number, target: string, start: string, end: string) => ({
   id,
   version: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: { id, name: target, deleted: false },
     globalId: target,
   },

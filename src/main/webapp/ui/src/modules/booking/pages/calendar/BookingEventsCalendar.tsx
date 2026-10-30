@@ -44,7 +44,7 @@ const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
     {
       name: "target",
       type: "relationship",
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       hasMany: false,
       labelKey: "booking:calendar.fields.target",
       capabilities: { filterOperators: [] },
