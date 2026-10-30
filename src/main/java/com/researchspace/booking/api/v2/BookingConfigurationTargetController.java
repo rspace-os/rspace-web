@@ -20,6 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class BookingConfigurationTargetController {
 
+  public record TargetDirectoryDocument(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<BookingConfigurationTarget> docs) {
+    public TargetDirectoryDocument {
+      docs = List.copyOf(docs);
+    }
+  }
+
   private final BookingConfigurationTargetManager manager;
 
   public BookingConfigurationTargetController(BookingConfigurationTargetManager manager) {
@@ -32,14 +39,16 @@ public class BookingConfigurationTargetController {
       summary = "Search eligible Booking configuration targets",
       tags = "booking-directories",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Eligible Instrument summaries."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Eligible Instrument summaries in docs, without paging metadata."),
         @ApiResponse(responseCode = "400"),
         @ApiResponse(responseCode = "401"),
         @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "429"),
         @ApiResponse(responseCode = "500")
       })
-  public List<BookingConfigurationTarget> search(
+  public TargetDirectoryDocument search(
       @Parameter(description = "Case-insensitive search text.", schema = @Schema(minLength = 2))
           @RequestParam
           String query,
@@ -57,6 +66,7 @@ public class BookingConfigurationTargetController {
     if (trimmed.length() < 2) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
     }
-    return manager.search(trimmed, ResourceAccessController.validateLimit(limit), caller.subject());
+    return new TargetDirectoryDocument(
+        manager.search(trimmed, ResourceAccessController.validateLimit(limit), caller.subject()));
   }
 }

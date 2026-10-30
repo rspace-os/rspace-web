@@ -54,9 +54,9 @@ class BookingConfigurationTargetControllerMVCIT {
                 .header("apiKey", fixture.userKey()))
         .andDo(BookingConfigurationTargetControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].id", hasItem((int) owned)))
-        .andExpect(jsonPath("$[*].id", not(hasItem((int) somebodyElses))))
-        .andExpect(jsonPath("$[0].owner").doesNotExist());
+        .andExpect(jsonPath("$.docs[*].id", hasItem((int) owned)))
+        .andExpect(jsonPath("$.docs[*].id", not(hasItem((int) somebodyElses))))
+        .andExpect(jsonPath("$.docs[0].owner").doesNotExist());
 
     mockMvc
         .perform(
@@ -64,8 +64,8 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("query", fixture.marker())
                 .header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].id", hasItem((int) owned)))
-        .andExpect(jsonPath("$[*].id", hasItem((int) somebodyElses)));
+        .andExpect(jsonPath("$.docs[*].id", hasItem((int) owned)))
+        .andExpect(jsonPath("$.docs[*].id", hasItem((int) somebodyElses)));
 
     fixture.bookingConfiguration(owned, "UTC", fixture.userKey());
     mockMvc
@@ -74,7 +74,7 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("query", fixture.marker())
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].id", not(hasItem((int) owned))));
+        .andExpect(jsonPath("$.docs[*].id", not(hasItem((int) owned))));
   }
 
   @Test
@@ -108,7 +108,7 @@ class BookingConfigurationTargetControllerMVCIT {
                   .queryParam("query", prefix + owned)
                   .header("apiKey", fixture.userKey()))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$[*].id", hasItem((int) owned)));
+          .andExpect(jsonPath("$.docs[*].id", hasItem((int) owned)));
     }
     mockMvc
         .perform(
@@ -116,14 +116,14 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("query", "IN" + other)
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isEmpty());
+        .andExpect(jsonPath("$.docs").isEmpty());
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
                 .queryParam("query", "IN" + other)
                 .header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].id", hasItem((int) other)));
+        .andExpect(jsonPath("$.docs[*].id", hasItem((int) other)));
     fixture.bookingConfiguration(owned, "UTC", fixture.userKey());
     mockMvc
         .perform(
@@ -131,14 +131,14 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("query", "IN" + owned)
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isEmpty());
+        .andExpect(jsonPath("$.docs").isEmpty());
     mockMvc
         .perform(
             get("/api/v2/booking-configuration-targets")
                 .queryParam("query", "IN" + "9".repeat(30))
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isEmpty());
+        .andExpect(jsonPath("$.docs").isEmpty());
   }
 
   private static void failOnUnexpectedServerError(

@@ -129,3 +129,7 @@ parsing accepts known compression-proxy tag alterations.
 
 When Booking is disabled, settings writes and configuration and booking writes
 return 404, as do the feature-specific directory and catalogue reads.
+
+The bounded `booking-configuration-targets` and `booking-settings/access-grantees`
+lookups return `{docs: [...]}` without paging metadata. Catalogue lists retain
+`docs` and their existing paging members.
