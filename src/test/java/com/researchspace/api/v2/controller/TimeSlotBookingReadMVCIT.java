@@ -196,8 +196,7 @@ class TimeSlotBookingReadMVCIT {
   }
 
   private static Instant alignedStart() {
-    Instant candidate = Instant.now().plus(7, ChronoUnit.DAYS);
-    return Instant.ofEpochSecond(((candidate.getEpochSecond() + 299) / 300) * 300);
+    return Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
   }
 
   @Test
