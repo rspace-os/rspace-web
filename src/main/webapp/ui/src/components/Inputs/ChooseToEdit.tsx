@@ -7,6 +7,12 @@ type ChooseToEditArgs = {
   checked: boolean;
   onChange: (newCheckedState: boolean) => void;
   ariaControls?: string;
+  /**
+   * Overrides the default "Batch edit this field" text, for the rare field whose own label
+   * doesn't make clear which field is meant (e.g. where the checkbox sits apart from the field it
+   * controls, rather than right beside it).
+   */
+  label?: string;
 };
 
 /**
@@ -14,7 +20,7 @@ type ChooseToEditArgs = {
  * editable when batch editing, and as such whether the value will be applied
  * to all of the records being edited.
  */
-export default function ChooseToEdit({ checked, onChange, ariaControls }: ChooseToEditArgs): React.ReactNode {
+export default function ChooseToEdit({ checked, onChange, ariaControls, label }: ChooseToEditArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const id = React.useId();
 
@@ -32,7 +38,7 @@ export default function ChooseToEdit({ checked, onChange, ariaControls }: Choose
         right: 0,
       })}
     >
-      {t("inputs.chooseToEdit.label")}
+      {label ?? t("inputs.chooseToEdit.label")}
       <Checkbox
         id={id}
         aria-controls={ariaControls}
