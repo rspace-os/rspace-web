@@ -35,13 +35,20 @@ function withEndAfterStart<
 }
 
 const BookingTargetSchema = v.object({
-  relationTo: v.literal("booking-instruments"),
+  relationTo: v.literal("instruments"),
   value: v.object({
     id: v.number(),
     name: v.string(),
     deleted: v.boolean(),
-    parentContainerName: v.optional(v.nullable(v.string())),
-    parentContainerGlobalId: v.optional(v.nullable(v.string())),
+    parentContainer: v.optional(
+      v.nullable(
+        v.object({
+          relationTo: v.literal("containers"),
+          value: v.union([v.number(), v.object({ id: v.number(), globalId: v.string(), name: v.string() })]),
+          globalId: v.string(),
+        }),
+      ),
+    ),
   }),
   globalId: v.string(),
 });
@@ -49,7 +56,7 @@ const BookingTargetSchema = v.object({
 // Mutation responses are serialized directly from the saved entity. Unlike reads, they do not
 // expand relationships, even when the request includes depth=1.
 const MutationTargetSchema = v.object({
-  relationTo: v.literal("booking-instruments"),
+  relationTo: v.literal("instruments"),
   value: v.union([v.number(), BookingTargetSchema.entries.value]),
   globalId: v.string(),
 });
@@ -158,7 +165,7 @@ export type BookingListDocument = v.InferOutput<typeof BookingListDocumentSchema
 type BookingMutation = v.InferOutput<typeof BookingMutationSchema>;
 
 export const BookingCreateSchema = v.object({
-  target: v.object({ relationTo: v.literal("booking-instruments"), value: v.number() }),
+  target: v.object({ relationTo: v.literal("instruments"), value: v.number() }),
   start: v.string(),
   end: v.string(),
   purpose: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(1000)))),
@@ -234,8 +241,10 @@ export async function requestBooking<TSchema extends v.BaseSchema<unknown, unkno
 
 export async function fetchBooking(id: number, token: string, signal?: AbortSignal): Promise<BookingDetails> {
   const parameters = new URLSearchParams({
-    depth: "1",
+    depth: "2",
     "fields[bookings]": BOOKING_READ_FIELDS,
+    "fields[instruments]": "id,globalId,name,deleted,parentContainer",
+    "fields[containers]": "id,globalId,name",
   });
   try {
     return await requestBooking(`/api/v2/bookings/${id}?${parameters}`, token, BookingDetailsSchema, {
