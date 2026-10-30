@@ -15,7 +15,6 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
 import java.util.Map;
@@ -33,18 +32,9 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       new CollectionQueryExecutor<>(
           Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "collectionInstrument");
 
-  public record ParentLocationRow(
-      Long instrumentId, Long containerId, String containerName, ContainerType containerType) {}
-
   public record InstrumentNameRow(Long instrumentId, String name) {}
 
-  public record InstrumentReadSummaryRow(
-      Long instrumentId,
-      String name,
-      Boolean deleted,
-      Long parentContainerId,
-      String parentContainerName,
-      ContainerType parentContainerType) {}
+  public record InstrumentReadSummaryRow(Long instrumentId, String name, Boolean deleted) {}
 
   private String defaultTemplateOwner;
 
@@ -68,62 +58,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
-  public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
-      Set<Long> instrumentIds) {
-    if (instrumentIds.isEmpty()) {
-      return Map.of();
-    }
-    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
-    query.whereExpression("instrument.id IN :instrumentIds");
-    query.whereExpression("location.storedInstrument.id = instrument.id");
-    query.setParameter("instrumentIds", instrumentIds);
-    return query.getResultList().stream()
-        .collect(
-            Collectors.toMap(
-                ParentLocationRow::instrumentId,
-                row ->
-                    new InstrumentParentLocationSummary(
-                        row.containerId(), row.containerName(), row.containerType())));
-  }
-
-  @Override
-  public Map<Long, InstrumentParentLocationSummary> getReadableParentLocationSummaries(
-      Set<Long> instrumentIds, User caller) {
-    if (instrumentIds.isEmpty()) {
-      return Map.of();
-    }
-    InventoryReadQueryContext context = readQueryContext(caller);
-    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
-    query.whereExpression("instrument.id IN :instrumentIds");
-    query.whereExpression("location.storedInstrument.id = instrument.id");
-    query.whereExpression("parent.deleted = false");
-    query.whereExpression(context.readableContainerPredicate(this, "parent"));
-    query.setParameter("instrumentIds", instrumentIds);
-    context.bind(query, null);
-    return query.getResultList().stream()
-        .collect(
-            Collectors.toMap(
-                ParentLocationRow::instrumentId,
-                row ->
-                    new InstrumentParentLocationSummary(
-                        row.containerId(), row.containerName(), row.containerType())));
-  }
-
-  private CriteriaBuilder<ParentLocationRow> parentLocationQuery() {
-    return criteriaBuilderFactory()
-        .create(getSession(), ParentLocationRow.class)
-        .from(Instrument.class, "instrument")
-        .innerJoin("instrument.parentLocation", "location")
-        .innerJoin("location.container", "parent")
-        .selectNew(ParentLocationRow.class)
-        .with("instrument.id")
-        .with("parent.id")
-        .with("parent.editInfo.name")
-        .with("parent.containerType")
-        .end();
-  }
-
-  @Override
   public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
     if (instrumentIds.isEmpty()) {
       return Map.of();
@@ -134,16 +68,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         criteriaBuilderFactory()
             .create(getSession(), InstrumentReadSummaryRow.class)
             .from(Instrument.class, "instrument")
-            .leftJoinOn("instrument.parentLocation", "location")
-            .setOnExpression("location.storedInstrument.id = instrument.id")
-            .leftJoin("location.container", "parent")
             .selectNew(InstrumentReadSummaryRow.class)
             .with("instrument.id")
             .with("instrument.editInfo.name")
             .with("instrument.deleted")
-            .with("parent.id")
-            .with("parent.editInfo.name")
-            .with("parent.containerType")
             .end()
             .whereExpression("instrument.id in :instrumentIds")
             .whereExpression("instrument.deleted = false")
@@ -152,15 +80,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     context.bind(query, null);
     return query
         .getResultStream()
-        .map(
-            row ->
-                new InstrumentReadSummary(
-                    row.instrumentId(),
-                    row.name(),
-                    row.deleted(),
-                    row.parentContainerId(),
-                    row.parentContainerName(),
-                    row.parentContainerType()))
+        .map(row -> new InstrumentReadSummary(row.instrumentId(), row.name(), row.deleted()))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 

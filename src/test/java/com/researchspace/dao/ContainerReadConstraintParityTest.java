@@ -36,12 +36,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 class ContainerReadConstraintParityTest extends SpringTransactionalTest {
 
   private final InstrumentDao instrumentDao;
-  @Autowired private CriteriaBuilderFactory criteria;
-  @Autowired private ContainerReadAccess access;
+  private final CriteriaBuilderFactory criteria;
+  private final ContainerReadAccess access;
 
   @Autowired
-  ContainerReadConstraintParityTest(InstrumentDao instrumentDao) {
+  ContainerReadConstraintParityTest(
+      InstrumentDao instrumentDao, CriteriaBuilderFactory criteria, ContainerReadAccess access) {
     this.instrumentDao = instrumentDao;
+    this.criteria = criteria;
+    this.access = access;
   }
 
   @Test

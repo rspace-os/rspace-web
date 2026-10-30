@@ -9,7 +9,10 @@ import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import java.util.List;
 import java.util.Set;
@@ -24,15 +27,17 @@ import java.util.Set;
  */
 public final class ApiV2InstrumentResource {
 
+  public static final String RESOURCE_NAME = "instruments";
+
   public static final CollectionDescription<Instrument> DESCRIPTION =
       description(activeInstruments());
 
   /** Builds this collection shape with its deployment's complete instrument read policy. */
   public static CollectionDescription<Instrument> description(AccessFunction readAccess) {
     return new CollectionDescription<>(
-        "instruments",
+        RESOURCE_NAME,
         Instrument.class,
-        List.<Field<Instrument, ?>>of(
+        List.<ResourceMember<Instrument>>of(
             Field.<Instrument, Long>readOnly(
                     "id", "id", CollectionFieldTypes.longNumber(), Instrument::getId)
                 .documented(
@@ -53,46 +58,14 @@ public final class ApiV2InstrumentResource {
                 .documented(
                     OpenApiSchemaDocumentation.of(
                         "Global ID", "RSpace global identifier.", "IN123")),
-            Field.<Instrument, String>readOnly(
-                    "parentContainerName",
-                    "parentLocation.container.editInfo.name",
-                    CollectionFieldTypes.text(255),
-                    instrument ->
-                        instrument.getParentContainer() == null
-                            ? null
-                            : instrument.getParentContainer().getName())
-                .allowNull()
-                .withQueryCapabilities(false, false)
-                .documented(
-                    OpenApiSchemaDocumentation.builder()
-                        .title("Location")
-                        .description(
-                            "Deprecated. Display name of the instrument's immediate parent "
-                                + "container. A future parentContainer relationship will replace "
-                                + "this field.")
-                        .example("Imaging lab")
-                        .deprecated()
-                        .build()),
-            Field.<Instrument, String>readOnly(
-                    "parentContainerGlobalId",
-                    "parentLocation.container.globalIdentifier",
-                    CollectionFieldTypes.text(),
-                    instrument ->
-                        instrument.getParentContainer() == null
-                            ? null
-                            : instrument.getParentContainer().getGlobalIdentifier())
-                .allowNull()
-                .withQueryCapabilities(false, false)
-                .documented(
-                    OpenApiSchemaDocumentation.builder()
-                        .title("Location global ID")
-                        .description(
-                            "Deprecated. RSpace global identifier of the instrument's immediate "
-                                + "parent container. A future parentContainer relationship will "
-                                + "replace this field.")
-                        .example("IC456")
-                        .deprecated()
-                        .build()),
+            Relationship.referenceToOne(
+                "parentContainer",
+                ApiV2ContainerResource.RESOURCE_NAME,
+                CollectionFieldTypes.longNumber(),
+                Container.class,
+                Instrument::getParentContainer,
+                Container::getId,
+                "parentLocation.container.id"),
             Field.<Instrument, Boolean>readOnly(
                     "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
                 .withQueryCapabilities(true, false)
@@ -110,9 +83,8 @@ public final class ApiV2InstrumentResource {
   /**
    * Reads are limited to instruments that are not in the trash.
    *
-   * <p>A row constraint rather than a filter added by the operations class: the registration folds
-   * it into the list, the count, the single read, and relationship resolution, so one declaration
-   * covers every route that can return an instrument.
+   * <p>Collection managers apply this row constraint to list and count queries. Relationship
+   * resolution also applies the target's read constraint.
    */
   private static AccessFunction activeInstruments() {
     FilterExpression notDeleted =
