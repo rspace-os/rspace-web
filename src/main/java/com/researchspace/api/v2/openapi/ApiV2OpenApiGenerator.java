@@ -596,7 +596,7 @@ public final class ApiV2OpenApiGenerator {
             "query",
             false,
             ordered("type", "string", "maxLength", 255),
-            "Case-insensitive text contained in the actor, action, description, target, or "
+            "Case-insensitive text contained in the actor, action, safe description, target, or "
                 + "recorded values."));
     Map<String, Object> actions =
         parameter(

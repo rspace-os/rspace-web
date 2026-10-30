@@ -177,6 +177,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return spec.resourceAccess();
   }
 
+  boolean auditDescriptionsSafe() {
+    return operations.auditDescriptionsSafe();
+  }
+
   Set<String> relatedAuditFields() {
     return operations.relatedAuditFields();
   }

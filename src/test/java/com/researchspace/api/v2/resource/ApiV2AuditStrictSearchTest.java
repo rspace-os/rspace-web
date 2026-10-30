@@ -70,6 +70,32 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void hiddenDescriptionsCannotMatchText() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1") + "description:[Hidden container IC9]\n");
+    var scanner = search(ReadObserver.NONE);
+    assertTrue(scanner.search(request(10, "ic9")).isEmpty());
+    var ordinary = request(10, "ic9");
+    var safe =
+        new Request(
+            ordinary.fromInclusive(),
+            ordinary.toExclusive(),
+            ordinary.domains(),
+            ordinary.actions(),
+            ordinary.oid(),
+            ordinary.requestedUsernames(),
+            ordinary.actor(),
+            ordinary.ceiling(),
+            ordinary.bypassActorDirectory(),
+            ordinary.search(),
+            ordinary.searchableFields(),
+            ordinary.relatedIdentifierFields(),
+            true);
+    assertEquals(1, scanner.search(safe).size());
+  }
+
+  @Test
   void ambiguousBoundaryTimestampCannotHideSecondFallbackOccurrence() throws IOException {
     write("RSLogs.txt", event("25 Oct 2026 02:30:00,000", "BC1") + "\n");
 

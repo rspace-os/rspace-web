@@ -80,6 +80,15 @@ class ApiV2AuditLogTest {
   }
 
   @Test
+  void omitsUnsafeDescriptionsByDefault() {
+    var result = result("Visible", Instant.parse("2026-01-02T12:00:00Z"));
+    result.getEvent().setDescription("Hidden container IC9");
+    when(strictSearch.search(any())).thenReturn(List.of(result));
+    var page = auditLog.search(resource, "7", rangeQuery(), actor);
+    org.junit.jupiter.api.Assertions.assertNull(page.docs().get(0).description());
+  }
+
+  @Test
   void searchesByResourceAuditIdentityAndRemovesPrivatePayload() {
     AuditData data =
         AuditData.fromJson(
