@@ -13,13 +13,18 @@ function serve(initial: Partial<typeof settings> = {}, saveSucceeds: () => boole
   const submitted: Record<string, unknown>[] = [];
   let current = { ...settings, ...initial };
   server.use(
-    http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
+    http.get("/api/v2/booking-settings/admin", () =>
+      HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+    ),
     http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+      if (!request.headers.has("If-Match")) return new HttpResponse(null, { status: 428 });
+      expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
       const body = (await request.json()) as Record<string, unknown>;
+      expect(body).not.toHaveProperty("configurationVersion");
       submitted.push(body);
       if (!saveSucceeds()) return HttpResponse.json({ status: 500 }, { status: 500 });
       current = { ...current, ...body, configurationVersion: current.configurationVersion + 1 };
-      return HttpResponse.json(current);
+      return HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } });
     }),
   );
   return submitted;
