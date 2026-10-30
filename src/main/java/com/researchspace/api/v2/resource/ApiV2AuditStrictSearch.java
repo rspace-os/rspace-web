@@ -5,7 +5,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
-import com.researchspace.model.core.Person;
+import com.researchspace.service.audit.search.AuditLogLineFormat;
 import com.researchspace.service.audit.search.AuditTrailActorVisibility;
 import com.researchspace.service.audit.search.AuditTrailSearchElement;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
@@ -59,12 +59,6 @@ import org.springframework.stereotype.Component;
 public final class ApiV2AuditStrictSearch {
 
   private static final String OPERATE_AS_DELIMITER = "->";
-  private static final Pattern AUDIT_LINE =
-      Pattern.compile(
-          "^(.*?)- domain:(\\w+)\\s+action:(\\w+)\\s+\\[(.+)]\\s+"
-              + "(["
-              + Person.ALLOWED_USERNAME_CHARS
-              + ">]+)\\((.+)\\)\\s*(?:description:\\[(.*)])?$");
   private static final Pattern AUDIT_PREFIX = Pattern.compile("^.*?-\\s+domain:");
   private static final Pattern LOG_LINE_TIMESTAMP = Pattern.compile("^(.*?)-");
   private static final DateTimeFormatter TIMESTAMP_FORMAT =
@@ -344,35 +338,38 @@ public final class ApiV2AuditStrictSearch {
   }
 
   private Optional<ParsedLine> parseAuditLine(String line, FileManifest file, int lineNumber) {
-    Matcher matcher = AUDIT_LINE.matcher(line);
-    if (!matcher.matches()) {
-      if (AUDIT_PREFIX.matcher(line).find()) {
-        throw failure(file.safeName(), lineNumber, null);
-      }
+    var fields =
+        AuditLogLineFormat.parse(
+            line,
+            malformed -> {
+              if (AUDIT_PREFIX.matcher(malformed).find()) {
+                throw failure(file.safeName(), lineNumber, null);
+              }
+            });
+    if (fields.isEmpty()) {
       return Optional.empty();
     }
+    var parsed = fields.get();
     try {
-      Instant timestamp = timestamp(matcher.group(1));
-      AuditDomain domain = AuditDomain.valueOf(matcher.group(2));
-      String actionValue =
-          "COPY".equalsIgnoreCase(matcher.group(3)) ? "DUPLICATE" : matcher.group(3);
-      AuditAction action = AuditAction.valueOf(actionValue);
-      AuditData data = AuditData.fromJson(matcher.group(4));
+      Instant timestamp = timestamp(parsed.timestamp());
+      AuditDomain domain = AuditDomain.valueOf(parsed.domain());
+      AuditAction action = AuditAction.valueOf(parsed.action());
+      AuditData data = AuditData.fromJson(parsed.data());
       if (data == null) {
         throw failure(file.safeName(), lineNumber, null);
       }
       HistoricData event =
-          new HistoricData(domain, action, matcher.group(6), data, matcher.group(5));
+          new HistoricData(domain, action, parsed.fullName(), data, parsed.username());
       event.setTimestamp(Date.from(timestamp));
-      if (matcher.group(7) != null) {
-        event.setDescription(matcher.group(7));
+      if (parsed.description() != null) {
+        event.setDescription(parsed.description());
       }
       return Optional.of(
           new ParsedLine(
               timestamp,
               domain,
               action,
-              matcher.group(5),
+              parsed.username(),
               new AuditTrailSearchResult(event, timestamp.toEpochMilli())));
     } catch (DateTimeException | IllegalArgumentException ex) {
       throw failure(file.safeName(), lineNumber, ex);
