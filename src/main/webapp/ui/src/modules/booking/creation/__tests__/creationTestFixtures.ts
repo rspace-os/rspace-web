@@ -115,7 +115,7 @@ export function existingBooking({ id, start, end }: { id: number; start: string;
     id,
     version: 0,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: { id: 123, name: "Confocal microscope", deleted: false },
       globalId: "IN123",
     },
