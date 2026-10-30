@@ -31,7 +31,9 @@ public interface DocumentsApi {
 
   @GetMapping
   /**
-   * Min search term length is 2 chars (but 5 for Sysadmins). Sysadmin cannot do wildcard searches
+   * Min search term length is 2 chars (but 5 for Sysadmins), both configurable per deployment
+   * (search.user.minTermLength, search.sysadmin.minTermLength). Sysadmin cannot do wildcard
+   * searches
    */
   ApiDocumentSearchResult getDocuments(
       DocumentApiPaginationCriteria pgCriteria,
