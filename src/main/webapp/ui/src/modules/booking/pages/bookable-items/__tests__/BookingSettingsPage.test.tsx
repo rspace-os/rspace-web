@@ -127,10 +127,17 @@ describe("BookingSettingsPage", () => {
     let submitted: unknown;
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
+      http.get("/api/v2/booking-settings/admin", () =>
+        HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+      ),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"1"');
         submitted = await request.json();
-        return HttpResponse.json({ ...current, allowDoubleBooking: true, configurationVersion: 2 });
+        expect(submitted).not.toHaveProperty("configurationVersion");
+        return HttpResponse.json(
+          { ...current, allowDoubleBooking: true, configurationVersion: 2 },
+          { headers: { ETag: '"2"' } },
+        );
       }),
     );
     renderPage(queryClient);
@@ -151,7 +158,6 @@ describe("BookingSettingsPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
     expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
     expect(submitted).toMatchObject({
-      configurationVersion: 1,
       openingHours: current.openingHours,
       allowDoubleBooking: true,
     });
@@ -162,10 +168,13 @@ describe("BookingSettingsPage", () => {
     let current = settings;
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
-      http.patch("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 }),
+      http.get("/api/v2/booking-settings/admin", () =>
+        HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
       ),
+      http.patch("/api/v2/booking-settings/admin", ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"0"');
+        return HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 });
+      }),
     );
     renderPage();
     await user.click(await screen.findByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
@@ -204,11 +213,15 @@ describe("BookingSettingsPage", () => {
       http.get("/api/v2/booking-settings/admin", async () => {
         loads += 1;
         if (loads > 1) await responseReady;
-        return HttpResponse.json({ ...settings, configurationVersion: loads - 1 });
+        return HttpResponse.json(
+          { ...settings, configurationVersion: loads - 1 },
+          { headers: { ETag: `"${loads - 1}"` } },
+        );
       }),
-      http.patch("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 }),
-      ),
+      http.patch("/api/v2/booking-settings/admin", ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"0"');
+        return HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 });
+      }),
     );
     renderPage();
     const doubleBooking = await screen.findByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" });
@@ -417,6 +430,8 @@ describe("BookingSettingsPage", () => {
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
+        expect(request.headers.get("If-Match")).toBe('"0"');
+        expect(body).not.toHaveProperty("configurationVersion");
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 }, { headers: { ETag: '"1"' } });
       }),
     );
@@ -441,10 +456,14 @@ describe("BookingSettingsPage", () => {
     let body: Record<string, unknown> | undefined;
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json({ ...settings, timeFormat: "H12" })),
+      http.get("/api/v2/booking-settings/admin", () =>
+        HttpResponse.json({ ...settings, timeFormat: "H12" }, { headers: { ETag: '"0"' } }),
+      ),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...settings, ...body });
+        expect(request.headers.get("If-Match")).toBe('"0"');
+        expect(body).not.toHaveProperty("configurationVersion");
+        return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 }, { headers: { ETag: '"1"' } });
       }),
     );
     renderPage();
@@ -463,15 +482,16 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     server.use(
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
-      http.patch("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json(
+      http.patch("/api/v2/booking-settings/admin", ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"0"');
+        return HttpResponse.json(
           {
             status,
             ...(status === 412 ? { code: "errors.api.v2.bookingConfiguration.stale" } : {}),
           },
           { status },
-        ),
-      ),
+        );
+      }),
     );
     renderPage();
 
@@ -501,11 +521,18 @@ describe("BookingSettingsPage", () => {
       const submitted: Record<string, unknown>[] = [];
       server.use(
         oauthTokenHandler(true),
-        http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(initial)),
+        http.get("/api/v2/booking-settings/admin", () =>
+          HttpResponse.json(initial, { headers: { ETag: `"${initial.configurationVersion}"` } }),
+        ),
         http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
           const body = (await request.json()) as Record<string, unknown>;
+          expect(body).not.toHaveProperty("configurationVersion");
+          expect(request.headers.get("If-Match")).toBe(`"${initial.configurationVersion}"`);
           submitted.push(body);
-          return HttpResponse.json({ ...initial, ...body, configurationVersion: initial.configurationVersion + 1 });
+          return HttpResponse.json(
+            { ...initial, ...body, configurationVersion: initial.configurationVersion + 1 },
+            { headers: { ETag: `"${initial.configurationVersion + 1}"` } },
+          );
         }),
       );
       return submitted;

@@ -99,7 +99,7 @@ describe("Booking settings route", () => {
   });
 
   it("loads the institution settings for a sysadmin", async () => {
-    answerAdminSettings(() => HttpResponse.json(settings));
+    answerAdminSettings(() => HttpResponse.json(settings, { headers: { ETag: '"0"' } }));
     renderSettingsRoute(true);
 
     expect(await screen.findByRole("button", { name: "booking:settings.actions.save" })).toBeInTheDocument();
@@ -119,7 +119,9 @@ describe("Booking settings route", () => {
   it("retries a server error, then offers a working retry inside the page", async () => {
     const user = userEvent.setup();
     let failing = true;
-    answerAdminSettings(() => (failing ? new HttpResponse(null, { status: 500 }) : HttpResponse.json(settings)));
+    answerAdminSettings(() =>
+      failing ? new HttpResponse(null, { status: 500 }) : HttpResponse.json(settings, { headers: { ETag: '"0"' } }),
+    );
     renderSettingsRoute(true);
 
     expect(await screen.findByText("booking:settings.unavailable.title")).toBeVisible();
@@ -132,7 +134,12 @@ describe("Booking settings route", () => {
 
   it("shows the default custom timezone field only in Custom mode", async () => {
     const user = userEvent.setup();
-    answerAdminSettings(() => HttpResponse.json({ ...settings, timezoneMode: "CUSTOM", customTimezone: "Asia/Tokyo" }));
+    answerAdminSettings(() =>
+      HttpResponse.json(
+        { ...settings, timezoneMode: "CUSTOM", customTimezone: "Asia/Tokyo" },
+        { headers: { ETag: '"0"' } },
+      ),
+    );
     renderSettingsRoute(true);
     const customName = { name: "booking:preferences.timezone.customLabel" };
 

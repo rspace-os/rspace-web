@@ -59,7 +59,7 @@ export function BookingSettingsContent() {
   // opening hours that Open all day would restore, for saves, accepted refreshes and reloads alike.
   const [editorVersion, setEditorVersion] = useState(0);
   const adoptSettings = useCallback(
-    (next: BookingAdminSettings) => {
+    (next: BookingAdminSettings & { etag: string }) => {
       setSettings(next);
       reset(form, { initialInput: next });
       setDisplaySettings(displayInput(next));
@@ -93,8 +93,7 @@ export function BookingSettingsContent() {
     }
   }, [loadedSettings, settings, dirty, mutation.isPending, adoptSettings]);
 
-  const stale =
-    mutation.error instanceof ApiV2ProblemError && mutation.error.status === 412;
+  const stale = mutation.error instanceof ApiV2ProblemError && mutation.error.status === 412;
 
   const saved = mutation.isSuccess && !dirty;
   const pending = mutation.isPending || reloading;
@@ -152,7 +151,8 @@ export function BookingSettingsContent() {
             }}
           >
             {t("settings.actions.reload")}
-          </Button>        ) : null}
+          </Button>
+        ) : null}
         <Button
           type="submit"
           disabled={pending || !dirty || !displaySettingsValid}

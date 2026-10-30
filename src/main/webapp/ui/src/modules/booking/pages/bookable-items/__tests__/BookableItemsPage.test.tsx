@@ -42,9 +42,13 @@ beforeEach(() => {
   } as ReturnType<typeof useCurrentUserQuery>);
   // One instrument the caller could set up, so the page offers Add unless a test says otherwise.
   server.use(
-    http.get("/api/v2/booking-configuration-targets", () =>
-      HttpResponse.json([{ id: 900, globalId: "IN900", name: "Unconfigured spectrometer", deleted: false }]),
-    ),
+    http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+      expect(new URL(request.url).searchParams.has("query")).toBe(false);
+      expect(new URL(request.url).searchParams.has("search")).toBe(false);
+      return HttpResponse.json({
+        docs: [{ id: 900, globalId: "IN900", name: "Unconfigured spectrometer", deleted: false }],
+      });
+    }),
   );
 });
 
@@ -312,9 +316,11 @@ describe("BookableItemsPage", () => {
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
-      http.get("/api/v2/booking-configuration-targets", () => {
+      http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+        expect(new URL(request.url).searchParams.has("query")).toBe(false);
+        expect(new URL(request.url).searchParams.has("search")).toBe(false);
         targetRequests += 1;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ docs: [] });
       }),
     );
     renderBookableItemsPage();
