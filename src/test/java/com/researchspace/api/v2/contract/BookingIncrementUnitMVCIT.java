@@ -153,7 +153,7 @@ class BookingIncrementUnitMVCIT {
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d},"
+                    "{\"target\":{\"relationTo\":\"instruments\",\"value\":%d},"
                             .formatted(instrumentId)
                         + "\"start\":\"%s\",\"end\":\"%s\"}"
                             .formatted(

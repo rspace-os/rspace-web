@@ -146,7 +146,7 @@ describe("ActiveBookingCreationDialog", () => {
           {
             id: 84,
             version: 1,
-            target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" },
+            target: { relationTo: "instruments", value: 123, globalId: "IN123" },
             timezone: "UTC",
             start: "2026-09-28T10:00:00Z",
             end: "2026-09-28T11:00:00Z",

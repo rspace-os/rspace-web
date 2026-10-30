@@ -36,7 +36,7 @@ describe("the availability oracle", () => {
   const booking = (start: string, end: string, kind: Booking["kind"] = "BOOKING"): Booking => ({
     id: 1,
     version: 0,
-    target: { relationTo: "booking-instruments", value: { id: 1, name: "IN1", deleted: false }, globalId: "IN1" },
+    target: { relationTo: "instruments", value: { id: 1, name: "IN1", deleted: false }, globalId: "IN1" },
     timezone: "UTC",
     start,
     end,

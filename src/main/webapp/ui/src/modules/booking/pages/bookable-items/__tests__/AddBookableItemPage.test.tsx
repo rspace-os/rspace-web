@@ -334,7 +334,7 @@ describe("AddBookableItemPage", () => {
       }
       expect(authorization).toBe("Bearer test-token");
       expect(requestBody).toEqual({
-        target: { relationTo: "booking-instruments", value: 123 },
+        target: { relationTo: "instruments", value: 123 },
         enabled,
         timezone: "Europe/Berlin",
         slotGranularityMinutes: 5,
