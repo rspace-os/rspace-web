@@ -28,7 +28,9 @@ describe("BookingPreferencesPage", () => {
       }),
     );
     const { container } = renderPage();
-    const ownActions = await screen.findByRole("switch", { name: "booking:notificationSubscriptions.preferences.ownActions.label" });
+    const ownActions = await screen.findByRole("switch", {
+      name: "booking:notificationSubscriptions.preferences.ownActions.label",
+    });
     expect(ownActions).toBeChecked();
     await expectAccessible(container);
     await user.click(ownActions);
@@ -41,7 +43,12 @@ describe("BookingPreferencesPage", () => {
     expect(savedButton).toHaveClass("bg-emerald-600");
     expect(savedButton).toBeDisabled();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(saved).toEqual({ notifyOwnActions: false, autoSubscribeOwnedItems: true, notifyOnCreated: true, notifyOnCancelled: true });
+    expect(saved).toEqual({
+      notifyOwnActions: false,
+      autoSubscribeOwnedItems: true,
+      notifyOnCreated: true,
+      notifyOnCancelled: true,
+    });
 
     await user.click(
       screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),
@@ -85,7 +92,12 @@ describe("BookingPreferencesPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
 
     expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
-    expect(saved).toEqual({ autoSubscribeOwnedItems: false, notifyOnCreated: true, notifyOnCancelled: false });
+    expect(saved).toEqual({
+      notifyOwnActions: true,
+      autoSubscribeOwnedItems: false,
+      notifyOnCreated: true,
+      notifyOnCancelled: false,
+    });
     expect(cancelled).not.toBeChecked();
     await expectAccessible(container);
   });

@@ -106,8 +106,7 @@ class ApiV2OpenApiFixtureTest {
     assertEquals(
         "getBookingCalendarSubscription", objectMap(management.get("get")).get("operationId"));
     assertEquals(
-        "createOrReplaceBookingCalendarSubscription",
-        objectMap(management.get("post")).get("operationId"));
+        "createBookingCalendarSubscription", objectMap(management.get("post")).get("operationId"));
     assertEquals(
         "revokeBookingCalendarSubscription",
         objectMap(management.get("delete")).get("operationId"));
@@ -117,14 +116,23 @@ class ApiV2OpenApiFixtureTest {
     assertEquals(
         Set.of("200", "401", "404", "406", "429", "500"), objectMap(get.get("responses")).keySet());
     assertEquals(
-        Set.of("200", "400", "401", "404", "406", "409", "428", "429", "500"),
+        Set.of("200", "201", "401", "404", "406", "409", "429", "500"),
         objectMap(post.get("responses")).keySet());
     assertEquals(
         Set.of("204", "401", "404", "406", "429", "500"),
         objectMap(delete.get("responses")).keySet());
 
+    Map<String, Object> rotate =
+        objectMap(
+            objectMap(
+                    paths.get(
+                        "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate"))
+                .get("post"));
+    assertEquals(
+        Set.of("200", "400", "401", "404", "406", "409", "412", "428", "429", "500"),
+        objectMap(rotate.get("responses")).keySet());
     Map<String, Object> ifMatch =
-        objectMapList(post.get("parameters")).stream()
+        objectMapList(rotate.get("parameters")).stream()
             .filter(parameter -> parameter.get("name").equals("If-Match"))
             .findFirst()
             .orElseThrow();
@@ -132,7 +140,7 @@ class ApiV2OpenApiFixtureTest {
     assertEquals(true, ifMatch.get("required"));
     assertEquals("string", objectMap(ifMatch.get("schema")).get("type"));
 
-    for (Map<String, Object> operation : List.of(get, post)) {
+    for (Map<String, Object> operation : List.of(get, post, rotate)) {
       Map<String, Object> headers =
           objectMap(objectMap(objectMap(operation.get("responses")).get("200")).get("headers"));
       assertEquals(Set.of("Cache-Control", "ETag"), headers.keySet());

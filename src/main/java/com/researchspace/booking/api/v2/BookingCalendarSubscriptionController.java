@@ -220,7 +220,13 @@ public class BookingCalendarSubscriptionController {
             description = "The requested representation is unavailable."),
         @ApiResponse(responseCode = "429", description = "Too many requests."),
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
-        @ApiResponse(responseCode = "204", description = "The subscription is inactive."),
+        @ApiResponse(
+            responseCode = "204",
+            description = "The subscription is inactive.",
+            headers =
+                @Header(
+                    name = "Cache-Control",
+                    schema = @Schema(types = "string", allowableValues = "private, no-store"))),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })

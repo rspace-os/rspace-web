@@ -306,8 +306,17 @@ public class BookingNotificationSubscriptionManagerImpl
   }
 
   private void requireAccess(User subject, User actor) {
-    if (!BookingUserAccess.hasAccess(featureFlags, subject, actor)) {
+    if (subject == null
+        || actor == null
+        || !subject.isEnabled()
+        || !actor.isEnabled()
+        || subject.isAccountLocked()
+        || actor.isAccountLocked()) {
       throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+    if (!featureFlags.isFeatureFlagEnabled(
+        com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED, subject)) {
+      throw new NotFoundException();
     }
   }
 

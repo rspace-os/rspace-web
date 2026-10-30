@@ -14,10 +14,10 @@ import {
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { Switch } from "@/modules/common/ui/switch";
 import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldLabel } from "@/modules/common/ui/field";
+import { Switch } from "@/modules/common/ui/switch";
 import { Heading } from "@/modules/common/ui/typography";
 import {
   BookingNotificationChoiceFields,
@@ -113,7 +113,14 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         initialInput: formInput(preferences),
       });
     }
-  }, [dirty, form, preferences.autoSubscribeOwnedItems, preferences.notifyOwnActions, preferences.notifyOnCreated, preferences.notifyOnCancelled]);
+  }, [
+    dirty,
+    form,
+    preferences.autoSubscribeOwnedItems,
+    preferences.notifyOwnActions,
+    preferences.notifyOnCreated,
+    preferences.notifyOnCancelled,
+  ]);
 
   return (
     <section className="max-w-2xl space-y-4" aria-labelledby="booking-notifications-heading">
@@ -180,9 +187,13 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         ) : null}
         <div className="space-y-2">
           <label htmlFor="notify-own-actions">{t("notificationSubscriptions.preferences.ownActions.label")}</label>
-          <Switch id="notify-own-actions" checked={notifyOwnActions.input ?? false} disabled={pending}
+          <Switch
+            id="notify-own-actions"
+            checked={notifyOwnActions.input ?? false}
+            disabled={pending}
             aria-describedby="notify-own-actions-description"
-            onCheckedChange={(checked) => notifyOwnActions.onChange(checked)} />
+            onCheckedChange={(checked) => notifyOwnActions.onChange(checked)}
+          />
           <p id="notify-own-actions-description">{t("notificationSubscriptions.preferences.ownActions.description")}</p>
         </div>
         <Button
@@ -199,8 +210,16 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
               ? t("notificationSubscriptions.preferences.saving")
               : t("notificationSubscriptions.preferences.save")}
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={pending || !dirty}
-          onClick={() => { reset(form, { initialInput: formInput(preferences) }); replace.reset(); }}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pending || !dirty}
+          onClick={() => {
+            reset(form, { initialInput: formInput(preferences) });
+            replace.reset();
+          }}
+        >
           {t("notificationSubscriptions.preferences.cancel")}
         </Button>
       </Form>

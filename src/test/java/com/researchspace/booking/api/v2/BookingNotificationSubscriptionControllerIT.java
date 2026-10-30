@@ -1,8 +1,5 @@
 package com.researchspace.booking.api.v2;
 
-import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
-import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
-
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -63,7 +60,7 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
     setBookingEnabled(false);
     mockMvc
         .perform(get(DEFAULTS).header("apiKey", fixture.userKey()))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isNotFound());
   }
 
   @Test

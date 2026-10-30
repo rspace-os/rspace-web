@@ -1,8 +1,5 @@
 package com.researchspace.booking.api.v2;
 
-import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
-import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
-
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -19,6 +16,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
+import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.PreferenceChanges;
@@ -65,7 +64,8 @@ class BookingNotificationSubscriptionControllerTest {
         BookingNotificationSubscriptionController.BulkReplacement.class);
     mvc =
         MockMvcBuilders.standaloneSetup(new BookingNotificationSubscriptionController(manager))
-            .setControllerAdvice(new ApiV2ControllerAdvice(messages()), new BookingApiV2ControllerAdvice(messages()))
+            .setControllerAdvice(
+                new ApiV2ControllerAdvice(messages()), new BookingApiV2ControllerAdvice(messages()))
             .setMessageConverters(jsonConverter, new WebConfig.YamlJackson2HttpMessageConverter())
             .build();
   }
@@ -100,6 +100,9 @@ class BookingNotificationSubscriptionControllerTest {
   @ValueSource(
       strings = {
         "{}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":null,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":\"false\",\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
         "{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":true,\"notifyOnCreated\":true}",
         "{\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
         "{\"autoSubscribeOwnedItems\":null,\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
@@ -124,6 +127,7 @@ class BookingNotificationSubscriptionControllerTest {
     return new ResultMatcher[] {
       jsonPath("$.*", hasSize(5)),
       jsonPath("$.autoSubscribeOwnedItems").value(false),
+      jsonPath("$.notifyOwnActions").value(true),
       jsonPath("$.notifyOnCreated").value(true),
       jsonPath("$.notifyOnCancelled").value(false),
       jsonPath("$.emailDelivery").value(true)

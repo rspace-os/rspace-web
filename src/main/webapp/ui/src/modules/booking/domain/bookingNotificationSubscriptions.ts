@@ -5,8 +5,8 @@ import { requestBooking } from "./booking";
 
 const bookingNotificationPreferenceEntries = {
   autoSubscribeOwnedItems: v.boolean(),
-  /** The same preference as the My Profile "booking created" notification toggle. */
   notifyOwnActions: v.boolean(),
+  /** The same preference as the My Profile "booking created" notification toggle. */
   notifyOnCreated: v.boolean(),
   /** The same preference as the My Profile "booking cancelled" notification toggle. */
   notifyOnCancelled: v.boolean(),
@@ -40,7 +40,9 @@ export const BookingNotificationSubscriptionSchema = v.strictObject({
 
 export type BookingNotificationSubscription = v.InferOutput<typeof BookingNotificationSubscriptionSchema>;
 
-const BookingNotificationSubscriptionListSchema = v.array(BookingNotificationSubscriptionSchema);
+const BookingNotificationSubscriptionListSchema = v.strictObject({
+  docs: v.array(BookingNotificationSubscriptionSchema),
+});
 const UpdatedCountSchema = v.strictObject({ updatedCount: v.pipe(v.number(), v.integer(), v.minValue(0)) });
 
 export const bookingNotificationPreferencesQueryKey = (subjectId: number) =>
@@ -109,10 +111,12 @@ export async function updateBookingNotificationSubscriptions(
   enabled: boolean,
   token: string,
 ): Promise<BookingNotificationSubscription[]> {
-  return requestBooking(subscriptionsPath, token, BookingNotificationSubscriptionListSchema, {
-    method: "PUT",
-    body: JSON.stringify({ configurationIds, enabled }),
-  });
+  return (
+    await requestBooking(subscriptionsPath, token, BookingNotificationSubscriptionListSchema, {
+      method: "PUT",
+      body: JSON.stringify({ configurationIds, enabled }),
+    })
+  ).docs;
 }
 
 export async function unsubscribeFromAllBookingNotificationSubscriptions(token: string): Promise<number> {

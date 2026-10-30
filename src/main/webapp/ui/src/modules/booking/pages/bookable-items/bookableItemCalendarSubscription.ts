@@ -154,7 +154,7 @@ export async function fetchItemCalendarLinks(token: string, signal?: AbortSignal
   const response = await requireSuccess(
     await fetchWithUiToken(itemCalendarLinksPath, { headers: apiV2Headers(token), signal }),
   );
-  return parseOrThrow(ItemCalendarLinksSchema, (await response.json()) as unknown);
+  return parseOrThrow(v.strictObject({ docs: ItemCalendarLinksSchema }), (await response.json()) as unknown).docs;
 }
 
 export function toWebcalUrl(feedUrl: string): string {

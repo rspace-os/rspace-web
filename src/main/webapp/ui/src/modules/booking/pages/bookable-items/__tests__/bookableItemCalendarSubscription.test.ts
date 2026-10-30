@@ -219,10 +219,12 @@ describe("user booking calendar subscription client", () => {
       updatedAt: timestamp,
       subscriptionUrl: "https://example.test/feed.ics?token=item",
     };
-    server.use(http.get(itemLinksPath, () => HttpResponse.json([link])));
+    server.use(http.get(itemLinksPath, () => HttpResponse.json({ docs: [link] })));
     await expect(fetchItemCalendarLinks("secret")).resolves.toEqual([link]);
 
-    server.use(http.get(itemLinksPath, () => HttpResponse.json([{ ...link, subscriptionUrl: "javascript:alert(1)" }])));
+    server.use(
+      http.get(itemLinksPath, () => HttpResponse.json({ docs: [{ ...link, subscriptionUrl: "javascript:alert(1)" }] })),
+    );
     await expect(fetchItemCalendarLinks("secret")).rejects.toThrow();
   });
 });

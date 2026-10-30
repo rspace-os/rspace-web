@@ -60,7 +60,7 @@
       "freeLaterTodayDescription": "Busy now, free again later today",
       "legend": "Quick filters",
       "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
-      "loading": "Finding bookable items\u2026",
+      "loading": "Finding bookable items…",
       "myItems": "Owned Items",
       "retry": "Retry",
       "scope": "Availability uses the selected display date and time zone."
@@ -85,7 +85,7 @@
       "available": "Available",
       "availableUntil": "Available until {time}",
       "notAvailable": "Not available",
-      "notAvailableFrom": "Not available \u00b7 Available from {time}"
+      "notAvailableFrom": "Not available · Available from {time}"
     },
     "emptyWindow": "This display window contains no time on this date because the clocks change.",
     "fullAvailable": "Available for the full period.",
@@ -434,7 +434,7 @@
       "error": "Could not find bookable items needing an owner.",
       "filter": "Owner attention needed",
       "filters": "Owner health filters",
-      "loading": "Finding bookable items needing an owner\u2026",
+      "loading": "Finding bookable items needing an owner…",
       "needsOwner": "Owner needed"
     },
     "permanentDeleteDialog": {
@@ -579,7 +579,7 @@
       "item": "Bookable item",
       "itemChoose": "Choose a bookable item",
       "itemNone": "No bookable items found",
-      "itemOption": "{name} ({globalId}) \u2014 {timezone}",
+      "itemOption": "{name} ({globalId}) — {timezone}",
       "itemPage": "Page {page, number} of {total, number}",
       "itemResults": "Bookable item results",
       "itemSearch": "Search bookable items",
@@ -776,7 +776,7 @@
       "nextMonth": "Go to next month",
       "previous": "Previous bookings",
       "previousMonth": "Go to previous month",
-      "range": "{start, number}\u2013{end, number} of {total, number}",
+      "range": "{start, number}–{end, number} of {total, number}",
       "title": "At a glance",
       "todayLabel": "Today, {date}",
       "tooMany": {
@@ -818,12 +818,12 @@
       "label": "{title}, {period}",
       "labelWithNotes": "{title}, {period}. {notes}",
       "showDetails": "Show details for {title}, {period}",
-      "titleWithBooker": "{title} \u00b7 {booker}"
+      "titleWithBooker": "{title} · {booker}"
     },
     "expanded": {
       "bookedBy": "Booked by",
       "createdBy": "Created by",
-      "dateTime": "{date} \u00b7 {time}",
+      "dateTime": "{date} · {time}",
       "duration": "{hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
       "item": "Item",
       "notes": "Notes",
@@ -837,7 +837,7 @@
     },
     "scrollLabel": "24-hour calendar for {date} in {timezone}",
     "vertical": {
-      "adjusting": "Adjusting draft booking\u2026",
+      "adjusting": "Adjusting draft booking…",
       "continuesAfter": "Continues into the next day",
       "continuesBefore": "Continues from the previous day",
       "dateNavigation": "Schedule date",
@@ -847,8 +847,8 @@
       "eventDetails": "Event details",
       "intervalChanged": "Draft booking updated to {period}.",
       "keyboardInstructions": "Press Up or Down on a draft handle to adjust by one slot. Use the date and time fields for short intervals.",
-      "loadError": "Could not load this day\u2019s schedule.",
-      "loading": "Loading schedule\u2026",
+      "loadError": "Could not load this day’s schedule.",
+      "loading": "Loading schedule…",
       "moveDraft": "Move draft booking, {period}",
       "nextDay": "Next day",
       "noTarget": "Choose a bookable item to see its day schedule.",
@@ -872,22 +872,22 @@
     "acceptBookingsHint": "Turning this off keeps existing bookings and pauses new ones.",
     "acceptingBookings": "Accepting bookings",
     "accessHint": "Who can use and manage this bookable item.",
-    "accessSummary": "Imaging group can book \u00b7 Grace Hopper owns this configuration",
+    "accessSummary": "Imaging group can book · Grace Hopper owns this configuration",
     "activity": "Activity",
     "activityCount": "Showing {shown} of {total} activities",
     "activityCreated": "Created",
-    "activityCreatedBy": "30 Aug 2026, 09:14 \u00b7 Grace Hopper",
+    "activityCreatedBy": "30 Aug 2026, 09:14 · Grace Hopper",
     "activityDetail": "Sample change: scheduling details updated after a calibration review. Expand entries to read full actor names without truncation.",
     "activityPage": "Page {page} of {total}",
     "activitySummary": "Updated 31 Aug 2026 by Grace Hopper",
     "activityUpdated": "Last updated",
-    "activityUpdatedBy": "31 Aug 2026, 16:40 \u00b7 Grace Hopper",
+    "activityUpdatedBy": "31 Aug 2026, 16:40 · Grace Hopper",
     "bufferAfterLabel": "Buffer after (minutes)",
     "bufferBeforeLabel": "Buffer before (minutes)",
     "compareLayouts": "Compare detail layouts",
     "configurationBreadcrumb": "Booking / Configuration details",
     "configurationInvalid": "Check opening hours, duration increments and non-negative buffer values.",
-    "dailyHours": "{start}\u2013{end} daily",
+    "dailyHours": "{start}–{end} daily",
     "discard": "Discard changes",
     "discarded": "Draft discarded. Saved details restored.",
     "doubleBookingHint": "Allow reservations to overlap.",
@@ -897,7 +897,7 @@
     "editing": "Editing",
     "eventBreadcrumb": "Booking / Event details",
     "eventInvalid": "Choose a unique local time, with end after start, within the displayed booking rules.",
-    "eventPeriod": "{date} \u00b7 {time}",
+    "eventPeriod": "{date} · {time}",
     "eventTimeHint": "Times in {timezone}. Use 15-minute increments between 08:00 and 18:00, up to 4 hours.",
     "footer": "Times shown in {timezone}. Full timestamps are under Activity.",
     "invalidPeriod": "Choose a valid booking period",
@@ -910,15 +910,15 @@
     "nextLayout": "Next layout",
     "noActivities": "No matching activities. Try another search.",
     "noChanges": "No changes yet",
-    "notice": "Prototype \u00b7 sample data \u00b7 edits reset on reload",
+    "notice": "Prototype · sample data · edits reset on reload",
     "outlineHint": "Expand a section to see its details.",
     "paused": "New bookings paused",
     "peopleItem": "People & location",
-    "peopleSummary": "Ada Lovelace \u00b7 Imaging suite",
+    "peopleSummary": "Ada Lovelace · Imaging suite",
     "previousActivities": "Previous activities",
     "previousLayout": "Previous layout",
     "reservedTime": "Reserved time",
-    "rulesSummary": "{start}\u2013{end} daily \u00b7 {increment}-minute increments",
+    "rulesSummary": "{start}–{end} daily · {increment}-minute increments",
     "saved": "Changes saved in this prototype.",
     "scenario": "Stress scenario",
     "scenarios": {
@@ -930,12 +930,12 @@
       "standard": "Standard",
       "veryLong": "Very long booking"
     },
-    "scenarioState": "{nameLength}-character name \u00b7 {activities} activities \u00b7 {access} access entries",
+    "scenarioState": "{nameLength}-character name · {activities} activities · {access} access entries",
     "schedulePurpose": "Schedule & purpose",
     "searchActivity": "Search activity by person, action or number",
     "sections": "Detail sections",
     "showMoreActivity": "Show more activities",
-    "timeSummary": "{duration} \u00b7 {timezone}",
+    "timeSummary": "{duration} · {timezone}",
     "unsaved": "Unsaved changes",
     "whoCanBook": "Who can book",
     "yourAccess": "You are an Owner. You can edit rules and manage access."
@@ -1020,7 +1020,7 @@
       "save": "Save",
       "saved": "Notification subscription saved.",
       "saveError": "The notification subscription could not be saved. Try again.",
-      "saving": "Saving\u2026",
+      "saving": "Saving…",
       "someEventsDisabled": "One booking event is off in My Profile.",
       "title": "Notifications"
     },
@@ -1033,6 +1033,7 @@
         "description": "This applies to new bookable instruments you own. It does not change existing subscriptions.",
         "label": "Automatically subscribe to new instruments I own"
       },
+      "cancel": "Cancel",
       "emailDelivery": {
         "change": "Change email delivery in My Profile",
         "off": "Email delivery is off: booking notifications appear in RSpace only.",
@@ -1046,19 +1047,18 @@
       "existingSubscriptions": {
         "description": "Unsubscribe from every instrument. Your notification settings above stay as they are."
       },
-      "save": "Save",
-      "saved": "Notification preference saved.",
-      "saveError": "Your notification preference could not be saved. The last saved choice has been restored.",
-      "saving": "Saving\u2026",
-      "title": "Booking notifications",
-      "unsubscribeAll": "Unsubscribe from all instruments",
-      "unsubscribed": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}. Your notification settings are unchanged.",
-      "unsubscribeError": "Subscriptions could not be removed. Try again.",
       "ownActions": {
         "description": "Applies to instruments you are subscribed to. Your booking-created and booking-cancelled notification choices still apply.",
         "label": "Also notify me about bookings I create or cancel myself"
       },
-      "cancel": "Cancel"
+      "save": "Save",
+      "saved": "Notification preference saved.",
+      "saveError": "Your notification preference could not be saved. The last saved choice has been restored.",
+      "saving": "Saving…",
+      "title": "Booking notifications",
+      "unsubscribeAll": "Unsubscribe from all instruments",
+      "unsubscribed": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}. Your notification settings are unchanged.",
+      "unsubscribeError": "Subscriptions could not be removed. Try again."
     }
   },
   "preferences": {
@@ -1132,7 +1132,7 @@
       "addUserOrGroup": "Add user or group",
       "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
       "error": "Users and groups could not be searched.",
-      "loading": "Searching users and groups\u2026",
+      "loading": "Searching users and groups…",
       "noResults": "No matching users or groups.",
       "options": {
         "ALL_USERS": {
