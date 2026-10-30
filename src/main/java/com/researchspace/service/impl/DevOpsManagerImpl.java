@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 @Service("devOpsManager")
 public class DevOpsManagerImpl implements DevOpsManager {
@@ -44,7 +45,9 @@ public class DevOpsManagerImpl implements DevOpsManager {
   private String checkFolderFixes(GlobalIdentifier oid, User subject, boolean runFix) {
     Folder folder = folderMgr.getFolder(oid.getDbId(), subject);
     String result =
-        String.format("Found a folder '%s' (type: %s).<br/>\n", folder.getName(), folder.getType());
+        String.format(
+            "Found a folder '%s' (type: %s).<br/>\n",
+            HtmlUtils.htmlEscape(folder.getName()), folder.getType());
     if (isSharedFolderMovedIntoWorkspace(folder)) {
       result +=
           "This is a shared folder, but is outside of 'Shared' hierarchy, which seems"
@@ -79,7 +82,7 @@ public class DevOpsManagerImpl implements DevOpsManager {
       result +=
           String.format(
               "Found one possible target for moving the folder: '%s' (%s).<br/>\n",
-              correctTarget.getName(), correctTarget.getGlobalIdentifier());
+              HtmlUtils.htmlEscape(correctTarget.getName()), correctTarget.getGlobalIdentifier());
     }
 
     if (correctTarget != null) {

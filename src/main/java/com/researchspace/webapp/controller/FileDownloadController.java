@@ -208,10 +208,26 @@ public class FileDownloadController extends BaseController {
   }
 
   /**
+   * Lets a converter check a conversion by file name, without fetching a file that may be in an
+   * external filestore.
+   */
+  private record StoredName(String name) implements Convertible {
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public String getFileUri() {
+      throw new UnsupportedOperationException("only the file name is known");
+    }
+  }
+
+  /**
    * Converts a document (e.g .text. .doc) to a viewable format in HTML page
    *
    * @param docId url path variable - id of ecat media file
-   * @param outputformat One of 'png', 'pdf' or 'html'
+   * @param outputformat a format the configured converter supports, such as 'png', 'pdf' or 'html'
    * @param revisionId optional file revision number
    * @param response
    * @throws IOException
@@ -228,6 +244,11 @@ public class FileDownloadController extends BaseController {
     User subject = userManager.getAuthenticatedUserInSession();
     EcatMediaFile input =
         baseRecordManager.retrieveMediaFile(subject, docId, revisionId, null, null);
+    if (!converter.supportsConversion(
+        new StoredName(input.getFileProperty().getFileName()), outputformat)) {
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("errors.gallery.unsupportedConversionFormat")));
+    }
 
     String fName = getFileStoreNameByChecksum(input.getFileProperty(), outputformat);
     FileProperty soughtFileProp = generateFileProperty(outputformat, input, fName, subject);

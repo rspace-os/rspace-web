@@ -34,6 +34,7 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
@@ -55,6 +56,7 @@ import org.springframework.test.web.servlet.MvcResult;
 public class ExportControllerMVCIT extends MVCTestBase {
 
   @Autowired private RaIDServiceManager raIDServiceManager;
+  @Autowired private IMutablePropertyHolder propertyHolder;
 
   @BeforeEach
   public void setup() throws Exception {
@@ -389,37 +391,41 @@ public class ExportControllerMVCIT extends MVCTestBase {
   @Test
   public void importPathValid() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    // invalid syntax
     final String SERVER_PATH = "serverFilePath";
     final String SERVER_IMPORT_URL = "/export/importServerArchive";
-    final String ARCHIVE_IMPORT_VIEW = "/import/archiveImport";
-    mockMvc
-        .perform(
-            post(SERVER_IMPORT_URL).principal(anyUser::getUsername).param(SERVER_PATH, "invalid*"))
-        .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
-        .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-    // missing file
-    mockMvc
-        .perform(
-            post(SERVER_IMPORT_URL)
-                .principal(anyUser::getUsername)
-                .param(SERVER_PATH, "/a/b/c/nonexistentZip.zip"))
-        .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
-        .andExpect(redirectedUrl(ARCHIVE_IMPORT_VIEW));
-
-    // actually imports
     File realFile = RSpaceTestUtils.getResource("archives/v1-35.zip");
-    // copy file to temp dir to avoid problem with parsing release dir path on jenkins
-    File realFileTempLocation = Files.createTempFile("archiveTest", "v1-35.zip").toFile();
-    FileUtils.copyFile(realFile, realFileTempLocation);
-    final String ARCHIVE_REPORT_VIEW = "/import/archiveImportReport";
-    mockMvc
-        .perform(
-            post(SERVER_IMPORT_URL)
-                .principal(anyUser::getUsername)
-                .param(SERVER_PATH, realFileTempLocation.getAbsolutePath()))
-        .andExpect(flash().attributeCount(0))
-        .andExpect(redirectedUrl(ARCHIVE_REPORT_VIEW));
+    boolean wasEnabled = propertyHolder.isImportArchiveFromServerEnabled();
+    String previousFolder = propertyHolder.getImportArchiveFromServerFolder();
+    Path importFolder = Files.createTempDirectory("serverImport");
+    try {
+      propertyHolder.setImportArchiveFromServerEnabled("true");
+      propertyHolder.setImportArchiveFromServerFolder(importFolder.toString());
+      // a real archive at a path the ServerPath rules refuse, so this fails if @Valid stops
+      // being applied to the request
+      File refused = importFolder.resolve("bad;name.zip").toFile();
+      FileUtils.copyFile(realFile, refused);
+      mockMvc
+          .perform(
+              post(SERVER_IMPORT_URL)
+                  .principal(anyUser::getUsername)
+                  .param(SERVER_PATH, refused.getAbsolutePath()))
+          .andExpect(flash().attributeExists(IMPORT_FORM_ERROR_ATTR_NAME))
+          .andExpect(redirectedUrl("/import/archiveImport"));
+
+      File inside = importFolder.resolve("v1-35.zip").toFile();
+      FileUtils.copyFile(realFile, inside);
+      mockMvc
+          .perform(
+              post(SERVER_IMPORT_URL)
+                  .principal(anyUser::getUsername)
+                  .param(SERVER_PATH, inside.getAbsolutePath()))
+          .andExpect(flash().attributeCount(0))
+          .andExpect(redirectedUrl("/import/archiveImportReport"));
+    } finally {
+      propertyHolder.setImportArchiveFromServerEnabled(Boolean.toString(wasEnabled));
+      propertyHolder.setImportArchiveFromServerFolder(previousFolder);
+      FileUtils.deleteQuietly(importFolder.toFile());
+    }
   }
 
   private User updatePreferenceToLetter(User u) {

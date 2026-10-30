@@ -5451,7 +5451,8 @@ export default interface Resources {
       },
       "dmpOnline": {
         "errors": {
-          "connect": "Error connecting to DMPonline."
+          "connect": "Error connecting to DMPonline.",
+          "invalidPlanUrl": "The plan identifier is not a DMPonline plan URL."
         }
       },
       "dmpTool": {
@@ -5480,7 +5481,8 @@ export default interface Resources {
         "errors": {
           "authenticationFailed": "Couldn't authenticate with provided credentials.",
           "credentialsRequired": "Egnyte username and password must be provided.",
-          "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials."
+          "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials.",
+          "invalidDomainUrl": "Egnyte Domain URL must be an http:// or https:// address."
         }
       },
       "errors": {
@@ -6781,7 +6783,8 @@ export default interface Resources {
             "sourcePathRequired": "sourcePath is mandatory"
           }
         },
-        "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files"
+        "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files",
+        "unsupportedConversionFormat": "Conversion to the requested format is not supported."
       }
     },
     "gallery": {
@@ -10180,7 +10183,10 @@ export default interface Resources {
           "csvRequired": "Please upload a CSV file",
           "details": "There was an error importing the archive: {0}",
           "invalidServerPath": "File {0} is not a valid archive path on the server - must be a readable .zip file{1}",
-          "serverFileUnreadable": "File {0} either does not exist, or cannot be read."
+          "serverFileOutsideImportFolder": "File {0} is not inside the folder configured for server imports.",
+          "serverFileUnreadable": "File {0} either does not exist, or cannot be read.",
+          "serverImportDisabled": "Importing archives from the server is not enabled.",
+          "serverImportNotConfigured": "Importing archives from the server is not configured correctly. Please contact your System Admin."
         },
         "findFile": "Find your file",
         "report": {

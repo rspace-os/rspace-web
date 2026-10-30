@@ -3,11 +3,13 @@ package com.researchspace.webapp.integrations.dmponline;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.rda.model.extras.DMPList;
 import jakarta.annotation.PostConstruct;
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -23,6 +25,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 public class DMPOnlineProviderImpl implements DMPOnlineProvider {
 
+  private static final String PLANS_PATH = "/api/v2/plans";
+  private static final Pattern PLAN_PATH = Pattern.compile(".*/api/v2/plans/(\\d+)/?");
+
   @Value("${dmponline.base.url}")
   private String baseUrl;
 
@@ -31,14 +36,18 @@ public class DMPOnlineProviderImpl implements DMPOnlineProvider {
 
   private final RestTemplate restTemplate;
 
-  private static String URL_DMP_PLANS;
+  private String urlPlans;
 
   public DMPOnlineProviderImpl() {
     this(CONNECT_TIMEOUT, READ_TIMEOUT);
   }
 
   DMPOnlineProviderImpl(Duration connectTimeout, Duration readTimeout) {
-    this.restTemplate = timeoutBoundedRestTemplate(connectTimeout, readTimeout);
+    this(timeoutBoundedRestTemplate(connectTimeout, readTimeout));
+  }
+
+  DMPOnlineProviderImpl(RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
   }
 
   static RestTemplate timeoutBoundedRestTemplate() {
@@ -54,26 +63,54 @@ public class DMPOnlineProviderImpl implements DMPOnlineProvider {
   }
 
   @PostConstruct
-  public void init() throws URISyntaxException, MalformedURLException {
-    URL_DMP_PLANS = this.baseUrl + "/api/v2/plans";
+  public void init() {
+    String trimmed = baseUrl.replaceAll("/+$", "");
+    this.urlPlans = trimmed + PLANS_PATH;
   }
 
   @Override
-  public DMPList getPlanByUrlId(String url, String accessToken)
-      throws MalformedURLException, URISyntaxException {
+  public DMPList getPlanByUrlId(String url, String accessToken) {
     return restTemplate
         .exchange(
-            new URL(url).toURI(),
+            planUri(url),
             HttpMethod.GET,
             new HttpEntity<>(getHttpHeadersWithToken(accessToken)),
             DMPList.class)
         .getBody();
   }
 
-  public JsonNode listPlans(String page, String per_page, String accessToken) {
+  /**
+   * DMPonline identifies a plan by its API URL, which the browser sends back when importing. Only
+   * the plan id is taken from it, so the request always goes to the configured server.
+   *
+   * @throws IllegalArgumentException if the URL does not end in a DMPonline plan id
+   */
+  URI planUri(String planUrl) {
+    URI given;
+    try {
+      given = new URI(planUrl);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException("Not a valid DMPonline plan URL");
+    }
+    // the host is not compared: DMPRoadmap servers have reported their own plan URLs with the wrong
+    // scheme or host, and the request is rebuilt from the configured base anyway
+    Matcher planPath = PLAN_PATH.matcher(Objects.toString(given.getRawPath(), ""));
+    if (given.getScheme() == null
+        || !given.getScheme().matches("(?i)https?")
+        || given.getRawUserInfo() != null
+        || !planPath.matches()) {
+      throw new IllegalArgumentException("Not a DMPonline plan URL");
+    }
+    return UriComponentsBuilder.fromUriString(urlPlans)
+        .pathSegment(planPath.group(1))
+        .build()
+        .toUri();
+  }
+
+  public JsonNode listPlans(int page, int per_page, String accessToken) {
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(URL_DMP_PLANS)
+            UriComponentsBuilder.fromUriString(urlPlans)
                 .queryParam("page", page)
                 .queryParam("per_page", per_page)
                 .build()

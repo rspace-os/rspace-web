@@ -30,7 +30,8 @@
     },
     "dmpOnline": {
       "errors": {
-        "connect": "Error connecting to DMPonline."
+        "connect": "Error connecting to DMPonline.",
+        "invalidPlanUrl": "The plan identifier is not a DMPonline plan URL."
       }
     },
     "dmpTool": {
@@ -81,7 +82,8 @@
       "errors": {
         "authenticationFailed": "Couldn't authenticate with provided credentials.",
         "credentialsRequired": "Egnyte username and password must be provided.",
-        "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials."
+        "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials.",
+        "invalidDomainUrl": "Egnyte Domain URL must be an http:// or https:// address."
       }
     },
     "fieldmark": {
