@@ -80,6 +80,31 @@ class ApiV2AuditLogTest {
   }
 
   @Test
+  void successfulSearchIsAuditedAndFailuresAreNot() {
+    var service = mock(com.researchspace.model.audittrail.AuditTrailService.class);
+    auditLog =
+        new ApiV2AuditLog(strictSearch, Clock.fixed(NOW, ZoneOffset.UTC), 100, null, service);
+    when(strictSearch.search(any())).thenReturn(List.of());
+    auditLog.search(resource, "7", rangeQuery(), actor);
+    var captured =
+        ArgumentCaptor.forClass(com.researchspace.model.audittrail.HistoricalEvent.class);
+    verify(service).notify(captured.capture());
+    assertEquals(AuditAction.SEARCH, captured.getValue().getAuditAction());
+    assertEquals(actor, captured.getValue().getSubject());
+    org.mockito.Mockito.clearInvocations(service);
+    var invalid = rangeQuery();
+    invalid.setSnapshotDate("2026-01-02");
+    invalid.setSnapshotFingerprint("0".repeat(64));
+    assertThrows(
+        ApiV2AuditSnapshotConflictException.class,
+        () -> auditLog.search(resource, "7", invalid, actor));
+    assertThrows(
+        ApiV2AuthenticationException.class,
+        () -> auditLog.search(resource, "7", rangeQuery(), null));
+    org.mockito.Mockito.verifyNoInteractions(service);
+  }
+
+  @Test
   void omitsUnsafeDescriptionsByDefault() {
     var result = result("Visible", Instant.parse("2026-01-02T12:00:00Z"));
     result.getEvent().setDescription("Hidden container IC9");

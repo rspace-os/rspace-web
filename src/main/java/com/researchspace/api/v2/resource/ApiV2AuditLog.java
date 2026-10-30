@@ -73,6 +73,7 @@ public final class ApiV2AuditLog {
   private final Clock clock;
   private final int resultCeiling;
   private final ResourceAccessManager resourceAccessManager;
+  private final com.researchspace.model.audittrail.AuditTrailService auditService;
   private final Map<Class<?>, Optional<AuditMetadata>> metadata = new ConcurrentHashMap<>();
 
   public ApiV2AuditLog(
@@ -82,12 +83,22 @@ public final class ApiV2AuditLog {
     this(strictSearch, clock, resultCeiling, null);
   }
 
-  @Autowired
   public ApiV2AuditLog(
       ApiV2AuditStrictSearch strictSearch,
       @Qualifier(ApiV2AuditConfig.AUDIT_CLOCK) Clock clock,
       @Value("${api.v2.audit.resultCeiling:1000}") int resultCeiling,
       ResourceAccessManager resourceAccessManager) {
+    this(strictSearch, clock, resultCeiling, resourceAccessManager, null);
+  }
+
+  @Autowired
+  public ApiV2AuditLog(
+      ApiV2AuditStrictSearch strictSearch,
+      @Qualifier(ApiV2AuditConfig.AUDIT_CLOCK) Clock clock,
+      @Value("${api.v2.audit.resultCeiling:1000}") int resultCeiling,
+      ResourceAccessManager resourceAccessManager,
+      com.researchspace.model.audittrail.AuditTrailService auditService) {
+    this.auditService = auditService;
     if (resultCeiling < 1) {
       throw new IllegalArgumentException("REST API v2 audit result ceiling must be positive");
     }
@@ -132,6 +143,24 @@ public final class ApiV2AuditLog {
                 ordered.size(),
                 Math.max(0L, PageOffsets.offset(query.getPage(), query.getLimit())));
     int last = (int) Math.min((long) ordered.size(), (long) first + query.getLimit());
+    if (auditService != null) {
+      var details = new com.researchspace.service.audit.search.AuditTrailSearchElement();
+      details.setOid(auditTarget.map(AuditTarget::identifier).orElse(rawId));
+      auditService.notify(
+          new com.researchspace.model.audittrail.GenericEvent(
+              actor,
+              details,
+              com.researchspace.model.audittrail.AuditAction.SEARCH,
+              "v2 audit "
+                  + resource.description().resourceName()
+                  + "/"
+                  + rawId
+                  + " ["
+                  + window.fromInclusive()
+                  + ", "
+                  + window.toExclusive()
+                  + ")"));
+    }
     return ApiV2AuditPage.of(
         ordered.subList(first, last),
         ordered.size(),
