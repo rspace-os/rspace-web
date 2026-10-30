@@ -102,8 +102,8 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(within(alert).getByText("Error")).toBeInTheDocument();
-    expect(alert).toHaveTextContent("An error occurred while determining RAiD export eligibility: Boom");
-    expect(alert).toHaveTextContent("Please press Next to continue without reporting to RAiD.");
+    expect(alert).toMatchTextContent("An error occurred while determining RAiD export eligibility: Boom");
+    expect(alert).toMatchTextContent("Please press Next to continue without reporting to RAiD.");
   });
 
   it("renders an ineligible message when groups are missing", async () => {
@@ -117,8 +117,8 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(alert).toHaveTextContent("unable to determine whether you have the rights");
-    expect(alert).toHaveTextContent("101");
+    expect(alert).toMatchTextContent("unable to determine whether you have the rights");
+    expect(alert).toMatchTextContent("101");
   });
 
   it("renders an ineligible message when no project groups are available", async () => {
@@ -132,7 +132,7 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(alert).toHaveTextContent("No project groups are associated with all shared items selected");
+    expect(alert).toMatchTextContent("No project groups are associated with all shared items selected");
   });
 
   it("renders an ineligible message when no RAiD association is found", async () => {
@@ -149,7 +149,7 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(alert).toHaveTextContent(
+    expect(alert).toMatchTextContent(
       "None of the project groups (Project Group 7 and Project Group 8) associated with the shared items have a RAiD association.",
     );
   });
@@ -168,7 +168,7 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(alert).toHaveTextContent(
+    expect(alert).toMatchTextContent(
       "Multiple project groups (Project Group 3 and Project Group 4) associated with the shared items have RAiD associations, which is not supported.",
     );
   });
@@ -187,10 +187,10 @@ describe("ExportDialogRaid", () => {
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
     expect(within(alert).getByText("Report to RAiD")).toBeInTheDocument();
-    expect(alert).toHaveTextContent(
+    expect(alert).toMatchTextContent(
       "The content you're about to export is part of the project group Project Group 5 which is associated with the following RAiD identifier:",
     );
-    expect(alert).toHaveTextContent("Test RAiD 5 (raid-5).");
+    expect(alert).toMatchTextContent("Test RAiD 5 (raid-5).");
 
     const user = userEvent.setup();
     const toggle = screen.getByRole("checkbox", { name: "Report to RAiD" });

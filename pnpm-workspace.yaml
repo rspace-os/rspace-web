@@ -1,27 +1,55 @@
 # Root manifest manages git hooks and frontend dependencies/scripts.
 packages: []
 
-overrides:
-  # Force miew-react 0.12.0 (ketcher-react pulls 0.11.0 transitively). 0.12.0
-  # declares a react/react-dom peer of >=18.2.0, so it supports React 19 without
-  # the allowedVersions workaround that 0.11.0 (peer ^18.2.0) needed.
-  miew-react: 0.12.0
-  # miew-react@0.12.0 was published with a broken "miew": "workspace:^"
-  # dependency (the workspace protocol only resolves inside miew's own
-  # monorepo). Redirect it to the published miew 0.12.0 on npm.
-  miew-react>miew: 0.12.0
+virtualStoreType: global
+# TypeScript must find peer types beside packages outside the project tree.
+addMissingPeerTypes: true
 
+overrides:
+  # Pin miew-react 0.12.0, the first release whose React peer accepts 19.
+  # ketcher-react pins 0.11.0: epam/ketcher#10288 bumped it, but #10324 reverted
+  # that (epam/ketcher#12519). 0.12.0 was published with "miew": "workspace:^"
+  # (epam/miew#708), so point it at the published miew.
+  miew-react: 0.12.0
+  miew-react>miew: 0.12.0
+  # @sa11y/vitest 8.x declares a hard vitest ^4 dependency, which installs a
+  # second vitest whose expect our tests never use. Share the root vitest
+  # until sa11y supports Vitest 5.
+  '@sa11y/vitest>vitest': 5.0.5
+
+# Each entry declares a dependency the package imports but doesn't declare.
+# Version-pinned keys stop matching silently after an upgrade; retarget them.
 packageExtensions:
-  # ketcher 3.18.0 imports Node's `events` without declaring it, so the editor
-  # dies with "EventEmitter is not a constructor". `overrides` can't add an
-  # undeclared dep. Expected fixed in ketcher 4.x. Drop when
-  # epam/ketcher#11911 lands.
+  # replit/codemirror-css-color-picker#28; Scalar pulls it in (scalar/scalar discussion #10766).
+  '@replit/codemirror-css-color-picker@6.3.0':
+    dependencies:
+      '@lezer/common': ^1.5.2
+  # scalar/scalar#10765
+  '@scalar/schemas@0.14.0':
+    dependencies:
+      '@scalar/types': 0.24.0
+  # dromru/react-photoswipe-gallery#1495
+  react-photoswipe-gallery:
+    peerDependencies:
+      react-dom: '*'
+  # xiaoluoboding/vue-sonner#167
+  vue-sonner@1.3.2:
+    peerDependencies:
+      vue: ^3.0.0
+  # epam/ketcher#11911: without `events` the editor fails with
+  # "EventEmitter is not a constructor".
   ketcher-core:
     dependencies:
       events: 3.3.0
   ketcher-standalone:
     dependencies:
       events: 3.3.0
+  # Without `assert`, Vite stubs the Node builtin and Ketcher throws on its
+  # first assert(), e.g. when adding an opened file to the canvas. 3.20.0
+  # imports assert from ketcher-core instead.
+  ketcher-react:
+    dependencies:
+      assert: 2.1.0
 
 allowBuilds:
   lefthook: true
@@ -45,9 +73,3 @@ allowBuilds:
 # Stricter than pnpm 11's 1440-minute (1 day) default.
 minimumReleaseAge: 10080
 strictPeerDependencies: true
-
-peerDependencyRules:
-  allowedVersions:
-    # @sa11y/vitest pulls an older vitest, which wants the matching UI+browser packages.
-    'vitest>@vitest/ui': 4.1.10
-    'vitest>@vitest/browser': 4.1.10

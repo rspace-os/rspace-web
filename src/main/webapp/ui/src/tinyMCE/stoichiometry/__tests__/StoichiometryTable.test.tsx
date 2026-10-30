@@ -13,7 +13,7 @@ import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/useOauthToken";
 import MockAdapter from "axios-mock-adapter";
 import * as Jwt from "jsonwebtoken";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { uiNavigationData } from "@/__tests__/helpers/appChrome";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";

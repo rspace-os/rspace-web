@@ -1,8 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { server } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import {
@@ -37,14 +37,14 @@ const isFirefox = server.browser === "firefox";
  *
  * Gallery app-shell endpoints (preference*, property*, SVG assets, etc.) are
  * handled by galleryAppShellHandlers(); analyticsProperties is in the global
- * appShellHandlers() from browserSetup.ts.
+ * appShellHandlers() from browserMocks.ts.
  */
 
 /*
  * Fetch a sample PDF (served by Vite from ./fixtures via the `?url` import)
  * once and cache its bytes, so each handler invocation can hand pdf.js a fresh
  * response from the same buffer. The fixture URL is not under /test-documents,
- * so MSW lets the fetch pass through to Vite (onUnhandledRequest: "bypass").
+ * so MSW lets the fetch pass through to Vite (onUnhandledFrame: "bypass").
  */
 const pdfBytesCache = new Map<string, Promise<ArrayBuffer>>();
 function loadSamplePdf(url: string): Promise<ArrayBuffer> {

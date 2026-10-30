@@ -4,6 +4,7 @@ import { AccessPermissionsEditor } from "./AccessPermissionsEditor";
 import { AddToBasketDialogComponent } from "./AddToBasketDialogComponent";
 import { AttachmentsEditor } from "./AttachmentsEditor";
 import { CollapsibleSections } from "./CollapsibleSections";
+import { ContentGridComponent } from "./ContentGridComponent";
 import { CreateNewItemDialog } from "./CreateNewItemDialog";
 import { CustomFieldsEditor } from "./CustomFieldsEditor";
 import { clickAndWaitDetached, openDialog } from "./DialogHelpers";
@@ -160,6 +161,10 @@ export class InventoryDetailsPanel {
 
   customFields(): CustomFieldsEditor {
     return new CustomFieldsEditor(this.page, this.section("Custom Fields"));
+  }
+
+  contentGrid(): ContentGridComponent {
+    return new ContentGridComponent(this.page, this.section("Locations and Content"));
   }
 
   accessPermissions(): AccessPermissionsEditor {

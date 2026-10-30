@@ -269,7 +269,7 @@ describe("PidinstImportDialog", () => {
       await user.click(screen.getByRole("button", { name: "common:actions.search" }));
 
       const toast = (await screen.findByText("inventory:pidinstImport.searchError")).closest('[role="group"]');
-      expect(toast).toHaveTextContent("B2INST did not answer.");
+      expect(toast).toMatchTextContent("B2INST did not answer.");
     } finally {
       // restored here so a failed assertion does not leave the console silenced for the rest of the file
       restoreConsole();
@@ -686,7 +686,7 @@ describe("PidinstImportDialog", () => {
     stubEndpoints();
     await renderOpenDialog();
     await search(user, "microscope");
-    expect(screen.getByRole("status")).not.toHaveTextContent("");
+    expect(screen.getByRole("status")).not.toMatchTextContent("");
 
     let finishSearch: ((value: [number, unknown]) => void) | undefined;
     mockAxios.onGet(SEARCH_URL).reply(
@@ -771,17 +771,17 @@ describe("PidinstImportDialog", () => {
     await user.click(within(warning).getByRole("button", { name: /sub-message/ }));
     // real English, because cimode renders neither the placeholders nor the address inside them
     const [otherServer, notAvailable, doi, script] = within(warning).getAllByRole("alert");
-    expect(otherServer).toHaveTextContent(
+    expect(otherServer).toMatchTextContent(
       `It points at another server (other.researchspace.com): ${SKIPPED[0].address}`,
     );
     expect(within(otherServer).getByRole("link", { name: SKIPPED[0].address })).toHaveAttribute(
       "href",
       SKIPPED[0].address,
     );
-    expect(notAvailable).toHaveTextContent(`The item it points at is not available to you: ${SKIPPED[1].address}`);
+    expect(notAvailable).toMatchTextContent(`The item it points at is not available to you: ${SKIPPED[1].address}`);
     expect(within(notAvailable).getByRole("link", { name: SKIPPED[1].address })).toBeVisible();
-    expect(doi).toHaveTextContent("It is not the address of an item in this RSpace: 10.1000/manual");
-    expect(script).toHaveTextContent("It is not the address of an item in this RSpace: javascript:alert(1)");
+    expect(doi).toMatchTextContent("It is not the address of an item in this RSpace: 10.1000/manual");
+    expect(script).toMatchTextContent("It is not the address of an item in this RSpace: javascript:alert(1)");
     expect(within(doi).queryByRole("link")).toBeNull();
     expect(within(script).queryByRole("link")).toBeNull();
   });

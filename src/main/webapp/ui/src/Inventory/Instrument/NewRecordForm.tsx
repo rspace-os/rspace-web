@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import InstrumentModel from "../../stores/models/InstrumentModel";
 import useStores from "../../stores/use-stores";
+import AccessPermissions from "../components/Fields/AccessPermissions";
 import DescriptionField from "../components/Fields/Description";
 import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
 import ImageField from "../components/Fields/Image";
@@ -116,6 +117,9 @@ export default function NewRecordForm(): React.ReactNode {
           <OverviewSection activeResult={activeResult} />
         </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
+        <StepperPanel title={t("formSections.accessPermissions")} sectionName="permissions" recordType="instrument">
+          <AccessPermissions fieldOwner={activeResult} />
+        </StepperPanel>
         <CustomFieldsSection activeResult={activeResult} />
       </Stepper>
     </SynchroniseFormSections>

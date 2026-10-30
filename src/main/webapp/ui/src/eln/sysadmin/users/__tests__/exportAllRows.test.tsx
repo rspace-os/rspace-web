@@ -147,8 +147,8 @@ describe("Export all rows", () => {
     await clickExportAllRows(user);
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("system:usersPage.export.allRowsFailed");
-    expect(alert).toHaveTextContent("Database is busy");
+    expect(alert).toMatchTextContent("system:usersPage.export.allRowsFailed");
+    expect(alert).toMatchTextContent("Database is busy");
     await waitFor(() => expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(10));
     expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
     restoreConsole();
