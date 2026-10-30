@@ -624,7 +624,10 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             assignment.getGranteeKind(),
             id,
             assignment.getGranteeKey(),
-            assignment.getNameSnapshot(),
+            assignment.getGranteeKind()
+                    == com.researchspace.model.resourceaccess.ResourceGranteeKind.AUDIENCE
+                ? messages.getMessage(assignment.getAudienceKey().messageKey())
+                : assignment.getNameSnapshot(),
             assignment.getDetailSnapshot(),
             available,
             granteeAccess.effectiveRole(),

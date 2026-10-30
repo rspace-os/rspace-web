@@ -30,6 +30,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +39,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.context.support.StaticMessageSource;
 
 class ResourceAccessManagerTest {
 
@@ -444,6 +447,45 @@ class ResourceAccessManagerTest {
 
     assertEquals(ResourceAccessException.Reason.STALE, error.reason());
     verify(gateway).lockAuthorizationFacts(access, owner);
+  }
+
+  @Test
+  void audienceLabelUsesReaderLocaleWithoutChangingStoredSnapshot() {
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        ResourceAudience.ALL_USERS.messageKey(), Locale.FRENCH, "Tous les utilisateurs");
+    ResourceAccessManager localizedManager =
+        new ResourceAccessManagerImpl(
+            gateway,
+            schemes,
+            resolver,
+            directory,
+            Clock.systemUTC(),
+            new MessageSourceUtils(source));
+    Locale previousLocale = LocaleContextHolder.getLocale();
+    try {
+      LocaleContextHolder.setLocale(Locale.FRENCH);
+
+      ResourceAccessDocument document = localizedManager.get(resource, 9L, owner);
+
+      assertEquals(
+          "Tous les utilisateurs",
+          document.assignments().stream()
+              .map(ResourceAccessAssignmentDocument::grantee)
+              .filter(grantee -> grantee.kind() == ResourceGranteeKind.AUDIENCE)
+              .findFirst()
+              .orElseThrow()
+              .name());
+      assertEquals(
+          "All users",
+          access.getAssignments().stream()
+              .filter(assignment -> assignment.getGranteeKind() == ResourceGranteeKind.AUDIENCE)
+              .findFirst()
+              .orElseThrow()
+              .getNameSnapshot());
+    } finally {
+      LocaleContextHolder.setLocale(previousLocale);
+    }
   }
 
   @Test
