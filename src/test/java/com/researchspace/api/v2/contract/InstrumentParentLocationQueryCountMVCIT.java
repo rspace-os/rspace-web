@@ -104,6 +104,35 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   @Test
+  void bookingLocationExpansionRunsNoContainerCountStatement() throws Exception {
+    FixtureRows rows = createRows(5, "LocationCount" + fixture.marker());
+    var logger =
+        (org.apache.logging.log4j.core.Logger)
+            org.apache.logging.log4j.LogManager.getLogger("org.hibernate.SQL");
+    var level = logger.getLevel();
+    var statements = new com.researchspace.core.testutil.StringAppenderForTestLogging();
+    statements.start();
+    logger.addAppender(statements);
+    logger.setLevel(org.apache.logging.log4j.Level.DEBUG);
+    try {
+      JsonNode docs =
+          request("/api/v2/bookings", rows.instrumentIds(), "id,location").body().path("docs");
+      assertFalse(docs.isEmpty());
+      String sql = statements.logContents.toLowerCase(java.util.Locale.ROOT);
+      assertTrue(sql.contains("select"), "SQL capture must contain executed statements");
+      assertFalse(
+          java.util.regex.Pattern.compile("select count\\((?:(?!select).)*?from container ")
+              .matcher(sql)
+              .find(),
+          sql);
+    } finally {
+      logger.removeAppender(statements);
+      logger.setLevel(level);
+      statements.stop();
+    }
+  }
+
+  @Test
   void masksUnreadableParentsAndNarrowsBookingTargets() throws Exception {
     FixtureRows rows = createRows(5, "Mixed" + fixture.marker());
     assertLocations(request(INSTRUMENTS, rows.instrumentIds(), LOCATION_FIELDS).body(), rows);

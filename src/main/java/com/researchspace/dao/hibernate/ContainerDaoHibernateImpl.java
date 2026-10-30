@@ -44,14 +44,14 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
   public ResourcePage<ContainerReadSummary> getReadableResourceSummaries(
       ResourceRequest request, AccessResult access) {
     if (access.isDenied()) return new ResourcePage<>(List.of(), 0);
-    return COLLECTION_QUERY.projectedPage(
+    var rows = COLLECTION_QUERY.projectedRows(
         criteriaBuilderFactory(),
         getSession(),
         request,
         access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
-        RelationshipReadAccess.none(),
         ContainerReadSummary.class,
         List.of("id", "editInfo.name", "containerType", "deleted"));
+    return new ResourcePage<>(rows, rows.size());
   }
 
   @Override
