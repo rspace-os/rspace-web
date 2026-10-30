@@ -10,6 +10,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.service.ResourceMutationManager;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,8 +28,9 @@ public class ApiV2ResourceConfig {
                   : AccessFunction.authenticated().check(context));
 
   @Bean
-  ApiV2ResourceCatalog apiV2ResourceCatalog(List<ApiV2ResourceSpec<?, ?>> specs) {
-    return new ApiV2ResourceCatalog(specs);
+  ApiV2ResourceCatalog apiV2ResourceCatalog(
+      List<ApiV2ResourceSpec<?, ?>> specs, ResourceMutationManager mutations) {
+    return new ApiV2ResourceCatalog(specs, mutations);
   }
 
   /** Shares the catalog's validated relationship graph with collection persistence adapters. */

@@ -26,9 +26,16 @@ class ApiV2ResourceRegistrationTest {
   private final ApiV2ResourceRegistration<?, ?> registration = registration();
 
   private ApiV2ResourceRegistration<?, ?> registration() {
+    return registration(READ);
+  }
+
+  private ApiV2ResourceRegistration<?, ?> registration(QueryConstraint readScope) {
     var read =
         AccessFunction.documented(
-            "Read scope", Set.of(), context -> AccessResult.allowedWhere(READ));
+            "Read scope",
+            Set.of(),
+            context ->
+                readScope == null ? AccessResult.allowed() : AccessResult.allowedWhere(readScope));
     var write =
         AccessFunction.documented(
             "Write scope", Set.of(), context -> AccessResult.allowedWhere(WRITE));
@@ -77,6 +84,22 @@ class ApiV2ResourceRegistrationTest {
         () -> registration.delete("1", new ResourceDeleteOptions(null, false), caller));
     verify(operations, never()).update(eq(1L), any(), any(Long.class), any());
     verify(operations, never()).delete(eq(1L), any(ResourceDeleteOptions.class), any());
+  }
+
+  @Test
+  void enforcesAWriteOnlyRowScope() {
+    when(operations.find(any(), same(actor))).thenReturn(new ResourcePage<>(List.of(), 0));
+    var writeOnly = registration(null);
+    var body = new ObjectMapper().createObjectNode().put("name", "new");
+    assertThrows(
+        NotFoundException.class,
+        () -> writeOnly.update("21", body, null, ApiV2Caller.direct(actor)));
+    var captor = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(operations).find(captor.capture(), same(actor));
+    assertEquals(WRITE, captor.getValue().serverConstraint());
+    assertEquals(
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(21L), false),
+        captor.getValue().filter());
   }
 
   @Test

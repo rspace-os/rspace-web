@@ -121,7 +121,6 @@ public interface ResourceOperations<T, ID> {
   }
 
   /** Checks the authorized ID scope and updates within one transaction. */
-  @org.springframework.transaction.annotation.Transactional
   default Optional<T> update(
       ID id,
       ParsedDocument document,
@@ -176,7 +175,6 @@ public interface ResourceOperations<T, ID> {
   }
 
   /** Checks the authorized ID scope and deletes within one transaction. */
-  @org.springframework.transaction.annotation.Transactional
   default Optional<ResourceDeleteResult<T>> delete(
       ID id, ResourceDeleteOptions options, ResourceRequest scope, ApiV2Caller caller) {
     if (scope != null && find(scope, caller.subject()).resources().isEmpty())
