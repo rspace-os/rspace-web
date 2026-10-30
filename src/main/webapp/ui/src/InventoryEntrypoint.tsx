@@ -7,9 +7,7 @@ window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   window.scrollTo(0, 1);
 
-  // WebKit can fire this handler twice for the same container.
-  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
-    domContainer.dataset.reactRootMounted = "true";
+  if (domContainer) {
     const root = createRoot(domContainer);
     root.render(
       <I18nRoot namespaces={["inventory", "common", "about"]} fallback={<LoaderCircular />}>
