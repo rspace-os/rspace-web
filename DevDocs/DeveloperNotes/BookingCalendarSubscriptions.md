@@ -1,6 +1,7 @@
 # Booking calendar subscriptions
 
 A calendar link is created once and kept until its owner rotates or disconnects it.
+The caller’s item calendar links are returned as `{docs: [...]}`.
 The owner can always read it again because every subscription row stores its raw
 token (`rawToken` is `NOT NULL`), and GET returns the current URL.
 

@@ -46,6 +46,8 @@ public class UserBookingCalendarSubscriptionController {
     }
   }
 
+  public record ItemLinksDocument(List<ItemLinkDocument> docs) {}
+
   private final BookingCalendarManager manager;
 
   public UserBookingCalendarSubscriptionController(BookingCalendarManager manager) {
@@ -178,7 +180,13 @@ public class UserBookingCalendarSubscriptionController {
             description = "The requested representation is unavailable."),
         @ApiResponse(responseCode = "429", description = "Too many requests."),
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
-        @ApiResponse(responseCode = "204", description = "The subscription is inactive."),
+        @ApiResponse(
+            responseCode = "204",
+            description = "The subscription is inactive.",
+            headers =
+                @Header(
+                    name = "Cache-Control",
+                    schema = @Schema(types = "string", allowableValues = "private, no-store"))),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
@@ -208,16 +216,16 @@ public class UserBookingCalendarSubscriptionController {
             headers = {
               @Header(
                   name = "Cache-Control",
-                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
-              @Header(name = "ETag", ref = "#/components/headers/ETag")
+                  schema = @Schema(types = "string", allowableValues = "private, no-store"))
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
-  public List<ItemLinkDocument> itemLinks(
+  public ItemLinksDocument itemLinks(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return manager.itemLinks(caller.subject(), caller.actor()).stream()
-        .map(ItemLinkDocument::from)
-        .toList();
+    return new ItemLinksDocument(
+        manager.itemLinks(caller.subject(), caller.actor()).stream()
+            .map(ItemLinkDocument::from)
+            .toList());
   }
 }

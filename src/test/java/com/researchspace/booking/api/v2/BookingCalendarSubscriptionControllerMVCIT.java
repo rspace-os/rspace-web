@@ -441,7 +441,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
     mockMvc
         .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(0));
+        .andExpect(jsonPath("$.docs.length()").value(0));
 
     String url = create(configurationId, apiKey);
 
@@ -449,16 +449,16 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
         .andExpect(status().isOk())
         .andExpect(header().string("Cache-Control", containsString("no-store")))
-        .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].configurationId").value(configurationId))
-        .andExpect(jsonPath("$[0].itemGlobalId").value(startsWith("IN")))
-        .andExpect(jsonPath("$[0].itemName").isString())
-        .andExpect(jsonPath("$[0].updatedAt").isString())
-        .andExpect(jsonPath("$[0].subscriptionUrl").value(url));
+        .andExpect(jsonPath("$.docs.length()").value(1))
+        .andExpect(jsonPath("$.docs[0].configurationId").value(configurationId))
+        .andExpect(jsonPath("$.docs[0].itemGlobalId").value(startsWith("IN")))
+        .andExpect(jsonPath("$.docs[0].itemName").isString())
+        .andExpect(jsonPath("$.docs[0].updatedAt").isString())
+        .andExpect(jsonPath("$.docs[0].subscriptionUrl").value(url));
     mockMvc
         .perform(get(ITEM_LINKS_PATH).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(0));
+        .andExpect(jsonPath("$.docs.length()").value(0));
 
     mockMvc
         .perform(delete(path(configurationId)).header("apiKey", apiKey))
@@ -466,7 +466,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
     mockMvc
         .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(0));
+        .andExpect(jsonPath("$.docs.length()").value(0));
   }
 
   @Test

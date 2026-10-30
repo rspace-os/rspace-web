@@ -11,19 +11,24 @@ public interface BookingNotificationSubscriptionManager {
    * The caller's booking-notification choices.
    *
    * @param autoSubscribeOwnedItems whether newly owned bookable instruments start subscribed
+   * @param notifyOwnActions whether subscribed events caused by the subject notify them
    * @param notifyOnCreated the My Profile "booking created" notification preference
    * @param notifyOnCancelled the My Profile "booking cancelled" notification preference
    * @param emailDelivery the effective My Profile preference for emailing notifications; read-only
    */
   record Preferences(
-      boolean autoSubscribeOwnedItems, boolean notifyOwnActions,
+      boolean autoSubscribeOwnedItems,
+      boolean notifyOwnActions,
       boolean notifyOnCreated,
       boolean notifyOnCancelled,
       boolean emailDelivery) {}
 
   /** The editable subset of {@link Preferences}. */
   record PreferenceChanges(
-      boolean autoSubscribeOwnedItems, boolean notifyOwnActions, boolean notifyOnCreated, boolean notifyOnCancelled) {}
+      boolean autoSubscribeOwnedItems,
+      boolean notifyOwnActions,
+      boolean notifyOnCreated,
+      boolean notifyOnCancelled) {}
 
   /**
    * Version -1 means no saved row; nonnegative versions identify persisted rows. {@code enabled} is
