@@ -314,10 +314,10 @@ class BookingSettingsPatchTest {
   @Test
   void decodesTheIncrementUnitAndAlignmentAndRendersThemInBothDocuments() throws Exception {
     BookingSchedulingSettings.Patch supplied =
-        patch("{\"incrementUnit\":\"DAYS\",\"alignToIncrement\":false,\"configurationVersion\":0}");
+        patch("{\"incrementUnit\":\"DAYS\",\"alignToIncrement\":false}");
     assertEquals(BookingIncrementUnit.DAYS, supplied.incrementUnit());
     assertEquals(false, supplied.alignToIncrement());
-    BookingSchedulingSettings.Patch omitted = patch("{\"configurationVersion\":0}");
+    BookingSchedulingSettings.Patch omitted = patch("{}");
     assertNull(omitted.incrementUnit());
     assertNull(omitted.alignToIncrement());
 
