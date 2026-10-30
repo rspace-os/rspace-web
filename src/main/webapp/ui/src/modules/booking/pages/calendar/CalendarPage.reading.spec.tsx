@@ -589,6 +589,8 @@ describe("Calendar page", () => {
   });
 
   test("does not reject a drag across a repeated hour", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
     await withViewport(1440, async () => {
       history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-10-25"] });
       const confocal = bookableItemFixtures.find((fixture) => fixture.target.globalId === "IN123");
