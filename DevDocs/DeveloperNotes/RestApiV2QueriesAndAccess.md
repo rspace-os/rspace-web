@@ -19,3 +19,12 @@ reusable DAO.
 A global ID in a relationship filter or write is a prefix and an unversioned ID. The ID can be
 negative, as seeded and baseline rows are (for example `US-3`). A versioned ID such as `IN12v2` is
 rejected.
+
+### Inventory container read constraints
+
+`InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
+`ContainerReadAccess` excludes deleted containers and allows direct Inventory read
+access or access through an active immediate child Container, Instrument or SubSample.
+Role visibility applies to the container itself, not its children. System administrators
+can read every active container, including workbenches. The query compiler uses correlated
+subqueries so filtering, totals and pagination use the same rule.

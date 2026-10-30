@@ -1,12 +1,17 @@
 package com.researchspace.dao.query;
 
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.inventory.model.InventorySharingReadFilters;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.FilterSelector;
+import com.researchspace.model.collection.InventoryContainerReadConstraint;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.ResolvedRuntimeField;
+import com.researchspace.model.inventory.ContainerLocation;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -45,6 +50,9 @@ final class RsqlExpressionCompiler {
   }
 
   String compileConstraint(QueryConstraint constraint, RsqlCompilationState state) {
+    if (constraint instanceof InventoryContainerReadConstraint containers) {
+      return compileContainers(containers, state);
+    }
     if (constraint instanceof FilterExpression filter) {
       return compile(filter, state);
     }
@@ -55,6 +63,46 @@ final class RsqlExpressionCompiler {
       return compileConstraintLogical(or.children(), " OR ", state);
     }
     throw new IllegalStateException("Unsupported query constraint " + constraint.getClass());
+  }
+
+  private String compileContainers(
+      InventoryContainerReadConstraint facts, RsqlCompilationState state) {
+    if (facts.sysadmin()) {
+      return "(" + alias + ".deleted = false)";
+    }
+    String direct = sharing(facts, facts.visibleOwners(), alias, state);
+    List<String> branches = new ArrayList<>();
+    branches.add(direct);
+    for (String child : List.of("storedContainer", "storedInstrument", "storedSubSample")) {
+      String location = state.nextTargetAlias();
+      RsqlCompilationState nested = state.nested(false);
+      String item = location + "." + child;
+      String owner = child.equals("storedSubSample") ? item + ".sample" : item;
+      String where =
+          location
+              + ".container.id = "
+              + alias
+              + ".id AND "
+              + item
+              + ".deleted = false AND "
+              + sharing(facts, List.of(), owner, nested);
+      branches.add("EXISTS " + state.addSubquery(ContainerLocation.class, location, where, nested));
+    }
+    return "(" + alias + ".deleted = false AND (" + String.join(" OR ", branches) + "))";
+  }
+
+  private String sharing(
+      InventoryContainerReadConstraint facts,
+      List<String> visibleOwners,
+      String itemAlias,
+      RsqlCompilationState state) {
+    var filter =
+        InventorySharingReadFilters.readable(
+            facts.username(), facts.groupMembers(), facts.groupNames(), visibleOwners);
+    var predicate =
+        new RsqlCollectionQuery(ApiV2InstrumentResource.DESCRIPTION, itemAlias, compilers)
+            .compileTrusted(filter, state.nested(false));
+    return state.merge(predicate);
   }
 
   private String compileConstraintLogical(
