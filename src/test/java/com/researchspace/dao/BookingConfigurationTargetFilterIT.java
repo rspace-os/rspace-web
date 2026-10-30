@@ -64,14 +64,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
 
-  private static final String SAFE_CONFIGURATION_RESOURCE = "test-booking-configurations";
   private static final String PROTECTED_CONFIGURATION_RESOURCE =
       "role-protected-booking-configurations";
   private static final FilterExpression NO_INSTRUMENT_IS_READABLE =
       new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
 
-  private static final CollectionDescription<BookingConfiguration> SAFE_CONFIGURATIONS =
-      bookingConfigurations(SAFE_CONFIGURATION_RESOURCE, AccessFunction.authenticated());
   private static final CollectionDescription<BookingConfiguration> PROTECTED_CONFIGURATIONS =
       bookingConfigurations(
           PROTECTED_CONFIGURATION_RESOURCE,
@@ -87,7 +84,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
               Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
               Relationship.referenceToOne(
                   "configuration",
-                  SAFE_CONFIGURATION_RESOURCE,
+                  PROTECTED_CONFIGURATION_RESOURCE,
                   CollectionFieldTypes.longNumber(),
                   BookingConfiguration.class,
                   TimeSlotBooking::getBookingConfiguration,
@@ -96,7 +93,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
           "id",
           List.of(new Sort("id", true)));
   private static final ResourceRegistry ROLE_PROTECTED_REGISTRY =
-      new ResourceRegistry(List.of(TEST_BOOKINGS, SAFE_CONFIGURATIONS, PROTECTED_CONFIGURATIONS));
+      new ResourceRegistry(List.of(TEST_BOOKINGS, PROTECTED_CONFIGURATIONS));
   private static final CollectionQueryExecutor<TimeSlotBooking> TEST_BOOKING_QUERY =
       new CollectionQueryExecutor<>(TimeSlotBooking.class, TEST_BOOKINGS, "booking");
   private static final ResolvedRuntimeField CONFIGURATION_TIME_ZONE =
@@ -109,8 +106,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
               "test",
               "Test",
               List.of()),
-          new RuntimeFieldBinding(BookingConfiguration.class, "id", "timeZone", Map.of()),
-          PROTECTED_CONFIGURATION_RESOURCE);
+          new RuntimeFieldBinding(BookingConfiguration.class, "id", "timeZone", Map.of()));
 
   private final InstrumentDao instrumentDao;
   private final BookingConfigurationDao bookingConfigurationDao;
@@ -307,7 +303,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   }
 
   @Test
-  void delegatedRuntimeSourceEnforcesNestedResourceRoleMembership() {
+  void relationshipRuntimeFieldEnforcesNestedResourceRoleMembership() {
     User assigned = createInitAndLoginAnyUser();
     User unassigned = createInitAndLoginAnyUser();
     BookingConfiguration configuration =
