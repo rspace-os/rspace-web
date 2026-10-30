@@ -44,13 +44,13 @@ describe("GranteePicker query identity", () => {
       http.get("/api/v2/test-collections/9/access/grantees", async ({ request }) => {
         const authorization = request.headers.get("Authorization") ?? "";
         authorizationHeaders.push(authorization);
-        searchTerms.push(new URL(request.url).searchParams.get("query") ?? "");
+        searchTerms.push(new URL(request.url).searchParams.get("q") ?? "");
         if (authorization === "Bearer token-a") {
-          return HttpResponse.json([directoryEntry(11, "Alice")]);
+          return HttpResponse.json({ docs: [directoryEntry(11, "Alice")] });
         }
         if (authorization === "Bearer token-b") {
           await tokenBResponse;
-          return HttpResponse.json([directoryEntry(22, "Bob")]);
+          return HttpResponse.json({ docs: [directoryEntry(22, "Bob")] });
         }
         return new HttpResponse(null, { status: 403 });
       }),
