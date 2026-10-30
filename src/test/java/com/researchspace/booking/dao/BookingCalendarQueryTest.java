@@ -6,13 +6,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.collection.AccessFunction;
-import com.researchspace.model.collection.AccessPolicy;
-import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ResourceRegistry;
-import com.researchspace.model.inventory.Instrument;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -21,18 +19,11 @@ class BookingCalendarQueryTest {
 
   @Test
   void searchEscapesLiteralLikeCharactersForItemsAndEventsWithoutChangingCase() {
-    var instruments = ApiV2BookingInstrumentResource.description(AccessFunction.anyone());
     ResourceRegistry resources =
         new ResourceRegistry(
             List.of(
-                instruments,
-                new CollectionDescription<Instrument>(
-                    "instruments",
-                    Instrument.class,
-                    instruments.fields(),
-                    instruments.idField(),
-                    instruments.defaultSort(),
-                    AccessPolicy.readOnly(AccessFunction.anyone()))));
+                ApiV2InstrumentResource.description(AccessFunction.anyone()),
+                ApiV2ContainerResource.description(AccessFunction.anyone())));
     @SuppressWarnings("unchecked")
     ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
     when(registry.getObject()).thenReturn(resources);

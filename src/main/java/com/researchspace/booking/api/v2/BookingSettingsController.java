@@ -1,7 +1,5 @@
 package com.researchspace.booking.api.v2;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.controller.ApiV2ConditionalRequest;
@@ -9,7 +7,6 @@ import com.researchspace.api.v2.controller.ResourceAccessController;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
-import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
@@ -372,5 +369,4 @@ public final class BookingSettingsController {
         .header(HttpHeaders.CACHE_CONTROL, "no-transform")
         .body(body);
   }
-
 }
