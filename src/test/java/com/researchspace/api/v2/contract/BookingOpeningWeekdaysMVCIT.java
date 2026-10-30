@@ -192,7 +192,7 @@ class BookingOpeningWeekdaysMVCIT {
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d},\"start\":\"%s\",\"end\":\"%s\"}"
+                    "{\"target\":{\"relationTo\":\"instruments\",\"value\":%d},\"start\":\"%s\",\"end\":\"%s\"}"
                         .formatted(
                             instrumentId,
                             day.plusDays(1).atTime(22, 0).atZone(zone).toInstant(),
@@ -211,7 +211,7 @@ class BookingOpeningWeekdaysMVCIT {
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"openingHours\":null,\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d}}"
+                    "{\"openingHours\":null,\"target\":{\"relationTo\":\"instruments\",\"value\":%d}}"
                         .formatted(instrumentId)))
         .andExpect(status().isBadRequest());
     long id = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());

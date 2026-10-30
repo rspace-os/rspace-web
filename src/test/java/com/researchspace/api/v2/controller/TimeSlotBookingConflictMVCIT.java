@@ -122,7 +122,7 @@ class TimeSlotBookingConflictMVCIT {
             .contentType(MediaType.APPLICATION_JSON)
             .content(
                 """
-                {"target":{"relationTo":"booking-instruments","value":%d},\
+                {"target":{"relationTo":"instruments","value":%d},\
                 "start":"%s","end":"%s"}\
                 """
                     .formatted(instrumentId, start, end)));

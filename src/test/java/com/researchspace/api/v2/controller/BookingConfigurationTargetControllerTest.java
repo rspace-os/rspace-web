@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.booking.api.v2.BookingConfigurationTargetController;
 import com.researchspace.booking.service.BookingConfigurationTarget;
 import com.researchspace.booking.service.BookingConfigurationTargetManager;
 import com.researchspace.model.User;

@@ -80,8 +80,10 @@ public class BookingConfigurationTargetController {
     if (!trimmed.isEmpty() && trimmed.length() < 2) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
     }
-    return new TargetDirectoryDocument(manager.search(
-        trimmed.isEmpty() ? null : trimmed,
-        ResourceAccessController.validateLimit(limit), caller.subject()));
+    return new TargetDirectoryDocument(
+        manager.search(
+            trimmed.isEmpty() ? null : trimmed,
+            ResourceAccessController.validateLimit(limit),
+            caller.subject()));
   }
 }
