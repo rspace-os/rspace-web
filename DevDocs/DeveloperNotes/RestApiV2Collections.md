@@ -290,3 +290,9 @@ visibility. Global IDs use `IC` for containers and `BE` for workbenches and cann
 be queried. Supply `ContainerReadAccess` to `ApiV2ContainerResource.description`
 when registering the resource. Its static description denies reads until a
 deployment supplies the policy.
+
+`CollectionQueryExecutor.count` uses the unpaginated count query without loading an entity.
+For scalar readers that do not need totals, `projectedSlice` returns a `ResourceSlice`.
+It requests one extra row at the original page offset with counting disabled, trims that
+row, and reports `hasNext`. Offsets beyond Blaze's integer limit return an empty slice
+without querying. `page` and `projectedPage` retain their counted-page behavior.

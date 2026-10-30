@@ -10,6 +10,7 @@ import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.collection.Sort;
 import jakarta.persistence.LockModeType;
 import java.util.List;
@@ -136,6 +137,33 @@ public final class CollectionQueryExecutor<T> {
     properties.forEach(property -> selection.with(alias + "." + property));
     selection.end();
     return paged(query, request);
+  }
+
+  /** Reads a scalar window and one extra row to determine whether another window exists. */
+  public <R> ResourceSlice<R> projectedSlice(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      Predicate restriction,
+      RelationshipReadAccess targets,
+      Class<R> resultType,
+      List<String> properties) {
+    CriteriaBuilder<R> query = factory.create(session, resultType).from(entityType, alias);
+    applyRequest(query, request, restriction, targets);
+    var selection = query.selectNew(resultType);
+    properties.forEach(property -> selection.with(alias + "." + property));
+    selection.end();
+    long firstResult = request.page().offset();
+    if (firstResult > Integer.MAX_VALUE) {
+      return new ResourceSlice<>(List.of(), false);
+    }
+    request.sort().forEach(sort -> applySort(query, sort));
+    if (request.sort().isEmpty()) {
+      orderById(query);
+    }
+    int size = request.page().size();
+    List<R> rows = query.page((int) firstResult, size + 1).withCountQuery(false).getResultList();
+    return new ResourceSlice<>(rows.subList(0, Math.min(rows.size(), size)), rows.size() > size);
   }
 
   private <R> ResourcePage<R> paged(CriteriaBuilder<R> query, ResourceRequest request) {
