@@ -287,6 +287,16 @@ final class ApiV2OpenApiResourceDocumentBuilder {
    * the reference and {@code null}, keeping its other keywords such as the description.
    */
   static Object withNullableReferenceProperties(Object schema) {
+    if (schema instanceof Map<?, ?> composite && composite.get("allOf") instanceof List<?> parts) {
+      Map<String, Object> copy = new LinkedHashMap<>();
+      composite.forEach((key, value) -> copy.put((String) key, value));
+      copy.put(
+          "allOf",
+          parts.stream()
+              .map(ApiV2OpenApiResourceDocumentBuilder::withNullableReferenceProperties)
+              .toList());
+      schema = copy;
+    }
     if (!(schema instanceof Map<?, ?> component)
         || !(component.get("properties") instanceof Map<?, ?> properties)
         || properties.values().stream().noneMatch(ApiV2OpenApiGenerator::isNullableReference)) {

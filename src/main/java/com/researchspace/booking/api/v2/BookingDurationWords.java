@@ -1,4 +1,4 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ListFormatUtils;
@@ -12,14 +12,14 @@ import java.util.Locale;
  * hours and minutes and joined as a unit list. It follows the booking form's {@code
  * formatDurationMinutes}, so a problem detail names a limit exactly as the form does.
  */
-public final class BookingDurationWords {
+final class BookingDurationWords {
 
   private static final long MINUTES_PER_HOUR = 60;
   private static final long MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
 
   private BookingDurationWords() {}
 
-  public static String format(long totalMinutes, MessageSourceUtils messages, Locale locale) {
+  static String format(long totalMinutes, MessageSourceUtils messages, Locale locale) {
     List<String> parts = new ArrayList<>();
     addPart(parts, "duration.days", totalMinutes / MINUTES_PER_DAY, messages, locale);
     addPart(

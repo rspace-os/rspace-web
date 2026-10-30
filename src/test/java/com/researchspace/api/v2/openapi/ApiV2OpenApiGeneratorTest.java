@@ -15,6 +15,7 @@ import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.booking.api.v2.BookingProblem;
 import com.researchspace.featureflags.ApiV2FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
@@ -135,7 +136,15 @@ class ApiV2OpenApiGeneratorTest {
             timeSlotBookingOperations,
             Long::valueOf,
             "create-error",
-            "update-error");
+            "update-error",
+            EnumSet.allOf(ResourceOperation.class),
+            Map.of(
+                ResourceOperation.CREATE,
+                OpenApiOperationDocumentation.builder()
+                    .problemSchema(400, BookingProblem.class)
+                    .problemSchema(409, BookingProblem.class)
+                    .errorResponse(409, "errors.api.v2.booking.overlap", "Conflict.")
+                    .build()));
     ApiV2ResourceSpec<FeatureFlagResource, String> featureFlags =
         new ApiV2ResourceSpec<>(
             ApiV2FeatureFlagResource.DESCRIPTION,
@@ -615,15 +624,39 @@ class ApiV2OpenApiGeneratorTest {
 
   @Test
   void problemSchemaDocumentsTheBookingExtensionMembersAsOptional() {
-    Map<String, Object> schemas = schemas(document());
-    Map<String, Object> problem = objectMap(schemas.get("ApiV2Problem"));
-    Map<String, Object> properties = objectMap(problem.get("properties"));
+    Map<String, Object> document = document();
+    Map<String, Object> schemas = schemas(document);
+    Map<String, Object> createResponses =
+        objectMap(
+            objectMap(
+                    objectMap(objectMap(document.get("paths")).get("/api/v2/bookings")).get("post"))
+                .get("responses"));
+    for (String status : List.of("400", "409")) {
+      assertEquals(
+          Map.of("$ref", "#/components/schemas/BookingProblem"),
+          objectMap(
+                  objectMap(objectMap(createResponses.get(status)).get("content"))
+                      .get("application/problem+json"))
+              .get("schema"));
+    }
+    assertEquals(
+        Map.of("$ref", "#/components/responses/Unauthenticated"), createResponses.get("401"));
+    Map<String, Object> shared = objectMap(schemas.get("ApiV2Problem"));
+    Map<String, Object> sharedProperties = objectMap(shared.get("properties"));
+    assertFalse(sharedProperties.containsKey("conflict"));
+    assertFalse(sharedProperties.containsKey("extensions"));
+    Map<String, Object> problem = objectMap(schemas.get("BookingProblem"));
+    assertEquals(
+        Map.of("$ref", "#/components/schemas/ApiV2Problem"),
+        ((List<?>) problem.get("allOf")).get(0));
+    Map<String, Object> properties =
+        objectMap(objectMap(((List<?>) problem.get("allOf")).get(1)).get("properties"));
 
     for (String member :
         List.of(
             "conflict", "bufferBeforeMinutes", "bufferAfterMinutes", "maximumDurationMinutes")) {
       assertTrue(properties.containsKey(member), member);
-      assertFalse(((List<?>) problem.get("required")).contains(member), member);
+      assertFalse(((List<?>) problem.getOrDefault("required", List.of())).contains(member), member);
     }
     Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
     assertEquals(
@@ -636,7 +669,11 @@ class ApiV2OpenApiGeneratorTest {
   @Test
   void problemConflictIsTheConflictSchemaOrNullAsOpenApi31AllowsIt() {
     Map<String, Object> properties =
-        objectMap(objectMap(schemas(document()).get("ApiV2Problem")).get("properties"));
+        objectMap(
+            objectMap(
+                    ((List<?>) objectMap(schemas(document()).get("BookingProblem")).get("allOf"))
+                        .get(1))
+                .get("properties"));
     Map<String, Object> conflict = objectMap(properties.get("conflict"));
 
     assertFalse(conflict.containsKey("type"), conflict.toString());

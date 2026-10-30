@@ -2,8 +2,6 @@ package com.researchspace.booking.api.v2;
 
 import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2Problem;
-import com.researchspace.api.v2.controller.BookingDurationWords;
-import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
@@ -70,7 +68,7 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
         detail,
         code,
         detail,
-        ApiV2Problem.Extensions.maximumDuration(maximumMinutes));
+        BookingProblem.maximumDuration(maximumMinutes));
   }
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)
@@ -96,15 +94,6 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   @ExceptionHandler(BookingNotificationSubscriptionConflictException.class)
   public ResponseEntity<ApiV2Problem> handleBookingNotificationSubscriptionConflict() {
     return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingNotifications.subscriptionConflict");
-  }
-
-  @Override
-  @ExceptionHandler(ApiV2ResourceException.class)
-  public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
-    if (ex.getCause() instanceof BookingPolicyException policy) {
-      return handleBookingPolicy(policy);
-    }
-    return super.handleResourceException(ex);
   }
 
   private ResponseEntity<ApiV2Problem> problem(HttpStatus status, String messageKey) {

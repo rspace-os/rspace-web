@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingBufferConflictException;
@@ -40,11 +41,7 @@ class TimeSlotBookingProblemContractTest {
           Instant.parse("2026-09-28T10:00:00Z"));
 
   private final ObjectMapper json = new ObjectMapper();
-  private final TimeSlotBookingResourceOperations operations =
-      new TimeSlotBookingResourceOperations(
-          mock(TimeSlotBookingManager.class),
-          mock(FeatureFlagManager.class),
-          ApiV2TimeSlotBookingResource.DESCRIPTION);
+  private TimeSlotBookingResourceOperations operations;
   private BookingApiV2ControllerAdvice advice;
 
   @BeforeEach
@@ -53,6 +50,12 @@ class TimeSlotBookingProblemContractTest {
     MessageSourceUtils messages = new MessageSourceUtils();
     messages.setMessageSource(new JsonMessageSource());
     advice = new BookingApiV2ControllerAdvice(messages);
+    operations =
+        new TimeSlotBookingResourceOperations(
+            mock(TimeSlotBookingManager.class),
+            mock(FeatureFlagManager.class),
+            ApiV2TimeSlotBookingResource.DESCRIPTION,
+            messages);
   }
 
   @AfterEach
@@ -73,6 +76,23 @@ class TimeSlotBookingProblemContractTest {
                     operations.timeSlotBookingApiV2Resource(), ResourceOperation.CREATE, failure));
 
     assertEquals(json.readTree(expectedJson), body(response));
+    if (policy) {
+      assertEquals(
+          json.readTree(expectedJson),
+          body(
+              new ApiV2ControllerAdvice(messageSource())
+                  .handleResourceException(
+                      translate(
+                          operations.timeSlotBookingApiV2Resource(),
+                          ResourceOperation.CREATE,
+                          failure))));
+    }
+  }
+
+  private static MessageSourceUtils messageSource() {
+    MessageSourceUtils messages = new MessageSourceUtils();
+    messages.setMessageSource(new JsonMessageSource());
+    return messages;
   }
 
   private static Stream<Arguments> schedulingProblemBodies() {

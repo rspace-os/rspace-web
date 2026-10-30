@@ -13,18 +13,17 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
-import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.model.ApiV2AuditEvent;
 import com.researchspace.api.v2.model.ApiV2AuditPage;
 import com.researchspace.api.v2.model.ApiV2AuditQuery;
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch;
-import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingOverlapException;
@@ -34,7 +33,6 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -42,12 +40,14 @@ import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.audit.search.AuditTrailActorVisibility;
 import com.researchspace.testutils.BookingResourceTestFixtures;
@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -77,7 +78,10 @@ class TimeSlotBookingResourceOperationsTest {
   private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
   private final TimeSlotBookingResourceOperations operations =
       new TimeSlotBookingResourceOperations(
-          manager, featureFlags, ApiV2TimeSlotBookingResource.DESCRIPTION);
+          manager,
+          featureFlags,
+          ApiV2TimeSlotBookingResource.DESCRIPTION,
+          mock(MessageSourceUtils.class));
   private final User actor = mock(User.class);
 
   @BeforeEach
@@ -159,8 +163,8 @@ class TimeSlotBookingResourceOperationsTest {
             BookingEventKind.MAINTENANCE,
             Instant.parse("2026-09-28T08:00:00Z"),
             Instant.parse("2026-09-28T10:00:00Z"));
-    ApiV2Problem.BookingConflict expected =
-        new ApiV2Problem.BookingConflict(
+    BookingProblem.BookingConflict expected =
+        new BookingProblem.BookingConflict(
             59L, "MAINTENANCE", "2026-09-28T08:00:00Z", "2026-09-28T10:00:00Z");
     for (ResourceOperation operation :
         EnumSet.of(ResourceOperation.CREATE, ResourceOperation.UPDATE)) {
@@ -168,13 +172,13 @@ class TimeSlotBookingResourceOperationsTest {
           translate(spec, operation, new BookingOverlapException(blocking));
       assertEquals(HttpStatus.CONFLICT, overlap.status());
       assertEquals("errors.api.v2.booking.overlap", overlap.errorCode());
-      assertEquals(ApiV2Problem.Extensions.bookingConflict(expected), overlap.extensions());
+      assertEquals(BookingProblem.bookingConflict(expected), overlap.extensions());
 
       ApiV2ResourceException buffer =
           translate(spec, operation, new BookingBufferConflictException(blocking, 15, 30));
       assertEquals(HttpStatus.CONFLICT, buffer.status());
       assertEquals("errors.api.v2.booking.buffer", buffer.errorCode());
-      assertEquals(ApiV2Problem.Extensions.bookingBuffer(expected, 15, 30), buffer.extensions());
+      assertEquals(BookingProblem.bookingBuffer(expected, 15, 30), buffer.extensions());
     }
   }
 
@@ -308,16 +312,11 @@ class TimeSlotBookingResourceOperationsTest {
             100);
     ApiV2ResourceRegistration<?, ?> bookings =
         new ApiV2ResourceCatalog(
-                List.of(operations.timeSlotBookingApiV2Resource()),
                 List.of(
-                    new ApiV2RelationshipTargetSpec<>(
-                        ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of()),
-                    new ApiV2RelationshipTargetSpec<>(
-                        ApiV2BookingInstrumentResource.DESCRIPTION,
-                        Long.class,
-                        (ids, actor) -> Map.of()),
-                    new ApiV2RelationshipTargetSpec<>(
-                        ApiV2UserResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of())))
+                    operations.timeSlotBookingApiV2Resource(),
+                    readOnly(ApiV2InstrumentResource.DESCRIPTION),
+                    readOnly(ApiV2UserResource.DESCRIPTION),
+                    readOnly(com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION)))
             .find("bookings")
             .orElseThrow();
 
@@ -326,6 +325,18 @@ class TimeSlotBookingResourceOperationsTest {
 
     assertEquals(1, page.totalDocs());
     verify(manager).requireCanViewAudit(any(TimeSlotBooking.class), eq(itemManager));
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> ApiV2ResourceSpec<T, Long> readOnly(CollectionDescription<T> description) {
+    return new ApiV2ResourceSpec<>(
+        description,
+        mock(ResourceOperations.class),
+        Long::valueOf,
+        "create-error",
+        "update-error",
+        Set.of(ResourceOperation.LIST),
+        Map.of());
   }
 
   private static TimeSlotBooking booking(User requester) {
