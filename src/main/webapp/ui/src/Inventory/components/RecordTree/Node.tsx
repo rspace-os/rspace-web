@@ -61,6 +61,13 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
             },
           }}
           itemId={node.globalId || ""}
+          disableSelection={search.alwaysFilterOut(node)}
+          onKeyDown={(event) => {
+            // The tree ignores Space on a selection-disabled row, so the browser would scroll the panel.
+            if (event.key === " " && event.target === event.currentTarget && search.alwaysFilterOut(node)) {
+              event.preventDefault();
+            }
+          }}
           label={
             <CardHeader
               action={node.canNavigateToChildren && <NavigateToNode node={node} />}

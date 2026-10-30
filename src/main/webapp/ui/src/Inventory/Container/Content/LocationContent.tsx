@@ -95,6 +95,19 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
   const theme = useTheme();
   const { search } = React.useContext(SearchContext);
 
+  const emptyGridLocationRef = React.useRef<HTMLDivElement | null>(null);
+  /*
+   * In selection-only grids this also re-runs when the content changes:
+   * deselecting a Move dialog preview swaps the focused item for this empty
+   * box, which must take the focus over. Not on the container page: there
+   * focusing a location selects it, and an item dragged away with the keyboard
+   * would leave its emptied location selected, which disables drag-and-drop.
+   */
+  const contentWhileSelectingOnly = search.uiConfig.dragAndDropDisabled ? location.content : null;
+  React.useEffect(() => {
+    if (hasFocus) emptyGridLocationRef.current?.focus();
+  }, [hasFocus, contentWhileSelectingOnly]);
+
   return (
     <Box
       sx={
@@ -157,7 +170,7 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
             <ActualLocationContent location={location} content={location.content} />
           </DragAndDrop.Draggable>
         ) : location.parentContainer.cType === "GRID" ? (
-          <Box tabIndex={tabIndex} sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}>
+          <Box ref={emptyGridLocationRef} tabIndex={tabIndex} sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}>
             {(location.coordY - 1) * (location.parentContainer.gridLayout?.columnsNumber || 0) + location.coordX}
           </Box>
         ) : location.parentContainer.cType === "IMAGE" ? (

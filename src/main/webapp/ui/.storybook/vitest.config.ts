@@ -14,6 +14,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "../src"),
     },
   },
+  optimizeDeps: {
+    // Storybook imports React DOM from pnpm's global store outside the project tree.
+    include: ["react-dom"],
+  },
   test: {
     name: "storybook",
     globals: true,

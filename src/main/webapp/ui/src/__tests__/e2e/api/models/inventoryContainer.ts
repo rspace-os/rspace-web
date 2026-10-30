@@ -1,6 +1,10 @@
+import type { ApiInventoryGridLocation } from "./inventory";
 import type { ApiInventoryRecordInfo } from "./inventoryRecordInfo";
 
-export type ApiInventoryContainer = ApiInventoryRecordInfo;
+export interface ApiInventoryContainer extends ApiInventoryRecordInfo {
+  deleted?: boolean;
+  locations?: Array<ApiInventoryGridLocation & { content: ApiInventoryRecordInfo | null }>;
+}
 
 export type ApiInventoryContainerType = "LIST" | "GRID" | "IMAGE";
 

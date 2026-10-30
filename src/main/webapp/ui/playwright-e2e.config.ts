@@ -2,12 +2,13 @@ import { defineConfig, devices, type ReporterDescription } from "@playwright/tes
 import { storageStatePath } from "./src/__tests__/e2e/authState";
 import { env } from "./src/__tests__/e2e/env";
 import type { E2EOptions } from "./src/__tests__/e2e/fixtures/ui";
-import { selectBrowserProjects } from "./src/__tests__/e2e/projects";
+import { parseProjectSelection, selectBrowserProjects } from "./src/__tests__/e2e/projects";
 import { tags } from "./src/__tests__/e2e/tags";
 import { USERS } from "./src/__tests__/e2e/users";
 import { MOBILE_DEVICE } from "./src/__tests__/e2e/viewports";
 
 const E2E_BROWSER = env.browser;
+const selectedNames = parseProjectSelection(E2E_BROWSER);
 const browserProjects = selectBrowserProjects(E2E_BROWSER, { cloud: env.cloud });
 const SETUP_BROWSER = browserProjects[0]?.browserName ?? "chromium";
 const desktopDevices = {
@@ -104,8 +105,8 @@ export default defineConfig<E2EOptions>({
       },
     })),
   ].filter(({ name }) => {
-    if (name === "setup") return E2E_BROWSER !== "api";
-    if (name === "api") return (!E2E_BROWSER && !env.cloud) || E2E_BROWSER === "api";
+    if (name === "setup") return selectedNames.length === 0 || selectedNames.some((selected) => selected !== "api");
+    if (name === "api") return (selectedNames.length === 0 && !env.cloud) || selectedNames.includes("api");
     return true;
   }),
 });

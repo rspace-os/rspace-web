@@ -17,7 +17,13 @@ function RecordTree(): React.ReactNode {
 
   const handleSelect = (event: SyntheticEvent | null, nodeIds: string | null) => {
     if (!event) return;
-    if (!tappedToggleIcon(event) && nodeIds !== search.tree.selected) {
+    // The tree fires Enter and Space from the item root, never from inside the label.
+    if (event.type === "keydown") {
+      if (nodeIds === null) return;
+    } else if (tappedToggleIcon(event)) {
+      return;
+    }
+    if (nodeIds !== search.tree.selected) {
       search.tree.setSelected(nodeIds);
     }
   };

@@ -2446,6 +2446,14 @@ export default interface Resources {
           "multipleItemsNotSupported": "Drag and drop does not currently support moving multiple items at once."
         },
         "gridViewLabel": "Container contents grid",
+        "keyboard": {
+          "dragTips": "Press Enter to drop items. Press Escape to cancel.",
+          "limitReached": "Selection limit reached: {count, plural, one {# location} other {# locations}} already selected.",
+          "nothingToMove": "Nothing to move here.",
+          "occupied": "This location is not empty.",
+          "selectionTips": "Use the arrow keys to move. Press Space to select or deselect a location. Hold Shift to select a range. Press Escape to clear selection.",
+          "tips": "Expand selection by holding Shift. Press Space to enter drag-and-drop mode. Press Escape to clear selection."
+        },
         "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
         "placeMarkers": {
           "columns": {
@@ -2457,6 +2465,7 @@ export default interface Resources {
           "emptyLocationHelper": "This location can be chosen as the destination in a move operation."
         },
         "previewAlt": "Preview of {name}",
+        "rowHeaderLabel": "Row",
         "zoom": {
           "ctrlTip": "Tip: Use <kbd>Ctrl</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
           "macTip": "Tip: Use <kbd>Command</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
@@ -3979,6 +3988,7 @@ export default interface Resources {
           "amountTakenEach": "Amount taken from each subsample",
           "documentation": "Documented by",
           "linkBack": "Links back to",
+          "location": "Location",
           "originEmptied": "Origin volume",
           "process": "Process",
           "storageTemp": "Storage temperature",
@@ -3989,9 +3999,11 @@ export default interface Resources {
           "amountTaken": "{amount} {unit}",
           "emptied": "Will be set to 0",
           "originAmount": "{origin}: {amount}",
+          "placedIn": "{container}: {slots}",
           "storageTemp": "{temp} °C",
           "subsamples": "{count} × {amount} {unit} each",
-          "takeAll": "All (subsamples emptied)"
+          "takeAll": "All (subsamples emptied)",
+          "workbench": "Your workbench"
         }
       },
       "cryopreserve": {
@@ -4065,6 +4077,28 @@ export default interface Resources {
         "singleOnly": "Select a single subsample for this operation.",
         "tooManySelected": "Select at most 100 subsamples for this operation."
       },
+      "placement": {
+        "changeContainer": "Change container",
+        "chosen": "Placing in {container} ({globalId})",
+        "container": "Choose a location",
+        "description": "Choose where the new subsamples go once they are created.",
+        "failedAfterCreate": "The new subsamples were created on your workbench, but could not be placed in {container}.",
+        "rememberedUnavailable": "The remembered container \"{container}\" can no longer take the new subsamples. Choose another location, or leave them on your workbench.",
+        "status": {
+          "cannotStoreSamples": "This container cannot hold subsamples. Choose another container.",
+          "deleted": "This container is in the trash. Choose another container.",
+          "image": "Image containers are not supported yet. Choose a grid or list container.",
+          "loading": "Loading the container…",
+          "noPermission": "You do not have permission to place items in this container. Choose another container.",
+          "notEnoughSpace": "{count, plural, one {This container has no free location.} other {Only {free} of the # locations needed are free.}} Choose another container.",
+          "occupiedSlot": "A selected location is already occupied. Deselect it.",
+          "ready": "The new subsamples will be placed in {container}.",
+          "selectSlots": "{count, plural, one {Select # more location in {container}.} other {Select # more locations in {container}.}}",
+          "tooManySlots": "{count, plural, one {Deselect # location.} other {Deselect # locations.}}",
+          "workbench": "To keep the new subsamples on your workbench, choose \"Leave on my workbench\"."
+        },
+        "workbench": "Leave on my workbench"
+      },
       "pool": {
         "description": "Combine an equal amount from several subsamples into one new pooled sample.",
         "label": "Pool",
@@ -4112,6 +4146,7 @@ export default interface Resources {
           "confirm": "Confirm",
           "details": "Details",
           "documentation": "Documentation",
+          "placement": "Location",
           "template": "Template"
         },
         "title": "Process subsample"
@@ -7298,6 +7333,7 @@ export default interface Resources {
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
           "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
+          "databaseError": "The database refused the import and nothing was imported. Check the rows for values longer than their fields allow, then try again.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
           "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",

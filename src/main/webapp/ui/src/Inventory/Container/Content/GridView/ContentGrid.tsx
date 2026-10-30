@@ -1,11 +1,12 @@
+import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
-import Snackbar from "@mui/material/Snackbar";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { type KeyboardEvent, type MouseEvent, useContext, useEffect, useRef, useState } from "react";
@@ -13,8 +14,10 @@ import { useTranslation } from "react-i18next";
 import SearchContext from "../../../../stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import ContainerModel from "../../../../stores/models/ContainerModel";
+import useStores from "../../../../stores/use-stores";
 import { preventEventBubbling } from "../../../../util/Util";
 import * as DragAndDrop from "../DragAndDrop";
+import { canStartDrag } from "../DragAndDrop/Draggable";
 import Dragger from "../Dragger";
 import LocationContent from "../LocationContent";
 import GridCell, { type GridCellArgs } from "./GridCell";
@@ -92,6 +95,7 @@ interface LoadedContentProps {
 const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const { t } = useTranslation("inventory");
   const { search } = React.useContext(SearchContext);
+  const { moveStore } = useStores();
   const columnsUnderHover = useLocalObservable(() => new Set<number>());
 
   /*
@@ -121,6 +125,13 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const [shiftOrigin, setShiftOrigin] = useState<Coord | null>(null);
 
   /*
+   * In a selection-only grid, the locations the current Shift+Arrow range
+   * added. Locations picked before the range began are kept as it grows or
+   * shrinks.
+   */
+  const shiftRange = useRef<Set<Location>>(new Set());
+
+  /*
    * When the user taps anywhere inside the table, initially we want to do
    * nothing but record where they tapped. If after 500ms they have neither
    * moved the cursor nor releases the click then drag-and-drop should be
@@ -144,6 +155,15 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const { disabled } = useContext(SearchContext);
 
   const [keyboardTips, setKeyboardTips] = useState(false);
+  // A click focuses the cell too, but the tips are for keyboard users.
+  const focusFromPointer = useRef(false);
+  const tipsTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hideKeyboardTips = () => {
+    clearTimeout(tipsTimeout.current);
+    setKeyboardTips(false);
+  };
+  useEffect(() => () => clearTimeout(tipsTimeout.current), []);
+  const instructionsId = React.useId();
 
   /*
    * When DndKit's keyboard-driven drag-and-drop mode is active, we don't want
@@ -153,6 +173,15 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
    * and when set all other keys are prevented from doing anything.
    */
   const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] = useState(false);
+
+  /*
+   * Why a key press did not select. Each refusal gets an id from a counter that
+   * never resets, so that a repeated message replaces the live region's content
+   * and is announced again.
+   */
+  const [announcement, setAnnouncement] = useState<{ id: number; text: string } | null>(null);
+  const announcementId = useRef(0);
+  const announce = (text: string) => setAnnouncement({ id: ++announcementId.current, text });
 
   const findLocation = (col: { value: number }, row: { value: number }): Location => {
     const loc = container.findLocation(col.value, row.value);
@@ -184,8 +213,20 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           sx={tableSx}
           padding="normal"
           size="small"
-          onFocus={() => setKeyboardTips(true)}
-          onBlur={() => setKeyboardTips(false)}
+          aria-describedby={instructionsId}
+          onFocus={(e) => {
+            if (!focusFromPointer.current && !e.currentTarget.contains(e.relatedTarget)) {
+              setKeyboardTips(true);
+              clearTimeout(tipsTimeout.current);
+              tipsTimeout.current = setTimeout(() => setKeyboardTips(false), 6000);
+            }
+            setFocusCoord((current) => current ?? tabIndexCoord);
+          }}
+          onBlur={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget)) return;
+            hideKeyboardTips();
+            focusFromPointer.current = false;
+          }}
           onMouseDown={(e) => {
             if (e.currentTarget === tableRef.current) return; // ignore taps to scrollbar
             if (!disabled) {
@@ -223,8 +264,22 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             }
           }}
           onKeyDown={(e: KeyboardEvent) => {
-            if (e.key === " ") {
-              setInKeyboardDragAndDropMode(true);
+            focusFromPointer.current = false;
+            if (e.key === " " || e.key.startsWith("Arrow")) hideKeyboardTips();
+            /*
+             * A grid without drag-and-drop is used only to choose locations, so
+             * it follows the WAI-ARIA grid multi-select model: arrows move focus,
+             * Space toggles the focused location, Escape clears the selection.
+             */
+            const selectionOnly = search.uiConfig.dragAndDropDisabled;
+            if (e.key === " " && !selectionOnly && !inKeyboardDragAndDropMode) {
+              const focused = focusCoord && container.findLocation(focusCoord.x, focusCoord.y);
+              if (focused && canStartDrag(container, focused, search, moveStore)) {
+                setInKeyboardDragAndDropMode(true);
+              } else {
+                e.preventDefault();
+                announce(t("container.content.keyboard.nothingToMove"));
+              }
               return;
             }
             if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {
@@ -234,10 +289,34 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             if (inKeyboardDragAndDropMode) return;
 
             if (!focusCoord) throw new Error("A cell must have focus for key events to be handled");
-            if (e.key === "Escape") {
-              container.toggleAllLocations(false);
-              container.findLocation(focusCoord.x, focusCoord.y)?.toggleSelected(true);
+            const { onlyAllowSelectingEmptyLocations: emptyOnly, selectionLimit } = search.uiConfig;
+            if (e.key === " ") {
               e.preventDefault();
+              const focused = container.findLocation(focusCoord.x, focusCoord.y);
+              if (!focused) return;
+              const wasSelected = focused.selected;
+              container.onSelect(focused, search);
+              setShiftOrigin(null);
+              if (wasSelected || focused.selected) setAnnouncement(null);
+              else if (!focused.isSelectable(search)) announce(t("container.content.keyboard.occupied"));
+              else
+                announce(
+                  t("container.content.keyboard.limitReached", { count: container.selectedLocations?.length ?? 0 }),
+                );
+              return;
+            }
+            setAnnouncement(null);
+            if (e.key === "Escape") {
+              setShiftOrigin(null);
+              container.toggleAllLocations(false);
+              e.preventDefault();
+              if (selectionOnly) {
+                // Grids used only to choose locations sit in dialogs, which would otherwise close on Escape.
+                e.stopPropagation();
+                return;
+              }
+              const focused = container.findLocation(focusCoord.x, focusCoord.y);
+              if (focused) focused.toggleSelected(true);
             }
 
             const newCoord: {
@@ -248,7 +327,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                 y,
               }),
               ArrowLeft: ({ x, y }) => ({
-                x: Math.max(x - 1, 0),
+                x: Math.max(x - 1, 1),
                 y,
               }),
               ArrowDown: ({ x, y }) => ({
@@ -257,7 +336,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
               }),
               ArrowUp: ({ x, y }) => ({
                 x,
-                y: Math.max(y - 1, 0),
+                y: Math.max(y - 1, 1),
               }),
             };
             if (!(e.key in newCoord)) return;
@@ -270,9 +349,35 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             const top = Math.min(y, origin.y);
             const bottom = Math.max(y, origin.y);
 
-            container.locations?.forEach((l) => {
-              l.toggleSelected(l.coordX >= left && l.coordX <= right && l.coordY >= top && l.coordY <= bottom);
-            });
+            const inRectangle = (container.locations ?? []).filter(
+              (l) =>
+                l.coordX >= left &&
+                l.coordX <= right &&
+                l.coordY >= top &&
+                l.coordY <= bottom &&
+                (!emptyOnly || l.selected || l.isSelectable(search)),
+            );
+            let toSelect = new Set(inRectangle.slice(0, emptyOnly ? selectionLimit : Infinity));
+            if (selectionOnly && e.shiftKey) {
+              const previousRange = shiftOrigin ? shiftRange.current : new Set<Location>();
+              const earlierPicks = new Set((container.selectedLocations ?? []).filter((l) => !previousRange.has(l)));
+              const room = Math.max(selectionLimit - earlierPicks.size, 0);
+              const candidates = inRectangle.filter((l) => !earlierPicks.has(l));
+              const range = candidates.slice(0, room);
+              if (candidates.length > room)
+                announce(t("container.content.keyboard.limitReached", { count: earlierPicks.size + range.length }));
+              shiftRange.current = new Set(range);
+              toSelect = new Set([...earlierPicks, ...range]);
+            }
+            if (!selectionOnly || e.shiftKey) {
+              // Cells already in the right state are left alone, so the Move dialog's staged previews survive.
+              container.locations?.forEach((l) => {
+                if (l.selected && !toSelect.has(l)) l.toggleSelected(false);
+              });
+              container.locations?.forEach((l) => {
+                if (!l.selected && toSelect.has(l)) l.toggleSelected(true);
+              });
+            }
 
             setShiftOrigin(e.shiftKey ? (shiftOrigin ?? focusCoord) : null);
             setFocusCoord({ x, y });
@@ -281,7 +386,11 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         >
           <TableHead>
             <TableRow>
-              <TableCell align="center" ref={topLeftCellRef} onMouseDown={preventEventBubbling()}></TableCell>
+              <TableCell align="center" ref={topLeftCellRef} onMouseDown={preventEventBubbling()}>
+                <Box component="span" sx={visuallyHidden}>
+                  {t("container.content.rowHeaderLabel")}
+                </Box>
+              </TableCell>
               {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}
@@ -318,6 +427,12 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       parentRef={tableRef}
                       columnsUnderHover={columnsUnderHover}
                       columnIndex={index}
+                      onPointerFocus={(coord) => {
+                        focusFromPointer.current = true;
+                        setTabIndexCoord(coord);
+                        setFocusCoord(coord);
+                        setShiftOrigin(null);
+                      }}
                     >
                       <LocationContent
                         location={findLocation(col, row)}
@@ -333,14 +448,36 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         </Table>
         <Dragger container={container} parentRef={tableRef} />
       </TableContainer>
-      <Snackbar
-        open={keyboardTips}
-        message={
-          inKeyboardDragAndDropMode
-            ? "Press Enter to drop items. Press Escape to cancel."
-            : "Expand selection by holding Shift. Press Space to enter drag-and-drop mode. Press Escape to clear selection."
-        }
-      />
+      <Box role="status" sx={visuallyHidden}>
+        {announcement && <span key={announcement.id}>{announcement.text}</span>}
+      </Box>
+      <Box id={instructionsId} sx={visuallyHidden}>
+        {search.uiConfig.dragAndDropDisabled
+          ? t("container.content.keyboard.selectionTips")
+          : t("container.content.keyboard.tips")}
+      </Box>
+      {/* Sticky inside the scrolling content, so in a dialog it sits above the footer's buttons. */}
+      {(keyboardTips || inKeyboardDragAndDropMode) && (
+        <Box
+          role="note"
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            px: 1,
+            py: 0.5,
+            typography: "body2",
+            bgcolor: "background.paper",
+            borderTop: 1,
+            borderColor: "divider",
+          }}
+        >
+          {inKeyboardDragAndDropMode
+            ? t("container.content.keyboard.dragTips")
+            : search.uiConfig.dragAndDropDisabled
+              ? t("container.content.keyboard.selectionTips")
+              : t("container.content.keyboard.tips")}
+        </Box>
+      )}
     </>
   );
 });

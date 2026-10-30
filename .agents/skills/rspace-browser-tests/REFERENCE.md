@@ -156,9 +156,11 @@ document/page divs, the TinyMCE contenteditable iframe body.
   body via `frameLocator` + a `css=` cast on `.tox-edit-area__iframe` and
   `body[contenteditable="true"]`. `pressSequentially` does not exist on Vitest
   locators; use `userEvent.type`.
-- **Firefox coverage.** Every spec file runs in every engine. Only the
-  PDF-preview tests in `CallablePdfPreview.spec.tsx` `skipIf(firefox)`: pdf.js
-  never resolves its worker in headless Firefox.
+- **PDF worker delivery.** All PDF-preview tests run in every engine.
+  `pdfWorkerAssetPlugin` serves the installed pdf.js worker file as is, so Vite
+  cannot inject imports into it. In Firefox those imports stall worker startup
+  while MSW awaits the importing worker's client. Keep the real worker and PDF
+  fixtures, and recheck the plugin after Vite, MSW or Playwright upgrades.
 - **`optimizeDeps`.** `entries` scans every spec, even in focused runs, and
   `include` pre-bundles lazily discovered deps, so no mid-run optimizer reload
   duplicates React/emotion. The browser config has its own `cacheDir`

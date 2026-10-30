@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dmponline;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -8,8 +9,13 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.researchspace.rda.model.extras.DMPList;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.Timeout.ThreadMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +23,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 class DMPOnlineProviderImplTest {
@@ -105,5 +112,25 @@ class DMPOnlineProviderImplTest {
   void otherUrlsAreRejected(String url) {
     assertThrows(IllegalArgumentException.class, () -> provider.planUri(url));
     mockServer.verify();
+  }
+
+  @Test
+  @Timeout(value = 10, threadMode = ThreadMode.SEPARATE_THREAD)
+  void requestToUnresponsiveServerFailsAfterReadTimeout() throws Exception {
+    // the OS accepts the connection into the backlog, but nothing ever replies
+    try (ServerSocket silentServer = new ServerSocket(0)) {
+      DMPOnlineProviderImpl timeoutProvider =
+          new DMPOnlineProviderImpl(Duration.ofSeconds(5), Duration.ofMillis(200));
+      String silentBase = "http://localhost:" + silentServer.getLocalPort();
+      ReflectionTestUtils.setField(timeoutProvider, "baseUrl", silentBase);
+      timeoutProvider.init();
+
+      ResourceAccessException thrown =
+          assertThrows(
+              ResourceAccessException.class,
+              () -> timeoutProvider.getPlanByUrlId(silentBase + "/api/v2/plans/1", "token"));
+
+      assertInstanceOf(SocketTimeoutException.class, thrown.getCause());
+    }
   }
 }
