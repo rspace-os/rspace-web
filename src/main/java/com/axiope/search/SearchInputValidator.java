@@ -26,13 +26,20 @@ import org.springframework.validation.Validator;
  */
 public abstract class SearchInputValidator implements Validator {
 
-  private static final int MIN_SYSADMIN_TERM_LENGTH = 5;
-  private static final int MIN_REGULAR_USER_TERM_LENGTH = 2;
+  private final int userMinTermLength;
+  private final int sysadminMinTermLength;
 
   private User user;
 
-  public SearchInputValidator(User subject) {
+  /**
+   * @param subject the searcher; a sysadmin is held to sysadminMinTermLength
+   * @param userMinTermLength floor for every searcher but a sysadmin; 0 or less disables it
+   * @param sysadminMinTermLength floor for a sysadmin; 0 or less disables it
+   */
+  public SearchInputValidator(User subject, int userMinTermLength, int sysadminMinTermLength) {
     this.user = subject;
+    this.userMinTermLength = userMinTermLength;
+    this.sysadminMinTermLength = sysadminMinTermLength;
   }
 
   private Pattern LUCENE_TOO_PERMISSIVE_WILDCARD = Pattern.compile(":\\*");
@@ -110,17 +117,15 @@ public abstract class SearchInputValidator implements Validator {
     for (int i = 0; i < terms.length; ++i) {
       if (shouldSkipLengthValidationOfTerm(options[i])) continue;
 
-      // If searching for the owner of a file, we will allow it to be less than 5 chars (min 2)
+      // an owner search by a sysadmin is held to the user floor, not the sysadmin one
       if (user.hasRole(Role.SYSTEM_ROLE) && !options[i].equals(OWNER_SEARCH_OPTION)) {
-        if (terms[i].length() < MIN_SYSADMIN_TERM_LENGTH) {
-          errors.reject(
-              "errors.searchTermMinLength", new Object[] {MIN_SYSADMIN_TERM_LENGTH}, null);
+        if (terms[i].length() < sysadminMinTermLength) {
+          errors.reject("errors.searchTermMinLength", new Object[] {sysadminMinTermLength}, null);
           return;
         }
 
-      } else if (terms[i].length() < MIN_REGULAR_USER_TERM_LENGTH) {
-        errors.reject(
-            "errors.searchTermMinLength", new Object[] {MIN_REGULAR_USER_TERM_LENGTH}, null);
+      } else if (terms[i].length() < userMinTermLength) {
+        errors.reject("errors.searchTermMinLength", new Object[] {userMinTermLength}, null);
         return;
       }
     }

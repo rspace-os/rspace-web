@@ -40,6 +40,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${netfilestores.s3.delete.window.minutes}")
   private int s3DeleteWindowMinutes;
 
+  @Value("${search.user.minTermLength}")
+  private int userMinSearchTermLength;
+
+  @Value("${search.sysadmin.minTermLength}")
+  private int sysadminMinSearchTermLength;
+
   @Value("${netfilestores.export.enabled}")
   private String netFileStoresExportEnabled;
 
@@ -494,6 +500,16 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public int getS3DeleteWindowMinutes() {
     return s3DeleteWindowMinutes;
+  }
+
+  @Override
+  public int getUserMinSearchTermLength() {
+    return userMinSearchTermLength;
+  }
+
+  @Override
+  public int getSysadminMinSearchTermLength() {
+    return sysadminMinSearchTermLength;
   }
 
   @Override

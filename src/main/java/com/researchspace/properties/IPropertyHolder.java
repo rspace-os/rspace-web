@@ -122,6 +122,19 @@ public interface IPropertyHolder extends Versionable {
    */
   int getS3DeleteWindowMinutes();
 
+  /**
+   * Minimum length, in characters, of a text search term for every searcher but a sysadmin
+   * (deployment property search.user.minTermLength). 0 or less disables the check.
+   */
+  int getUserMinSearchTermLength();
+
+  /**
+   * Minimum length, in characters, of a text search term for a sysadmin, whose search spans every
+   * user's content (deployment property search.sysadmin.minTermLength). 0 or less disables the
+   * check.
+   */
+  int getSysadminMinSearchTermLength();
+
   String getNetFileStoresExportEnabled();
 
   String getUserSignup();

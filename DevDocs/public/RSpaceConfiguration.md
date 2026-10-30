@@ -555,6 +555,23 @@ These optional settings tweak behaviour of RSpace Inventory part.
 * **inventory.import.containersLimit** The maximum number of containers that a single import operation can create. Default is 500.
 * **inventory.import.samplesLimit** The maximum number of samples that a single import operation can create. Default is 1000.
 * **inventory.import.subSamplesLimit** The maximum number of subSamples that a single import operation can create. Default is 2000.
+
+### Search behaviour
+
+RSpace refuses a text search term shorter than a minimum number of characters in Workspace and
+Inventory searches, whether run in RSpace or through the API. The minimum is a crude performance safeguard rather than a
+matching rule: a short term matches more records, the full-text query and the permission filtering
+of its hits take longer, and a system admin's search spans every user's content (its result set is
+capped at 500). The defaults suit alphabetic text. In CJK languages two to four characters make a
+complete term (細胞 "cell", 接着 "adhesion"), so lower the values on such installations.
+
+* **search.sysadmin.minTermLength** Minimum length, in characters, of a search term entered by a system admin. Default is 5. Searches by tag are exempt, and searches by owner use `search.user.minTermLength` instead.
+* **search.user.minTermLength** Minimum length, in characters, of a search term entered by any other user, and of a search by owner whoever enters it. Default is 2.
+
+A value of 0 or less turns the check off; an empty term is still refused. The Workspace search box
+always asks for at least 2 characters, so a `search.user.minTermLength` below 2 only takes effect in
+Inventory and in API searches. Lowering either value can make searches slower on large
+installations, system admin searches most of all.
  
 ### Other settings
 
