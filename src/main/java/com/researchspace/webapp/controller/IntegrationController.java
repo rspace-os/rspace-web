@@ -35,8 +35,6 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpSession;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -204,15 +203,10 @@ public class IntegrationController extends BaseController {
     if (isBlank(url)) {
       return true; // clearing the setting is allowed
     }
-    try {
-      URI uri = new URI(url);
-      // the browser loads this address in an iframe and links, so no javascript: or file: URLs
-      return uri.getHost() != null
-          && ("https".equalsIgnoreCase(uri.getScheme())
-              || "http".equalsIgnoreCase(uri.getScheme()));
-    } catch (URISyntaxException e) {
-      return false;
-    }
+    // the browser loads this address in an iframe and links, so no javascript: or file: URLs.
+    // Local URLs are allowed for the dev stack's Egnyte mock on localhost.
+    return new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS)
+        .isValid(url);
   }
 
   @PostMapping("/saveAppOptions")
