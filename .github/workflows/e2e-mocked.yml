@@ -12,6 +12,12 @@ on:
         options: ['17', '21']
         default: '17'
 
+# A new push to a pull request cancels that PR's running e2e jobs. Other events get
+# a group per run, so runs on main are never queued behind or cancelled by each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

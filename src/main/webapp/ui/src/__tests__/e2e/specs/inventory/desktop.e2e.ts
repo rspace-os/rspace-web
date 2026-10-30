@@ -67,6 +67,8 @@ test.describe(`Inventory Desktop layout`, { tag: tags.INVENTORY }, () => {
     await page.goto(`/inventory/search?parentGlobalId=${sample.globalId}`);
     await pageInventory.isLoaded();
 
+    // Loading placeholders also render as rows, so wait for the search itself to finish.
+    await expect(pageInventory.searchPanel.statusText).toContainText("30 subsamples found.");
     await expect.poll(() => pageInventory.searchPanel.rowCount()).toBe(10);
     await expect(pageInventory.detailsPanel.heading).toContainText(sampleName);
 

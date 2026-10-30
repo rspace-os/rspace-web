@@ -1,5 +1,6 @@
 import { createDynamicUser } from "../createDynamicUser";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
+import { storageStateFor } from "../savedSessions";
 import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
 import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
@@ -26,22 +27,9 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     );
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
-  storageState: async ({ appUser, browser, browserContextOptions }, use) => {
-    const { context, page, close } = await loginInNewContext(
-      browser,
-      browserContextOptions,
-      appUser.username,
-      appUser.password,
-    );
-    try {
-      const workspace = new WorkspacePage(page);
-      if (!(await workspace.isLoaded())) {
-        throw new Error(`Workspace did not load after authenticating dynamic user '${appUser.username}'.`);
-      }
-      await use(await context.storageState());
-    } finally {
-      await close();
-    }
+  // An HTTP login still runs first-login setup, which happens when /workspace is served.
+  storageState: async ({ appUser }, use) => {
+    await use(await storageStateFor(appUser));
   },
 
   flowCreateUser: async ({ clientSysadmin, browser, browserContextOptions }, use) => {

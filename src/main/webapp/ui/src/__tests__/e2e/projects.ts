@@ -13,16 +13,30 @@ const browserProjects: BrowserProject[] = [
   { name: "mobile", browserName: "chromium", appUser: USERS.user7g },
 ];
 
+const NON_BROWSER_SELECTIONS = ["api", "setup"];
+
+/** `E2E_BROWSER` accepts a comma-separated list, e.g. `mobile,api`; empty selects every project. */
+export function parseProjectSelection(selection: string): string[] {
+  return selection
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
 /** Shared by the runner and authentication setup so each selected user has login state. */
 export function selectBrowserProjects(selection: string, { cloud }: { cloud: boolean }): BrowserProject[] {
-  if (selection === "api" || selection === "setup") return [];
   const available = cloud ? browserProjects.filter(({ name }) => name !== "mobile") : browserProjects;
-  if (!selection) return available;
-  const project = available.find(({ name }) => name === selection);
-  if (!project) {
-    throw new Error(
-      `Unknown E2E_BROWSER "${selection}"${cloud ? " with E2E_CLOUD=true" : ""}. Choose ${available.map(({ name }) => name).join(", ")}, api, or setup.`,
-    );
-  }
-  return [project];
+  const names = parseProjectSelection(selection);
+  if (names.length === 0) return available;
+  return names
+    .filter((name) => !NON_BROWSER_SELECTIONS.includes(name))
+    .map((name) => {
+      const project = available.find((candidate) => candidate.name === name);
+      if (!project) {
+        throw new Error(
+          `Unknown E2E_BROWSER "${name}"${cloud ? " with E2E_CLOUD=true" : ""}. Choose ${available.map(({ name }) => name).join(", ")}, api, or setup.`,
+        );
+      }
+      return project;
+    });
 }
