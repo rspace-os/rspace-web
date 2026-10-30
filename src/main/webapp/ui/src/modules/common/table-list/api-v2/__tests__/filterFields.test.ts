@@ -317,7 +317,7 @@ describe("filter selectors derived from published relationship targets", () => {
             operators: ["==", "!=", "=in=", "=out="],
             wildcards: false,
             fieldType: "text",
-            picker: { resource: "booking-locations", identity: "globalId", globalIdPrefix: "IC" },
+            picker: { resource: "containers", identity: "globalId", globalIdPrefix: "IC" },
           },
           "createdBy.id": { ...untitled, fieldType: "number" },
           "createdBy.firstName": untitled,
@@ -349,8 +349,8 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(label("location")).toBe("Location");
     expect(enriched.fields.find((field) => String(field.name) === "location")).toMatchObject({
       type: "relationship",
-      relationTo: "booking-locations",
-      filterPicker: { resource: "booking-locations", identity: "globalId", globalIdPrefix: "IC" },
+      relationTo: "containers",
+      filterPicker: { resource: "containers", identity: "globalId", globalIdPrefix: "IC" },
     });
     expect(enriched.fields.some((field) => field.label?.includes("tableList."))).toBe(false);
   });
