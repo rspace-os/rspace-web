@@ -2395,6 +2395,25 @@
         "required" : [ "bannerImageUrl" ],
         "type" : "object"
       },
+      "BulkReplacement" : {
+        "properties" : {
+          "configurationIds" : {
+            "items" : {
+              "exclusiveMinimum" : 0,
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "maxItems" : 100,
+            "minItems" : 1,
+            "type" : "array"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "configurationIds", "enabled" ],
+        "type" : "object"
+      },
       "Capabilities" : {
         "properties" : {
           "canPublish" : {
@@ -2790,6 +2809,22 @@
         },
         "type" : "object"
       },
+      "Lookup" : {
+        "properties" : {
+          "configurationIds" : {
+            "items" : {
+              "exclusiveMinimum" : 0,
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "maxItems" : 100,
+            "minItems" : 1,
+            "type" : "array"
+          }
+        },
+        "required" : [ "configurationIds" ],
+        "type" : "object"
+      },
       "MaintenancesCreate" : {
         "additionalProperties" : false,
         "properties" : {
@@ -3026,6 +3061,29 @@
           "total" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PreferenceReplacement" : {
+        "properties" : {
+          "autoSubscribeOwnedItems" : {
+            "type" : "boolean"
+          },
+          "notifyOwnActions" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "autoSubscribeOwnedItems", "notifyOwnActions" ],
+        "type" : "object"
+      },
+      "Preferences" : {
+        "properties" : {
+          "autoSubscribeOwnedItems" : {
+            "type" : "boolean"
+          },
+          "notifyOwnActions" : {
+            "type" : "boolean"
           }
         },
         "type" : "object"
@@ -3609,6 +3667,56 @@
         },
         "type" : "object"
       },
+      "Status" : {
+        "properties" : {
+          "cancelledEnabled" : {
+            "type" : "boolean"
+          },
+          "configurationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "createdEnabled" : {
+            "type" : "boolean"
+          },
+          "emailEnabled" : {
+            "type" : "boolean"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "StatusList" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Status"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "SubscriptionReplacement" : {
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "version" : {
+            "format" : "int64",
+            "minimum" : -1,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "enabled", "version" ],
+        "type" : "object"
+      },
       "TargetDirectoryDocument" : {
         "properties" : {
           "docs" : {
@@ -3619,6 +3727,15 @@
           }
         },
         "required" : [ "docs" ],
+        "type" : "object"
+      },
+      "UnsubscribeResult" : {
+        "properties" : {
+          "updatedCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
         "type" : "object"
       },
       "UsersCreate" : {
@@ -7892,6 +8009,92 @@
           "description" : "Authenticated callers who can read the resource."
         },
         "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
+    "/api/v2/booking-configurations/{id}/notification-subscription" : {
+      "get" : {
+        "operationId" : "getMyBookingNotificationSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Status"
+                }
+              }
+            },
+            "description" : "Current personal subscription."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get the caller's personal subscription and effective event delivery",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "put" : {
+        "operationId" : "replaceMyBookingNotificationSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubscriptionReplacement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Status"
+                }
+              }
+            },
+            "description" : "Saved personal subscription."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The subscription changed since it was read."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update the caller's personal subscription with optimistic concurrency",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
       }
     },
     "/api/v2/booking-settings" : {
@@ -14167,6 +14370,158 @@
         "x-rspace-operation" : "CUSTOM"
       }
     },
+    "/api/v2/users/me/booking-notification-preferences" : {
+      "get" : {
+        "operationId" : "getMyBookingNotificationPreferences",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Preferences"
+                }
+              }
+            },
+            "description" : "Current automatic subscription default."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get the caller's booking notification preferences",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "put" : {
+        "operationId" : "replaceMyBookingNotificationPreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PreferenceReplacement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Preferences"
+                }
+              }
+            },
+            "description" : "Saved automatic subscription default."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Change personal notification preferences without changing existing subscriptions",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-notification-subscriptions" : {
+      "delete" : {
+        "operationId" : "unsubscribeMyBookingNotifications",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnsubscribeResult"
+                }
+              }
+            },
+            "description" : "Number of subscriptions disabled."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Unsubscribe from all instruments without changing the automatic subscription default",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "put" : {
+        "description" : "Applies the explicit choice atomically to up to 100 instruments. All must be readable by the caller. Existing defaults and global event preferences are preserved.",
+        "operationId" : "replaceMyBookingNotificationSubscriptions",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkReplacement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StatusList"
+                }
+              }
+            },
+            "description" : "Saved personal subscriptions."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Subscribe or unsubscribe from selected readable instruments",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-notification-subscriptions/lookup" : {
+      "post" : {
+        "operationId" : "lookupMyBookingNotificationSubscriptions",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Lookup"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StatusList"
+                }
+              }
+            },
+            "description" : "Current personal subscriptions."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Read personal subscriptions for up to 100 readable instruments",
+        "tags" : [ "BookingNotificationSubscriptionController" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/users/me/booking-preferences" : {
       "delete" : {
         "description" : "Deletes the logical override so subsequent reads inherit global defaults.",
@@ -14791,6 +15146,9 @@
   }, {
     "description" : "Operations documented by BookingDisplayPreferencesController.",
     "name" : "BookingDisplayPreferencesController"
+  }, {
+    "description" : "Operations documented by BookingNotificationSubscriptionController.",
+    "name" : "BookingNotificationSubscriptionController"
   }, {
     "description" : "Operations documented by BookingSettingsController.",
     "name" : "BookingSettingsController"
