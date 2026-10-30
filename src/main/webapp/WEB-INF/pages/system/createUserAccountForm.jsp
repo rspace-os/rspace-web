@@ -164,7 +164,7 @@
                 <p><spring:message code="system.createAccountForm.password.helpText"/></p>
 			</td>
 			<td width="30%">
-				<input type="password" name="password" placeholder="<spring:message code='system:usersPage.piRoleDialog.password'/>" class="accountsInputs" pattern="[ -~]{8,50}" title="<spring:message code='system.createAccountForm.password.title'/>" required />
+				<input type="password" name="password" placeholder="<spring:message code='system:usersPage.piRoleDialog.password'/>" class="accountsInputs" pattern="[ -~]{8,128}" title="<spring:message code='system.createAccountForm.password.title'/>" required />
 
 			</td>
 			<td width="20%">
@@ -173,7 +173,7 @@
 				</label>
 			</td>
 			<td width="30%">
-				<input type="password" name="passwordConfirmation" placeholder="<spring:message code='system.createAccountForm.passwordConfirmation.placeholder'/>" class="accountsInputs" pattern="[ -~]{8,50}" title="<spring:message code='system.createAccountForm.passwordConfirmation.title'/>" required />
+				<input type="password" name="passwordConfirmation" placeholder="<spring:message code='system.createAccountForm.passwordConfirmation.placeholder'/>" class="accountsInputs" pattern="[ -~]{8,128}" title="<spring:message code='system.createAccountForm.passwordConfirmation.title'/>" required />
 			</td>
 		</tr>
 		<tr class="createPasswordRow" >

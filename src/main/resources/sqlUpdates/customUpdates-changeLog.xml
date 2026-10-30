@@ -13,5 +13,7 @@
     <include relativeToChangelogFile="true" file="rsdev-1525-move-github-slack-secrets.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-1525-move-dataverse-teams-galaxy-secrets.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-894-wrap-password-hashes.xml"/>
+    <include relativeToChangelogFile="true"
+      file="rsdev-894-prefix-bcrypt-verification-passwords.xml"/>
 
 </databaseChangeLog>

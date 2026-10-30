@@ -7,4 +7,4 @@
 	</c:otherwise>
 </c:choose>
 <spring:message code="system.admin.confirmPasswordTitle" var="confirmPasswordTitle"/>
-<form:password path="sysadminPassword" maxlength="100" title="${confirmPasswordTitle}" autofocus="true" />
+<form:password path="sysadminPassword" maxlength="128" title="${confirmPasswordTitle}" autofocus="true" />

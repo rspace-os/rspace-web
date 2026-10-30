@@ -5380,7 +5380,8 @@ export default interface Resources {
     "verificationPassword": {
       "set": {
         "errors": {
-          "alreadySet": "Verification password has already been set."
+          "alreadySet": "Verification password has already been set.",
+          "busy": "The server is busy and could not set your verification password. Please try again in a moment."
         },
         "success": "Verification password set successfully"
       }
@@ -8770,8 +8771,8 @@ export default interface Resources {
       "confirmPasswordLabel": "Confirm {0}",
       "enterNewPasswordPrompt": "Please enter your new {0}:",
       "newPasswordLabel": "New {0}",
-      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
       "submitButton": "Reset",
       "title": "Reset {0}"
     },
@@ -8831,7 +8832,7 @@ export default interface Resources {
         "confirmPasswordLabel": "Confirm Password",
         "confirmPasswordPlaceholder": "Confirm Password",
         "confirmPasswordTitle": "Confirm Password",
-        "createPasswordLabel": "Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.",
+        "createPasswordLabel": "Create a Password (8 - 128 characters). Numbers, letters, spaces and special characters are allowed.",
         "createUsernameLabel": "Create Username",
         "emailLabel": "Email address",
         "fillDetailsPrompt": "Please fill in your details",
@@ -8839,8 +8840,8 @@ export default interface Resources {
         "firstNamePlaceholder": "Your First Name",
         "lastNameLabel": "Last Name",
         "lastNamePlaceholder": "Your Last Name",
-        "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-        "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+        "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+        "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
         "passwordPlaceholder": "Create a Password",
         "piStatusNotice": "Based on your status at {0}, you cannot become a PI unless a system administrator manually enables this for you.",
         "signupCodeLabel": "Signup code",
@@ -9140,8 +9141,8 @@ export default interface Resources {
           "label": "Please copy or manually note this password, as it must be delivered to the new user outside RSpace."
         },
         "password": {
-          "helpText": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-          "title": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
+          "helpText": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+          "title": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
         },
         "passwordConfirmation": {
           "placeholder": "Password Confirmation",
@@ -10463,8 +10464,8 @@ export default interface Resources {
       "lastLoginLabel": "Last Login:",
       "otherProfileHeading": "User Profile",
       "ownProfileHeading": "My Profile",
-      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
       "pictureLabel": "Picture:",
       "profileHeading": "Profile",
       "signupSource": {

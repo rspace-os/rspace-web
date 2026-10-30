@@ -214,8 +214,8 @@
         "label": "Please copy or manually note this password, as it must be delivered to the new user outside RSpace."
       },
       "password": {
-        "helpText": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-        "title": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
+        "helpText": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+        "title": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
       },
       "passwordConfirmation": {
         "placeholder": "Password Confirmation",
