@@ -4,6 +4,7 @@ import Switch from "@mui/material/Switch";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
+import type React from "react";
 import { useTranslation } from "react-i18next";
 import { Heading } from "../../components/DynamicHeadingLevel";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -13,7 +14,7 @@ import type SampleModel from "../../stores/models/SampleModel";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parser from "../../util/parsers";
 
-const RequestableSwitch = observer(({ activeResult }: { activeResult: SampleModel }) => {
+function RequestableSwitch({ activeResult }: { activeResult: SampleModel }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
   const sampleRequestsAvailable = FetchingData.getSuccessValue(
@@ -69,6 +70,6 @@ const RequestableSwitch = observer(({ activeResult }: { activeResult: SampleMode
       />
     </Box>
   );
-});
+}
 
-export default RequestableSwitch;
+export default observer(RequestableSwitch);

@@ -16,8 +16,8 @@ import NoValue from "@/components/NoValue";
 import StyledMenu from "@/components/StyledMenu";
 import UserDetails from "@/components/UserDetails";
 import { isoToLocale } from "@/util/Util";
-import { userDisplayName } from "./RequestsList";
 import RequestsStatusChip from "./RequestsStatusChip";
+import { userDisplayName } from "./sampleRequest";
 
 export type ApiSampleRequestStatusChangeItem = {
   id: number;

@@ -3,8 +3,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import ListItemText from "@mui/material/ListItemText";
-import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -14,9 +12,8 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { orderBy } from "es-toolkit";
-import type { TFunction } from "i18next";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import GlobalId from "@/components/GlobalId";
 import UserDetails from "@/components/UserDetails";
@@ -24,46 +21,19 @@ import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import { paginationOptions } from "@/util/table";
 import { isoToLocale } from "@/util/Util";
-import DropdownButton from "../../components/DropdownButton";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
-import StyledMenu from "../../components/StyledMenu";
+import FilterDropdown, { type FilterOption } from "./FilterDropdown";
 import { useSampleRequestsListQuery } from "./queries";
 import RequestsSearchbar from "./RequestsSearchbar";
 import RequestsStatusChip, { requestStatusLabel } from "./RequestsStatusChip";
-import RequestsTableHead, { type ColumnKey, type SortDirection } from "./RequestsTableHead";
-
-export type ApiSampleRequestListItem = {
-  id: number;
-  status: string;
-  created: string;
-  note: string | null;
-  requester: { id: number; username: string; firstName: string | null; lastName: string | null };
-  sample: { id: number; globalId: string; name: string; owner: { id: number } };
-};
-
-/**
- * Shared by every place a SampleRequest's response names a user by id/username/firstName/
- * lastName: the requester, and each status change's createdBy. The id is always present, whether
- * or not that account still exists; a null firstName and lastName together mean the account has
- * since been deleted - there is then no current name to show, so username is the one field
- * guaranteed to still meaningfully identify who it was.
- *
- * Takes `t` rather than calling useTranslation itself so it can be shared by any caller already
- * resolving the "inventory" namespace (as every current caller does) regardless of which other
- * namespaces they also requested - i18next's generated TFunction type is otherwise invariant in
- * its namespace list, which would make this reject some of those callers for no real reason.
- */
-export function userDisplayName(
-  person: { id: number; username: string; firstName: string | null; lastName: string | null },
-  t: TFunction<readonly ["inventory", "common"]>,
-): string {
-  return person.firstName === null && person.lastName === null
-    ? t("inventory:requestsManagement.userDeleted", { username: person.username })
-    : `${person.firstName} ${person.lastName}`;
-}
-
-export type RequestsFilter = "all" | "sent" | "received";
-export type StatusFilter = "all" | "active" | "past";
+import RequestsTableHead, { type AdjustableColumnKey, type ColumnKey, type SortDirection } from "./RequestsTableHead";
+import {
+  type ApiSampleRequestListItem,
+  type RequestsFilter,
+  type StatusFilter,
+  userDisplayName,
+} from "./sampleRequest";
+import { useClientPagination } from "./useClientPagination";
 
 // Smaller than the main Inventory search's (5, 10, 25, 100): this list is rarely as long.
 const REQUEST_PAGE_SIZES = [10, 25, 50];
@@ -71,6 +41,17 @@ const DEFAULT_REQUEST_PAGE_SIZE = 25;
 // Decoupled from REQUEST_PAGE_SIZES' own max (50): without this, "All" would disappear for any
 // count over 50, even though fetching and rendering a few hundred requests at once is still fine.
 const REQUEST_ALL_THRESHOLD = 200;
+
+const REQUESTS_FILTER_OPTIONS: ReadonlyArray<FilterOption<RequestsFilter>> = [
+  { value: "all", labelKey: "requestsManagement.filters.requests.all" },
+  { value: "sent", labelKey: "requestsManagement.filters.requests.sent" },
+  { value: "received", labelKey: "requestsManagement.filters.requests.received" },
+];
+const STATUS_FILTER_OPTIONS: ReadonlyArray<FilterOption<StatusFilter>> = [
+  { value: "all", labelKey: "requestsManagement.filters.status.all" },
+  { value: "active", labelKey: "requestsManagement.filters.status.active" },
+  { value: "past", labelKey: "requestsManagement.filters.status.past" },
+];
 
 function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): number | string {
   switch (column) {
@@ -88,8 +69,8 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
       // grouping deleted accounts to one end as intended. A single string key keeps every
       // comparison the same (string-to-string) type: an order prefix that always sorts before a
       // live user's name groups deleted accounts together, and the username (the one field still
-      // guaranteed to identify a deleted account - see userDisplayName above) orders them
-      // consistently against each other.
+      // guaranteed to identify a deleted account - see userDisplayName) orders them consistently
+      // against each other.
       return request.requester.firstName === null && request.requester.lastName === null
         ? `0:${request.requester.username}`
         : `1:${request.requester.firstName} ${request.requester.lastName}`;
@@ -121,32 +102,15 @@ function requestMatchesQuery(request: ApiSampleRequestListItem, lowerCaseQuery: 
   return searchableText.some((text) => text.toLowerCase().includes(lowerCaseQuery));
 }
 
-function renderColumnCell(
-  request: ApiSampleRequestListItem,
-  column: ColumnKey,
-  t: TFunction<readonly ["inventory", "common"]>,
-): React.ReactNode {
-  if (column === "sample") {
-    return <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />;
+function renderAdjustableCell(request: ApiSampleRequestListItem, column: AdjustableColumnKey): React.ReactNode {
+  switch (column) {
+    case "status":
+      return <RequestsStatusChip status={request.status} />;
+    case "id":
+      return request.id;
+    case "submitted":
+      return isoToLocale(request.created);
   }
-  if (column === "requester") {
-    return request.requester.firstName === null && request.requester.lastName === null ? (
-      userDisplayName(request.requester, t)
-    ) : (
-      <UserDetails
-        userId={request.requester.id}
-        fullName={userDisplayName(request.requester, t)}
-        position={["bottom", "right"]}
-      />
-    );
-  }
-  if (column === "status") {
-    return <RequestsStatusChip status={request.status} />;
-  }
-  if (column === "submitted") {
-    return isoToLocale(request.created);
-  }
-  return getColumnValue(request, column);
 }
 
 export default function RequestsList({
@@ -159,48 +123,17 @@ export default function RequestsList({
   const { t } = useTranslation(["inventory", "common"]);
   const [requestsFilter, setRequestsFilter] = useState<RequestsFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [fromDropdown, setFromDropdown] = useState<HTMLElement | null>(null);
-  const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<ColumnKey>("submitted");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [adjustableColumn, setAdjustableColumn] = useState<ColumnKey>("status");
-  const [pageNumber, setPageNumber] = useState(0);
-  const [pageSize, setPageSize] = useState(DEFAULT_REQUEST_PAGE_SIZE);
-
-  function selectRequestsFilter(filter: RequestsFilter): void {
-    setRequestsFilter(filter);
-    setFromDropdown(null);
-  }
+  const [sort, setSort] = useState<{ column: ColumnKey; direction: SortDirection }>({
+    column: "submitted",
+    direction: "desc",
+  });
+  const [adjustableColumn, setAdjustableColumn] = useState<AdjustableColumnKey>("status");
 
   // Refetches on its own whenever a mutation elsewhere invalidates sampleRequestsQueryKeys (e.g.
   // approved/rejected from the detail pane), since the active filters may mean it should appear,
   // disappear, or just show a different status - no manual refresh-counter/event wiring needed.
-  const {
-    data: requests = [],
-    isLoading: loading,
-    isError,
-    refetch,
-  } = useSampleRequestsListQuery(requestsFilter, statusFilter);
-
-  // A page number left over from a longer list would otherwise point past the end of a shorter
-  // one once the filters, search, sort, or page size change what "the list" even is.
-  useEffect(() => {
-    setPageNumber(0);
-  }, [requestsFilter, statusFilter, searchQuery, sortBy, sortDirection, pageSize]);
-
-  const handleSort = (column: ColumnKey) => {
-    if (sortBy === column) {
-      setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy(column);
-      setSortDirection("asc");
-    }
-  };
-
-  const handleAdjustableColumnChange = (newColumn: ColumnKey) => {
-    setAdjustableColumn(newColumn);
-  };
+  const { data: requests = [], isLoading, isError, refetch } = useSampleRequestsListQuery(requestsFilter, statusFilter);
 
   const searchedRequests = useMemo(() => {
     const lowerCaseQuery = searchQuery.trim().toLowerCase();
@@ -208,97 +141,56 @@ export default function RequestsList({
     return requests.filter((request) => requestMatchesQuery(request, lowerCaseQuery));
   }, [requests, searchQuery]);
 
-  // Separately, clamp (rather than reset) whenever a refetch shrinks the result count out from
-  // under the current page - e.g. closing the sole request on the last page, triggered by a
-  // status mutation elsewhere invalidating this query - without yanking the user back to page one
-  // if their current page is still valid.
-  useEffect(() => {
-    const lastPageNumber = Math.max(0, Math.ceil(searchedRequests.length / pageSize) - 1);
-    setPageNumber((page) => Math.min(page, lastPageNumber));
-  }, [searchedRequests.length, pageSize]);
-
   const sortedRequests = useMemo(
-    () => orderBy(searchedRequests, [(request) => getColumnValue(request, sortBy)], [sortDirection]),
-    [searchedRequests, sortBy, sortDirection],
+    () => orderBy(searchedRequests, [(request) => getColumnValue(request, sort.column)], [sort.direction]),
+    [searchedRequests, sort],
   );
 
-  const pagedRequests = useMemo(
-    () => sortedRequests.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize),
-    [sortedRequests, pageNumber, pageSize],
-  );
+  const pagination = useClientPagination(sortedRequests, DEFAULT_REQUEST_PAGE_SIZE);
+  const pagedRequests = pagination.pagedItems;
 
-  const requestsFilterLabel =
-    requestsFilter === "all"
-      ? t("requestsManagement.filters.requests.all")
-      : requestsFilter === "sent"
-        ? t("requestsManagement.filters.requests.sent")
-        : t("requestsManagement.filters.requests.received");
-  const statusLabel =
-    statusFilter === "all"
-      ? t("requestsManagement.filters.status.all")
-      : statusFilter === "active"
-        ? t("requestsManagement.filters.status.active")
-        : t("requestsManagement.filters.status.past");
+  const handleSort = (column: ColumnKey) => {
+    setSort((previous) =>
+      previous.column === column
+        ? { column, direction: previous.direction === "asc" ? "desc" : "asc" }
+        : { column, direction: "asc" },
+    );
+    pagination.reset();
+  };
 
   return (
     <Box
       sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%", minWidth: 0, p: 1 }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", width: "100%" }}>
-        <RequestsSearchbar value={searchQuery} onChange={setSearchQuery} />
+        <RequestsSearchbar
+          value={searchQuery}
+          onChange={(query) => {
+            setSearchQuery(query);
+            pagination.reset();
+          }}
+        />
         <HelpLinkIcon link={helpDocsArticleUrl("sampleRequests")} title={t("requestsManagement.helpTitle")} />
       </Stack>
       <Grid container direction="row" spacing={1} sx={{ pt: 1 }}>
-        <DropdownButton
-          name={t("requestsManagement.chips.requests", { value: requestsFilterLabel })}
-          onClick={({ target }) => setFromDropdown(target as HTMLElement)}
-        >
-          <StyledMenu anchorEl={fromDropdown} open={Boolean(fromDropdown)} onClose={() => setFromDropdown(null)}>
-            <MenuItem selected={requestsFilter === "all"} onClick={() => selectRequestsFilter("all")}>
-              <ListItemText primary={t("requestsManagement.filters.requests.all")} />
-            </MenuItem>
-            <MenuItem selected={requestsFilter === "sent"} onClick={() => selectRequestsFilter("sent")}>
-              <ListItemText primary={t("requestsManagement.filters.requests.sent")} />
-            </MenuItem>
-            <MenuItem selected={requestsFilter === "received"} onClick={() => selectRequestsFilter("received")}>
-              <ListItemText primary={t("requestsManagement.filters.requests.received")} />
-            </MenuItem>
-          </StyledMenu>
-        </DropdownButton>
-        <DropdownButton
-          name={t("requestsManagement.chips.status", { value: statusLabel })}
-          onClick={({ target }) => setStatusDropdown(target as HTMLElement)}
-        >
-          <StyledMenu anchorEl={statusDropdown} open={Boolean(statusDropdown)} onClose={() => setStatusDropdown(null)}>
-            <MenuItem
-              selected={statusFilter === "all"}
-              onClick={() => {
-                setStatusFilter("all");
-                setStatusDropdown(null);
-              }}
-            >
-              <ListItemText primary={t("requestsManagement.filters.status.all")} />
-            </MenuItem>
-            <MenuItem
-              selected={statusFilter === "active"}
-              onClick={() => {
-                setStatusFilter("active");
-                setStatusDropdown(null);
-              }}
-            >
-              <ListItemText primary={t("requestsManagement.filters.status.active")} />
-            </MenuItem>
-            <MenuItem
-              selected={statusFilter === "past"}
-              onClick={() => {
-                setStatusFilter("past");
-                setStatusDropdown(null);
-              }}
-            >
-              <ListItemText primary={t("requestsManagement.filters.status.past")} />
-            </MenuItem>
-          </StyledMenu>
-        </DropdownButton>
+        <FilterDropdown
+          chipLabelKey="requestsManagement.chips.requests"
+          value={requestsFilter}
+          options={REQUESTS_FILTER_OPTIONS}
+          onChange={(filter) => {
+            setRequestsFilter(filter);
+            pagination.reset();
+          }}
+        />
+        <FilterDropdown
+          chipLabelKey="requestsManagement.chips.status"
+          value={statusFilter}
+          options={STATUS_FILTER_OPTIONS}
+          onChange={(filter) => {
+            setStatusFilter(filter);
+            pagination.reset();
+          }}
+        />
       </Grid>
       <Divider orientation="horizontal" sx={{ my: 0.75 }} />
       {isError ? (
@@ -333,11 +225,11 @@ export default function RequestsList({
             <TableContainer>
               <Table size="small" stickyHeader>
                 <RequestsTableHead
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
+                  sortBy={sort.column}
+                  sortDirection={sort.direction}
                   onSort={handleSort}
                   adjustableColumn={adjustableColumn}
-                  onAdjustableColumnChange={handleAdjustableColumnChange}
+                  onAdjustableColumnChange={setAdjustableColumn}
                 />
                 <TableBody>
                   {pagedRequests.map((request) => (
@@ -376,15 +268,27 @@ export default function RequestsList({
                         },
                       })}
                     >
-                      <TableCell>{renderColumnCell(request, "sample", t)}</TableCell>
-                      <TableCell>{renderColumnCell(request, "requester", t)}</TableCell>
-                      <TableCell>{renderColumnCell(request, adjustableColumn, t)}</TableCell>
+                      <TableCell>
+                        <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
+                      </TableCell>
+                      <TableCell>
+                        {request.requester.firstName === null && request.requester.lastName === null ? (
+                          userDisplayName(request.requester, t)
+                        ) : (
+                          <UserDetails
+                            userId={request.requester.id}
+                            fullName={userDisplayName(request.requester, t)}
+                            position={["bottom", "right"]}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>{renderAdjustableCell(request, adjustableColumn)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-            {!loading && searchedRequests.length === 0 && (
+            {!isLoading && searchedRequests.length === 0 && (
               <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
                 {t("requestsManagement.noResults")}
               </Typography>
@@ -402,10 +306,10 @@ export default function RequestsList({
                   REQUEST_PAGE_SIZES,
                   REQUEST_ALL_THRESHOLD,
                 )}
-                rowsPerPage={Math.min(pageSize, searchedRequests.length)}
-                page={pageNumber}
-                onPageChange={(_event: unknown, page: number) => setPageNumber(page)}
-                onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
+                rowsPerPage={Math.min(pagination.pageSize, searchedRequests.length)}
+                page={pagination.page}
+                onPageChange={(_event: unknown, page: number) => pagination.setPage(page)}
+                onRowsPerPageChange={(e) => pagination.setPageSize(Number(e.target.value))}
                 slotProps={{
                   select: {
                     renderValue: (value: unknown) =>

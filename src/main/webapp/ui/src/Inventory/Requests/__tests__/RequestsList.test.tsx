@@ -7,7 +7,8 @@ import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import materialTheme from "@/theme";
-import RequestsList, { type ApiSampleRequestListItem } from "../RequestsList";
+import RequestsList from "../RequestsList";
+import type { ApiSampleRequestListItem } from "../sampleRequest";
 
 function renderWithProviders(
   ui: React.ReactElement,

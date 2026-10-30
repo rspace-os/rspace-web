@@ -16,7 +16,10 @@ import StyledMenu from "@/components/StyledMenu";
 export type ColumnKey = "id" | "sample" | "requester" | "status" | "submitted";
 export type SortDirection = "asc" | "desc";
 
-export const ADJUSTABLE_COLUMN_OPTIONS: ReadonlyArray<ColumnKey> = ["status", "id", "submitted"];
+/** The subset of ColumnKey the rightmost column's cog can swap in - never "sample"/"requester". */
+export type AdjustableColumnKey = "status" | "id" | "submitted";
+
+export const ADJUSTABLE_COLUMN_OPTIONS: ReadonlyArray<AdjustableColumnKey> = ["status", "id", "submitted"];
 
 const COLUMN_LABEL_KEYS = {
   id: "requestsManagement.columns.id",
@@ -61,11 +64,11 @@ function AdjustableHeaderCell({
   onSort,
   onChange,
 }: {
-  current: ColumnKey;
+  current: AdjustableColumnKey;
   sortBy: ColumnKey;
   sortDirection: SortDirection;
   onSort: (column: ColumnKey) => void;
-  onChange: (newColumn: ColumnKey) => void;
+  onChange: (newColumn: AdjustableColumnKey) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -120,8 +123,8 @@ export default function RequestsTableHead({
   sortBy: ColumnKey;
   sortDirection: SortDirection;
   onSort: (column: ColumnKey) => void;
-  adjustableColumn: ColumnKey;
-  onAdjustableColumnChange: (newColumn: ColumnKey) => void;
+  adjustableColumn: AdjustableColumnKey;
+  onAdjustableColumnChange: (newColumn: AdjustableColumnKey) => void;
 }): React.ReactNode {
   return (
     <TableHead>

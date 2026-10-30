@@ -8,10 +8,8 @@ import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
 import { mkAlert } from "@/stores/contexts/Alert";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
-import type PersonModel from "@/stores/models/PersonModel";
 import SubSampleModel, { type SubSampleAttrs } from "@/stores/models/SubSampleModel";
 import useStores from "@/stores/use-stores";
-import { getErrorMessage } from "@/util/error";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
 import type { OperationResult } from "../components/Operations/operationsApi";
@@ -20,13 +18,6 @@ import ApprovalResultFields from "./ApprovalResultFields";
 import ChooseMethodDialog from "./ChooseMethodDialog";
 import CollapsibleSection from "./CollapsibleSection";
 import FulfilRequestDialog from "./FulfilRequestDialog";
-import {
-  useApproveSampleRequestMutation,
-  useCancelSampleRequestMutation,
-  useFulfilSampleRequestMutation,
-  useRejectSampleRequestMutation,
-  useTransferSampleOwnershipMutation,
-} from "./mutations";
 import OwnerActionsPanel from "./OwnerActionsPanel";
 import {
   useOtherActiveSampleRequestsQuery,
@@ -39,8 +30,10 @@ import RequestDetailsFields from "./RequestDetailsFields";
 import RequesterCancelPanel from "./RequesterCancelPanel";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
-import { type ApiSampleRequestListItem, userDisplayName } from "./RequestsList";
+import { type ApiSampleRequestListItem, userDisplayName } from "./sampleRequest";
 import TransferOwnershipDialog from "./TransferOwnershipDialog";
+import type { PreparationMethod } from "./types";
+import { useRequestActions } from "./useRequestActions";
 
 // Preparing a sample for a request always ends in transferring it to the requester, so
 // destroying the origin has no sensible place in this flow; Pool requires multiple origins,
@@ -57,6 +50,32 @@ function statusHelpKey(status: string): (typeof STATUS_HELP_KEY)[keyof typeof ST
   return status in STATUS_HELP_KEY ? STATUS_HELP_KEY[status as keyof typeof STATUS_HELP_KEY] : null;
 }
 
+/** The most recent (by `created`) of `statusChanges` whose own `status` matches `status`. */
+function latestStatusChange(
+  statusChanges: Array<ApiSampleRequestStatusChangeItem>,
+  status: string,
+): ApiSampleRequestStatusChangeItem | null {
+  return statusChanges
+    .filter((change) => change.status === status)
+    .reduce<ApiSampleRequestStatusChangeItem | null>(
+      (latest, change) =>
+        !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
+      null,
+    );
+}
+
+/**
+ * Only one dialog/step of the owner's prepare-or-transfer flow is ever open at a time, so it's one
+ * value rather than a handful of independently-toggleable booleans - making "two dialogs open at
+ * once" (and the bookkeeping that would otherwise be needed to prevent it) unrepresentable.
+ */
+type Flow =
+  | { kind: "idle" }
+  | { kind: "reject"; reason: string }
+  | { kind: "fulfil" }
+  | { kind: "chooseMethod"; method: PreparationMethod | null }
+  | { kind: "transfer" };
+
 /**
  * The right-hand detail pane for the Requests page: the header shows the
  * request id and the requested sample's name, and the "Details" section
@@ -64,17 +83,8 @@ function statusHelpKey(status: string): (typeof STATUS_HELP_KEY)[keyof typeof ST
  */
 export default function RequestDetailPanel({ request }: { request: ApiSampleRequestListItem | null }): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
-  const [detailsExpanded, setDetailsExpanded] = useState(true);
-  const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
-  const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
-  const [sampleLocationsExpanded, setSampleLocationsExpanded] = useState(true);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-  const [fulfilDialogOpen, setFulfilDialogOpen] = useState(false);
-  const [selectedSubsampleId, setSelectedSubsampleId] = useState<number | null>(null);
-  const [selectedSubsampleName, setSelectedSubsampleName] = useState<string | null>(null);
-  const [chooseMethodDialogOpen, setChooseMethodDialogOpen] = useState(false);
-  const [preparationMethod, setPreparationMethod] = useState<"wizard" | "transfer" | null>(null);
+  const [flow, setFlow] = useState<Flow>({ kind: "idle" });
+  const [selectedSubsample, setSelectedSubsample] = useState<{ id: number; name: string } | null>(null);
   const [wizardOrigin, setWizardOrigin] = useState<SubSampleModel | null>(null);
   // Covers the gap between clicking Proceed (which has already closed the Choose dialog) on the
   // "wizard" radio and the wizard actually opening: fetching the selected subsample, then - once
@@ -83,19 +93,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // window a mutation would disable them, rather than only while a request status mutation is
   // itself in flight.
   const [isLaunchingWizard, setIsLaunchingWizard] = useState(false);
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   // Set only when the Transfer Ownership dialog is reached via the "wizard" radio's Operations
   // Wizard having just created a new sample; null (the ordinary case, including every "transfer"
   // radio route into this dialog) means the dialog acts on request.sample exactly as before.
   const [wizardCreatedSample, setWizardCreatedSample] = useState<OperationResult | null>(null);
-  const [transferRecipient, setTransferRecipient] = useState<PersonModel | null>(null);
-  // Separate from transferRecipient: that field can be cleared back to an unrestricted search by
-  // the owner (e.g. to double-check who else is available), but this dialog only ever exists to
-  // hand the sample to the requester specifically, so the field's choices should stay restricted
-  // to them regardless. Fetched once and never cleared, unlike transferRecipient.
-  const [transferRequesterPerson, setTransferRequesterPerson] = useState<PersonModel | null>(null);
   const currentUser = useWhoAmI();
-  const { peopleStore, uiStore } = useStores();
+  const { uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
@@ -170,29 +173,18 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const hasPendingOtherActiveRequest = (otherActiveRequests ?? []).some((r) => r.status === "PENDING");
   const hasApprovedOtherActiveRequest = (otherActiveRequests ?? []).some((r) => r.status === "APPROVED");
 
-  // Guards every top-level action below (approve/reject/cancel/fulfil/transfer) against
-  // double-clicks and cross-action races - at most one is ever genuinely legitimate at a time,
-  // since each needs the previous one's resulting status change to even become clickable again.
-  const approveMutation = useApproveSampleRequestMutation();
-  const rejectMutation = useRejectSampleRequestMutation();
-  const fulfilMutation = useFulfilSampleRequestMutation();
-  const cancelMutation = useCancelSampleRequestMutation();
-  const transferMutation = useTransferSampleOwnershipMutation();
-  const isProcessingAction =
-    approveMutation.isPending ||
-    rejectMutation.isPending ||
-    fulfilMutation.isPending ||
-    cancelMutation.isPending ||
-    transferMutation.isPending ||
-    isLaunchingWizard;
+  const {
+    approve,
+    reject,
+    fulfil,
+    cancel,
+    transfer,
+    isProcessingAction: isProcessingMutation,
+    showActionError,
+  } = useRequestActions();
+  const isProcessingAction = isProcessingMutation || isLaunchingWizard;
 
-  const comment = statusChanges
-    .filter((change) => change.status === status)
-    .reduce<ApiSampleRequestStatusChangeItem | null>(
-      (latest, change) =>
-        !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
-      null,
-    )?.reason;
+  const comment = status ? latestStatusChange(statusChanges, status)?.reason : undefined;
 
   if (!request) {
     return (
@@ -217,42 +209,21 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog) - always
   // a real globalId, since request.sample.globalId (unlike the lookup above) can't be absent.
   const transferredSampleGlobalId =
-    statusChanges
-      .filter((change) => change.status === "FULFILLED")
-      .reduce<ApiSampleRequestStatusChangeItem | null>(
-        (latest, change) =>
-          !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
-        null,
-      )?.transferredSample?.globalId ?? request.sample.globalId;
-
-  // Shared by every top-level action below: each hits the same "silent failure" shape, so the
-  // user sees nothing go wrong while the UI quietly stays in its pre-click state.
-  const showActionError = (action: string, error: unknown) => {
-    console.error(action, error);
-    uiStore.addAlert(
-      mkAlert({
-        variant: "error",
-        message: t("errors.genericActionError", { error: getErrorMessage(error, t("errors.unknownReason")) }),
-      }),
-    );
-  };
+    latestStatusChange(statusChanges, "FULFILLED")?.transferredSample?.globalId ?? request.sample.globalId;
 
   const approveRequest = () => {
     if (isProcessingAction) return;
-    approveMutation.mutate(request.id, {
+    approve.mutate(request.id, {
       onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.approve"), error),
     });
   };
 
   const rejectRequest = () => {
-    if (isProcessingAction) return;
-    rejectMutation.mutate(
-      { requestId: request.id, reason: rejectReason },
+    if (isProcessingAction || flow.kind !== "reject") return;
+    reject.mutate(
+      { requestId: request.id, reason: flow.reason },
       {
-        onSuccess: () => {
-          setRejectDialogOpen(false);
-          setRejectReason("");
-        },
+        onSuccess: () => setFlow({ kind: "idle" }),
         onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.reject"), error),
       },
     );
@@ -260,26 +231,21 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const fulfilRequest = () => {
     if (isProcessingAction) return;
-    fulfilMutation.mutate(request.id, {
-      onSuccess: () => setFulfilDialogOpen(false),
+    fulfil.mutate(request.id, {
+      onSuccess: () => setFlow({ kind: "idle" }),
       onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.fulfil"), error),
     });
   };
 
-  // The requester is pre-fetched as a PersonModel via peopleStore.getUser the first time this
-  // opens (for either route into it: the "transfer" radio directly, or the "wizard" radio once
-  // the Operations Wizard has created a new sample); if that lookup hasn't resolved yet, the
-  // field just starts empty and the owner can pick a recipient manually.
+  // There's only ever one legal recipient (the requester) - the backend itself always transfers
+  // to them regardless of anything picked in the dialog (see
+  // useTransferSampleOwnershipMutation's doc comment in ./mutations.ts) - so there's nothing left
+  // to look up or wait on before showing it. createdSample names the Operations Wizard's newly
+  // created sample when reached via the "wizard" radio; every other route into this dialog
+  // (including every other call site below) leaves it null, meaning request.sample as always.
   const openTransferDialog = (createdSample: OperationResult | null = null) => {
     setWizardCreatedSample(createdSample);
-    setTransferDialogOpen(true);
-    if (!transferRecipient || !transferRequesterPerson) {
-      void peopleStore.getUser(request.requester.username).then((person) => {
-        if (!person) return;
-        if (!transferRecipient) setTransferRecipient(person);
-        setTransferRequesterPerson(person);
-      });
-    }
+    setFlow({ kind: "transfer" });
   };
 
   // Kept in sync every render (see the ref declaration above): the Operations Wizard's onPerformed
@@ -291,9 +257,9 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   };
 
   const launchOperationsWizardForSelectedSubsample = () => {
-    if (selectedSubsampleId === null) return;
+    if (selectedSubsample === null) return;
     setIsLaunchingWizard(true);
-    ApiService.get<SubSampleAttrs>("subSamples", selectedSubsampleId)
+    ApiService.get<SubSampleAttrs>("subSamples", selectedSubsample.id)
       .then(({ data }) => {
         setWizardOrigin(new SubSampleModel(new AlwaysNewFactory(), data));
       })
@@ -301,18 +267,18 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         // The Choose dialog has already closed by this point (see proceedWithPreparationMethod),
         // so without this the user is left looking at the unchanged detail pane with no idea
         // Proceed did anything at all. isLaunchingWizard only clears here, on failure - a success
-        // instead sets wizardOrigin above, and the effect below clears it once edit-lock
+        // instead sets wizardOrigin above, and the effect above clears it once edit-lock
         // acquisition (the rest of what Proceed promised to do) has also settled.
         setIsLaunchingWizard(false);
-        showActionError("Failed to load the selected subsample for the Operations Wizard", error);
+        showActionError(t("requestsManagement.detail.actionErrors.prepareWizard"), error);
       });
   };
 
   const proceedWithPreparationMethod = () => {
-    if (!preparationMethod) return;
-    setChooseMethodDialogOpen(false);
-    setPreparationMethod(null);
-    if (preparationMethod === "wizard") {
+    if (flow.kind !== "chooseMethod" || !flow.method) return;
+    const method = flow.method;
+    setFlow({ kind: "idle" });
+    if (method === "wizard") {
       launchOperationsWizardForSelectedSubsample();
     } else {
       openTransferDialog();
@@ -325,21 +291,17 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // useTransferSampleOwnershipMutation's doc comment in ./mutations.ts) - there is no
   // half-succeeded state to account for here.
   const submitTransfer = () => {
-    // transferRequesterPerson also gates the button below, but is re-checked here too: until it
-    // has loaded, PeopleField's restrictToUser is unset and so searches everyone (see
-    // openTransferDialog's comment), meaning transferRecipient could be any user, not just the
-    // requester this dialog exists to hand the sample to.
-    if (!transferRecipient || !transferRequesterPerson || isProcessingAction) return;
+    if (isProcessingAction) return;
     // The "wizard" radio transfers the sample the Operations Wizard just created, not the
     // originally requested one; wizardCreatedSample is null for every other route into this
-    // dialog, in which case it's the same sample as always - matching the dialog's own heading
-    // above, which names the same sample the same way.
+    // dialog, in which case it's the same sample as always - matching the dialog's own heading,
+    // which names the same sample the same way.
     const transferredSampleName = wizardCreatedSample?.name ?? request.sample.name;
-    transferMutation.mutate(
+    transfer.mutate(
       { requestId: request.id, sampleToTransferGlobalId: wizardCreatedSample?.globalId },
       {
         onSuccess: () => {
-          setTransferDialogOpen(false);
+          setFlow({ kind: "idle" });
           uiStore.addAlert(
             mkAlert({
               variant: "success",
@@ -358,7 +320,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           // requester cancelled it first" versus every other way this can fail (wrong actor, the
           // requester's account having been deleted, an edit lock, etc. - see ./mutations.ts), so
           // re-fetching the request directly is the only reliable way to tell those apart.
-          setTransferDialogOpen(false);
+          setFlow({ kind: "idle" });
           const refetched = await detailQuery.refetch();
           if (refetched.data?.status === "CANCELLED") {
             console.error("Failed to transfer sample ownership: request was cancelled", error);
@@ -390,7 +352,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // cancelling is only legal for the requester, and only while the request is PENDING.
   const cancelRequest = () => {
     if (isProcessingAction) return;
-    cancelMutation.mutate(request.id, {
+    cancel.mutate(request.id, {
       onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.cancel"), error),
     });
   };
@@ -402,8 +364,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // unavailable, skipChooseMethodDialog means every route through this button already ends in a
   // direct transfer of the whole sample (all of its subsamples), so no particular one needs to be
   // selected first.
-  const prepareSampleEnabled =
-    isActionableState && (skipChooseMethodDialog || selectedSubsampleId !== null) && !isProcessingAction;
+  const prepareSampleEnabled = isActionableState && (skipChooseMethodDialog || selectedSubsample !== null);
   const statusHelpTranslationKey = status ? statusHelpKey(status) : null;
   const statusHelpText = statusHelpTranslationKey ? t(statusHelpTranslationKey) : null;
   const infoBoxText =
@@ -419,10 +380,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           ? // No subsample selection to call out here - the button above is already enabled, and
             // transfers the whole sample regardless of which (if any) subsample is selected.
             t("requestsManagement.detail.preparationHint.approvedReadyToTransfer", { requester: requesterFullName })
-          : selectedSubsampleId === null || selectedSubsampleName === null
+          : selectedSubsample === null
             ? t("requestsManagement.detail.preparationHint.approvedNoSelection")
             : t("requestsManagement.detail.preparationHint.approvedSelected", {
-                subsample: selectedSubsampleName,
+                subsample: selectedSubsample.name,
                 requester: requesterFullName,
               })
         : null;
@@ -445,6 +406,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       : t("requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningApproved");
   };
 
+  const preparationMethod = flow.kind === "chooseMethod" ? flow.method : null;
   // Combined into one alert rather than one each: both warn about consequences of the same
   // "transfer" choice in the Choose Sample to Prepare dialog, so showing both at once as two
   // separate boxes read as more alarming than warranted.
@@ -469,18 +431,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%", minWidth: 0 }}>
       <RequestDetailHeader id={request.id} sampleName={request.sample.name} status={status} />
       <Box sx={{ overflow: "auto", flexGrow: 1 }}>
-        <CollapsibleSection
-          title={t("requestsManagement.detail.sections.details")}
-          expanded={detailsExpanded}
-          onToggle={() => setDetailsExpanded(!detailsExpanded)}
-        >
+        <CollapsibleSection title={t("requestsManagement.detail.sections.details")}>
           <RequestDetailsFields request={request} />
         </CollapsibleSection>
-        <CollapsibleSection
-          title={t("requestsManagement.detail.sections.approvalResult")}
-          expanded={approvalResultExpanded}
-          onToggle={() => setApprovalResultExpanded(!approvalResultExpanded)}
-        >
+        <CollapsibleSection title={t("requestsManagement.detail.sections.approvalResult")}>
           <ApprovalResultFields
             status={status ?? request.status}
             isSampleOwner={isSampleOwner}
@@ -498,12 +452,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             isProcessingAction={isProcessingAction}
             infoBoxText={infoBoxText}
             statusHelpText={statusHelpText}
-            onReject={() => setRejectDialogOpen(true)}
+            onReject={() => setFlow({ kind: "reject", reason: "" })}
             onApprove={approveRequest}
             onPrepareOrTransfer={() =>
-              skipChooseMethodDialog ? openTransferDialog() : setChooseMethodDialogOpen(true)
+              skipChooseMethodDialog ? openTransferDialog() : setFlow({ kind: "chooseMethod", method: null })
             }
-            onMarkFulfilled={() => setFulfilDialogOpen(true)}
+            onMarkFulfilled={() => setFlow({ kind: "fulfil" })}
           />
         )}
         {!isSampleOwner && status === "PENDING" && (
@@ -513,69 +467,55 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <CollapsibleSection
             title={t("requestsManagement.detail.fields.sampleLocation")}
             tooltip={t("requestsManagement.detail.fields.sampleLocationTooltip")}
-            expanded={sampleLocationsExpanded}
-            onToggle={() => setSampleLocationsExpanded(!sampleLocationsExpanded)}
           >
             <Box sx={{ p: 2 }}>
               <RequestSampleLocations
                 sampleId={request.sample.id}
                 selectable={status === "PENDING" || status === "APPROVED"}
-                selectedSubsampleId={selectedSubsampleId}
-                onSelectSubsample={(subSample) => {
-                  setSelectedSubsampleId(subSample.id);
-                  setSelectedSubsampleName(subSample.name);
-                }}
+                selectedSubsampleId={selectedSubsample?.id ?? null}
+                onSelectSubsample={setSelectedSubsample}
               />
             </Box>
           </CollapsibleSection>
         )}
-        <CollapsibleSection
-          title={t("requestsManagement.detail.history.sectionTitle")}
-          expanded={requestHistoryExpanded}
-          onToggle={() => setRequestHistoryExpanded(!requestHistoryExpanded)}
-        >
+        <CollapsibleSection title={t("requestsManagement.detail.history.sectionTitle")}>
           <RequestHistoryTable statusChanges={statusChanges} />
         </CollapsibleSection>
       </Box>
       <RejectRequestDialog
-        open={rejectDialogOpen}
-        reason={rejectReason}
-        onReasonChange={setRejectReason}
+        open={flow.kind === "reject"}
+        reason={flow.kind === "reject" ? flow.reason : ""}
+        onReasonChange={(reason) => setFlow({ kind: "reject", reason })}
         isProcessingAction={isProcessingAction}
-        onClose={() => setRejectDialogOpen(false)}
+        onClose={() => setFlow({ kind: "idle" })}
         onConfirm={rejectRequest}
       />
       <FulfilRequestDialog
-        open={fulfilDialogOpen}
+        open={flow.kind === "fulfil"}
         isProcessingAction={isProcessingAction}
-        onClose={() => setFulfilDialogOpen(false)}
+        onClose={() => setFlow({ kind: "idle" })}
         onConfirm={fulfilRequest}
       />
       <ChooseMethodDialog
-        open={chooseMethodDialogOpen}
+        open={flow.kind === "chooseMethod"}
         preparationMethod={preparationMethod}
-        onMethodChange={setPreparationMethod}
+        onMethodChange={(method) => setFlow({ kind: "chooseMethod", method })}
         warnings={chooseMethodTransferWarnings}
-        onClose={() => {
-          setChooseMethodDialogOpen(false);
-          setPreparationMethod(null);
-        }}
+        onClose={() => setFlow({ kind: "idle" })}
         onProceed={proceedWithPreparationMethod}
       />
       {operationWizard}
       <TransferOwnershipDialog
-        open={transferDialogOpen}
+        open={flow.kind === "transfer"}
         requestId={request.id}
         sampleName={wizardCreatedSample?.name ?? request.sample.name}
+        requesterId={request.requester.id}
         requesterFullName={requesterFullName}
         isNewlyCreatedSample={wizardCreatedSample !== null}
         subSampleCount={subSampleCount}
         otherActiveRequests={otherActiveRequests}
-        transferRecipient={transferRecipient}
-        transferRequesterPerson={transferRequesterPerson}
         isProcessingAction={isProcessingAction}
-        onRecipientChange={setTransferRecipient}
-        onClose={() => setTransferDialogOpen(false)}
+        onClose={() => setFlow({ kind: "idle" })}
         onSubmit={submitTransfer}
       />
     </Box>

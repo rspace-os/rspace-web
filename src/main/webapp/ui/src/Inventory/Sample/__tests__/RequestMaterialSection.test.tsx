@@ -15,8 +15,8 @@ import PersonModel from "@/stores/models/PersonModel";
 import type SampleModel from "@/stores/models/SampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
 import materialTheme from "@/theme";
-import { RequestMaterialSection } from "../Form";
 import RequestableSwitch from "../RequestableSwitch";
+import RequestMaterialSection from "../RequestMaterialSection";
 
 const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
 

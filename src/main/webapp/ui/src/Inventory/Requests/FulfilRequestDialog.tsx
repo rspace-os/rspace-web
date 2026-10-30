@@ -3,10 +3,11 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { darken, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { markAsFulfilledButtonSx } from "./actionButtonStyles";
 
 export default function FulfilRequestDialog({
   open,
@@ -33,15 +34,7 @@ export default function FulfilRequestDialog({
         <Button
           variant="outlined"
           disabled={isProcessingAction}
-          sx={{
-            "&&": {
-              ...theme.palette.sampleRequestActions.markAsFulfilled,
-              "&:hover": {
-                borderColor: darken(theme.palette.sampleRequestActions.markAsFulfilled.borderColor, 0.2),
-                backgroundColor: theme.palette.sampleRequestStatus.fulfilled,
-              },
-            },
-          }}
+          sx={markAsFulfilledButtonSx(theme)}
           onClick={onConfirm}
         >
           {t("requestsManagement.detail.fulfilDialog.fulfilButton")}
