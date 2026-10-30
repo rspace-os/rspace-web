@@ -45,8 +45,15 @@ purify.addHook("uponSanitizeAttribute", (_node, data) => {
 purify.addHook("afterSanitizeAttributes", (node) => {
   const target = node.getAttribute("target");
   if (target === null) return;
-  if (target.toLowerCase() === "_blank") node.setAttribute("rel", "noopener");
-  else node.removeAttribute("target");
+  if (target.toLowerCase() !== "_blank") {
+    node.removeAttribute("target");
+    return;
+  }
+  const rel = (node.getAttribute("rel") ?? "")
+    .split(/\s+/)
+    .filter((token) => token !== "" && token.toLowerCase() !== "opener");
+  if (!rel.some((token) => token.toLowerCase() === "noopener")) rel.push("noopener");
+  node.setAttribute("rel", rel.join(" "));
 });
 
 export function sanitizeInventoryRichText(html: string): string {

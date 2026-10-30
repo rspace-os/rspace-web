@@ -70,6 +70,11 @@ describe("sanitizeInventoryRichText", () => {
       '<p><a href="https://example.org/a" target="_BLANK" rel="noopener">a</a></p>',
     ],
     [
+      "a new tab's hold on this page next to other link relations",
+      '<p><a href="https://example.org/a" target="_blank" rel="noreferrer OPENER">a</a></p>',
+      '<p><a href="https://example.org/a" target="_blank" rel="noreferrer noopener">a</a></p>',
+    ],
+    [
       "a named target",
       '<p><a href="https://example.org/a" target="login" rel="opener">a</a></p>',
       '<p><a href="https://example.org/a" rel="opener">a</a></p>',
@@ -96,6 +101,10 @@ describe("sanitizeInventoryRichText", () => {
     ["strikethrough", "<p><s>a</s> <del>b</del></p>"],
     ["a link", '<p><a href="https://example.org/a" title="Example">a</a></p>'],
     ["a link that opens in a new tab", '<p><a href="https://example.org/a" target="_blank" rel="noopener">a</a></p>'],
+    [
+      "a new-tab link that hides the referrer",
+      '<p><a href="https://example.org/a" target="_blank" rel="noopener noreferrer">a</a></p>',
+    ],
     ["a link to an RSpace page", '<p><a href="/inventory/search?query=a">a</a></p>'],
     ["a bulleted list", "<ul><li>a</li><li>b</li></ul>"],
     ["a numbered list", "<ol><li>a</li><li>b</li></ol>"],
