@@ -14,6 +14,7 @@ import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
+import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -162,7 +163,7 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+      throw new NotFoundException();
     }
   }
 

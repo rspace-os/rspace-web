@@ -1,4 +1,4 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.researchspace.api.v2.auth.ApiV2Caller;
@@ -102,7 +102,7 @@ public final class BookingDisplayPreferencesController {
       responses = {
         @ApiResponse(responseCode = "200", description = "Resolved Booking display preferences."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public Document get(@RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     return Document.from(manager.get(caller.subject(), caller.actor()));
@@ -119,7 +119,7 @@ public final class BookingDisplayPreferencesController {
         @ApiResponse(responseCode = "200", description = "Stored Booking display preferences."),
         @ApiResponse(responseCode = "400", description = "The replacement document is invalid."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public Document replace(
       @Valid @RequestBody Replacement replacement,
@@ -136,7 +136,7 @@ public final class BookingDisplayPreferencesController {
       responses = {
         @ApiResponse(responseCode = "204", description = "The override was reset."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public void reset(@RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     manager.reset(caller.subject(), caller.actor());

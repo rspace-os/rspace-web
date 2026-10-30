@@ -23,7 +23,6 @@ import com.researchspace.service.UserManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -110,7 +109,7 @@ class BookingDisplayPreferencesManagerTest {
                 actor));
 
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)).thenReturn(false);
-    assertThrows(AuthorizationException.class, () -> manager.get(subject, actor));
+    assertThrows(jakarta.ws.rs.NotFoundException.class, () -> manager.get(subject, actor));
   }
 
   private void preference(String value) {
