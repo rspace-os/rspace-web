@@ -66,6 +66,12 @@ export function bookingPagesHandlers(): RequestHandler[] {
       const url = new URL(request.url);
       const fields = url.searchParams.get("fields[bookings]");
       if (fields === calendarBookingFields) {
+        if (
+          url.searchParams.get("depth") !== "2" ||
+          url.searchParams.get("fields[instruments]") !== "id,globalId,name,deleted,parentContainer" ||
+          url.searchParams.get("fields[containers]") !== "id,globalId,name"
+        )
+          return new HttpResponse(null, { status: 400 });
         bookingPageRequests.calendarBookingRequests.push(url);
         return apiV2CollectionResponse("bookings", request, [ownBooking, otherBooking, busyBooking]);
       }

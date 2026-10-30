@@ -11,6 +11,12 @@ describe("calendar events", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
+        if (
+          url.searchParams.get("depth") !== "2" ||
+          url.searchParams.get("fields[instruments]") !== "id,globalId,name,deleted,parentContainer" ||
+          url.searchParams.get("fields[containers]") !== "id,globalId,name"
+        )
+          return new HttpResponse(null, { status: 400 });
         const fields = url.searchParams.get("fields[bookings]")?.split(",") ?? [];
         const source = url.searchParams.get("page") === "2" ? otherBooking : ownBooking;
         const projectedBooking = Object.fromEntries(
