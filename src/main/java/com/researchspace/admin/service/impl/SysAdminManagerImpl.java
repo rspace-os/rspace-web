@@ -14,6 +14,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.sort.UserSort;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -82,14 +84,13 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         fileUsage = fileDao.getTotalFileUsageForAllUsers(pgCrit);
       }
 
-      Map<String, User> users = getUsersInOrder(fileUsage.keySet());
+      List<User> users = getUsersInOrder(fileUsage.keySet());
       Map<String, DatabaseUsageByUserGroupByResult> recordCounts =
-          recordDao.getTotalRecordsForUsers(users.values(), pgCrit);
-      for (Map.Entry<String, User> entry : users.entrySet()) {
-        User user = entry.getValue();
+          recordDao.getTotalRecordsForUsers(users, pgCrit);
+      for (User user : users) {
         uui.add(
             setUserUsageInfoProperties(
-                user, fileUsage.get(entry.getKey()), recordCounts.get(user.getUsername())));
+                user, fileUsage.get(user.getUsername()), recordCounts.get(user.getUsername())));
       }
       return new SearchResultsImpl<>(
           uui, pgCrit.getPageNumber().intValue(), totalUsersWithFiles, pgCrit.getResultsPerPage());
@@ -105,14 +106,13 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
       recordCount = recordDao.getTotalRecordsForUsers(pgCrit);
       totalUsersWithRecords = recordDao.getCountOfUsersWithRecords();
     }
-    Map<String, User> users = getUsersInOrder(recordCount.keySet());
+    List<User> users = getUsersInOrder(recordCount.keySet());
     Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
-        fileDao.getTotalFileUsageForUsers(users.values(), pgCrit);
-    for (Map.Entry<String, User> entry : users.entrySet()) {
-      User user = entry.getValue();
+        fileDao.getTotalFileUsageForUsers(users, pgCrit);
+    for (User user : users) {
       uui.add(
           setUserUsageInfoProperties(
-              user, fileUsage.get(user.getUsername()), recordCount.get(entry.getKey())));
+              user, fileUsage.get(user.getUsername()), recordCount.get(user.getUsername())));
     }
     return new SearchResultsImpl<>(
         uui, pgCrit.getPageNumber().intValue(), totalUsersWithRecords, pgCrit.getResultsPerPage());
@@ -144,24 +144,15 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .build();
   }
 
-  /**
-   * Keyed by {@code usernames} as given, in their order (the requested sort); unknown usernames are
-   * skipped.
-   */
-  private Map<String, User> getUsersInOrder(Collection<String> usernames) {
-    // usage rows can spell a username in another case; the database still matches them
-    Map<String, User> byUsername = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    userDao
-        .getUsersByUsernames(usernames)
-        .forEach(user -> byUsername.put(user.getUsername(), user));
-    Map<String, User> inOrder = new LinkedHashMap<>();
-    for (String username : usernames) {
-      User user = byUsername.get(username);
-      if (user != null) {
-        inOrder.put(username, user);
-      }
-    }
-    return inOrder;
+  /** Keeps the order of {@code usernames}, which reflects the requested sort. */
+  private List<User> getUsersInOrder(Collection<String> usernames) {
+    Map<String, User> byUsername =
+        userDao.getUsersByUsernames(usernames).stream()
+            .collect(Collectors.toMap(User::getUsername, Function.identity()));
+    return usernames.stream()
+        .map(byUsername::get)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   private Community getCommunityForAdmin(User sysadmin, Community comm) {

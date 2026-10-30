@@ -68,7 +68,7 @@ public class SysAdminManagerImplTest {
     PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
     pgCrit.setOrderBy(UserSort.FILE_USAGE.key());
     Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
-        usageOf(Map.entry("B", 300), Map.entry("a", 200), Map.entry("ghost", 100));
+        usageOf(Map.entry("b", 300), Map.entry("a", 200), Map.entry("ghost", 100));
     User a = TestFactory.createAnyUser("a");
     User b = TestFactory.createAnyUser("b");
     when(fileDao.getCountOfUsersWithFilesInFileSystem()).thenReturn(3L);
@@ -87,7 +87,7 @@ public class SysAdminManagerImplTest {
     PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
     pgCrit.setOrderBy(UserSort.RECORD_COUNT.key());
     Map<String, DatabaseUsageByUserGroupByResult> recordCount =
-        usageOf(Map.entry("a", 3), Map.entry("ghost", 2), Map.entry("B", 1));
+        usageOf(Map.entry("a", 3), Map.entry("ghost", 2), Map.entry("b", 1));
     User a = TestFactory.createAnyUser("a");
     User b = TestFactory.createAnyUser("b");
     when(recordDao.getCountOfUsersWithRecords()).thenReturn(3L);
