@@ -193,7 +193,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     if (operationKind == ResourceAccessOperation.SEARCH) {
       parameters.add(
           parameter(
-              "query",
+              "q",
               "query",
               true,
               ordered("type", "string", "minLength", 2),
