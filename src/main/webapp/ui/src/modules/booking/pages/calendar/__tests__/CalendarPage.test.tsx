@@ -71,10 +71,7 @@ describe("CalendarPage", () => {
       ),
     );
     const user = userEvent.setup();
-    await renderCalendar("/booking/calendar?date=2026-08-17");
-    await user.click(await screen.findByRole("button", { name: "Week" }));
-    if (layout !== "resources")
-      await user.click(screen.getByRole("button", { name: layout === "agenda" ? "Agenda" : "Time grid" }));
+    await renderCalendar(`/booking/calendar?date=2026-08-17&view=week&layout=${layout}`);
     const own = await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
     await user.click(within(own).getByRole("button"));
     expect(
