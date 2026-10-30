@@ -300,7 +300,6 @@ class BookingCalendarManagerFeedTest {
     configuration.setTimeZone(timeZone);
     when(bookingManager.getBooking(BOOKING_ID, owner)).thenReturn(Optional.of(booking));
     when(instrumentDao.getBookingSummaries(Set.of(101L)))
-        .thenReturn(
-            Map.of(101L, new InstrumentReadSummary(101L, itemName, false, null, null, null)));
+        .thenReturn(Map.of(101L, new InstrumentReadSummary(101L, itemName, false, null)));
   }
 }
