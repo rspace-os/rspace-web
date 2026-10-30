@@ -144,6 +144,7 @@ public class LdapRealmTest {
 
   @Test
   public void autoSignupFailureSurfacesAsAuthenticationExceptionWithItsMessage() throws Exception {
+    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
     when(userManager.userExists(any())).thenReturn(false);
     when(properties.isUserSignup()).thenReturn(true);
     UserSignupException busy = new UserSignupException("busy");
