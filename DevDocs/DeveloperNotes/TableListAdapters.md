@@ -18,7 +18,7 @@ table and query state and returns `tableProps` plus functions that change that s
 
 The OpenAPI reader validates the current generated contract with Valibot. Selector and runtime
 flags must be booleans, and query/catalog limits must be positive integers; `maximumProjections`
-may be zero. Runtime descriptors must include their catalog limits and `via`/`viaResource` values.
+may be zero. Runtime descriptors must include their catalog limits and `via` value.
 Missing values are errors rather than client-side defaults. The list response must reference
 a local Read component through `docs.items.$ref`.
 

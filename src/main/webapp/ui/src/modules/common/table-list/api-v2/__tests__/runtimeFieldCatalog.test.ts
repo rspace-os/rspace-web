@@ -137,7 +137,7 @@ describe("catalog request shape", () => {
 
     await fetchRuntimeFieldCatalog(namespace, { fetch: stub, search: "hazard", page: 2, limit: 200 });
 
-    expect(urls[0]).toBe("/api/v2/instruments/fields/customFields?search=hazard&page=2&limit=200");
+    expect(urls[0]).toBe("/api/v2/instruments/fields/customFields?q=hazard&page=2&limit=200");
   });
 
   it("hydrates specific IDs instead of searching, for a saved view", async () => {

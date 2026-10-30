@@ -256,7 +256,7 @@ The Filters panel offers only namespaces with `filterable: true`. The Columns pa
 namespaces with `columnSelectable: true`. Both panels search the published catalog URL. A selected
 definition becomes a normal resolved field in the table configuration.
 
-The catalog picker requests one namespace after two characters.
+The catalog picker requests one namespace after two characters, using `q` for the search term.
 It sends the REST API v2 bearer token and uses React Query to cancel obsolete requests. Catalog
 searches and saved-field hydration include catalog URLs and authorization identity in their cache
 keys, so collections that reuse a namespace do not reuse another catalog's definitions.
