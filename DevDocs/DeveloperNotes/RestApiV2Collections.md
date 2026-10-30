@@ -366,9 +366,11 @@ Each registered resource also has this route:
 The caller must authenticate with an API key or OAuth bearer token and have resource read access.
 The audit handler applies its normal subject visibility rules.
 
-The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, repeated `actions`, and an optional
+The list route accepts `page`, `limit`, `start`, `end`, repeated `actions`, and an optional
 `snapshotDate`/`snapshotFingerprint` pair. Pagination is one-based. The first page omits the pair;
-the response selects the latest completed UTC day permitted by `dateTo` and returns both values.
+the response selects the latest completed UTC day permitted by `end` and returns both values.
+The requested `end` selects completed UTC days, rather than an arbitrary event cutoff.
+For compatibility, an `end` at exactly the final millisecond of a UTC day includes that day.
 Every later page sends both values unchanged. The response's `totalDocs` is the number of matching
 events for that snapshot. To request a minimal page when only the total is needed, use
 `GET /api/v2/widgets/{id}/audit?limit=1` and read `totalDocs`.
@@ -376,10 +378,10 @@ events for that snapshot. To request a minimal page when only the total is neede
 A search covers at most 183 days. Wider windows return `400` and
 `errors.api.v2.audit.range.tooWide` to avoid truncated results that look complete. Page longer
 periods one window at a time. With no dates, the server uses the last 183 days.
-`dateFrom` after `dateTo` is `400`.
+`start` after `end` is `400`.
 
-The list is a daily bounded-consistency snapshot over the exact half-open interval from `dateFrom`
-through midnight after `snapshotDate` in UTC. The server filters unreadable payload fields, assigns
+The list is a daily bounded-consistency snapshot over the exact half-open interval from `start`
+inclusive to midnight after `snapshotDate` exclusive in UTC. The server filters unreadable payload fields, assigns
 each event a deterministic `eventId`, sorts the complete result, fingerprints it, and only then
 slices the requested page. Exact duplicate events remain separate rows. Neither hash is a signature
 or evidence that the source log has not been changed.

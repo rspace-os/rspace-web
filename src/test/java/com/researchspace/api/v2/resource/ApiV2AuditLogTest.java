@@ -94,8 +94,8 @@ class ApiV2AuditLogTest {
     ApiV2AuditQuery query = new ApiV2AuditQuery();
     query.setPage(2);
     query.setLimit(20);
-    query.setDateFrom(Date.from(Instant.parse("2025-12-01T00:00:00Z")));
-    query.setDateTo(Date.from(Instant.parse("2026-01-02T23:59:59.999Z")));
+    query.setStart(Date.from(Instant.parse("2025-12-01T00:00:00Z")));
+    query.setEnd(Date.from(Instant.parse("2026-01-02T23:59:59.999Z")));
     query.setActions(new HashSet<>(Set.of(AuditAction.WRITE)));
     query.setSearch("PayloadMarker");
 
@@ -232,8 +232,8 @@ class ApiV2AuditLogTest {
   void selectsLatestCompletedUtcDayAndExcludesItsNextMidnight() {
     when(strictSearch.search(any())).thenReturn(List.of());
     ApiV2AuditQuery query = new ApiV2AuditQuery();
-    query.setDateFrom(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
-    query.setDateTo(Date.from(Instant.parse("2026-01-03T11:00:00Z")));
+    query.setStart(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
+    query.setEnd(Date.from(Instant.parse("2026-01-03T11:00:00Z")));
 
     var page = auditLog.search(resource, "7", query, actor);
 
@@ -248,8 +248,8 @@ class ApiV2AuditLogTest {
   void historicalInclusiveToSelectsOnlyItsLatestCompletedDay() {
     when(strictSearch.search(any())).thenReturn(List.of());
     ApiV2AuditQuery query = new ApiV2AuditQuery();
-    query.setDateFrom(Date.from(Instant.parse("2025-12-01T00:00:00Z")));
-    query.setDateTo(Date.from(Instant.parse("2025-12-20T18:00:00Z")));
+    query.setStart(Date.from(Instant.parse("2025-12-01T00:00:00Z")));
+    query.setEnd(Date.from(Instant.parse("2025-12-20T18:00:00Z")));
 
     var page = auditLog.search(resource, "7", query, actor);
 
@@ -259,8 +259,8 @@ class ApiV2AuditLogTest {
   @Test
   void todayOnlyRangeIsAValidEmptySnapshot() {
     ApiV2AuditQuery query = new ApiV2AuditQuery();
-    query.setDateFrom(Date.from(Instant.parse("2026-01-03T00:00:00Z")));
-    query.setDateTo(Date.from(Instant.parse("2026-01-03T11:00:00Z")));
+    query.setStart(Date.from(Instant.parse("2026-01-03T00:00:00Z")));
+    query.setEnd(Date.from(Instant.parse("2026-01-03T11:00:00Z")));
 
     var page = auditLog.search(resource, "7", query, actor);
 
@@ -328,12 +328,12 @@ class ApiV2AuditLogTest {
     laterDefault.setSnapshotFingerprint(defaultPage.snapshotFingerprint());
     movingAuditLog.search(resource, "7", laterDefault, actor);
 
-    Date oldDateFrom = Date.from(NOW.minus(Duration.ofDays(365)));
+    Date oldStart = Date.from(NOW.minus(Duration.ofDays(365)));
     ApiV2AuditQuery firstClamped = new ApiV2AuditQuery();
-    firstClamped.setDateFrom(oldDateFrom);
+    firstClamped.setStart(oldStart);
     var clampedPage = movingAuditLog.search(resource, "7", firstClamped, actor);
     ApiV2AuditQuery laterClamped = new ApiV2AuditQuery();
-    laterClamped.setDateFrom(oldDateFrom);
+    laterClamped.setStart(oldStart);
     laterClamped.setSnapshotDate(clampedPage.snapshotDate());
     laterClamped.setSnapshotFingerprint(clampedPage.snapshotFingerprint());
     movingAuditLog.search(resource, "7", laterClamped, actor);
@@ -491,8 +491,8 @@ class ApiV2AuditLogTest {
 
   private static ApiV2AuditQuery rangeQuery() {
     ApiV2AuditQuery query = new ApiV2AuditQuery();
-    query.setDateFrom(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
-    query.setDateTo(Date.from(Instant.parse("2026-01-02T23:59:59.999Z")));
+    query.setStart(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
+    query.setEnd(Date.from(Instant.parse("2026-01-02T23:59:59.999Z")));
     return query;
   }
 
