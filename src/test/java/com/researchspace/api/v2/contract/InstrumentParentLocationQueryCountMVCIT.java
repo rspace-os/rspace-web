@@ -104,7 +104,7 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   @Test
-  void bookingPagesKeepActorColumnsOutOfLimitedSql() throws Exception {
+  void bookingPagesAvoidLocationCountsAndActorColumnsInLimitedSql() throws Exception {
     FixtureRows rows = createRows(5, "LocationCount" + fixture.marker());
     var logger =
         (org.apache.logging.log4j.core.Logger)
@@ -124,10 +124,15 @@ class InstrumentParentLocationQueryCountMVCIT {
     try {
       for (String path : List.of("/api/v2/bookings", "/api/v2/booking-configurations")) {
         statements.logContents = "";
-        JsonNode docs = request(path, rows.instrumentIds(), "id").body().path("docs");
+        JsonNode docs = request(path, rows.instrumentIds(), path.endsWith("/bookings") ? "id,location" : "id").body().path("docs");
         assertFalse(docs.isEmpty());
         String sql = statements.logContents.toLowerCase(java.util.Locale.ROOT);
         assertTrue(sql.contains("select"), "SQL capture must contain executed statements");
+        assertFalse(
+            java.util.regex.Pattern.compile("select count\\((?:(?!select).)*?from container ")
+                .matcher(sql)
+                .find(),
+            sql);
         var pages = java.util.regex.Pattern.compile("select [^\\n]*? limit [^\\n]*").matcher(sql);
         boolean foundPage = false;
         while (pages.find()) {
