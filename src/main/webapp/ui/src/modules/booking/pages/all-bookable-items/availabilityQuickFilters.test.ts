@@ -26,7 +26,7 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
   id,
   configurationVersion: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: { id, name: globalId, deleted: false },
     globalId,
   },
