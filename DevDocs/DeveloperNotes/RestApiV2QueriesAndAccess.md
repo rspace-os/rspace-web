@@ -453,7 +453,7 @@ contracts.
 ## OpenAPI
 
 The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
-and its schemas. A target-only spec adds schemas without paths.
+and its schemas. Relationships refer to registered resources and their schemas.
 
 The document service merges Swagger annotations from concrete controllers and validates the
 complete document before returning it.
