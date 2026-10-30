@@ -55,7 +55,7 @@ beforeEach(() => {
       const url = new URL(request.url);
       catalogRequests.push(url.searchParams);
       const ids = new Set((url.searchParams.get("ids") ?? "").split(",").filter(Boolean));
-      const search = url.searchParams.get("search")?.toLocaleLowerCase();
+      const search = url.searchParams.get("q")?.toLocaleLowerCase();
       const fields = runtimeDefinitions.filter((field) =>
         ids.size > 0
           ? ids.has(field.id)
@@ -163,7 +163,7 @@ describe("API v2 filter expansion", () => {
     let finishLoading: (() => void) | undefined;
     worker.use(
       http.get("/api/v2/instruments/fields/extraFields", ({ request }) => {
-        const search = new URL(request.url).searchParams.get("search") ?? "";
+        const search = new URL(request.url).searchParams.get("q") ?? "";
         if (search === "Blocked") return new HttpResponse(null, { status: 503 });
         if (search === "Malformed") return HttpResponse.json({ fields: [{ id: 7 }] });
         if (search === "Loading") {

@@ -341,7 +341,7 @@ class ApiV2FilterExpansionMVCIT {
             .perform(
                 get(RUNTIME_FIELDS)
                     .header("apiKey", apiKey)
-                    .param("search", fieldName)
+                    .param("q", fieldName)
                     .param("limit", "50"))
             .andReturn();
     assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
