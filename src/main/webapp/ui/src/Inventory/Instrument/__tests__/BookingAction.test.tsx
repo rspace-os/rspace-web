@@ -183,8 +183,10 @@ describe("Inventory instrument booking action", () => {
     server.use(
       ...bookingHandlers({ enabled: true, docs: [] }),
       http.get("/api/v2/booking-configuration-targets", ({ request }) => {
-        targetQuery = new URL(request.url).searchParams.get("query");
-        return HttpResponse.json([{ id: 123, globalId, name: "Confocal microscope", deleted: false }]);
+        expect(new URL(request.url).searchParams.has("query")).toBe(false);
+        expect(new URL(request.url).searchParams.has("search")).toBe(false);
+        targetQuery = new URL(request.url).searchParams.get("q");
+        return HttpResponse.json({ docs: [{ id: 123, globalId, name: "Confocal microscope", deleted: false }] });
       }),
     );
     renderAction({ isOwner: false });
@@ -199,9 +201,11 @@ describe("Inventory instrument booking action", () => {
     let targetRequests = 0;
     server.use(
       ...bookingHandlers({ enabled: true, docs: [] }),
-      http.get("/api/v2/booking-configuration-targets", () => {
+      http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+        expect(new URL(request.url).searchParams.has("query")).toBe(false);
+        expect(new URL(request.url).searchParams.has("search")).toBe(false);
         targetRequests += 1;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ docs: [] });
       }),
     );
     renderAction({ isOwner: false });

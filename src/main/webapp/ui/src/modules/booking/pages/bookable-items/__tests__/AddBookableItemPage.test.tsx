@@ -42,7 +42,7 @@ const settings = {
 function targetsHandler(onRequest: (url: URL) => void = () => undefined, targets: readonly unknown[] = [confocal]) {
   return http.get("/api/v2/booking-configuration-targets", ({ request }) => {
     const parameters = new URL(request.url).searchParams;
-    if (!parameters.has("q") || parameters.has("query")) return new HttpResponse(null, { status: 400 });
+    if (parameters.has("search") || parameters.has("query")) return new HttpResponse(null, { status: 400 });
     onRequest(new URL(request.url));
     return HttpResponse.json({ docs: targets });
   });
@@ -229,8 +229,8 @@ describe("AddBookableItemPage", () => {
     expect(await screen.findByText("common:relationshipPicker.searchTooShort")).toBeVisible();
     expect(screen.queryByText("common:relationshipPicker.empty")).not.toBeInTheDocument();
     await user.type(picker, "o");
-    await waitFor(() => expect(requests.at(-1)?.searchParams.get("query")).toBe("Co"));
-    expect(requests.some((url) => url.searchParams.get("query") === "C")).toBe(false);
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("q")).toBe("Co"));
+    expect(requests.some((url) => url.searchParams.get("q") === "C")).toBe(false);
   });
 
   it("explains how to make an instrument eligible when none can be configured", async () => {
