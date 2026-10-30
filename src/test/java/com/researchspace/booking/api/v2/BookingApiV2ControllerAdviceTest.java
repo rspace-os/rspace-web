@@ -153,6 +153,15 @@ class BookingApiV2ControllerAdviceTest {
     }
   }
 
+  @Test
+  void calendarFailuresPreserveErrorBodies() {
+    register("errors.api.v2.notFound");
+    check(advice.handleCalendarNotFound(), HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+    String key = "errors.api.v2.bookingCalendar.subscriptionConflict";
+    register(key);
+    check(advice.handleUserSubscriptionConflict(), HttpStatus.CONFLICT, key);
+  }
+
   private void register(String key) {
     source.addMessage(key, Locale.getDefault(), "Detail " + key);
   }

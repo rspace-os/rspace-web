@@ -1,6 +1,7 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2ConditionalRequest;
 import com.researchspace.booking.service.BookingCalendarManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

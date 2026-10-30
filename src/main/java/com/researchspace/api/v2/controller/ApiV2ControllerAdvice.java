@@ -153,14 +153,9 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.FORBIDDEN, "errors.api.v2.forbidden");
   }
 
-  @ExceptionHandler({NotFoundException.class, BookingCalendarNotFoundException.class})
+  @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<ApiV2Problem> handleNotFound() {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
-  }
-
-  @ExceptionHandler(UserSubscriptionConflictException.class)
-  public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
-    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingCalendar.subscriptionConflict");
   }
 
   @ExceptionHandler(ThrottlingException.class)
