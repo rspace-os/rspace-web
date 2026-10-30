@@ -75,7 +75,7 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
 
 describe("AllBookableItemsPage", () => {
   it.each([{ name: "Catalogue lab", globalId: "IC999" }, null])(
-    "uses the catalogue location in the table and availability details: %s",
+    "uses the catalogue location in the table without repeating it in booking availability details: %s",
     async (location) => {
       const user = userEvent.setup();
       const item = { ...catalogueItem(bookableItemFixtures[0]), location };
@@ -109,11 +109,11 @@ describe("AllBookableItemsPage", () => {
       await user.click(screen.getAllByRole("button", { name: /^Confocal microscope, Booked,/ })[0]);
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByLabelText(/^Show details for Confocal microscope,/));
-      if (location) {
-        expect(within(dialog).getByRole("link", { name: location.name })).toHaveAttribute("href", "/globalId/IC999");
-      } else {
-        expect(within(dialog).queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
-      }
+      expect(within(dialog).queryByRole("link", { name: location?.name ?? "Imaging lab" })).not.toBeInTheDocument();
+      expect(within(dialog).getByRole("link", { name: "Details" })).toHaveAttribute(
+        "href",
+        "/booking/calendar/bookings/41",
+      );
     },
   );
 
