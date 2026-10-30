@@ -28,20 +28,28 @@ public record ApiV2MaintenanceResource(
             additionalExamples = {"43"})
         Long id,
     @ApiV2ResourceField(
+            createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+            updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             requiredOnCreate = true,
             description = "Beginning of the maintenance window.",
             example = "2026-08-01T20:00:00Z")
         Date startDate,
     @ApiV2ResourceField(
+            createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+            updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             requiredOnCreate = true,
             description = "End of the maintenance window.",
             example = "2026-08-01T21:00:00Z")
         Date endDate,
     @ApiV2ResourceField(
+            createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+            updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             nullable = true,
             description = "Time after which ordinary users may no longer log in.")
         Date stopUserLoginDate,
     @ApiV2ResourceField(
+            createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+            updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             nullable = true,
             maxLength = User.DEFAULT_MAXFIELD_LEN,
             description = "User-facing maintenance message.")

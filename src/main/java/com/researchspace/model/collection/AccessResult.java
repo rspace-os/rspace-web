@@ -6,10 +6,9 @@ import java.util.Optional;
 /**
  * Outcome of an access check: allow, deny, or allow subject to a query constraint.
  *
- * <p>Returning a {@link QueryConstraint} turns access control into a predicate that is folded into
- * the query and pushed down to SQL, rather than a gate that filters in memory afterwards. That
- * keeps pagination totals correct and, because bulk operations take the same {@link
- * ResourceRequest}, makes a read constraint bound bulk writes automatically.
+ * <p>A constraint can be compiled into a database predicate. Collection managers and DAOs must
+ * apply read constraints to list and count queries. Relationship resolution uses the target read
+ * constraint. Read constraints do not yet automatically restrict writes.
  */
 public sealed interface AccessResult {
 

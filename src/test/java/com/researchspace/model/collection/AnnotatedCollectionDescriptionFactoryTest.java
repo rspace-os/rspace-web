@@ -28,6 +28,28 @@ import org.junit.jupiter.api.Test;
 class AnnotatedCollectionDescriptionFactoryTest {
 
   @Test
+  void setterWithoutDeclaredWriteIsReadOnly() {
+    var description =
+        CollectionDescription.fromApiV2Resource(
+            UndeclaredResource.class, BoxedQuantityEntity.class, List.of(new Sort("id", true)));
+    assertFalse(description.requireField("quantity").writableOn(WriteOperation.CREATE));
+    assertFalse(description.requireField("quantity").writableOn(WriteOperation.UPDATE));
+    assertThrows(
+        CollectionQueryException.class,
+        () ->
+            description.apply(
+                new BoxedQuantityEntity(), Map.of("quantity", 8L), WriteOperation.UPDATE));
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "undeclared",
+      entity = BoxedQuantityEntity.class,
+      id = "id",
+      auditFields = false)
+  private record UndeclaredResource(
+      @ApiV2ResourceField Long id, @ApiV2ResourceField long quantity) {}
+
+  @Test
   void preservesAuditAliasPrecedenceAndMemberOrder() {
     CollectionDescription<AuditEntity> description =
         CollectionDescription.fromApiV2Resource(
@@ -170,7 +192,10 @@ class AnnotatedCollectionDescriptionFactoryTest {
   @ApiV2ResourceDefinition(name = "auditResources", entity = AuditEntity.class, id = "id")
   private record AuditResource(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField long quantity,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          long quantity,
       @ApiV2ResourceRelationship(
               relationTo = {
                 @ApiV2RelationshipTarget(resource = "targets", entity = RelatedTarget.class)
@@ -263,7 +288,11 @@ class AnnotatedCollectionDescriptionFactoryTest {
       id = "id",
       auditFields = false)
   private record BoxedQuantityResource(
-      @ApiV2ResourceField Long id, @ApiV2ResourceField long quantity) {}
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          long quantity) {}
 
   public static final class BoxedQuantityEntity {
 
@@ -288,7 +317,11 @@ class AnnotatedCollectionDescriptionFactoryTest {
       id = "id",
       auditFields = false)
   private record MismatchedResource(
-      @ApiV2ResourceField Long id, @ApiV2ResourceField String value) {}
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          String value) {}
 
   public static final class MismatchedEntity {
 
@@ -306,7 +339,12 @@ class AnnotatedCollectionDescriptionFactoryTest {
       entity = ThrowingEntity.class,
       id = "id",
       auditFields = false)
-  private record ThrowingResource(@ApiV2ResourceField Long id, @ApiV2ResourceField String value) {}
+  private record ThrowingResource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          String value) {}
 
   public static final class ThrowingEntity {
 
