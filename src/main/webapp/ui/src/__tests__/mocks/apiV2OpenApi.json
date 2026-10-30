@@ -3784,6 +3784,13 @@
           }
         }, {
           "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : true,
           "schema" : {
@@ -3890,6 +3897,13 @@
           }
         }, {
           "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : true,
           "schema" : {
@@ -3983,6 +3997,13 @@
           "required" : false,
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
           }
         }, {
           "in" : "query",
