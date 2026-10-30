@@ -5,7 +5,9 @@ import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -851,6 +853,68 @@ public class GroupControllerMVCIT extends MVCTestBase {
     member1 = userMgr.get(member1.getId());
     g1 = grpMgr.getGroup(g1.getId());
     assertFalse(g1.getUserGroupForUser(member1).isAdminViewDocsEnabled());
+  }
+
+  @Test
+  public void collabGroupMemberCannotChangeRoles() throws Exception {
+    User pi1 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    User pi2 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    User member1 = createAndSaveUser(getRandomName(7));
+    initUsers(pi1, pi2, member1);
+    logoutAndLoginAs(pi1);
+    Group g1 = createGroupForUsers(pi1, pi1.getUsername(), "", pi1, member1);
+    Group g2 = createGroupForUsers(pi2, pi2.getUsername(), "", pi2);
+    Group collabGrp = createCollabGroupBetweenGroups(g1, g2);
+    grpMgr.addUserToGroup(member1.getUsername(), collabGrp.getId(), RoleInGroup.DEFAULT);
+
+    logoutAndLoginAs(member1);
+    MvcResult selfPromotion =
+        mockMvc
+            .perform(
+                post(CHANGE_ROLE_URL, collabGrp.getId(), member1.getId())
+                    .param("role", RoleInGroup.RS_LAB_ADMIN.name())
+                    .principal(member1::getUsername))
+            .andReturn();
+    assertInstanceOf(AuthorizationException.class, selfPromotion.getResolvedException());
+    MvcResult piDemotion =
+        mockMvc
+            .perform(
+                post(CHANGE_ROLE_URL, collabGrp.getId(), pi2.getId())
+                    .param("role", RoleInGroup.DEFAULT.name())
+                    .principal(member1::getUsername))
+            .andReturn();
+    assertInstanceOf(AuthorizationException.class, piDemotion.getResolvedException());
+
+    Group reloaded = grpMgr.getGroup(collabGrp.getId());
+    assertEquals(RoleInGroup.DEFAULT, reloaded.getUserGroupForUser(member1).getRoleInGroup());
+    assertEquals(RoleInGroup.PI, reloaded.getUserGroupForUser(pi2).getRoleInGroup());
+  }
+
+  @Test
+  public void collabGroupPiCanMakeMemberLabAdmin() throws Exception {
+    User pi1 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    User pi2 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    User member1 = createAndSaveUser(getRandomName(7));
+    initUsers(pi1, pi2, member1);
+    logoutAndLoginAs(pi1);
+    Group g1 = createGroupForUsers(pi1, pi1.getUsername(), "", pi1, member1);
+    Group g2 = createGroupForUsers(pi2, pi2.getUsername(), "", pi2);
+    Group collabGrp = createCollabGroupBetweenGroups(g1, g2);
+    grpMgr.addUserToGroup(member1.getUsername(), collabGrp.getId(), RoleInGroup.DEFAULT);
+
+    logoutAndLoginAs(pi1);
+    MvcResult res =
+        mockMvc
+            .perform(
+                post(CHANGE_ROLE_URL, collabGrp.getId(), member1.getId())
+                    .param("role", RoleInGroup.RS_LAB_ADMIN.name())
+                    .principal(pi1::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(res.getResolvedException());
+    assertEquals(
+        RoleInGroup.RS_LAB_ADMIN,
+        grpMgr.getGroup(collabGrp.getId()).getUserGroupForUser(member1).getRoleInGroup());
   }
 
   @Test

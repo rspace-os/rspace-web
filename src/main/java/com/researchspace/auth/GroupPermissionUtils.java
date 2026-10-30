@@ -1,7 +1,9 @@
 package com.researchspace.auth;
 
+import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserGroupDao;
+import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.Role;
@@ -17,6 +19,8 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,23 +30,23 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
   private @Autowired IPermissionUtils permissionUtils;
   private @Autowired UserGroupDao ugDao;
   private @Autowired UserDao userDao;
+  private @Autowired CommunityDao communityDao;
   private @Autowired IPropertyHolder properties;
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgrPermUtils;
 
   @Override
   public boolean subjectCanAlterGroupRole(Group group, User subject, User toChange) {
+    if (group.isCollaborationGroup()) {
+      return subject.hasRoleInGroup(group, RoleInGroup.PI)
+          || subject.hasRole(Role.SYSTEM_ROLE)
+          || (subject.hasRole(Role.ADMIN_ROLE) && hasLabInAdminsCommunity(group, subject));
+    }
     boolean canAlter = false;
     if (permissionUtils.isPermitted(group, PermissionType.WRITE, subject)) {
       if (subjectIsPIOrAdmin(group, subject)) {
         canAlter = true;
       }
-    }
-    // if a user who is already in a collab group is creating his own lab group,
-    // it's OK to promote him to PI in collab group
-    // note: this is maybe too loose, there should be constraints on collab group as well.
-    if (group.isCollaborationGroup()) {
-      canAlter = true;
     }
     if (group.isProjectGroup() && subject.hasRoleInGroup(group, RoleInGroup.GROUP_OWNER)) {
       canAlter = true;
@@ -52,6 +56,25 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
 
   private boolean subjectIsPIOrAdmin(Group group, User subject) {
     return subject.hasRoleInGroup(group, RoleInGroup.PI) || subject.hasAdminRole();
+  }
+
+  // a collab group's labs are those its PIs lead; Group#getMemberGroupsForCollabGroup is unreliable
+  // (RSPAC-2500)
+  private boolean hasLabInAdminsCommunity(Group collabGroup, User admin) {
+    Set<Long> adminCommunityIds =
+        communityDao.listCommunitiesForAdmin(admin.getId()).stream()
+            .map(Community::getId)
+            .collect(Collectors.toSet());
+    for (User pi : collabGroup.getPiusers()) {
+      for (Group lab : pi.getGroups()) {
+        if (lab.isLabGroup()
+            && pi.hasRoleInGroup(lab, RoleInGroup.PI)
+            && adminCommunityIds.contains(lab.getCommunityId())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   @Override
@@ -114,8 +137,7 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
 
   public User assertLeaveGroupPermissions(String leaveCandidateUsername, User subject, Group grp) {
     // RSPAC-1662 lets users self-remove
-    if (subject.getUsername().equals(leaveCandidateUsername)
-        && (properties.isCloud() || grp.isProjectGroup())
+    if (isSelfServiceLeave(leaveCandidateUsername, subject, grp)
         && !grp.isOnlyGroupPi(leaveCandidateUsername)) {
       return loadUser(leaveCandidateUsername);
     }
@@ -130,6 +152,12 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
       throwAuthException(subject, "errors.authorization.failure.removePiFromGroup");
     }
     return userToRemove;
+  }
+
+  @Override
+  public boolean isSelfServiceLeave(String leaveCandidateUsername, User subject, Group grp) {
+    return subject.getUsername().equals(leaveCandidateUsername)
+        && (properties.isCloud() || grp.isProjectGroup());
   }
 
   private User loadUser(String leaveCandidateUsername) {

@@ -1,9 +1,12 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.Group;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestGroup;
@@ -86,6 +89,88 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     logoutAndLoginAs(useringroup);
     assertAlterRoleNotAuthorised(testgrp, useringroup);
     assertSetLabAdminViewAllNotAuthorised(testgrp, useringroup);
+  }
+
+  @Test
+  public void memberInCollabGroupCannotChangeRoles() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(1);
+    Group collab = createCollabGroupWithLabMembers(tg1, tg2);
+    User member = tg1.u1();
+    logoutAndLoginAs(member);
+
+    assertCollabRoleChangeNotAuthorised(collab, member, member, RoleInGroup.RS_LAB_ADMIN);
+    assertCollabRoleChangeNotAuthorised(collab, member, tg2.u1(), RoleInGroup.RS_LAB_ADMIN);
+    assertCollabRoleChangeNotAuthorised(collab, member, tg2.getPi(), RoleInGroup.DEFAULT);
+    assertCollabRole(collab, member, RoleInGroup.DEFAULT);
+    assertCollabRole(collab, tg2.u1(), RoleInGroup.DEFAULT);
+    assertCollabRole(collab, tg2.getPi(), RoleInGroup.PI);
+  }
+
+  @Test
+  public void piInCollabGroupCanChangeMemberRoles() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(1);
+    Group collab = createCollabGroupWithLabMembers(tg1, tg2);
+    logoutAndLoginAs(tg1.getPi());
+    assertCollabRolesCanBeAltered(collab, tg2.u1(), tg1.getPi());
+  }
+
+  @Test
+  public void sysadminCanChangeCollabGroupRoles() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(1);
+    Group collab = createCollabGroupWithLabMembers(tg1, tg2);
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    assertCollabRolesCanBeAltered(collab, tg1.u1(), sysadmin);
+  }
+
+  @Test
+  public void labAdminInCollabGroupCanRemoveAnotherLabAdmin() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(1);
+    Group collab = createCollabGroupWithLabMembers(tg1, tg2);
+    User labAdmin = tg1.u1();
+    User otherLabAdmin = tg2.u1();
+    for (User u : new User[] {labAdmin, otherLabAdmin}) {
+      grpMgr.setRoleForUser(
+          collab.getId(), u.getId(), RoleInGroup.RS_LAB_ADMIN.name(), tg1.getPi());
+    }
+
+    logoutAndLoginAs(labAdmin);
+    grpMgr.removeUserFromGroup(otherLabAdmin.getUsername(), collab.getId(), labAdmin);
+
+    assertFalse(grpMgr.getGroup(collab.getId()).hasMember(otherLabAdmin));
+  }
+
+  private Group createCollabGroupWithLabMembers(TestGroup tg1, TestGroup tg2) {
+    logoutAndLoginAs(tg1.getPi());
+    Group collab = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
+    grpMgr.addUserToGroup(tg1.u1().getUsername(), collab.getId(), RoleInGroup.DEFAULT);
+    grpMgr.addUserToGroup(tg2.u1().getUsername(), collab.getId(), RoleInGroup.DEFAULT);
+    return collab;
+  }
+
+  private void assertCollabRoleChangeNotAuthorised(
+      Group collab, User subject, User toChange, RoleInGroup role) {
+    Long groupId = collab.getId();
+    Long userId = toChange.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.setRoleForUser(groupId, userId, role.name(), subject));
+  }
+
+  private void assertCollabRolesCanBeAltered(Group collab, User toChange, User subject) {
+    grpMgr.setRoleForUser(
+        collab.getId(), toChange.getId(), RoleInGroup.RS_LAB_ADMIN.name(), subject);
+    assertCollabRole(collab, toChange, RoleInGroup.RS_LAB_ADMIN);
+    grpMgr.setRoleForUser(collab.getId(), toChange.getId(), RoleInGroup.DEFAULT.name(), subject);
+    assertCollabRole(collab, toChange, RoleInGroup.DEFAULT);
+  }
+
+  private void assertCollabRole(Group collab, User user, RoleInGroup expected) {
+    assertEquals(
+        expected, grpMgr.getGroup(collab.getId()).getUserGroupForUser(user).getRoleInGroup());
   }
 
   private User getLabAdmin(TestGroup testgrp) {

@@ -291,7 +291,12 @@ public class GroupManagerImpl implements GroupManager {
     UserGroup ug = grp.getUserGroupForUser(userToRemove);
     // if user is a lab admin in this group (RSPAC-1116)
     if (ug != null && ug.isAdminRole()) {
-      setRoleForUser(grp.getId(), userToRemove.getId(), RoleInGroup.DEFAULT.toString(), subject);
+      if (groupPermUtils.isSelfServiceLeave(uname, subject, grp) || grp.isCollaborationGroup()) {
+        // already authorised by assertLeaveGroupPermissions
+        changeRoleInGroup(grp, userToRemove, RoleInGroup.DEFAULT);
+      } else {
+        setRoleForUser(grp.getId(), userToRemove.getId(), RoleInGroup.DEFAULT.toString(), subject);
+      }
     }
 
     grp.removeMember(userToRemove);
@@ -901,7 +906,6 @@ public class GroupManagerImpl implements GroupManager {
   public void setRoleForUser(long groupId, Long userid, String roleStr, User subject) {
     RoleInGroup role = RoleInGroup.valueOf(roleStr);
     Group group = getGroup(groupId);
-    Set<UserGroup> ugs = group.getUserGroups();
     User toChange = userDao.get(userid);
     if (!groupPermUtils.subjectCanAlterGroupRole(group, subject, toChange)) {
       throw new AuthorizationException(
@@ -911,8 +915,26 @@ public class GroupManagerImpl implements GroupManager {
                 subject.getUsername(), toChange.getUsername(), group.getDisplayName()
               }));
     }
+    changeRoleInGroup(group, toChange, role);
+  }
 
-    for (UserGroup ug : ugs) {
+  @Override
+  public void setPiRoleInCollaborationGroups(User toPromote, User subject) {
+    if (!(subject.getId().equals(toPromote.getId()) || subject.hasAdminRole())) {
+      throw new AuthorizationException(
+          String.format(
+              "%s cannot give %s the PI role in their collaboration groups",
+              subject.getUsername(), toPromote.getUsername()));
+    }
+    for (Group grp : toPromote.getGroups()) {
+      if (grp.isCollaborationGroup()) {
+        changeRoleInGroup(getGroup(grp.getId()), toPromote, RoleInGroup.PI);
+      }
+    }
+  }
+
+  private void changeRoleInGroup(Group group, User toChange, RoleInGroup role) {
+    for (UserGroup ug : group.getUserGroups()) {
       if (ug.getUser().getUsername().equals(toChange.getUsername())) {
 
         if (isPiDemotion(role, ug)) {

@@ -6,14 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.GroupType;
 import com.researchspace.model.Organisation;
 import com.researchspace.model.Role;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -161,5 +165,34 @@ public class GroupControllerTest {
     }
 
     assertEquals(GroupController.GROUPS_VIEW_PUBLIC_NAME, response);
+  }
+
+  @Test
+  public void changeRoleToLabAdminInCollabGroupSkipsViewAll() {
+    group.setGroupType(GroupType.COLLABORATION_GROUP);
+    stubChangeRole();
+
+    grpController.changeRole(1L, 2L, RoleInGroup.RS_LAB_ADMIN.name(), true);
+
+    verify(grpMgr).setRoleForUser(1L, 2L, RoleInGroup.RS_LAB_ADMIN.name(), userPI);
+    verify(grpMgr, never())
+        .authorizeLabAdminToViewAll(anyLong(), any(User.class), anyLong(), anyBoolean());
+  }
+
+  @Test
+  public void changeRoleToLabAdminInLabGroupAuthorisesViewAll() {
+    stubChangeRole();
+
+    grpController.changeRole(1L, 2L, RoleInGroup.RS_LAB_ADMIN.name(), true);
+
+    verify(grpMgr).authorizeLabAdminToViewAll(2L, userPI, 1L, true);
+  }
+
+  private void stubChangeRole() {
+    userA.setId(2L);
+    when(grpMgr.getGroup(1L)).thenReturn(group);
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(userPI);
+    when(userMgr.get(2L)).thenReturn(userA);
+    when(groupPermissionUtils.subjectCanAlterGroupRole(group, userPI, userA)).thenReturn(true);
   }
 }
