@@ -43,12 +43,14 @@ resolved during design. This file is a glossary only — no implementation detai
   of an Extra text field are different things and keep their own, shorter cap for now.
 - **Inventory rich text** — the formatted text of a Description, subsample note,
   Extra text field or template text field, written in the Inventory text editor.
-  When it is displayed, only the formatting that editor offers survives: paragraphs,
-  headings, preformatted text, bold, italic, underline, highlight colour, links
-  (including links that open in a new tab) and bulleted and numbered lists. Any
-  other markup is dropped and only its text is kept, however the text arrived
-  (typed, API, CSV import, registry import) and whenever it was saved: no forms,
-  text or password boxes, buttons or images. What is stored is not changed.
+  When it is displayed, only the formatting that editor offers or keeps from pasted
+  text survives: paragraphs, headings, preformatted text, bold, italic, underline,
+  strikethrough, superscript, subscript, text and highlight colour, alignment,
+  indentation, links (including links that open in a new tab) and bulleted and
+  numbered lists. Any other markup or styling is dropped and only its text is kept,
+  however the text arrived (typed, API, CSV import, registry import) and whenever it
+  was saved: no forms, text or password boxes, buttons, or images, whether as
+  elements or as backgrounds. What is stored is not changed.
 
 ## Inventory access permissions
 

@@ -37,6 +37,27 @@ describe("sanitizeInventoryRichText", () => {
     ["a data attribute", "<p data-x='1'>a</p>", "<p>a</p>"],
     ["an aria attribute", "<p aria-hidden='true'>a</p>", "<p>a</p>"],
     ["controls nested in a list item", "<ul><li><form><input type='text'></form>a</li></ul>", "<ul><li>a</li></ul>"],
+    [
+      "a background image",
+      '<p><span style="background-image: url(https://example.org/pixel.gif);">a</span></p>',
+      "<p><span>a</span></p>",
+    ],
+    [
+      "an image set",
+      "<p><span style='background: image-set(\"https://example.org/pixel.gif\" 1x);'>a</span></p>",
+      "<p><span>a</span></p>",
+    ],
+    [
+      "an escaped background image",
+      '<p><span style="b\\61 ckground-image: url(https://example.org/pixel.gif);">a</span></p>',
+      "<p><span>a</span></p>",
+    ],
+    [
+      "a background image next to a colour",
+      '<p><span style="color: red; background-image: url(https://example.org/pixel.gif);">a</span></p>',
+      '<p><span style="color: red;">a</span></p>',
+    ],
+    ["a full-page overlay", '<p><span style="position: fixed; inset: 0;">a</span></p>', "<p><span>a</span></p>"],
   ])("drops %s and keeps its text", (_name, html, expected) => {
     expect(sanitizeInventoryRichText(html)).toBe(expected);
   });
@@ -51,6 +72,11 @@ describe("sanitizeInventoryRichText", () => {
     ["underline", '<p><span style="text-decoration: underline;">a</span></p>'],
     ["plain bold, italic and underline tags", "<p><b>a</b><i>b</i><u>c</u></p>"],
     ["highlight colour", '<p><span style="background-color: #e03e2d;">a</span></p>'],
+    ["text colour", '<p><span style="color: #e03e2d;">a</span></p>'],
+    ["alignment", '<p style="text-align: center;">a</p>'],
+    ["indentation", '<p style="padding-left: 40px;">a</p>'],
+    ["superscript and subscript", "<p>10<sup>-3</sup> M, H<sub>2</sub>O</p>"],
+    ["strikethrough", "<p><s>a</s> <del>b</del></p>"],
     ["a link", '<p><a href="https://example.org/a" title="Example">a</a></p>'],
     ["a link that opens in a new tab", '<p><a href="https://example.org/a" target="_blank" rel="noopener">a</a></p>'],
     ["a link to an RSpace page", '<p><a href="/inventory/search?query=a">a</a></p>'],
