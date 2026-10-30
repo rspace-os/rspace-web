@@ -197,7 +197,7 @@ describe("BookingEventPage", () => {
       http.get("/api/v2/bookings/41", () =>
         HttpResponse.json({
           ...document,
-          target: { ...document.target, value: { ...document.target.value, parentContainer: null } },
+          location: null,
         }),
       ),
     );

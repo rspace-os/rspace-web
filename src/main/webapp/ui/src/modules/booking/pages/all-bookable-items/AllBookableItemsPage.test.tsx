@@ -289,7 +289,7 @@ describe("AllBookableItemsPage", () => {
     server.use(
       http.get("/api/v2/booking-configuration-targets", () => {
         targetsRequested = true;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ docs: [] });
       }),
       catalogueHandler(() => HttpResponse.json(candidatePage([]))),
       http.get("/api/v2/booking-catalogue", () => HttpResponse.json(candidatePage([]))),
