@@ -6,6 +6,7 @@ import com.researchspace.api.v2.model.ApiV2AuditPage;
 import com.researchspace.api.v2.model.ApiV2AuditQuery;
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -29,6 +30,7 @@ public final class ApiV2AuditController {
     this.auditLog = auditLog;
   }
 
+  @Operation(summary = "List audit events for a readable resource")
   @GetMapping("/{resource}/{id}/audit")
   public ApiV2AuditPage<ApiV2AuditEvent> list(
       @PathVariable String resource,
