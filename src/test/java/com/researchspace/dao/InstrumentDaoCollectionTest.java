@@ -4,14 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
@@ -63,6 +70,77 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
   private static List<String> names(List<Instrument> instruments) {
     return instruments.stream().map(Instrument::getName).toList();
+  }
+
+  @Autowired private CriteriaBuilderFactory queryFactory;
+
+  @Test
+  public void countsWithoutSelectingRowsAndDropsFetchPathsOnOverflow() {
+    User owner = createInitAndLoginAnyUser();
+    createBasicInstrumentForUser(owner, "Count only scope");
+    var session = sessionFactory.getCurrentSession();
+    session.flush();
+    var executor =
+        new CollectionQueryExecutor<>(Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "i");
+    var request = page(nameContains("Count only scope"), 1, 20);
+    var statistics = sessionFactory.getStatistics();
+    boolean enabled = statistics.isStatisticsEnabled();
+    statistics.setStatisticsEnabled(true);
+    try {
+      statistics.clear();
+      assertEquals(1, executor.count(queryFactory, session, request));
+      assertEquals(1, statistics.getPrepareStatementCount());
+      statistics.clear();
+      var overflow =
+          executor.page(
+              queryFactory,
+              session,
+              page(nameContains("Count only scope"), Integer.MAX_VALUE, 2),
+              null,
+              RelationshipReadAccess.none(),
+              List.of("owner"));
+      assertEquals(1, overflow.total());
+      assertTrue(overflow.resources().isEmpty());
+      assertEquals(1, statistics.getPrepareStatementCount());
+    } finally {
+      statistics.setStatisticsEnabled(enabled);
+    }
+  }
+
+  @Test
+  public void unfilteredQueryCounts() {
+    createInitAndLoginAnyUser();
+    var executor = new CollectionQueryExecutor<>(User.class, ApiV2UserResource.DESCRIPTION, "u");
+    var session = sessionFactory.getCurrentSession();
+    session.flush();
+    long expected =
+        session.createQuery("select count(u) from User u", Long.class).getSingleResult();
+    assertEquals(expected, executor.count(queryFactory, session, page(null, 1, 20)));
+  }
+
+  @Test
+  public void countsCorrelatedParentNameFilters() {
+    User owner = createInitAndLoginAnyUser();
+    var instrument =
+        instrumentDao.get(createBasicInstrumentForUser(owner, "Related scope").getId());
+    var registry =
+        new ResourceRegistry(
+            List.of(ApiV2InstrumentResource.DESCRIPTION, ApiV2ContainerResource.DESCRIPTION));
+    var targets = RelationshipReadAccess.unrestricted(registry);
+    var executor =
+        new CollectionQueryExecutor<>(Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "i");
+    var request =
+        page(
+            new FilterExpression.Comparison(
+                "parentContainer.name",
+                Operator.EQUAL,
+                List.of(instrument.getParentContainer().getName()),
+                false),
+            1,
+            20);
+    var session = sessionFactory.getCurrentSession();
+    assertEquals(1, executor.page(queryFactory, session, request, null, targets).total());
+    assertEquals(1, executor.count(queryFactory, session, request, null, targets));
   }
 
   @Test
