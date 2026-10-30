@@ -15,7 +15,7 @@ const document = {
   id: 41,
   version: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: { id: 12, name: "Scope", deleted: false },
     globalId: "IN12",
   },
@@ -35,7 +35,7 @@ const document = {
 
 const mutationDocument = {
   ...document,
-  target: { relationTo: "booking-instruments", value: 12, globalId: "IN12" },
+  target: { relationTo: "instruments", value: 12, globalId: "IN12" },
 };
 
 describe("booking API", () => {
@@ -59,7 +59,7 @@ describe("booking API", () => {
     await fetchBooking(41, "token", new AbortController().signal);
     await createBooking(
       {
-        target: { relationTo: "booking-instruments", value: 12 },
+        target: { relationTo: "instruments", value: 12 },
         start: document.start,
         end: document.end,
         purpose: null,
@@ -76,7 +76,7 @@ describe("booking API", () => {
       ["PATCH", "/api/v2/bookings/41", "1"],
     ]);
     expect(requests[1].body).toEqual({
-      target: { relationTo: "booking-instruments", value: 12 },
+      target: { relationTo: "instruments", value: 12 },
       start: document.start,
       end: document.end,
       purpose: null,

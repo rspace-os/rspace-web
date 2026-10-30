@@ -13,7 +13,7 @@ const cancelledBooking = {
   id: 41,
   version: 1,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: { id: 12, name: "Scope", deleted: false },
     globalId: "IN12",
   },
