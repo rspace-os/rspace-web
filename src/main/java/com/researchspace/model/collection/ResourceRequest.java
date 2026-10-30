@@ -110,7 +110,7 @@ public record ResourceRequest(
 
   /** Adds a trusted server-owned restriction without changing or reclassifying caller input. */
   public ResourceRequest restrict(QueryConstraint constraint) {
-    if (constraint == null) {
+    if (constraint == null || containsConstraint(serverConstraint, constraint)) {
       return this;
     }
     QueryConstraint combined =
@@ -118,5 +118,11 @@ public record ResourceRequest(
             ? constraint
             : new QueryConstraint.And(List.of(serverConstraint, constraint));
     return new ResourceRequest(filter, combined, sort, page, fieldSelections, includes, runtime);
+  }
+
+  private static boolean containsConstraint(QueryConstraint current, QueryConstraint candidate) {
+    if (candidate.equals(current)) return true;
+    return current instanceof QueryConstraint.And and
+        && and.children().stream().anyMatch(child -> containsConstraint(child, candidate));
   }
 }

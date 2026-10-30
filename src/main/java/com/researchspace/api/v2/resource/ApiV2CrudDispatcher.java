@@ -198,10 +198,28 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return invoke(
         ResourceOperation.READ,
         () ->
-            operations
-                .findById(id, actor)
+            findOne(id, request, actor)
                 .map(resource -> decorated(resource, request, actor, decorator))
                 .orElseThrow(NotFoundException::new));
+  }
+
+  private Optional<T> findOne(ID id, ResourceRequest request, User actor) {
+    if (request.serverConstraint() == null && request.filter() == null)
+      return operations.findById(id, actor);
+    FilterExpression target =
+        new FilterExpression.Comparison(description.idField(), Operator.EQUAL, List.of(id), false);
+    ResourceRequest scoped =
+        new ResourceRequest(
+            request.filter() == null
+                ? target
+                : new FilterExpression.And(List.of(request.filter(), target)),
+            request.serverConstraint(),
+            request.sort(),
+            new ResourceRequest.Page(1, 1),
+            request.fieldSelections(),
+            request.includes(),
+            request.runtime());
+    return operations.find(scoped, actor).resources().stream().findFirst();
   }
 
   private Map<String, Object> decorated(
@@ -264,11 +282,21 @@ public final class ApiV2CrudDispatcher<T, ID> {
       Long expectedVersion,
       ApiV2Caller caller,
       FieldSelection selection) {
+    return update(id, document, expectedVersion, caller, selection, null);
+  }
+
+  public Map<String, Object> update(
+      ID id,
+      ParsedDocument document,
+      Long expectedVersion,
+      ApiV2Caller caller,
+      FieldSelection selection,
+      ResourceRequest scope) {
     return invoke(
         ResourceOperation.UPDATE,
         () ->
             operations
-                .update(id, document, expectedVersion, caller)
+                .update(id, document, expectedVersion, scope, caller)
                 .map(resource -> document(resource, selection, caller.subject()))
                 .orElseThrow(NotFoundException::new));
   }
@@ -287,11 +315,20 @@ public final class ApiV2CrudDispatcher<T, ID> {
 
   public ResourceDeleteResult<Map<String, Object>> delete(
       ID id, ResourceDeleteOptions options, ApiV2Caller caller, FieldSelection selection) {
+    return delete(id, options, caller, selection, null);
+  }
+
+  public ResourceDeleteResult<Map<String, Object>> delete(
+      ID id,
+      ResourceDeleteOptions options,
+      ApiV2Caller caller,
+      FieldSelection selection,
+      ResourceRequest scope) {
     return invoke(
         ResourceOperation.DELETE,
         () ->
             operations
-                .delete(id, options, caller)
+                .delete(id, options, scope, caller)
                 .map(
                     result ->
                         result
