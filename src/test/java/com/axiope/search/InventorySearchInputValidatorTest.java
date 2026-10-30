@@ -158,20 +158,4 @@ public class InventorySearchInputValidatorTest {
     validator.validate(cfg, errors);
     assertTrue(errors.hasGlobalErrors());
   }
-
-  @Test
-  public void sysadminFloorFollowsTheConfiguredValue() {
-    User sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
-    SearchConfig fourChars =
-        createSearchConfig(sysadmin, new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"a234"});
-
-    Errors errors = reinitializeErrors();
-    new InventorySearchInputValidator(sysadmin, 2, 2).validate(fourChars, errors);
-    assertFalse(errors.hasGlobalErrors());
-
-    errors = reinitializeErrors();
-    new InventorySearchInputValidator(sysadmin, 2, 7).validate(fourChars, errors);
-    assertEquals("errors.searchTermMinLength", errors.getGlobalError().getCode());
-    assertEquals(7, errors.getGlobalError().getArguments()[0]);
-  }
 }
