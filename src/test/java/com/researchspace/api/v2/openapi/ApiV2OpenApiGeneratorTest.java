@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
-import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
@@ -148,17 +147,35 @@ class ApiV2OpenApiGeneratorTest {
             EnumSet.of(ResourceOperation.LIST, ResourceOperation.READ),
             Map.of(),
             Map.of());
-    ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
-        new ApiV2RelationshipTargetSpec<>(
-            ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
-    ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstruments =
-        new ApiV2RelationshipTargetSpec<>(
-            ApiV2BookingInstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
+    ApiV2ResourceSpec<Instrument, Long> instruments =
+        new ApiV2ResourceSpec<>(
+            ApiV2InstrumentResource.DESCRIPTION,
+            operationsMock(),
+            Long::valueOf,
+            "create-error",
+            "update-error",
+            Set.of(),
+            Map.of());
+    ApiV2ResourceSpec<Instrument, Long> bookingInstruments =
+        new ApiV2ResourceSpec<>(
+            ApiV2BookingInstrumentResource.DESCRIPTION,
+            operationsMock(),
+            Long::valueOf,
+            "create-error",
+            "update-error",
+            Set.of(),
+            Map.of());
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(
-                List.of(maintenance, users, bookingConfigurations, timeSlotBookings, featureFlags),
-                List.of(instruments, bookingInstruments)),
+                List.of(
+                    maintenance,
+                    users,
+                    bookingConfigurations,
+                    timeSlotBookings,
+                    featureFlags,
+                    instruments,
+                    bookingInstruments)),
             "Test API",
             "2.0.0");
   }
@@ -657,10 +674,15 @@ class ApiV2OpenApiGeneratorTest {
                                     widgetOperations,
                                     Long::valueOf,
                                     "create-error",
-                                    "update-error")),
-                            List.of(
-                                new ApiV2RelationshipTargetSpec<>(
-                                    gadgets, Long.class, (ids, actor) -> Map.of()))),
+                                    "update-error"),
+                                new ApiV2ResourceSpec<>(
+                                    gadgets,
+                                    operationsMock(),
+                                    Long::valueOf,
+                                    "create-error",
+                                    "update-error",
+                                    Set.of(),
+                                    Map.of()))),
                         "Test API",
                         "2.0.0")
                     .generate(),

@@ -172,17 +172,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     return countReadableResources(COLLECTION_QUERY, request, access);
   }
 
-  private static InstrumentReadSummary toReadSummary(
-      Long id,
-      String name,
-      boolean deleted,
-      Long parentContainerId,
-      String parentContainerName,
-      ContainerType parentContainerType) {
-    return new InstrumentReadSummary(
-        id, name, deleted, parentContainerId, parentContainerName, parentContainerType);
-  }
-
   @Override
   public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
     if (instrumentIds.isEmpty()) {

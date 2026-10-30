@@ -1,5 +1,6 @@
 package com.researchspace.dao.hibernate;
 
+import com.researchspace.booking.service.BookingCatalogueLocation;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.hibernate.InstrumentDaoHibernateImpl.InstrumentScalarRow;
 import com.researchspace.dao.query.LikeEscaper;
@@ -10,7 +11,6 @@ import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import java.util.List;
@@ -31,7 +31,7 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
   }
 
   @Override
-  public ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
+  public ResourcePage<BookingCatalogueLocation> getBookingCatalogueLocations(
       String query, int page, int limit, User caller, Set<String> readableRoleKeys) {
     if (!caller.hasSysadminRole() && readableRoleKeys.isEmpty()) {
       return new ResourcePage<>(List.of(), 0);
@@ -114,12 +114,12 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
         visibleOwners,
         query);
     long total = countQuery.getSingleResult();
-    List<InstrumentParentLocationSummary> locations =
+    List<BookingCatalogueLocation> locations =
         pageQuery
             .getResultStream()
             .map(
                 row ->
-                    new InstrumentParentLocationSummary(
+                    new BookingCatalogueLocation(
                         (Long) row[0], (String) row[1], (ContainerType) row[2]))
             .toList();
     return new ResourcePage<>(locations, total);
@@ -137,12 +137,16 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
         .with("instrument.id")
         .with("instrument.editInfo.name")
         .with("instrument.deleted")
+        .with("instrument.parentLocation.container.id")
         .end()
         .whereExpression("type(instrument) = Instrument")
         .whereExpression("instrument.id in :instrumentIds")
         .setParameter("instrumentIds", instrumentIds)
         .getResultStream()
-        .map(row -> toReadSummary(row.instrumentId(), row.name(), row.deleted(), null, null, null))
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
@@ -246,14 +250,33 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
     }
   }
 
-  private static InstrumentReadSummary toReadSummary(
-      Long id,
-      String name,
-      boolean deleted,
-      Long parentContainerId,
-      String parentContainerName,
-      ContainerType parentContainerType) {
-    return new InstrumentReadSummary(
-        id, name, deleted, parentContainerId, parentContainerName, parentContainerType);
+  @Override
+  public Map<Long, BookingCatalogueLocation> getReadableParentLocationSummaries(
+      Set<Long> instrumentIds, User caller) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(caller);
+    String hql =
+        "select instrument.id, parent.id, parent.editInfo.name, parent.containerType "
+            + "from Instrument instrument "
+            + "join instrument.parentLocation location "
+            + "join location.container parent "
+            + "where instrument.id in (:instrumentIds) "
+            + "and location.storedInstrument.id = instrument.id "
+            + "and parent.deleted = false and "
+            + context.readableContainerPredicate(this, "parent");
+    Query<Object[]> query =
+        getSession()
+            .createQuery(hql, Object[].class)
+            .setParameterList("instrumentIds", instrumentIds);
+    context.bind(query, null);
+    return query.getResultList().stream()
+        .collect(
+            Collectors.toMap(
+                row -> (Long) row[0],
+                row ->
+                    new BookingCatalogueLocation(
+                        (Long) row[1], (String) row[2], (ContainerType) row[3])));
   }
 }

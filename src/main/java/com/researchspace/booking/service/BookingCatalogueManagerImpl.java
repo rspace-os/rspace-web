@@ -20,7 +20,6 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.ws.rs.NotFoundException;
@@ -142,8 +141,8 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             .map(configuration -> configuration.getTarget().id())
             .collect(Collectors.toSet());
     Map<Long, Instrument> targets = bookingInstruments.getBookingRelationshipTargets(targetIds);
-    Map<Long, InstrumentParentLocationSummary> locations =
-        instruments.getReadableParentLocationSummaries(targetIds, caller);
+    Map<Long, BookingCatalogueLocation> locations =
+        bookingInstruments.getReadableParentLocationSummaries(targetIds, caller);
     return new Page(
         result.resources().stream()
             .map(
@@ -169,7 +168,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     if (!targetTypes.isEmpty() && !targetTypes.contains("INSTRUMENT")) {
       return new LocationPage(List.of(), page, limit, 0);
     }
-    ResourcePage<com.researchspace.model.inventory.InstrumentParentLocationSummary> result =
+    ResourcePage<BookingCatalogueLocation> result =
         bookingInstruments.getBookingCatalogueLocations(
             query,
             page,
@@ -184,8 +183,8 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
                         (location.containerType() == Container.ContainerType.WORKBENCH
                                 ? GlobalIdPrefix.BE
                                 : GlobalIdPrefix.IC)
-                            + location.containerId().toString(),
-                        location.containerName()))
+                            + location.id().toString(),
+                        location.name()))
             .toList(),
         page,
         limit,
@@ -237,9 +236,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   }
 
   private Optional<Item> item(
-      BookingConfiguration configuration,
-      Instrument instrument,
-      InstrumentParentLocationSummary parent) {
+      BookingConfiguration configuration, Instrument instrument, BookingCatalogueLocation parent) {
     if (instrument == null || instrument.isDeleted()) {
       return Optional.empty();
     }
@@ -250,8 +247,8 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
                 (parent.containerType() == Container.ContainerType.WORKBENCH
                         ? GlobalIdPrefix.BE
                         : GlobalIdPrefix.IC)
-                    + parent.containerId().toString(),
-                parent.containerName());
+                    + parent.id().toString(),
+                parent.name());
     return Optional.of(
         new Item(
             configuration.getId(),
