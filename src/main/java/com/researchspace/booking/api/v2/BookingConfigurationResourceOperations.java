@@ -20,6 +20,7 @@ import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
 import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
 import com.researchspace.booking.service.InvalidBookableTargetException;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -78,6 +79,12 @@ public final class BookingConfigurationResourceOperations
   ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurationApiV2Resource() {
     List<ApiV2ErrorMapping> writeErrors =
         List.of(
+            ApiV2ErrorMapping.withErrorCode(
+                InvalidBookingSchedulingSettingsException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.bookingConfiguration.granularity.invalid",
+                "The scheduling settings are invalid.",
+                exception -> exception.reason().errorCode()),
             ApiV2ErrorMapping.of(
                 InvalidBookableTargetException.class,
                 HttpStatus.BAD_REQUEST,

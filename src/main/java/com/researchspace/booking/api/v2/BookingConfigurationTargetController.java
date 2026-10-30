@@ -1,9 +1,9 @@
 package com.researchspace.booking.api.v2;
 
-import com.researchspace.api.v2.controller.ResourceAccessController;
-import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2BadRequestException;
+import com.researchspace.api.v2.controller.ResourceAccessController;
 import com.researchspace.booking.service.BookingConfigurationTarget;
 import com.researchspace.booking.service.BookingConfigurationTargetManager;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,7 +1,5 @@
 package com.researchspace.booking.api.v2;
 
-import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
-import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -21,8 +19,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
-import com.researchspace.booking.api.v2.BookingSettingsController.SettingsPatch;
+import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
+import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
+import com.researchspace.booking.api.v2.BookingSettingsController.SettingsPatch;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException.Reason;
@@ -85,7 +85,8 @@ class BookingSettingsPatchTest {
                 new BookingSettingsController(
                     manager, featureFlags, directoryManager, Clock.systemUTC()))
             .setMessageConverters(converter, new YamlJackson2HttpMessageConverter())
-            .setControllerAdvice(new ApiV2ControllerAdvice(new MessageSourceUtils(messageSource)))
+            .setControllerAdvice(
+                new BookingApiV2ControllerAdvice(new MessageSourceUtils(messageSource)))
             .setValidator(validator)
             .build();
 

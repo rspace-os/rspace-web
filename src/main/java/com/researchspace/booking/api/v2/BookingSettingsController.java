@@ -1,10 +1,10 @@
 package com.researchspace.booking.api.v2;
 
-import com.researchspace.api.v2.controller.ResourceAccessController;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ResourceAccessController;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
