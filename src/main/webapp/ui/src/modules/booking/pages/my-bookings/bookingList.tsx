@@ -41,7 +41,7 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
       {
         name: "target",
         type: "relationship",
-        relationTo: "booking-instruments",
+        relationTo: "instruments",
         hasMany: false,
         labelKey: "booking:myBookings.fields.target",
         list: {

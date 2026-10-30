@@ -502,7 +502,7 @@ describe("Calendar page", () => {
 
     await expect.poll(() => bookingPageRequests.createdPayloads.length).toBe(1);
     expect(bookingPageRequests.createdPayloads[0]).toMatchObject({
-      target: { relationTo: "booking-instruments", value: 123 },
+      target: { relationTo: "instruments", value: 123 },
       kind: "BOOKING",
       purpose: "Live-stack-shaped booking",
     });

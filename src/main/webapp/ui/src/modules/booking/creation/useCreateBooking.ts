@@ -53,7 +53,7 @@ export function useCreateBooking(token: string) {
     mutationFn: (submission: BookingFormSubmission) =>
       createBooking(
         {
-          target: { relationTo: "booking-instruments", value: submission.target.targetId },
+          target: { relationTo: "instruments", value: submission.target.targetId },
           start: submission.window.start,
           end: submission.window.end,
           purpose: submission.purpose,

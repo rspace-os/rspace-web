@@ -19,7 +19,7 @@ const booking = {
   id: 41,
   version: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: {
       id: 123,
       name: "Confocal microscope",

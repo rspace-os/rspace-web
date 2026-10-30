@@ -24,7 +24,7 @@ const document = {
   id: 41,
   version: 7,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     value: { id: 123, name: "Confocal microscope", deleted: false },
     globalId: "IN123",
   },

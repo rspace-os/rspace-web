@@ -45,7 +45,7 @@ export const editableBooking = {
   id: 41,
   version: 0,
   target: {
-    relationTo: "booking-instruments",
+    relationTo: "instruments",
     globalId: "IN123",
     value: { id: 123, name: "Confocal microscope", deleted: false },
   },
