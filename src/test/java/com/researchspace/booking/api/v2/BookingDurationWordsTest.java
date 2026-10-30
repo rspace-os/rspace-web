@@ -1,4 +1,4 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

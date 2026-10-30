@@ -121,7 +121,7 @@ public final class ApiV2OpenApiGenerator {
                     schemas, resource, componentNames.get(resource.resourceName())));
     catalog
         .routableResources()
-        .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
+        .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas, schemas));
 
     schemas.replaceAll((name, schema) -> withNullableReferenceProperties(schema));
     Map<String, Object> components = new LinkedHashMap<>();
@@ -163,7 +163,8 @@ public final class ApiV2OpenApiGenerator {
       Map<String, Object> paths,
       ApiV2ResourceRegistration<?, ?> resource,
       Map<String, String> componentNames,
-      Map<String, ResourceSchema> resourceSchemas) {
+      Map<String, ResourceSchema> resourceSchemas,
+      Map<String, Object> schemas) {
     String collectionPath = "/api/v2/" + resource.resourceName();
     String itemPath = collectionPath + "/{id}";
     String countPath = collectionPath + "/count";
@@ -183,7 +184,7 @@ public final class ApiV2OpenApiGenerator {
       if (pathItem.containsKey(method)) {
         throw new IllegalArgumentException("Duplicate OpenAPI operation " + method + " " + path);
       }
-      pathItem.put(method, operation(resource, operation, component, resourceSchemas));
+      pathItem.put(method, operation(resource, operation, component, resourceSchemas, schemas));
     }
     addAuditPaths(paths, resource, component);
     addResourceAccessPaths(paths, resource, component);
@@ -211,7 +212,8 @@ public final class ApiV2OpenApiGenerator {
       ApiV2ResourceRegistration<?, ?> resource,
       ResourceOperation operation,
       String component,
-      Map<String, ResourceSchema> resourceSchemas) {
+      Map<String, ResourceSchema> resourceSchemas,
+      Map<String, Object> schemas) {
     ResourceSchema schema = resource.description().schema();
     OpenApiOperationDocumentation documentation = resource.operationDocumentation(operation);
     Map<String, Object> result = new LinkedHashMap<>();
@@ -290,7 +292,7 @@ public final class ApiV2OpenApiGenerator {
       putIfNotNull(media, "example", documentation.requestExample());
       result.put("requestBody", ordered("required", true, "content", Map.of(JSON, media)));
     }
-    result.put("responses", responses(resource, operation, component, documentation));
+    result.put("responses", responses(resource, operation, component, documentation, schemas));
     result.put("x-rspace-operation", operation.name());
     result.putAll(documentation.extensions());
     return result;
@@ -344,7 +346,8 @@ public final class ApiV2OpenApiGenerator {
       ApiV2ResourceRegistration<?, ?> resource,
       ResourceOperation operation,
       String component,
-      OpenApiOperationDocumentation documentation) {
+      OpenApiOperationDocumentation documentation,
+      Map<String, Object> schemas) {
     Map<String, Object> responses = new LinkedHashMap<>();
     String successStatus =
         operation == ResourceOperation.CREATE || operation == ResourceOperation.BULK_CREATE
@@ -434,6 +437,29 @@ public final class ApiV2OpenApiGenerator {
                 mutable.put("description", responseDocumentation.description());
                 responses.put(String.valueOf(status), mutable);
               }
+            });
+    documentation
+        .problemSchemas()
+        .forEach(
+            (status, type) -> {
+              Object existing = responses.get(String.valueOf(status));
+              if (existing == null)
+                throw new IllegalArgumentException(
+                    "Problem schema needs a documented response: " + status);
+              Map<String, Object> response = new LinkedHashMap<>(mutableObjectMap(existing));
+              if (response.containsKey("$ref")) {
+                String name =
+                    response.remove("$ref").toString().replace("#/components/responses/", "");
+                response.putAll(mutableObjectMap(standardResponses().get(name)));
+              }
+              Map<String, Object> content =
+                  new LinkedHashMap<>(mutableObjectMap(response.get("content")));
+              Map<String, Object> media =
+                  new LinkedHashMap<>(mutableObjectMap(content.get(PROBLEM_JSON)));
+              media.put("schema", ApiV2OpenApiSchemas.schemaFor(type, schemas));
+              content.put(PROBLEM_JSON, media);
+              response.put("content", content);
+              responses.put(String.valueOf(status), response);
             });
     return responses;
   }

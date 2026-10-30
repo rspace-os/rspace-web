@@ -1,6 +1,6 @@
 package com.researchspace.api.v2.resource;
 
-import com.researchspace.api.v2.controller.ApiV2Problem;
+import java.util.Map;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 
@@ -10,14 +10,14 @@ public final class ApiV2ResourceException extends RuntimeException {
   private final HttpStatus status;
   private final String errorCode;
   private final Object[] arguments;
-  private final transient ApiV2Problem.Extensions extensions;
+  private final transient Map<String, Object> extensions;
 
   ApiV2ResourceException(
       RuntimeException cause,
       HttpStatus status,
       String errorCode,
       Object[] arguments,
-      ApiV2Problem.Extensions extensions) {
+      Map<String, Object> extensions) {
     super(errorCode, cause);
     this.status = Objects.requireNonNull(status, "Error status");
     this.errorCode = Objects.requireNonNull(errorCode, "Error code");
@@ -26,8 +26,7 @@ public final class ApiV2ResourceException extends RuntimeException {
   }
 
   public static ApiV2ResourceException of(HttpStatus status, String errorCode) {
-    return new ApiV2ResourceException(
-        null, status, errorCode, new Object[0], ApiV2Problem.Extensions.NONE);
+    return new ApiV2ResourceException(null, status, errorCode, new Object[0], Map.of());
   }
 
   public HttpStatus status() {
@@ -43,7 +42,7 @@ public final class ApiV2ResourceException extends RuntimeException {
   }
 
   /** RFC 9457 extension members for the problem body; never {@code null}. */
-  public ApiV2Problem.Extensions extensions() {
+  public Map<String, Object> extensions() {
     return extensions;
   }
 }
