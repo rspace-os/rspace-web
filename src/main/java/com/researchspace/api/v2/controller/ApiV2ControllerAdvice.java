@@ -8,12 +8,6 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
-import com.researchspace.booking.service.BookingConfigurationLifecycleException;
-import com.researchspace.booking.service.BookingPolicyException;
-import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
-import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
-import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
-import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.throttling.ThrottlingException;
 import com.researchspace.model.collection.CollectionQueryException;
@@ -33,6 +27,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -70,7 +65,8 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 @ControllerAdvice(
     basePackageClasses = ApiV2ControllerAdvice.class,
     assignableTypes = ApiV2OpenApiController.class)
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Primary
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @Slf4j
 public class ApiV2ControllerAdvice {
 
@@ -182,39 +178,6 @@ public class ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleAuditUnavailable(ApiV2AuditUnavailableException ex) {
     log.error("REST API v2 audit snapshot is unavailable", ex.getCause());
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "errors.api.v2.audit.unavailable");
-  }
-
-  @ExceptionHandler(InvalidBookingSchedulingSettingsException.class)
-  public ResponseEntity<ApiV2Problem> handleInvalidBookingSettings(
-      InvalidBookingSchedulingSettingsException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
-  }
-
-  @ExceptionHandler(InvalidBookingDisplaySettingsException.class)
-  public ResponseEntity<ApiV2Problem> handleInvalidBookingDisplaySettings(
-      InvalidBookingDisplaySettingsException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
-  }
-
-  @ExceptionHandler(InvalidBookingDefaultSharingException.class)
-  public ResponseEntity<ApiV2Problem> handleInvalidBookingDefaultSharing() {
-    return problem(
-        HttpStatus.BAD_REQUEST, "errors.api.v2.bookingConfiguration.defaultSharing.invalid");
-  }
-
-  @ExceptionHandler(BookingPolicyException.class)
-  public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
-  }
-
-  @ExceptionHandler(BookingConfigurationLifecycleException.class)
-  public ResponseEntity<ApiV2Problem> handleBookingConfigurationLifecycle() {
-    return problem(HttpStatus.CONFLICT, BookingConfigurationLifecycleException.MESSAGE_KEY);
-  }
-
-  @ExceptionHandler(StaleBookingSettingsException.class)
-  public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
-    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.stale");
   }
 
   @ExceptionHandler(ApiV2ResourceException.class)

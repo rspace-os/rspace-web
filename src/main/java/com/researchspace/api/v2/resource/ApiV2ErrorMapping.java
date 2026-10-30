@@ -11,13 +11,15 @@ public record ApiV2ErrorMapping(
     HttpStatus status,
     String errorCode,
     String description,
-    Function<RuntimeException, Object[]> argumentExtractor) {
+    Function<RuntimeException, Object[]> argumentExtractor,
+    Function<RuntimeException, String> errorCodeExtractor) {
 
   public ApiV2ErrorMapping {
     Objects.requireNonNull(exceptionType, "Exception type");
     Objects.requireNonNull(status, "Error status");
     Assert.hasText(errorCode, "Error code must not be blank");
     Assert.hasText(description, "Error description must not be blank");
+    Objects.requireNonNull(errorCodeExtractor, "Error code extractor");
     Objects.requireNonNull(argumentExtractor, "Error argument extractor");
     if (!status.isError()) {
       throw new IllegalArgumentException("Resource error mapping requires an error status");
@@ -41,14 +43,31 @@ public record ApiV2ErrorMapping(
         status,
         errorCode,
         description,
-        exception -> argumentExtractor.apply(exceptionType.cast(exception)));
+        exception -> argumentExtractor.apply(exceptionType.cast(exception)),
+        ignored -> errorCode);
+  }
+
+  /** Maps reason-bearing failures while retaining a representative documented error code. */
+  public static <E extends RuntimeException> ApiV2ErrorMapping withErrorCode(
+      Class<E> type,
+      HttpStatus status,
+      String documentedCode,
+      String description,
+      Function<E, String> errorCodeExtractor) {
+    return new ApiV2ErrorMapping(
+        type,
+        status,
+        documentedCode,
+        description,
+        ignored -> new Object[0],
+        exception -> errorCodeExtractor.apply(type.cast(exception)));
   }
 
   public ApiV2ResourceException translate(RuntimeException exception) {
     return new ApiV2ResourceException(
         exception,
         status,
-        errorCode,
+        errorCodeExtractor.apply(exception),
         Objects.requireNonNull(argumentExtractor.apply(exception), "Mapped error arguments"));
   }
 
