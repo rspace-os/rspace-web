@@ -245,6 +245,17 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   @Test
+  void disabledBookingIsUnavailableForCalendarWrites() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.create(CONFIGURATION_ID, owner, owner));
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.createUser(owner, owner));
+  }
+
+  @Test
   void statusRequiresAnActivePersonalCaller() {
     User delegate = TestFactory.createAnyUser("delegate");
     delegate.setId(8L);
@@ -276,6 +287,9 @@ class BookingCalendarManagerSubscriptionTest {
     assertThrows(
         BookingConfigurationLifecycleException.class,
         () -> manager.create(CONFIGURATION_ID, owner, owner));
+    assertThrows(
+        BookingConfigurationLifecycleException.class,
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"stale\""));
   }
 
   @Test
@@ -553,6 +567,6 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   private static InstrumentReadSummary instrument(long id, String name, boolean deleted) {
-    return new InstrumentReadSummary(id, name, deleted, null, null, null);
+    return new InstrumentReadSummary(id, name, deleted, null);
   }
 }

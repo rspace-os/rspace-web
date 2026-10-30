@@ -218,7 +218,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
-        .andExpect(status().isConflict())
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
     String currentEtag =
@@ -242,7 +242,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, currentEtag))
-        .andExpect(status().isConflict());
+        .andExpect(status().isPreconditionFailed());
   }
 
   @Test
@@ -268,7 +268,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
-        .andExpect(status().isConflict())
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
     String currentEtag =
@@ -292,7 +292,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, currentEtag))
-        .andExpect(status().isConflict());
+        .andExpect(status().isPreconditionFailed());
   }
 
   @Test
@@ -320,7 +320,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, gzipped))
-        .andExpect(status().isConflict())
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
     long configurationId = readableConfiguration();

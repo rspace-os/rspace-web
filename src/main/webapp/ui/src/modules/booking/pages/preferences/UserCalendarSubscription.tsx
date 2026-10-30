@@ -68,7 +68,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
       queryClient.setQueryData(userCalendarSubscriptionQueryKey, rotated);
     },
     onError: (error) => {
-      if (error instanceof ApiV2ProblemError && error.status === 409) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
       }
     },
@@ -86,7 +86,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
   });
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
   const pending = create.isPending || rotate.isPending || revoke.isPending;
-  const rotateConflict = rotate.error instanceof ApiV2ProblemError && rotate.error.status === 409;
+  const rotateConflict = rotate.error instanceof ApiV2ProblemError && rotate.error.status === 412;
 
   const copyLink = async () => {
     if (subscriptionUrl === null) return;

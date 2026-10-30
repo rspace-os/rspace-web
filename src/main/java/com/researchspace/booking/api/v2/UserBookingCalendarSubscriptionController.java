@@ -73,7 +73,7 @@ public class UserBookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public ResponseEntity<StatusDocument> get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
@@ -115,7 +115,7 @@ public class UserBookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public ResponseEntity<CreatedDocument> create(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
@@ -147,9 +147,9 @@ public class UserBookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
         @ApiResponse(
-            responseCode = "409",
+            responseCode = "412",
             description = "The subscription is missing or changed since it was read."),
         @ApiResponse(responseCode = "400", description = "Invalid If-Match."),
         @ApiResponse(responseCode = "428", description = "If-Match is required.")
@@ -180,7 +180,7 @@ public class UserBookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "204", description = "The subscription is inactive."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public ResponseEntity<Void> revoke(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
@@ -212,7 +212,7 @@ public class UserBookingCalendarSubscriptionController {
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public List<ItemLinkDocument> itemLinks(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {

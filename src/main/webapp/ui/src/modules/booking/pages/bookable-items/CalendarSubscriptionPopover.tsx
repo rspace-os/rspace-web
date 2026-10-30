@@ -89,7 +89,7 @@ export function CalendarSubscriptionPopover({
     },
     onError: async (error) => {
       setConfirming(null);
-      if (error instanceof ApiV2ProblemError && error.status === 409) await status.refetch();
+      if (error instanceof ApiV2ProblemError && error.status === 412) await status.refetch();
     },
   });
   const revokeMutation = useMutation({
@@ -208,7 +208,7 @@ export function CalendarSubscriptionPopover({
   };
 
   const manageLink = () => {
-    const rotateConflict = rotateMutation.error instanceof ApiV2ProblemError && rotateMutation.error.status === 409;
+    const rotateConflict = rotateMutation.error instanceof ApiV2ProblemError && rotateMutation.error.status === 412;
     return (
       <div className="space-y-2 border-t pt-4">
         {confirming ? (

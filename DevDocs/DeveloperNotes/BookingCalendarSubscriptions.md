@@ -15,7 +15,7 @@ one contract:
   a URL another request just returned.
 - `POST …/rotate` is the only way to replace a URL. It requires the last
   received ETag as `If-Match`: missing preconditions return 428, and a stale
-  ETag or a missing subscription returns 409. On conflict, reload the status and
+  ETag or a missing subscription returns 412. On conflict, reload the status and
   show its current URL.
 - `DELETE` revokes the link.
 
