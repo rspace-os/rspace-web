@@ -2,7 +2,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

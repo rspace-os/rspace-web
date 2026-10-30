@@ -1,4 +1,4 @@
-import { HttpResponse } from "msw";
+import { HttpResponse } from "msw/http";
 import { describe, expect, it } from "vitest";
 import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -300,6 +300,6 @@ describe("removeRaidIdentifierAjax", () => {
     await removeRaidIdentifierAjax(mockParams);
 
     expect(requests).toHaveLength(1);
-    expect(requests[0].body).toBeNull();
+    expect(await requests[0].text()).toBe("");
   });
 });

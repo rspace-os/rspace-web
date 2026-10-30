@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render as renderWithoutQueryClient, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import type React from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -403,7 +403,7 @@ describe("OperationWizard step flow", () => {
 
     await user.click(nextButton());
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
-    expect(screen.getByTestId("tmpl-remembered-error")).toHaveTextContent(/rememberedDeleted/);
+    expect(screen.getByTestId("tmpl-remembered-error")).toMatchTextContent(/rememberedDeleted/);
   });
 
   it("never substitutes the parent's template for a trashed remembered one", async () => {
@@ -423,7 +423,7 @@ describe("OperationWizard step flow", () => {
     expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
     await user.click(nextButton());
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
-    expect(screen.getByTestId("tmpl-remembered-error")).toHaveTextContent(/rememberedDeleted/);
+    expect(screen.getByTestId("tmpl-remembered-error")).toMatchTextContent(/rememberedDeleted/);
     expect(nextButton()).toBeDisabled();
   });
 
@@ -436,7 +436,7 @@ describe("OperationWizard step flow", () => {
     await fillDerive(user, "dna");
     await user.click(nextButton()); // details -> template
 
-    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/templateDeleted/));
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toMatchTextContent(/templateDeleted/));
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("null");
     expect(nextButton()).toBeDisabled();
   });
@@ -468,7 +468,7 @@ describe("OperationWizard step flow", () => {
     await fillDerive(user, "dna");
     await user.click(nextButton()); // details -> template
 
-    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/mandatoryFieldsError/));
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toMatchTextContent(/mandatoryFieldsError/));
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("null");
     expect(nextButton()).toBeDisabled();
   });
@@ -482,7 +482,7 @@ describe("OperationWizard step flow", () => {
     await fillDerive(user, "dna");
     await user.click(nextButton());
 
-    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/lookupFailed/));
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toMatchTextContent(/lookupFailed/));
     expect(nextButton()).toBeDisabled();
   });
 
@@ -673,7 +673,7 @@ describe("OperationWizard step flow", () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
     // The toast sits outside the modal, where assistive technology cannot reach it.
-    expect(screen.getByRole("alert")).toHaveTextContent(/backend rejected the request/);
+    expect(screen.getByRole("alert")).toMatchTextContent(/backend rejected the request/);
     await user.click(screen.getByRole("button", { name: /actions\.back/i }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -683,9 +683,9 @@ describe("OperationWizard step flow", () => {
     render(<OperationWizard open onClose={vi.fn()} origins={[mockOrigin()]} />);
     await fillDerive(user, "dna");
     expect(document.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
-    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.details/);
+    expect(document.querySelector('[aria-current="step"]')).toMatchTextContent(/step\.details/);
     await user.click(nextButton());
-    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.template/);
+    expect(document.querySelector('[aria-current="step"]')).toMatchTextContent(/step\.template/);
   });
 
   // --- the edit-session lock the wizard holds on its origins ---
@@ -1000,7 +1000,7 @@ describe("OperationWizard step flow", () => {
       await user.type(screen.getByTestId("proc"), "dna");
       await user.click(screen.getByTestId("fill-taken-1"));
       await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
-      await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(expected));
+      await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toMatchTextContent(expected));
       unmount();
     }
   });

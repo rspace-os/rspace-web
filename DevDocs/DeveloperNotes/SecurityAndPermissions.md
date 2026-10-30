@@ -165,6 +165,15 @@ Security events and exceptions should be logged by a security logger
 out of a controller will be logged correctly using the
 `ControllerExceptionHandler` wired into controllers.
 
+## ZAP pull request scans
+
+`.github/workflows/zap-pr.yml` builds each PR's WAR without secrets.
+`.github/workflows/zap-pr-scan.yml` then scans it from the default branch, so
+changes to the scan take effect only after they merge.
+
+The scan enables production CSRF and CORS settings over the development `csrf.filters.enabled=true` and `api.permissiveCors.enabled=false`
+template. Keep them when changing the scan setup.
+
 ## Sorting paginated listings
 
 The `orderBy` request parameter on legacy listings is bound straight onto

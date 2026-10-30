@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 export const MOCK_PLAN_ID = "mock-plan-1";
 export const MOCK_PLAN_LABEL = "Mock Data Management Plan";

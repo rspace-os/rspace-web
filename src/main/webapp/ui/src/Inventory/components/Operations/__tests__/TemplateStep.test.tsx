@@ -154,7 +154,7 @@ describe("TemplateStep", () => {
     );
     // cimode renders the key without its parameters, so the name itself is asserted in English
     // below.
-    expect(screen.getByRole("alert")).toHaveTextContent(/template\.selectedLabel/);
+    expect(screen.getByRole("alert")).toMatchTextContent(/template\.selectedLabel/);
     for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
     expect(screen.queryByTestId("template-picker")).not.toBeInTheDocument();
   });
@@ -338,7 +338,7 @@ describe("TemplateStep failure and clearing paths", () => {
       <TemplateStep value={fromSampleMode} onChange={() => undefined} originSampleName="S1" parentTemplateChecking />,
     );
     const status = await screen.findByRole("status");
-    expect(status).toHaveTextContent(/template\.checking/);
+    expect(status).toMatchTextContent(/template\.checking/);
   });
 
   it("announces the wizard's parent-template block as an alert", () => {
@@ -366,7 +366,7 @@ describe("TemplateStep failure and clearing paths", () => {
     );
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/mandatoryFieldsError/);
-    expect(alert).not.toHaveTextContent("parent problem");
+    expect(alert).toMatchTextContent(/mandatoryFieldsError/);
+    expect(alert).not.toMatchTextContent("parent problem");
   });
 });

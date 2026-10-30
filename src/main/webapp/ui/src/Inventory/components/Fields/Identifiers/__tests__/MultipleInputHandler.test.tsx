@@ -29,7 +29,7 @@ describe("MultipleInputHandler — Dates field", () => {
       <MultipleInputHandler field={datesField(new Date(2027, 4, 25))} activeResult={mockActiveResult} editable />,
       { wrapper: Wrapper },
     );
-    expect(container).not.toHaveTextContent("common:inputs.dateField.invalidDate");
+    expect(container).not.toMatchTextContent("common:inputs.dateField.invalidDate");
   });
 
   test("in read-only mode a Date value is displayed as a yyyy-MM-dd string", () => {

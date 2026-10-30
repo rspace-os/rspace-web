@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 export const MOCK_EGNYTE_ACCESS_TOKEN = "mock-egnyte-access-token";
 export const MOCK_EGNYTE_FILE_NAME = "mock-egnyte-file.txt";

@@ -1066,7 +1066,7 @@ paths:
         Any sample request against the sample that is still PENDING or APPROVED
         is closed: a request raised by the new owner is fulfilled, recording the
         sample as the transferred sample; any other is rejected, with a reason
-        naming the new owner.
+        saying that the sample went to another user.
 
 
         ## Examples of the request body
@@ -1378,7 +1378,8 @@ paths:
         when the request is raised and cannot be set here. Transferring the
         requested sample to a new owner also closes the request if it is still
         PENDING or APPROVED: it is fulfilled if the new owner is the requester,
-        and rejected otherwise, with a reason that names the new owner.
+        and rejected otherwise, with a reason saying that the sample went to
+        another user.
 
         `transferredSampleGlobalId` optionally gives the global id of the sample
         the request was fulfilled with, e.g. the requested sample itself or a
@@ -5157,8 +5158,8 @@ components:
           type: string
           nullable: true
           description: >-
-            Set for a rejection, and for a fulfilment made by transferring the
-            sample to its requester; null otherwise.
+            The owner's reason for a rejection, or why a change of owner closed
+            the request automatically; null otherwise.
         transferredSample:
           allOf:
             - $ref: "#/components/schemas/SampleInfo"

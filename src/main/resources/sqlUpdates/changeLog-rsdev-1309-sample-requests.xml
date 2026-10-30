@@ -112,6 +112,9 @@
                 <constraints nullable="false"/>
             </column>
             <column name="reason" type="VARCHAR(2000)"/>
+            <column name="autoClosed" type="bit" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
             <!-- the sample a fulfilment handed over, if recorded -->
             <column name="transferredSample_id" type="BIGINT">
                 <constraints nullable="true" foreignKeyName="fk_srsc_transferredsample"

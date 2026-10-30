@@ -1,4 +1,4 @@
-import { HttpResponse } from "msw";
+import { HttpResponse } from "msw/http";
 import { describe, expect, it } from "vitest";
 import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { getStoichiometry } from "@/modules/stoichiometry/queries";

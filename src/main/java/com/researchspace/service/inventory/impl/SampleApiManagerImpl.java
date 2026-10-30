@@ -117,7 +117,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       return none;
     }
     ISearchResults<Sample> dbSamples =
-        sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, query, user);
+        Boolean.TRUE.equals(requestable)
+            ? sampleDao.getRequestableSamples(pgCrit, ownedBy, query)
+            : sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, user);
     List<ApiSampleInfo> sampleInfos = new ArrayList<>();
     for (Sample sample : dbSamples.getResults()) {
       ApiSampleInfo apiSample = new ApiSampleInfo(sample);
@@ -781,13 +783,14 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     Validate.notNull(apiSample.getOwner().getUsername(), "'owner.username' field not present");
 
     SampleEntity dbSample = getIfExists(apiSample.getId());
-    // a transfer committed since the sample was read must be seen, and none may overtake this one
-    sampleDao.refreshForUpdate(dbSample);
+    // checked again under the lock; this one keeps a caller who may not transfer from locking
     invPermissions.assertUserCanTransferInventoryRecord(dbSample, user);
-
     boolean temporaryLock = lockItemForEdit(dbSample, user);
 
     try {
+      // a transfer committed since the sample was read must be seen, and none may overtake this one
+      sampleDao.refreshForUpdate(dbSample);
+      invPermissions.assertUserCanTransferInventoryRecord(dbSample, user);
       dbSample = getIfExists(dbSample.getId());
       User originalOwner = dbSample.getOwner();
       String newOwnerUsername = apiSample.getOwner().getUsername();

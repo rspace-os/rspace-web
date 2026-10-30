@@ -13,7 +13,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-import java.io.Serializable;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
@@ -22,11 +21,9 @@ import lombok.Setter;
 @Entity
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SampleRequestStatusChange implements Serializable {
+public class SampleRequestStatusChange {
 
   public static final int REASON_COLUMN_LENGTH = 2000;
-
-  private static final long serialVersionUID = 1L;
 
   private Long id;
   private SampleRequest sampleRequest;
@@ -34,6 +31,7 @@ public class SampleRequestStatusChange implements Serializable {
   private Long createdById;
   private SampleRequestStatus status;
   private String reason;
+  private boolean autoClosed;
   private Sample transferredSample;
   private Date created = new Date();
 
@@ -96,10 +94,15 @@ public class SampleRequestStatusChange implements Serializable {
     return status;
   }
 
-  /** Set for a rejection, and for a fulfilment made by a transfer. */
+  /** The reason the owner gave for a rejection. */
   @Column(length = REASON_COLUMN_LENGTH)
   public String getReason() {
     return reason;
+  }
+
+  /** Whether a transfer closed the request as a side effect, not an action on the request. */
+  public boolean isAutoClosed() {
+    return autoClosed;
   }
 
   /** The sample this transition fulfilled the request with, if any. */

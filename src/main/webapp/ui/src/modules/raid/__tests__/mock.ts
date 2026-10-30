@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import raidsFixture from "./fixtures/raids.json" with { type: "json" };
 import servicePointFixture from "./fixtures/servicePoint.json" with { type: "json" };
 

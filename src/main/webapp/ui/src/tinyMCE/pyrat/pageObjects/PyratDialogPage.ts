@@ -74,10 +74,12 @@ export class PyratDialogPage {
   }
 
   async selectAnimal(eartag: string): Promise<void> {
-    // The row overrides its role to checkbox and also labels the checkbox
-    // input inside it, so both match the eartag; scope to the row (the
-    // first match, as it precedes its descendant) and click its checkbox.
-    const row = page.getByRole("checkbox", { name: eartag }).first();
+    // The row overrides its role to checkbox and labels the input inside it,
+    // so both are named by the whole row; find the row by its eartag cell.
+    const row = page
+      .getByRole("checkbox")
+      .filter({ has: page.getByText(eartag, { exact: true }) })
+      .first();
     await row.getByRole("checkbox").click();
   }
 
