@@ -1981,6 +1981,30 @@
           "description" : "A logged-in session is required."
         }
       },
+      "BookingConflict" : {
+        "properties" : {
+          "end" : {
+            "example" : "2026-09-28T10:00:00Z",
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "kind" : {
+            "enum" : [ "BOOKING", "MAINTENANCE" ],
+            "type" : "string"
+          },
+          "start" : {
+            "example" : "2026-09-28T08:00:00Z",
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "end", "id", "kind", "start" ],
+        "type" : "object"
+      },
       "BookingDisplayPreferences" : {
         "properties" : {
           "availabilityWindowEnd" : {
@@ -2036,6 +2060,38 @@
           }
         },
         "type" : "object"
+      },
+      "BookingProblem" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/ApiV2Problem"
+        }, {
+          "properties" : {
+            "bufferAfterMinutes" : {
+              "description" : "Minutes that must stay free after another event. Present on errors.api.v2.booking.buffer.",
+              "format" : "int64",
+              "type" : [ "integer", "null" ]
+            },
+            "bufferBeforeMinutes" : {
+              "description" : "Minutes that must stay free before another event. Present on errors.api.v2.booking.buffer.",
+              "format" : "int64",
+              "type" : [ "integer", "null" ]
+            },
+            "conflict" : {
+              "anyOf" : [ {
+                "$ref" : "#/components/schemas/BookingConflict"
+              }, {
+                "type" : "null"
+              } ],
+              "description" : "The existing event that blocks the requested booking interval. Present on errors.api.v2.booking.overlap and errors.api.v2.booking.buffer."
+            },
+            "maximumDurationMinutes" : {
+              "description" : "The bookable item's maximum booking duration. Present on errors.api.v2.booking.maximumDuration.",
+              "format" : "int64",
+              "type" : [ "integer", "null" ]
+            }
+          },
+          "type" : "object"
+        } ]
       },
       "BookingsCreate" : {
         "additionalProperties" : false,
@@ -4265,14 +4321,13 @@
     },
     "/api/v2/booking-configuration-targets" : {
       "get" : {
+        "description" : "Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.",
         "operationId" : "searchBookingConfigurationTargets",
         "parameters" : [ {
-          "description" : "Case-insensitive search text.",
+          "description" : "Optional case-insensitive search text. Omit it or provide an empty or whitespace-only value to browse the first `limit` eligible targets by name. A nonblank value must have at least two characters after trimming.",
           "in" : "query",
           "name" : "q",
-          "required" : true,
           "schema" : {
-            "minLength" : 2,
             "type" : "string"
           }
         }, {
@@ -5813,6 +5868,26 @@
                   "dayOfWeek" : 1,
                   "end" : "18:00",
                   "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 2,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 3,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 4,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 5,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 6,
+                  "end" : "16:00",
+                  "start" : "10:00"
                 } ],
                 "slotGranularityMinutes" : 5,
                 "target" : {
@@ -8868,7 +8943,7 @@
                   }
                 },
                 "schema" : {
-                  "$ref" : "#/components/schemas/ApiV2Problem"
+                  "$ref" : "#/components/schemas/BookingProblem"
                 }
               }
             },
@@ -8887,6 +8962,15 @@
             "content" : {
               "application/problem+json" : {
                 "examples" : {
+                  "errors.api.v2.booking.buffer" : {
+                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.buffer",
+                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                      "status" : 409,
+                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
+                    }
+                  },
                   "errors.api.v2.booking.concurrentModification" : {
                     "summary" : "The schedule changed while the booking was being created.",
                     "value" : {
@@ -8897,12 +8981,12 @@
                     }
                   },
                   "errors.api.v2.booking.overlap" : {
-                    "summary" : "The interval overlaps another booking.",
+                    "summary" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                     "value" : {
                       "code" : "errors.api.v2.booking.overlap",
-                      "detail" : "The interval overlaps another booking.",
+                      "detail" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                       "status" : 409,
-                      "title" : "The interval overlaps another booking."
+                      "title" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event."
                     }
                   },
                   "errors.api.v2.booking.target.unavailable" : {
@@ -8916,11 +9000,11 @@
                   }
                 },
                 "schema" : {
-                  "$ref" : "#/components/schemas/ApiV2Problem"
+                  "$ref" : "#/components/schemas/BookingProblem"
                 }
               }
             },
-            "description" : "The selected target is unavailable. The interval overlaps another booking. The schedule changed while the booking was being created."
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The schedule changed while the booking was being created."
           },
           "415" : {
             "$ref" : "#/components/responses/UnsupportedMediaType"
@@ -9590,7 +9674,7 @@
                   }
                 },
                 "schema" : {
-                  "$ref" : "#/components/schemas/ApiV2Problem"
+                  "$ref" : "#/components/schemas/BookingProblem"
                 }
               }
             },
@@ -9612,13 +9696,22 @@
             "content" : {
               "application/problem+json" : {
                 "examples" : {
+                  "errors.api.v2.booking.buffer" : {
+                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.buffer",
+                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                      "status" : 409,
+                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
+                    }
+                  },
                   "errors.api.v2.booking.overlap" : {
-                    "summary" : "The interval overlaps another booking.",
+                    "summary" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                     "value" : {
                       "code" : "errors.api.v2.booking.overlap",
-                      "detail" : "The interval overlaps another booking.",
+                      "detail" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                       "status" : 409,
-                      "title" : "The interval overlaps another booking."
+                      "title" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event."
                     }
                   },
                   "errors.api.v2.booking.state.transition" : {
@@ -9641,11 +9734,11 @@
                   }
                 },
                 "schema" : {
-                  "$ref" : "#/components/schemas/ApiV2Problem"
+                  "$ref" : "#/components/schemas/BookingProblem"
                 }
               }
             },
-            "description" : "The selected target is unavailable. The interval overlaps another booking. The requested state transition is invalid."
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The requested state transition is invalid."
           },
           "412" : {
             "content" : {
