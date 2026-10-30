@@ -1,5 +1,6 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
+import com.researchspace.api.v2.controller.ResourceAccessController;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.fasterxml.jackson.databind.JsonNode;
