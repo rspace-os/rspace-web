@@ -124,7 +124,10 @@ const eligibleBookingTargetFixture = {
 export function bookableItemsHandlers(onCollectionRequest: (request: Request) => void): RequestHandler[] {
   return [
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
-    http.get("/api/v2/booking-configuration-targets", () => HttpResponse.json([eligibleBookingTargetFixture])),
+    http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+      if (new URL(request.url).searchParams.has("query")) return new HttpResponse(null, { status: 400 });
+      return HttpResponse.json({ docs: [eligibleBookingTargetFixture] });
+    }),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");

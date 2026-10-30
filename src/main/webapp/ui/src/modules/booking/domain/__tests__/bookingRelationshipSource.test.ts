@@ -1,7 +1,11 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { bookingInstrumentSource, bookingLocationSource, bookingRelationshipSources } from "../bookingRelationshipSource";
+import {
+  bookingInstrumentSource,
+  bookingLocationSource,
+  bookingRelationshipSources,
+} from "../bookingRelationshipSource";
 
 const signal = () => new AbortController().signal;
 describe("booking relationship source", () => {
