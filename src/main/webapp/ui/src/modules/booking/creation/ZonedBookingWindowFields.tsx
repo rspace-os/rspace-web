@@ -3,7 +3,7 @@ import { GlobeIcon, InfoIcon } from "lucide-react";
 import { type ChangeEvent, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
-import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
+import { formatBookingLength, formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { maximumDurationMessage } from "@/modules/booking/creation/useCreateBooking";
 import { bookingTimeZoneOptions, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
@@ -31,7 +31,7 @@ import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
-import { validateBookingWindow } from "./bookingWindowValidation";
+import { resolveBookingWindow, validateBookingWindow } from "./bookingWindowValidation";
 
 export {
   type BookingWindowPolicy,
@@ -615,11 +615,15 @@ export function ZonedBookingWindowFields({
       );
     }
     if (current === "duration" || current === "dayEndMissing") {
+      const resolved = resolveBookingWindow(value, zones).window;
+      const length = resolved
+        ? formatBookingLength(incrementUnit, resolved, resolvedSchedulingTimezone, t, locale)
+        : "";
       return (
         <FieldError>
           {rule.kind === "days"
-            ? t("bookings.errors.dayIncrement", { increment, timezone: resolvedSchedulingTimezone })
-            : t("bookings.errors.durationMultiple", { increment })}
+            ? t("bookings.errors.dayIncrement", { length, increment, timezone: resolvedSchedulingTimezone })
+            : t("bookings.errors.durationMultiple", { length, increment })}
         </FieldError>
       );
     }
