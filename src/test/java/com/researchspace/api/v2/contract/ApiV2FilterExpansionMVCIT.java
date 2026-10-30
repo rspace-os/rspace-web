@@ -152,7 +152,7 @@ class ApiV2FilterExpansionMVCIT {
     assertListAndCount(scoped, "target.value==" + matchingTarget, Set.of(matchingConfig));
     assertListAndCount(scoped, "target.value=exists=false", Set.of());
     assertListAndCount(
-        scoped, "target.relationTo==booking-instruments", Set.of(matchingConfig, otherConfig));
+        scoped, "target.relationTo==instruments", Set.of(matchingConfig, otherConfig));
     assertBadRequest("id=in=(" + join(scoped) + ");target==XX" + matchingTarget);
   }
 

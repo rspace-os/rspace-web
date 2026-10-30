@@ -429,7 +429,7 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(bookingSelectors.containsKey("target.relationTo"));
     assertEquals(
         Map.of(
-            "resource", "booking-instruments",
+            "resource", "instruments",
             "identity", "globalId",
             "globalIdPrefix", "IN"),
         objectMap(objectMap(bookingSelectors.get("target")).get("picker")));
@@ -828,8 +828,7 @@ class ApiV2OpenApiGeneratorTest {
             CollectionFieldTypes.longNumber(),
             List.of(
                 new RelationshipTarget<>("instruments", "instrument", "IN", Instrument.class),
-                new RelationshipTarget<>(
-                    "booking-instruments", "booking-instrument", "BK", Instrument.class)),
+                new RelationshipTarget<>("users", "user", "US", User.class)),
             new SplitReferenceBinding<MultiTargetFilterFixture, String, Long>(
                 ignored -> null, "target.type", "target.id"));
     CollectionDescription<MultiTargetFilterFixture> description =
@@ -845,14 +844,28 @@ class ApiV2OpenApiGeneratorTest {
     ApiV2ResourceSpec<MultiTargetFilterFixture, Long> spec =
         new ApiV2ResourceSpec<>(
             description, operationsMock(), Long::valueOf, "create-error", "update-error");
-    ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
-        new ApiV2RelationshipTargetSpec<>(
-            ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
-    ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstruments =
-        new ApiV2RelationshipTargetSpec<>(
-            ApiV2BookingInstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
     ApiV2ResourceCatalog catalog =
-        new ApiV2ResourceCatalog(List.of(spec), List.of(instruments, bookingInstruments));
+        new ApiV2ResourceCatalog(
+            List.of(
+                spec,
+                new ApiV2ResourceSpec<>(
+                    ApiV2InstrumentResource.DESCRIPTION,
+                    operationsMock(),
+                    Long::valueOf,
+                    "create-error",
+                    "update-error"),
+                new ApiV2ResourceSpec<>(
+                    ApiV2UserResource.DESCRIPTION,
+                    operationsMock(),
+                    Long::valueOf,
+                    "create-error",
+                    "update-error"),
+                new ApiV2ResourceSpec<>(
+                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                    operationsMock(),
+                    Long::valueOf,
+                    "create-error",
+                    "update-error")));
     return Json31.mapper()
         .convertValue(
             new ApiV2OpenApiGenerator(catalog, "Test API", "2.0.0").generate(),
