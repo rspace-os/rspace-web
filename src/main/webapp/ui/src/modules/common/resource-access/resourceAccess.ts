@@ -95,11 +95,14 @@ export async function searchBookingSettingsGrantees(
   token: string,
   signal?: AbortSignal,
 ): Promise<readonly ResourceGranteeDirectoryEntry[]> {
-  const parameters = new URLSearchParams({ query, limit: "20" });
+  const parameters = new URLSearchParams({ q: query, limit: "20" });
   const response = await fetchWithUiToken(`/api/v2/booking-settings/access-grantees?${parameters}`, {
     headers: headers(token),
     signal,
   });
   if (!response.ok) throw new ResourceAccessRequestError(response.status);
-  return parseOrThrow(v.array(ResourceGranteeDirectoryEntrySchema), (await response.json()) as unknown);
+  return parseOrThrow(
+    v.object({ docs: v.array(ResourceGranteeDirectoryEntrySchema) }),
+    (await response.json()) as unknown,
+  ).docs;
 }

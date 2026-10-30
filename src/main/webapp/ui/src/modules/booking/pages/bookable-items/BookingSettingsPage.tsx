@@ -96,7 +96,7 @@ function BookingSettingsContent() {
           defaultSharedWith,
           selectedGranteeKeys: selectedGrantees.map(({ key }) => key),
         } as BookingSettingsInput,
-        settings.configurationVersion,
+        settings.etag,
         token,
       ),
     onSuccess: async (saved) => {
@@ -273,8 +273,7 @@ function BookingSettingsContent() {
         {mutation.isError ? (
           <FieldError>
             {t(
-              mutation.error instanceof ApiV2ProblemError &&
-                mutation.error.code === "errors.api.v2.bookingConfiguration.stale"
+              mutation.error instanceof ApiV2ProblemError && mutation.error.status === 412
                 ? "settings.errors.stale"
                 : "settings.errors.save",
             )}

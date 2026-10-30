@@ -26,16 +26,19 @@ function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: {
 }
 
 describe("BookingSettingsPage", () => {
-  it("keeps the draft's version after a background settings refresh", async () => {
+  it("keeps the draft's ETag after a background settings refresh", async () => {
     const user = userEvent.setup();
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let current = settings;
     let submitted: unknown;
     server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
+      http.get("/api/v2/booking-settings/admin", () =>
+        HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+      ),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"0"');
         submitted = await request.json();
-        return HttpResponse.json({ status: 409, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 409 });
+        return HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 });
       }),
     );
     renderPage(queryClient);
@@ -53,7 +56,6 @@ describe("BookingSettingsPage", () => {
 
     expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
     expect(submitted).toMatchObject({
-      configurationVersion: 0,
       openingHours: settings.openingHours,
       allowDoubleBooking: true,
     });
@@ -61,7 +63,9 @@ describe("BookingSettingsPage", () => {
   });
 
   it("offers every supported time increment", async () => {
-    server.use(http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)));
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
+    );
     renderPage();
 
     const granularity = await screen.findByRole("combobox", {
@@ -78,10 +82,10 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let patches = 0;
     server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", () => {
         patches += 1;
-        return HttpResponse.json(settings);
+        return HttpResponse.json(settings, { headers: { ETag: '"0"' } });
       }),
     );
     renderPage();
@@ -102,10 +106,15 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let body: unknown;
     server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        if (!request.headers.has("If-Match")) return new HttpResponse(null, { status: 428 });
+        expect(request.headers.get("If-Match")).toBe('"0"');
         body = await request.json();
-        return HttpResponse.json({ ...settings, allowDoubleBooking: true, configurationVersion: 1 });
+        return HttpResponse.json(
+          { ...settings, allowDoubleBooking: true, configurationVersion: 1 },
+          { headers: { ETag: '"1"' } },
+        );
       }),
     );
     renderPage();
@@ -133,7 +142,6 @@ describe("BookingSettingsPage", () => {
       customTimezone: null,
       defaultSharedWith: "ALL_USERS",
       selectedGranteeKeys: [],
-      configurationVersion: 0,
     });
   });
 
@@ -141,10 +149,10 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 });
+        return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 }, { headers: { ETag: '"1"' } });
       }),
     );
     renderPage();
@@ -157,21 +165,21 @@ describe("BookingSettingsPage", () => {
 
     expect(await screen.findByRole("status")).toBeVisible();
     expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
-    expect(body).toMatchObject({ configurationVersion: 0 });
+    expect(body).not.toHaveProperty("configurationVersion");
   });
 
   it("keeps a stale form open and asks the admin to reload", async () => {
     const user = userEvent.setup();
     server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", () =>
         HttpResponse.json(
           {
-            status: 409,
+            status: 412,
             code: "errors.api.v2.bookingConfiguration.stale",
             detail: "stale",
           },
-          { status: 409 },
+          { status: 412 },
         ),
       ),
     );
