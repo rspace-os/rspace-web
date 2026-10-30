@@ -21,6 +21,7 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
@@ -39,7 +40,7 @@ public record ApiV2BookingConfigurationResource(
     @ApiV2ResourceRelationship(
             relationTo =
                 @ApiV2RelationshipTarget(
-                    resource = ApiV2BookingInstrumentResource.RESOURCE_NAME,
+                    resource = ApiV2InstrumentResource.RESOURCE_NAME,
                     entity = Instrument.class,
                     kind = "INSTRUMENT",
                     globalIdPrefix = "IN"),
@@ -104,7 +105,7 @@ public record ApiV2BookingConfigurationResource(
             CollectionFieldTypes.longNumber(),
             List.of(
                 new RelationshipTarget<>(
-                    ApiV2BookingInstrumentResource.RESOURCE_NAME,
+                    ApiV2InstrumentResource.RESOURCE_NAME,
                     BookableTargetType.INSTRUMENT,
                     "IN",
                     com.researchspace.model.inventory.Instrument.class)),
