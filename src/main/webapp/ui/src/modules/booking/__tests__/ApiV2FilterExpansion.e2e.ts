@@ -229,7 +229,7 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
     expect(privatePage.totalDocs).toBe(0);
 
     const runtimeCatalogResponse = await apiContext.get(
-      `/api/v2/instruments/fields/extraFields?search=${encodeURIComponent(fieldName)}`,
+      `/api/v2/instruments/fields/extraFields?q=${encodeURIComponent(fieldName)}`,
       { headers: { apiKey: appUser.apiKey } },
     );
     expect(runtimeCatalogResponse.ok(), await runtimeCatalogResponse.text()).toBe(true);
