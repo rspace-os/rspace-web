@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -24,12 +26,31 @@ public class DMPOnlineProviderImpl implements DMPOnlineProvider {
   @Value("${dmponline.base.url}")
   private String baseUrl;
 
+  private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+  private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
+
   private final RestTemplate restTemplate;
 
   private static String URL_DMP_PLANS;
 
   public DMPOnlineProviderImpl() {
-    this.restTemplate = new RestTemplate();
+    this(CONNECT_TIMEOUT, READ_TIMEOUT);
+  }
+
+  DMPOnlineProviderImpl(Duration connectTimeout, Duration readTimeout) {
+    this.restTemplate = timeoutBoundedRestTemplate(connectTimeout, readTimeout);
+  }
+
+  static RestTemplate timeoutBoundedRestTemplate() {
+    return timeoutBoundedRestTemplate(CONNECT_TIMEOUT, READ_TIMEOUT);
+  }
+
+  private static RestTemplate timeoutBoundedRestTemplate(
+      Duration connectTimeout, Duration readTimeout) {
+    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(connectTimeout);
+    factory.setReadTimeout(readTimeout);
+    return new RestTemplate(factory);
   }
 
   @PostConstruct
