@@ -1,4 +1,4 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -189,9 +189,17 @@ class BookingDisplayPreferencesControllerMVCIT {
   @Test
   void rejectsRequestsWhenBookingIsDisabled() throws Exception {
     setBookingEnabled(false);
+    mockMvc.perform(get(PATH).header("apiKey", fixture.userKey())).andExpect(status().isNotFound());
     mockMvc
-        .perform(get(PATH).header("apiKey", fixture.userKey()))
-        .andExpect(status().isForbidden());
+        .perform(
+            put(PATH)
+                .header("apiKey", fixture.userKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validBody()))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(delete(PATH).header("apiKey", fixture.userKey()))
+        .andExpect(status().isNotFound());
   }
 
   private void setBookingEnabled(boolean enabled) {
