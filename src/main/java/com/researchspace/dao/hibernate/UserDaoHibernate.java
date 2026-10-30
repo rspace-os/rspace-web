@@ -38,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -162,6 +163,17 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         .createQuery("from User where usernameAlias=:usernameAlias", User.class)
         .setParameter("usernameAlias", usernameAlias)
         .uniqueResultOptional();
+  }
+
+  @Override
+  public List<User> getUsersByUsernames(Collection<String> usernames) {
+    if (usernames.isEmpty()) {
+      return List.of();
+    }
+    return getSession()
+        .createQuery("from User where username in (:usernames)", User.class)
+        .setParameterList("usernames", usernames)
+        .list();
   }
 
   public List<User> getUserByEmail(String email) {

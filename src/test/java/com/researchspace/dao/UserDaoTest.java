@@ -62,6 +62,14 @@ public class UserDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void getUsersByUsernamesSkipsUnknownUsernames() {
+    assertThat(userDao.getUsersByUsernames(List.of("user1a", "user2b", "noSuchUser")))
+        .extracting(User::getUsername)
+        .containsExactlyInAnyOrder("user1a", "user2b");
+    assertThat(userDao.getUsersByUsernames(List.of())).isEmpty();
+  }
+
+  @Test
   public void testGetUserBasicInfoWithRole() throws Exception {
 
     List<UserRoleView> users = userDao.getUsersBasicInfoWithRoles();

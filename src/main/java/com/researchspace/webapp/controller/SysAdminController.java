@@ -49,6 +49,7 @@ import com.researchspace.model.views.UserStatistics;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
+import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.SysadminUserCreationHandler;
@@ -239,16 +240,27 @@ public class SysAdminController extends BaseController {
         HttpStatus.BAD_REQUEST, getText("templates.users.accountAlreadyUnlocked"));
   }
 
-  @PostMapping("/ajax/removeUserAccount")
+  @GetMapping("/ajax/removeUserAccount/formsAndTemplatesUsage")
   @ResponseBody
-  public ResponseEntity<Object> removeUserAccount(@RequestParam("userId") Long userId) {
+  public FormsAndTemplatesUsage getFormsAndTemplatesUsage(@RequestParam("userId") Long userId) {
+    assertUserRemovalAllowed();
+    return userDeletionMgr.getFormsAndTemplatesUsage(userId);
+  }
 
+  /** Returns the sysadmin in session. */
+  private User assertUserRemovalAllowed() {
     if (!(TRUE.toString()).equalsIgnoreCase(properties.getDeleteUser())) {
       throw new IllegalStateException(getText("errors.deleteUser.disabled"));
     }
-
     User sysadmin = userManager.getAuthenticatedUserInSession();
     assertUserIsSysAdmin(sysadmin);
+    return sysadmin;
+  }
+
+  @PostMapping("/ajax/removeUserAccount")
+  @ResponseBody
+  public ResponseEntity<Object> removeUserAccount(@RequestParam("userId") Long userId) {
+    User sysadmin = assertUserRemovalAllowed();
 
     try {
       // fail fast

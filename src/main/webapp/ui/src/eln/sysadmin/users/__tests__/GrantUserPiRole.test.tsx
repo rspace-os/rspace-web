@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useUiPreference";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
@@ -54,9 +55,11 @@ describe("Grant User PI Role", () => {
 
         .reply(200, { data: true });
       render(
-        <ThemeProvider theme={materialTheme}>
-          <UsersPage />
-        </ThemeProvider>,
+        <QueryClientProvider client={new QueryClient()}>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </QueryClientProvider>,
       );
       await waitFor(() => {
         expect(screen.getByRole("grid")).toBeVisible();
@@ -99,9 +102,11 @@ describe("Grant User PI Role", () => {
 
         .reply(200, { data: false });
       render(
-        <ThemeProvider theme={materialTheme}>
-          <UsersPage />
-        </ThemeProvider>,
+        <QueryClientProvider client={new QueryClient()}>
+          <ThemeProvider theme={materialTheme}>
+            <UsersPage />
+          </ThemeProvider>
+        </QueryClientProvider>,
       );
       await waitFor(() => {
         expect(screen.getByRole("grid")).toBeVisible();

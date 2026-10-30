@@ -14,7 +14,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.sort.UserSort;
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +27,6 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
   private @Autowired IServerlogRetriever serverLogRetriever;
   private @Autowired CommunityDao commDao;
   private @Autowired RecordDao recordDao;
-  private @Autowired FormDao formDao;
 
   @Override
   public ISearchResults<UserUsageInfo> getUserUsageInfo(
@@ -84,22 +84,13 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         fileUsage = fileDao.getTotalFileUsageForAllUsers(pgCrit);
       }
 
-      Set<User> users = new HashSet<>();
-      for (String uname : fileUsage.keySet()) {
-        if (userDao.userExists(uname)) {
-          users.add(userDao.getUserByUsername(uname));
-        }
-      }
+      List<User> users = getUsersInOrder(fileUsage.keySet());
       Map<String, DatabaseUsageByUserGroupByResult> recordCounts =
           recordDao.getTotalRecordsForUsers(users, pgCrit);
-      for (Entry<String, DatabaseUsageByUserGroupByResult> entry : fileUsage.entrySet()) {
-        if (userDao.userExists(entry.getKey())) {
-          User user = userDao.getUserByUsername(entry.getKey());
-          UserUsageInfo info =
-              setUserUsageInfoProperties(
-                  user, entry.getValue(), recordCounts.get(user.getUsername()));
-          uui.add(info);
-        }
+      for (User user : users) {
+        uui.add(
+            setUserUsageInfoProperties(
+                user, fileUsage.get(user.getUsername()), recordCounts.get(user.getUsername())));
       }
       return new SearchResultsImpl<>(
           uui, pgCrit.getPageNumber().intValue(), totalUsersWithFiles, pgCrit.getResultsPerPage());
@@ -115,18 +106,13 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
       recordCount = recordDao.getTotalRecordsForUsers(pgCrit);
       totalUsersWithRecords = recordDao.getCountOfUsersWithRecords();
     }
-    Map<String, User> users = new HashMap<>();
-    for (String uname : recordCount.keySet()) {
-      users.put(uname, userDao.getUserByUsername(uname));
-    }
+    List<User> users = getUsersInOrder(recordCount.keySet());
     Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
-        fileDao.getTotalFileUsageForUsers(users.values(), pgCrit);
-    for (String uname : recordCount.keySet()) {
-      User user = users.get(uname);
-      UserUsageInfo info =
+        fileDao.getTotalFileUsageForUsers(users, pgCrit);
+    for (User user : users) {
+      uui.add(
           setUserUsageInfoProperties(
-              user, fileUsage.get(user.getUsername()), recordCount.get(uname));
-      uui.add(info);
+              user, fileUsage.get(user.getUsername()), recordCount.get(user.getUsername())));
     }
     return new SearchResultsImpl<>(
         uui, pgCrit.getPageNumber().intValue(), totalUsersWithRecords, pgCrit.getResultsPerPage());
@@ -155,9 +141,18 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .userInfo(new UserPublicInfoForUsageInfo(user))
         .signupSource(user.getSignupSource().toString())
         .lastLogin(user.getLastLogin())
-        .hasFormsUsedByOtherUsers(formDao.hasUserPublishedFormsUsedInOtherRecords(user))
-        .hasTemplatesUsedByOtherUsers(recordDao.hasUserSharedTemplatesUsedByOtherUsers(user))
         .build();
+  }
+
+  /** Keeps the order of {@code usernames}, which reflects the requested sort. */
+  private List<User> getUsersInOrder(Collection<String> usernames) {
+    Map<String, User> byUsername =
+        userDao.getUsersByUsernames(usernames).stream()
+            .collect(Collectors.toMap(User::getUsername, Function.identity()));
+    return usernames.stream()
+        .map(byUsername::get)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   private Community getCommunityForAdmin(User sysadmin, Community comm) {

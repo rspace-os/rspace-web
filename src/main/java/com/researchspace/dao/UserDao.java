@@ -9,6 +9,7 @@ import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -62,6 +63,13 @@ public interface UserDao extends GenericDao<User, Long> {
   Optional<User> getOptionalUserByUsername(String username);
 
   Optional<User> getUserByUsernameAlias(String usernameAlias);
+
+  /**
+   * Looks up users by username in one query.
+   *
+   * @return the users that exist, in no particular order; unknown usernames are skipped
+   */
+  List<User> getUsersByUsernames(Collection<String> usernames);
 
   /**
    * Gets a paginated list of users and returns an {@link ISearchResults}
