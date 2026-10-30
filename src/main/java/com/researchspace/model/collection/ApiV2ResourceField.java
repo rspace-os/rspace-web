@@ -21,6 +21,8 @@ public @interface ApiV2ResourceField {
 
   /** Per-request access presets, resolved to an {@link AccessFunction}. */
   enum AccessPreset {
+    /** No write declared; the field is read-only. */
+    UNDECLARED,
     /** Visible to anyone who may read the collection. */
     INHERITED,
     /** Visible only to an authenticated caller. */
@@ -35,7 +37,7 @@ public @interface ApiV2ResourceField {
         case INHERITED -> AccessFunction.INHERITED;
         case AUTHENTICATED -> AccessFunction.authenticated();
         case SYSADMIN -> AccessFunction.sysadmin();
-        case NEVER -> AccessFunction.never();
+        case UNDECLARED, NEVER -> AccessFunction.never();
       };
     }
   }
@@ -59,10 +61,10 @@ public @interface ApiV2ResourceField {
    * create function receives the complete parsed candidate through {@link
    * AccessContext#requireInput()}.
    */
-  AccessPreset createAccess() default AccessPreset.INHERITED;
+  AccessPreset createAccess() default AccessPreset.UNDECLARED;
 
   /** Who may supply this field when updating a resource. */
-  AccessPreset updateAccess() default AccessPreset.INHERITED;
+  AccessPreset updateAccess() default AccessPreset.UNDECLARED;
 
   boolean requiredOnCreate() default false;
 

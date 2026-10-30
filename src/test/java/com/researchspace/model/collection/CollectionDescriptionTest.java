@@ -522,8 +522,17 @@ class CollectionDescriptionTest {
   @ApiV2ResourceDefinition(name = "annotatedEntities", entity = AnnotatedEntity.class, id = "id")
   private record ApiV2AnnotatedResource(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(maxLength = 10, sortable = false) String value,
-      @ApiV2ResourceField(filterable = false) String serverManaged) {}
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              maxLength = 10,
+              sortable = false)
+          String value,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              filterable = false)
+          String serverManaged) {}
 
   public static final class AnnotatedEntity {
 
@@ -564,42 +573,91 @@ class CollectionDescriptionTest {
   @ApiV2ResourceDefinition(name = "constrained", entity = ConstrainedEntity.class, id = "id")
   private record ConstrainedResource(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(minLength = 2, pattern = "^[A-Z]", example = "AB", defaultValue = "AA")
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              minLength = 2,
+              pattern = "^[A-Z]",
+              example = "AB",
+              defaultValue = "AA")
           String code,
-      @ApiV2ResourceField(minimum = "1", maximum = "7", example = "3") Integer size,
-      @ApiV2ResourceField ConstrainedState state) {}
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              minimum = "1",
+              maximum = "7",
+              example = "3")
+          Integer size,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          ConstrainedState state) {}
 
   @ApiV2ResourceDefinition(name = "minimumOnText", entity = ConstrainedEntity.class, id = "id")
   private record MinimumOnText(
-      @ApiV2ResourceField Long id, @ApiV2ResourceField(minimum = "1") String code) {}
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              minimum = "1")
+          String code) {}
 
   @ApiV2ResourceDefinition(name = "patternOnNumber", entity = ConstrainedEntity.class, id = "id")
   private record PatternOnNumber(
-      @ApiV2ResourceField Long id, @ApiV2ResourceField(pattern = "1") Integer size) {}
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              pattern = "1")
+          Integer size) {}
 
   @ApiV2ResourceDefinition(name = "enumValuesOnEnum", entity = ConstrainedEntity.class, id = "id")
   private record EnumValuesOnEnum(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(enumValues = "OPEN") ConstrainedState state) {}
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              enumValues = "OPEN")
+          ConstrainedState state) {}
 
   @ApiV2ResourceDefinition(name = "invalidPattern", entity = ConstrainedEntity.class, id = "id")
   private record InvalidPattern(
-      @ApiV2ResourceField Long id, @ApiV2ResourceField(pattern = "(") String code) {}
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              pattern = "(")
+          String code) {}
 
   @ApiV2ResourceDefinition(name = "exampleOutOfRange", entity = ConstrainedEntity.class, id = "id")
   private record ExampleOutOfRange(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(minimum = "1", example = "0") Integer size) {}
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              minimum = "1",
+              example = "0")
+          Integer size) {}
 
   @ApiV2ResourceDefinition(name = "defaultTooLong", entity = ConstrainedEntity.class, id = "id")
   private record DefaultTooLong(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(maxLength = 2, defaultValue = "ABC") String code) {}
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              maxLength = 2,
+              defaultValue = "ABC")
+          String code) {}
 
   @ApiV2ResourceDefinition(name = "defaultOnRequired", entity = ConstrainedEntity.class, id = "id")
   private record DefaultOnRequired(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(requiredOnCreate = true, defaultValue = "AB") String code) {}
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              requiredOnCreate = true,
+              defaultValue = "AB")
+          String code) {}
 
   public static final class ConstrainedEntity {
 

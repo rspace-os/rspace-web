@@ -485,7 +485,12 @@ class DeclaredArrayFieldTest {
   }
 
   @ApiV2ResourceDefinition(name = "arrayBeans", entity = ArrayBean.class, id = "id")
-  private record ArrayResource(@ApiV2ResourceField Long id, @ApiV2ResourceField List<Row> rows) {}
+  private record ArrayResource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          List<Row> rows) {}
 
   public static class ArrayBean {
     public Long getId() {

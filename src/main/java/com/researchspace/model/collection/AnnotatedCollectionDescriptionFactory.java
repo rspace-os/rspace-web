@@ -340,10 +340,12 @@ final class AnnotatedCollectionDescriptionFactory {
     boolean createWritable =
         !component.getName().equals(idField)
             && writer != null
+            && definition.createAccess() != ApiV2ResourceField.AccessPreset.UNDECLARED
             && definition.createAccess() != ApiV2ResourceField.AccessPreset.NEVER;
     boolean updateWritable =
         !component.getName().equals(idField)
             && writer != null
+            && definition.updateAccess() != ApiV2ResourceField.AccessPreset.UNDECLARED
             && definition.updateAccess() != ApiV2ResourceField.AccessPreset.NEVER;
     Field<T, V> field;
     if (!createWritable && !updateWritable) {

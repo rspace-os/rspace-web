@@ -159,7 +159,12 @@ class CollectionFieldTypeRegistryTest {
   }
 
   @ApiV2ResourceDefinition(name = "tokens", entity = Entity.class, id = "id", auditFields = false)
-  private record Resource(@ApiV2ResourceField Long id, @ApiV2ResourceField Token token) {}
+  private record Resource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
+              updateAccess = ApiV2ResourceField.AccessPreset.INHERITED)
+          Token token) {}
 
   public static final class Entity {
     public Long getId() {
