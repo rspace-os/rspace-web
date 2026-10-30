@@ -11,6 +11,7 @@ import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
@@ -1266,6 +1267,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
             .get(0);
     assertEquals(fixture.requester.getId(), listed.getRequester().getId());
     assertEquals(fixture.requesterUsername, listed.getRequester().getUsername());
+    ApiRuntimeException transferRefused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> sampleRequestApiMgr.fulfilByTransfer(fixture.requestId, null, fixture.owner));
+    assertEquals("errors.inventory.sampleRequest.requesterDeleted", transferRefused.getMessage());
     ApiSampleRequestStatusPut reject = new ApiSampleRequestStatusPut();
     reject.setStatus(SampleRequestStatus.REJECTED);
     reject.setReason("the requester has left");
