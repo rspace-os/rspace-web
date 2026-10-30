@@ -95,6 +95,11 @@ date, and successful creation returns to the submitted start date rather than
 the date originally supplied in the URL. Item headers label the display timezone;
 the Booking rules section retains the separate scheduling timezone.
 
+All Bookable Items renders table and availability-detail locations from the catalogue item's
+`location`, carried by the configuration adapter on `target.location`. It makes no per-item
+instrument request. Instrument-backed configuration pages instead expand `parentContainer`
+with `depth=2` and sparse fieldsets for `instruments` and `containers`.
+
 All Bookable Items keeps `pageSize` in the URL for both normal and availability-filtered
 results. Changing it resets to page one. My Bookings uses TableList cards on narrow
 viewports and a table on wide viewports. Search inputs show their collection scope.

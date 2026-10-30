@@ -23,7 +23,10 @@ type CurrentDayAvailability = ReturnType<typeof classifyCurrentDayAvailability>;
 type BookingCataloguePage = Awaited<ReturnType<typeof fetchAllBookingCataloguePages>>;
 
 export type AvailabilityQuickFilter = "available-now" | "free-later-today";
-export type AllBookableItem = BookingConfiguration & { availability?: AvailabilityQuickFilter };
+export type AllBookableItem = BookingConfiguration & {
+  target: (NonNullable<BookingConfiguration["target"]> & { location?: BookingCatalogueItem["location"] }) | null;
+  availability?: AvailabilityQuickFilter;
+};
 
 export function hasAvailabilityFilter(expression: FilterExpression<AllBookableItem> | null): boolean {
   return (

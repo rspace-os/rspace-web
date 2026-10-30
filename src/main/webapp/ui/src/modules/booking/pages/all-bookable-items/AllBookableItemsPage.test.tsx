@@ -4,7 +4,7 @@ setupRealAppI18n();
 
 import "@/__tests__/__mocks__/matchMedia";
 import { createMemoryHistory, createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
@@ -17,6 +17,7 @@ import {
   bookableItemsHandlers,
   bookingCataloguePage,
   collectionPage,
+  sampleBookingEvents,
 } from "../bookable-items/mocks/bookableItemsMocks";
 import { renderBookingTestPage } from "../calendar/__tests__/calendarTestHarness";
 import AllBookableItemsPage from "./AllBookableItemsPage";
@@ -42,10 +43,7 @@ function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
     allowDoubleBooking: configuration.allowDoubleBooking,
     effectiveRole: configuration.effectiveRole,
     capabilities: configuration.capabilities,
-    location:
-      target.value.parentContainerName && target.value.parentContainerGlobalId
-        ? { name: target.value.parentContainerName, globalId: target.value.parentContainerGlobalId }
-        : null,
+    location: target.value.parentContainer?.value ?? null,
   };
 }
 
@@ -69,6 +67,49 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
 }
 
 describe("AllBookableItemsPage", () => {
+  it.each([{ name: "Catalogue lab", globalId: "IC999" }, null])(
+    "uses the catalogue location in the table and availability details: %s",
+    async (location) => {
+      const user = userEvent.setup();
+      const item = { ...catalogueItem(bookableItemFixtures[0]), location };
+      server.use(...bookableItemsHandlers(() => undefined));
+      server.use(
+        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+        http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCataloguePage([item], 1, 20))),
+        http.get("/api/v2/bookings", () =>
+          HttpResponse.json({
+            ...collectionPage(
+              sampleBookingEvents.slice(0, 1).map((booking) => ({
+                ...booking,
+                kind: "BOOKING",
+                canEdit: false,
+                canCancel: false,
+                createdAt: "2026-08-01T09:00:00Z",
+                updatedAt: "2026-08-01T09:00:00Z",
+              })),
+            ),
+            hasNextPage: false,
+          }),
+        ),
+      );
+      await renderPage();
+      await screen.findAllByRole("img", { name: "Confocal microscope availability" });
+      if (location) {
+        expect(screen.getAllByRole("link", { name: location.name })[0]).toHaveAttribute("href", "/globalId/IC999");
+      } else {
+        expect(screen.queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
+      }
+      await user.click(screen.getAllByRole("button", { name: /^Confocal microscope, Booked,/ })[0]);
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByLabelText(/^Show details for Confocal microscope,/));
+      if (location) {
+        expect(within(dialog).getByRole("link", { name: location.name })).toHaveAttribute("href", "/globalId/IC999");
+      } else {
+        expect(within(dialog).queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
+      }
+    },
+  );
+
   it("retains every advanced rule through apply, quick-filter changes, and date navigation", async () => {
     const user = userEvent.setup();
     const original = "id=ge=7;id=le=7;target==IN123;target==IN123";

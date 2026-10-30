@@ -68,10 +68,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
                 idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
                 size="xs"
               >
-                <InventoryLocationLink
-                  name={row.target.value.parentContainerName}
-                  globalId={row.target.value.parentContainerGlobalId}
-                />
+                <InventoryLocationLink name={row.target.location?.name} globalId={row.target.location?.globalId} />
               </InventoryItem>
             ) : (
               <UnknownItem size="xs" />
@@ -522,14 +519,7 @@ function AllBookableItemsContent({
               const item = {
                 name: target.value.name,
                 globalId: target.globalId,
-                ...(target.value.parentContainerName != null && target.value.parentContainerGlobalId != null
-                  ? {
-                      location: {
-                        name: target.value.parentContainerName,
-                        globalId: target.value.parentContainerGlobalId,
-                      },
-                    }
-                  : {}),
+                ...(target.location ? { location: target.location } : {}),
               };
               const quickEntry = quickIndex.data?.get(target.globalId);
               if (quickMode) {
