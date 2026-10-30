@@ -4,9 +4,14 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.record.IRecordFactory;
@@ -22,6 +27,21 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, Long>
     implements ContainerDao {
+
+  private static final CollectionQueryExecutor<Container> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(
+          Container.class, ApiV2ContainerResource.DESCRIPTION, "collectionContainer");
+
+  @Override
+  public ResourcePage<Container> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    return readableResourcePage(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public long countReadableResources(ResourceRequest request, AccessResult access) {
+    return countReadableResources(COLLECTION_QUERY, request, access);
+  }
 
   @Autowired protected IRecordFactory recordFactory;
 

@@ -283,3 +283,10 @@ read-only opaque type. Declare constraints on embedded children using the same s
 constraint `Pattern` must have no flags, because the published pattern cannot carry them.
 
 These per-field wire rules do not replace manager enforcement of domain rules.
+
+The read-only `containers` shape exposes `id`, `globalId`, `name`, `containerType`
+and `deleted`. These fields are safe when the caller has only contents-based
+visibility. Global IDs use `IC` for containers and `BE` for workbenches and cannot
+be queried. Supply `ContainerReadAccess` to `ApiV2ContainerResource.description`
+when registering the resource. Its static description denies reads until a
+deployment supplies the policy.
