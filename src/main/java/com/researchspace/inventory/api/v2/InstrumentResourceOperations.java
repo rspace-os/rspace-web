@@ -10,11 +10,13 @@ import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.impl.ExtraFieldRuntimeManagerImpl;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,6 +99,39 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
   @Override
   public ResourcePage<Instrument> find(ResourceRequest request, User actor) {
     return instrumentManager.getReadableInstruments(request, actor);
+  }
+
+  @Override
+  public boolean usesReadDocuments() {
+    return true;
+  }
+
+  @Override
+  public ResourcePage<Map<String, Object>> findReadDocuments(ResourceRequest request, User actor) {
+    var page = instrumentManager.getReadableInstrumentSummaries(request, actor);
+    return new ResourcePage<>(
+        page.resources().stream().map(InstrumentResourceOperations::readDocument).toList(),
+        page.total());
+  }
+
+  @Override
+  public Optional<Map<Object, Map<String, Object>>> relationshipReadDocuments(
+      Set<Long> ids, User actor) {
+    Map<Object, Map<String, Object>> documents = new LinkedHashMap<>();
+    instrumentManager
+        .getReadableInstrumentSummaries(ids, actor)
+        .forEach((id, summary) -> documents.put(id, readDocument(summary)));
+    return Optional.of(documents);
+  }
+
+  private static Map<String, Object> readDocument(InstrumentReadSummary summary) {
+    Map<String, Object> document = new LinkedHashMap<>();
+    document.put("id", summary.id());
+    document.put("name", summary.name());
+    document.put("globalId", "IN" + summary.id());
+    document.put("deleted", summary.deleted());
+    document.put("parentContainer", summary.parentContainerId());
+    return document;
   }
 
   @Override

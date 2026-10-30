@@ -4,6 +4,7 @@ import com.researchspace.dao.ContainerDao;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.*;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.ContainerReadSummary;
 import com.researchspace.service.inventory.ContainerReadAccess;
 import com.researchspace.service.inventory.ContainerReadManager;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,13 @@ public class ContainerReadManagerImpl implements ContainerReadManager {
   @Override
   public ResourcePage<Container> find(ResourceRequest request, User actor) {
     return dao.getReadableResources(
+        request,
+        access.check(new AccessContext(actor, AccessContext.Operation.READ, "containers")));
+  }
+
+  @Override
+  public ResourcePage<ContainerReadSummary> findSummaries(ResourceRequest request, User actor) {
+    return dao.getReadableResourceSummaries(
         request,
         access.check(new AccessContext(actor, AccessContext.Operation.READ, "containers")));
   }

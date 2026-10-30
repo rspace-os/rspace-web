@@ -1,5 +1,6 @@
 package com.researchspace.inventory.api.v2;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -10,11 +11,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class InstrumentResourceOperationsTest {
@@ -29,13 +33,25 @@ class InstrumentResourceOperationsTest {
   private final User actor = mock(User.class);
 
   @Test
-  void readsEntitiesSoTheFrameworkCanExpandParentRelationships() {
+  void projectsListAndRelationshipDocumentsWithParentIds() {
     ResourceRequest request = ResourceRequest.unpaged(null);
-    var page = new ResourcePage<>(List.of(instrument(1L)), 1);
-    when(manager.getReadableInstruments(request, actor)).thenReturn(page);
-    assertSame(page, operations.find(request, actor));
-    org.junit.jupiter.api.Assertions.assertFalse(operations.usesReadDocuments());
-    assertTrue(operations.readOverrideFields().isEmpty());
+    var summary = new InstrumentReadSummary(1L, "Scope", false, 12L);
+    when(manager.getReadableInstrumentSummaries(request, actor))
+        .thenReturn(new ResourcePage<>(List.of(summary), 7));
+    when(manager.getReadableInstrumentSummaries(Set.of(1L), actor)).thenReturn(Map.of(1L, summary));
+    assertTrue(operations.usesReadDocuments());
+    var page = operations.findReadDocuments(request, actor);
+    assertEquals(7, page.total());
+    assertEquals(
+        Map.of(
+            "id", 1L, "name", "Scope", "globalId", "IN1", "deleted", false, "parentContainer", 12L),
+        page.resources().get(0));
+    assertEquals(
+        Map.of(1L, page.resources().get(0)),
+        operations.relationshipReadDocuments(Set.of(1L), actor).orElseThrow());
+    org.mockito.Mockito.verify(manager, org.mockito.Mockito.never())
+        .getReadableInstruments(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
   }
 
   @Test

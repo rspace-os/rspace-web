@@ -33,7 +33,7 @@ Instrument location is the nullable `parentContainer` to-one relationship to
 `containers`, bound to `parentLocation.container.id`. Use relationship expansion
 to read its name and global ID. An authorization-aware target resolver returns
 no target for an unreadable container, which renders the relationship as `null`.
-Instrument scalar summaries no longer include parent location data.
+Instrument scalar summaries carry only the parent container ID; the target registration controls its visibility and expansion.
 
 ## Query configuration
 
@@ -118,17 +118,20 @@ as a substring, in any order, including partial words. For example, `=like=lab B
 
 ### Scalar read documents
 
-Collections without relationships may use `ResourceOperations.usesReadDocuments()` and
+Collections may use `ResourceOperations.usesReadDocuments()` and
 `findReadDocuments()` to project scalar rows through the same collection query compiler and
 pagination as entity reads. `CollectionQueryExecutor.projectedPage()` avoids hydrating the
 Inventory aggregate. The renderer validates supplied declared objects and arrays before applying
-selection and per-row field access. Instruments use entity reads so `parentContainer` is rendered
-through the containers registration's read policy. Runtime providers that support relationship ID projection receive authorized
+selection and per-row field access. Instruments project `InstrumentReadSummary` rows, including
+the parent container ID, for list, single and relationship reads. Runtime providers that support relationship ID projection receive authorized
 page IDs through a direct `valuesForIds()` call, retaining their transaction advice. Other
 providers must explicitly implement `valuesForAuthorizedIds()` and may trust those IDs only after
-the collection read policy has selected the page. Scalar read documents do
-not bind relationships. Entity reads remain available to internal domain callers and relationship
-resolution.
+the collection read policy has selected the page. Scalar read documents may supply a to-one relationship's target ID (or a `ResourceReference` for
+polymorphic relationships). The renderer batches those IDs through the target registration with
+request-scoped caching, applies its read policy even at depth zero, and renders unreadable targets
+as `null`. Selected expansions retain target field access and global IDs. Container relationship
+reads also project scalar rows, avoiding hydration of the Inventory aggregate. Entity reads remain
+available to internal domain callers and write-side relationship resolution.
 
 ## Access control
 

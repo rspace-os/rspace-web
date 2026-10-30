@@ -163,7 +163,13 @@ public final class ApiV2CrudDispatcher<T, ID> {
           ResourcePage<Map<String, Object>> page = operations.findReadDocuments(request, actor);
           List<Map<String, Object>> documents =
               renderer.renderReadDocuments(
-                  page.resources(), description, fieldsForId, readContext(actor));
+                  page.resources(),
+                  description,
+                  fieldsForId,
+                  request.fieldSelections(),
+                  request.includes(),
+                  targetResolver(actor),
+                  readContext(actor));
           decorator.decorate(page.resources(), documents);
           return ApiV2ListResult.of(
               documents, page.total(), request.page().size(), request.page().number());
@@ -197,7 +203,13 @@ public final class ApiV2CrudDispatcher<T, ID> {
                   .orElseThrow(NotFoundException::new);
           List<Map<String, Object>> documents =
               renderer.renderReadDocuments(
-                  List.of(resource), description, ignored -> request.fields(), readContext(actor));
+                  List.of(resource),
+                  description,
+                  ignored -> request.fields(),
+                  request.fieldSelections(),
+                  request.includes(),
+                  targetResolver(actor),
+                  readContext(actor));
           decorator.decorate(List.of(resource), documents);
           return documents.get(0);
         });

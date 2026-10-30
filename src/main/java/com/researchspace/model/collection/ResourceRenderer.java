@@ -239,16 +239,48 @@ public final class ResourceRenderer {
    * Selects scalar read documents without invoking entity field readers.
    *
    * <p>Every supplied declared object or array is validated before selection or caller access can
-   * hide malformed values. Collections with relationships retain the entity rendering path.
+   * hide malformed values. To-one relationships carry target IDs and use the same batched resolver
+   * as entity relationships; polymorphic relationships carry ResourceReference values.
    */
   public List<Map<String, Object>> renderReadDocuments(
       List<Map<String, Object>> documents,
       CollectionDescription<?> description,
       Function<Object, FieldSelection> fieldsForId,
       AccessContext context) {
-    if (!description.relationships().isEmpty()) {
-      throw new IllegalArgumentException("Scalar read documents do not bind relationships");
-    }
+    return renderReadDocuments(
+        documents,
+        description,
+        fieldsForId,
+        ResourceFieldSelections.root(FieldSelection.all()),
+        IncludeTree.empty(),
+        NO_TARGETS,
+        context);
+  }
+
+  /** Resolves scalar relationship IDs through the caller's request-scoped target resolver. */
+  public List<Map<String, Object>> renderReadDocuments(
+      List<Map<String, Object>> documents,
+      CollectionDescription<?> description,
+      Function<Object, FieldSelection> fieldsForId,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver targetResolver,
+      AccessContext context) {
+    TargetResolver resolver =
+        targetResolver == NO_TARGETS ? NO_TARGETS : new CachingTargetResolver(targetResolver);
+    prefetch(
+        documents.stream()
+            .map(
+                document ->
+                    new RenderNode(
+                        document,
+                        description,
+                        fieldsForId.apply(document.get(description.idField())),
+                        includes))
+            .toList(),
+        selections,
+        resolver,
+        context);
     return documents.stream()
         .map(
             document -> {
@@ -266,8 +298,15 @@ public final class ResourceRenderer {
                   }
                 }
               }
-              return selectReadDocument(
-                  document, description, fieldsForId.apply(id), rowContext, false);
+              return renderReadDocument(
+                  document,
+                  description,
+                  fieldsForId.apply(id),
+                  selections,
+                  includes,
+                  resolver,
+                  rowContext,
+                  false);
             })
         .toList();
   }
@@ -329,7 +368,7 @@ public final class ResourceRenderer {
                   }
                   next.add(
                       new RenderNode(
-                          target.entity(),
+                          target.readDocument().isEmpty() ? target.entity() : target.readDocument(),
                           targetDescription,
                           target
                               .fields()
@@ -349,15 +388,21 @@ public final class ResourceRenderer {
       Set<TargetKey> targets,
       List<PendingExpansion> expansions,
       AccessContext context) {
-    T entity = description.entityType().cast(node.entity());
+    Map<?, ?> scalar = node.entity() instanceof Map<?, ?> map ? map : null;
+    T entity = scalar == null ? description.entityType().cast(node.entity()) : null;
     AccessContext rowContext =
-        context.forRead(description.resourceName(), description.idValue(entity));
+        context.forRead(
+            description.resourceName(),
+            scalar == null ? description.idValue(entity) : scalar.get(description.idField()));
     for (Relationship<T> relationship : description.relationships()) {
       if (!node.fields().includes(relationship.name(), description.idField())
           || !relationship.readAccess().allowsField(rowContext)) {
         continue;
       }
-      Object value = relationship.read(entity);
+      Object value =
+          scalar == null
+              ? relationship.read(entity)
+              : scalarReference(scalar.get(relationship.name()), relationship);
       if (!(value instanceof ResourceReference<?, ?> reference)) {
         continue;
       }
@@ -478,12 +523,15 @@ public final class ResourceRenderer {
                               targetResolver,
                               targetEntity.readOverrides(),
                               context.forRead(target.resourceName(), reference.id()))
-                          : selectReadDocument(
+                          : renderReadDocument(
                               targetEntity.readDocument(),
                               targetDescription,
                               targetEntity
                                   .fields()
                                   .intersect(requestedFields, targetDescription.idField()),
+                              selections,
+                              includes.orElseThrow(),
+                              targetResolver,
                               context.forRead(target.resourceName(), reference.id()),
                               true))
               .orElse(renderedValue);
@@ -493,8 +541,57 @@ public final class ResourceRenderer {
     referenceDocument.put("value", renderedValue);
     if (target.globalIdPrefix() != null) {
       referenceDocument.put("globalId", target.globalIdPrefix() + reference.id());
+    } else {
+      resolved
+          .map(ResolvedTarget::readDocument)
+          .map(document -> document.get("globalId"))
+          .ifPresent(globalId -> referenceDocument.put("globalId", globalId));
     }
     return Optional.of(referenceDocument);
+  }
+
+  private static ResourceReference<?, ?> scalarReference(
+      Object value, Relationship<?> relationship) {
+    if (value == null) return null;
+    if (value instanceof ResourceReference<?, ?> reference) return reference;
+    if (relationship.targets().size() != 1) {
+      throw new IllegalArgumentException(
+          "Polymorphic scalar relationship requires a resource reference");
+    }
+    return new ResourceReference<>(
+        relationship.targets().get(0).storedKind(), relationship.idType().javaType().cast(value));
+  }
+
+  private Map<String, Object> renderReadDocument(
+      Map<String, Object> source,
+      CollectionDescription<?> description,
+      FieldSelection fields,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver resolver,
+      AccessContext context,
+      boolean included) {
+    Map<String, Object> document =
+        selectReadDocument(source, description, fields, context, included);
+    for (Relationship<?> relationship : description.relationships()) {
+      if (!fields.includes(relationship.name(), description.idField())
+          || !relationship.readAccess().allowsField(context)) continue;
+      ResourceReference<?, ?> reference =
+          scalarReference(source.get(relationship.name()), relationship);
+      document.put(
+          relationship.name(),
+          reference == null
+              ? null
+              : renderReference(
+                      relationship,
+                      reference,
+                      includes.relationship(relationship.name()),
+                      selections,
+                      resolver,
+                      context)
+                  .orElse(null));
+    }
+    return document;
   }
 
   private static Map<String, Object> selectReadDocument(
