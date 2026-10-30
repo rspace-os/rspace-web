@@ -13,7 +13,7 @@ import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInterceptor;
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
-import com.researchspace.api.v2.controller.BookingSettingsController;
+import com.researchspace.booking.api.v2.BookingSettingsController;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.webapp.integrations.wopi.WopiAuthorisationInterceptor;
 import com.researchspace.webapp.integrations.wopi.WopiProofKeyValidationInterceptor;
