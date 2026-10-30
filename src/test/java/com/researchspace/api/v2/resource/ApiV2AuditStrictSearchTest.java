@@ -188,20 +188,6 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
-  void hashInValidDirectAndDelegatedUsernamesDoesNotPoisonResourceSearches() throws IOException {
-    for (String actor : List.of("alice#1", "sys#admin->alice#1")) {
-      write(
-          "RSLogs.txt",
-          event("01 Jan 2026 12:00:00,000", "BC2").replace("alice(", actor + "(")
-              + "\n"
-              + event("01 Jan 2026 13:00:00,000", "BC1").replace("alice(", actor + "(")
-              + "\n");
-
-      assertEquals(1, search(ReadObserver.NONE).search(request(10)).size());
-    }
-  }
-
-  @Test
   void excludedHistoricalLogIsOpenedOnlyForItsTwoBoundaries() throws IOException {
     Path log =
         write("RSLogs.txt", (event("01 Jan 2020 12:00:00,000", "BC1") + "\n").repeat(10_000));

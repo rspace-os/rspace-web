@@ -817,3 +817,8 @@ binding assignments to `ReplaceResourceAccessRequest`. Malformed fields return
 field names and array indices, such as `assignments[0].role`. All rows are
 validated before the named-assignment limit; `audience:all-users` does not count
 toward that limit.
+
+The v1 Audit Trail page and v2 audit search share the audit line format, including usernames
+containing `#`, operate-as usernames, empty descriptions, and the legacy `COPY` action.
+V1 skips malformed lines and retains its lenient timestamp parsing in the JVM default zone.
+V2 rejects malformed audit lines and uses strict, zone-aware timestamps.
