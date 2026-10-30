@@ -3381,9 +3381,7 @@ components:
     queryParam:
       name: query
       in: query
-      description: >
-        Global search for a term, works identically to the  simple "All' search
-        in RSpace Workspace.
+      description: The term to search for.
       schema:
         type: string
     documentsQueryParam:

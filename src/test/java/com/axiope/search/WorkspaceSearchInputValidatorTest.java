@@ -242,7 +242,7 @@ public class WorkspaceSearchInputValidatorTest {
   }
 
   @Test
-  public void aTwoCharacterCjkTermPassesTheDefaultUserFloor() {
+  public void aTwoCharacterCjkTermPassesAFloorOfTwoButNotFive() {
     WorkspaceListingConfig cell =
         createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"細胞"});
 

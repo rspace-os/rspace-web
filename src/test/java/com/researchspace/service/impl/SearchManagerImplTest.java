@@ -49,4 +49,17 @@ class SearchManagerImplTest {
         () -> searchManager.searchWorkspaceRecords(threeChars, user));
     verifyNoInteractions(textSearchDao);
   }
+
+  @Test
+  void inventorySearchTakesTheSysadminFloorFromTheDeploymentProperties() {
+    when(properties.getSysadminMinSearchTermLength()).thenReturn(10);
+    User sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            searchManager.searchInventoryWithSimpleQuery(
+                "abcdefg", null, null, null, null, null, sysadmin));
+    verifyNoInteractions(textSearchDao);
+  }
 }

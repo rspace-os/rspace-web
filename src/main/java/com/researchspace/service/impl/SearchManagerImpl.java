@@ -270,8 +270,6 @@ public class SearchManagerImpl implements SearchManager {
     searchConfig.setOptions(options.toArray(new String[0]));
     searchConfig.setTerms(terms.toArray(new String[0]));
 
-    // validate the provided query - use WorkspaceSearchInputValidator as the rules seem relevant
-    // enough
     InventorySearchInputValidator validator =
         new InventorySearchInputValidator(
             user,
