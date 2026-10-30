@@ -59,6 +59,21 @@ describe("sanitizeInventoryRichText", () => {
       '<p><span style="color: red;">a</span></p>',
     ],
     ["a full-page overlay", '<p><span style="position: fixed; inset: 0;">a</span></p>', "<p><span>a</span></p>"],
+    [
+      "a new tab's hold on this page",
+      '<p><a href="https://example.org/a" target="_blank" rel="opener">a</a></p>',
+      '<p><a href="https://example.org/a" target="_blank" rel="noopener">a</a></p>',
+    ],
+    [
+      "a new tab's hold on this page with an upper-case target",
+      '<p><a href="https://example.org/a" target="_BLANK" rel="opener">a</a></p>',
+      '<p><a href="https://example.org/a" target="_BLANK" rel="noopener">a</a></p>',
+    ],
+    [
+      "a named target",
+      '<p><a href="https://example.org/a" target="login" rel="opener">a</a></p>',
+      '<p><a href="https://example.org/a" rel="opener">a</a></p>',
+    ],
   ])("drops %s and keeps its text", (_name, html, expected) => {
     expect(sanitizeInventoryRichText(html)).toBe(expected);
   });

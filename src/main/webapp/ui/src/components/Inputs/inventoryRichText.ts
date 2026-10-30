@@ -41,6 +41,13 @@ purify.addHook("uponSanitizeAttribute", (_node, data) => {
     .join(" ");
   data.keepAttr = data.attrValue !== "";
 });
+// Browsers cut a new tab's hold on this page only for _blank, and rel="opener" restores it.
+purify.addHook("afterSanitizeAttributes", (node) => {
+  const target = node.getAttribute("target");
+  if (target === null) return;
+  if (target.toLowerCase() === "_blank") node.setAttribute("rel", "noopener");
+  else node.removeAttribute("target");
+});
 
 export function sanitizeInventoryRichText(html: string): string {
   return purify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR, ALLOW_DATA_ATTR: false, ALLOW_ARIA_ATTR: false });
