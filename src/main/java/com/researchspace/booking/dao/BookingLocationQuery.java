@@ -22,9 +22,8 @@ import org.springframework.stereotype.Component;
  * <p>Readability is the readable-Container rule of {@code
  * InventoryDaoHibernate.readableContainerPredicate}, which decides every other location filter and
  * the catalogue's location member: the caller may read the Container itself, or one of its
- * non-deleted stored Containers, Instruments or subsamples without role visibility. The caller's
- * read and edit constraints are supplied by the Booking service and compile the same sharing facts;
- * the edit form is the read rule without role-visible owners.
+ * non-deleted stored Containers, Instruments or subsamples without role visibility. ContainerReadAccess supplies the shared container constraint; the Booking service supplies
+ * the instrument read constraint.
  */
 @Component
 public class BookingLocationQuery {
