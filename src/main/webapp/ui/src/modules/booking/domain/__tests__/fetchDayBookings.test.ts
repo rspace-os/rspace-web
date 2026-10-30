@@ -8,7 +8,7 @@ const bounds = { start: "2026-09-25T00:00:00Z", end: "2026-09-26T00:00:00Z" };
 const busy = {
   id: 1,
   version: 0,
-  target: { relationTo: "booking-instruments", globalId: "IN1", value: { id: 1, name: "Microscope", deleted: false } },
+  target: { relationTo: "instruments", globalId: "IN1", value: { id: 1, name: "Microscope", deleted: false } },
   timezone: "UTC",
   start: "2026-09-24T23:00:00Z",
   end: "2026-09-25T01:00:00Z",
@@ -34,6 +34,7 @@ describe("day schedule fetch", () => {
           `target=in=(IN1);start=lt=${bounds.end};end=gt=${bounds.start};state==CONFIRMED`,
         );
         expect(params.get("depth")).toBe("1");
+        expect(params.get("fields[instruments]")).toBe("id,globalId,name,deleted");
         expect(request.headers.get("Authorization")).toBe("Bearer test-token");
         const page = Number(params.get("page"));
         pages.push(String(page));

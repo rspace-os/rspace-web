@@ -11,13 +11,16 @@ function busyBooking(id: number): BookingListDocument {
   return bookingListDocument({
     id,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: {
         id: 41,
         name: "Confocal microscope",
         deleted: false,
-        parentContainerName: "Imaging suite with an unusually long location name",
-        parentContainerGlobalId: "IC23",
+        parentContainer: {
+          relationTo: "containers",
+          globalId: "IC23",
+          value: { id: 23, globalId: "IC23", name: "Imaging suite with an unusually long location name" },
+        },
       },
       globalId: "IN41",
     },

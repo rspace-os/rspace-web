@@ -18,13 +18,18 @@ function booking(
 ): BookingListDocument {
   const target: BookingListDocument["target"] = name
     ? {
-        relationTo: "booking-instruments",
+        relationTo: "instruments",
         value: {
           id: id + 100,
           name,
           deleted: false,
-          parentContainerName: location ?? null,
-          parentContainerGlobalId: null,
+          parentContainer: location
+            ? {
+                relationTo: "containers",
+                globalId: "IC23",
+                value: { id: 23, globalId: "IC23", name: location },
+              }
+            : null,
         },
         globalId: `IN${id + 100}`,
       }

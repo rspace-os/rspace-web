@@ -46,7 +46,7 @@ function booking({
     id,
     version: 0,
     target: {
-      relationTo: "booking-instruments",
+      relationTo: "instruments",
       value: { id: 123, name: target.name, deleted: false },
       globalId: target.globalId,
     },
