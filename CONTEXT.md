@@ -612,16 +612,16 @@ resolved during design. This file is a glossary only — no implementation detai
   _Avoid_: query (that is the whole request), keyword
 - **Minimum search term length** — the number of characters below which RSpace refuses a
   text search term instead of running it, so that one search cannot sweep too much content.
-  There is one floor for a system-wide search and a lower one for every other search; both
-  are set per deployment by the administrator, with 5 and 2 as the historical defaults, and
-  a floor of 0 switches the check off. Id and date terms are never measured, nor
-  are tag terms in a system-wide search; an owner term always gets the lower floor, and an
-  empty term is refused whatever the floor.
+  There is one floor for a system-wide search and another for every other search; both are
+  set per deployment by the administrator, by default 5 and 2, and a floor of 0 switches the
+  check off. Id and date terms are never measured, nor are tag terms in a system-wide search;
+  an owner term always gets the floor for every other search, and an empty term is refused
+  whatever the floor.
   It counts characters, not words, which is why CJK deployments lower it: 細胞 (cell) is
   two characters.
   _Avoid_: minimum query length, 5-character rule, search limit
 - **System-wide search** — a search run by a system admin, which covers every user's
-  content rather than the searcher's own and shared records. It has the higher minimum
-  search term length, refuses wildcard terms and returns at most 500 results.
+  content rather than the searcher's own and shared records. It has its own minimum search
+  term length, refuses wildcard terms and returns at most 500 results.
   _Avoid_: sysadmin search, admin search, global search (that is the simple "All" search
   anyone runs)

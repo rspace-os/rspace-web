@@ -22,8 +22,7 @@ import org.springframework.validation.Validator;
 
 /**
  * Abstract class with common validation code for RSpace searches.<br>
- * A new object should be made for each validation, as this object stores the user and the minimum
- * search term lengths in its state.
+ * A new object should be made for each validation, as this object stores user in its state.
  */
 public abstract class SearchInputValidator implements Validator {
 
@@ -33,7 +32,7 @@ public abstract class SearchInputValidator implements Validator {
   private User user;
 
   /**
-   * @param subject the searcher; a sysadmin gets the higher floor
+   * @param subject the searcher; a sysadmin is held to sysadminMinTermLength
    * @param userMinTermLength floor for every searcher but a sysadmin; 0 or less disables it
    * @param sysadminMinTermLength floor for a sysadmin; 0 or less disables it
    */
