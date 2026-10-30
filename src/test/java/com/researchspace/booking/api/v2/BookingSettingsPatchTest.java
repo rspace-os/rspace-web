@@ -3,7 +3,6 @@ package com.researchspace.booking.api.v2;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,7 +53,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
 
 class BookingSettingsPatchTest {
@@ -75,6 +73,10 @@ class BookingSettingsPatchTest {
   @BeforeEach
   void setUp() {
     messageSource.addMessage("errors.api.v2.invalidRequest", Locale.ENGLISH, "Invalid request");
+    messageSource.addMessage(
+        "errors.api.v2.bookingConfiguration.ifMatchRequired",
+        Locale.ENGLISH,
+        "If-Match is required.");
     validator.setValidationMessageSource(messageSource);
     validator.afterPropertiesSet();
 
@@ -124,8 +126,8 @@ class BookingSettingsPatchTest {
         patch(
             """
             {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
-                             {"dayOfWeek":1,"start":"09:00","end":"17:00"}],
-             "configurationVersion":0}
+                             {"dayOfWeek":1,"start":"09:00","end":"17:00"}]
+            }
             """);
     assertEquals(
         List.of(
@@ -134,9 +136,7 @@ class BookingSettingsPatchTest {
         supplied.openingHours());
     BookingSchedulingSettings current =
         BookingSchedulingSettings.from(new BookingConfigurationDefaults());
-    for (String json :
-        List.of(
-            "{\"configurationVersion\":0}", "{\"openingHours\":null,\"configurationVersion\":0}")) {
+    for (String json : List.of("{}", "{\"openingHours\":null}")) {
       BookingSchedulingSettings.Patch unchanged = patch(json);
       assertTrue(unchanged.isEmpty());
       assertEquals(current, unchanged.merge(current));
@@ -172,27 +172,27 @@ class BookingSettingsPatchTest {
         Reason.OPENING_HOURS,
         assertThrows(
                 InvalidBookingSchedulingSettingsException.class,
-                () -> patch("{\"openingHours\":" + value + ",\"configurationVersion\":0}"))
+                () -> patch("{\"openingHours\":" + value + "}"))
             .reason());
   }
 
   @Test
   void strictHttpBindingRejectsUnknownFieldsAndScalarCoercions() throws Exception {
     mockMvc
-        .perform(patchRequest("{\"configurationVersion\":0,\"futureField\":true}"))
+        .perform(patchRequest("{\"futureField\":true}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"))
         .andExpect(jsonPath("$.invalidParams[0].name").value("futureField"))
         .andExpect(jsonPath("$.invalidParams[0].reason").value("unknownField"));
     for (String body :
         List.of(
-            "{\"configurationVersion\":0,\"slotGranularityMinutes\":15.5}",
-            "{\"configurationVersion\":0,\"slotGranularityMinutes\":15.0}",
-            "{\"configurationVersion\":0,\"timezoneMode\":0}",
-            "{\"configurationVersion\":0,\"defaultSharedWith\":0}",
-            "{\"configurationVersion\":0,\"allowDoubleBooking\":\"true\"}",
-            "{\"configurationVersion\":0,\"slotGranularityMinutes\":\"15\"}",
-            "{\"configurationVersion\":0,\"availabilityWindowStart\":1}")) {
+            "{\"slotGranularityMinutes\":15.5}",
+            "{\"slotGranularityMinutes\":15.0}",
+            "{\"timezoneMode\":0}",
+            "{\"defaultSharedWith\":0}",
+            "{\"allowDoubleBooking\":\"true\"}",
+            "{\"slotGranularityMinutes\":\"15\"}",
+            "{\"availabilityWindowStart\":1}")) {
       mockMvc
           .perform(patchRequest(body))
           .andExpect(status().isBadRequest())
@@ -202,20 +202,37 @@ class BookingSettingsPatchTest {
   }
 
   @Test
-  void missingAndNullVersionRemainOnTheBeanValidationPath() throws Exception {
-    for (String body : List.of("{}", "{\"configurationVersion\":null}")) {
-      var result =
-          mockMvc
-              .perform(patchRequest(body))
-              .andExpect(status().isBadRequest())
-              .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"))
-              .andReturn();
-      assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException());
-      String problem = result.getResponse().getContentAsString();
-      JsonNode response = mapper.readTree(problem);
-      assertEquals("must not be null", response.path("detail").asText(), problem);
-      assertFalse(response.has("invalidParams"), problem);
+  void requiresIfMatchAndRejectsMalformedTagsBeforeWriting() throws Exception {
+    mockMvc
+        .perform(
+            patchRequest("{}")
+                .with(
+                    request -> {
+                      request.removeHeader("If-Match");
+                      return request;
+                    }))
+        .andExpect(status().isPreconditionRequired());
+    for (String tag : List.of("*", "0", "\"-1\"", "\"abc\"", "\"0\", \"1\"")) {
+      mockMvc
+          .perform(
+              patchRequest("{}")
+                  .with(
+                      request -> {
+                        request.removeHeader("If-Match");
+                        request.addHeader("If-Match", tag);
+                        return request;
+                      }))
+          .andExpect(status().isBadRequest());
     }
+    verifyNoInteractions(manager);
+  }
+
+  @Test
+  void rejectsBodyVersions() throws Exception {
+    mockMvc
+        .perform(patchRequest("{\"configurationVersion\":0}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.invalidParams[0].name").value("configurationVersion"));
     verifyNoInteractions(manager);
   }
 
@@ -225,7 +242,7 @@ class BookingSettingsPatchTest {
         .perform(
             patchRequest(
                 """
-                {"configurationVersion":0,"slotGranularityMinutes":15,
+                {"slotGranularityMinutes":15,
                  "allowDoubleBooking":false}
                 """))
         .andExpect(status().isOk());
@@ -233,7 +250,7 @@ class BookingSettingsPatchTest {
         .perform(
             patchRequest(
                 """
-                {"configurationVersion":0,"slotGranularityMinutes":null,"openingHours":null,
+                {"slotGranularityMinutes":null,"openingHours":null,
                  "bufferBeforeMinutes":null,"bufferAfterMinutes":null,
                  "maxBookingDurationMinutes":null,"allowDoubleBooking":null,
                  "availabilityWindowStart":null,"availabilityWindowEnd":null,"timezoneMode":null,
@@ -261,6 +278,7 @@ class BookingSettingsPatchTest {
       String body) {
     return MockMvcRequestBuilders.patch(PATH)
         .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
+        .header("If-Match", "\"0\"")
         .contentType(MediaType.APPLICATION_JSON)
         .content(body);
   }

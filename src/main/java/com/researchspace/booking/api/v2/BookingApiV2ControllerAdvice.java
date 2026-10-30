@@ -57,7 +57,7 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
 
   @ExceptionHandler(StaleBookingSettingsException.class)
   public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
-    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.stale");
+    return problem(HttpStatus.PRECONDITION_FAILED, "errors.api.v2.bookingConfiguration.stale");
   }
 
   private ResponseEntity<ApiV2Problem> problem(HttpStatus status, String messageKey) {
