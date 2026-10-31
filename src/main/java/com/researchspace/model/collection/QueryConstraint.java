@@ -7,7 +7,8 @@ public sealed interface QueryConstraint
     permits InventoryContainerReadConstraint,
         FilterExpression,
         QueryConstraint.And,
-        QueryConstraint.Or {
+        QueryConstraint.Or,
+        ResourceRoleMembershipConstraint {
 
   /** Conjunction of heterogeneous trusted constraints. */
   record And(List<QueryConstraint> children) implements QueryConstraint {
