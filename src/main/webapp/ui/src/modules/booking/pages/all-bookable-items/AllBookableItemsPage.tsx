@@ -4,6 +4,7 @@ import { CalendarClockIcon, CalendarPlusIcon, Clock3Icon, EyeIcon, PlusIcon, Set
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -62,7 +63,7 @@ function createAllBookableItemsConfig(availableNow: string, freeLaterToday: stri
           renderCell: ({ row }: { row: AllBookableItem }) =>
             row.target ? (
               <InventoryItem
-                name={row.target.value.name}
+                name={<BookableItemName name={row.target.value.name} globalId={row.target.globalId} />}
                 globalId={row.target.globalId}
                 href={`/globalId/${row.target.globalId}`}
                 idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
