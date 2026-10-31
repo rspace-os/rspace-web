@@ -199,6 +199,15 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public Map<String, String> requiredAuditFields(BookingConfiguration configuration) {
+    return Map.of(
+        "target.type",
+        configuration.getTarget().type().name(),
+        "target.id",
+        configuration.getTarget().id().toString());
+  }
+
+  @Override
   public Set<String> relatedAuditFields() {
     return Set.of("bookingConfigurationId", "start", "end", "kind", "state", "purpose", "deleted");
   }

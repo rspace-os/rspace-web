@@ -64,6 +64,15 @@ class BookingConfigurationResourceOperationsTest {
   }
 
   @Test
+  void scopesAuditHistoryToTheCurrentConfigurationTarget() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 552L));
+    assertEquals(
+        Map.of("target.type", "INSTRUMENT", "target.id", "552"),
+        operations.requiredAuditFields(configuration));
+  }
+
+  @Test
   void translatesRestCreatesToTheSharedManagerInterface() {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setTimeZone("Pacific/Auckland");

@@ -453,7 +453,7 @@ class ApiV2RelationshipContractMVCIT {
     @DisplayName("the audit route binds and reuses a daily snapshot")
     void theAuditRouteBindsAndReusesADailySnapshot() throws Exception {
       long id = fixture.bookingConfiguration(instrumentId, "UTC");
-      writeAuditEvent(id);
+      writeAuditEvent(id, instrumentId);
 
       MvcResult first =
           mockMvc
@@ -591,7 +591,7 @@ class ApiV2RelationshipContractMVCIT {
     }
   }
 
-  private static void writeAuditEvent(long configurationId) throws IOException {
+  private static void writeAuditEvent(long configurationId, long instrumentId) throws IOException {
     LocalDate completedUtcDay = LocalDate.now(ZoneOffset.UTC).minusDays(1);
     LocalDateTime localTimestamp =
         completedUtcDay
@@ -600,8 +600,8 @@ class ApiV2RelationshipContractMVCIT {
             .withZoneSameInstant(ZoneId.systemDefault())
             .toLocalDateTime();
     String line =
-        "%s - domain:UNKNOWN action:CREATE [{\"data\":{\"id\":\"booking-configurations:%d\",\"enabled\":true}}] sysadmin1(System Admin)%n"
-            .formatted(AUDIT_TIMESTAMP.format(localTimestamp), configurationId);
+        "%s - domain:UNKNOWN action:CREATE [{\"data\":{\"id\":\"booking-configurations:%d\",\"enabled\":true,\"target\":{\"type\":\"INSTRUMENT\",\"id\":%d}}}] sysadmin1(System Admin)%n"
+            .formatted(AUDIT_TIMESTAMP.format(localTimestamp), configurationId, instrumentId);
     Files.writeString(AUDIT_DIRECTORY.resolve("RSLogs.txt"), line, StandardCharsets.UTF_8);
   }
 }

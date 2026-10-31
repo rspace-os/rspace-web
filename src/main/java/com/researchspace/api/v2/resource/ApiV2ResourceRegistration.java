@@ -189,6 +189,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.relatedAuditIdentifierFields();
   }
 
+  Map<String, String> requiredAuditFields(Object entity) {
+    return operations.requiredAuditFields(description.entityType().cast(entity));
+  }
+
   boolean auditBypassesActorDirectory() {
     return operations.auditBypassesActorDirectory();
   }

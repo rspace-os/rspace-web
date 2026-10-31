@@ -61,6 +61,37 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void reusedConfigurationIdCannotExposeAnotherTargetsHistory() throws IOException {
+    String own =
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            .replace("\"name\":\"item\"", "\"target\":{\"type\":\"INSTRUMENT\",\"id\":552}");
+    write("RSLogs.txt", own.replace("552", "910100009") + "\n" + own + "\n");
+    var scanner = search(ReadObserver.NONE);
+    var original = request(1);
+    for (String id : List.of("552", "910100009")) {
+      var restricted =
+          new Request(
+              original.fromInclusive(),
+              original.toExclusive(),
+              original.domains(),
+              original.actions(),
+              original.oid(),
+              original.requestedUsernames(),
+              original.actor(),
+              1,
+              false,
+              null,
+              Set.of(),
+              Set.of(),
+              false,
+              Map.of("target.type", "INSTRUMENT", "target.id", id));
+      var results = scanner.search(restricted);
+      assertEquals(1, results.size());
+      assertTrue(results.get(0).getEvent().getData().toJson().contains(id));
+    }
+  }
+
+  @Test
   void retriesInitialEnumerationFailureInTheSameRequest() throws IOException {
     Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
     var scanner = search(ReadObserver.NONE);

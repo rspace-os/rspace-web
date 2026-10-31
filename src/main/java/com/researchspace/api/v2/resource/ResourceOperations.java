@@ -72,6 +72,11 @@ public interface ResourceOperations<T, ID> {
   /** Audit-only authorization hook, deliberately independent of generic access-document routes. */
   default void requireAuditAccess(T resource, User subject) {}
 
+  /** Trusted payload fields required to belong to the currently readable resource instance. */
+  default Map<String, String> requiredAuditFields(T entity) {
+    return Map.of();
+  }
+
   /** Whether every audit description for this resource is safe for its readers. */
   default boolean auditDescriptionsSafe() {
     return false;
