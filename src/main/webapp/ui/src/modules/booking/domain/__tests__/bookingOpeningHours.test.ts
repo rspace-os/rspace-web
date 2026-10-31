@@ -370,7 +370,7 @@ describe("duration increments and continuous opening periods", () => {
     });
     expect(longestOpeningMinutes(hours)).toBe(2160);
     const increment = (slotGranularityMinutes: number) =>
-      incrementFitsSchedule({ ...hours, slotGranularityMinutes, incrementUnit: "MINUTES", alignToIncrement: false });
+      incrementFitsSchedule({ ...hours, slotGranularityMinutes, incrementUnit: "MINUTES" });
     expect(increment(2160)).toBe(true);
     expect(increment(2161)).toBe(false);
   });

@@ -298,7 +298,7 @@ class BookingConfigurationManagerTest {
                 "UTC",
                 target(12L),
                 new BookingSchedulingSettings.Patch(
-                    1441L, BookingIncrementUnit.DAYS, false, null, null, null, null, null)),
+                    1441L, BookingIncrementUnit.DAYS, null, null, null, null, null)),
             InvalidBookingSchedulingSettingsException.Reason.GRANULARITY),
         Arguments.of(
             new Create(
@@ -308,8 +308,7 @@ class BookingConfigurationManagerTest {
                 new BookingSchedulingSettings.Patch(
                     15L,
                     BookingIncrementUnit.MINUTES,
-                    true,
-                    hours("09:05", "09:20"),
+                    hours("09:05", "09:19"),
                     null,
                     null,
                     null,

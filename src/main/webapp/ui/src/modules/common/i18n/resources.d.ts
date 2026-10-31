@@ -881,7 +881,6 @@ export default interface Resources {
         "createBooking": "Create booking",
         "leave": "Leave configuration"
       },
-      "alignmentUnavailable": "Not available for 24 hours or more",
       "archiveDialog": {
         "confirm": "Archive",
         "description": "Archive {item}? Every future booking on it is cancelled automatically and cannot be restored. Bookings that have already started are kept.",
@@ -962,7 +961,6 @@ export default interface Resources {
           "tooWide": "Choose a period of no more than 183 days."
         },
         "values": {
-          "alignToIncrement": "Start on clock intervals",
           "allowDoubleBooking": "Allow concurrent bookings",
           "availabilityWindowEnd": "Availability window end",
           "availabilityWindowStart": "Availability window start",
@@ -1054,7 +1052,6 @@ export default interface Resources {
         "requester": "Requester"
       },
       "fields": {
-        "alignToIncrement": "Start on clock intervals",
         "bufferAfter": "Buffer after",
         "bufferBefore": "Buffer before",
         "createdAt": "Created at",
@@ -1319,8 +1316,6 @@ export default interface Resources {
       },
       "editTitle": "Edit Booking",
       "errors": {
-        "alignment": "The start must fall on this item's clock intervals of {increment}, counted from midnight in {timezone}.",
-        "alignmentRejected": "The start time is not on this bookable item's clock intervals.",
         "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
         "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
         "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
@@ -1415,7 +1410,6 @@ export default interface Resources {
         "selectedItem": "{name} ({globalId})",
         "start": "Start",
         "startDate": "Start date",
-        "startSnapped": "Start adjusted to {time} to match the clock intervals of {increment}.",
         "startTime": "Start time",
         "startTimezone": "Start time zone",
         "submit": "Book",
@@ -2009,7 +2003,6 @@ export default interface Resources {
       },
       "errors": {
         "buffer": "Enter a whole number from 0 to 10,080.",
-        "incrementAlignedOpening": "No start on the increment's clock intervals leaves room for a whole increment within an opening period. Change the increment or the opening hours, or turn off Start on clock intervals.",
         "incrementDaysNeedFullWeek": "Day increments require continuous availability, 24 hours a day, seven days a week.",
         "incrementOpening": "The increment must fit within one continuous opening period.",
         "incrementRange": "Enter an increment from 1 minute to 527,040 minutes.",
@@ -2022,9 +2015,6 @@ export default interface Resources {
         "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
       "fields": {
-        "alignToIncrement": "Start on clock intervals",
-        "alignToIncrementDescription": "Start bookings at multiples of the increment from midnight in the item's timezone. For 15 minutes, starts are :00, :15, :30 or :45. When off, bookings can start at any minute, but durations must still be multiples of the increment.",
-        "alignToIncrementUnavailable": "Unavailable for increments of 24 hours or more.",
         "allowDoubleBooking": "Allow double booking",
         "buffer": "Buffer before and after bookings (minutes)",
         "bufferAfter": "Buffer after booking (minutes)",
@@ -2094,7 +2084,6 @@ export default interface Resources {
       "resizeStart": "No other valid start time fits on this day.",
       "startAtMidnight": "Start at midnight on {date}",
       "unavailable": {
-        "alignment": "Midnight is not on this item's clock intervals.",
         "dayEndMissing": "Midnight would not leave a whole number of this item's increments.",
         "duration": "Midnight would not leave a whole number of this item's increments.",
         "maximum": "Midnight would make the booking longer than this item's maximum.",
@@ -7639,7 +7628,6 @@ export default interface Resources {
           },
           "authenticationRequired": "Authentication is required.",
           "booking": {
-            "alignment": "The start time must fall on this bookable item's time increment, counted from midnight in its timezone.",
             "buffer": "The selected time is too close to another booking (buffer).",
             "cancellationReason": {
               "length": "The cancellation reason must not exceed 500 characters.",
@@ -7686,7 +7674,7 @@ export default interface Resources {
               "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
             },
             "granularity": {
-              "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period; when starts follow the clock grid, at least one grid start must leave room for a whole increment inside an opening period."
+              "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
             },
             "ifMatchRequired": "The current booking configuration version is required.",
             "lifecycleConflict": "Restore the archived booking configuration before changing it.",

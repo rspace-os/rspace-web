@@ -11,7 +11,6 @@ public final class BookingPolicyException extends RuntimeException {
 
   public enum Reason {
     GRANULARITY("errors.api.v2.booking.granularity"),
-    ALIGNMENT("errors.api.v2.booking.alignment"),
     DAY_END_MISSING("errors.api.v2.booking.dayEndMissing"),
     OPENING_HOURS("errors.api.v2.booking.openingHours"),
     MAXIMUM_DURATION("errors.api.v2.booking.maximumDuration");

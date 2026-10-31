@@ -56,10 +56,6 @@ public class BookingConfigurationDefaults implements Serializable {
   @Setter
   private BookingIncrementUnit incrementUnit = BookingSchedulingSettings.DEFAULT_INCREMENT_UNIT;
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "alignToIncrement")})
-  @Setter
-  private boolean alignToIncrement = BookingSchedulingSettings.DEFAULT_ALIGN_TO_INCREMENT;
-
   @Getter(
       onMethod_ = {
         @Convert(converter = BookingOpeningHoursConverter.class),

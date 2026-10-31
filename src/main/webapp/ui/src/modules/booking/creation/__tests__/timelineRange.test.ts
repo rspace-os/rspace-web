@@ -19,12 +19,10 @@ function context(
   slotGranularityMinutes: number,
   {
     incrementUnit = "MINUTES",
-    alignToIncrement = true,
     openingHours = ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
     maxBookingDurationMinutes = 0,
   }: Partial<{
     incrementUnit: IncrementUnit;
-    alignToIncrement: boolean;
     openingHours: OpeningHoursEntry[];
     maxBookingDurationMinutes: number;
   }> = {},
@@ -36,9 +34,7 @@ function context(
       timezone,
       slotGranularityMinutes,
       incrementUnit,
-      alignToIncrement,
       openingHours,
-
       maxBookingDurationMinutes,
     }),
   };
@@ -53,31 +49,9 @@ function adjuster(range: TimelineRange, timelineContext: TimelineContext) {
 const utc15 = context("2026-08-17", "UTC", "UTC", 15);
 
 describe("timeline moves", () => {
-  it("snaps an aligned start in the scheduling timezone and keeps the elapsed duration", () => {
-    const range = { start: "2026-06-15T09:30:00Z", end: "2026-06-15T10:30:00Z" };
-    const moves = adjuster(range, context("2026-06-15", "America/Los_Angeles", "Europe/Berlin", 15));
-
-    // 09:22:30 is equidistant from 09:15 and 09:30, so the earlier start wins.
-    expect(moves.adjust("move", "2026-06-15T09:22:30Z")).toEqual({
-      start: "2026-06-15T09:15:00Z",
-      end: "2026-06-15T10:15:00Z",
-    });
-  });
-
-  it("aligns hourly starts to a scheduling zone with a fractional-hour offset", () => {
-    const range = { start: "2026-08-17T09:15:00Z", end: "2026-08-17T10:15:00Z" };
-    const moves = adjuster(range, context("2026-08-17", "UTC", "Asia/Kathmandu", 60));
-
-    expect(moves.step("move", "next")).toEqual({ start: "2026-08-17T10:15:00Z", end: "2026-08-17T11:15:00Z" });
-    expect(moves.adjust("move", "2026-08-17T09:55:00Z")).toEqual({
-      start: "2026-08-17T10:15:00Z",
-      end: "2026-08-17T11:15:00Z",
-    });
-  });
-
   it("moves an unaligned start by single minutes", () => {
     const range = { start: "2026-08-17T09:07:00Z", end: "2026-08-17T09:37:00Z" };
-    const moves = adjuster(range, context("2026-08-17", "UTC", "UTC", 15, { alignToIncrement: false }));
+    const moves = adjuster(range, context("2026-08-17", "UTC", "UTC", 15, {}));
 
     expect(moves.step("move", "next")).toEqual({ start: "2026-08-17T09:08:00Z", end: "2026-08-17T09:38:00Z" });
     expect(moves.adjust("move", "2026-08-17T11:03:20Z")).toEqual({
@@ -98,11 +72,11 @@ describe("timeline moves", () => {
     const range = { start: "2026-08-17T21:00:00Z", end: "2026-08-17T23:00:00Z" };
     const moves = adjuster(range, utc15);
 
-    expect(moves.step("move", "next")).toEqual({ start: "2026-08-17T21:15:00Z", end: "2026-08-17T23:15:00Z" });
+    expect(moves.step("move", "next")).toEqual({ start: "2026-08-17T21:01:00Z", end: "2026-08-17T23:01:00Z" });
     // Midnight would put the whole booking on the next day, so the nearest start still on this day wins.
     expect(moves.adjust("move", "2026-08-17T23:59:00Z")).toEqual({
-      start: "2026-08-17T23:45:00Z",
-      end: "2026-08-18T01:45:00Z",
+      start: "2026-08-17T23:59:00Z",
+      end: "2026-08-18T01:59:00Z",
     });
   });
 
@@ -125,7 +99,7 @@ describe("timeline moves", () => {
     const range = { start: "2026-03-28T11:00:00Z", end: "2026-03-29T10:00:00Z" };
     const moves = adjuster(
       range,
-      context("2026-03-28", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS", alignToIncrement: false }),
+      context("2026-03-28", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS" }),
     );
 
     // 13:00 on Saturday to 13:00 on Sunday: 23 elapsed hours, the same local time.
@@ -139,7 +113,7 @@ describe("timeline moves", () => {
     const range = { start: "2026-10-23T00:30:00Z", end: "2026-10-24T00:30:00Z" };
     const moves = adjuster(
       range,
-      context("2026-10-24", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS", alignToIncrement: false }),
+      context("2026-10-24", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS" }),
     );
 
     // Starts from 02:00 to 02:59 on 24 October would end on the repeated hour of 25 October.
@@ -153,27 +127,27 @@ describe("timeline moves", () => {
     const range = { start: "2026-10-24T00:30:00Z", end: "2026-10-25T01:30:00Z" };
     const moves = adjuster(
       range,
-      context("2026-10-25", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS", alignToIncrement: false }),
+      context("2026-10-25", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS" }),
     );
 
     expect(moves.adjust("move", range.start)).toEqual(range);
   });
 
   it("steps through both occurrences of the repeated hour", () => {
-    const range = { start: "2026-10-25T00:45:00Z", end: "2026-10-25T01:15:00Z" };
+    const range = { start: "2026-10-25T00:59:00Z", end: "2026-10-25T01:29:00Z" };
     const moves = adjuster(range, context("2026-10-25", "Europe/Berlin", "Europe/Berlin", 15));
 
     expect(wallClockDraftFromInstants(range.start, range.end, "Europe/Berlin")).toMatchObject({
-      startTime: "02:45",
+      startTime: "02:59",
       startOccurrence: "earlier",
-      endTime: "02:15",
+      endTime: "02:29",
       endOccurrence: "later",
     });
     expect(moves.step("move", "next")).toEqual({ start: "2026-10-25T01:00:00Z", end: "2026-10-25T01:30:00Z" });
   });
 
   it("steps across the spring gap without inventing skipped times", () => {
-    const range = { start: "2026-03-29T00:45:00Z", end: "2026-03-29T01:15:00Z" };
+    const range = { start: "2026-03-29T00:59:00Z", end: "2026-03-29T01:29:00Z" };
     const moves = adjuster(range, context("2026-03-29", "Europe/Berlin", "Europe/Berlin", 15));
 
     expect(moves.step("move", "next")).toEqual({ start: "2026-03-29T01:00:00Z", end: "2026-03-29T01:30:00Z" });
@@ -198,7 +172,7 @@ describe("timeline resizing", () => {
 
   it("resizes an unaligned booking by duration multiples from the fixed endpoint", () => {
     const range = { start: "2026-08-17T09:07:00Z", end: "2026-08-17T09:24:00Z" };
-    const resizing = adjuster(range, context("2026-08-17", "UTC", "UTC", 17, { alignToIncrement: false }));
+    const resizing = adjuster(range, context("2026-08-17", "UTC", "UTC", 17, {}));
 
     expect(resizing.adjust("end", "2026-08-17T10:00:00Z")).toEqual({ start: range.start, end: "2026-08-17T09:58:00Z" });
   });
@@ -207,7 +181,7 @@ describe("timeline resizing", () => {
     const range = { start: "2026-03-30T10:00:00Z", end: "2026-04-03T10:00:00Z" };
     const resizing = adjuster(
       range,
-      context("2026-03-30", "Europe/Berlin", "Europe/Berlin", 2880, { incrementUnit: "DAYS", alignToIncrement: false }),
+      context("2026-03-30", "Europe/Berlin", "Europe/Berlin", 2880, { incrementUnit: "DAYS" }),
     );
 
     expect(resizing.visible).toEqual({ start: true, end: false });
@@ -220,7 +194,7 @@ describe("timeline resizing", () => {
     const range = { start: "2026-10-24T00:30:00Z", end: "2026-10-25T00:30:00Z" };
     const resizing = adjuster(
       range,
-      context("2026-10-25", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS", alignToIncrement: false }),
+      context("2026-10-25", "Europe/Berlin", "Europe/Berlin", 1440, { incrementUnit: "DAYS" }),
     );
 
     expect(resizing.canResize("end")).toBe(true);
@@ -253,7 +227,7 @@ describe("hidden endpoints", () => {
     const range = { start: "2026-03-30T10:00:00Z", end: "2026-04-03T10:00:00Z" };
     const edges = adjuster(
       range,
-      context("2026-03-30", "Europe/Berlin", "Europe/Berlin", 2880, { incrementUnit: "DAYS", alignToIncrement: false }),
+      context("2026-03-30", "Europe/Berlin", "Europe/Berlin", 2880, { incrementUnit: "DAYS" }),
     );
 
     expect(edges.hiddenEdge("end")).toEqual({ kind: "disabled", reason: "duration" });
@@ -262,10 +236,7 @@ describe("hidden endpoints", () => {
   it("refuses a display-zone midnight that is not the scheduling zone's day boundary", () => {
     // Shown in UTC; Berlin midnight to midnight across the spring change starts at 23:00 UTC the day before.
     const range = { start: "2026-03-28T23:00:00Z", end: "2026-03-29T22:00:00Z" };
-    const edges = adjuster(
-      range,
-      context("2026-03-29", "UTC", "Europe/Berlin", 1440, { incrementUnit: "DAYS", alignToIncrement: false }),
-    );
+    const edges = adjuster(range, context("2026-03-29", "UTC", "Europe/Berlin", 1440, { incrementUnit: "DAYS" }));
 
     expect(edges.visible).toEqual({ start: false, end: true });
     expect(edges.hiddenEdge("start")).toEqual({ kind: "disabled", reason: "duration" });
@@ -274,25 +245,15 @@ describe("hidden endpoints", () => {
   it("names a skipped display-zone midnight instead of choosing a time", () => {
     // Santiago skips 00:00 to 01:00 on 6 September 2026.
     const range = { start: "2026-09-05T20:00:00Z", end: "2026-09-06T12:00:00Z" };
-    const edges = adjuster(
-      range,
-      context("2026-09-06", "America/Santiago", "America/Santiago", 15, { alignToIncrement: false }),
-    );
+    const edges = adjuster(range, context("2026-09-06", "America/Santiago", "America/Santiago", 15, {}));
 
     expect(edges.hiddenEdge("start")).toEqual({ kind: "disabled", reason: "midnightSkipped" });
   });
 });
 
 describe("creation proposals", () => {
-  it("starts an aligned proposal on the grid and rounds the length to whole increments", () => {
-    expect(proposeDayRange({ startMinute: 547, endMinute: 548 }, "2026-08-17", "UTC", utc15.policy)).toEqual({
-      startMinute: 540,
-      endMinute: 555,
-    });
-  });
-
   it("keeps an unaligned start", () => {
-    const policy = context("2026-08-17", "UTC", "UTC", 17, { alignToIncrement: false }).policy;
+    const policy = context("2026-08-17", "UTC", "UTC", 17, {}).policy;
     expect(proposeDayRange({ startMinute: 547, endMinute: 600 }, "2026-08-17", "UTC", policy)).toEqual({
       startMinute: 547,
       endMinute: 598,
@@ -302,7 +263,6 @@ describe("creation proposals", () => {
   it("offers no Day proposal whose end would need an occurrence choice", () => {
     const policy = context("2026-10-24", "Europe/Berlin", "Europe/Berlin", 1440, {
       incrementUnit: "DAYS",
-      alignToIncrement: false,
     }).policy;
     expect(
       proposeDayRange({ startMinute: 150, endMinute: 151 }, "2026-10-24", "Europe/Berlin", policy),
@@ -312,7 +272,6 @@ describe("creation proposals", () => {
   it("extends a Day proposal to the same local time on a later date", () => {
     const policy = context("2026-03-28", "Europe/Berlin", "Europe/Berlin", 1440, {
       incrementUnit: "DAYS",
-      alignToIncrement: false,
     }).policy;
     // Noon Saturday to noon Sunday in Berlin is 23 elapsed hours.
     expect(proposeDayRange({ startMinute: 720, endMinute: 721 }, "2026-03-28", "Europe/Berlin", policy)).toEqual({
@@ -340,18 +299,18 @@ describe("preserved whole-window movement", () => {
     expect(adjuster(range, utc15).adjust("move", target)).toEqual(expected);
   });
 
-  it("keeps the elapsed duration and resolves a left-edge Kathmandu grid tie to the earlier start", () => {
+  it("keeps the elapsed duration and starts at the left display edge in a fractional-offset scheduling timezone", () => {
     const range = { start: "2026-08-17T00:20:00Z", end: "2026-08-17T01:20:00Z" };
     expect(
       adjuster(range, context("2026-08-17", "UTC", "Asia/Kathmandu", 10)).adjust("move", "2026-08-17T00:00:00Z"),
-    ).toEqual({ start: "2026-08-16T23:55:00Z", end: "2026-08-17T00:55:00Z" });
+    ).toEqual({ start: "2026-08-17T00:00:00Z", end: "2026-08-17T01:00:00Z" });
   });
 
   it("finds the nearest valid start at the right display edge without losing the hidden end", () => {
     const range = { start: "2026-08-17T23:45:00Z", end: "2026-08-18T00:45:00Z" };
     expect(
       adjuster(range, context("2026-08-17", "UTC", "Asia/Kathmandu", 10)).adjust("move", "2026-08-18T00:00:00Z"),
-    ).toEqual({ start: "2026-08-17T23:55:00Z", end: "2026-08-18T00:55:00Z" });
+    ).toEqual({ start: "2026-08-17T23:59:00Z", end: "2026-08-18T00:59:00Z" });
   });
 
   it("validates the whole interval against opening hours before choosing a candidate", () => {

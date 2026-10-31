@@ -50,7 +50,6 @@ class ApiV2BookingConfigurationResourceTest {
           "timezone",
           "slotGranularityMinutes",
           "incrementUnit",
-          "alignToIncrement",
           "openingHours",
           "bufferBeforeMinutes",
           "bufferAfterMinutes",
@@ -109,7 +108,6 @@ class ApiV2BookingConfigurationResourceTest {
             "state",
             "slotGranularityMinutes",
             "incrementUnit",
-            "alignToIncrement",
             "openingHours",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
@@ -263,7 +261,6 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals("Europe/Berlin", rendered.get("timezone"));
     assertEquals(15L, rendered.get("slotGranularityMinutes"));
     assertEquals("MINUTES", rendered.get("incrementUnit"));
-    assertEquals(true, rendered.get("alignToIncrement"));
     assertEquals(
         List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
         rendered.get("openingHours"));
@@ -546,11 +543,9 @@ class ApiV2BookingConfigurationResourceTest {
 
   @Test
   void parsesTheIncrementUnitByNameAndRejectsAnyOtherValue() throws Exception {
-    ParsedDocument document =
-        parseUpdate(mapper.readTree("{\"incrementUnit\": \"DAYS\", \"alignToIncrement\": false}"));
+    ParsedDocument document = parseUpdate(mapper.readTree("{\"incrementUnit\": \"DAYS\"}"));
 
     assertEquals(BookingIncrementUnit.DAYS, document.values().get("incrementUnit"));
-    assertEquals(false, document.values().get("alignToIncrement"));
     assertEquals(
         DocumentValidationException.Reason.INVALID_VALUE,
         updateViolation("{\"incrementUnit\": \"WEEKS\"}"));
@@ -559,9 +554,6 @@ class ApiV2BookingConfigurationResourceTest {
         updateViolation("{\"incrementUnit\": \"days\"}"));
     assertEquals(
         DocumentValidationException.Reason.WRONG_TYPE, updateViolation("{\"incrementUnit\": 1}"));
-    assertEquals(
-        DocumentValidationException.Reason.WRONG_TYPE,
-        updateViolation("{\"alignToIncrement\": \"true\"}"));
   }
 
   private ParsedDocument parseUpdate(String json) throws Exception {

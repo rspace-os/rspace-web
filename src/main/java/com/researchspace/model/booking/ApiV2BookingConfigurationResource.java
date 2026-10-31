@@ -94,14 +94,6 @@ public record ApiV2BookingConfigurationResource(
                     + " weekdays.",
             example = "MINUTES")
         BookingIncrementUnit incrementUnit,
-    @ApiV2ResourceField(
-            createAccess = INHERITED,
-            updateAccess = INHERITED,
-            description =
-                "Whether booking starts must fall on the increment counted from local midnight."
-                    + " The stored value is ignored for DAYS and for increments of 1440 minutes or"
-                    + " more.")
-        boolean alignToIncrement,
     @ApiV2ResourceMember(factory = "openingHoursField") List<BookingOpeningHoursEntry> openingHours,
     @ApiV2ResourceField(
             createAccess = INHERITED,

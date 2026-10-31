@@ -6,7 +6,10 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import type { Booking } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
-import { bookableItemEventsQuery } from "@/modules/booking/pages/bookable-items/bookableItemEvents";
+import {
+  bookableItemEventsQuery,
+  fetchBookableItemEvents,
+} from "@/modules/booking/pages/bookable-items/bookableItemEvents";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";

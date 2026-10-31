@@ -371,9 +371,7 @@ describe("DayTimeline table row", () => {
       timezone: "Europe/Berlin",
       slotGranularityMinutes: 15,
       incrementUnit: "MINUTES",
-      alignToIncrement: true,
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-
       maxBookingDurationMinutes: 0,
     });
     const proposeQuarterHours = (range: { startMinute: number; endMinute: number }) =>
@@ -409,9 +407,9 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 539 } },
     ]);
-    expect(screen.getByText("08:00 AM–09:00 AM")).toBeVisible();
+    expect(screen.getByText("08:01 AM–09:01 AM")).toBeVisible();
     await user.pointer("[/MouseLeft]");
-    expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 480, endMinute: 540 }, expect.any(HTMLElement));
+    expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 481, endMinute: 541 }, expect.any(HTMLElement));
 
     rerender(
       <DayTimeline
@@ -451,7 +449,6 @@ describe("DayTimeline table row", () => {
         timezone: "UTC",
         slotGranularityMinutes,
         incrementUnit,
-        alignToIncrement: false,
         openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         maxBookingDurationMinutes: 0,
       });

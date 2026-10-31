@@ -183,24 +183,18 @@ class BookingConfigurationResourceOperationsTest {
   }
 
   @Test
-  void translatesIncrementUnitAndAlignmentPatchesToSchedulingSettings() {
+  void translatesIncrementUnitPatchesToSchedulingSettings() {
     BookingConfiguration configuration = new BookingConfiguration();
     BookingSchedulingSettings.Patch schedulingPatch =
         new BookingSchedulingSettings.Patch(
-            1440L, BookingIncrementUnit.DAYS, false, null, null, null, null, null);
+            1440L, BookingIncrementUnit.DAYS, null, null, null, null, null);
     when(manager.updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor))
         .thenReturn(Optional.of(configuration));
 
     operations.update(
         42L,
         ParsedDocument.update(
-            Map.of(
-                "slotGranularityMinutes",
-                1440L,
-                "incrementUnit",
-                BookingIncrementUnit.DAYS,
-                "alignToIncrement",
-                false)),
+            Map.of("slotGranularityMinutes", 1440L, "incrementUnit", BookingIncrementUnit.DAYS)),
         ApiV2Caller.direct(actor));
 
     verify(manager).updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor);

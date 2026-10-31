@@ -29,9 +29,7 @@ function instrument(overrides: Partial<BookableItemOption>): BookableItemOption 
     timezone: "Europe/Berlin",
     slotGranularityMinutes: 15,
     incrementUnit: "MINUTES",
-    alignToIncrement: true,
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "07:00", end: "19:00" })),
-
     bufferBeforeMinutes: 0,
     bufferAfterMinutes: 0,
     maxBookingDurationMinutes: 240,
@@ -114,7 +112,6 @@ export const SCENARIOS = {
     item: instrument({
       slotGranularityMinutes: 30,
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-
       maxBookingDurationMinutes: 0,
     }),
     events: [
@@ -148,7 +145,6 @@ export const SCENARIOS = {
     item: instrument({
       slotGranularityMinutes: 30,
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-
       maxBookingDurationMinutes: 0,
     }),
     events: [

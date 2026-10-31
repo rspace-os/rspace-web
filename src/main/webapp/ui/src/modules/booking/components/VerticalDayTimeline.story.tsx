@@ -98,10 +98,8 @@ export function VerticalDayTimelineStory({
         policy: timelinePolicy({
           timezone: TIMEZONE,
           openingHours: ALWAYS_OPEN.openingHours,
-
           slotGranularityMinutes: 5,
           incrementUnit: "MINUTES",
-          alignToIncrement: true,
           maxBookingDurationMinutes: 0,
         }),
         targetKey: "IN123",

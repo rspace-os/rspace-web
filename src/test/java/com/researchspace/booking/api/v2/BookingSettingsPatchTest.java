@@ -312,19 +312,15 @@ class BookingSettingsPatchTest {
   }
 
   @Test
-  void decodesTheIncrementUnitAndAlignmentAndRendersThemInBothDocuments() throws Exception {
-    BookingSchedulingSettings.Patch supplied =
-        patch("{\"incrementUnit\":\"DAYS\",\"alignToIncrement\":false}");
+  void decodesTheIncrementUnitAndRendersItInBothDocuments() throws Exception {
+    BookingSchedulingSettings.Patch supplied = patch("{\"incrementUnit\":\"DAYS\"}");
     assertEquals(BookingIncrementUnit.DAYS, supplied.incrementUnit());
-    assertEquals(false, supplied.alignToIncrement());
     BookingSchedulingSettings.Patch omitted = patch("{}");
     assertNull(omitted.incrementUnit());
-    assertNull(omitted.alignToIncrement());
 
     BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
     defaults.setSlotGranularityMinutes(1440);
     defaults.setIncrementUnit(BookingIncrementUnit.HOURS);
-    defaults.setAlignToIncrement(true);
     Clock clock = Clock.fixed(Instant.EPOCH, ZoneId.of("UTC"));
     JsonNode document =
         mapper.valueToTree(BookingSettingsController.SettingsDocument.from(defaults, clock));
@@ -333,7 +329,6 @@ class BookingSettingsPatchTest {
     for (JsonNode rendered : List.of(document, admin)) {
       assertEquals(1440, rendered.get("slotGranularityMinutes").asLong());
       assertEquals("HOURS", rendered.get("incrementUnit").asText());
-      assertTrue(rendered.get("alignToIncrement").asBoolean());
     }
   }
 }

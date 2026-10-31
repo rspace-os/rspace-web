@@ -25,7 +25,6 @@ import java.util.Set;
 public record BookingSchedulingSettings(
     long slotGranularityMinutes,
     BookingIncrementUnit incrementUnit,
-    boolean alignToIncrement,
     List<BookingOpeningHoursEntry> openingHours,
     long bufferBeforeMinutes,
     long bufferAfterMinutes,
@@ -34,7 +33,6 @@ public record BookingSchedulingSettings(
 
   public static final long DEFAULT_SLOT_GRANULARITY_MINUTES = 15;
   public static final BookingIncrementUnit DEFAULT_INCREMENT_UNIT = BookingIncrementUnit.MINUTES;
-  public static final boolean DEFAULT_ALIGN_TO_INCREMENT = true;
   public static final String MIDNIGHT = "00:00";
   public static final String END_OF_DAY = "24:00";
   public static final long DEFAULT_BUFFER_MINUTES = 0;
@@ -67,11 +65,8 @@ public record BookingSchedulingSettings(
   /** How a booking's start and end are checked against the increment. */
   public sealed interface IncrementRule permits ElapsedIncrement, DayIncrement {}
 
-  /**
-   * Elapsed time: the booking lasts a positive multiple of {@code minutes}. When {@code aligned},
-   * its start's local minute of day is also a multiple of {@code minutes}.
-   */
-  public record ElapsedIncrement(long minutes, boolean aligned) implements IncrementRule {}
+  /** Elapsed time: the booking lasts a positive multiple of {@code minutes}. */
+  public record ElapsedIncrement(long minutes) implements IncrementRule {}
 
   /**
    * Calendar days: the booking ends at its start's local time, a positive multiple of {@code days}
@@ -86,16 +81,13 @@ public record BookingSchedulingSettings(
   public record Patch(
       Long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
-      Boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       Long bufferBeforeMinutes,
       Long bufferAfterMinutes,
       Long maxBookingDurationMinutes,
       Boolean allowDoubleBooking) {
 
-    /**
-     * A patch that leaves the increment unit, the alignment choice and weekly schedule unchanged.
-     */
+    /** A patch that leaves the increment unit and weekly schedule unchanged. */
     public Patch(
         Long slotGranularityMinutes,
         List<BookingOpeningHoursEntry> openingHours,
@@ -106,7 +98,6 @@ public record BookingSchedulingSettings(
       this(
           slotGranularityMinutes,
           null,
-          null,
           openingHours,
           bufferBeforeMinutes,
           bufferAfterMinutes,
@@ -115,7 +106,7 @@ public record BookingSchedulingSettings(
     }
 
     public static Patch empty() {
-      return new Patch(null, null, null, null, null, null, null, null);
+      return new Patch(null, null, null, null, null, null, null);
     }
 
     /** Returns one complete value using {@code current} for every omitted field. */
@@ -125,7 +116,6 @@ public record BookingSchedulingSettings(
               ? current.slotGranularityMinutes()
               : slotGranularityMinutes,
           incrementUnit == null ? current.incrementUnit() : incrementUnit,
-          alignToIncrement == null ? current.alignToIncrement() : alignToIncrement,
           openingHours == null ? current.openingHours() : openingHours,
           bufferBeforeMinutes == null ? current.bufferBeforeMinutes() : bufferBeforeMinutes,
           bufferAfterMinutes == null ? current.bufferAfterMinutes() : bufferAfterMinutes,
@@ -138,7 +128,6 @@ public record BookingSchedulingSettings(
     public boolean isEmpty() {
       return slotGranularityMinutes == null
           && incrementUnit == null
-          && alignToIncrement == null
           && openingHours == null
           && bufferBeforeMinutes == null
           && bufferAfterMinutes == null
@@ -151,7 +140,6 @@ public record BookingSchedulingSettings(
     return new BookingSchedulingSettings(
         configuration.getSlotGranularityMinutes(),
         configuration.getIncrementUnit(),
-        configuration.isAlignToIncrement(),
         configuration.getOpeningHours(),
         configuration.getBufferBeforeMinutes(),
         configuration.getBufferAfterMinutes(),
@@ -163,7 +151,6 @@ public record BookingSchedulingSettings(
     return new BookingSchedulingSettings(
         defaults.getSlotGranularityMinutes(),
         defaults.getIncrementUnit(),
-        defaults.isAlignToIncrement(),
         defaults.getOpeningHours(),
         defaults.getBufferBeforeMinutes(),
         defaults.getBufferAfterMinutes(),
@@ -174,7 +161,6 @@ public record BookingSchedulingSettings(
   public void applyTo(BookingConfiguration configuration) {
     configuration.setSlotGranularityMinutes(slotGranularityMinutes);
     configuration.setIncrementUnit(incrementUnit);
-    configuration.setAlignToIncrement(alignToIncrement);
     configuration.setOpeningHours(openingHours);
     configuration.setBufferBeforeMinutes(bufferBeforeMinutes);
     configuration.setBufferAfterMinutes(bufferAfterMinutes);
@@ -185,7 +171,6 @@ public record BookingSchedulingSettings(
   public void applyTo(BookingConfigurationDefaults defaults) {
     defaults.setSlotGranularityMinutes(slotGranularityMinutes);
     defaults.setIncrementUnit(incrementUnit);
-    defaults.setAlignToIncrement(alignToIncrement);
     defaults.setOpeningHours(openingHours);
     defaults.setBufferBeforeMinutes(bufferBeforeMinutes);
     defaults.setBufferAfterMinutes(bufferAfterMinutes);
@@ -229,37 +214,22 @@ public record BookingSchedulingSettings(
             .toList();
   }
 
-  /**
-   * Whether booking starts must sit on the increment's grid, counted from local midnight. The
-   * stored {@code alignToIncrement} choice applies only to an elapsed increment shorter than one
-   * day; it is ignored, never rewritten, for longer increments and for days.
-   */
-  public boolean effectiveAlignment() {
-    return alignToIncrement
-        && incrementUnit != BookingIncrementUnit.DAYS
-        && slotGranularityMinutes < MINUTES_PER_DAY;
-  }
-
   /** The rule bookings are checked against; requires a valid increment. */
   public IncrementRule incrementRule() {
     return incrementUnit == BookingIncrementUnit.DAYS
         ? new DayIncrement(slotGranularityMinutes / MINUTES_PER_DAY)
-        : new ElapsedIncrement(slotGranularityMinutes, effectiveAlignment());
+        : new ElapsedIncrement(slotGranularityMinutes);
   }
 
   /**
    * Whether the increment fits the opening hours. Days need every ISO weekday open from 00:00 to
-   * 24:00. An aligned elapsed increment needs a start on its midnight grid inside a continuous
-   * opening period with room for one increment; an unaligned one needs a continuous opening period
-   * at least one increment long.
+   * 24:00. Elapsed increments need a continuous opening period at least one increment long.
    */
   public boolean incrementFitsOpeningHours() {
     if (incrementUnit == BookingIncrementUnit.DAYS) {
       return isOpenAllDayEveryDay();
     }
-    return effectiveAlignment()
-        ? alignedIncrementFitsOpening()
-        : slotGranularityMinutes <= longestOpeningMinutes();
+    return slotGranularityMinutes <= longestOpeningMinutes();
   }
 
   /** Whether every ISO weekday is effectively open from 00:00 to 24:00. */
@@ -279,27 +249,6 @@ public record BookingSchedulingSettings(
       longest = Math.max(longest, period[1] - period[0]);
     }
     return longest >= MINUTES_PER_WEEK ? MAX_BOOKING_DURATION_MINUTES : longest;
-  }
-
-  /**
-   * Whether some continuous opening period contains {@code [start, start + increment]} for a start
-   * whose minute of day is a multiple of the increment. The grid restarts at each local midnight,
-   * so each covered day is tried from its first grid minute inside the period.
-   */
-  private boolean alignedIncrementFitsOpening() {
-    long increment = slotGranularityMinutes;
-    for (long[] period : continuousOpenings()) {
-      for (long dayStart = period[0] / MINUTES_PER_DAY * MINUTES_PER_DAY;
-          dayStart < period[1];
-          dayStart += MINUTES_PER_DAY) {
-        long earliest = Math.max(period[0], dayStart) - dayStart;
-        long start = dayStart + (earliest + increment - 1) / increment * increment;
-        if (start < dayStart + MINUTES_PER_DAY && start + increment <= period[1]) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   /**

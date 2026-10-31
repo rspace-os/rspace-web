@@ -7,9 +7,7 @@ import {
   incrementFitsSchedule,
   incrementRule,
   incrementViolation,
-  isStartAligned,
   snapEndToIncrement,
-  snapStartToGrid,
   validIncrement,
   validMaximumForIncrement,
 } from "../bookingIncrement";
@@ -20,7 +18,7 @@ type IntervalVector = IncrementSettings & {
   timezone: string;
   start: string;
   end: string;
-  expected: "valid" | "precision" | "alignment" | "duration" | "dayEndMissing";
+  expected: "valid" | "precision" | "duration" | "dayEndMissing";
 };
 
 type SettingsVector = IncrementSettings & {
@@ -54,8 +52,8 @@ describe("shared increment vectors", () => {
 });
 
 describe("end snapping", () => {
-  const settings = (slotGranularityMinutes: number, incrementUnit: IncrementUnit, alignToIncrement = false) =>
-    incrementRule({ slotGranularityMinutes, incrementUnit, alignToIncrement });
+  const settings = (slotGranularityMinutes: number, incrementUnit: IncrementUnit) =>
+    incrementRule({ slotGranularityMinutes, incrementUnit });
 
   it("chooses the nearest positive elapsed multiple, earlier on ties", () => {
     const rule = settings(15, "MINUTES");
@@ -103,28 +101,5 @@ describe("end snapping", () => {
       earlier: "2026-10-25T00:30:00Z",
       later: "2026-10-25T01:30:00Z",
     });
-  });
-});
-
-describe("start snapping", () => {
-  it("snaps to the scheduling timezone's grid, including across midnight", () => {
-    expect(snapStartToGrid("2026-08-17T09:07:00Z", 15, "UTC")).toBe("2026-08-17T09:00:00Z");
-    expect(snapStartToGrid("2026-08-17T09:08:00Z", 15, "UTC")).toBe("2026-08-17T09:15:00Z");
-    expect(snapStartToGrid("2026-08-17T23:59:00Z", 17, "UTC")).toBe("2026-08-18T00:00:00Z");
-    expect(snapStartToGrid("2026-08-17T09:50:00Z", 60, "Asia/Kathmandu")).toBe("2026-08-17T10:15:00Z");
-  });
-
-  it("finds the nearest grid point across the autumn rollback", () => {
-    // 00:59Z is 02:59 summer time; 01:00Z is 02:00 winter time, one minute later.
-    expect(snapStartToGrid("2026-10-25T00:59:00Z", 15, "Europe/Berlin")).toBe("2026-10-25T01:00:00Z");
-    // Lord Howe rolls back 30 minutes at 02:00 local.
-    expect(snapStartToGrid("2026-04-04T14:59:00Z", 15, "Australia/Lord_Howe")).toBe("2026-04-04T15:00:00Z");
-  });
-
-  it("never proposes a time inside the spring gap", () => {
-    // 02:16 does not exist in Berlin on 29 March; 01:42 and 03:24 are the neighbouring 17-minute grid points.
-    const rule = incrementRule({ slotGranularityMinutes: 17, incrementUnit: "MINUTES", alignToIncrement: true });
-    const snapped = snapStartToGrid("2026-03-29T01:05:00Z", 17, "Europe/Berlin");
-    expect(isStartAligned(rule, snapped, "Europe/Berlin")).toBe(true);
   });
 });

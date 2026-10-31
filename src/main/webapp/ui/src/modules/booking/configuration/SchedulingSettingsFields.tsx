@@ -4,13 +4,10 @@ import { useTranslation } from "react-i18next";
 import { OpeningHoursEditor } from "@/modules/booking/configuration/OpeningHoursEditor";
 import { MAX_BUFFER_MINUTES, type SchedulingSettings } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import {
-  alignmentAvailable,
-  effectiveAlignment,
   INCREMENT_UNIT_MINUTES,
   INCREMENT_UNITS,
   type IncrementSettings,
   type IncrementUnit,
-  incrementFitsSchedule,
   openAllDayEveryDay,
   validIncrementForSchedule,
   validMaximumForIncrement,
@@ -26,7 +23,6 @@ import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
-import { FieldHelpTooltip } from "@/modules/common/ui/field-help-tooltip";
 import { Input } from "@/modules/common/ui/input";
 
 function numberInput(value: unknown): number | undefined {
@@ -38,13 +34,7 @@ function incrementUnitInput(value: unknown): IncrementUnit {
 }
 
 /** Why an increment cannot be saved; null when `validIncrementForSchedule` accepts it. */
-export type IncrementProblem =
-  | "range"
-  | "wholeMinutes"
-  | "wholeDays"
-  | "daysNeedFullWeek"
-  | "opening"
-  | "alignedOpening";
+export type IncrementProblem = "range" | "wholeMinutes" | "wholeDays" | "daysNeedFullWeek" | "opening";
 
 export function incrementProblem(settings: OpeningSchedule & IncrementSettings): IncrementProblem | null {
   if (validIncrementForSchedule(settings)) return null;
@@ -54,10 +44,7 @@ export function incrementProblem(settings: OpeningSchedule & IncrementSettings):
     return minutes % INCREMENT_UNIT_MINUTES.DAYS === 0 ? "daysNeedFullWeek" : "wholeDays";
   }
   if (!Number.isInteger(minutes)) return "wholeMinutes";
-  // An aligned increment that would fit with any start fails only because of the clock grid.
-  return effectiveAlignment(settings) && incrementFitsSchedule({ ...settings, alignToIncrement: false })
-    ? "alignedOpening"
-    : "opening";
+  return "opening";
 }
 
 const INCREMENT_PROBLEM_KEYS = {
@@ -66,7 +53,6 @@ const INCREMENT_PROBLEM_KEYS = {
   wholeDays: "settings.errors.incrementWholeDays",
   daysNeedFullWeek: "settings.errors.incrementDaysNeedFullWeek",
   opening: "settings.errors.incrementOpening",
-  alignedOpening: "settings.errors.incrementAlignedOpening",
 } as const satisfies Record<IncrementProblem, string>;
 
 const INCREMENT_UNIT_LABEL_KEYS = {
@@ -78,16 +64,11 @@ const INCREMENT_UNIT_LABEL_KEYS = {
 // Unit conversion can leave float noise (0.35 days = 503.99999999999994); fractional minutes stay invalid.
 const wholeMinutes = (value: number) => Number(value.toFixed(6));
 
-/**
- * The increment's number and unit, and Start on clock intervals. The unit is a form field, never inferred from the
- * minutes, so 24 Hours and 1 Day stay distinct. Days need every weekday open all day; alignment is unavailable from
- * one day up, shown off without changing the stored choice.
- */
+/** The increment number and unit remain distinct, including 24 Hours and 1 Day. */
 function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: string; disabled: boolean }) {
   const { t } = useTranslation("booking");
   const field = useField(form, { path: ["slotGranularityMinutes"] });
   const unitField = useField(form, { path: ["incrementUnit"] });
-  const alignField = useField(form, { path: ["alignToIncrement"] });
   // Reading the whole input subscribes this field to the opening hours that decide Days and the fit checks.
   const values = getInput(form) as SchedulingSettings;
   const minutes = numberInput(field.input);
@@ -103,11 +84,7 @@ function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: strin
           ...values,
           slotGranularityMinutes: minutes,
           incrementUnit: unit,
-          alignToIncrement: alignField.input === true,
         });
-  const alignmentPossible = alignmentAvailable({ slotGranularityMinutes: minutes ?? 0, incrementUnit: unit });
-  const aligned = alignmentPossible && alignField.input === true;
-  const alignmentDescription = t("settings.fields.alignToIncrementDescription");
   return (
     <Field>
       <div className="flex flex-wrap items-center gap-2">
@@ -171,30 +148,6 @@ function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: strin
         )}
       </div>
       {problem ? <FieldError id={`${id}-error`}>{t(INCREMENT_PROBLEM_KEYS[problem])}</FieldError> : null}
-      <Field orientation="horizontal">
-        <Checkbox
-          id={`${id}-align`}
-          checked={aligned}
-          disabled={disabled || !alignmentPossible}
-          inputRef={alignField.props.ref}
-          aria-describedby={[`${id}-align-description`, alignmentPossible ? null : `${id}-align-help`]
-            .filter(Boolean)
-            .join(" ")}
-          onCheckedChange={(checked) => {
-            if (alignmentPossible) alignField.onChange(checked);
-          }}
-        />
-        <div className="flex min-w-0 items-center gap-1">
-          <FieldLabel htmlFor={`${id}-align`}>{t("settings.fields.alignToIncrement")}</FieldLabel>
-          <FieldHelpTooltip label={t("settings.fields.alignToIncrement")}>{alignmentDescription}</FieldHelpTooltip>
-          <span id={`${id}-align-description`} className="sr-only">
-            {alignmentDescription}
-          </span>
-        </div>
-      </Field>
-      {alignmentPossible ? null : (
-        <FieldDescription id={`${id}-align-help`}>{t("settings.fields.alignToIncrementUnavailable")}</FieldDescription>
-      )}
     </Field>
   );
 }

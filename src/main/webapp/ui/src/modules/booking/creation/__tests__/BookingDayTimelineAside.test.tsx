@@ -380,9 +380,11 @@ describe("BookingDayTimelineAside acceptance", () => {
     expect(onChange).toHaveBeenCalledOnce();
     expect(onChange).toHaveBeenCalledWith({
       startDate: "2026-08-17",
-      startTime: "09:05",
+      startTime: "09:01",
+      startOccurrence: undefined,
       endDate: "2026-08-17",
-      endTime: "10:05",
+      endTime: "10:01",
+      endOccurrence: undefined,
     });
     expect(requests).toBe(1);
   });

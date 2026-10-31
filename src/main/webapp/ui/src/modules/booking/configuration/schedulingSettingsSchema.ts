@@ -19,7 +19,7 @@ export const MAX_BUFFER_MINUTES = 10_080;
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "incrementUnit",
-  "alignToIncrement",
+
   "openingHours",
   "bufferBeforeMinutes",
   "bufferAfterMinutes",
@@ -29,7 +29,6 @@ export const schedulingSettingsFieldNames = [
 export const schedulingSettingsEntries = {
   slotGranularityMinutes: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_BOOKING_DURATION_MINUTES)),
   incrementUnit: v.picklist(INCREMENT_UNITS),
-  alignToIncrement: v.boolean(),
   openingHours: OpeningHoursSchema,
   bufferBeforeMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
   bufferAfterMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
@@ -99,7 +98,6 @@ export type BookingSettingsInput = SchedulingSettings & BookingDisplayPreference
 export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   slotGranularityMinutes: 15,
   incrementUnit: "MINUTES",
-  alignToIncrement: true,
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,

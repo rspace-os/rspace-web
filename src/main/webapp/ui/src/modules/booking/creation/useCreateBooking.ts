@@ -74,7 +74,6 @@ const BOOKING_PROBLEM_KEYS = {
   "errors.api.v2.booking.overlap": "bookings.errors.overlap",
   [BUFFER_CODE]: "bookings.errors.overlap",
   "errors.api.v2.booking.granularity": "bookings.errors.granularity",
-  "errors.api.v2.booking.alignment": "bookings.errors.alignmentRejected",
   "errors.api.v2.booking.dayEndMissing": "bookings.errors.dayEndMissingRejected",
   "errors.api.v2.booking.openingHours": "bookings.errors.openingHours",
   "errors.api.v2.booking.target.unavailable": "bookings.errors.targetUnavailable",

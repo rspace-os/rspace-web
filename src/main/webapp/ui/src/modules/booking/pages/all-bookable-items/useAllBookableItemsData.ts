@@ -169,7 +169,7 @@ export function useAllBookableItemsData({
   const counts = useAvailabilityCounts(
     token,
     subjectId,
-    { q, totals: true, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
+    { q, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
     today,
     !runtimeFilterBlocked,
   );
@@ -177,7 +177,17 @@ export function useAllBookableItemsData({
   const scope = useQueryIdentityScope(subjectId);
   const catalogueOptions = bookingCatalogueQuery(
     scope,
-    { q, totals: true, types, mine, where: serverWhere, page, pageSize, availability: serverAvailability, availabilityWindow: today },
+    {
+      q,
+      totals: true,
+      types,
+      mine,
+      where: serverWhere,
+      page,
+      pageSize,
+      availability: serverAvailability,
+      availabilityWindow: today,
+    },
     token,
   );
   const catalogueQueryKey = catalogueOptions.queryKey;

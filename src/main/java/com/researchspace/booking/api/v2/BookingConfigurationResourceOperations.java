@@ -134,7 +134,6 @@ public final class BookingConfigurationResourceOperations
                         Map.entry("enabled", true),
                         Map.entry("slotGranularityMinutes", 15),
                         Map.entry("incrementUnit", "MINUTES"),
-                        Map.entry("alignToIncrement", true),
                         Map.entry(
                             "openingHours",
                             List.of(
@@ -360,7 +359,6 @@ public final class BookingConfigurationResourceOperations
     return new BookingSchedulingSettings.Patch(
         BookingDocumentValues.value(document, "slotGranularityMinutes", Long.class),
         BookingDocumentValues.value(document, "incrementUnit", BookingIncrementUnit.class),
-        BookingDocumentValues.value(document, "alignToIncrement", Boolean.class),
         openingHours(document),
         BookingDocumentValues.value(document, "bufferBeforeMinutes", Long.class),
         BookingDocumentValues.value(document, "bufferAfterMinutes", Long.class),

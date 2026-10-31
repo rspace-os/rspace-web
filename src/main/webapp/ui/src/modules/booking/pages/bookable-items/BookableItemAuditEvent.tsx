@@ -52,7 +52,6 @@ function RecordedValues({ row }: { row: AuditRow }) {
     openingHours: t("bookableItemDetails.audit.values.openingHours"),
     slotGranularityMinutes: t("bookableItemDetails.audit.values.increment"),
     incrementUnit: t("bookableItemDetails.audit.values.incrementUnit"),
-    alignToIncrement: t("bookableItemDetails.audit.values.alignToIncrement"),
     maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
     bufferBeforeMinutes: t("bookableItemDetails.audit.values.bufferBefore"),
     bufferAfterMinutes: t("bookableItemDetails.audit.values.bufferAfter"),

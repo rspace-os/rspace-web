@@ -227,9 +227,6 @@
     "schemas" : {
       "AdminSettingsDocument" : {
         "properties" : {
-          "alignToIncrement" : {
-            "type" : "boolean"
-          },
           "allowDoubleBooking" : {
             "type" : "boolean"
           },
@@ -708,15 +705,6 @@
       "BookingConfigurationsCreate" : {
         "additionalProperties" : false,
         "properties" : {
-          "alignToIncrement" : {
-            "description" : "Whether booking starts must fall on the increment counted from local midnight. The stored value is ignored for DAYS and for increments of 1440 minutes or more.",
-            "type" : "boolean",
-            "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required."
-            }
-          },
           "allowDoubleBooking" : {
             "description" : "Whether overlapping bookings are permitted.",
             "type" : "boolean",
@@ -1014,15 +1002,6 @@
       "BookingConfigurationsRead" : {
         "additionalProperties" : false,
         "properties" : {
-          "alignToIncrement" : {
-            "description" : "Whether booking starts must fall on the increment counted from local midnight. The stored value is ignored for DAYS and for increments of 1440 minutes or more.",
-            "type" : "boolean",
-            "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required."
-            }
-          },
           "allowDoubleBooking" : {
             "description" : "Whether overlapping bookings are permitted.",
             "type" : "boolean",
@@ -1831,15 +1810,6 @@
       "BookingConfigurationsUpdate" : {
         "additionalProperties" : false,
         "properties" : {
-          "alignToIncrement" : {
-            "description" : "Whether booking starts must fall on the increment counted from local midnight. The stored value is ignored for DAYS and for increments of 1440 minutes or more.",
-            "type" : "boolean",
-            "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required."
-            }
-          },
           "allowDoubleBooking" : {
             "description" : "Whether overlapping bookings are permitted.",
             "type" : "boolean",
@@ -2952,9 +2922,6 @@
       },
       "Item" : {
         "properties" : {
-          "alignToIncrement" : {
-            "type" : "boolean"
-          },
           "allowDoubleBooking" : {
             "type" : "boolean"
           },
@@ -3865,9 +3832,6 @@
       },
       "SettingsDocument" : {
         "properties" : {
-          "alignToIncrement" : {
-            "type" : "boolean"
-          },
           "allowDoubleBooking" : {
             "type" : "boolean"
           },
@@ -3922,10 +3886,6 @@
       },
       "SettingsPatch" : {
         "properties" : {
-          "alignToIncrement" : {
-            "description" : "Whether booking starts follow the increment from local midnight. Ignored for DAYS and for increments of 1440 minutes or more.",
-            "type" : "boolean"
-          },
           "allowDoubleBooking" : {
             "type" : "boolean"
           },
@@ -4816,13 +4776,6 @@
             "maximumLikeComparisons" : 10,
             "maximumNesting" : 10,
             "selectors" : {
-              "alignToIncrement" : {
-                "operators" : [ "!=", "==", "=exists=" ],
-                "schema" : {
-                  "type" : "boolean"
-                },
-                "wildcards" : false
-              },
               "allowDoubleBooking" : {
                 "operators" : [ "!=", "==", "=exists=" ],
                 "schema" : {
@@ -5308,13 +5261,6 @@
             "maximumLikeComparisons" : 10,
             "maximumNesting" : 10,
             "selectors" : {
-              "alignToIncrement" : {
-                "operators" : [ "!=", "==", "=exists=" ],
-                "schema" : {
-                  "type" : "boolean"
-                },
-                "wildcards" : false
-              },
               "allowDoubleBooking" : {
                 "operators" : [ "!=", "==", "=exists=" ],
                 "schema" : {
@@ -5695,7 +5641,7 @@
           },
           "x-rspace-sort" : {
             "default" : [ "id" ],
-            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "alignToIncrement", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
+            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
             "maximumFields" : 5
           }
         }, {
@@ -5775,7 +5721,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "alignToIncrement", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -5808,7 +5754,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "alignToIncrement", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -5962,13 +5908,6 @@
             "maximumLikeComparisons" : 10,
             "maximumNesting" : 10,
             "selectors" : {
-              "alignToIncrement" : {
-                "operators" : [ "!=", "==", "=exists=" ],
-                "schema" : {
-                  "type" : "boolean"
-                },
-                "wildcards" : false
-              },
               "allowDoubleBooking" : {
                 "operators" : [ "!=", "==", "=exists=" ],
                 "schema" : {
@@ -6513,7 +6452,6 @@
           "content" : {
             "application/json" : {
               "example" : {
-                "alignToIncrement" : true,
                 "allowDoubleBooking" : false,
                 "bufferAfterMinutes" : 15,
                 "bufferBeforeMinutes" : 15,
@@ -6883,13 +6821,6 @@
             "maximumLikeComparisons" : 10,
             "maximumNesting" : 10,
             "selectors" : {
-              "alignToIncrement" : {
-                "operators" : [ "!=", "==", "=exists=" ],
-                "schema" : {
-                  "type" : "boolean"
-                },
-                "wildcards" : false
-              },
               "allowDoubleBooking" : {
                 "operators" : [ "!=", "==", "=exists=" ],
                 "schema" : {
@@ -7957,7 +7888,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "alignToIncrement", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -7990,7 +7921,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "alignToIncrement", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]

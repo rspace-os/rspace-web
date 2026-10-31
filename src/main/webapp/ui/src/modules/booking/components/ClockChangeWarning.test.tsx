@@ -21,7 +21,7 @@ describe("ClockChangeWarning", () => {
       kind: "BOOKING",
     });
 
-    expect(screen.getByRole("note")).toHaveTextContent(
+    expect(screen.getByRole("note")).toMatchTextContent(
       "This booking crosses a daylight-saving change in Europe/Berlin. It spans 2 calendar days but lasts 47 hours.",
     );
   });
@@ -34,7 +34,7 @@ describe("ClockChangeWarning", () => {
       kind: "MAINTENANCE",
     });
 
-    expect(screen.getByRole("note")).toHaveTextContent(
+    expect(screen.getByRole("note")).toMatchTextContent(
       /^This maintenance event crosses a daylight-saving change in Europe\/Berlin\. It runs from .+ to .+ local time and lasts 1 hour(,| and)? 30 minutes\.$/,
     );
   });
@@ -47,7 +47,7 @@ describe("ClockChangeWarning", () => {
       kind: "BOOKING",
     });
 
-    expect(screen.getByRole("note")).toHaveTextContent("crosses 2 clock changes in Europe/Berlin");
+    expect(screen.getByRole("note")).toMatchTextContent("crosses 2 clock changes in Europe/Berlin");
   });
 
   it("announces a changed interval through a polite live region", async () => {
@@ -60,7 +60,7 @@ describe("ClockChangeWarning", () => {
 
     const message =
       "This booking crosses a daylight-saving change in Europe/Berlin. It spans 1 calendar day but lasts 25 hours.";
-    expect(screen.getByRole("note")).toHaveTextContent(message);
+    expect(screen.getByRole("note")).toMatchTextContent(message);
     // Set after mount, so the region changes and is announced rather than holding its first content silently.
     expect(screen.getByText(message, { selector: "[aria-live='polite']" })).toHaveAttribute("aria-atomic", "true");
   });

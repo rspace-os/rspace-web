@@ -9,7 +9,6 @@ export type BookableItemOption = {
   timezone: string;
   slotGranularityMinutes: number;
   incrementUnit: IncrementUnit;
-  alignToIncrement: boolean;
   openingHours: OpeningHoursEntry[];
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
@@ -46,7 +45,6 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     source.timezone === undefined ||
     source.slotGranularityMinutes === undefined ||
     source.incrementUnit === undefined ||
-    source.alignToIncrement === undefined ||
     source.openingHours === undefined ||
     source.bufferBeforeMinutes === undefined ||
     source.bufferAfterMinutes === undefined ||
@@ -63,7 +61,6 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     timezone: source.timezone,
     slotGranularityMinutes: source.slotGranularityMinutes,
     incrementUnit: source.incrementUnit,
-    alignToIncrement: source.alignToIncrement,
     openingHours: source.openingHours,
     bufferBeforeMinutes: source.bufferBeforeMinutes,
     bufferAfterMinutes: source.bufferAfterMinutes,

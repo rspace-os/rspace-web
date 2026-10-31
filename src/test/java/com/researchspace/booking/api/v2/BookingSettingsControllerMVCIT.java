@@ -2,7 +2,6 @@ package com.researchspace.booking.api.v2;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -76,7 +75,6 @@ class BookingSettingsControllerMVCIT {
         new BookingSchedulingSettings.Patch(
             originalSettings.slotGranularityMinutes(),
             originalSettings.incrementUnit(),
-            originalSettings.alignToIncrement(),
             originalSettings.openingHours(),
             originalSettings.bufferBeforeMinutes(),
             originalSettings.bufferAfterMinutes(),
@@ -490,7 +488,7 @@ class BookingSettingsControllerMVCIT {
 
     patchDefaults(
             """
-            {"slotGranularityMinutes":1440,"incrementUnit":"HOURS","alignToIncrement":true,
+            {"slotGranularityMinutes":1440,"incrementUnit":"HOURS",
              "openingHours":%s,"maxBookingDurationMinutes":0}
             """
                 .formatted(
@@ -501,8 +499,7 @@ class BookingSettingsControllerMVCIT {
         .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.slotGranularityMinutes").value(1440))
-        .andExpect(jsonPath("$.incrementUnit").value("HOURS"))
-        .andExpect(jsonPath("$.alignToIncrement").value(true));
+        .andExpect(jsonPath("$.incrementUnit").value("HOURS"));
     assertEquals(
         BookingIncrementUnit.HOURS, settingsManager.getDefaults(sysadmin).getIncrementUnit());
 
@@ -524,12 +521,10 @@ class BookingSettingsControllerMVCIT {
         .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.slotGranularityMinutes").value(1440))
-        .andExpect(jsonPath("$.incrementUnit").value("DAYS"))
-        .andExpect(jsonPath("$.alignToIncrement").value(true));
+        .andExpect(jsonPath("$.incrementUnit").value("DAYS"));
     BookingConfigurationDefaults persisted = settingsManager.getDefaults(sysadmin);
     assertEquals(BookingIncrementUnit.DAYS, persisted.getIncrementUnit());
     assertEquals(1440, persisted.getSlotGranularityMinutes());
-    assertTrue(persisted.isAlignToIncrement());
 
     patchDefaults(
             """

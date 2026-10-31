@@ -30,7 +30,6 @@ it("keeps the midnight continuation for a short visible part of an overnight dra
           timezone: "UTC",
           slotGranularityMinutes: 15,
           incrementUnit: "MINUTES",
-          alignToIncrement: true,
           openingHours: ALWAYS_OPEN.openingHours,
           maxBookingDurationMinutes: 0,
         }),

@@ -17,23 +17,20 @@ class BookingSchedulingSettingsTest {
     BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
     assertEquals(15, configuration.getSlotGranularityMinutes());
     assertEquals(BookingIncrementUnit.MINUTES, configuration.getIncrementUnit());
-    assertTrue(configuration.isAlignToIncrement());
     assertEquals(BookingIncrementUnit.MINUTES, defaults.getIncrementUnit());
-    assertTrue(defaults.isAlignToIncrement());
     assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, configuration.getOpeningHours());
     assertEquals(configuration.getOpeningHours(), defaults.getOpeningHours());
   }
 
   @Test
   void patchKeepsOmittedValuesAndReplacesTheCompleteWeekInOrder() {
-    BookingSchedulingSettings current = increment(1440, BookingIncrementUnit.HOURS, false);
+    BookingSchedulingSettings current = increment(1440, BookingIncrementUnit.HOURS);
     assertTrue(BookingSchedulingSettings.Patch.empty().isEmpty());
     assertEquals(current, BookingSchedulingSettings.Patch.empty().merge(current));
     BookingSchedulingSettings.Patch patch =
         new BookingSchedulingSettings.Patch(
             null,
             BookingIncrementUnit.MINUTES,
-            true,
             List.of(
                 new BookingOpeningHoursEntry(5, "10:00", "12:00"),
                 new BookingOpeningHoursEntry(1, "08:00", "18:00")),
@@ -45,7 +42,6 @@ class BookingSchedulingSettingsTest {
     assertFalse(patch.isEmpty());
     assertEquals(1440, merged.slotGranularityMinutes());
     assertEquals(BookingIncrementUnit.MINUTES, merged.incrementUnit());
-    assertTrue(merged.alignToIncrement());
     assertEquals(
         Optional.of(new BookingSchedulingSettings.DailyHours("08:00", "18:00")),
         merged.effectiveHours(1));
@@ -79,36 +75,16 @@ class BookingSchedulingSettingsTest {
   }
 
   @Test
-  void alignmentIsEffectiveOnlyForElapsedIncrementsShorterThanADay() {
-    assertTrue(increment(1439, BookingIncrementUnit.MINUTES, true).effectiveAlignment());
-    assertTrue(increment(90, BookingIncrementUnit.HOURS, true).effectiveAlignment());
-    assertFalse(increment(60, BookingIncrementUnit.MINUTES, false).effectiveAlignment());
-    assertFalse(increment(1440, BookingIncrementUnit.MINUTES, true).effectiveAlignment());
-    assertFalse(increment(1440, BookingIncrementUnit.HOURS, true).effectiveAlignment());
-    assertFalse(increment(1440, BookingIncrementUnit.DAYS, true).effectiveAlignment());
-
-    BookingConfiguration configuration = new BookingConfiguration();
-    increment(1440, BookingIncrementUnit.HOURS, true).applyTo(configuration);
-    BookingSchedulingSettings stored = BookingSchedulingSettings.from(configuration);
-    assertTrue(stored.alignToIncrement());
-    assertFalse(stored.effectiveAlignment());
-    assertTrue(
-        new BookingSchedulingSettings.Patch(60L, null, null, null, null, null)
-            .merge(stored)
-            .effectiveAlignment());
-  }
-
-  @Test
   void theIncrementRuleNeverTreatsDaysAsElapsedMinutes() {
     assertEquals(
         new BookingSchedulingSettings.DayIncrement(2),
-        increment(2880, BookingIncrementUnit.DAYS, true).incrementRule());
+        increment(2880, BookingIncrementUnit.DAYS).incrementRule());
     assertEquals(
-        new BookingSchedulingSettings.ElapsedIncrement(1440, false),
-        increment(1440, BookingIncrementUnit.HOURS, true).incrementRule());
+        new BookingSchedulingSettings.ElapsedIncrement(1440),
+        increment(1440, BookingIncrementUnit.HOURS).incrementRule());
     assertEquals(
-        new BookingSchedulingSettings.ElapsedIncrement(90, true),
-        increment(90, BookingIncrementUnit.HOURS, true).incrementRule());
+        new BookingSchedulingSettings.ElapsedIncrement(90),
+        increment(90, BookingIncrementUnit.HOURS).incrementRule());
   }
 
   @Test
@@ -139,9 +115,8 @@ class BookingSchedulingSettingsTest {
     assertFalse(configuration.isGranularityValid());
   }
 
-  private static BookingSchedulingSettings increment(
-      long minutes, BookingIncrementUnit unit, boolean aligned) {
+  private static BookingSchedulingSettings increment(long minutes, BookingIncrementUnit unit) {
     return new BookingSchedulingSettings(
-        minutes, unit, aligned, BookingSchedulingSettings.DEFAULT_OPENING_HOURS, 0, 0, 0, false);
+        minutes, unit, BookingSchedulingSettings.DEFAULT_OPENING_HOURS, 0, 0, 0, false);
   }
 }

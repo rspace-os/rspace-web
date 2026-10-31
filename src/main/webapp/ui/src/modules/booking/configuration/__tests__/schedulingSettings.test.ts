@@ -47,19 +47,10 @@ describe("incrementProblem", () => {
       "daysNeedFullWeek",
     ],
     [
-      "aligned 60 minutes in 09:15-10:15",
-      settings({
-        slotGranularityMinutes: 60,
-        openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:15", end: "10:15" })),
-      }),
-      "alignedOpening",
-    ],
-    [
       "90 minutes in 09:00-10:00",
       settings({
         slotGranularityMinutes: 90,
         openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "10:00" })),
-        alignToIncrement: false,
       }),
       "opening",
     ],
@@ -69,15 +60,14 @@ describe("incrementProblem", () => {
 
   it.each([
     [
-      "unaligned 60 minutes in 09:15-10:15",
+      "60 minutes in 09:15-10:15",
       settings({
         slotGranularityMinutes: 60,
         openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:15", end: "10:15" })),
-        alignToIncrement: false,
       }),
     ],
     [
-      "aligned 60 minutes in 09:00-10:00",
+      "60 minutes in 09:00-10:00",
       settings({
         slotGranularityMinutes: 60,
         openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "10:00" })),
@@ -88,9 +78,9 @@ describe("incrementProblem", () => {
       { ...allDayExcept(3, "00:00", "24:00"), slotGranularityMinutes: 1440, incrementUnit: "DAYS" as const },
     ],
     ["24 hours open all week", settings({ slotGranularityMinutes: 1440, incrementUnit: "HOURS" })],
-    // 20:00 to midnight joins the next day's 00:00 to 02:00, so the 20:00 grid start fits 5 hours.
+    // 20:00 to midnight joins the next day's 00:00 to 02:00, so a 5-hour increment fits.
     [
-      "5 aligned hours across midnight",
+      "5 hours across midnight",
       settings({
         slotGranularityMinutes: 300,
         incrementUnit: "HOURS",
@@ -102,11 +92,10 @@ describe("incrementProblem", () => {
     ],
     // Sunday evening joins Monday morning across the week wrap.
     [
-      "6 unaligned hours across the week wrap",
+      "6 hours across the week wrap",
       settings({
         slotGranularityMinutes: 360,
         incrementUnit: "HOURS",
-        alignToIncrement: false,
         openingHours: [
           { dayOfWeek: 7, start: "21:00", end: "24:00" },
           { dayOfWeek: 1, start: "00:00", end: "03:00" },

@@ -35,7 +35,6 @@ const event = {
     openingHours: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
     slotGranularityMinutes: 1440,
     incrementUnit: "HOURS",
-    alignToIncrement: false,
   },
   target: "bookings:41",
 };
@@ -125,9 +124,6 @@ describe("BookableItemAuditLog", () => {
       within(item).getByText("booking:bookableItemDetails.fields.granularity").nextElementSibling,
     ).toHaveTextContent("booking:bookableItemDetails.hours");
     expect(within(item).queryByText("booking:bookableItemDetails.audit.values.increment")).not.toBeInTheDocument();
-    expect(
-      within(item).getByText("booking:bookableItemDetails.audit.values.alignToIncrement").nextElementSibling,
-    ).toHaveTextContent("booking:bookableItemDetails.no");
     await expectAccessible(container);
   });
 

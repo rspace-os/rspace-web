@@ -142,7 +142,7 @@
           "lifecycleConflict": "Restore the archived booking configuration before changing it.",
           "stale": "The booking settings changed after this page was loaded. Reload and try again.",
           "granularity": {
-            "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period; when starts follow the clock grid, at least one grid start must leave room for a whole increment inside an opening period."
+            "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
           },
           "openingHours": {
             "invalid": "Opening hours must use HH:mm with start before end; the end may be 24:00 to close at midnight."
@@ -201,7 +201,6 @@
           "create": "The booking is invalid.",
           "patch": "The booking patch is invalid.",
           "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
-          "alignment": "The start time must fall on this bookable item's time increment, counted from midnight in its timezone.",
           "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
           "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
           "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",

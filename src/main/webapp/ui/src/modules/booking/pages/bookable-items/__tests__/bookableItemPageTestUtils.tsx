@@ -28,12 +28,10 @@ export const configuration = {
   timezone: "UTC",
   slotGranularityMinutes: 5,
   incrementUnit: "MINUTES",
-  alignToIncrement: true,
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:30" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
   ],
-
   bufferBeforeMinutes: 5,
   bufferAfterMinutes: 15,
   createdAt: "2026-08-17T00:00:00Z",

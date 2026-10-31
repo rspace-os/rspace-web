@@ -78,9 +78,7 @@ const optionDocument = {
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
   incrementUnit: "MINUTES" as const,
-  alignToIncrement: true,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -116,7 +114,6 @@ const catalogueOption = {
   timezone: optionDocument.timezone,
   slotGranularityMinutes: optionDocument.slotGranularityMinutes,
   incrementUnit: "MINUTES" as const,
-  alignToIncrement: true,
   openingHours: optionDocument.openingHours,
   bufferBeforeMinutes: optionDocument.bufferBeforeMinutes,
   bufferAfterMinutes: optionDocument.bufferAfterMinutes,

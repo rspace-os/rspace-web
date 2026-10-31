@@ -195,17 +195,15 @@ class BookingSchedulingPolicyImplTest {
   }
 
   @Test
-  void anAlignedIncrementChecksTheLocalStartAndTheElapsedLengthOnly() {
+  void anElapsedIncrementAcceptsAnyWholeMinuteStartAndChecksLength() {
     // Europe/Berlin is UTC+2 in August.
     BookingConfiguration item = configuration("Europe/Berlin", hours("00:00", "24:00"));
     item.setSlotGranularityMinutes(120);
     allowed(item, "2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z");
-    assertEquals(Reason.ALIGNMENT, rejection(item, "2026-08-17T07:00:00Z", "2026-08-17T09:00:00Z"));
+    allowed(item, "2026-08-17T07:00:00Z", "2026-08-17T09:00:00Z");
     assertEquals(
         Reason.GRANULARITY, rejection(item, "2026-08-17T08:00:00Z", "2026-08-17T09:00:00Z"));
 
-    item.setAlignToIncrement(false);
-    allowed(item, "2026-08-17T07:00:00Z", "2026-08-17T09:00:00Z");
     assertEquals(
         Reason.GRANULARITY, rejection(item, "2026-08-17T07:00:00Z", "2026-08-17T08:00:00Z"));
   }
