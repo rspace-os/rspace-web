@@ -181,11 +181,11 @@ export function RelationshipPicker({
   const handleInputValueChange = (nextTerm: string, { reason }: { reason: string }) => {
     if (reason === "input-change") {
       setTerm(nextTerm);
-      debounceSearch(nextTerm);
+      if (searchDebounceMs > 0) debounceSearch(nextTerm);
     }
     if (reason === "input-clear" || reason === "clear-press" || reason === "item-press") {
       setTerm("");
-      debounceSearch("");
+      if (searchDebounceMs > 0) debounceSearch("");
     }
   };
   const unavailableStatus = (option: RelationshipOptionWithSource) => availability.unavailable[String(option.value)];
