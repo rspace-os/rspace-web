@@ -131,6 +131,159 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   @Test
+  void bookingDocumentsMatchEntityPathSnapshots() throws Exception {
+    FixtureRows rows = createRows(1, "Snapshot");
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            ignored -> {
+              Instrument instrument = instrumentDao.get(rows.instrumentIds().get(0));
+              instrument.setSharingMode(InventorySharingMode.OWNER_ONLY);
+              instrumentDao.save(instrument);
+              sessionFactory
+                  .getCurrentSession()
+                  .createQuery(
+                      "from BookingConfiguration where target.id = :id",
+                      com.researchspace.model.booking.BookingConfiguration.class)
+                  .setParameter("id", instrument.getId())
+                  .getSingleResult()
+                  .setSlotGranularityMinutes(15);
+            });
+    var snapshots = OBJECT_MAPPER.createObjectNode();
+    for (String path : List.of("/api/v2/booking-configurations", "/api/v2/bookings")) {
+      String resource = path.substring("/api/v2/".length());
+      JsonNode ownPage =
+          measuredRequest(
+                  get(path)
+                      .header("apiKey", fixture.userKey())
+                      .param("where", targetFilter(rows.instrumentIds())),
+                  false)
+              .body();
+      long documentId = ownPage.path("docs").get(0).path("id").asLong();
+      for (String depth : List.of("0", "1")) {
+        for (boolean sparse : List.of(false, true)) {
+          for (boolean unreadableTarget : List.of(false, true)) {
+            var request =
+                get(path)
+                    .header("apiKey", unreadableTarget ? fixture.thirdUserKey() : fixture.userKey())
+                    .param("where", "id==" + documentId)
+                    .param("depth", depth)
+                    .param("limit", "20");
+            if (sparse) request.param("fields[" + resource + "]", "id,target");
+            JsonNode docs = measuredRequest(request, false).body().path("docs");
+            assertEquals(1, docs.size());
+            if (unreadableTarget) assertTrue(docs.get(0).path("target").isNull());
+            snapshots.set(
+                resource + "-" + depth + "-" + sparse + "-" + unreadableTarget,
+                normalizeSnapshot(docs));
+          }
+        }
+      }
+    }
+    var snapshotPath =
+        java.nio.file.Path.of("src/test/resources/api-v2/booking-entity-read-documents.json");
+    if (Boolean.getBoolean("updateBookingReadSnapshot")) {
+      java.nio.file.Files.createDirectories(snapshotPath.getParent());
+      java.nio.file.Files.writeString(
+          snapshotPath,
+          OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(snapshots) + "\n");
+    }
+    assertEquals(OBJECT_MAPPER.readTree(java.nio.file.Files.readString(snapshotPath)), snapshots);
+  }
+
+  private static JsonNode normalizeSnapshot(JsonNode node) {
+    if (node.isArray()) {
+      var result = OBJECT_MAPPER.createArrayNode();
+      node.forEach(value -> result.add(normalizeSnapshot(value)));
+      return result;
+    }
+    if (node.isObject()) {
+      var result = OBJECT_MAPPER.createObjectNode();
+      node.properties()
+          .forEach(
+              entry -> {
+                String key = entry.getKey();
+                JsonNode value = entry.getValue();
+                if (List.of(
+                            "id",
+                            "requesterId",
+                            "globalId",
+                            "createdAt",
+                            "updatedAt",
+                            "configurationVersion")
+                        .contains(key)
+                    || (key.equals("value") && value.isNumber())) {
+                  result.set(
+                      key,
+                      value.isNull()
+                          ? value
+                          : OBJECT_MAPPER.getNodeFactory().textNode("<" + key + ">"));
+                } else {
+                  result.set(key, normalizeSnapshot(value));
+                }
+              });
+      return result;
+    }
+    return node.isTextual()
+        ? OBJECT_MAPPER
+            .getNodeFactory()
+            .textNode(node.asText().replaceAll("apiv2[a-z0-9]+", "<user>"))
+        : node;
+  }
+
+  @Test
+  void bookingEntityPagesBatchRelationshipsAndPreserveDepthAndFields() throws Exception {
+    FixtureRows rows = createRows(20, "Booking page " + fixture.marker());
+    for (String path : List.of("/api/v2/booking-configurations", "/api/v2/bookings")) {
+      for (String depth : List.of("0", "1")) {
+        String resource = path.substring("/api/v2/".length());
+        var oneRequest =
+            get(path)
+                .header("apiKey", fixture.userKey())
+                .param("where", targetFilter(rows.instrumentIds().subList(0, 1)))
+                .param("depth", depth)
+                .param("limit", "20");
+        MeasuredResponse one = measuredRequest(oneRequest, false);
+        var pageRequest =
+            get(path)
+                .header("apiKey", fixture.userKey())
+                .param("where", targetFilter(rows.instrumentIds()))
+                .param("depth", depth)
+                .param("limit", "20");
+        MeasuredResponse page = measuredRequest(pageRequest, false);
+        assertEquals(20, page.body().path("docs").size());
+        assertFalse(page.body().has("totalDocs"));
+        assertTrue(
+            page.statements() <= 30,
+            () -> path + " depth=" + depth + " prepared " + page.statements() + " statements");
+        assertTrue(
+            page.statements() <= one.statements() + 4,
+            () ->
+                path
+                    + " depth="
+                    + depth
+                    + " grew from "
+                    + one.statements()
+                    + " to "
+                    + page.statements()
+                    + " statements");
+        JsonNode sparse =
+            measuredRequest(pageRequest.param("fields[" + resource + "]", "id,target"), false)
+                .body();
+        for (int index = 0; index < 20; index++) {
+          JsonNode fullDocument = page.body().path("docs").get(index);
+          JsonNode sparseDocument = sparse.path("docs").get(index);
+          assertEquals(fullDocument.path("id"), sparseDocument.path("id"));
+          assertEquals(fullDocument.path("target"), sparseDocument.path("target"));
+          assertEquals(2, sparseDocument.size());
+          JsonNode target = sparseDocument.path("target");
+          assertEquals("instruments", target.path("relationTo").asText());
+          assertEquals(depth.equals("0"), target.path("value").isNumber());
+        }
+      }
+    }
+  }
+
+  @Test
   void scalarRequestsPreserveValuesPagesAndFiltersWithConstantQueries() throws Exception {
     ScalarRows rows = createScalarRows();
     List<Long> oneId = List.of(rows.instruments().get(0).id());
@@ -180,6 +333,7 @@ class InstrumentParentLocationQueryCountMVCIT {
               get(INSTRUMENTS)
                   .header("apiKey", fixture.userKey())
                   .param("where", idFilter(allIds))
+                  .param("totals", "true")
                   .param("sort", "-name,id")
                   .param("limit", "5")
                   .param("page", Integer.toString(page))
@@ -200,6 +354,7 @@ class InstrumentParentLocationQueryCountMVCIT {
                   get(INSTRUMENTS)
                       .header("apiKey", fixture.userKey())
                       .param("where", where)
+                      .param("totals", "true")
                       .param("limit", "100")
                       .param("fields[instruments]", "id"),
                   true)
@@ -323,6 +478,7 @@ class InstrumentParentLocationQueryCountMVCIT {
             .param("fields[containers]", "id,name,globalId")
             .param("limit", "100")
             .param("fields[" + path.substring("/api/v2/".length()) + "]", fields);
+    if (path.equals(INSTRUMENTS)) request.param("totals", "true");
     if (!path.equals(INSTRUMENTS)) request.param("fields[instruments]", "id,name");
     MeasuredResponse response = measuredRequest(request, path.equals(INSTRUMENTS));
     assertEquals(ids.size(), response.body().path("docs").size());

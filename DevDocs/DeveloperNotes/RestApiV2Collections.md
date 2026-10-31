@@ -653,6 +653,13 @@ It requests one extra row at the original page offset with counting disabled, tr
 row, and reports `hasNext`. Offsets beyond Blaze's integer limit return an empty slice
 without querying. `page` and `projectedPage` retain their counted-page behavior.
 
+Booking and booking-configuration lists retain the counted entity path. Their documents include
+caller-specific privacy, capabilities, role sources and owner health prepared from access
+aggregates. The page query fetches the to-one actors and access aggregate alongside each
+configuration; assignments and instrument targets are resolved in batches. Moving these lists
+to scalar read documents also requires projecting those access inputs and preserving their
+caller-specific preparation. Until then, these lists count internally even without `totals=true`.
+
 The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is
 needed to preserve sort order. On the seeded 100k-row benchmark with the PI access
 rule, MariaDB `ANALYZE FORMAT=JSON` for 21 rows examined 35 index entries and stopped
