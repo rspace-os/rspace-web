@@ -62,7 +62,7 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "Europe/Berlin",
     ...DEFAULT_SCHEDULING_SETTINGS,
-    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "17:00" })),
+    openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours.map((entry) => ({ ...entry, start: "08:00", end: "17:00" })),
     createdAt: "2026-08-01T09:00:00Z",
     createdByName: "Grace Hopper (grace)",
     updatedAt: "2026-08-10T10:00:00Z",

@@ -5,9 +5,13 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
-import { institutionBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
-import { ownBooking } from "../mocks/bookingCalendarFixtures";
+import {
+  customNewYorkBookingPreferences,
+  institutionBookingPreferences,
+} from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
+import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { CalendarPageStory } from "./CalendarPage.story";
 import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
 
@@ -36,6 +40,8 @@ describe("Calendar page", () => {
 
     const event = calendar.event("Confocal microscope");
     await expect.element(event).toBeVisible();
+    // The week grid opens on the availability window; bring the event into view before measuring.
+    event.element().scrollIntoView({ block: "center" });
     const indicator = event.element().querySelector<HTMLElement>("[data-event-expand-indicator]");
     expect(indicator).not.toBeNull();
     const collapsedPosition = indicator?.getBoundingClientRect();
@@ -64,6 +70,41 @@ describe("Calendar page", () => {
 
     await calendar.showEventDetails("Busy").click();
     await expect.element(calendar.viewItemDetails).not.toBeInTheDocument();
+  });
+
+  test("lays the week time grid out on one hour axis", async () => {
+    const overlapping = { ...ownBooking, id: 46, start: "2026-08-17T09:00:00Z", end: "2026-08-17T11:00:00Z" };
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () =>
+        HttpResponse.json(collectionResponse([ownBooking, overlapping])),
+      ),
+    );
+    render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
+    await calendar.timeGridLayout.click();
+    await calendar.week.click();
+
+    const monday = calendar.timeGrid.getByRole("region", { name: "Monday, August 17, 2026" });
+    const cards = monday.getByRole("button", { name: "Show details for Confocal microscope", exact: false });
+    await expect.poll(() => cards.all().length).toBe(2);
+    // 09:00 New York, at 56px per hour, less the clearance for its label under the sticky header.
+    // Firefox reports a sub-pixel scroll offset.
+    expect(Math.round(calendar.weekGrid.element().scrollTop)).toBe(9 * 56 - 12);
+    const column = monday.element().getBoundingClientRect();
+    const [first, second] = cards.all().map((card) => {
+      const slot = card.element().closest("li");
+      if (!slot) throw new Error("Week events must render inside the day column list");
+      return slot.getBoundingClientRect();
+    });
+    // 04:00-06:00 and 05:00-07:00 New York overlap, so they share the hour axis side by side.
+    expect(Math.round(first.top - column.top)).toBe(4 * 56);
+    expect(Math.round(second.top - column.top)).toBe(5 * 56);
+    expect(Math.round(first.height)).toBe(2 * 56);
+    expect(Math.round(first.width)).toBe(Math.round(second.width));
+    expect(second.left).toBeGreaterThanOrEqual(first.right - 1);
+    await expectNoAxeViolations();
+
+    await cards.first().click();
+    await expect.element(calendar.viewItemDetails).toBeVisible();
   });
 
   test("edits an editable booking inside its expanded calendar card", async () => {

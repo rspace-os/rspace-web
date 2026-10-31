@@ -1,15 +1,20 @@
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { beforeAll as beforeBookingCatalog } from "vitest";
+import appI18n from "@/modules/common/i18n";
+
+beforeBookingCatalog(async () => {
+  appI18n.addResourceBundle(
+    "en-US",
+    "booking",
+    (await import("@/modules/common/i18n/locales/en-US/booking.json")).default,
+  );
+});
+
+import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { renderInRouter } from "@/__tests__/helpers/renderInRouter";
 import type { AvailabilitySource } from "@/modules/booking/domain/availability";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 
@@ -60,14 +65,9 @@ async function renderRoutedAvailabilityBar(props: Partial<React.ComponentProps<t
   const root = createRootRoute({ component: Outlet });
   const index = createRoute({ getParentRoute: () => root, path: "/", component: () => availabilityBar(props) });
   const details = createRoute({ getParentRoute: () => root, path: "/booking/calendar/bookings/$id" });
-  const router = createRouter({
-    routeTree: root.addChildren([index, details]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  });
-  return {
-    ...(await renderWithRealI18n(<RouterProvider router={router as never} />, { resources, defaultNS: "booking" })),
-    router,
-  };
+  return renderInRouter(root.addChildren([index, details]), (ui) =>
+    renderWithRealI18n(ui, { resources, defaultNS: "booking" }),
+  );
 }
 
 describe("AvailabilityBar", () => {

@@ -104,9 +104,15 @@ export function useAllBookableItemsData({
   const candidateWhere = candidateFilter ? serializeRsqlExpression(candidateFilter) : undefined;
   const usesAvailability = hasAvailabilityFilter(filters.expression);
   const quickMode = availabilityMode(filters.expression);
-  const quickFilterLabels = {
-    "available-now": t("allBookableItems.quickFilters.availableNow"),
-    "free-later-today": t("allBookableItems.quickFilters.freeLaterToday"),
+  const quickFilterText = {
+    "available-now": {
+      label: t("allBookableItems.quickFilters.availableNow"),
+      description: t("allBookableItems.quickFilters.availableNowDescription"),
+    },
+    "free-later-today": {
+      label: t("allBookableItems.quickFilters.freeLaterToday"),
+      description: t("allBookableItems.quickFilters.freeLaterTodayDescription"),
+    },
   } as const;
   const bounds = useMemo(
     () =>
@@ -175,6 +181,16 @@ export function useAllBookableItemsData({
     staleTime: 30_000,
   });
   const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
+  const hasNoBookableItems =
+    catalogue.isSuccess &&
+    catalogue.data.total === 0 &&
+    !q &&
+    !where &&
+    !target &&
+    !routeAvailability &&
+    !mine &&
+    !types?.length;
   const notificationSubscriptionMutation = useMutation({
     mutationFn: ({ configurationIds, enabled }: { configurationIds: readonly number[]; enabled: boolean }) =>
       updateBookingNotificationSubscriptions(configurationIds, enabled, token),
@@ -211,13 +227,14 @@ export function useAllBookableItemsData({
     invalidFilter,
     runtimeFilterBlocked,
     quickMode,
-    quickFilterLabels,
+    quickFilterText,
     bounds,
     quickIndex,
     quickFilterPending,
     quickFilterError,
     catalogue,
     rows,
+    hasNoBookableItems,
     selectedNotificationIds,
     setSelectedNotificationIds,
     notificationFeedback,

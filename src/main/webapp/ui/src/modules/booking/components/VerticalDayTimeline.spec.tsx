@@ -46,12 +46,12 @@ describe("VerticalDayTimeline", () => {
     await expect.element(timeline.endResizeHandle).toBeVisible();
     expect(timeline.moveHandle.element().getBoundingClientRect().height).toBeGreaterThanOrEqual(24);
     expect(timeline.endResizeHandle.element().getBoundingClientRect().height).toBeCloseTo(12);
-    await expect.element(page.getByText("02:00 +02:00", { exact: true })).toBeVisible();
-    await expect.element(page.getByText("02:00 +01:00", { exact: true })).toBeVisible();
+    await expect.element(page.getByText("02:00 AM +02:00", { exact: true })).toBeVisible();
+    await expect.element(page.getByText("02:00 AM +01:00", { exact: true })).toBeVisible();
 
     await timeline.moveDraftLaterByOneSlot();
 
-    await expect.element(timeline.draft).toHaveTextContent("02:05 +01:00–03:05 +01:00");
+    await expect.element(timeline.draft).toMatchTextContent("02:05 AM +01:00–03:05 AM +01:00");
   });
 
   test("uses controlled date navigation and provides a return to the draft day", async () => {
@@ -126,7 +126,7 @@ describe("VerticalDayTimeline", () => {
     expect(occupancyEventIds).toEqual(expect.arrayContaining(["busy-short", "short-full"]));
 
     const fullEvent = page.getByRole("article", {
-      name: "Flow cytometer · Katherine Johnson, 14:00 +01:00–14:05 +01:00. Calibration run.",
+      name: "Flow cytometer · Katherine Johnson, 02:00 PM +01:00–02:05 PM +01:00. Calibration run.",
       exact: true,
       includeHidden: true,
     });
@@ -134,7 +134,7 @@ describe("VerticalDayTimeline", () => {
     await timeline.eventDetailsSummary.click();
 
     await expect.element(fullEvent).toBeVisible();
-    const busyEvent = page.getByRole("article", { name: "Busy, 12:00 +01:00–12:05 +01:00", exact: true });
+    const busyEvent = page.getByRole("article", { name: "Busy, 12:00 PM +01:00–12:05 PM +01:00", exact: true });
     await expect.element(busyEvent).toBeVisible();
     await expect.element(busyEvent).not.toHaveTextContent("Katherine Johnson");
   });
@@ -151,7 +151,7 @@ describe("VerticalDayTimeline", () => {
 
     await expect.element(timeline.endResizeHandle).toBeVisible();
     await timeline.endResizeHandle.click();
-    await expect.element(timeline.draft).toHaveTextContent("02:00 +01:00–04:00 +01:00");
+    await expect.element(timeline.draft).toMatchTextContent("02:00 AM +01:00–04:00 AM +01:00");
 
     const canvasBounds = timeline.canvas.element().getBoundingClientRect();
     const handleBounds = timeline.endResizeHandle.element().getBoundingClientRect();
@@ -165,7 +165,7 @@ describe("VerticalDayTimeline", () => {
       targetPosition,
     });
 
-    await expect.element(timeline.draft).toHaveTextContent("02:00 +01:00–04:05 +01:00");
+    await expect.element(timeline.draft).toMatchTextContent("02:00 AM +01:00–04:05 AM +01:00");
   });
 
   test("continues a native drag through overlapping bookings with a full-width draft", async () => {
@@ -182,11 +182,11 @@ describe("VerticalDayTimeline", () => {
     );
 
     const adaBooking = page.getByRole("article", {
-      name: "Confocal microscope · Ada Lovelace, 08:00 +01:00–09:30 +01:00. Cell imaging with the 63x oil objective.",
+      name: "Confocal microscope · Ada Lovelace, 08:00 AM +01:00–09:30 AM +01:00. Cell imaging with the 63x oil objective.",
       exact: true,
     });
     const graceBooking = page.getByRole("article", {
-      name: "Confocal microscope · Grace Hopper, 08:30 +01:00–09:30 +01:00. Cryo-grid screening.",
+      name: "Confocal microscope · Grace Hopper, 08:30 AM +01:00–09:30 AM +01:00. Cryo-grid screening.",
       exact: true,
     });
     await expect.element(adaBooking).toBeVisible();
@@ -233,14 +233,14 @@ describe("VerticalDayTimeline", () => {
 
     try {
       await dragDraftBy(120, 12);
-      await expect.element(timeline.draft).toHaveTextContent("09:00 +01:00–10:00 +01:00");
+      await expect.element(timeline.draft).toMatchTextContent("09:00 AM +01:00–10:00 AM +01:00");
 
       await dragDraftBy(5, 3);
     } finally {
       observer.disconnect();
     }
 
-    await expect.element(timeline.draft).toHaveTextContent("09:05 +01:00–10:05 +01:00");
+    await expect.element(timeline.draft).toMatchTextContent("09:05 AM +01:00–10:05 AM +01:00");
     const movedBounds = timeline.draft.element().getBoundingClientRect();
     expect(movedBounds.width).toBeGreaterThanOrEqual(canvasBounds.width * 0.9);
     expect(getComputedStyle(timeline.draft.element()).backgroundColor).toBe(backgroundColor);

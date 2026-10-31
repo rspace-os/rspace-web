@@ -38,10 +38,11 @@ export function CalendarContent() {
     setEventWhere,
     setItemWhere,
     setMineOnly,
-    location,
     myItemsOnly,
     setMyItemsOnly,
-    targetItemExpression,
+    target,
+    targetName,
+    replaceSearch,
   } = useCalendarContentData();
 
   return (
@@ -66,7 +67,15 @@ export function CalendarContent() {
       eventFilterExpression={eventExpression}
       itemFilterIssue={itemIssue}
       eventFilterIssue={eventIssue}
-      hasTargetFilter={targetItemExpression !== null}
+      targetFilter={
+        target
+          ? {
+              globalId: target,
+              name: targetName,
+              onRemove: () => replaceSearch("target"),
+            }
+          : undefined
+      }
       eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
       eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
       onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}
@@ -98,11 +107,7 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) => {
-        const search = new URLSearchParams(location.searchStr);
-        search.set("date", nextDate);
-        void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true });
-      }}
+      onDateChange={(nextDate) => replaceSearch("date", nextDate)}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);

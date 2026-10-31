@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { parseAsString, useQueryState } from "nuqs";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -19,10 +19,10 @@ import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterExpression } from "@/modules/common/table-list/types";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
-import { type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
+import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./calendarLayoutUtils";
 
 const calendarResourceSourceConfig = {
   ...bookingConfigurationConfig,
@@ -34,6 +34,11 @@ const calendarResourceSourceConfig = {
 const calendarSearchOptions = { history: "replace", clearOnDefault: true } as const;
 const calendarSearchParser = parseAsString.withDefault("").withOptions(calendarSearchOptions);
 const calendarWhereParser = parseAsString.withOptions(calendarSearchOptions);
+// The view and layout live in the query string, so a reload or a shared link reopens the same calendar.
+const calendarViewParser = parseAsStringLiteral(calendarViews).withDefault("day").withOptions(calendarSearchOptions);
+const calendarLayoutParser = parseAsStringLiteral(calendarLayouts)
+  .withDefault("resources")
+  .withOptions(calendarSearchOptions);
 
 function andFilters<TDocument>(
   filters: readonly (FilterExpression<TDocument> | null | undefined)[],
@@ -106,13 +111,22 @@ export function useCalendarContentData() {
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
+  const replaceSearch = (key: string, value?: string) => {
+    const search = new URLSearchParams(location.searchStr);
+    if (value === undefined) search.delete(key);
+    else search.set(key, value);
+    const query = search.toString();
+    void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
+  };
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
-  const [view, setView] = React.useState<CalendarView>("day");
-  const [layout, setLayout] = React.useState<CalendarLayout>("resources");
+  const [requestedView, setView] = useQueryState("view", calendarViewParser);
+  const [layout, setLayout] = useQueryState("layout", calendarLayoutParser);
+  // Month is not offered in Resources, so a link asking for it opens the week, as switching layouts does.
+  const view: CalendarView = layout === "resources" && requestedView === "month" ? "week" : requestedView;
   const [resettingControls, setResettingControls] = React.useState(false);
   const [mineOnly, setMineOnly] = React.useState(false);
   const [myItemsOnly, setMyItemsOnly] = React.useState(false);
@@ -300,8 +314,8 @@ export function useCalendarContentData() {
   }, [filterScopeSignature, resourceTable.setPage, resourceTable.state.page]);
   const resourceConfigurations = React.useMemo(
     () =>
+      // Read-only rows are kept for closure shading; consumers check the capabilities before offering actions.
       resourceTable.tableProps.rows.flatMap((row) => {
-        if (!row.capabilities.canCreateBooking && !row.capabilities.canEditConfiguration) return [];
         const option = bookableItemOption(row);
         return option ? [option] : [];
       }),
@@ -337,6 +351,10 @@ export function useCalendarContentData() {
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
+  const targetName = target
+    ? (resourceTargets.find((resource) => resource.globalId === target)?.value.name ??
+      events.data?.find((event) => event.target?.globalId === target)?.target?.value.name)
+    : undefined;
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     void setEventWhere(expression ? serializeRsqlExpression(expression) : null);
   };
@@ -377,9 +395,10 @@ export function useCalendarContentData() {
     setEventWhere,
     setItemWhere,
     setMineOnly,
-    location,
     myItemsOnly,
     setMyItemsOnly,
-    targetItemExpression,
+    target,
+    targetName,
+    replaceSearch,
   };
 }
