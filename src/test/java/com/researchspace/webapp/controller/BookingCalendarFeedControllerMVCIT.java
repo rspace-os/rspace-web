@@ -58,8 +58,7 @@ class BookingCalendarFeedControllerMVCIT {
     long configurationId = fixture.bookingConfiguration(instrumentId, "UTC");
     Instant candidate = Instant.now().plus(2, ChronoUnit.DAYS);
     Instant start = candidate.truncatedTo(ChronoUnit.HOURS).plus(1, ChronoUnit.HOURS);
-    String firstToken =
-        token(calendarManager.createOrRotate(configurationId, owner, owner, "\"inactive\""));
+    String firstToken = token(calendarManager.create(configurationId, owner, owner));
     assertAvailable(firstToken);
 
     fixture.booking(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
@@ -67,7 +66,7 @@ class BookingCalendarFeedControllerMVCIT {
 
     String replacementToken =
         token(
-            calendarManager.createOrRotate(
+            calendarManager.rotate(
                 configurationId,
                 owner,
                 owner,

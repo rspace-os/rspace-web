@@ -90,8 +90,18 @@ class BookingNotificationSubscriptionManagerTest {
         .thenReturn(owner.getValueForPreference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS));
     when(userManager.getPreferenceForUser(owner, Preference.BOOKING_NOTIFY_OWN_ACTIONS))
         .thenReturn(owner.getValueForPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS));
+    stubPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, true);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false);
     assertTrue(manager.getPreferences(owner, actor).notifyOwnActions());
-    assertFalse(manager.replacePreferences(true, false, owner, actor).notifyOwnActions());
+    assertFalse(
+        manager
+            .replacePreferences(
+                new BookingNotificationSubscriptionManager.PreferenceChanges(
+                    true, false, true, true),
+                owner,
+                actor)
+            .notifyOwnActions());
     verify(userManager)
         .setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
     verify(userManager)
@@ -232,6 +242,60 @@ class BookingNotificationSubscriptionManagerTest {
     inOrder.verify(instruments).lockById(10L);
     inOrder.verify(instruments).lockById(20L);
     inOrder.verify(subscriptions).unsubscribeEnabledForUser(eq(owner.getId()), any());
+  }
+
+  @Test
+  void preferencesExposeTheSharedProfileEventChoicesAndEffectiveEmailDelivery() {
+    stubPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, true);
+    stubPreference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, true);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, false);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false);
+
+    assertEquals(
+        new BookingNotificationSubscriptionManager.Preferences(true, true, false, true, false),
+        manager.getPreferences(owner, actor));
+  }
+
+  @Test
+  void replacingPreferencesWritesTheProfileEventChoicesButNotEmailDelivery() {
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, true);
+
+    BookingNotificationSubscriptionManager.Preferences saved =
+        manager.replacePreferences(
+            new BookingNotificationSubscriptionManager.PreferenceChanges(false, true, true, false),
+            owner,
+            actor);
+
+    assertEquals(
+        new BookingNotificationSubscriptionManager.Preferences(false, true, true, false, true),
+        saved);
+    verify(userManager)
+        .setPreference(
+            Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, "false", owner.getUsername());
+    verify(userManager)
+        .setPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, "true", owner.getUsername());
+    verify(userManager)
+        .setPreference(
+            Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, "false", owner.getUsername());
+    verify(userManager, never())
+        .setPreference(eq(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL), any(), any());
+    verify(subscriptions, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void preferencesRequireBookingForTheSubject() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+
+    assertThrows(
+        jakarta.ws.rs.NotFoundException.class,
+        () ->
+            manager.replacePreferences(
+                new BookingNotificationSubscriptionManager.PreferenceChanges(
+                    true, true, true, true),
+                owner,
+                actor));
+    verify(userManager, never()).setPreference(any(), any(), any());
   }
 
   private void stubPreference(Preference preference, boolean enabled) {

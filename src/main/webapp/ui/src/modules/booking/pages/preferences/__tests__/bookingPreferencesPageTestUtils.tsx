@@ -11,10 +11,16 @@ export function useDefaultBookingPreferencesHandlers() {
   server.use(
     http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
     http.get("/api/v2/users/me/booking-notification-preferences", () =>
-      HttpResponse.json({ notifyOwnActions: true, autoSubscribeOwnedItems: false }),
+      HttpResponse.json({
+        autoSubscribeOwnedItems: false,
+        notifyOwnActions: true,
+        notifyOnCreated: true,
+        notifyOnCancelled: true,
+        emailDelivery: false,
+      }),
     ),
     http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) =>
-      HttpResponse.json(await request.json()),
+      HttpResponse.json({ ...((await request.json()) as object), emailDelivery: false }),
     ),
     http.delete("/api/v2/users/me/booking-notification-subscriptions", () => HttpResponse.json({ updatedCount: 0 })),
     http.get("/api/v2/users/me/booking-calendar-subscription", () =>

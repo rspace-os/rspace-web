@@ -48,7 +48,8 @@ class DashboardBookingNotificationMessagesTest {
     ReflectionTestUtils.setField(
         controller,
         "bookingMessageFormatter",
-        new BookingNotificationMessageFormatter(new JsonMessageSource()));
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
     ReflectionTestUtils.setField(
         controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
     when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
@@ -83,12 +84,54 @@ class DashboardBookingNotificationMessagesTest {
     other.setNotificationType(NotificationType.PROCESS_COMPLETED);
 
     Map<Long, String> messages =
-        controller.bookingNotificationMessages(List.of(structured, other), "recipient", session);
+        controller.bookingNotificationMessages(
+            List.of(structured, other), "recipient", session, null);
 
     assertEquals("Stored email text", structured.getNotificationMessage());
     assertTrue(messages.get(1L).contains("Jan 1, 2026, 7:04 PM (America/Los_Angeles, UTC-08:00)"));
+    assertTrue(
+        messages.get(1L).startsWith("Booking <a href=\"/booking/calendar/bookings/42\">42</a>"),
+        messages.get(1L));
     assertFalse(messages.containsKey(3L));
     verify(preferences).getForNotificationRecipient(recipient);
+  }
+
+  @Test
+  void writesTimesWithTheBrowserRegionsClockAndTheAppLanguagesWords() {
+    LocaleContextHolder.setLocale(Locale.US);
+    Notification structured =
+        bookingNotification(
+            5L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
+    Notification legacy =
+        bookingNotification(
+            6L, "Booking 6 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
+
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+
+    Map<Long, String> british =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy),
+            "recipient",
+            mock(HttpSession.class),
+            "en-GB,en-US;q=0.9,en;q=0.8");
+    Map<Long, String> american =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
+
+    assertTrue(
+        british.get(5L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british.get(5L));
+    assertTrue(british.get(5L).startsWith("Booking <a href="), british.get(5L));
+    assertTrue(
+        british.get(6L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
+        british.get(6L));
+    // ICU writes a narrow no-break space before the day period, as browsers do.
+    assertTrue(
+        american
+            .get(5L)
+            .replace('\u202f', ' ')
+            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+        american.get(5L));
+    assertFalse(american.get(5L).contains("06:00"), american.get(5L));
   }
 
   private static Notification bookingNotification(

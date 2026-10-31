@@ -581,9 +581,9 @@ describe("AllBookableItemsPage", () => {
     );
     await renderPage("/booking/all-items?date=2026-08-20");
     const available = await screen.findByRole("button", { name: "Available now" });
-    const later = screen.getByRole("button", { name: "Free later today" });
+    const later = screen.getByRole("button", { name: "Busy now, free later" });
     await waitFor(() => expect(available).toHaveTextContent("Available now1"));
-    expect(later).toHaveTextContent("Free later today1");
+    expect(later).toHaveTextContent("Busy now, free later1");
     for (const link of screen.getAllByRole("link", { name: "Book" })) {
       expect(link.getAttribute("href")).toContain("date=2026-08-20");
     }
@@ -591,7 +591,7 @@ describe("AllBookableItemsPage", () => {
     await userEvent.click(available);
     await waitFor(() => expect(available).toHaveAttribute("aria-pressed", "false"));
     expect(available).toHaveTextContent("Available now1");
-    expect(later).toHaveTextContent("Free later today1");
+    expect(later).toHaveTextContent("Busy now, free later1");
   });
 
   it.each([false, true])(

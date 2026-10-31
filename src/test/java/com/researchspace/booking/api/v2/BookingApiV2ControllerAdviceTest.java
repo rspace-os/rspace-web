@@ -162,7 +162,7 @@ class BookingApiV2ControllerAdviceTest {
     check(advice.handleCalendarNotFound(), HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
     String key = "errors.api.v2.bookingCalendar.subscriptionConflict";
     register(key);
-    check(advice.handleUserSubscriptionConflict(), HttpStatus.CONFLICT, key);
+    check(advice.handleUserSubscriptionConflict(), HttpStatus.PRECONDITION_FAILED, key);
   }
 
   private void register(String key) {

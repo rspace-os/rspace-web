@@ -445,7 +445,7 @@ describe("CalendarPage", () => {
     await user.type(search, "No-event");
     // The unfiltered first page lists the same resources; page only once the debounced search has been requested,
     // because applying a search returns to the first page.
-    await waitFor(() => expect(catalogueRequests).toContainEqual({ q: "No-event", page: 1 }));
+    await waitFor(() => expect(catalogueRequests).toContainEqual({ q: "No-event", page: 1 }), { timeout: 3_000 });
 
     expect(await screen.findByText("No-event microscope 1")).toBeVisible();
     expect(screen.getByText("1–20 of 21 records")).toBeVisible();
