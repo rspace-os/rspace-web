@@ -33,7 +33,7 @@ const fetchBookingList: typeof fetch = (input, init = {}) => {
   return fetchWithUiToken(url.toString(), init);
 };
 
-const UpcomingCountSchema = v.object({ totalDocs: v.number() });
+const UpcomingCountSchema = v.object({ totalDocs: v.number(), totalIsLowerBound: v.optional(v.boolean()) });
 const projection = {
   fixed: [
     "id",
@@ -65,16 +65,17 @@ export async function fetchUpcomingBookingCount(
   asOf: Date,
   token: string,
   signal?: AbortSignal,
-): Promise<number> {
+): Promise<v.InferOutput<typeof UpcomingCountSchema>> {
   const parameters = new URLSearchParams({
     where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf.toISOString()}`,
+    max: "100",
   });
   const response = await fetchWithUiToken(`/api/v2/bookings/count?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });
   if (!response.ok) throw new Error(`Booking count request failed (${response.status})`);
-  return parseOrThrow(UpcomingCountSchema, await response.json()).totalDocs;
+  return parseOrThrow(UpcomingCountSchema, await response.json());
 }
 
 export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
@@ -279,9 +280,15 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                 <Badge
                   variant={period === "upcoming" ? "secondary" : "outline"}
                   className="pointer-events-none min-w-5 px-1"
-                  aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+                  aria-label={
+                    upcomingCount.data.totalIsLowerBound
+                      ? t("myBookings.count.lowerBoundAccessible")
+                      : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
+                  }
                 >
-                  {upcomingCount.data}
+                  {upcomingCount.data.totalIsLowerBound
+                    ? t("myBookings.count.lowerBound")
+                    : upcomingCount.data.totalDocs}
                 </Badge>
               )}
               {upcomingCount.isPending && (

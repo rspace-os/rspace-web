@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -124,6 +125,26 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       } satisfies CollectionConfig<Booking>),
     [formatter, period, t],
   );
+  const queryPrefix = ["api-v2", "bookings", "bookable-item-events", globalId, period, cutoff];
+  const totals = useQuery({
+    queryKey: [...queryPrefix, "totals"],
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const result = await fetchBookableItemEvents({
+        globalId,
+        period,
+        cutoff,
+        page: 0,
+        limit: 1,
+        token,
+        signal,
+        totals: true,
+      });
+      if (result.totalDocs === undefined) throw new Error("Booking totals response omitted totalDocs");
+      return result.totalDocs;
+    },
+  });
   const table = useTableList<Booking>({
     config,
     dataSource: {
@@ -148,7 +169,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
           token,
           signal,
         });
-        return { rows: result.docs, rowCount: result.totalDocs };
+        return { rows: result.docs, hasNextPage: result.hasNextPage };
       },
       keepPreviousData: true,
       retry: false,
@@ -207,6 +228,13 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
   return (
     <TableList
       {...table.tableProps}
+      features={{
+        ...table.tableProps.features,
+        pagination:
+          table.tableProps.features.pagination === false
+            ? false
+            : { ...table.tableProps.features.pagination, rowCount: totals.data },
+      }}
       hideHeader
       emptyDescription={t("bookableItemDetails.events.empty")}
       presentations={{ table: "wide", cards: "narrow" }}

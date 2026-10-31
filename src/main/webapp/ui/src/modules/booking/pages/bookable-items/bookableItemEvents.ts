@@ -2,13 +2,13 @@ import type * as v from "valibot";
 import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/booking/domain/booking";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 export type BookingEventPeriod = "upcoming" | "past";
 
-const BookableItemEventsSchema = v2ListEnvelope(BookingSchema);
+const BookableItemEventsSchema = v2PageEnvelope(BookingSchema);
 
 export type BookableItemEvents = v.InferOutput<typeof BookableItemEventsSchema>;
 
@@ -20,6 +20,7 @@ export async function fetchBookableItemEvents(input: {
   limit: number;
   token: string;
   signal?: AbortSignal;
+  totals?: boolean;
 }): Promise<BookableItemEvents> {
   const where = serializeRsqlExpression<Booking>({
     kind: "and",
@@ -42,6 +43,7 @@ export async function fetchBookableItemEvents(input: {
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
   });
+  if (input.totals) parameters.set("totals", "true");
   const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: apiV2Headers(input.token),
     signal: input.signal,

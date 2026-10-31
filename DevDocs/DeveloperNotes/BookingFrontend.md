@@ -169,3 +169,5 @@ The shared transport helpers do not parse Booking-specific problem extensions.
 
 The Booking API scheduling-timezone write contract is in
 [Booking](Booking.md#scheduling-timezone-writes).
+
+Bookable-item event tables cache totals separately from page requests under the bookings query prefix. Page navigation uses `hasNextPage`, and pagination shows "of many" until the total is available. The upcoming-bookings badge uses `/api/v2/bookings/count?max=100` and displays `99+` when the server marks the total as a lower bound.

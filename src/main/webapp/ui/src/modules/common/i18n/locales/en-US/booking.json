@@ -769,7 +769,9 @@
     "count": {
       "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
       "error": "The upcoming booking count could not be loaded.",
-      "loading": "Loading upcoming count"
+      "loading": "Loading upcoming count",
+      "lowerBound": "99+",
+      "lowerBoundAccessible": "More than 99 upcoming bookings"
     },
     "description": "View and manage bookings requested by this user.",
     "empty": {
