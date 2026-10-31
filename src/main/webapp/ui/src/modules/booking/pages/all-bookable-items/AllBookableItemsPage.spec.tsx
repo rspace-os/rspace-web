@@ -198,7 +198,8 @@ describe("the All Bookable Items page", () => {
     await withViewport(400, async () => {
       render(<AllBookableItemsStory containerWidth={360} />);
 
-      await pageObj.availabilitySlice("Confocal microscope", 11).click();
+      // Hover opens the popup before WebKit completes its click actionability check.
+      await pageObj.availabilitySlice("Confocal microscope", 11).click({ force: true });
       await expect.element(pageObj.availabilityDetails).toBeVisible();
 
       const details = pageObj.availabilityDetailsRect();
