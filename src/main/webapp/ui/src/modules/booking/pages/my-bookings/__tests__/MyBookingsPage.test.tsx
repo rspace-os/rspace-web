@@ -208,7 +208,7 @@ describe("My Bookings page", () => {
   it("keeps icon-only page actions accessible by name", async () => {
     renderPage();
 
-    const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.upcoming" });
+    const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.withCount" });
     const past = screen.getByRole("button", { name: "booking:myBookings.period.past" });
     const viewDetails = (await screen.findAllByRole("link", { name: "booking:myBookings.actions.viewDetails" }))[0];
     const table = within(screen.getByRole("table"));

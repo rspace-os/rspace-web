@@ -265,7 +265,14 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                       size="icon"
                       variant="outline"
                       className={`relative ${period === "upcoming" ? "border-foreground bg-muted text-foreground" : ""}`}
-                      aria-label={t("myBookings.period.upcoming")}
+                      aria-label={
+                        upcomingCount.isSuccess
+                          ? t("myBookings.period.withCount", {
+                              label: t("myBookings.period.upcoming"),
+                              count: upcomingCount.data,
+                            })
+                          : t("myBookings.period.upcoming")
+                      }
                       aria-pressed={period === "upcoming"}
                       onClick={() => selectPeriod("upcoming")}
                     />

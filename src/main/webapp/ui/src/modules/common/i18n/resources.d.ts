@@ -1368,7 +1368,8 @@ export default interface Resources {
       "period": {
         "legend": "Booking period",
         "past": "Past",
-        "upcoming": "Upcoming"
+        "upcoming": "Upcoming",
+        "withCount": "{label} {count}"
       },
       "plural": "Bookings",
       "roleLoss": {

@@ -2,7 +2,7 @@ import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import type { Locator } from "vitest/browser";
+import { type Locator, page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
@@ -40,6 +40,7 @@ afterEach(() => {
 describe("the My Bookings page", () => {
   test("shows a tooltip for every icon-only page control", async () => {
     render(<MyBookingsPageStory />);
+    await expect.element(pageObj.upcoming).toHaveAccessibleName("Upcoming 2");
 
     const controls = [
       [pageObj.confocalDetails, "View details"],
@@ -50,6 +51,10 @@ describe("the My Bookings page", () => {
 
     for (const [control, label] of controls) {
       await control.hover();
+      await expect.element(pageObj.tooltip(label)).toBeVisible();
+      await page.getByRole("heading", { name: "My Bookings", exact: true }).hover();
+      control.element().focus();
+      await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
       await expect.element(pageObj.tooltip(label)).toBeVisible();
     }
   });
@@ -74,4 +79,23 @@ describe("the My Bookings page", () => {
     await expect.poll(() => window.location.pathname).toBe("/booking/calendar/bookings/41");
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
   });
+});
+
+test("keeps all row actions visible at common desktop widths", async () => {
+  await page.viewport(1376, 795);
+  render(<MyBookingsPageStory />);
+  for (const control of [
+    pageObj.confocalItemCalendar,
+    pageObj.confocalDetails,
+    pageObj.confocalEdit,
+    pageObj.confocalCancel,
+  ]) {
+    await expect.element(control).toBeVisible();
+    await expect
+      .poll(() => {
+        const box = control.element().getBoundingClientRect();
+        return box.left >= 0 && box.right <= 1376;
+      })
+      .toBe(true);
+  }
 });
