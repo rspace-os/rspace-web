@@ -115,31 +115,11 @@ describe("AvailabilityBar", () => {
   it("clips, sorts, and merges overlapping or adjacent intervals of the same kind", async () => {
     await renderAvailabilityBar({
       intervals: [
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T10:30:00.000Z"),
-          endsAt: new Date("2026-08-12T12:00:00.000Z"),
-        },
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T09:00:00.000Z"),
-          endsAt: new Date("2026-08-12T10:00:00.000Z"),
-        },
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T10:00:00.000Z"),
-          endsAt: new Date("2026-08-12T11:00:00.000Z"),
-        },
-        {
-          kind: "blockout",
-          startsAt: new Date("2026-08-11T23:00:00.000Z"),
-          endsAt: new Date("2026-08-12T01:00:00.000Z"),
-        },
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-13T01:00:00.000Z"),
-          endsAt: new Date("2026-08-13T02:00:00.000Z"),
-        },
+        sourced("fixture:1", "2026-08-12T10:30:00.000Z", "2026-08-12T12:00:00.000Z", "booking"),
+        sourced("fixture:2", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z", "booking"),
+        sourced("fixture:3", "2026-08-12T10:00:00.000Z", "2026-08-12T11:00:00.000Z", "booking"),
+        sourced("fixture:4", "2026-08-11T23:00:00.000Z", "2026-08-12T01:00:00.000Z", "blockout"),
+        sourced("fixture:5", "2026-08-13T01:00:00.000Z", "2026-08-13T02:00:00.000Z", "booking"),
       ],
     });
 
@@ -152,16 +132,8 @@ describe("AvailabilityBar", () => {
   it("reports cross-kind overlaps without hiding either state", async () => {
     await renderAvailabilityBar({
       intervals: [
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T09:00:00.000Z"),
-          endsAt: new Date("2026-08-12T11:00:00.000Z"),
-        },
-        {
-          kind: "blockout",
-          startsAt: new Date("2026-08-12T10:00:00.000Z"),
-          endsAt: new Date("2026-08-12T12:00:00.000Z"),
-        },
+        sourced("fixture:6", "2026-08-12T09:00:00.000Z", "2026-08-12T11:00:00.000Z", "booking"),
+        sourced("fixture:7", "2026-08-12T10:00:00.000Z", "2026-08-12T12:00:00.000Z", "blockout"),
       ],
     });
 
@@ -214,39 +186,6 @@ describe("AvailabilityBar", () => {
     await user.click(rightSlice);
     expect(rightSlice).toHaveAttribute("data-popup-open");
     expect(rightSlice).toHaveClass("rounded-r-full");
-  });
-
-  it("does not expose a partial card for mixed sourced and unsourced contributors", async () => {
-    await renderAvailabilityBar({
-      intervals: [
-        sourced("booking:1", "2026-08-12T09:00:00.000Z", "2026-08-12T11:00:00.000Z"),
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T10:00:00.000Z"),
-          endsAt: new Date("2026-08-12T12:00:00.000Z"),
-        },
-      ],
-    });
-
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 12:00 UTC.",
-    );
-  });
-
-  it("keeps source-free inputs non-interactive", async () => {
-    await renderAvailabilityBar({
-      intervals: [
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T09:00:00.000Z"),
-          endsAt: new Date("2026-08-12T10:00:00.000Z"),
-        },
-      ],
-    });
-
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toBeVisible();
   });
 
   it("shows neutral constituent details without rendering source IDs", async () => {
@@ -439,13 +378,7 @@ describe("AvailabilityBar", () => {
   it("uses an explicitly supplied arbitrary period", async () => {
     await renderAvailabilityBar({
       periodEnd: new Date("2026-08-15T00:00:00.000Z"),
-      intervals: [
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-14T20:00:00.000Z"),
-          endsAt: new Date("2026-08-14T22:00:00.000Z"),
-        },
-      ],
+      intervals: [sourced("fixture:8", "2026-08-14T20:00:00.000Z", "2026-08-14T22:00:00.000Z", "booking")],
     });
 
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
@@ -483,7 +416,6 @@ describe("AvailabilityBar", () => {
       periodStart: new Date("2026-08-11T22:00:00.000Z"),
       periodEnd: new Date("2026-08-12T22:00:00.000Z"),
       timeZone: "Europe/Berlin",
-      userTimeZone: "America/New_York",
     });
 
     const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00 GMT+2.");
@@ -506,13 +438,7 @@ describe("AvailabilityBar", () => {
     },
   ])("optionally shows the current availability as '$expected'", async ({ expected, now }) => {
     await renderAvailabilityBar({
-      intervals: [
-        {
-          kind: "booking",
-          startsAt: new Date("2026-08-12T10:00:00.000Z"),
-          endsAt: new Date("2026-08-12T11:00:00.000Z"),
-        },
-      ],
+      intervals: [sourced("fixture:9", "2026-08-12T10:00:00.000Z", "2026-08-12T11:00:00.000Z", "booking")],
       now,
       showCurrentAvailability: true,
     });
@@ -529,13 +455,7 @@ describe("AvailabilityBar", () => {
     },
     {
       expected: "Not available",
-      intervals: [
-        {
-          kind: "booking" as const,
-          startsAt: new Date("2026-08-12T23:00:00.000Z"),
-          endsAt: new Date("2026-08-13T01:00:00.000Z"),
-        },
-      ],
+      intervals: [sourced("fixture:10", "2026-08-12T23:00:00.000Z", "2026-08-13T01:00:00.000Z")],
       now: new Date("2026-08-12T23:30:00.000Z"),
       periodEnd: new Date("2026-08-14T00:00:00.000Z"),
     },
@@ -551,7 +471,6 @@ describe("AvailabilityBar", () => {
       periodStart: new Date("2026-08-11T16:00:00.000Z"),
       periodEnd: new Date("2026-08-12T16:00:00.000Z"),
       timeZone: "Asia/Singapore",
-      userTimeZone: "America/Los_Angeles",
     });
 
     expect(screen.getByTitle("Current time Aug 13, 2026, 14:00 GMT+8 is after the displayed window.")).toHaveStyle({

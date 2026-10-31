@@ -729,7 +729,6 @@
     "enterSearchTerm": "Enter a search term",
     "failed": "Search is unavailable. Try again.",
     "openOptions": "Show matching records",
-    "openRecord": "Open record {globalId}",
     "remove": "Remove {item}",
     "restoreFailed": "Could not restore this saved selection. Try again.",
     "search": "Search by name or global ID",
@@ -1130,6 +1129,7 @@
           "time": "Time"
         }
       },
+      "editFilters": "Edit filters",
       "field": "Field for filter {number, number}",
       "fieldSearch": {
         "clear": "Clear the field search",
@@ -1166,6 +1166,7 @@
         "placeholder": "Search operators",
         "trigger": "Show operators"
       },
+      "panelSummary": "{count, plural, =0 {No other filters} one {# other filter} other {# other filters}}",
       "placeholders": {
         "pattern": "Use * as a wildcard",
         "value": "Enter a value"

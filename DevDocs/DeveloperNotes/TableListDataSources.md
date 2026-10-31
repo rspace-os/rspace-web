@@ -113,6 +113,11 @@ metadata. Keep DTO parsing, pagination, and query composition in the endpoint's 
 A collection's `relationshipSources`, keyed by `relationTo`, override default picker sources. Keep
 search and saved-ID resolution in the source, and preserve an unavailable saved ID in the filter.
 
+For an endpoint that reuses REST API v2 metadata, see
+[Booking catalogue availability quick filters](./Booking.md#booking-catalogue-availability-quick-filters).
+Its page maps supported top-level availability rules to the catalogue parameter and obtains badge
+counts separately. The Booking guide owns availability classification and unsupported-rule behavior.
+
 ## Tests
 
 For a REST API v2 table, test the OpenAPI metadata reader with a small document fixture, table state

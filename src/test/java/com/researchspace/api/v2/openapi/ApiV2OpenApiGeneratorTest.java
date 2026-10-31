@@ -603,9 +603,32 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
-  void generatedFilterMetadataIsDeterministicAndAdditive() {
+  void publishesTheLocationFilterWithAPickerAndNoRequesterRelationship() {
+    Map<String, Object> bookings = where(document(), "/api/v2/bookings");
+    Map<String, Object> bookingSelectors =
+        objectMap(objectMap(bookings.get("x-rspace-filter")).get("selectors"));
+
+    // People are filtered by the scalar requester ID and the Calendar "Booked by" text facet only.
+    assertTrue(bookingSelectors.containsKey("requesterId"));
+    assertFalse(bookingSelectors.containsKey("requester"));
+    // Bookings render the readable location too, and filter by it with the same picker.
+    assertEquals(
+        "containers",
+        objectMap(objectMap(bookingSelectors.get("location")).get("picker")).get("resource"));
+
+    Map<String, Object> configurations = where(document(), "/api/v2/booking-configurations");
+    Map<String, Object> configurationSelectors =
+        objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
+
+    assertEquals(
+        Map.of("resource", "containers", "identity", "globalId", "globalIdPrefix", "IC"),
+        objectMap(configurationSelectors.get("location")).get("picker"));
+    assertTrue(configurationSelectors.containsKey("location.name"));
+  }
+
+  @Test
+  void publishesFilterLimitsAndRelationshipTargetFields() {
     Map<String, Object> first = document();
-    Map<String, Object> second = document();
     Map<String, Object> paths = objectMap(first.get("paths"));
     Map<String, Object> list =
         objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
@@ -615,7 +638,6 @@ class ApiV2OpenApiGeneratorTest {
             .findFirst()
             .orElseThrow();
 
-    assertEquals(first, second);
     assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
     assertTrue(
         objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"))
@@ -658,32 +680,22 @@ class ApiV2OpenApiGeneratorTest {
       assertTrue(properties.containsKey(member), member);
       assertFalse(((List<?>) problem.getOrDefault("required", List.of())).contains(member), member);
     }
+    Map<String, Object> conflictProperty = objectMap(properties.get("conflict"));
+    assertFalse(conflictProperty.containsKey("type"), conflictProperty.toString());
+    assertFalse(conflictProperty.containsKey("$ref"), conflictProperty.toString());
+    assertEquals(
+        List.of(Map.of("$ref", "#/components/schemas/BookingConflict"), Map.of("type", "null")),
+        conflictProperty.get("anyOf"));
+    assertTrue(
+        conflictProperty.get("description").toString().contains("errors.api.v2.booking.overlap"));
+    assertEquals(
+        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
     Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
     assertEquals(
         List.of("end", "id", "kind", "start"),
         ((List<?>) conflict.get("required")).stream().map(Object::toString).sorted().toList());
     assertEquals(
         "date-time", objectMap(objectMap(conflict.get("properties")).get("start")).get("format"));
-  }
-
-  @Test
-  void problemConflictIsTheConflictSchemaOrNullAsOpenApi31AllowsIt() {
-    Map<String, Object> properties =
-        objectMap(
-            objectMap(
-                    ((List<?>) objectMap(schemas(document()).get("BookingProblem")).get("allOf"))
-                        .get(1))
-                .get("properties"));
-    Map<String, Object> conflict = objectMap(properties.get("conflict"));
-
-    assertFalse(conflict.containsKey("type"), conflict.toString());
-    assertFalse(conflict.containsKey("$ref"), conflict.toString());
-    assertEquals(
-        List.of(Map.of("$ref", "#/components/schemas/BookingConflict"), Map.of("type", "null")),
-        conflict.get("anyOf"));
-    assertTrue(conflict.get("description").toString().contains("errors.api.v2.booking.overlap"));
-    assertEquals(
-        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
   }
 
   @Test

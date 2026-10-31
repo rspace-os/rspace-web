@@ -166,6 +166,26 @@ public final class CollectionQueryExecutor<T> {
     return new ResourceSlice<>(rows.subList(0, Math.min(rows.size(), size)), rows.size() > size);
   }
 
+  /** Reads a bounded projection without counting, for relationship target resolution. */
+  public <R> List<R> projectedRows(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      Predicate restriction,
+      Class<R> resultType,
+      List<String> properties) {
+    if (request.page().offset() > Integer.MAX_VALUE) return List.of();
+    CriteriaBuilder<R> query = factory.create(session, resultType).from(entityType, alias);
+    applyRequest(query, request, restriction, RelationshipReadAccess.none());
+    var selection = query.selectNew(resultType);
+    properties.forEach(property -> selection.with(alias + "." + property));
+    selection.end();
+    return query
+        .setFirstResult((int) request.page().offset())
+        .setMaxResults(request.page().size())
+        .getResultList();
+  }
+
   private <R> ResourcePage<R> paged(CriteriaBuilder<R> query, ResourceRequest request) {
     long firstResult = request.page().offset();
     if (firstResult > Integer.MAX_VALUE) {

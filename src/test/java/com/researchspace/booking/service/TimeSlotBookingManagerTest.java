@@ -70,11 +70,11 @@ class TimeSlotBookingManagerTest {
         .thenReturn(
             new ResourceRegistry(
                 List.of(
-                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                     ApiV2TimeSlotBookingResource.DESCRIPTION,
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION)));
+                    ApiV2UserResource.DESCRIPTION,
+                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION)));
     when(bookingDao.saveAndFlush(any(TimeSlotBooking.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(accessManager.resolveForMutation(any(BookingConfiguration.class), eq(actor)))

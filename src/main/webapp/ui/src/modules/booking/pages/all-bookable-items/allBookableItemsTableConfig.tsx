@@ -91,36 +91,6 @@ function createAllBookableItemsConfig(
   } as const satisfies CollectionConfig<AllBookableItem>);
 }
 
-function comparisons(
-  expression: FilterExpression<AllBookableItem> | null,
-): readonly Extract<FilterExpression<AllBookableItem>, { kind: "comparison" }>[] {
-  if (!expression) return [];
-  if (expression.kind === "comparison") return [expression];
-  if (expression.kind === "or") return [];
-  return expression.children.flatMap(comparisons);
-}
-
-function filterValue(
-  expression: FilterExpression<AllBookableItem> | null,
-  field: "availability" | "target",
-): string | undefined {
-  const value = comparisons(expression).find(
-    (comparison) => comparison.field === field && comparison.operator === "equals",
-  )?.value;
-  return typeof value === "string" ? value : undefined;
-}
-
-function availabilityMode(expression: FilterExpression<AllBookableItem> | null): AvailabilityQuickFilter | undefined {
-  const values = new Set(
-    comparisons(expression)
-      .filter((rule) => rule.field === "availability")
-      .map((rule) => rule.value),
-  );
-  if (values.size !== 1) return undefined;
-  const value = filterValue(expression, "availability");
-  return value === "available-now" || value === "free-later-today" ? value : undefined;
-}
-
 function filterExpression(
   target: string | undefined,
   availability: AvailabilityQuickFilter | undefined,
@@ -133,4 +103,4 @@ function filterExpression(
   return values.length === 0 ? null : values.length === 1 ? values[0] : { kind: "and", children: values };
 }
 
-export { availabilityMode, createAllBookableItemsConfig, filterExpression };
+export { createAllBookableItemsConfig, filterExpression };

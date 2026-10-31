@@ -78,6 +78,8 @@ class BookingApiV2ControllerAdviceTest {
     var operations =
         new BookingConfigurationResourceOperations(
             org.mockito.Mockito.mock(BookingConfigurationManager.class),
+            org.mockito.Mockito.mock(
+                com.researchspace.booking.service.BookingLocationFilterManager.class),
             org.mockito.Mockito.mock(BookingConfigurationProtectedResourceAccess.class),
             org.mockito.Mockito.mock(com.researchspace.service.FeatureFlagManager.class),
             java.time.Clock.systemUTC(),
@@ -131,7 +133,9 @@ class BookingApiV2ControllerAdviceTest {
             org.mockito.Mockito.mock(TimeSlotBookingManager.class),
             org.mockito.Mockito.mock(com.researchspace.service.FeatureFlagManager.class),
             com.researchspace.model.booking.ApiV2TimeSlotBookingResource.DESCRIPTION,
-            org.mockito.Mockito.mock(com.researchspace.service.MessageSourceUtils.class));
+            org.mockito.Mockito.mock(com.researchspace.service.MessageSourceUtils.class),
+            org.mockito.Mockito.mock(
+                com.researchspace.booking.service.BookingLocationFilterManager.class));
     var spec = operations.timeSlotBookingApiV2Resource();
     var shared =
         new com.researchspace.api.v2.controller.ApiV2ControllerAdvice(

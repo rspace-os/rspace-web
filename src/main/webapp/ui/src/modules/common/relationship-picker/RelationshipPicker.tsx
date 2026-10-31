@@ -53,7 +53,6 @@ function sameOption(option: RelationshipOptionWithSource, other: RelationshipOpt
  * a caller stores and restores exactly what it sends.
  */
 export function RelationshipPicker({
-  source,
   sources,
   availabilitySource,
   authScope,
@@ -80,10 +79,8 @@ export function RelationshipPicker({
   browseEmptyMessage,
   minimumSearchLength,
 }: {
-  /** One source, retained as a compatibility alias. */
-  source?: RelationshipSource;
   /** Sources searched in parallel and merged in declaration order. */
-  sources?: readonly RelationshipSource[];
+  sources: readonly RelationshipSource[];
   availabilitySource?: RelationshipOptionAvailabilitySource;
   /** Caller identity used to partition cached options when permissions differ between callers. */
   authScope?: string | number;
@@ -123,13 +120,11 @@ export function RelationshipPicker({
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const anchor = useComboboxAnchor();
   const [term, setTerm] = useState("");
-  const sourceList = sources ?? (source === undefined ? [] : [source]);
   const hasSearchTerm = term.trim() !== "";
   const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && term.trim().length < minimumSearchLength;
   const showsOptions = hasSearchTerm || browseWhenEmpty;
   const labels = useMemo(
     () => ({
-      idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
       unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
       failedLabel: () => t("relationshipPicker.restoreFailed"),
       compact,
@@ -138,14 +133,14 @@ export function RelationshipPicker({
   );
 
   const selected = useSelectedRelationshipOptions({
-    sources: sourceList,
-    values: splitValue(value, sourceList),
+    sources: sources,
+    values: splitValue(value, sources),
     token,
     authScope,
     labels,
   });
   const { options, failed, loading } = useRelationshipOptions({
-    sources: sourceList,
+    sources: sources,
     term,
     token,
     authScope,
@@ -153,7 +148,7 @@ export function RelationshipPicker({
     enabled: showsOptions,
   });
   const availability = useRelationshipOptionAvailability({
-    sourceId: sourceList[0]?.id ?? "none",
+    sourceId: sources[0]?.id ?? "none",
     options,
     availabilitySource,
     token,

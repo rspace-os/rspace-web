@@ -24,6 +24,11 @@ function busyBooking(id: number): BookingListDocument {
       },
       globalId: "IN41",
     },
+    location: {
+      relationTo: "containers",
+      value: { id: 23, globalId: "IC23", name: "Imaging suite with an unusually long location name" },
+      globalId: "IC23",
+    },
     start: "2026-09-24T08:00:00.000Z",
     end: "2026-09-24T09:00:00.000Z",
     privacy: "busy",

@@ -1,6 +1,5 @@
 import type { Booking, BookingListDocument } from "@/modules/booking/domain/booking";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
-import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import i18n from "@/modules/common/i18n";
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 
@@ -28,7 +27,9 @@ export function toTimelineEvent(
   const target = event.target;
   const itemName = target?.value.name ?? i18n.t("common:values.unknownItem");
   const itemGlobalId = target?.globalId ?? null;
-  const location = target ? resourceLocation(target) : undefined;
+  const location = event.location
+    ? { name: event.location.value.name, globalId: event.location.value.globalId }
+    : undefined;
   const item = { name: itemName, globalId: itemGlobalId, location };
   if (event.kind === "MAINTENANCE") {
     return {

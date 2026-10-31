@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.ObjectProvider;
@@ -415,6 +416,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
           accesses.put(configuration.getId(), configuration);
         });
     Map<Long, ResolvedResourceAccess> resolved = accessManager.resolveAll(accesses.values(), actor);
+    var targets =
+        bookingInstruments.getBookingSummaries(
+            bookings.stream()
+                .map(booking -> booking.getBookingConfiguration().getTarget().id())
+                .collect(Collectors.toSet()));
     for (TimeSlotBooking booking : bookings) {
       booking.getRequester().getUsername();
       booking.getRequester().getFullName();
@@ -443,6 +449,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               && booking.getBookingConfiguration().getState() == BookingConfigurationState.ACTIVE,
           canCancel,
           currentRole);
+      var target = targets.get(booking.getBookingConfiguration().getTarget().id());
+      booking.prepareLocation(target == null ? null : target.parentContainerId());
     }
   }
 

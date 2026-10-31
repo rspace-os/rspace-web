@@ -104,6 +104,71 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   @Test
+  void bookingLocationExpansionRunsNoContainerCountStatement() throws Exception {
+    FixtureRows rows = createRows(5, "LocationCount" + fixture.marker());
+    var logger =
+        (org.apache.logging.log4j.core.Logger)
+            org.apache.logging.log4j.LogManager.getLogger("org.hibernate.SQL");
+    var level = logger.getLevel();
+    var statements = new com.researchspace.core.testutil.StringAppenderForTestLogging();
+    statements.start();
+    logger.addAppender(statements);
+    logger.setLevel(org.apache.logging.log4j.Level.DEBUG);
+    try {
+      JsonNode docs =
+          request("/api/v2/bookings", rows.instrumentIds(), "id,location").body().path("docs");
+      assertFalse(docs.isEmpty());
+      String sql = statements.logContents.toLowerCase(java.util.Locale.ROOT);
+      assertTrue(sql.contains("select"), "SQL capture must contain executed statements");
+      assertFalse(
+          java.util.regex.Pattern.compile("select count\\((?:(?!select).)*?from container ")
+              .matcher(sql)
+              .find(),
+          sql);
+    } finally {
+      logger.removeAppender(statements);
+      logger.setLevel(level);
+      statements.stop();
+    }
+  }
+
+  @Test
+  void bookingLocationsUseContainerReferencesAndHideUnreadableParentsAtEveryDepth()
+      throws Exception {
+    FixtureRows rows = createRows(5, "BookingLocation" + fixture.marker());
+    for (int depth : List.of(0, 1)) {
+      JsonNode docs =
+          measuredRequest(
+                  get("/api/v2/bookings")
+                      .header("apiKey", fixture.userKey())
+                      .param("where", targetFilter(rows.instrumentIds()))
+                      .param("depth", Integer.toString(depth))
+                      .param("fields[bookings]", "id,target,location")
+                      .param("fields[instruments]", "id")
+                      .param("fields[containers]", "id,name,globalId"),
+                  false)
+              .body()
+              .path("docs");
+      assertEquals(5, docs.size());
+      for (JsonNode doc : docs) {
+        JsonNode target = doc.path("target").path("value");
+        long targetId = target.isNumber() ? target.asLong() : target.path("id").asLong();
+        int index = rows.instrumentIds().indexOf(targetId);
+        JsonNode location = doc.path("location");
+        if (index == 3 || index == 4) {
+          assertTrue(location.isNull(), doc.toString());
+        } else {
+          assertEquals("containers", location.path("relationTo").asText());
+          if (depth == 0) assertTrue(location.path("value").isNumber());
+          else assertTrue(location.path("value").path("name").isTextual());
+          if (index == 1)
+            assertEquals("IC" + rows.sharedParentId(), location.path("globalId").asText());
+        }
+      }
+    }
+  }
+
+  @Test
   void masksUnreadableParentsAndNarrowsBookingTargets() throws Exception {
     FixtureRows rows = createRows(5, "Mixed" + fixture.marker());
     assertLocations(request(INSTRUMENTS, rows.instrumentIds(), LOCATION_FIELDS).body(), rows);

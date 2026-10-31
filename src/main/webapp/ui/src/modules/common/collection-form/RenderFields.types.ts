@@ -4,10 +4,8 @@ import type { RelationshipOptionAvailability, RelationshipOptions } from "@/modu
 
 export type {
   RelationshipOption,
-  RelationshipOptionAvailabilitySource,
   RelationshipOptions,
   ToOneRelationshipValue,
-  UnavailableRelationshipOption,
 } from "@/modules/common/relationship-picker/types";
 
 /**

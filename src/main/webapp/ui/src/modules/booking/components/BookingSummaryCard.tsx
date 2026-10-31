@@ -4,7 +4,6 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatBookingAgendaDateTime } from "@/modules/booking/domain/bookingAgenda";
 import { bookingLocale } from "@/modules/booking/domain/bookingTime";
-import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import type { TableListCardField } from "@/modules/common/table-list/components/TableListCardView";
 import { TableListCard } from "@/modules/common/table-list/components/TableListCardView";
 import { buttonVariants } from "@/modules/common/ui/button";
@@ -25,7 +24,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
   const purpose = isFullPrivacy ? booking.purpose : null;
   const target = booking.target;
   const itemName = target?.value.name ?? commonT("values.unknownItem");
-  const location = target ? resourceLocation(target)?.name : undefined;
+  const location = booking.location?.value.name;
   const canLinkToItem = isFullPrivacy && booking.canViewConfiguration && target !== null;
   const actionLabel = t("dashboard.agenda.viewDetailsFor", {
     name: itemName,

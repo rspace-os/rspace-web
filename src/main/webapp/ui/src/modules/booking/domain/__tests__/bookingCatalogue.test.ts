@@ -18,7 +18,7 @@ describe("calendar catalogue", () => {
       }),
     );
     await expect(
-      fetchBookingCatalogue({ start: "2026-10-30T00:00:00Z", end: "2026-10-31T00:00:00Z" }, "token"),
+      fetchBookingCatalogue({ start: "2026-10-30T00:00:00Z", end: "2026-10-31T00:00:00Z", totals: true }, "token"),
     ).resolves.toMatchObject({ items: [] });
   });
 });
