@@ -1,7 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
-import { isPublicDocumentView, mintUiToken } from "@/modules/common/utils/auth";
+import { isPublicDocumentView, mintUiToken, TOKEN_EXPIRY_BUFFER_SECONDS } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -34,6 +34,7 @@ export default class AuthStore {
   isSynchronizing: boolean = true;
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
+  private refreshFailures = 0;
   systemSettings: SystemSettings | undefined;
   pidinstEnabled: boolean = false;
 
@@ -58,7 +59,10 @@ export default class AuthStore {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
     }
-    this.isAuthenticated = false;
+    this.timeoutId = null;
+    const existingToken = JwtService.getToken();
+    this.isAuthenticated =
+      this.isAuthenticated && existingToken !== null && JwtService.secondsToExpiry(existingToken) > 0;
     const tokenRequest = isPublicDocumentView()
       ? axios
           .get<{ data: string }>("/public/publicView/userform/ajax/inventoryOauthToken")
@@ -75,25 +79,45 @@ export default class AuthStore {
           JwtService.saveToken(token);
           InvApiService.setAuthorizationHeader();
           ElnApiService.setAuthorizationHeader();
+          this.refreshFailures = 0;
           this.isAuthenticated = true;
           this.isSynchronizing = false;
 
-          // Reauthenticate few minutes before token expiry
-          this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+          // Enter mintUiToken's refresh window before expiry, leaving time for retries.
+          this.scheduleRefresh(
+            Math.max(1000, (JwtService.secondsToExpiry(token) - TOKEN_EXPIRY_BUFFER_SECONDS + 1) * 1000),
+          );
         }),
       )
       .then(() => {})
       .catch((error: unknown) => {
         this.isSynchronizing = false;
         if (axios.isAxiosError(error) && error.response?.status === 401) {
+          this.isAuthenticated = false;
+          JwtService.destroyToken();
           window.location.href = "/login";
           return;
+        }
+        const storedToken = JwtService.getToken();
+        const millisecondsToExpiry = storedToken ? JwtService.secondsToExpiry(storedToken) * 1000 : 0;
+        if (millisecondsToExpiry > 0) {
+          const backoffMs = 1000 * 2 ** Math.min(this.refreshFailures++, 5);
+          this.scheduleRefresh(Math.min(backoffMs, millisecondsToExpiry));
+        } else {
+          this.isAuthenticated = false;
         }
         throw error;
       });
   }
 
+  private scheduleRefresh(delay: number) {
+    if (!Number.isFinite(delay)) return;
+    // authenticate schedules recovery before rejecting; timer callers must consume that rejection.
+    this.timeoutId = setTimeout(() => void this.authenticate().catch(() => undefined), delay);
+  }
+
   signOut() {
+    if (this.timeoutId) clearTimeout(this.timeoutId);
     this.isSigningOut = true;
     this.isAuthenticated = false;
     JwtService.destroyToken();

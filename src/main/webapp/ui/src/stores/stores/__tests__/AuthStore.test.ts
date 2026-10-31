@@ -14,11 +14,126 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   document.getElementById("public_document_view")?.remove();
 });
 
 describe("AuthStore", () => {
+  it("retries scheduled failures while the token is valid and stops after expiry", async () => {
+    vi.useFakeTimers();
+    const token = tokenExpiringIn(3600);
+    let requestCount = 0;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => {
+        requestCount += 1;
+        if (requestCount === 2 || requestCount > 3) return new HttpResponse(null, { status: 500 });
+        return HttpResponse.json({ accessToken: requestCount === 1 ? token : tokenExpiringIn(3600) });
+      }),
+    );
+    const authStore = new AuthStore({} as RootStore);
+    try {
+      await authStore.refreshAuthentication();
+      await vi.advanceTimersByTimeAsync(3301_000);
+      await vi.waitFor(() => expect(requestCount).toBe(2));
+      expect(authStore.isAuthenticated).toBe(true);
+      expect(JwtService.getToken()).toBe(token);
+      await vi.advanceTimersByTimeAsync(1000);
+      await vi.waitFor(() => expect(JwtService.getToken()).not.toBe(token));
+      expect(requestCount).toBe(3);
+      expect(authStore.isAuthenticated).toBe(true);
+      expect(authStore.isSynchronizing).toBe(false);
+      JwtService.saveToken(tokenExpiringIn(-1));
+      resetUiTokenForTests();
+      await vi.advanceTimersByTimeAsync(3301_000);
+      await vi.waitFor(() => expect(requestCount).toBe(4));
+      expect(authStore.isAuthenticated).toBe(false);
+      expect(authStore.timeoutId).toBeNull();
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(requestCount).toBe(4);
+    } finally {
+      if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
+    }
+  });
+
+  it("retries at token expiry when the backoff would outlast the token", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    JwtService.saveToken(tokenExpiringIn(20));
+    const authStore = new AuthStore({} as RootStore);
+    authStore.isAuthenticated = true;
+    let requestCount = 0;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => {
+        requestCount += 1;
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+
+    try {
+      await expect(authStore.authenticate()).rejects.toMatchObject({ response: { status: 500 } });
+      for (const [index, delay] of [1000, 2000, 4000, 8000].entries()) {
+        await vi.advanceTimersByTimeAsync(delay);
+        await vi.waitFor(() => expect(requestCount).toBe(index + 2));
+      }
+      await vi.advanceTimersByTimeAsync(new Date("2026-01-01T00:00:20Z").getTime() - Date.now() - 1);
+      expect(requestCount).toBe(5);
+      expect(authStore.isAuthenticated).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.waitFor(() => expect(requestCount).toBe(6));
+      expect(authStore.isAuthenticated).toBe(false);
+      expect(authStore.timeoutId).toBeNull();
+    } finally {
+      if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
+    }
+  });
+
+  it("clears authentication when a pending refresh fails after token expiry", async () => {
+    vi.useFakeTimers();
+    const token = tokenExpiringIn(10);
+    JwtService.saveToken(token);
+    const authStore = new AuthStore({} as RootStore);
+    authStore.isAuthenticated = true;
+    const response = Promise.withResolvers<Response>();
+    const started = Promise.withResolvers<void>();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => {
+        started.resolve();
+        return response.promise;
+      }),
+    );
+
+    const authentication = authStore.authenticate();
+    const rejection = expect(authentication).rejects.toMatchObject({ response: { status: 500 } });
+    await started.promise;
+    expect(authStore.isAuthenticated).toBe(true);
+    await vi.advanceTimersByTimeAsync(11_000);
+    response.resolve(new HttpResponse(null, { status: 500 }));
+    await rejection;
+
+    expect(authStore.isAuthenticated).toBe(false);
+    expect(authStore.isSynchronizing).toBe(false);
+    expect(authStore.timeoutId).toBeNull();
+  });
+
+  it("preserves a usable session and retries a failed refresh", async () => {
+    const token = tokenExpiringIn(3600);
+    server.use(http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: token })));
+    const authStore = new AuthStore({} as RootStore);
+    await authStore.refreshAuthentication();
+    resetUiTokenForTests();
+    server.use(http.post("/api/v2/oauth/tokens", () => new HttpResponse(null, { status: 500 })));
+    try {
+      await expect(authStore.authenticate()).rejects.toMatchObject({ response: { status: 500 } });
+      expect(authStore.isAuthenticated).toBe(true);
+      expect(JwtService.getToken()).toBe(token);
+      expect(authStore.timeoutId).not.toBeNull();
+    } finally {
+      if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
+    }
+  });
+
   it.each([429, 500])("keeps the page when token minting fails with %s", async (status) => {
     const location = { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" };
     vi.stubGlobal("location", location);

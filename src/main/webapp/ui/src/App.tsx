@@ -34,7 +34,10 @@ function App(): React.ReactNode {
           await currentUser.getBench();
         }
       }
-    })();
+    })().catch((error: unknown) => {
+      console.error("Application initialization failed", error);
+      setLoadingDone(true);
+    });
   }, []);
 
   return (
