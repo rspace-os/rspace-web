@@ -172,13 +172,31 @@ class ApiV2QueryContractMVCIT {
     @DisplayName("exists distinguishes a set value from an absent one on a text field")
     void existsOnAText() throws Exception {
       threeRows();
+      long withoutMessage =
+          fixture.maintenance(
+              base.plus(3, ChronoUnit.HOURS), base.plus(210, ChronoUnit.MINUTES), null);
+      String scope = "id=in=(%d,%d,%d,%d);".formatted(first, second, third, withoutMessage);
 
       mockMvc
           .perform(
               get(MAINTENANCES)
                   .header("apiKey", sysadminKey)
-                  .param("where", and("message=exists=true")))
-          .andExpect(jsonPath("$.totalDocs").value(3));
+                  .param("where", scope + "message=exists=true")
+                  .param("sort", "id"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(3))
+          .andExpect(
+              jsonPath("$.docs[*].id")
+                  .value(Matchers.contains((int) first, (int) second, (int) third)));
+
+      mockMvc
+          .perform(
+              get(MAINTENANCES)
+                  .header("apiKey", sysadminKey)
+                  .param("where", scope + "message=exists=false"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(1))
+          .andExpect(jsonPath("$.docs[0].id").value(withoutMessage));
     }
 
     @Test
