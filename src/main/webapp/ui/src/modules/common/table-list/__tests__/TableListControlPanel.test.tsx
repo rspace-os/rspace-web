@@ -165,7 +165,7 @@ describe("TableList control panel", () => {
     renderWithColumns(["title", "owner"]);
 
     const button = screen.getByRole("button", { name: "common:tableList.columns.customised" });
-    expect(button).toHaveTextContent("2");
+    expect(button).toMatchTextContent("2");
     expect(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" })).toBeVisible();
   });
 
@@ -221,7 +221,7 @@ describe("TableList control panel", () => {
     );
 
     const reset = screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" });
-    expect(reset).not.toHaveTextContent("common:tableList.actions.resetToDefaults");
+    expect(reset).not.toMatchTextContent("common:tableList.actions.resetToDefaults");
 
     await user.click(reset);
 
