@@ -198,7 +198,6 @@
         "configuration": "Booking configuration",
         "configurationVersion": "Configuration version",
         "customTimezone": "Custom time zone",
-        "defaultSharedWith": "Default sharing",
         "deletedAt": "Deleted at (UTC)",
         "empty": "No details recorded",
         "enabled": "Enabled",

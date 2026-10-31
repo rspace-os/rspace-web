@@ -48,7 +48,6 @@ final class BookingAuditDetails {
           entry("availabilityWindowEnd", "availabilityWindowEnd"),
           entry("timezoneMode", "timezoneMode"),
           entry("customTimezone", "customTimezone"),
-          entry("defaultSharedWith", "defaultSharedWith"),
           entry("configurationVersion", "configurationVersion"),
           entry("removedBookings", "removedBookings"),
           entry("removedSubscriptions", "removedSubscriptions"),
@@ -116,6 +115,7 @@ final class BookingAuditDetails {
             .filter(
                 key ->
                     !"id".equals(key)
+                        && !"defaultSharedWith".equals(key)
                         && LABELS.stream().noneMatch(label -> label.getKey().equals(key)))
             .sorted()
             .map(key -> key + ": " + value(key, data.get(key), locale, messages, forDisplay));

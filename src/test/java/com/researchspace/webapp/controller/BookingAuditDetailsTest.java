@@ -59,7 +59,7 @@ class BookingAuditDetailsTest {
 
     assertEquals(
         "Availability window start: 08:00; Availability window end: 18:00; Time zone mode: BROWSER;"
-            + " Custom time zone: —; Default sharing: ALL_USERS",
+            + " Custom time zone: —",
         BookingAuditDetails.format(data.getData(), messages, Locale.US));
   }
 

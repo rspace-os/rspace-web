@@ -956,7 +956,6 @@ export default interface Resources {
           "configuration": "Booking configuration",
           "configurationVersion": "Configuration version",
           "customTimezone": "Custom time zone",
-          "defaultSharedWith": "Default sharing",
           "deletedAt": "Deleted at (UTC)",
           "empty": "No details recorded",
           "enabled": "Enabled",
@@ -9343,6 +9342,7 @@ export default interface Resources {
         "itemsExportedAs": "Items exported as {0} to {1}",
         "itemsExportedWithConfiguration": "{0, plural, one {# item exported as {1} to {2}} other {# items exported as {1} to {2}}}",
         "movedFromTo": "from {0} ({1}) to {2} ({3})",
+        "onBehalfOf": "On behalf of {0}",
         "permanentlyDeleted": "Permanently deleted",
         "queryingAuditTable": "Querying audit table..",
         "queryingAuditTrail": "Querying audit trail"

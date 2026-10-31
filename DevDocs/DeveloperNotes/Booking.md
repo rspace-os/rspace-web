@@ -181,3 +181,5 @@ in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-r
 
 See [Booking audit events](Logging.md#booking-audit-events) for snapshot rendering and historical
 schedule handling.
+
+The audit display ignores obsolete `defaultSharedWith` entries in historical defaults snapshots.
