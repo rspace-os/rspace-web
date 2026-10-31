@@ -16,7 +16,9 @@ class ApiV2FixtureTest {
   void cleanupRunsAllActionsInReverseAndClearsThemAfterFailure() throws Exception {
     var constructor = ApiV2Fixture.class.getDeclaredConstructors()[0];
     constructor.setAccessible(true);
-    ApiV2Fixture fixture = ApiV2Fixture.class.cast(constructor.newInstance(new Object[8]));
+    ApiV2Fixture fixture =
+        ApiV2Fixture.class.cast(
+            constructor.newInstance(new Object[constructor.getParameterCount()]));
     List<Integer> calls = new ArrayList<>();
     RuntimeException firstFailure = new IllegalStateException("first failure");
     Error laterFailure = new AssertionError("later failure");
