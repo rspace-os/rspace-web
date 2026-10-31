@@ -102,7 +102,9 @@ describe("TableList filter buttons", () => {
     await user.click(availableNow);
     expect(availableNow).toBeChecked();
     await user.keyboard("{Escape}");
-    expect(screen.getByRole("button", { name: "common:tableList.filters.applied" })).toHaveTextContent("1");
+    expect(
+      within(screen.getByRole("button", { name: "common:tableList.filters.applied" })).getByText("1"),
+    ).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" }));
     expect(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" })).toBeInTheDocument();
