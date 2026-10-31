@@ -17,7 +17,7 @@ import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
-import { Field, FieldLabel } from "@/modules/common/ui/field";
+import { Field, FieldContent, FieldDescription, FieldLabel } from "@/modules/common/ui/field";
 import { Switch } from "@/modules/common/ui/switch";
 import { Heading } from "@/modules/common/ui/typography";
 import {
@@ -185,8 +185,15 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             {t("notificationSubscriptions.preferences.saveError")}
           </p>
         ) : null}
-        <div className="space-y-2">
-          <label htmlFor="notify-own-actions">{t("notificationSubscriptions.preferences.ownActions.label")}</label>
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="notify-own-actions">
+              {t("notificationSubscriptions.preferences.ownActions.label")}
+            </FieldLabel>
+            <FieldDescription id="notify-own-actions-description">
+              {t("notificationSubscriptions.preferences.ownActions.description")}
+            </FieldDescription>
+          </FieldContent>
           <Switch
             id="notify-own-actions"
             checked={notifyOwnActions.input ?? false}
@@ -194,8 +201,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             aria-describedby="notify-own-actions-description"
             onCheckedChange={(checked) => notifyOwnActions.onChange(checked)}
           />
-          <p id="notify-own-actions-description">{t("notificationSubscriptions.preferences.ownActions.description")}</p>
-        </div>
+        </Field>
         <Button
           type="submit"
           size="sm"
