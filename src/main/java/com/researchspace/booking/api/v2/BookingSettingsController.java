@@ -34,6 +34,7 @@ import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -199,25 +200,34 @@ public final class BookingSettingsController {
       }
     }
 
+    /**
+     * Decodes the complete schedule strictly, without Jackson's scalar coercion. Omitted and null
+     * both leave the stored schedule unchanged.
+     */
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
-          decodeOpeningHours(openingHours),
+          decode(
+              openingHours,
+              BookingOpeningHoursCodec::openingHours,
+              InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS),
           bufferBeforeMinutes,
           bufferAfterMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
     }
 
-    private static List<BookingOpeningHoursEntry> decodeOpeningHours(JsonNode node) {
+    private static <V> V decode(
+        JsonNode node,
+        Function<JsonNode, V> decoder,
+        InvalidBookingSchedulingSettingsException.Reason reason) {
       if (node == null || node.isNull()) {
         return null;
       }
       try {
-        return BookingOpeningHoursCodec.openingHours(node);
+        return decoder.apply(node);
       } catch (IllegalArgumentException ex) {
-        throw new InvalidBookingSchedulingSettingsException(
-            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS);
+        throw new InvalidBookingSchedulingSettingsException(reason);
       }
     }
 

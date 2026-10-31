@@ -268,6 +268,9 @@ class ApiV2ResourceConfigTest {
         () -> mock(BookingConfigurationTargetManager.class));
     context.registerBean(TimeSlotBookingManager.class, () -> mock(TimeSlotBookingManager.class));
     context.registerBean(
+        com.researchspace.service.MessageSourceUtils.class,
+        () -> mock(com.researchspace.service.MessageSourceUtils.class));
+    context.registerBean(
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
     InstrumentCustomFieldManager customFields = mock(InstrumentCustomFieldManager.class);
     // The generated OpenAPI document reads both from the real manager.

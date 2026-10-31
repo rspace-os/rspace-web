@@ -183,7 +183,7 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(ApiV2ResourceException.class)
   public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
     String detail = messages.getMessage(ex.errorCode(), ex.arguments());
-    return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail);
+    return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail, ex.extensions());
   }
 
   @ExceptionHandler(ResourceAccessException.class)

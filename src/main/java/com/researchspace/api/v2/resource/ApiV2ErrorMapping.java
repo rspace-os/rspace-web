@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.resource;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,8 @@ public record ApiV2ErrorMapping(
     String errorCode,
     String description,
     Function<RuntimeException, Object[]> argumentExtractor,
-    Function<RuntimeException, String> errorCodeExtractor) {
+    Function<RuntimeException, String> errorCodeExtractor,
+    Function<RuntimeException, Map<String, Object>> extensionExtractor) {
 
   public ApiV2ErrorMapping {
     Objects.requireNonNull(exceptionType, "Exception type");
@@ -21,6 +23,7 @@ public record ApiV2ErrorMapping(
     Assert.hasText(description, "Error description must not be blank");
     Objects.requireNonNull(errorCodeExtractor, "Error code extractor");
     Objects.requireNonNull(argumentExtractor, "Error argument extractor");
+    Objects.requireNonNull(extensionExtractor, "Error extension extractor");
     if (!status.isError()) {
       throw new IllegalArgumentException("Resource error mapping requires an error status");
     }
@@ -37,14 +40,31 @@ public record ApiV2ErrorMapping(
       String errorCode,
       String description,
       Function<E, Object[]> argumentExtractor) {
+    return of(
+        exceptionType, status, errorCode, description, argumentExtractor, ignored -> Map.of());
+  }
+
+  /**
+   * Maps a failure whose problem body carries RFC 9457 extension members, provided by a resource
+   * operation.
+   */
+  public static <E extends RuntimeException> ApiV2ErrorMapping of(
+      Class<E> exceptionType,
+      HttpStatus status,
+      String errorCode,
+      String description,
+      Function<E, Object[]> argumentExtractor,
+      Function<E, Map<String, Object>> extensionExtractor) {
     Objects.requireNonNull(argumentExtractor, "Error argument extractor");
+    Objects.requireNonNull(extensionExtractor, "Error extension extractor");
     return new ApiV2ErrorMapping(
         exceptionType,
         status,
         errorCode,
         description,
         exception -> argumentExtractor.apply(exceptionType.cast(exception)),
-        ignored -> errorCode);
+        ignored -> errorCode,
+        exception -> extensionExtractor.apply(exceptionType.cast(exception)));
   }
 
   /** Maps reason-bearing failures while retaining a representative documented error code. */
@@ -54,13 +74,33 @@ public record ApiV2ErrorMapping(
       String documentedCode,
       String description,
       Function<E, String> errorCodeExtractor) {
+    return withErrorCode(
+        type,
+        status,
+        documentedCode,
+        description,
+        errorCodeExtractor,
+        ignored -> new Object[0],
+        ignored -> Map.of());
+  }
+
+  /** Maps dynamic codes, message arguments and RFC 9457 extensions supplied by an operation. */
+  public static <E extends RuntimeException> ApiV2ErrorMapping withErrorCode(
+      Class<E> type,
+      HttpStatus status,
+      String documentedCode,
+      String description,
+      Function<E, String> errorCodeExtractor,
+      Function<E, Object[]> argumentExtractor,
+      Function<E, Map<String, Object>> extensionExtractor) {
     return new ApiV2ErrorMapping(
         type,
         status,
         documentedCode,
         description,
-        ignored -> new Object[0],
-        exception -> errorCodeExtractor.apply(type.cast(exception)));
+        exception -> argumentExtractor.apply(type.cast(exception)),
+        exception -> errorCodeExtractor.apply(type.cast(exception)),
+        exception -> extensionExtractor.apply(type.cast(exception)));
   }
 
   public ApiV2ResourceException translate(RuntimeException exception) {
@@ -68,7 +108,8 @@ public record ApiV2ErrorMapping(
         exception,
         status,
         errorCodeExtractor.apply(exception),
-        Objects.requireNonNull(argumentExtractor.apply(exception), "Mapped error arguments"));
+        Objects.requireNonNull(argumentExtractor.apply(exception), "Mapped error arguments"),
+        Objects.requireNonNull(extensionExtractor.apply(exception), "Mapped error extensions"));
   }
 
   OpenApiOperationDocumentation.Response documentedResponse() {

@@ -194,6 +194,7 @@
         "availabilityWindowStart": "Availability window start",
         "bufferAfter": "Buffer after (minutes)",
         "bufferBefore": "Buffer before (minutes)",
+        "cancellationReason": "Cancellation reason",
         "configuration": "Booking configuration",
         "configurationVersion": "Configuration version",
         "customTimezone": "Custom time zone",
@@ -218,7 +219,8 @@
         "state": "Status",
         "target": "Bookable item",
         "targetName": "Bookable item name",
-        "timezone": "Scheduling timezone",
+        "timeFormat": "Time format",
+        "timezone": "Scheduling time zone",
         "timezoneMode": "Time zone mode"
       }
     },

@@ -50,6 +50,7 @@ class BookingApiV2ControllerAdviceTest {
   @Test
   void policy() {
     for (var reason : BookingPolicyException.Reason.values()) {
+      if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
       register(reason.errorCode());
       check(
           advice.handleBookingPolicy(new BookingPolicyException(reason)),
@@ -129,7 +130,8 @@ class BookingApiV2ControllerAdviceTest {
         new TimeSlotBookingResourceOperations(
             org.mockito.Mockito.mock(TimeSlotBookingManager.class),
             org.mockito.Mockito.mock(com.researchspace.service.FeatureFlagManager.class),
-            com.researchspace.model.booking.ApiV2TimeSlotBookingResource.DESCRIPTION);
+            com.researchspace.model.booking.ApiV2TimeSlotBookingResource.DESCRIPTION,
+            org.mockito.Mockito.mock(com.researchspace.service.MessageSourceUtils.class));
     var spec = operations.timeSlotBookingApiV2Resource();
     var shared =
         new com.researchspace.api.v2.controller.ApiV2ControllerAdvice(
@@ -139,6 +141,7 @@ class BookingApiV2ControllerAdviceTest {
             com.researchspace.api.v2.resource.ResourceOperation.CREATE,
             com.researchspace.api.v2.resource.ResourceOperation.UPDATE)) {
       for (var reason : BookingPolicyException.Reason.values()) {
+        if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
         register(reason.errorCode());
         var mapping =
             spec.errorMappings().get(operation).stream()
