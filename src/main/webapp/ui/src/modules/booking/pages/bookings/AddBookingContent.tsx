@@ -15,6 +15,7 @@ import {
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingAddedNoticeValues } from "@/modules/booking/domain/bookingTime";
 import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Heading } from "@/modules/common/ui/typography";
@@ -81,6 +82,7 @@ export function AddBookingContent() {
       createBookingEventNotice({
         event: created,
         message: t("bookings.feedback.eventAdded", {
+          ...bookingAddedNoticeValues(created.start, created.end, preferences.timeZone, preferences.timeFormat),
           itemName: submission.target.name,
         }),
         timeZone: preferences.timeZone,

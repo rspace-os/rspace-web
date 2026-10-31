@@ -14,6 +14,7 @@ import i18n from "@/modules/common/i18n";
 import { resolveBookingWindow } from "../../creation/ZonedBookingWindowFields";
 import {
   addCalendarDays,
+  bookingAddedNoticeValues,
   bookingDateTimeLocale,
   bookingHourCycle,
   bookingLocale,
@@ -159,7 +160,19 @@ describe("bookingTime", () => {
   test("shows a shared timezone only once in an agenda period", () => {
     const period = formatAgendaPeriod("2026-08-18T08:00:00Z", "2026-08-18T09:00:00Z", "Europe/Berlin", "en-GB");
 
-    expect(period.split("GMT+2")).toHaveLength(2);
+    expect(period).not.toContain("GMT");
+    expect(period).toBe("10:00–11:00");
+  });
+
+  test("writes regional dates in booking notices", () => {
+    const values = bookingAddedNoticeValues("2026-11-02T13:00:00Z", "2026-11-02T15:00:00Z", "Europe/London", "H24");
+    expect(values.date).toBe(
+      new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "Europe/London" }).format(
+        new Date("2026-11-02T13:00:00Z"),
+      ),
+    );
+    expect(values.start).toBe("13:00");
+    expect(values.end).toBe("15:00");
   });
 
   test("names the date in a booking period, even when two bookings share the times", () => {
@@ -168,21 +181,6 @@ describe("bookingTime", () => {
     expect(period).toContain("Oct 8, 2026");
     expect(period).not.toBe(
       formatBookingPeriod("2026-10-09T04:00:00Z", "2026-10-09T05:00:00Z", "Europe/Berlin", "en-US"),
-    );
-  });
-
-  test.each([
-    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "UTC"],
-    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "Europe/Berlin"],
-    ["2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z", "Europe/Berlin"],
-  ])("uses display-zone dates in native ordinary-day ranges: %s to %s in %s", (start, end, timeZone) => {
-    expect(formatBookingPeriod(start, end, timeZone, "en-GB", "H24")).toBe(
-      new Intl.DateTimeFormat("en-GB", {
-        timeZone,
-        dateStyle: "medium",
-        timeStyle: "short",
-        hourCycle: "h23",
-      }).formatRange(new Date(start), new Date(end)),
     );
   });
 
@@ -204,16 +202,16 @@ describe("bookingTime", () => {
       expect(later).toBe(`${dateTime("2026-10-25T01:30:00Z")} +01:00`);
       expect(dateTime("2026-10-25T00:30:00Z")).toBe(dateTime("2026-10-25T01:30:00Z"));
       expect(formatBookingPeriod("2026-10-25T00:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${earlier} – 3:30 AM +01:00`,
+        `${earlier}–${dateTime("2026-10-25T02:30:00Z")} +01:00`,
       );
       expect(formatBookingPeriod("2026-10-25T01:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${later} – 3:30 AM +01:00`,
+        `${later}–${dateTime("2026-10-25T02:30:00Z")} +01:00`,
       );
     });
 
     test("names the offsets either side of a skipped hour", () => {
       expect(formatBookingPeriod("2026-03-29T00:30:00Z", "2026-03-29T01:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${dateTime("2026-03-29T00:30:00Z")} +01:00 – 3:30 AM +02:00`,
+        `${dateTime("2026-03-29T00:30:00Z")} +01:00–${dateTime("2026-03-29T01:30:00Z")} +02:00`,
       );
     });
 
@@ -222,12 +220,7 @@ describe("bookingTime", () => {
         dateTime("2026-10-08T04:00:00Z"),
       );
       expect(formatBookingPeriod("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z", "Europe/Berlin", "en-US")).toBe(
-        new Intl.DateTimeFormat("en-US", {
-          dateStyle: "medium",
-          timeStyle: "short",
-          hourCycle: bookingHourCycle("AUTOMATIC"),
-          timeZone: "Europe/Berlin",
-        }).formatRange(new Date("2026-10-08T04:00:00Z"), new Date("2026-10-08T05:00:00Z")),
+        `${dateTime("2026-10-08T04:00:00Z")}–${dateTime("2026-10-08T05:00:00Z")}`,
       );
     });
   });

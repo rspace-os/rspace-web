@@ -16,6 +16,7 @@ import {
   withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingAddedNoticeValues } from "@/modules/booking/domain/bookingTime";
 import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import {
@@ -263,6 +264,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
                           itemName: submission.target.name,
                         })
                       : t("bookings.feedback.eventAdded", {
+                          ...bookingAddedNoticeValues(
+                            created.start,
+                            created.end,
+                            preferences.timeZone,
+                            preferences.timeFormat,
+                          ),
                           itemName: submission.target.name,
                         }),
                   timeZone: preferences.timeZone,

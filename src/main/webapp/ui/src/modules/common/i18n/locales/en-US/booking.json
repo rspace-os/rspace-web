@@ -605,7 +605,7 @@
       "maintenanceConflict": "Maintenance: {label}"
     },
     "feedback": {
-      "eventAdded": "{itemName} event added.",
+      "eventAdded": "Booking added for {itemName}, {date}, {start} to {end}.",
       "eventUpdated": "{itemName} event updated.",
       "focusOnCalendar": "Focus on calendar",
       "maintenanceAdded": "Maintenance for {itemName} added.",

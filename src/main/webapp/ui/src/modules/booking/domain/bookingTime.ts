@@ -403,3 +403,13 @@ export function formatAgendaPeriod(
   });
   return formatInstantRange(withOffset, startDate, endDate);
 }
+
+export function bookingAddedNoticeValues(start: string, end: string, timeZone: string, timeFormat: BookingTimeFormat) {
+  const locale = bookingDateTimeLocale(timeFormat);
+  const clock = new Intl.DateTimeFormat(locale, { timeZone, hour: "numeric", minute: "2-digit" });
+  return {
+    date: new Intl.DateTimeFormat(locale, { timeZone, dateStyle: "medium" }).format(new Date(start)),
+    start: clock.format(new Date(start)),
+    end: clock.format(new Date(end)),
+  };
+}
