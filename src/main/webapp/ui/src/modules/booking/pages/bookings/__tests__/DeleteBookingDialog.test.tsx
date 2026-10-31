@@ -285,7 +285,7 @@ describe("DeleteBookingDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.details.cancelMaintenance" }));
 
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("booking:bookings.details.cancelMaintenanceDescription");
+    expect(screen.getByRole("alertdialog")).toMatchTextContent("booking:bookings.details.cancelMaintenanceDescription");
     expect(screen.getByRole("heading")).toHaveTextContent("booking:bookings.details.cancelMaintenanceTitle");
   });
 });
