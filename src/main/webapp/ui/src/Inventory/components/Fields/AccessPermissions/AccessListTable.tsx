@@ -89,7 +89,13 @@ export default function AccessListTable({
         {sharedWith.map(({ group, shared }) => (
           <TableRow key={group.id}>
             <TableCell padding="checkbox">
-              <Checkbox onClick={() => onCheckboxClick(group)} checked={shared} color="default" disabled={disabled} />
+              <Checkbox
+                slotProps={{ input: { "aria-label": group.name } }}
+                onClick={() => onCheckboxClick(group)}
+                checked={shared}
+                color="default"
+                disabled={disabled}
+              />
             </TableCell>
             <TableCell>{group.name}</TableCell>
           </TableRow>
