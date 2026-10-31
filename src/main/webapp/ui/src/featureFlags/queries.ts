@@ -30,7 +30,7 @@ export async function getFeatureFlags(token: string): Promise<FeatureFlagRespons
     const result = parseOrThrow(FeatureFlagPageSchema, (await response.json()) as unknown);
     documents.push(...result.docs);
     if (!result.hasNextPage) break;
-    if (result.nextPage === null || result.nextPage <= page || result.nextPage > result.totalPages) {
+    if (result.nextPage === null || result.nextPage <= page) {
       throw new Error("Feature flag pagination did not advance");
     }
     page = result.nextPage;
