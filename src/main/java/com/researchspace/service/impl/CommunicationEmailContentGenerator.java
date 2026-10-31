@@ -28,14 +28,10 @@ class CommunicationEmailContentGenerator {
     if (communication instanceof Notification notification
         && notification.getNotificationDataObject() instanceof BookingNotificationData data) {
       var model = velocityModelFor(communication);
-      var zone = java.time.ZoneId.of(data.getEmailDisplayTimezone());
-      var timestamp =
-          java.time.format.DateTimeFormatter.ofLocalizedDateTime(
-                  java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT)
-              .withLocale(contentGenerator.getLocale())
-              .withZone(zone)
-              .format(java.time.Instant.now());
-      model.put("bookingTimestamp", timestamp + " (" + zone.getId() + ")");
+      model.put(
+          "bookingTimestamp",
+          com.researchspace.booking.service.BookingNotificationMessageFormatter
+              .formatEmailTimestamp(java.time.Instant.now(), data, contentGenerator.getLocale()));
       return contentGenerator.render(
           NotificationTypeMessages.keyFor(notification.getNotificationType()) + "Subject",
           new Object[] {data.getInstrumentName()},

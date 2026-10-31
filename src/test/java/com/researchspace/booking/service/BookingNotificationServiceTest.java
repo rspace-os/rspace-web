@@ -70,7 +70,11 @@ class BookingNotificationServiceTest {
   @ParameterizedTest
   @EnumSource(
       value = NotificationType.class,
-      names = {"NOTIFICATION_BOOKING_CREATED", "NOTIFICATION_BOOKING_CANCELLED"})
+      names = {
+        "NOTIFICATION_BOOKING_CREATED",
+        "NOTIFICATION_BOOKING_CANCELLED",
+        "NOTIFICATION_BOOKING_CHANGED"
+      })
   void notifiesSelectedSubscriberWithRenderedMessageAndConfig(NotificationType notificationType) {
     User actor = user(1L, "actor");
     User recipient = user(2L, "recipient");
@@ -103,6 +107,7 @@ class BookingNotificationServiceTest {
     assertEquals("42", data.getBookingId());
     assertEquals("<Mic & scope>", data.getInstrumentName());
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
+    assertEquals("Europe/Berlin", data.getEmailDisplayTimezone());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
     String expectedMessage =
@@ -113,13 +118,23 @@ class BookingNotificationServiceTest {
             : "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was cancelled. It was "
                 + "scheduled from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
                 + "Jan 2, 2026, 5:04 AM (Europe/Berlin, UTC+01:00).";
+    if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
+      expectedMessage =
+          "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was changed to Jan 2, 2026,"
+              + " 4:04 AM (Europe/Berlin, UTC+01:00) to Jan 2, 2026, 5:04 AM (Europe/Berlin,"
+              + " UTC+01:00).";
+    }
     assertEquals(expectedMessage, message.getValue());
   }
 
   @ParameterizedTest
   @EnumSource(
       value = NotificationType.class,
-      names = {"NOTIFICATION_BOOKING_CREATED", "NOTIFICATION_BOOKING_CANCELLED"})
+      names = {
+        "NOTIFICATION_BOOKING_CREATED",
+        "NOTIFICATION_BOOKING_CANCELLED",
+        "NOTIFICATION_BOOKING_CHANGED"
+      })
   void deliversSelfTargetedNotificationToCommunicationManager(NotificationType notificationType) {
     User actor = user(1L, "actor");
     User recipient = actor;
@@ -180,6 +195,14 @@ class BookingNotificationServiceTest {
     assertEquals(
         Set.of(losAngelesRecipient),
         configs.getAllValues().get(1).getNotificationTargetsOverride());
+    assertEquals(
+        List.of("Europe/Berlin", "America/Los_Angeles"),
+        configs.getAllValues().stream()
+            .map(
+                config ->
+                    ((BookingNotificationData) config.getNotificationData())
+                        .getEmailDisplayTimezone())
+            .toList());
     assertTrue(messages.getAllValues().get(0).contains("Jan 2, 2026, 4:04 AM"));
     assertTrue(messages.getAllValues().get(0).contains("Europe/Berlin, UTC+01:00"));
     assertTrue(messages.getAllValues().get(1).contains("Jan 1, 2026, 7:04 PM"));

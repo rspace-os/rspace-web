@@ -106,6 +106,15 @@ public class BookingNotificationMessageFormatter {
         : CANCELLED_MESSAGE_KEY;
   }
 
+  /** Formats the email header in the recipient zone saved with its body. */
+  public static String formatEmailTimestamp(
+      Instant instant, BookingNotificationData data, Locale locale) {
+    return formatInstant(
+        instant.toString(),
+        validZone(data.getEmailDisplayTimezone()).orElse(java.time.ZoneOffset.UTC),
+        locale);
+  }
+
   private static String formatInstant(String value, ZoneId zone, Locale locale) {
     Instant instant = Instant.parse(value);
     String localDateTime =
