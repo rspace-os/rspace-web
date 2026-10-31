@@ -64,9 +64,8 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request,
       RelationshipReadAccess targetAccess,
       com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
-    // Configurations inherit access from their target from this layer on, so only the actors are
-    // fetched with the page.
-    return collectionQuery.page(
+    // Fetch actors only after the ordered page has been selected.
+    return collectionQuery.pageWithBatchedFetch(
         criteriaBuilderFactory,
         getSession(),
         request,

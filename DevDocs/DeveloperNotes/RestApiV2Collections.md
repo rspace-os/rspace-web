@@ -671,8 +671,9 @@ without querying. `page` and `projectedPage` retain their counted-page behavior.
 
 Booking and booking-configuration lists retain the counted entity path. Their documents include
 caller-specific privacy, capabilities, role sources and owner health prepared from access
-aggregates. The page query fetches the to-one actors and access aggregate alongside each
-configuration; assignments and instrument targets are resolved in batches. Moving these lists
+aggregates. The ordered page query selects IDs; a second ID-scoped query fetches the
+selected entities with their to-one actors and configuration. Actor columns stay out of the
+paginated sort. Assignments and instrument targets are resolved in batches. Moving these lists
 to scalar read documents also requires projecting those access inputs and preserving their
 caller-specific preparation. Until then, these lists count internally even without `totals=true`.
 

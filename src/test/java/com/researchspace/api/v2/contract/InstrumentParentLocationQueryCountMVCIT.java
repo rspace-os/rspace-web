@@ -104,27 +104,48 @@ class InstrumentParentLocationQueryCountMVCIT {
   }
 
   @Test
-  void bookingLocationExpansionRunsNoContainerCountStatement() throws Exception {
+  void bookingPagesAvoidLocationCountsAndActorColumnsInLimitedSql() throws Exception {
     FixtureRows rows = createRows(5, "LocationCount" + fixture.marker());
     var logger =
         (org.apache.logging.log4j.core.Logger)
             org.apache.logging.log4j.LogManager.getLogger("org.hibernate.SQL");
     var level = logger.getLevel();
-    var statements = new com.researchspace.core.testutil.StringAppenderForTestLogging();
+    var statements =
+        new com.researchspace.core.testutil.StringAppenderForTestLogging() {
+          @Override
+          public void append(org.apache.logging.log4j.core.LogEvent event) {
+            super.append(event);
+            logContents += "\n";
+          }
+        };
     statements.start();
     logger.addAppender(statements);
     logger.setLevel(org.apache.logging.log4j.Level.DEBUG);
     try {
-      JsonNode docs =
-          request("/api/v2/bookings", rows.instrumentIds(), "id,location").body().path("docs");
-      assertFalse(docs.isEmpty());
-      String sql = statements.logContents.toLowerCase(java.util.Locale.ROOT);
-      assertTrue(sql.contains("select"), "SQL capture must contain executed statements");
-      assertFalse(
-          java.util.regex.Pattern.compile("select count\\((?:(?!select).)*?from container ")
-              .matcher(sql)
-              .find(),
-          sql);
+      for (String path : List.of("/api/v2/bookings", "/api/v2/booking-configurations")) {
+        statements.logContents = "";
+        JsonNode docs =
+            request(path, rows.instrumentIds(), path.endsWith("/bookings") ? "id,location" : "id")
+                .body()
+                .path("docs");
+        assertFalse(docs.isEmpty());
+        String sql = statements.logContents.toLowerCase(java.util.Locale.ROOT);
+        assertTrue(sql.contains("select"), "SQL capture must contain executed statements");
+        assertFalse(
+            java.util.regex.Pattern.compile("select count\\((?:(?!select).)*?from container ")
+                .matcher(sql)
+                .find(),
+            sql);
+        var pages = java.util.regex.Pattern.compile("select [^\\n]*? limit [^\\n]*").matcher(sql);
+        boolean foundPage = false;
+        while (pages.find()) {
+          foundPage = true;
+          assertFalse(
+              pages.group().contains("password"),
+              "paged SQL fetches full actors: " + pages.group());
+        }
+        assertTrue(foundPage, "SQL capture must contain a limited page query");
+      }
     } finally {
       logger.removeAppender(statements);
       logger.setLevel(level);
