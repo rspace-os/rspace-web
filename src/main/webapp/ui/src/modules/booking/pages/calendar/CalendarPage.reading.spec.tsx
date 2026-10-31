@@ -85,7 +85,7 @@ describe("Calendar page", () => {
       http.get("/api/v2/instruments/fields/customFields", () => HttpResponse.json({ fields: [], hasMore: false })),
     );
     history.push("/booking/calendar?date=2026-08-17&calendar-resources.where=target.customFields.SF999%3D%3Dx");
-    await expect.element(page.getByRole("alert")).toHaveTextContent("target.customFields.SF999==x");
+    await expect.element(page.getByRole("alert")).toMatchTextContent("target.customFields.SF999==x");
     await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
     expect(bookingPageRequests.calendarBookingRequests).toHaveLength(count);
     await page.getByRole("button", { name: "Reset saved view" }).click();
@@ -103,7 +103,7 @@ describe("Calendar page", () => {
     );
     render(<CalendarPageStory history={history} />);
     await calendar.agenda.click();
-    await expect.element(page.getByRole("alert")).toHaveTextContent("Booking events are unavailable.");
+    await expect.element(page.getByRole("alert")).toMatchTextContent("Booking events are unavailable.");
     await calendar.search.fill("Cell imaging");
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     await expect.element(page.getByRole("alert")).not.toBeInTheDocument();
