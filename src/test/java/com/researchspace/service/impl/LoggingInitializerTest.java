@@ -1,10 +1,10 @@
 package com.researchspace.service.impl;
 
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,11 +30,10 @@ public class LoggingInitializerTest {
   }
 
   @Test
-  public void testImpossibleFileHandledOnNix() {
-    // only runs properly on nix
-    assumeFalse(IS_OS_WINDOWS);
-    //	 impossible file
-    loggingInit.setLoggingDir("../../../../../../../../test");
+  public void testImpossibleFileHandled() throws IOException {
+    File regularFile = new File(folder, "not-a-directory");
+    assertTrue(regularFile.createNewFile());
+    loggingInit.setLoggingDir(new File(regularFile, "child").getPath());
     loggingInit.init();
     assertEquals(".", loggingInit.getLoggingDir());
   }

@@ -498,7 +498,7 @@ export default class CoreFetcher {
       (acc, [k, v]) => ({
         // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
         ...acc,
-        [k]: acc[k] || this[k] || v,
+        [k]: Object.hasOwn(acc, k) ? acc[k] : (this[k] ?? v),
       }),
       params,
     );
