@@ -86,12 +86,27 @@ export class CalendarPage {
   }
 
   async dragResourceSelection(index: number): Promise<void> {
-    const canvas = this.resourceCanvases[index];
-    const positions = {
-      sourcePosition: { x: 300, y: 60 },
-      targetPosition: { x: 420, y: 60 },
-    };
-    await userEvent.dragAndDrop(canvas, canvas, positions);
+    const scroller = page.getByTestId("day-timeline-scroller").all()[index];
+    const element = scroller.element();
+    const bounds = element.getBoundingClientRect();
+    const canvas = this.resourceCanvases[index].element();
+    // A compact editor can cover part of the next resource. Use an exposed part of its timeline.
+    const y = 60;
+    const sourceX = Array.from({ length: Math.floor((element.clientWidth - 140) / 40) }, (_, i) => 20 + i * 40).find(
+      (x) =>
+        [x, x + 120].every((offset) => {
+          const hit = document.elementFromPoint(
+            bounds.left + element.clientLeft + offset,
+            bounds.top + element.clientTop + y,
+          );
+          return hit !== null && canvas.contains(hit) && hit.closest("button") === null;
+        }),
+    );
+    if (sourceX === undefined) throw new Error("No exposed resource timeline range to drag");
+    await userEvent.dragAndDrop(scroller, scroller, {
+      sourcePosition: { x: sourceX, y },
+      targetPosition: { x: sourceX + 120, y },
+    });
   }
 
   get timeGridCanvas(): Locator {
@@ -110,10 +125,10 @@ export class CalendarPage {
     scroller.scrollLeft = Math.max(0, startMinute * pixelsPerMinute - 40);
     const canvasBounds = canvas.getBoundingClientRect();
     const scrollerBounds = scroller.getBoundingClientRect();
-    // Half a minute in, so the pointer never sits on the boundary the snap rounds from; above the event lanes.
+    // Target the minute itself; the timeline rounds pointer positions to the nearest minute.
     const positionAt = (minute: number) => ({
-      x: canvasBounds.left - scrollerBounds.left + (minute + 0.5) * pixelsPerMinute,
-      y: canvasBounds.top - scrollerBounds.top + 40,
+      x: canvasBounds.left - scrollerBounds.left - scroller.clientLeft + minute * pixelsPerMinute,
+      y: canvasBounds.top - scrollerBounds.top - scroller.clientTop + 40,
     });
     // Target the scroller, which fits the viewport, so Playwright does not re-center the oversized canvas.
     await userEvent.dragAndDrop(this.timeGridScroller, this.timeGridScroller, {

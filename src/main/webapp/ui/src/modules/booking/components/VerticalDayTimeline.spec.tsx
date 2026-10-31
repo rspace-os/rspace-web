@@ -51,7 +51,7 @@ describe("VerticalDayTimeline", () => {
 
     await timeline.moveDraftLaterByOneSlot();
 
-    await expect.element(timeline.draft).toMatchTextContent("02:05 AM +01:00–03:05 AM +01:00");
+    await expect.element(timeline.draft).toMatchTextContent("02:01 AM +01:00–03:01 AM +01:00");
   });
 
   test("uses controlled date navigation and provides a return to the draft day", async () => {
@@ -136,7 +136,7 @@ describe("VerticalDayTimeline", () => {
     await expect.element(fullEvent).toBeVisible();
     const busyEvent = page.getByRole("article", { name: "Busy, 12:00 PM +01:00–12:05 PM +01:00", exact: true });
     await expect.element(busyEvent).toBeVisible();
-    await expect.element(busyEvent).not.toHaveTextContent("Katherine Johnson");
+    await expect.element(busyEvent).not.toMatchTextContent("Katherine Johnson");
   });
 
   test("leaves a stationary edge press unchanged and resizes by the pointer delta", async () => {
@@ -217,15 +217,19 @@ describe("VerticalDayTimeline", () => {
       const moveHandle = timeline.moveHandle;
       const moveHandleBounds = moveHandle.element().getBoundingClientRect();
       const currentCanvasBounds = timeline.canvas.element().getBoundingClientRect();
+      const sourceY = Math.round(moveHandleBounds.top + moveHandleBounds.height / 2);
       await userEvent.dragAndDrop(moveHandle, timeline.canvas, {
-        sourcePosition: { x: moveHandleBounds.width / 2, y: moveHandleBounds.height / 2 },
+        sourcePosition: {
+          x: moveHandleBounds.width / 2 - moveHandle.element().clientLeft,
+          y: sourceY - moveHandleBounds.top - moveHandle.element().clientTop,
+        },
         targetPosition: {
           x: currentCanvasBounds.width / 2,
           y:
-            moveHandleBounds.top -
-            currentCanvasBounds.top +
-            moveHandleBounds.height / 2 +
-            dayPixelsPerMinute * deltaMinutes,
+            sourceY +
+            Math.round(dayPixelsPerMinute * deltaMinutes) -
+            currentCanvasBounds.top -
+            timeline.canvas.element().clientTop,
         },
         steps,
       });

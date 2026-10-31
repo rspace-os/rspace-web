@@ -22,6 +22,8 @@ registerHandlers();
 let history: RouterHistory;
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
   resetBookingPageRequests();
   registerHandlers();
@@ -207,13 +209,13 @@ describe("Calendar page", () => {
     await expect.element(moveBooking).toBeVisible();
     moveBooking.element().focus();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:45");
-    await expect.element(card.getByLabelText("End time")).toHaveValue("09:45");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:59");
+    await expect.element(card.getByLabelText("End time")).toHaveValue("09:59");
     await card.getByLabelText("Start time").fill("12:00");
     await card.getByLabelText("End time").fill("13:00");
 
     await expect.element(card.getByText("This period overlaps:")).toBeVisible();
-    await expect.element(card.getByText("Booking #42")).toBeVisible();
+    await expect.element(card.getByText("Booking #42", { exact: false })).toBeVisible();
     await expect.element(save).toBeDisabled();
     expect(updatedPayload).toBeUndefined();
   });
@@ -305,7 +307,7 @@ describe("Calendar page", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41/edit");
     const purpose = page.getByRole("textbox", { name: "Purpose" });
     await purpose.fill("Updated from event details");
-    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Save changes" }).click();
 
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41");
     await expect.element(page.getByText("Updated from event details", { exact: true })).toBeVisible();

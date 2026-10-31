@@ -248,6 +248,7 @@ describe("Booking dashboard", () => {
       await expect
         .element(dashboard.quickAction("Calendar"))
         .toHaveAttribute("href", "/booking/calendar?date=2026-08-18");
+      await expect.element(dashboard.calendarDay("Tuesday, August 18, 2026")).toBeVisible();
       await expect
         .poll(() => dashboard.calendarDay("Tuesday, August 18, 2026").element().closest("[data-today=true]"))
         .not.toBeNull();
@@ -289,13 +290,17 @@ describe("Booking dashboard", () => {
   test("pages days with five, six, and twelve bookings without another request", async () => {
     render(<BookingDashboardPageStory history={history} />);
 
-    await dashboard.calendarDay("Tuesday, August 18, 2026").click();
+    await expect.element(dashboard.calendarDay("Tuesday, August 18, 2026")).toBeVisible();
+    dashboard.calendarDay("Tuesday, August 18, 2026").element().focus();
+    await userEvent.keyboard("{Enter}");
     await expect.element(dashboard.popup).toBeVisible();
     await expect.element(dashboard.previous).not.toBeInTheDocument();
     await expect.element(dashboard.next).not.toBeInTheDocument();
     await closePopup();
 
-    await dashboard.calendarDay("Wednesday, August 19, 2026").click();
+    await expect.element(dashboard.calendarDay("Wednesday, August 19, 2026")).toBeVisible();
+    dashboard.calendarDay("Wednesday, August 19, 2026").element().focus();
+    await userEvent.keyboard("{Enter}");
     await expect.element(dashboard.range).toHaveTextContent("1–5 of 6");
     await expect.element(dashboard.previous).toBeDisabled();
     await expect.element(dashboard.next).toBeEnabled();
@@ -307,7 +312,9 @@ describe("Booking dashboard", () => {
     await expect.poll(() => requests.length).toBe(requestCount);
     await closePopup();
 
-    await dashboard.calendarDay("Thursday, August 20, 2026").click();
+    await expect.element(dashboard.calendarDay("Thursday, August 20, 2026")).toBeVisible();
+    dashboard.calendarDay("Thursday, August 20, 2026").element().focus();
+    await userEvent.keyboard("{Enter}");
     await expect.element(dashboard.range).toHaveTextContent("1–5 of 12");
     const pagerTop = () => dashboard.next.element().getBoundingClientRect().top;
     const fullPagePagerTop = pagerTop();
@@ -329,7 +336,9 @@ describe("Booking dashboard", () => {
     // WebKit reports descendants of a closed details element as hidden, even
     // inside its visible summary. Assert on the disclosure itself.
     await expect.element(dashboard.summaryDisclosure("Private full booking")).toBeVisible();
-    await expect.element(dashboard.summaryDisclosure("Private full booking")).toHaveTextContent("Private full booking");
+    await expect
+      .element(dashboard.summaryDisclosure("Private full booking"))
+      .toMatchTextContent("Private full booking");
     await expect.element(dashboard.summary("Private busy booking")).toBeVisible();
     await dashboard.summaryDisclosure("Private full booking").click();
     await expect.element(dashboard.popup.getByText("Private purpose", { exact: true })).toBeVisible();

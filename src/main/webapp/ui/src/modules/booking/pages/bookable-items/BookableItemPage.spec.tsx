@@ -133,7 +133,7 @@ describe("BookableItemPage", () => {
       await expect.element(pageObj.heading).toBeVisible();
       const headingRow = pageObj.heading.element().closest("section");
       const tabList = pageObj.bookingsTab.element().parentElement;
-      const facts = page.getByRole("complementary", { name: "About" }).element();
+      const facts = page.getByRole("complementary", { name: "About this item" }).element();
       expect(headingRow).not.toBeNull();
       expect(tabList).not.toBeNull();
       const headingBox = headingRow?.getBoundingClientRect();
@@ -340,7 +340,7 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByRole("button", { name: "New Booking" })).not.toBeInTheDocument();
     await pageObj.calendarTrigger.click();
     await expect
-      .element(page.getByText("Calendar links cannot be generated while this booking configuration is archived."))
+      .element(page.getByText("New calendar links cannot be generated while this booking configuration is archived."))
       .toBeVisible();
     expect(calendarCreates).toBe(0);
     await userEvent.keyboard("{Escape}");
@@ -357,7 +357,7 @@ describe("BookableItemPage", () => {
     const dialog = page.getByRole("alertdialog", { name: "Permanently delete configuration?" });
     const confirm = dialog.getByRole("button", { name: "Delete permanently" });
     const itemName = dialog.getByRole("textbox", { name: "Item name" });
-    await expect.element(dialog).toHaveTextContent("access assignments");
+    await expect.element(dialog).toMatchTextContent("access assignments");
     await expect.element(confirm).toBeDisabled();
     await userEvent.fill(itemName, "confocal microscope");
     await expect.element(confirm).toBeDisabled();
@@ -371,7 +371,7 @@ describe("BookableItemPage", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/config/bookable-items");
     await expect.element(page.getByRole("heading", { name: "Bookable Items", exact: true })).toBeVisible();
     const notices = page.getByRole("list", { name: "Recent changes" });
-    await expect.element(notices).toHaveTextContent("Confocal microscope was permanently deleted.");
+    await expect.element(notices).toMatchTextContent("Confocal microscope was permanently deleted.");
     await expect.element(notices.getByRole("link")).not.toBeInTheDocument();
   });
 
@@ -599,8 +599,8 @@ describe("BookableItemPage", () => {
       await pageObj.auditTab.click();
 
       const alert = pageObj.auditPanel.getByRole("alert");
-      await expect.element(alert).toHaveTextContent(title);
-      await expect.element(alert).not.toHaveTextContent("Do not display");
+      await expect.element(alert).toMatchTextContent(title);
+      await expect.element(alert).not.toMatchTextContent("Do not display");
       await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
       await expectNoAxeViolations();
     },
@@ -711,7 +711,7 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.auditTab).not.toBeDisabled();
     await expect
       .element(page.getByRole("list", { name: "Recent changes" }))
-      .toHaveTextContent("Booking configuration saved.");
+      .toMatchTextContent("Booking configuration saved.");
   });
 
   test("focuses an invalid field and associates correction guidance", async () => {
