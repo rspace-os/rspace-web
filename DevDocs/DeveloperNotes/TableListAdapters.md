@@ -276,3 +276,10 @@ The hook passes an `AbortSignal` to the fetcher. TanStack Query can cancel an ob
 See [Table List interactions](./TableListInteractions.md) for shared interactions and filters,
 and [Table List data sources](./TableListDataSources.md) for rows already in the browser and other
 endpoints.
+
+API v2 tables load count-free pages and request `totals=true` separately once per
+filter/sort combination. The total uses the same `api-v2` resource, endpoint and
+authorization prefix as page queries, without paging or column projection in its
+key. Invalidate that prefix after writes to refresh both the current page and its
+total. Until the total arrives, pagination shows “of many”; next-page availability
+always follows the page response's `hasNextPage`.

@@ -86,7 +86,7 @@ describe("createApiV2CollectionAdapter", () => {
         adapter.selectedFields(state),
       ),
       // The parsed row carries the selected fields only, like the request asked for.
-    ).toEqual({ rows: [{ id: "1", title: "A", owner: "Ada", enabled: true }], rowCount: 42 });
+    ).toEqual({ rows: [{ id: "1", title: "A", owner: "Ada", enabled: true }], rowCount: 42, hasNextPage: true });
   });
 
   it("validates the selected fields only", () => {
@@ -95,7 +95,11 @@ describe("createApiV2CollectionAdapter", () => {
     const envelope = { ...v2ListEnvelope(sparse), totalDocs: 1, limit: 10, totalPages: 1 };
 
     // `score` and `modifiedAt` are not selected, so their absence is not an error.
-    expect(adapter.parseResponse({ ...envelope, docs: sparse }, selected)).toEqual({ rows: sparse, rowCount: 1 });
+    expect(adapter.parseResponse({ ...envelope, docs: sparse }, selected)).toEqual({
+      rows: sparse,
+      rowCount: 1,
+      hasNextPage: false,
+    });
 
     // `owner` is selected, so its absence is a contract failure.
     expect(() =>

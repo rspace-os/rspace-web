@@ -108,12 +108,14 @@ export function useTableList<TDocument extends Record<string, unknown>>({
   );
 
   const rows = dataSource.type === "client" ? dataSource.rows : canFetch ? (query.data?.rows ?? []) : [];
-  const rowCount = dataSource.type === "client" ? dataSource.rows.length : canFetch ? (query.data?.rowCount ?? 0) : 0;
+  const rowCount = dataSource.type === "client" ? dataSource.rows.length : canFetch ? query.data?.rowCount : 0;
   const enabled = (feature: keyof FeatureSelection) => selectedFeatures?.[feature] !== false;
   const tableFeatures: TableListFeatures<TDocument> = {
     filtering: enabled("filtering") ? { value: state.filters, onChange: setFilters } : false,
     sorting: enabled("sorting") ? { value: state.sorting, onChange: setSorting } : false,
-    pagination: enabled("pagination") ? { value: state.page, rowCount, onChange: setPage } : false,
+    pagination: enabled("pagination")
+      ? { value: state.page, rowCount, hasNextPage: query.data?.hasNextPage, onChange: setPage }
+      : false,
     columns: enabled("columns") ? { value: state.visibleFields, onChange: setVisibleFields } : false,
   };
 

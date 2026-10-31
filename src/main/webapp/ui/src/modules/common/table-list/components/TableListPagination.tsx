@@ -9,21 +9,29 @@ const defaultLimits = [10, 20, 30, 40, 50] as const;
 export function TableListPagination({
   value,
   rowCount,
+  hasNextPage,
+  pageRowCount,
   limits = defaultLimits,
   onChange,
 }: {
   value: PageState;
-  rowCount: number;
+  rowCount?: number;
+  hasNextPage?: boolean;
+  pageRowCount: number;
   limits?: readonly number[];
   onChange: (value: PageState) => void;
 }) {
   const { t, i18n } = useTranslation("common");
-  const pageCount = Math.max(Math.ceil(rowCount / value.pageSize), 1);
-  const first = rowCount === 0 ? 0 : value.pageIndex * value.pageSize + 1;
-  const last = Math.min((value.pageIndex + 1) * value.pageSize, rowCount);
+  const pageCount = rowCount === undefined ? undefined : Math.max(Math.ceil(rowCount / value.pageSize), 1);
+  const first = pageRowCount === 0 ? 0 : value.pageIndex * value.pageSize + 1;
+  const last = pageRowCount === 0 ? 0 : value.pageIndex * value.pageSize + pageRowCount;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t px-3 py-3 text-xs text-muted-foreground">
-      <span>{t("tableList.results", { first, last, total: rowCount })}</span>
+      <span>
+        {rowCount === undefined
+          ? t("tableList.resultsUnknown", { first, last })
+          : t("tableList.results", { first, last, total: rowCount })}
+      </span>
       <div className="flex items-center gap-2">
         <label className="flex items-center gap-2">
           {t("tableList.rows")}
@@ -41,7 +49,9 @@ export function TableListPagination({
           </select>
         </label>
         <span className="min-w-20 text-center text-foreground">
-          {t("tableList.page", { page: value.pageIndex + 1, pages: pageCount })}
+          {pageCount === undefined
+            ? t("tableList.pageUnknown", { page: value.pageIndex + 1 })
+            : t("tableList.page", { page: value.pageIndex + 1, pages: pageCount })}
         </span>
         <Button
           aria-label={t("tableList.actions.previousPage")}
@@ -56,7 +66,7 @@ export function TableListPagination({
           aria-label={t("tableList.actions.nextPage")}
           size="icon-sm"
           variant="outline"
-          disabled={value.pageIndex + 1 >= pageCount}
+          disabled={!(hasNextPage ?? (pageCount !== undefined && value.pageIndex + 1 < pageCount))}
           onClick={() => onChange({ ...value, pageIndex: value.pageIndex + 1 })}
         >
           <ChevronRightIcon aria-hidden="true" />
