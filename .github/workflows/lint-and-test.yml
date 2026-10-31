@@ -89,6 +89,54 @@ jobs:
               - 'scripts/run-chemistry-tests.sh'
               - '.github/workflows/**'
 
+  openapi-base-fixture:
+    # Stacked PRs target other stack branches and change the unreleased contract on purpose;
+    # breaking changes matter once the contract is on main.
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      exists: ${{ steps.fixture.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: openapi-base
+          persist-credentials: false
+      - name: Check base fixture
+        id: fixture
+        run: |
+          if test -f openapi-base/src/main/webapp/ui/src/__tests__/mocks/apiV2OpenApi.json; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  openapi-breaking:
+    needs: openapi-base-fixture
+    if: needs.openapi-base-fixture.outputs.exists == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: openapi-base
+          persist-credentials: false
+      - name: Check OpenAPI breaking changes
+        uses: oasdiff/oasdiff-action/breaking@9e56cf8b3aff7edb326d5767d3d23f96127e20c3 # v0.1.21
+        with:
+          base: openapi-base/src/main/webapp/ui/src/__tests__/mocks/apiV2OpenApi.json
+          revision: src/main/webapp/ui/src/__tests__/mocks/apiV2OpenApi.json
+          fail-on: ERR
+          review: 'false'
+          github-token: ''
+
   stack-verification-inputs:
     runs-on: ubuntu-latest
     steps:

@@ -10,6 +10,21 @@ For query compilation, authentication and request limits, see
 
 For booking domain rules and API examples, see [Booking](Booking.md).
 
+## Check the published contract
+
+The frontend fixture at `src/main/webapp/ui/src/__tests__/mocks/apiV2OpenApi.json` snapshots
+the generated collection schemas and annotated MVC routes through the same document service
+used by the OpenAPI controller. Regenerate it after contract changes:
+
+```sh
+mvn -q test -Dfast=true -Dtest=ApiV2OpenApiFixtureTest -DupdateApiV2OpenApiFixture=true
+```
+
+The Lint and Test workflow compares this fixture at the pull request base and head with
+oasdiff. A separate job checks the base checkout for the fixture; when absent, the
+breaking-change job is skipped. Error-level breaking changes fail the job. Spec upload
+and pull request comments are disabled.
+
 ## Add a field type
 
 Collection field implementations live in `model.collection.types`. Each implements

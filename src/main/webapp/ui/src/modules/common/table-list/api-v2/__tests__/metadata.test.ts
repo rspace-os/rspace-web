@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { apiV2OpenApi } from "@/__tests__/mocks/apiV2OpenApi";
 import type { TestRecord } from "../../__tests__/fixtures/tableList";
 import { apiV2CollectionMetadataFromOpenApi } from "../metadata";
 
@@ -115,6 +116,19 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
     const descriptor = (parameter as Record<string, unknown>)[entry] as Record<string, unknown>;
     descriptor.default = null;
     expect(() => apiV2CollectionMetadataFromOpenApi(document, "records")).toThrow(role);
+  });
+
+  it("reads every generated list contract", () => {
+    const resources = Object.entries(apiV2OpenApi.paths).flatMap(([path, operation]) => {
+      if (!/^\/api\/v2\/[^/]+$/.test(path) || !("get" in operation) || !("parameters" in operation.get)) return [];
+      return operation.get.parameters.some((parameter) => parameter.name === "fields")
+        ? [path.slice("/api/v2/".length)]
+        : [];
+    });
+    expect(resources.length).toBeGreaterThan(0);
+    for (const resource of resources) {
+      expect(apiV2CollectionMetadataFromOpenApi(apiV2OpenApi, resource).fields.length).toBeGreaterThan(0);
+    }
   });
 
   it.each([undefined, null, "true", 1])("rejects the selector flag %s instead of coercing it", (wildcards) => {
