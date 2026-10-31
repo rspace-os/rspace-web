@@ -69,6 +69,9 @@ describe("Lighthouse SDK manager", () => {
 
   it("routes contact navigation to support email when livechat is disabled", () => {
     const open = vi.fn();
+    const hide = vi.fn();
+    setTestLighthouse({ hide });
+    vi.mocked(Intercom).mockClear();
     window.open = open;
 
     configureLighthouse({
@@ -81,5 +84,7 @@ describe("Lighthouse SDK manager", () => {
     window.hdlh.onNavigate?.({ page: "contact" });
 
     expect(open).toHaveBeenCalledWith("mailto:support@researchspace.com", "_blank");
+    expect(hide).toHaveBeenCalledOnce();
+    expect(Intercom).not.toHaveBeenCalled();
   });
 });
