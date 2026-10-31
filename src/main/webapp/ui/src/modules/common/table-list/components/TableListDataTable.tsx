@@ -224,10 +224,17 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
             <TableRow
               key={row.id}
               data-state={selection?.value.has(row.id) ? "selected" : undefined}
-              className="hover:bg-muted/40 data-[state=selected]:bg-primary/10"
+              className="group/row hover:bg-muted/40 data-[state=selected]:bg-primary/10"
             >
               {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="overflow-hidden py-2 text-ellipsis">
+                <TableCell
+                  key={cell.id}
+                  className={cn(
+                    "overflow-hidden py-2 text-ellipsis",
+                    cell.column.id === "actions" &&
+                      "sticky right-0 z-10 bg-background group-hover/row:bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-background))] group-data-[state=selected]/row:bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-background))]",
+                  )}
+                >
                   {cell.column.id === selectionColumnId && selection ? (
                     renderRowSelection(row.id, row.original)
                   ) : (

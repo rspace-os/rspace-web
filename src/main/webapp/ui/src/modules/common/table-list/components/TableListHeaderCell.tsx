@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { fieldLabel } from "@/modules/common/collection/labels";
 import { TableHead } from "@/modules/common/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { cn } from "@/modules/common/utils/cn";
 import { selectionColumnId, type tableListFeatures } from "../utils/features";
 
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -47,7 +48,11 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
               : "none"
           : undefined
       }
-      className="relative h-9 bg-muted/35 pr-4 text-xs"
+      className={cn(
+        "relative h-9 bg-muted/35 pr-4 text-xs",
+        header.column.id === "actions" &&
+          "sticky right-0 z-10 bg-[color-mix(in_oklab,var(--color-muted)_35%,var(--color-background))]",
+      )}
     >
       <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
         {header.column.id === selectionColumnId && selectAllControl ? (

@@ -1008,7 +1008,7 @@
     "filters": {
       "alsoShowAsColumn": "Show as column",
       "and": "And",
-      "applied": "Filters, {count, number} applied",
+      "applied": "Filters {count, number} applied",
       "customField": {
         "attached": "This rule filters on the target's field, through the relationship.",
         "noMatch": "No matching custom field.",
@@ -1118,7 +1118,7 @@
       "selectRow": "Select {row}"
     },
     "sorting": {
-      "applied": "Sort, {count, plural, one {# rule active} other {# rules active}}",
+      "applied": "Sort {count, plural, one {# rule active} other {# rules active}}",
       "ascending": "Ascending",
       "descending": "Descending",
       "direction": "Direction for {column}",

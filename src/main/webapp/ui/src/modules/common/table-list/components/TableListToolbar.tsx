@@ -218,7 +218,7 @@ export function TableListToolbar<TDocument>({
             <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
             {t("tableList.toolbar.filters")}
             {filterCount > 0 ? (
-              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">{filterCount}</span>
+              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background"> {filterCount}</span>
             ) : null}
           </Button>
         ) : null}
@@ -239,7 +239,7 @@ export function TableListToolbar<TDocument>({
             <ArrowDownUpIcon aria-hidden="true" data-icon="inline-start" />
             {t("tableList.toolbar.sorting")}
             {sortingCount > 0 ? (
-              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">{sortingCount}</span>
+              <span className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background"> {sortingCount}</span>
             ) : null}
           </Button>
         ) : null}
