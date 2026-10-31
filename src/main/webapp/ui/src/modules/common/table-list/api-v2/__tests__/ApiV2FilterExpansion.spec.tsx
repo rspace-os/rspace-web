@@ -94,7 +94,7 @@ describe("API v2 filter expansion", () => {
 
     await expect.element(view.operator(1)).toHaveValue("equals");
     await userEvent.click(view.value(1));
-    await userEvent.click(page.getByRole("option", { name: "ACTIVE" }));
+    await userEvent.click(page.getByRole("option", { name: "Active" }));
 
     await view.selectRelationshipOptionWithKeyboard("Narrow asset 1", 2);
 
