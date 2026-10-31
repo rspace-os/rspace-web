@@ -5,9 +5,9 @@ import { test as base } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN, USERS } from "@/__tests__/e2e/users";
+import { createBookingConfiguration } from "./bookingE2eFixtures";
 
 type CreatedInstrument = { id: number; globalId: string; name: string; sharingMode?: string };
-type BookingConfiguration = { id: number };
 type BookingConfigurationPage = {
   docs: Array<{ id: number }>;
   totalDocs: number;
@@ -47,22 +47,6 @@ async function createInstrument(
   });
   expect(response.ok(), await response.text()).toBe(true);
   return response.json() as Promise<CreatedInstrument>;
-}
-
-async function createBookingConfiguration(
-  apiContext: APIRequestContext,
-  apiKey: string,
-  instrumentId: number,
-): Promise<BookingConfiguration> {
-  const response = await apiContext.post("/api/v2/booking-configurations", {
-    headers: { apiKey },
-    data: {
-      enabled: true,
-      target: { relationTo: "instruments", value: instrumentId },
-    },
-  });
-  expect(response.ok(), await response.text()).toBe(true);
-  return response.json() as Promise<BookingConfiguration>;
 }
 
 async function cleanupFilterExpansionRecords({ configurations, instruments }: FilterExpansionRecords): Promise<void> {
