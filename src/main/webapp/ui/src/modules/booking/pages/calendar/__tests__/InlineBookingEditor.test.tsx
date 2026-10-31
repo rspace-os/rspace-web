@@ -74,9 +74,9 @@ describe("InlineBookingEditor", () => {
     const submit = screen.getByRole("button", { name: "booking:bookings.form.save" });
     await waitFor(() => (blocked ? expect(submit).toBeDisabled() : expect(submit).toBeEnabled()));
     const feedback = blocked ? await screen.findByRole("alert") : await screen.findByRole("status");
-    expect(feedback).toHaveTextContent("booking:bookings.errors.overlapSummary");
-    expect(feedback).not.toHaveTextContent("Self event details");
-    expect(feedback).not.toHaveTextContent("Private purpose");
-    expect(feedback).not.toHaveTextContent("Private requester");
+    expect(feedback).toMatchTextContent("booking:bookings.errors.overlapSummary");
+    expect(feedback).not.toMatchTextContent("Self event details");
+    expect(feedback).not.toMatchTextContent("Private purpose");
+    expect(feedback).not.toMatchTextContent("Private requester");
   });
 });

@@ -636,8 +636,8 @@ describe("BookingForm", () => {
     );
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookings.errors.outcomeUncertain");
-    expect(alert).toHaveTextContent("booking:bookings.errors.outcomeUncertainGuidance");
+    expect(alert).toMatchTextContent("booking:bookings.errors.outcomeUncertain");
+    expect(alert).toMatchTextContent("booking:bookings.errors.outcomeUncertainGuidance");
     expect(screen.getByRole("link", { name: "booking:bookings.errors.checkExistingBookings" })).toHaveAttribute(
       "href",
       "/booking/my-bookings?period=upcoming",
