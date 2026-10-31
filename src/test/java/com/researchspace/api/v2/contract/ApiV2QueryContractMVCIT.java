@@ -96,14 +96,20 @@ class ApiV2QueryContractMVCIT {
 
       mockMvc
           .perform(
-              get(MAINTENANCES).header("apiKey", sysadminKey).param("where", and("id==" + second)))
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", and("id==" + second)))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").value(1))
           .andExpect(jsonPath("$.docs[0].id").value(second));
 
       mockMvc
           .perform(
-              get(MAINTENANCES).header("apiKey", sysadminKey).param("where", and("id!=" + second)))
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", and("id!=" + second)))
           .andExpect(jsonPath("$.totalDocs").value(2));
     }
 
@@ -115,6 +121,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", and("id=in=(%d,%d)".formatted(first, third))))
           .andExpect(jsonPath("$.totalDocs").value(2));
@@ -122,6 +129,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", and("id=out=(%d,%d)".formatted(first, third))))
           .andExpect(jsonPath("$.totalDocs").value(1))
@@ -142,6 +150,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", and(template.formatted(base))))
           .andExpect(status().isOk())
@@ -156,6 +165,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", "message=contains=" + fixture.marker()))
           .andExpect(jsonPath("$.totalDocs").value(3));
@@ -163,6 +173,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", "message==*" + fixture.marker() + "*"))
           .andExpect(jsonPath("$.totalDocs").value(3));
@@ -180,6 +191,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", scope + "message=exists=true")
                   .param("sort", "id"))
@@ -192,6 +204,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", scope + "message=exists=false"))
           .andExpect(status().isOk())
@@ -207,6 +220,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", and("id==%d;id==%d".formatted(first, second))))
           .andExpect(jsonPath("$.totalDocs").value(0));
@@ -214,6 +228,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", and("(id==%d,id==%d)".formatted(first, second))))
           .andExpect(jsonPath("$.totalDocs").value(2));
@@ -233,7 +248,11 @@ class ApiV2QueryContractMVCIT {
     @DisplayName("an operator the field type does not support is refused")
     void anUnsupportedOperatorIsRefused(String expression) throws Exception {
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey).param("where", expression))
+          .perform(
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", expression))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }
@@ -249,7 +268,11 @@ class ApiV2QueryContractMVCIT {
       threeRows();
 
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey).param("where", mine()))
+          .perform(
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", mine()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.docs[0].id").value(first))
           .andExpect(jsonPath("$.docs[2].id").value(third));
@@ -263,6 +286,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("sort", "-startDate"))
@@ -281,7 +305,11 @@ class ApiV2QueryContractMVCIT {
     @DisplayName("an unusable sort is a client error rather than being ignored")
     void anUnusableSortIsAClientError(String sort) throws Exception {
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey).param("sort", sort))
+          .perform(
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("sort", sort))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }
@@ -326,6 +354,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("limit", "2")
@@ -345,6 +374,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("limit", "2")
@@ -366,6 +396,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("limit", "2")
@@ -398,7 +429,11 @@ class ApiV2QueryContractMVCIT {
     @DisplayName("a limit outside the permitted range is refused")
     void aLimitOutsideTheRangeIsRefused(String limit) throws Exception {
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey).param("limit", limit))
+          .perform(
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("limit", limit))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }
@@ -416,6 +451,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("fields[maintenances]", "message"))
@@ -434,6 +470,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("exclude[maintenances]", "message,stopUserLoginDate"))
@@ -453,6 +490,7 @@ class ApiV2QueryContractMVCIT {
       mockMvc
           .perform(
               get(MAINTENANCES)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", mine())
                   .param("exclude[maintenances]", "id"))
@@ -468,7 +506,11 @@ class ApiV2QueryContractMVCIT {
     @DisplayName("a projection naming an unknown field is refused")
     void aProjectionNamingAnUnknownFieldIsRefused(String parameter, String value) throws Exception {
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey).param(parameter, value))
+          .perform(
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param(parameter, value))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }

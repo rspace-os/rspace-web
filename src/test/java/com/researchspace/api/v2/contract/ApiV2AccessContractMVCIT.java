@@ -204,7 +204,7 @@ class ApiV2AccessContractMVCIT {
       fixture.otherUser();
 
       mockMvc
-          .perform(get(USERS).header("apiKey", fixture.userKey()))
+          .perform(get(USERS).param("totals", "true").header("apiKey", fixture.userKey()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").value(1))
           .andExpect(jsonPath("$.docs[0].id").value(callerId));
@@ -225,7 +225,10 @@ class ApiV2AccessContractMVCIT {
 
       mockMvc
           .perform(
-              get(USERS).header("apiKey", fixture.userKey()).param("where", "id==" + otherUserId))
+              get(USERS)
+                  .param("totals", "true")
+                  .header("apiKey", fixture.userKey())
+                  .param("where", "id==" + otherUserId))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").value(0));
     }

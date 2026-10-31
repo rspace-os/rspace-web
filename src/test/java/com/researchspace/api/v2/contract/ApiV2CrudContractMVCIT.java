@@ -379,7 +379,11 @@ class ApiV2CrudContractMVCIT {
           .andExpect(jsonPath("$.invalidParams[?(@.name == 'docs[1].endDate')]").exists());
 
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey).param("where", mine()))
+          .perform(
+              get(MAINTENANCES)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", mine()))
           .andExpect(jsonPath("$.totalDocs").value(0));
     }
 
@@ -481,7 +485,7 @@ class ApiV2CrudContractMVCIT {
     @DisplayName("an authenticated response is not cached and declares its language")
     void anAuthenticatedResponseIsNotCachedAndDeclaresItsLanguage() throws Exception {
       mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", sysadminKey))
+          .perform(get(MAINTENANCES).param("totals", "true").header("apiKey", sysadminKey))
           .andExpect(status().isOk())
           .andExpect(
               header().string(HttpHeaders.CACHE_CONTROL, Matchers.containsString("no-store")))
@@ -502,7 +506,7 @@ class ApiV2CrudContractMVCIT {
     void anUnavailableAcceptLanguageDoesNotChangeTheResponseLanguage() throws Exception {
       String deployment =
           mockMvc
-              .perform(get(MAINTENANCES).header("apiKey", sysadminKey))
+              .perform(get(MAINTENANCES).param("totals", "true").header("apiKey", sysadminKey))
               .andReturn()
               .getResponse()
               .getHeader(HttpHeaders.CONTENT_LANGUAGE);
@@ -511,6 +515,7 @@ class ApiV2CrudContractMVCIT {
           mockMvc
               .perform(
                   get(MAINTENANCES)
+                      .param("totals", "true")
                       .header("apiKey", sysadminKey)
                       .header(HttpHeaders.ACCEPT_LANGUAGE, "zz-ZZ"))
               .andReturn()
