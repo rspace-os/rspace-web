@@ -186,7 +186,7 @@ describe("BookableItemPage", () => {
       await expect.element(pageObj.heading).toBeVisible();
       const headingRow = pageObj.heading.element().closest("section");
       const tabList = pageObj.bookingsTab.element().parentElement;
-      const facts = page.getByRole("complementary", { name: "About" }).element();
+      const facts = page.getByRole("complementary", { name: "About this item" }).element();
       expect(headingRow).not.toBeNull();
       expect(tabList).not.toBeNull();
       const headingBox = headingRow?.getBoundingClientRect();

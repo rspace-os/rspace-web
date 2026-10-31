@@ -739,7 +739,9 @@ describe("Calendar page", () => {
     const submit = dialog.getByRole("button", { name: "Book", exact: true });
     await submit.click();
 
-    await expect.element(dialog.getByText("RSpace could not confirm whether the booking was saved.")).toBeVisible();
+    await expect
+      .element(dialog.getByText("RSpace could not confirm whether the booking was saved.", { exact: false }))
+      .toBeVisible();
     await expect
       .element(dialog.getByRole("link", { name: "Check My Bookings" }))
       .toHaveAttribute("href", "/booking/my-bookings?period=upcoming");
