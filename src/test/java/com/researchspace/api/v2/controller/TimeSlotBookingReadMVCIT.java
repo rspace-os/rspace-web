@@ -73,6 +73,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param(
                     "where",
@@ -83,6 +84,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "target==IN" + instrumentId))
         .andExpect(status().isOk())
@@ -111,6 +113,7 @@ class TimeSlotBookingReadMVCIT {
         .perform(
             get("/api/v2/bookings")
                 .param("totals", "true")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==%d;state==CANCELLED".formatted(bookingId)))
         .andExpect(status().isOk())
@@ -119,6 +122,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==%d;state==CONFIRMED".formatted(bookingId)))
@@ -145,6 +149,7 @@ class TimeSlotBookingReadMVCIT {
         .perform(
             get("/api/v2/bookings")
                 .param("totals", "true")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==" + bookingId))
         .andExpect(status().isOk())
@@ -167,6 +172,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.otherUserKey())
                 .param("where", "id==%d".formatted(bookingId)))
         .andExpect(status().isOk())
@@ -175,6 +181,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.thirdUserKey())
                 .param("where", "purpose=contains=Hidden"))
         .andExpect(status().isOk())
@@ -241,6 +248,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==" + bookingId))
         .andExpect(status().isOk())
@@ -248,6 +256,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==" + bookingId + ";target.name==" + fixture.marker()))
         .andExpect(status().isOk())

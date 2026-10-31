@@ -250,6 +250,7 @@ class BookingCalendarControllerMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .queryParam("where", "purpose=exists=false")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
