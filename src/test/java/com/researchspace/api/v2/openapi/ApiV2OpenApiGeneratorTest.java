@@ -181,6 +181,8 @@ class ApiV2OpenApiGeneratorTest {
 
   private static final class SecondConflictException extends RuntimeException {}
 
+  private record MultiTargetFilterFixture(Long id) {}
+
   @SuppressWarnings("unchecked")
   private static ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess() {
     return mock(ProtectedResourceAccess.class);
@@ -421,6 +423,16 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(List.of("=="), objectMap(bookingSelectors.get("target.deleted")).get("operators"));
     assertTrue(bookingSelectors.containsKey("createdBy.username"));
     assertTrue(bookingSelectors.containsKey("updatedBy.username"));
+    assertFalse(bookingSelectors.containsKey("createdBy"));
+    assertTrue(bookingSelectors.containsKey("createdBy.value"));
+    assertTrue(bookingSelectors.containsKey("target.value"));
+    assertTrue(bookingSelectors.containsKey("target.relationTo"));
+    assertEquals(
+        Map.of(
+            "resource", "instruments",
+            "identity", "globalId",
+            "globalIdPrefix", "IN"),
+        objectMap(objectMap(bookingSelectors.get("target")).get("picker")));
 
     assertTrue(
         bookingSelectors
@@ -428,6 +440,7 @@ class ApiV2OpenApiGeneratorTest {
             .containsAll(List.of("target.id", "target.name", "target.globalId", "target.deleted")));
     Map<String, Object> name = objectMap(bookingSelectors.get("target.name"));
     assertEquals("Name", name.get("title"));
+    assertEquals("Booking target", name.get("viaTitle"));
     assertTrue(((List<?>) name.get("operators")).contains("=contains="));
     Map<String, Object> globalId = objectMap(bookingSelectors.get("target.globalId"));
     assertEquals("Global ID", globalId.get("title"));
@@ -542,6 +555,45 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> example = objectMap(problemMedia.get("example"));
     assertEquals(List.of("title", "status", "code", "detail"), example.keySet().stream().toList());
     assertTrue(objectMap(components.get("headers")).containsKey("RateLimitRemaining"));
+  }
+
+  @Test
+  void publishesPickersOnlyForSingleTargetRelationshipsWithGlobalIds() {
+    Map<String, Object> document = multiTargetDocument();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    Map<String, Object> list = objectMap(objectMap(paths.get("/api/v2/multi-targets")).get("get"));
+    Map<String, Object> where =
+        objectMapList(list.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> selectors =
+        objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"));
+
+    assertTrue(selectors.containsKey("target"));
+    assertFalse(objectMap(selectors.get("target")).containsKey("picker"));
+    assertTrue(selectors.containsKey("target.value"));
+    assertTrue(selectors.containsKey("target.relationTo"));
+  }
+
+  @Test
+  void generatedFilterMetadataIsDeterministicAndAdditive() {
+    Map<String, Object> first = document();
+    Map<String, Object> second = document();
+    Map<String, Object> paths = objectMap(first.get("paths"));
+    Map<String, Object> list =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
+    Map<String, Object> where =
+        objectMapList(list.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(first, second);
+    assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
+    assertTrue(
+        objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"))
+            .containsKey("target.name"));
   }
 
   @Test
@@ -767,6 +819,57 @@ class ApiV2OpenApiGeneratorTest {
   private Map<String, Object> document() {
     return Json31.mapper()
         .convertValue(generator.generate(), new TypeReference<LinkedHashMap<String, Object>>() {});
+  }
+
+  private static Map<String, Object> multiTargetDocument() {
+    Relationship<MultiTargetFilterFixture> target =
+        Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(
+                new RelationshipTarget<>("instruments", "instrument", "IN", Instrument.class),
+                new RelationshipTarget<>("users", "user", "US", User.class)),
+            new SplitReferenceBinding<MultiTargetFilterFixture, String, Long>(
+                ignored -> null, "target.type", "target.id"));
+    CollectionDescription<MultiTargetFilterFixture> description =
+        new CollectionDescription<>(
+            "multi-targets",
+            MultiTargetFilterFixture.class,
+            List.of(
+                Field.readOnly(
+                    "id", "id", CollectionFieldTypes.longNumber(), MultiTargetFilterFixture::id),
+                target),
+            "id",
+            List.of(new Sort("id", true)));
+    ApiV2ResourceSpec<MultiTargetFilterFixture, Long> spec =
+        new ApiV2ResourceSpec<>(
+            description, operationsMock(), Long::valueOf, "create-error", "update-error");
+    ApiV2ResourceCatalog catalog =
+        new ApiV2ResourceCatalog(
+            List.of(
+                spec,
+                new ApiV2ResourceSpec<>(
+                    ApiV2InstrumentResource.DESCRIPTION,
+                    operationsMock(),
+                    Long::valueOf,
+                    "create-error",
+                    "update-error"),
+                new ApiV2ResourceSpec<>(
+                    ApiV2UserResource.DESCRIPTION,
+                    operationsMock(),
+                    Long::valueOf,
+                    "create-error",
+                    "update-error"),
+                new ApiV2ResourceSpec<>(
+                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                    operationsMock(),
+                    Long::valueOf,
+                    "create-error",
+                    "update-error")));
+    return Json31.mapper()
+        .convertValue(
+            new ApiV2OpenApiGenerator(catalog, "Test API", "2.0.0").generate(),
+            new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 
   private static Map<String, Object> objectMap(Object value) {

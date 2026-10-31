@@ -168,3 +168,7 @@ grants no busy-only rows today, and the guard does not depend on that.
 projection; `target.extraFields` supports filters only. The catalogue preserves resolved runtime
 bindings and trusted constraints while owning its paging, sorting and DTO projection. See
 [relationship queries](RestApiV2QueriesAndAccess.md#relationships) for the shared contract.
+
+The `target` picker names `booking-instruments`, uses `globalId` identity and the `IN` prefix.
+The shared picker metadata, traversal limits and runtime catalog allowlist rules are documented
+in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-reached-through-a-relationship).

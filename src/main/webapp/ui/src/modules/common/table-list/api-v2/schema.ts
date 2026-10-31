@@ -110,6 +110,7 @@ const runtimeNamespaceSchema = v.object({
   catalogMaximumLimit: positiveInteger,
   catalogMaximumIds: positiveInteger,
   via: v.string(),
+  viaResource: v.optional(v.string()),
 });
 export type ApiV2RuntimeFieldNamespace = v.InferOutput<typeof runtimeNamespaceSchema>;
 export const metadataRuntimeFieldsSchema = v.optional(v.array(runtimeNamespaceSchema), () => []);
