@@ -80,17 +80,10 @@ export default function AppShell() {
     </React.Suspense>
   );
 
-  return (
-    // The app bar spans the full width, so the sidebar starts below it.
-    <SidebarProvider
-      key={renderSidebar === undefined ? "without-route-sidebar" : "with-route-sidebar"}
-      className="flex-col"
-      defaultOpen={Boolean(renderSidebar)}
-      keyboardShortcut={renderSidebar !== undefined}
-      style={{ "--app-header-height": "calc(3rem + 3px)" } as React.CSSProperties}
-    >
+  const content = (
+    <>
       <HeadContent />
-      <CloseMobileSidebarOnNavigation />
+      {renderSidebar && <CloseMobileSidebarOnNavigation />}
       {appBarProps !== false && appBarProps.authenticated !== false && authenticatedAppBar}
       {appBarProps !== false && appBarProps.authenticated === false && (
         // Auth-optional page: authenticated bar for a logged-in user, public bar when auth queries reject.
@@ -118,6 +111,13 @@ export default function AppShell() {
           </NuqsAdapter>
         </SidebarInset>
       </div>
+    </>
+  );
+  if (!renderSidebar) return <div className="flex min-h-svh w-full flex-col">{content}</div>;
+
+  return (
+    <SidebarProvider className="flex-col" style={{ "--app-header-height": "calc(3rem + 3px)" } as React.CSSProperties}>
+      {content}
     </SidebarProvider>
   );
 }
