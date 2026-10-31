@@ -29,6 +29,24 @@ class BookingNotificationMessageFormatterTest {
           new JsonMessageSource(), "https://rspace.example.org//");
 
   @Test
+  void identifiesTheLondonZoneInWinterAndSummer() {
+    for (String[] example :
+        new String[][] {
+          {"2026-01-02T13:00:00Z", "13:00 GMT (Europe/London)"},
+          {"2026-07-02T12:00:00Z", "13:00 BST (Europe/London)"}
+        }) {
+      String message =
+          formatter.formatForEmail(
+              NotificationType.NOTIFICATION_BOOKING_CREATED,
+              data(example[0], example[0]),
+              ZoneId.of("Europe/London"),
+              Locale.UK,
+              BookingTimeFormat.H24);
+      assertTrue(message.contains(example[1]), message);
+    }
+  }
+
+  @Test
   void recognisesOnlyAbsoluteHttpLinkBasesForEmail() {
     assertTrue(BookingNotificationMessageFormatter.isAbsoluteHttpUrl("https://rspace.example.org"));
     assertTrue(
@@ -39,43 +57,6 @@ class BookingNotificationMessageFormatterTest {
     assertFalse(BookingNotificationMessageFormatter.isAbsoluteHttpUrl("ftp://rspace.example.org"));
     assertFalse(BookingNotificationMessageFormatter.isAbsoluteHttpUrl("https:///no-host"));
     assertFalse(BookingNotificationMessageFormatter.isAbsoluteHttpUrl("https://bad host"));
-  }
-
-  @Test
-  void sameDayRangesNameTheDateOnceAndOvernightRangesKeepBothDates() {
-    BookingNotificationData data = data("2026-11-06T15:00:00Z", "2026-11-06T16:00:00Z");
-    String sameDay =
-        formatter.format(
-            NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US);
-    assertEquals(1, sameDay.split("Nov 6, 2026", -1).length - 1, sameDay);
-    assertTrue(sameDay.contains("to 4:00 PM (UTC, UTC)"), sameDay);
-    data.setEndTime("2026-11-07T16:00:00Z");
-    String overnight =
-        formatter.format(
-            NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US);
-    assertTrue(overnight.contains("Nov 6, 2026"), overnight);
-    assertTrue(overnight.contains("Nov 7, 2026"), overnight);
-  }
-
-  @Test
-  void dateElisionUsesTheDisplayZoneRatherThanUtc() {
-    ZoneId berlin = ZoneId.of("Europe/Berlin");
-    String sameDay =
-        formatter.format(
-            NotificationType.NOTIFICATION_BOOKING_CREATED,
-            data("2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z"),
-            berlin,
-            Locale.US);
-    assertEquals(1, sameDay.split("Nov 7, 2026", -1).length - 1, sameDay);
-    assertFalse(sameDay.contains("Nov 6, 2026"), sameDay);
-    String overnight =
-        formatter.format(
-            NotificationType.NOTIFICATION_BOOKING_CREATED,
-            data("2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z"),
-            berlin,
-            Locale.US);
-    assertTrue(overnight.contains("Nov 6, 2026"), overnight);
-    assertTrue(overnight.contains("Nov 7, 2026"), overnight);
   }
 
   @Test
@@ -116,8 +97,8 @@ class BookingNotificationMessageFormatterTest {
             ZoneId.of("America/New_York"),
             Locale.US);
 
-    assertTrue(message.contains("Nov 1, 2026, 1:30 AM (America/New_York, UTC-04:00)"));
-    assertTrue(message.contains("to 1:30 AM (America/New_York, UTC-05:00)"));
+    assertTrue(message.contains("Nov 1, 2026, 1:30 AM EDT (America/New_York)"));
+    assertTrue(message.contains("Nov 1, 2026, 1:30 AM EST (America/New_York)"));
   }
 
   @Test
@@ -201,11 +182,11 @@ class BookingNotificationMessageFormatterTest {
         formatter.format(
             NotificationType.NOTIFICATION_BOOKING_CREATED, data, berlin, Locale.US, Locale.US);
 
-    assertTrue(british.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british);
-    assertTrue(british.contains("07:00 (Europe/Berlin, UTC+02:00)"), british);
+    assertTrue(british.contains("Oct 8, 2026, 06:00 CEST (Europe/Berlin)"), british);
+    assertTrue(british.contains("Oct 8, 2026, 07:00 CEST (Europe/Berlin)"), british);
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
-        normalised(american).contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"), american);
+        normalised(american).contains("Oct 8, 2026, 6:00 AM CEST (Europe/Berlin)"), american);
     assertFalse(american.contains("06:00"), american);
   }
 
@@ -231,12 +212,10 @@ class BookingNotificationMessageFormatterTest {
     String twelveHour =
         formatter.formatForEmail(created, data, berlin, Locale.UK, BookingTimeFormat.H12);
 
-    assertTrue(
-        twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
+    assertTrue(twentyFourHour.contains("Oct 8, 2026, 06:00 CEST (Europe/Berlin)"), twentyFourHour);
     assertFalse(twentyFourHour.contains("AM"), twentyFourHour);
     assertTrue(
-        normalised(twelveHour).contains("8 Oct 2026, 6:00 am (Europe/Berlin, UTC+02:00)"),
-        twelveHour);
+        normalised(twelveHour).contains("8 Oct 2026, 6:00 am CEST (Europe/Berlin)"), twelveHour);
     for (BookingTimeFormat automatic :
         new BookingTimeFormat[] {BookingTimeFormat.AUTOMATIC, null}) {
       assertEquals(
@@ -245,7 +224,7 @@ class BookingNotificationMessageFormatterTest {
     }
     assertTrue(
         normalised(formatter.formatForEmail(created, data, berlin, Locale.US))
-            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"));
+            .contains("Oct 8, 2026, 6:00 AM CEST (Europe/Berlin)"));
   }
 
   @Test
@@ -260,11 +239,9 @@ class BookingNotificationMessageFormatterTest {
     String twelveHour =
         formatter.format(created, data, berlin, Locale.US, british, BookingTimeFormat.H12);
 
+    assertTrue(twentyFourHour.contains("Oct 8, 2026, 06:00 CEST (Europe/Berlin)"), twentyFourHour);
     assertTrue(
-        twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
-    assertTrue(
-        normalised(twelveHour).contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
-        twelveHour);
+        normalised(twelveHour).contains("Oct 8, 2026, 6:00 AM CEST (Europe/Berlin)"), twelveHour);
     assertEquals(
         formatter.format(created, data, berlin, Locale.US, british),
         formatter.format(created, data, berlin, Locale.US, british, BookingTimeFormat.AUTOMATIC));
@@ -283,7 +260,7 @@ class BookingNotificationMessageFormatterTest {
             Locale.US,
             BookingTimeFormat.H24);
 
-    assertTrue(message.contains("Oct 8, 2026, 00:00 (Europe/Berlin"), message);
+    assertTrue(message.contains("Oct 8, 2026, 00:00 CEST (Europe/Berlin"), message);
   }
 
   @Test

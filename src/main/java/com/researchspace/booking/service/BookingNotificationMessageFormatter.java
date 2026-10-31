@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Date;
@@ -220,7 +219,7 @@ public class BookingNotificationMessageFormatter {
           StringEscapeUtils.escapeHtml4(data.getInstrumentName()),
           StringEscapeUtils.escapeHtml4(data.getInstrumentGlobalIdentifier()),
           formatInstant(data.getStartTime(), zone, locale, hourCycle),
-          formatRangeEnd(data.getStartTime(), data.getEndTime(), zone, locale, hourCycle),
+          formatInstant(data.getEndTime(), zone, locale, hourCycle),
           href(linkBase, BOOKING_PATH, data.getBookingId()),
           href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier()),
           StringEscapeUtils.escapeHtml4(data.getCancellationReason())
@@ -298,43 +297,28 @@ public class BookingNotificationMessageFormatter {
         hourCycleKeyword(data.getEmailTimeFormat(), null));
   }
 
-  private static String formatRangeEnd(
-      String start, String end, ZoneId zone, Locale locale, String hourCycle) {
-    ZonedDateTime endTime = Instant.parse(end).atZone(zone);
-    boolean sameDay = Instant.parse(start).atZone(zone).toLocalDate().equals(endTime.toLocalDate());
-    return formatInstant(endTime, locale, hourCycle, !sameDay);
-  }
-
+  /** Formats an instant with the {@code hc} keyword {@code hourCycle}, or the locale's if null. */
   private static String formatInstant(String value, ZoneId zone, Locale locale, String hourCycle) {
-    return formatInstant(Instant.parse(value).atZone(zone), locale, hourCycle, true);
-  }
-
-  private static String formatInstant(
-      ZonedDateTime value, Locale locale, String hourCycle, boolean includeDate) {
+    Instant instant = Instant.parse(value);
     String localDateTime =
         hourCycle == null
-            ? (includeDate
-                    ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-                    : DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
+            ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
                 .withLocale(locale)
-                .format(value)
-            : formatWithHourCycle(value.toLocalDateTime(), locale, hourCycle, includeDate);
-    String offset = value.getOffset().getId();
-    return localDateTime
-        + " ("
-        + value.getZone().getId()
-        + ", UTC"
-        + ("Z".equals(offset) ? "" : offset)
-        + ")";
+                .withZone(zone)
+                .format(instant)
+            : formatWithHourCycle(LocalDateTime.ofInstant(instant, zone), locale, hourCycle);
+    String zoneLabel = DateTimeFormatter.ofPattern("z", locale).withZone(zone).format(instant);
+    return localDateTime + " " + zoneLabel + " (" + zone.getId() + ")";
   }
 
   /**
-   * Formats a wall-clock time in {@code locale}'s words and field order with the clock selected by
-   * {@code hourCycle}. java.time ignores the Unicode {@code hc} keyword, so this uses ICU, which
-   * also backs the browser's {@code Intl} API.
+   * Formats a wall-clock time in {@code locale}'s words and field order with the 12- or 24-hour
+   * clock named by the Unicode {@code hc} keyword {@code hourCycle}, as the booking pages do.
+   * java.time ignores that keyword, so this uses ICU, which also backs the browser's {@code Intl}
+   * API.
    */
   private static String formatWithHourCycle(
-      LocalDateTime wallClock, Locale locale, String hourCycle, boolean includeDate) {
+      LocalDateTime wallClock, Locale locale, String hourCycle) {
     ULocale withHourCycle =
         new ULocale.Builder()
             .setLocale(ULocale.forLocale(locale))
@@ -343,9 +327,7 @@ public class BookingNotificationMessageFormatter {
     // ICU formatters are not thread-safe, so each call builds its own. The wall clock is already
     // in the display zone, so ICU formats it in GMT and never maps the zone to its own tz data.
     DateFormat formatter =
-        includeDate
-            ? DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, withHourCycle)
-            : DateFormat.getTimeInstance(DateFormat.SHORT, withHourCycle);
+        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, withHourCycle);
     formatter.setTimeZone(TimeZone.GMT_ZONE);
     return formatter.format(Date.from(wallClock.toInstant(ZoneOffset.UTC)));
   }
