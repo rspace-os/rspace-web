@@ -36,6 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -670,19 +671,22 @@ class ApiV2AuditStrictSearchTest {
   @ParameterizedTest
   @ValueSource(strings = {"bookings:41", "booking-configurations:12"})
   void sameDomainEventsMustMatchTheDecodedTopLevelIdentifier(String identifier) throws IOException {
-    String unrelated = event("01 Jan 2026 12:00:00,000", "bookings:42");
-    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    Function<Map<String, ?>, String> unrelated =
+        data -> event("01 Jan 2026 12:00:00,000", data).replace("domain:UNKNOWN", "domain:BOOKING");
+    String purpose = unrelated.apply(Map.of("id", "bookings:42", "purpose", identifier));
     String nested =
-        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+        unrelated.apply(Map.of("id", "bookings:42", "target", Map.of("id", identifier)));
     String parent =
-        unrelated.replace("\"name\":\"item\"", "\"bookingConfigurationId\":\"" + identifier + "\"");
-    String direct = event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"));
+        unrelated.apply(Map.of("id", "bookings:42", "bookingConfigurationId", identifier));
+    String direct =
+        event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"))
+            .replace("domain:UNKNOWN", "domain:BOOKING");
     write("RSLogs.txt", purpose + "\n" + nested + "\n" + parent + "\n" + direct + "\n");
     Request request =
         new Request(
             FROM,
             TO,
-            Set.of(AuditDomain.UNKNOWN),
+            Set.of(AuditDomain.BOOKING),
             Set.of(AuditAction.CREATE),
             identifier,
             Set.of(),
