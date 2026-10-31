@@ -1193,6 +1193,8 @@ export default interface Resources {
         "openItem": "Open {globalId}",
         "openingHours": "Open: {start} - {end}",
         "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
+        "policyMismatchNotes": "This booking does not meet the current booking rules. You can update its maintenance notes without changing its reserved times. Changing those times requires following the current rules.",
+        "policyMismatchPurpose": "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
         "previousItems": "Previous",
         "purpose": "Purpose",
         "purposeCount": "{count, number}/1,000 characters",
