@@ -346,41 +346,20 @@ export function formatBookingPeriod(
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const formatter = dateTimeFormatter(timezone, locale, timeFormat);
-  const startZoned = zonedDateTime(start, timezone);
-  const endZoned = zonedDateTime(end, timezone);
-  const startOffset = clockChangeOffsetLabel(startZoned);
-  const endOffset = clockChangeOffsetLabel(endZoned);
-  if (!startOffset && !endOffset) return formatter.formatRange(new Date(start), new Date(end));
-  let endLabel: string;
-  if (startZoned.toPlainDate().equals(endZoned.toPlainDate())) {
-    const formatted = new Intl.DateTimeFormat(locale, {
-      timeZone: timezone,
-      timeStyle: "short",
-      hourCycle: bookingHourCycle(timeFormat),
-    }).format(new Date(end));
-    const offset = endOffset.trim();
-    endLabel = offset
-      ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
-      : formatted;
-  } else {
-    endLabel = formatBookingDateTime(end, timezone, locale, timeFormat);
-  }
+  const startOffset = clockChangeOffsetLabel(zonedDateTime(start, timezone));
+  const endOffset = clockChangeOffsetLabel(zonedDateTime(end, timezone));
+  if (!startOffset && !endOffset) return formatInstantRange(formatter, new Date(start), new Date(end));
   return i18n.t("booking:time.dateTimeRange", {
     start: formatBookingDateTime(start, timezone, locale, timeFormat),
-    end: endLabel,
+    end: formatBookingDateTime(end, timezone, locale, timeFormat),
     lng: bookingLocale(),
   });
 }
 
 /** Format both endpoints without Intl range elision or added date fields. */
-export function formatInstantRange(
-  formatter: Intl.DateTimeFormat,
-  start: Date | number,
-  end: Date | number,
-  separator: "–" | " – " = "–",
-): string {
+export function formatInstantRange(formatter: Intl.DateTimeFormat, start: Date | number, end: Date | number): string {
   const values = { start: formatter.format(start), end: formatter.format(end), lng: bookingLocale() };
-  return separator === " – " ? i18n.t("booking:time.dateTimeRange", values) : i18n.t("booking:time.range", values);
+  return i18n.t("booking:time.range", values);
 }
 
 export function formatAgendaPeriod(

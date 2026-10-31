@@ -1,6 +1,8 @@
 import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
+import appI18n from "@/modules/common/i18n";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -15,7 +17,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { BookingEventList } from "../BookingEventList";
@@ -27,6 +29,10 @@ const fullBooking = { ...booking, purpose: "Cell imaging" };
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 const changeTargetLabel = "Change target";
+
+beforeAll(() => {
+  appI18n.addResourceBundle("en-US", "booking", bookingEnglish);
+});
 
 beforeEach(() => {
   mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);

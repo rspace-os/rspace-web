@@ -49,7 +49,7 @@ export function BookingInstrumentTimeTooltip({
   const dateTime =
     time ??
     (start && end
-      ? formatInstantRange(formatter, new Date(start), new Date(end), " – ")
+      ? formatInstantRange(formatter, new Date(start), new Date(end))
       : start
         ? formatter.format(new Date(start))
         : "");

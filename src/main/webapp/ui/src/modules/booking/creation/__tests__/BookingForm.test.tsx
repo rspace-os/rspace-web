@@ -48,10 +48,10 @@ describe("BookingForm", () => {
     vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   });
   it.each([
-    ["H12", "en-GB", true, "Open: 02:00 pm - 06:00 pm"],
-    ["H24", "en-US", true, "Open: 14:00 - 18:00"],
-    ["H12", "en-GB", false, "Open on this date: 08:00 am - 12:00 pm"],
-    ["H24", "en-US", false, "Open on this date: 08:00 - 12:00"],
+    ["H12", "en-GB", true, "Open: 02:00 pm–06:00 pm"],
+    ["H24", "en-US", true, "Open: 14:00–18:00"],
+    ["H12", "en-GB", false, "Open on this date: 08:00 am–12:00 pm"],
+    ["H24", "en-US", false, "Open on this date: 08:00–12:00"],
   ] as const)(
     "uses %s over the %s browser clock for compact opening hours (uniform: %s)",
     async (timeFormat, browserLocale, uniform, expected) => {

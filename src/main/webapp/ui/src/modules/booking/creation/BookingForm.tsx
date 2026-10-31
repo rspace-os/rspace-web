@@ -23,6 +23,7 @@ import {
   type BookingWindowDraft,
   bookingDateTimeLocale,
   bookingLocale,
+  formatDurationMinutes,
   formatWallClockTime,
   isPlainDate,
   sameDraft,
@@ -485,7 +486,7 @@ export function BookingForm(props: BookingFormProps) {
             {target.maxBookingDurationMinutes > 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("bookings.form.maximumDuration", {
-                  count: target.maxBookingDurationMinutes,
+                  duration: formatDurationMinutes(target.maxBookingDurationMinutes),
                 })}
               </p>
             ) : null}

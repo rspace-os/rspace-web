@@ -944,8 +944,8 @@ describe("Calendar page", () => {
     const dialog = await calendar.openTargetlessBookingDialog();
     const timeFormatter = new Intl.DateTimeFormat(undefined, { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
     const clock = (hour: number) => timeFormatter.format(new Date(Date.UTC(2026, 7, 18, hour)));
-    const viewerHours = `${clock(2)} - ${clock(11)}`;
-    const instrumentHours = `${clock(8)} - ${clock(17)}`;
+    const viewerHours = `${clock(2)}–${clock(11)}`;
+    const instrumentHours = `${clock(8)}–${clock(17)}`;
     // A Berlin item seen from New York: the viewer's own hours for the date, with no timezone named.
     await expect.element(dialog.getByText(`Open on this date: ${viewerHours}`, { exact: true })).toBeVisible();
     expect(dialog.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
