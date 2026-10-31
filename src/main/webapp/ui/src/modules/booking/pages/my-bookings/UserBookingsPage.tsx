@@ -248,7 +248,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                           label,
                           count: upcomingCount.data.totalIsLowerBound
                             ? t("myBookings.count.lowerBound")
-                            : upcomingCount.data.totalDocs,
+                            : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language),
                         })
                       : label
                   }
@@ -269,7 +269,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                     >
                       {upcomingCount.data.totalIsLowerBound
                         ? t("myBookings.count.lowerBound")
-                        : upcomingCount.data.totalDocs}
+                        : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
                     </Badge>
                   )}
                   {value === "upcoming" && upcomingCount.isPending && (

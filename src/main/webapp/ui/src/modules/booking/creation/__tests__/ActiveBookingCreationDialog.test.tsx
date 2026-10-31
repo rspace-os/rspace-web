@@ -200,7 +200,7 @@ describe("ActiveBookingCreationDialog", () => {
     const alert = await within(dialog).findByRole("alert");
     expect(alert).toHaveTextContent("booking:bookings.errors.buffer");
     expect(alert).toHaveTextContent("booking:bookings.errors.bufferSummary");
-    expect(within(alert).getByRole("listitem")).toHaveTextContent(/booking:bookings\.errors\.overlapBooking · 0?8:00/);
+    expect(within(alert).getByRole("listitem")).toMatchTextContent(/booking:bookings\.errors\.overlapBooking · 0?8:00/);
     expect(alert).not.toHaveTextContent("private server detail");
     expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
   });
