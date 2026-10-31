@@ -53,8 +53,9 @@ describe("CalendarPage", () => {
     expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
-    for (const name of ["Jump to date", "Time grid", "Day", "Resources", "My Bookings", "Owned Items"]) {
-      expect(screen.getByRole("button", { name: new RegExp(`^${name}$`) })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
+    for (const name of ["Time grid", "Day", "Resources", "My Bookings", "Owned Items"]) {
+      expect(screen.getByRole("button", { name })).toBeVisible();
     }
   });
 
