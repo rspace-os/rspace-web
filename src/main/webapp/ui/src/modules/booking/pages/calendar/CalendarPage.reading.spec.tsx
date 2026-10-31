@@ -95,7 +95,7 @@ describe("Calendar page", () => {
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters 1 applied");
     await calendar.week.click();
     await expect
       .element(page.getByRole("region", { name: "Resources", exact: true }))
@@ -105,7 +105,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.search).toHaveValue("");
     await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
     await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
     expect(new URLSearchParams(window.location.search).get("calendar-resources.q")).toBe("Confocal");
     await expect

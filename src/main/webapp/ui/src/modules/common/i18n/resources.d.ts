@@ -1327,6 +1327,9 @@ export default interface Resources {
       "label": "Booking",
       "preferences": "Preferences",
       "settings": "Settings"
+    },
+    "toolbar": {
+      "jumpToDateAccessible": "{label}, {date}"
     }
   },
   "common": {

@@ -31,7 +31,7 @@ describe("CalendarPage", () => {
 
     await user.type(screen.getByRole("textbox", { name: "Search Calendar" }), "no matching booking");
 
-    expect(screen.getByRole("button", { name: "Jump to date" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
     expect(screen.getByRole("button", { name: "Time grid" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     expect(screen.getByText("Mass spectrometer")).toBeVisible();

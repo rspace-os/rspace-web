@@ -44,7 +44,7 @@ export function BookingDateControls({
   onDateChange: (date: string) => void;
   className?: string;
 }) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation("booking");
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const selectedDate = dateInTimeZone(date, timeZone);
 
@@ -65,7 +65,18 @@ export function BookingDateControls({
       <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
         <PopoverTrigger
           render={
-            <Button type="button" variant="ghost" className="shrink-0" aria-label={jumpToDateLabel}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="shrink-0"
+              aria-label={t("toolbar.jumpToDateAccessible", {
+                label: jumpToDateLabel,
+                date: new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+                  dateStyle: "medium",
+                  timeZone,
+                }).format(selectedDate),
+              })}
+            >
               <CalendarDaysIcon aria-hidden="true" />
               <time dateTime={date}>
                 {new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
