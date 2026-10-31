@@ -87,6 +87,8 @@ optimistic concurrency. Failed saves retain the draft through the reconciliation
 
 Catalogue availability projections and cache signatures include the full `openingHours` schedule.
 Changing any weekday recalculates the quick-filter category, including within the current minute.
+Availability candidates and batched booking reads request `totals=true` for their pagination
+and 1,000-item safety limits.
 
 ## Loading layouts
 

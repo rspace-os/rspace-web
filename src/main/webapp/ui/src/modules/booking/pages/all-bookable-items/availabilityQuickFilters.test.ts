@@ -784,11 +784,12 @@ describe("availability quick filters", () => {
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
-        return HttpResponse.json(
+        const result =
           url.searchParams.get("page") === "1"
             ? page([candidate(1, "IN1", "UTC")], 1, 2, 2)
-            : page([candidate(2, "IN2", "Europe/Berlin")], 2, 2, 2),
-        );
+            : page([candidate(2, "IN2", "Europe/Berlin")], 2, 2, 2);
+        const { totalDocs, totalPages, ...withoutTotals } = result;
+        return HttpResponse.json(url.searchParams.get("totals") === "true" ? result : withoutTotals);
       }),
     );
 
@@ -796,6 +797,7 @@ describe("availability quick filters", () => {
     expect(result).toHaveLength(2);
     expect(requests.map((request) => request.searchParams.get("page"))).toEqual(["1", "2"]);
     expect(requests[0].searchParams.get("where")).toBe("enabled==true;state==ACTIVE;target.deleted==false");
+    expect(requests.every((request) => request.searchParams.get("totals") === "true")).toBe(true);
     expect(requests[0].searchParams.get("limit")).toBe("100");
     expect(requests[0].searchParams.get("depth")).toBe("1");
     expect(requests[0].searchParams.get("fields[booking-configurations]")).toBe(

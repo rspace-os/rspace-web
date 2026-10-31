@@ -594,6 +594,7 @@ async function fetchCandidatePage(page: number, token: string, signal: AbortSign
     where: "enabled==true;state==ACTIVE;target.deleted==false",
     page: String(page),
     limit: "100",
+    totals: "true",
     depth: "1",
     "fields[booking-configurations]":
       "target,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",

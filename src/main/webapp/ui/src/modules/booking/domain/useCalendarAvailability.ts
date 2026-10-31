@@ -45,6 +45,7 @@ function availabilityRequest(
     sort: "start,id",
     page: String(page),
     limit: "100",
+    totals: "true",
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
     "fields[instruments]": "id,globalId,name,deleted",
