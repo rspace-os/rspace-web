@@ -526,10 +526,10 @@ describe("AvailabilityBar", () => {
       timeZone: "Europe/Berlin",
     });
 
-    const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00 GMT+2.");
+    const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00.");
     expect(marker).toHaveStyle({ left: "50%" });
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available for the full period. Current time: Aug 12, 2026, 12:00 GMT+2.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available for the full period. Current time: Aug 12, 2026, 12:00.",
     );
     expect(screen.queryByText("Time zone: Europe/Berlin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Available/)).not.toBeInTheDocument();
@@ -581,7 +581,7 @@ describe("AvailabilityBar", () => {
       timeZone: "Asia/Singapore",
     });
 
-    expect(screen.getByTitle("Current time Aug 13, 2026, 14:00 GMT+8 is after the displayed window.")).toHaveStyle({
+    expect(screen.getByTitle("Current time Aug 13, 2026, 14:00 is after the displayed window.")).toHaveStyle({
       left: "100%",
     });
   });
@@ -594,7 +594,7 @@ describe("AvailabilityBar", () => {
       timeZone: "Asia/Singapore",
     });
 
-    expect(screen.getByTitle("Current time Aug 11, 2026, 14:00 GMT+8 is before the displayed window.")).toHaveStyle({
+    expect(screen.getByTitle("Current time Aug 11, 2026, 14:00 is before the displayed window.")).toHaveStyle({
       left: "0%",
     });
   });

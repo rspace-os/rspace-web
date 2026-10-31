@@ -10,7 +10,7 @@ import {
   type SourcedAvailabilityInterval,
   timestamp,
 } from "@/modules/booking/domain/availability";
-import { bookingLocale, formatInstantRange } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale, formatInstantRange } from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
@@ -89,7 +89,7 @@ export function AvailabilityBar({
   const nowPosition = nowTimestamp === null ? null : Math.max(0, Math.min(1, (nowTimestamp - start) / (end - start)));
 
   const slices = buildAvailabilitySlices(intervals, new Date(start), new Date(end));
-  const locale = bookingLocale();
+  const locale = bookingDateTimeLocale();
   const itemDateTimeFormatter = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
@@ -98,7 +98,6 @@ export function AvailabilityBar({
     minute: "2-digit",
     hourCycle: "h23",
     timeZone,
-    timeZoneName: "short",
   });
   const timeFormatter = new Intl.DateTimeFormat(locale, {
     hour: "2-digit",

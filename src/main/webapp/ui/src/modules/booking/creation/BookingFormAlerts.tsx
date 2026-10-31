@@ -46,7 +46,11 @@ export function BookingFormAlerts({
               : t("bookings.errors.overlapBooking", { id: booking.id }));
         return (
           <li key={booking.id}>
-            <span className="font-medium">{label}</span>
+            <span className="font-medium">
+              {booking.kind === "MAINTENANCE"
+                ? t("bookings.errors.maintenanceConflict", { label, defaultValue: "Maintenance: {label}" })
+                : label}
+            </span>
             {" · "}
             <BookingInstrumentTimeTooltip
               start={booking.start}

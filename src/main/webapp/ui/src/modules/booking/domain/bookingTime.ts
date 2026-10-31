@@ -412,11 +412,7 @@ export function formatAgendaPeriod(
   const endOffset = offset(endDate);
 
   if (startOffset && startOffset === endOffset) {
-    return i18n.t("booking:time.rangeWithOffset", {
-      period: timeFormatter.formatRange(startDate, endDate),
-      offset: startOffset,
-      lng: bookingLocale(),
-    });
+    return formatInstantRange(timeFormatter, startDate, endDate);
   }
 
   const withOffset = new Intl.DateTimeFormat(resolvedLocale, {

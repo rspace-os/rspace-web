@@ -601,7 +601,8 @@
       "startInPast": "The booking starts in the past and cannot be created.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
-      "windowRequired": "Enter a valid start and end."
+      "windowRequired": "Enter a valid start and end.",
+      "maintenanceConflict": "Maintenance: {label}"
     },
     "feedback": {
       "eventAdded": "{itemName} event added.",
