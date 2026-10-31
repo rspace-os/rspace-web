@@ -21,7 +21,10 @@ import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
 // otherwise race the first runtime handler update when this spec follows another file.
 registerHandlers();
 
-beforeEach(() => {
+beforeEach(async () => {
+  await page.viewport(1440, 900);
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   resetBookingPageRequests();
   registerHandlers();
 });

@@ -57,11 +57,26 @@ export class CalendarPage {
   }
 
   async dragResourceSelection(index: number): Promise<void> {
-    const canvas = this.resourceCanvases[index];
-    const positions = {
-      sourcePosition: { x: 300, y: 60 },
-      targetPosition: { x: 420, y: 60 },
-    };
-    await userEvent.dragAndDrop(canvas, canvas, positions);
+    const scroller = page.getByTestId("day-timeline-scroller").all()[index];
+    const element = scroller.element();
+    const bounds = element.getBoundingClientRect();
+    const canvas = this.resourceCanvases[index].element();
+    // A compact editor can cover part of the next resource. Use an exposed part of its timeline.
+    const y = 60;
+    const sourceX = Array.from({ length: Math.floor((element.clientWidth - 140) / 40) }, (_, i) => 20 + i * 40).find(
+      (x) =>
+        [x, x + 120].every((offset) => {
+          const hit = document.elementFromPoint(
+            bounds.left + element.clientLeft + offset,
+            bounds.top + element.clientTop + y,
+          );
+          return hit !== null && canvas.contains(hit) && hit.closest("button") === null;
+        }),
+    );
+    if (sourceX === undefined) throw new Error("No exposed resource timeline range to drag");
+    await userEvent.dragAndDrop(scroller, scroller, {
+      sourcePosition: { x: sourceX, y },
+      targetPosition: { x: sourceX + 120, y },
+    });
   }
 }
