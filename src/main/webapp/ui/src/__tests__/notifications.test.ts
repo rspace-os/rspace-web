@@ -59,7 +59,7 @@ describe("notification message rendering", () => {
         ["&lt;strong&gt;Legacy notification&lt;/strong&gt;"],
         ["<strong>Legacy notification</strong>"],
       ]);
-      expect(dom.window.document.querySelector("#legacyNotification")).toHaveTextContent("Legacy notification");
+      expect(dom.window.document.querySelector("#legacyNotification")?.textContent).toBe("Legacy notification");
     } finally {
       dom.window.close();
     }
