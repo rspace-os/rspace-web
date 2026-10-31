@@ -535,10 +535,16 @@
             "type" : "integer"
           },
           "totalDocs" : {
+            "description" : "Present only when totals=true.",
             "format" : "int64",
             "type" : "integer"
           },
+          "totalIsLowerBound" : {
+            "description" : "True when the requested total exceeds max.",
+            "type" : "boolean"
+          },
           "totalPages" : {
+            "description" : "Present only when totals=true.",
             "format" : "int32",
             "type" : "integer"
           }
