@@ -1,3 +1,4 @@
+import { createMemoryHistory, createRootRoute, createRouter, RouterContextProvider } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { bookingListDocument } from "@/modules/booking/domain/bookingAgendaFixtures";
@@ -31,6 +32,24 @@ const busyBooking = bookingListDocument({
 });
 
 describe("BookingSummaryCard", () => {
+  it.each([true, false])("gates the item name link on configuration access (%s)", (canViewConfiguration) => {
+    const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
+    const booking = bookingListDocument({ ...busyBooking, privacy: "full", canViewConfiguration });
+    render(
+      <RouterContextProvider router={router}>
+        <BookingSummaryCard booking={booking} timeZone="Europe/Berlin" />
+      </RouterContextProvider>,
+    );
+    if (canViewConfiguration) {
+      expect(screen.getByRole("link", { name: "Confocal microscope" })).toHaveAttribute(
+        "href",
+        "/booking/bookable-items/IN42",
+      );
+    } else {
+      expect(screen.queryByRole("link", { name: "Confocal microscope" })).not.toBeInTheDocument();
+    }
+  });
+
   it("omits busy purpose and actions even when private data and configuration access are supplied", () => {
     render(<BookingSummaryCard booking={busyBooking} timeZone="Europe/Berlin" />);
 

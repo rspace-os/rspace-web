@@ -10,6 +10,7 @@ import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
+import { BookableItemName } from "./BookableItemName";
 
 type BookingSummaryCardProps = {
   booking: BookingListDocument;
@@ -83,7 +84,9 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
     title: target ? (
       <div className="min-w-0 space-y-1">
         <InventoryItem
-          name={target.value.name}
+          name={
+            canLinkToItem ? <BookableItemName name={target.value.name} globalId={target.globalId} /> : target.value.name
+          }
           nameClassName="whitespace-normal overflow-visible break-words"
           globalId={target.globalId}
           href={canLinkToItem ? `/globalId/${target.globalId}` : undefined}
