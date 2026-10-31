@@ -47,19 +47,28 @@ describe("BookableItemPage", () => {
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([archived], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+        HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        ),
       ),
       http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
         posts += 1;
         return HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null });
       }),
     );
+    const user = userEvent.setup();
     renderPage("/booking/bookable-items/IN123/details?edit=true");
 
     expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
     expect(posts).toBe(0);
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
+    expect(
+      await screen.findByText("booking:bookableItemDetails.calendarSubscription.archivedUnavailable"),
+    ).toBeVisible();
+    expect(posts).toBe(0);
   });
 
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
@@ -86,6 +95,7 @@ describe("BookableItemPage", () => {
     expect(patchRequest?.headers.get("Content-Type")).toBe("application/json");
     expect(patchRequest?.headers.get("If-Match")).toBe('"2"');
     await expect(patchRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
+    expect(await screen.findByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toHaveFocus();
   });
 

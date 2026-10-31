@@ -657,20 +657,21 @@ See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and life
 | 17. | Default shared with | The instance-wide setting supplying initial Booking access grants. |
 | 18. | Leave a booking configuration | Remove one's direct Booking access assignment. |
 | 19. | Own-booking access after role loss | Read-only access to one's retained bookings after losing a Booking role. |
-| 20. | Booking access directory | The resource-scoped users and groups selectable for role assignment. |
-| 21. | Booking access | Permission to use a Booking configuration and its events. |
-| 22. | System administrator Booking access | Implicit Booking Owner access for a system administrator acting as themselves. |
-| 23. | Booking identity boundary | The separation between the represented subject and the original audit actor. |
-| 24. | Booking defaults | Instance-wide scheduling values copied into a new configuration. |
-| 25. | Scheduling policy | The per-configuration rules for valid booking times. |
-| 26. | Opening interval | A daily wall-clock period when a booking may occur in the configuration's timezone. |
-| 27. | Booking buffer | Unavailable time immediately before or after a confirmed booking. |
-| 28. | Maximum booking duration | The per-configuration elapsed-time limit for one booking. |
-| 29. | Double-booking | Allowing confirmed booking intervals on the same item to overlap. |
-| 30. | Time-slot booking | One persisted reservation for one Booking configuration. |
-| 31. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
-| 32. | Half-open booking interval | A time interval including its start and excluding its end. |
-| 33. | Booking cancellation | The transition of a booking to the Cancelled state. |
+| 20. | Booking ownership transfer | The Booking access change accompanying a target Instrument ownership transfer. |
+| 21. | Booking access directory | The resource-scoped users and groups selectable for role assignment. |
+| 22. | Booking access | Permission to use a Booking configuration and its events. |
+| 23. | System administrator Booking access | Implicit Booking Owner access for a system administrator acting as themselves. |
+| 24. | Booking identity boundary | The separation between the represented subject and the original audit actor. |
+| 25. | Booking defaults | Instance-wide scheduling values copied into a new configuration. |
+| 26. | Scheduling policy | The per-configuration rules for valid booking times. |
+| 27. | Opening interval | A daily wall-clock period when a booking may occur in the configuration's timezone. |
+| 28. | Booking buffer | Unavailable time immediately before or after a confirmed booking. |
+| 29. | Maximum booking duration | The per-configuration elapsed-time limit for one booking. |
+| 30. | Double-booking | Allowing confirmed booking intervals on the same item to overlap. |
+| 31. | Time-slot booking | One persisted reservation for one Booking configuration. |
+| 32. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
+| 33. | Half-open booking interval | A time interval including its start and excluding its end. |
+| 34. | Booking cancellation | The transition of a booking to the Cancelled state. |
 
 ## Booking calendar presentation
 
@@ -699,3 +700,14 @@ See [Booking availability](DevDocs/DeveloperNotes/BookingFrontend.md) for filter
 |---|---|---|
 | 1. | Available now | The current-availability quick filter for items free at the current instant. |
 | 2. | Free later today | The current-availability quick filter for items with free time later in today's preferred display interval. |
+
+## Booking calendar subscriptions
+
+See [Booking calendar subscriptions](DevDocs/DeveloperNotes/BookingCalendarSubscriptions.md) for endpoints, tokens and feed behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Bookable-item calendar subscription | One user's revocable, read-only calendar of a Booking configuration's schedule. |
+| 2. | Personal booking calendar subscription | One user's revocable, read-only calendar across their bookable items. |
+| 3. | Subscription link | The bearer URL for a bookable-item or personal booking calendar subscription. |
+| 4. | Calendar cancellation tombstone | A cancelled or deleted calendar event retained with its stable identity and original time range. |

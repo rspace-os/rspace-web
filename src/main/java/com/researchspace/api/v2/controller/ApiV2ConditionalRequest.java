@@ -32,7 +32,7 @@ public final class ApiV2ConditionalRequest {
     }
   }
 
-  static String parseStrongEtag(String value, String requiredCode) {
+  public static String parseStrongEtag(String value, String requiredCode) {
     String etag = normalize(value, requiredCode);
     if (etag.substring(1, etag.length() - 1).chars().anyMatch(c -> c == '"' || c < 0x21)) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");

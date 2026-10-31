@@ -311,6 +311,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             null,
             changedAt,
             ResourceAccessAuditReason.DIRECT_LEAVE));
+    events.publishEvent(new ResourceAccessChangedEvent(protectedEntity));
   }
 
   private void publishDeltas(
@@ -372,6 +373,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
               changedAt,
               reason));
     }
+    events.publishEvent(new ResourceAccessChangedEvent(auditTarget));
   }
 
   private <T, ID> Locked<T> lockAndAuthorize(

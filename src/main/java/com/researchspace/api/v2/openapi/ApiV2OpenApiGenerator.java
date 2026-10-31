@@ -778,9 +778,9 @@ public final class ApiV2OpenApiGenerator {
         "ETag",
         ordered(
             "description",
-            "Strong version identifier for conditional resource access replacement.",
+            "Strong entity tag for the returned representation.",
             "schema",
-            ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$")),
+            ordered("type", "string", "pattern", "^\\\"[^\\\"\\x00-\\x20]+\\\"$")),
         "RateLimitLimit",
         integerHeader("Configured request limit for the shortest throttle interval."),
         "RateLimitRemaining",
