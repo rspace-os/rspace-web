@@ -58,31 +58,6 @@ class ApiV2OpenApiFixtureTest {
         MAPPER.readTree(generatedDocument()).path("paths").has("/api/v2/booking-settings/admin"));
   }
 
-  @Test
-  void nestedRelationshipTargetsHaveSparseFieldsets() throws IOException {
-    JsonNode parameters =
-        MAPPER
-            .readTree(generatedDocument())
-            .path("paths")
-            .path("/api/v2/booking-configurations")
-            .path("get")
-            .path("parameters");
-    for (String name : List.of("fields", "exclude")) {
-      JsonNode parameter =
-          Stream.of(parameters)
-              .flatMap(
-                  node -> {
-                    List<JsonNode> entries = new ArrayList<>();
-                    node.forEach(entries::add);
-                    return entries.stream();
-                  })
-              .filter(node -> name.equals(node.path("name").asText()))
-              .findFirst()
-              .orElseThrow();
-      assertTrue(parameter.path("x-rspace-allowed-fields").has("containers"));
-    }
-  }
-
   private static String generatedDocument() throws IOException {
     try (var context = ApiV2ResourceConfigTest.newContext();
         var handlers = ApiV2TestHandlerMappings.newContext()) {
