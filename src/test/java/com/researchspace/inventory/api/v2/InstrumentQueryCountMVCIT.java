@@ -25,6 +25,43 @@ class InstrumentQueryCountMVCIT extends SpringTransactionalTest {
   }
 
   @Test
+  void parentFiltersUseReadableTargetContextForPagesSlicesAndCounts() throws Exception {
+    var owner = createInitAndLoginAnyUser();
+    var hiddenOwner = createAndSaveUserIfNotExists("hiddenParentOwner");
+    var visible = createBasicContainerForUser(owner, "Visible parent", List.of());
+    var hidden = createBasicContainerForUser(hiddenOwner, "Hidden parent", List.of());
+    var item = createBasicInstrumentForUser(owner, "Parent filter instrument");
+    var entity = instruments.assertUserCanReadInstrument(item.getId(), owner);
+    var mvc = MockMvcBuilders.standaloneSetup(new ApiV2CrudController(catalog)).build();
+    for (var parent : List.of(visible, hidden)) {
+      entity.moveToNewParent(containerDao.get(parent.getId()));
+      if (parent == hidden) containerDao.get(parent.getId()).setRecordDeleted(true);
+      sessionFactory.getCurrentSession().flush();
+      int expected = parent == visible ? 1 : 0;
+      for (String filter :
+          List.of(
+              "parentContainer.name=='" + parent.getName() + "'",
+              "parentContainer.value==" + parent.getId())) {
+        for (boolean totals : List.of(false, true)) {
+          mvc.perform(
+                  get("/api/v2/instruments")
+                      .param("where", filter)
+                      .param("totals", Boolean.toString(totals))
+                      .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(owner)))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.docs.length()").value(expected));
+        }
+        mvc.perform(
+                get("/api/v2/instruments/count")
+                    .param("where", filter)
+                    .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(owner)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalDocs").value(expected));
+      }
+    }
+  }
+
+  @Test
   void instrumentSliceNavigationAndOptInCount() throws Exception {
     var owner = createInitAndLoginAnyUser();
     for (int i = 0; i < 5; i++) createBasicInstrumentForUser(owner, "Slice scope " + i);

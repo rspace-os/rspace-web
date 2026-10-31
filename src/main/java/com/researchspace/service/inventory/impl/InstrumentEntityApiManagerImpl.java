@@ -24,7 +24,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -66,6 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +79,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
+  private @Autowired ObjectProvider<ResourceRegistry> resourceRegistry;
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired ContainerDao containerDao;
   private @Autowired InstrumentReadAccess instrumentReadAccess;
@@ -1044,24 +1048,36 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user) {
-    return instrumentDao.getReadableResources(request, readAccess(user));
+    return instrumentDao.getReadableResources(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
   }
 
   @Override
   public ResourcePage<InstrumentReadSummary> getReadableInstrumentSummaries(
       ResourceRequest request, User user) {
-    return instrumentDao.getReadableResourceSummaries(request, readAccess(user));
+    return instrumentDao.getReadableResourceSummaries(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
   }
 
   @Override
   public ResourceSlice<InstrumentReadSummary> getReadableInstrumentSummarySlice(
       ResourceRequest request, User user) {
-    return instrumentDao.getReadableResourceSummarySlice(request, readAccess(user));
+    return instrumentDao.getReadableResourceSummarySlice(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
   }
 
   @Override
   public long countReadableInstruments(ResourceRequest request, User user) {
-    return instrumentDao.countReadableResources(request, readAccess(user));
+    return instrumentDao.countReadableResources(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
   }
 
   @Override

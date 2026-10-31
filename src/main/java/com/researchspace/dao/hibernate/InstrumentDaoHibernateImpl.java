@@ -54,13 +54,19 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   @Override
   public ResourcePage<Instrument> getReadableResources(
-      ResourceRequest request, AccessResult access) {
-    return readableResourcePage(COLLECTION_QUERY, request, access);
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
+    if (access.isDenied()) return new ResourcePage<>(List.of(), 0);
+    return COLLECTION_QUERY.page(
+        criteriaBuilderFactory(),
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+        relationships);
   }
 
   @Override
   public ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
-      ResourceRequest request, AccessResult access) {
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
     if (access.isDenied()) {
       return new ResourcePage<>(List.of(), 0);
     }
@@ -70,7 +76,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             getSession(),
             request,
             access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
-            RelationshipReadAccess.none(),
+            relationships,
             InstrumentScalarRow.class,
             List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
     return new ResourcePage<>(
@@ -85,7 +91,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   @Override
   public ResourceSlice<InstrumentReadSummary> getReadableResourceSummarySlice(
-      ResourceRequest request, AccessResult access) {
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
     if (access.isDenied()) {
       return new ResourceSlice<>(List.of(), false);
     }
@@ -95,7 +101,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             getSession(),
             request,
             access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
-            RelationshipReadAccess.none(),
+            relationships,
             InstrumentScalarRow.class,
             List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
     return new ResourceSlice<>(
@@ -109,8 +115,15 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
-  public long countReadableResources(ResourceRequest request, AccessResult access) {
-    return countReadableResources(COLLECTION_QUERY, request, access);
+  public long countReadableResources(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
+    if (access.isDenied()) return 0;
+    return COLLECTION_QUERY.count(
+        criteriaBuilderFactory(),
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+        relationships);
   }
 
   @Override
