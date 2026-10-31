@@ -5,7 +5,6 @@ import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { queryKeys as authQueryKeys } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
-import { UserSessionStoreProvider } from "@/modules/common/stores/userSessionStore";
 import AppBar from "./AppBar";
 import { appConfigQueryKeys } from "./queries/config";
 import { nextMaintenanceQueryKeys } from "./queries/nextMaintenance";
@@ -66,9 +65,7 @@ export function AppBarStory() {
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
-        <UserSessionStoreProvider>
-          <RouterProvider router={router} />
-        </UserSessionStoreProvider>
+        <RouterProvider router={router} />
       </Suspense>
     </QueryClientProvider>
   );

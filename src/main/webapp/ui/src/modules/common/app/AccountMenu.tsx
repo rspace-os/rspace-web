@@ -3,7 +3,6 @@ import { ExternalLinkIcon, LogOutIcon, UserIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
-import { useUserSessionStore } from "@/modules/common/stores/userSessionStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/common/ui/avatar";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuLinkItem, MenuSeparator, MenuTrigger } from "@/modules/common/ui/menu";
@@ -44,7 +43,6 @@ export default function AccountMenu({
   bannerImageUrl: string;
 }) {
   const { t } = useTranslation("common");
-  const clearSessions = useUserSessionStore((state) => state.clearSessions);
   const fullName =
     [currentUser.firstName.trim(), currentUser.lastName.trim()].filter(Boolean).join(" ") || currentUser.username;
   const { operatedAs } = currentUser.session;
@@ -53,7 +51,6 @@ export default function AccountMenu({
   const logoutLabel = operatedAs ? t("appBar.release") : t("appBar.logOut");
 
   const handleLogout = () => {
-    clearSessions();
     clearStoredToken();
     if (!operatedAs && typeof window.gapi !== "undefined" && window.gapi.auth2) {
       const auth2 = window.gapi.auth2.getAuthInstance();

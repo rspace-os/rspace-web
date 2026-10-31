@@ -15,7 +15,6 @@ import { useLighthouseSdk } from "@/modules/common/app/lighthouse";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
-import { createUserSessionStore, UserSessionStoreProvider } from "@/modules/common/stores/userSessionStore";
 import { ID_TOKEN_KEY } from "@/modules/common/utils/auth";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
@@ -89,19 +88,16 @@ function renderAppBar() {
   return render(
     <QueryClientProvider client={queryClient}>
       <UIStoreProvider>
-        <UserSessionStoreProvider>
-          <Suspense fallback={null}>
-            <NewAppBar currentPage="workspace" />
-          </Suspense>
-        </UserSessionStoreProvider>
+        <Suspense fallback={null}>
+          <NewAppBar currentPage="workspace" />
+        </Suspense>
       </UIStoreProvider>
     </QueryClientProvider>,
   );
 }
 
-function renderAccountMenu(ui: ReactElement, store = createUserSessionStore()) {
-  render(<UserSessionStoreProvider store={store}>{ui}</UserSessionStoreProvider>);
-  return store;
+function renderAccountMenu(ui: ReactElement) {
+  render(ui);
 }
 
 describe("NewAppBar (MSW-driven)", () => {
@@ -278,22 +274,17 @@ describe("AccountMenu", () => {
     const user = userEvent.setup();
     const signOut = vi.fn();
     vi.stubGlobal("gapi", { auth2: { getAuthInstance: () => ({ signOut }) } });
-    const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id) });
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     renderAccountMenu(
       <AccountMenu
         currentUser={{ ...currentUserResponse, session: { ...currentUserResponse.session, operatedAs: true } }}
         bannerImageUrl=""
       />,
-      sessionStore,
     );
 
     await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
     await user.click(await screen.findByRole("menuitem", { name: "common:appBar.release" }));
 
-    expect(sessionStore.getState().sessions).toEqual([]);
-    expect(sessionStore.getState().activeAccountId).toBeNull();
     expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
     expect(signOut).not.toHaveBeenCalled();
   });
@@ -306,14 +297,11 @@ describe("AccountMenu", () => {
     const user = userEvent.setup();
     vi.stubGlobal("gapi", gapi);
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
-    const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id) });
-    renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />, sessionStore);
+    renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />);
 
     await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
     await user.click(await screen.findByRole("menuitem", { name: "common:appBar.logOut" }));
 
-    expect(sessionStore.getState().sessions).toEqual([]);
     expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
   });
 
@@ -322,15 +310,12 @@ describe("AccountMenu", () => {
     const signOut = vi.fn(() => new Promise<void>(() => {}));
     vi.stubGlobal("gapi", { auth2: { getAuthInstance: () => ({ signOut }) } });
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
-    const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id) });
-    renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />, sessionStore);
+    renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />);
 
     await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
     await user.click(await screen.findByRole("menuitem", { name: "common:appBar.logOut" }));
 
     expect(signOut).toHaveBeenCalledOnce();
-    expect(sessionStore.getState().sessions).toEqual([]);
     expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
   });
 
