@@ -130,6 +130,10 @@ export default defineConfig({
     // partial dependency cache can reload later files in a full run.
     entries: ["src/**/*.spec.{ts,tsx}", "!src/__tests__/e2e/**"],
     include: [
+      // Keep nuqs and its router adapter in the same pre-bundled module graph.
+      "nuqs/adapters/tanstack-router",
+      "nuqs/adapters/testing",
+      "nuqs/adapters/custom",
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
@@ -153,6 +157,7 @@ export default defineConfig({
     // first-attempt timing miss does not fail the run; a test that fails every
     // attempt is a real failure.
     retry: 2,
+    clearMocks: true,
     // Every file shares one origin-level MSW service worker registration. Keep
     // files serial within each browser; the CI matrix provides engine parallelism.
     fileParallelism: false,
@@ -164,10 +169,15 @@ export default defineConfig({
     outputFile: process.env.CI ? { junit: `browser-junit-${browsers.join("-")}.xml` } : undefined,
     browser: {
       enabled: true,
-      provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      instances: browsers.map((browser) => ({ browser })),
+      instances: browsers.map((browser) => ({
+        browser,
+        provider: playwright({
+          // Assertions use English copy and decimal points on every host OS.
+          contextOptions: { locale: "en-US" },
+        }),
+      })),
     },
   },
 });
