@@ -154,7 +154,7 @@ const meta = {
   component: PrototypeLab,
   parameters: { layout: "fullscreen" },
   beforeEach: async () => {
-    await prototypeWorker.start({ onUnhandledRequest: "bypass" });
+    await prototypeWorker.start({ onUnhandledFrame: "bypass" });
     return () => prototypeWorker.stop();
   },
 } satisfies Meta<typeof PrototypeLab>;
