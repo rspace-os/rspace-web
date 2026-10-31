@@ -159,7 +159,7 @@ describe("calendar availability", () => {
     expect(where).not.toContain("start<");
     expect(where).not.toContain("end>");
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
-    expect(requests[0].searchParams.get("totals")).toBe("true");
+    expect(requests[0].searchParams.has("totals")).toBe(false);
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-03-28T23:00:00Z", "2026-03-29T01:00:00Z", "2026-03-28T22:00:00Z"),
     ]);
@@ -236,9 +236,17 @@ describe("calendar availability", () => {
     expect(result.get("IN2")?.map(({ source }) => source.id)).toEqual(["booking:2", "booking:3"]);
 
     server.use(
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json(collectionResponse([], { page: 1, totalPages: 11, totalDocs: 1001 })),
-      ),
+      http.get("/api/v2/bookings", ({ request }) => {
+        const page = Number(new URL(request.url).searchParams.get("page"));
+        return HttpResponse.json(
+          collectionResponse(
+            Array.from({ length: 100 }, (_, index) =>
+              booking((page - 1) * 100 + index + 1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+            ),
+            { page, totalPages: 11, totalDocs: 1001 },
+          ),
+        );
+      }),
     );
     await expect(loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal)).rejects.toThrow(
       "exceeds 1,000",

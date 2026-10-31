@@ -1,15 +1,10 @@
 import * as v from "valibot";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "./booking";
 
-const PageSchema = v.object({
-  docs: v.array(BookingSchema),
-  totalDocs: v.number(),
-  totalPages: v.number(),
-  page: v.number(),
-  hasNextPage: v.boolean(),
-});
+const PageSchema = v2PageEnvelope(BookingSchema);
 
 const MAX_TARGETS_PER_BATCH = 500;
 const MAX_REQUEST_BYTES = 6000; // Leaves headroom for browser/proxy headers outside application control.
@@ -35,7 +30,6 @@ function availabilityRequest(
     sort: "start,id",
     page: String(page),
     limit: "100",
-    totals: "true",
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
     "fields[instruments]": "id,globalId,name,deleted",
@@ -100,23 +94,18 @@ async function loadAvailabilityBatch(
   token: string,
   signal: AbortSignal,
 ): Promise<Booking[]> {
-  const first = await fetchPage(globalIds, envelope, 1, token, signal);
-  if (first.totalDocs > MAX_BOOKINGS_PER_BATCH) {
-    throw new Error("Calendar availability batch exceeds 1,000 bookings");
-  }
-  assertAvailabilityPage(first, 1);
-  const bookings: Booking[] = [...first.docs];
-  for (let page = 2; page <= first.totalPages; page += 1) {
+  const bookings: Booking[] = [];
+  let requestedPage = 1;
+  for (let pages = 0; ; pages += 1) {
     throwIfAborted(signal);
-    const next = await fetchPage(globalIds, envelope, page, token, signal);
-    assertAvailabilityPage(next, page, first);
-    bookings.push(...next.docs);
-    if (bookings.length > first.totalDocs) {
-      throw new Error("Calendar availability pagination returned too many bookings");
+    const result = await fetchPage(globalIds, envelope, requestedPage, token, signal);
+    assertAvailabilityPage(result, requestedPage);
+    bookings.push(...result.docs);
+    if (bookings.length > MAX_BOOKINGS_PER_BATCH || (result.hasNextPage && pages >= 9)) {
+      throw new Error("Calendar availability batch exceeds 1,000 bookings or 10 pages");
     }
-  }
-  if (bookings.length !== first.totalDocs) {
-    throw new Error("Calendar availability pagination returned an incomplete booking set");
+    if (!result.hasNextPage) break;
+    requestedPage = result.nextPage ?? requestedPage + 1;
   }
   if (new Set(bookings.map(({ id }) => id)).size !== bookings.length) {
     throw new Error("Booking schedule changed during pagination");
@@ -124,27 +113,14 @@ async function loadAvailabilityBatch(
   return bookings;
 }
 
-function assertAvailabilityPage(
-  page: v.InferOutput<typeof PageSchema>,
-  requestedPage: number,
-  firstPage?: v.InferOutput<typeof PageSchema>,
-): void {
+function assertAvailabilityPage(page: v.InferOutput<typeof PageSchema>, requestedPage: number): void {
   if (
-    !Number.isSafeInteger(page.totalDocs) ||
-    page.totalDocs < 0 ||
-    !Number.isSafeInteger(page.totalPages) ||
-    page.totalPages < 0 ||
-    page.totalPages > 10 ||
-    (page.totalDocs === 0 ? page.totalPages > 1 : page.totalPages === 0) ||
     page.page !== requestedPage ||
     page.docs.length > 100 ||
-    (page.totalDocs > 0 && page.docs.length === 0) ||
-    page.hasNextPage !== requestedPage < page.totalPages
+    (page.hasNextPage && page.docs.length === 0) ||
+    (page.hasNextPage && page.nextPage !== null && page.nextPage <= requestedPage)
   ) {
     throw new Error("Calendar availability returned inconsistent pagination metadata");
-  }
-  if (firstPage && (page.totalDocs !== firstPage.totalDocs || page.totalPages !== firstPage.totalPages)) {
-    throw new Error("Booking schedule changed during pagination");
   }
 }
 
