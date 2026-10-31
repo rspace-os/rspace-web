@@ -300,9 +300,9 @@
     "permanentDeleteDialog": {
       "confirm": "Delete permanently",
       "confirmationLabel": "Item name",
-      "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+      "description": "This permanently deletes the booking setup for {item}, all its bookings and its calendar links. The Inventory instrument is kept. This cannot be undone. Type \"{item}\" to confirm.",
       "error": "The configuration could not be permanently deleted. Refresh and try again.",
-      "title": "Permanently delete configuration?"
+      "title": "Permanently delete booking setup?"
     },
     "rules": "Booking rules",
     "tabs": {
@@ -425,9 +425,9 @@
     },
     "permanentDeleteDialog": {
       "confirmationLabel": "Item name",
-      "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+      "description": "This permanently deletes the booking setup for {item}, all its bookings and its calendar links. The Inventory instrument is kept. This cannot be undone. Type \"{item}\" to confirm.",
       "error": "The configuration could not be permanently deleted. Refresh and try again.",
-      "title": "Permanently delete configuration?"
+      "title": "Permanently delete booking setup?"
     },
     "plural": "Bookable Items",
     "primer": {

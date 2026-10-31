@@ -354,10 +354,10 @@ describe("BookableItemPage", () => {
 
     await pageObj.lifecycleActions.click();
     await pageObj.permanentDeleteAction.click();
-    const dialog = page.getByRole("alertdialog", { name: "Permanently delete configuration?" });
+    const dialog = page.getByRole("alertdialog", { name: "Permanently delete booking setup?" });
     const confirm = dialog.getByRole("button", { name: "Delete permanently" });
     const itemName = dialog.getByRole("textbox", { name: "Item name" });
-    await expect.element(dialog).toMatchTextContent("access assignments");
+    await expect.element(dialog).toMatchTextContent("The Inventory instrument is kept.");
     await expect.element(confirm).toBeDisabled();
     await userEvent.fill(itemName, "confocal microscope");
     await expect.element(confirm).toBeDisabled();
