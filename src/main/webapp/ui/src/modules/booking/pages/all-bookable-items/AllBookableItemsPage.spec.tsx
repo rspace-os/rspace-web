@@ -68,11 +68,11 @@ describe("the All Bookable Items page", () => {
     });
   });
 
-  test("navigates to the bookable item details page", async () => {
+  test("navigates through the instrument name to the bookable item details page", async () => {
     render(<AllBookableItemsStory />);
 
     await expect.element(pageObj.detailsButton).toBeVisible();
-    await pageObj.detailsButton.click();
+    await pageObj.instrumentName.click();
 
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
     await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
@@ -280,4 +280,17 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.massSpectrometer).toBeVisible();
     await expectNoAxeViolations();
   });
+});
+
+test("names desktop icon actions on hover and keyboard focus", async () => {
+  await page.viewport(1376, 795);
+  render(<AllBookableItemsStory containerWidth={1100} />);
+  for (const control of [pageObj.detailsButton, pageObj.electronBookButton]) {
+    await control.hover();
+    await expect.element(page.getByRole("tooltip")).toBeVisible();
+    await pageObj.heading.hover();
+    control.element().focus();
+    await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+    await expect.element(page.getByRole("tooltip")).toBeVisible();
+  }
 });

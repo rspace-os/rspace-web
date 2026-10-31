@@ -119,7 +119,10 @@ describe("AllBookableItemsPage", () => {
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
     const { router } = await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}`);
-    expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
+    expect((await screen.findAllByRole("link", { name: "Confocal microscope" }))[0]).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN123",
+    );
     expect(screen.queryByText("Electron microscope")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^Filters/ }));
     expect(await screen.findByRole("combobox", { name: "Value for filter 3" })).toBeVisible();
@@ -295,9 +298,12 @@ describe("AllBookableItemsPage", () => {
         expect(screen.getByRole("status")).toHaveClass("sr-only");
         expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
       } else {
-        expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
+        expect((await screen.findAllByRole("link", { name: "Confocal microscope" }))[0]).toHaveAttribute(
+          "href",
+          "/booking/bookable-items/IN123",
+        );
       }
-      expect(screen.getByRole("button", { name: "Jump to date" })).toBeVisible();
+      expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
       await expectAccessible(container);
       unmount();
       await act(async () => release?.());

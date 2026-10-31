@@ -2,6 +2,10 @@ import { type Locator, page } from "vitest/browser";
 import { bookableItemHeading, bookableItemTarget, css } from "../../bookable-items/pageObjects/bookableItemLocators";
 
 export class AllBookableItemsPage {
+  get instrumentName(): Locator {
+    return page.getByRole("link", { name: "Confocal microscope", exact: true }).first();
+  }
+
   readonly bookableItemDetailsHeading: Locator = bookableItemHeading("Confocal microscope");
   readonly bookableItemDetailsTarget: Locator = bookableItemTarget("IN123");
 
@@ -103,7 +107,7 @@ export class AllBookableItemsPage {
   }
 
   get datePicker(): Locator {
-    return page.getByRole("button", { name: "Jump to date" });
+    return page.getByRole("button", { name: /^Jump to date, / });
   }
 
   get nextDay(): Locator {
