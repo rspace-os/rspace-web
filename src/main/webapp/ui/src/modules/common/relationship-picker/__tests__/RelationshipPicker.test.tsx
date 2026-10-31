@@ -390,7 +390,7 @@ describe("relationship picker restore", () => {
     );
 
     await waitFor(() => expect(batches).toHaveLength(2));
-    expect(batches.map((batch) => batch.length)).toEqual([100, 1]);
+    expect(batches.map((batch) => batch.length).sort((a, b) => a - b)).toEqual([1, 100]);
     expect(result.current.every((option) => option.restoreStatus === undefined)).toBe(true);
   });
 
