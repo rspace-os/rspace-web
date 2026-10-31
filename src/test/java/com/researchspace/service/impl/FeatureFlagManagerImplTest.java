@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -34,6 +36,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
@@ -140,32 +144,31 @@ class FeatureFlagManagerImplTest {
         () -> featureFlagManager.updateFeatureFlag(FLAG, baseline(true), user, user));
   }
 
-  @Test
-  void runAsSysadminCannotChangeBaselinesOrUseDevtoolsOnNonDevServer() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void runAsOrLookupFailureDeniesCapabilitiesAndPatches(boolean lookupFails) {
     featureFlagManager = createManager("false", "false", "prod");
     Subject subject = ThreadContext.getSubject();
-    when(subject.isRunAs()).thenReturn(true);
+    if (lookupFails) {
+      when(subject.isRunAs()).thenThrow(new IllegalStateException("Run-as state unavailable"));
+    } else {
+      when(subject.isRunAs()).thenReturn(true);
+    }
     initialiseRuntime(Map.of(FLAG, false), false);
+    clearInvocations(featureFlagDao, events);
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+    sysadmin.setId(19L);
 
-    assertFalse(featureFlagManager.canChangeFeatureFlagBaselines(sysadmin));
-    assertFalse(featureFlagManager.canUseDevtools(sysadmin));
     assertThrows(
         FeatureFlagPermissionException.class,
         () -> featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin, sysadmin));
-    verify(featureFlagDao, never()).upsertBaseline(any(), anyBoolean());
-    verify(events, never()).publishEvent(any(FeatureFlagResourceChangedEvent.class));
-  }
-
-  @Test
-  void failureToDetermineRunAsDeniesSysadminCapabilities() {
-    featureFlagManager = createManager("false", "false", "prod");
-    Subject subject = ThreadContext.getSubject();
-    when(subject.isRunAs()).thenThrow(new IllegalStateException("Run-as state unavailable"));
-    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
-
+    assertThrows(
+        FeatureFlagPermissionException.class,
+        () -> featureFlagManager.updateFeatureFlag(FLAG, override(true), sysadmin, sysadmin));
     assertFalse(featureFlagManager.canChangeFeatureFlagBaselines(sysadmin));
     assertFalse(featureFlagManager.canUseDevtools(sysadmin));
+    assertFalse(featureFlagManager.canOverrideFeatureFlags(sysadmin));
+    verifyNoInteractions(featureFlagDao, events);
   }
 
   @Test
