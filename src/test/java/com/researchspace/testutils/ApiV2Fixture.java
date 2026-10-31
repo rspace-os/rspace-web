@@ -320,10 +320,10 @@ public final class ApiV2Fixture {
   public long bookingConfiguration(long instrumentId, String timezone, String apiKey) {
     enableBookings();
     String body =
-        """
-        {"enabled":true,"target":{"relationTo":"instruments","value":%d}}\
-        """
-            .formatted(instrumentId);
+"""
+        {"enabled":true,"timezone":"%s","target":{"relationTo":"instruments","value":%d}}\
+"""
+            .formatted(timezone, instrumentId);
     long id = idOf(postJson("/api/v2/booking-configurations", body, apiKey));
     teardown.add(() -> deleteBookingConfigurationAsSysadmin(id));
     return id;

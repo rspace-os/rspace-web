@@ -3,6 +3,7 @@ import {
   schedulingSettingsEntries,
   validMaximumBookingDuration,
 } from "@/modules/booking/configuration/schedulingSettings";
+import { isValidTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { RoleSourceSchema } from "@/modules/common/resource-access/schemas";
 
 const NO_BOOKING_CAPABILITIES = {
@@ -94,6 +95,7 @@ export const BookingConfigurationInputSchema = v.pipe(
       value: v.number(),
     }),
     enabled: v.boolean(),
+    timezone: v.pipe(v.string(), v.check(isValidTimeZone)),
     ...schedulingSettingsEntries,
   }),
   v.forward(

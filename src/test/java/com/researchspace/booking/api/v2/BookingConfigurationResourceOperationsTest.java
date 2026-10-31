@@ -63,23 +63,35 @@ class BookingConfigurationResourceOperationsTest {
     when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(true);
   }
 
-  @Test
-  void translatesRestCreatesToTheSharedManagerInterface() {
+  @ParameterizedTest
+  @MethodSource("restCreates")
+  void translatesRestCreatesToTheSharedManagerInterface(
+      ParsedDocument document, String expectedTimezone, ResolvedBookableTarget target) {
     BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setTimeZone("Pacific/Auckland");
-    ResolvedResourceReference<BookableTargetType, Long> resolved =
-        BookingResourceTestFixtures.resolved(12L);
-    ResolvedBookableTarget target = target(resolved);
-    when(manager.createConfiguration(new Create(true, "Pacific/Auckland", target), actor, actor))
+    configuration.setTimeZone(expectedTimezone);
+    when(manager.createConfiguration(new Create(true, expectedTimezone, target), actor, actor))
         .thenReturn(configuration);
 
-    BookingConfiguration created =
-        operations.create(
-            new ParsedDocument(WriteOperation.CREATE, Map.of("enabled", true, "target", resolved)),
-            ApiV2Caller.direct(actor));
+    BookingConfiguration created = operations.create(document, ApiV2Caller.direct(actor));
 
     assertEquals(configuration, created);
-    verify(manager).createConfiguration(new Create(true, "Pacific/Auckland", target), actor, actor);
+    verify(manager).createConfiguration(new Create(true, expectedTimezone, target), actor, actor);
+  }
+
+  private static Stream<Arguments> restCreates() {
+    ResolvedResourceReference<BookableTargetType, Long> resolved =
+        BookingResourceTestFixtures.resolved(12L);
+    return Stream.of(
+        Arguments.of(
+            new ParsedDocument(WriteOperation.CREATE, Map.of("enabled", true, "target", resolved)),
+            "Pacific/Auckland",
+            target(resolved)),
+        Arguments.of(
+            new ParsedDocument(
+                WriteOperation.CREATE,
+                Map.of("enabled", true, "target", resolved, "timezone", "Europe/Berlin")),
+            "Europe/Berlin",
+            target(resolved)));
   }
 
   @Test

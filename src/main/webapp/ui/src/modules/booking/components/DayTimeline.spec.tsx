@@ -3,7 +3,8 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { DayTimeline } from "./DayTimeline";
+import { currentWallClock } from "@/modules/booking/domain/bookingTime";
+import { DayTimeline, type DayTimelineEvent } from "./DayTimeline";
 import { LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { DayTimelineStory } from "./DayTimeline.story";
 import { DayTimelinePage } from "./pageObjects/DayTimelinePage";
@@ -78,6 +79,114 @@ describe("DayTimeline expanded cards", () => {
     await timeline.close("09:45–10:45", "Electron microscope · Grace Hopper");
     await expect.element(timeline.popup("09:45–10:45")).not.toBeInTheDocument();
     await expect.element(timeline.trigger("Electron microscope · Grace Hopper")).toHaveFocus();
+  });
+
+  test("accepts a named timezone alias in Temporal and instrument-time tooltip", async () => {
+    const startInstant = "2026-08-17T07:30:00Z";
+    const endInstant = "2026-08-17T08:30:00Z";
+    const event: DayTimelineEvent = {
+      id: "cross-zone",
+      kind: "booking",
+      privacy: "full",
+      title: "Cross-zone booking",
+      bookedBy: "Ada Lovelace",
+      item: { name: "Confocal microscope", globalId: "IN123" },
+      canEdit: true,
+      notes: "Cross-zone run",
+      startMinute: 9 * 60 + 30,
+      endMinute: 10 * 60 + 30,
+      startInstant,
+      endInstant,
+      instrumentTimeZone: "Asia/Calcutta",
+    };
+    render(
+      <DayTimeline
+        date="2026-08-17"
+        timezone="Europe/Berlin"
+        events={[event]}
+        startWindow={7 * 60}
+        endWindow={12 * 60}
+        showZoomControls={false}
+        itemName="Test instruments"
+      />,
+    );
+
+    const trigger = timeline.trigger("Cross-zone booking");
+    await trigger.hover();
+    const tooltip = page.getByRole("tooltip");
+    await expect.element(tooltip).toBeVisible();
+    const expectedInstrumentRange = new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "shortOffset",
+      timeZone: "Asia/Calcutta",
+    });
+    const startDate = new Date(startInstant);
+    const endDate = new Date(endInstant);
+    await expect
+      .element(tooltip)
+      .toHaveTextContent(
+        `Instrument time: ${expectedInstrumentRange.format(startDate)} – ${expectedInstrumentRange.format(endDate)} (Asia/Calcutta)`,
+      );
+    expect(currentWallClock(startInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 13 * 60 });
+    expect(currentWallClock(endInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 14 * 60 });
+    await expect.element(tooltip).toHaveTextContent("Asia/Calcutta");
+    await expect.element(tooltip).not.toHaveTextContent("Cross-zone run");
+
+    await trigger.click();
+    const booking = timeline.popup("09:30–10:30");
+    await expect.element(booking).toBeVisible();
+    await expect.element(booking.getByText("Cross-zone run")).toBeVisible();
+  });
+
+  test("shows both offsets when an instrument booking crosses the repeated DST hour", async () => {
+    const startInstant = "2026-11-01T05:30:00Z";
+    const endInstant = "2026-11-01T06:30:00Z";
+    const event: DayTimelineEvent = {
+      id: "dst-booking",
+      kind: "booking",
+      privacy: "full",
+      title: "DST booking",
+      bookedBy: "Ada Lovelace",
+      item: { name: "Confocal microscope", globalId: "IN123" },
+      canEdit: false,
+      startMinute: 6 * 60 + 30,
+      endMinute: 7 * 60 + 30,
+      startInstant,
+      endInstant,
+      instrumentTimeZone: "America/New_York",
+    };
+    render(
+      <DayTimeline
+        date="2026-11-01"
+        timezone="Europe/Berlin"
+        events={[event]}
+        startWindow={6 * 60}
+        endWindow={9 * 60}
+        showZoomControls={false}
+        itemName="Test instruments"
+      />,
+    );
+
+    await timeline.trigger("DST booking").hover();
+    const tooltip = page.getByRole("tooltip");
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "shortOffset",
+      timeZone: "America/New_York",
+    });
+    await expect.element(tooltip).toHaveTextContent(formatter.format(new Date(startInstant)));
+    await expect.element(tooltip).toHaveTextContent(formatter.format(new Date(endInstant)));
+    await expect.element(tooltip).toHaveTextContent("GMT-4");
+    await expect.element(tooltip).toHaveTextContent("GMT-5");
+    await expect.element(tooltip).toHaveTextContent("America/New_York");
   });
 
   test("closes on outside press and Escape while preserving event privacy rules", async () => {

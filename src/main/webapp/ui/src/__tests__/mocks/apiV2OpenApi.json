@@ -943,6 +943,17 @@
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
               "description" : "A logged-in session is required."
             }
+          },
+          "timezone" : {
+            "description" : "Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.",
+            "example" : "Europe/Berlin",
+            "maxLength" : 255,
+            "type" : "string",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
           }
         },
         "required" : [ "target" ],
@@ -1632,10 +1643,9 @@
             "type" : "object"
           },
           "timezone" : {
-            "description" : "Read-only scheduling timezone used for opening hours and booking policy.",
+            "description" : "Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.",
             "example" : "Europe/Berlin",
             "maxLength" : 255,
-            "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
