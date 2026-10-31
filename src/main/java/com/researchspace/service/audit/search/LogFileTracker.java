@@ -150,7 +150,7 @@ public class LogFileTracker implements ILogResourceTracker {
     }
   }
 
-  private Pattern timestamp = Pattern.compile("^" + LogLineParser.LOG_TIME_STAMPPATTERN);
+  private Pattern timestamp = Pattern.compile("^([^\\-]+)");
 
   private Date getStartDate(File f) throws IOException, ParseException {
     SimpleDateFormat logTimeStampFormat = new SimpleDateFormat(BasicLogQuerySearcher.DATE_FORMAT);

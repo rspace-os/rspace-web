@@ -1,0 +1,938 @@
+package com.researchspace.api.v2.resource;
+
+import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditData;
+import com.researchspace.model.audittrail.AuditDomain;
+import com.researchspace.model.audittrail.HistoricData;
+import com.researchspace.service.audit.search.AuditLogLineFormat;
+import com.researchspace.service.audit.search.AuditTrailActorVisibility;
+import com.researchspace.service.audit.search.AuditTrailSearchElement;
+import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import com.researchspace.service.audit.search.IAuditTrailSearchConfig;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import lombok.Getter;
+import org.apache.commons.io.input.BoundedInputStream;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+/** Performs a strict, bounded and retryable scan of the audit log for REST API v2. */
+@Component
+public final class ApiV2AuditStrictSearch {
+
+  private static final String OPERATE_AS_DELIMITER = "->";
+  private static final Pattern AUDIT_PREFIX = Pattern.compile("^.*?-\\s+domain:");
+  private static final Pattern LOG_LINE_TIMESTAMP = Pattern.compile("^(.*?)-");
+  private static final DateTimeFormatter TIMESTAMP_FORMAT =
+      new DateTimeFormatterBuilder()
+          .parseCaseSensitive()
+          .appendPattern("dd MMM uuuu HH:mm:ss,SSS")
+          .toFormatter(Locale.ENGLISH)
+          .withResolverStyle(ResolverStyle.STRICT);
+  private static final Set<OpenOption> READ_OPTIONS =
+      Set.of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+  private static final int TAIL_READ_BLOCK_SIZE = 8192;
+
+  private final Path logDirectory;
+  private final String filePrefix;
+  private final ZoneId logZone;
+  private final AuditTrailActorVisibility actorVisibility;
+  private final ReadObserver observer;
+  private final Semaphore scanSlots;
+  private final int cacheEntries;
+  private final long cacheNanos;
+  private final Map<CacheKey, CachedScan> cache = new LinkedHashMap<>(16, 0.75f, true);
+
+  public ApiV2AuditStrictSearch(
+      @Value("${logging.dir:.}") String loggingDirectory,
+      AuditTrailActorVisibility actorVisibility) {
+    this(
+        Path.of(loggingDirectory),
+        "RSLogs",
+        ZoneId.systemDefault(),
+        actorVisibility,
+        ReadObserver.NONE);
+  }
+
+  @Autowired
+  public ApiV2AuditStrictSearch(
+      @Value("${logging.dir:.}") String loggingDirectory,
+      AuditTrailActorVisibility actorVisibility,
+      @Value("${api.v2.audit.concurrentScans:2}") int concurrentScans,
+      @Value("${api.v2.audit.cacheEntries:32}") int cacheEntries,
+      @Value("${api.v2.audit.cacheSeconds:10}") int cacheSeconds) {
+    this(
+        Path.of(loggingDirectory),
+        "RSLogs",
+        ZoneId.systemDefault(),
+        actorVisibility,
+        ReadObserver.NONE,
+        concurrentScans,
+        cacheEntries,
+        cacheSeconds);
+  }
+
+  ApiV2AuditStrictSearch(
+      Path logDirectory,
+      String filePrefix,
+      ZoneId logZone,
+      AuditTrailActorVisibility actorVisibility,
+      ReadObserver observer) {
+    this(logDirectory, filePrefix, logZone, actorVisibility, observer, 2, 32, 10);
+  }
+
+  ApiV2AuditStrictSearch(
+      Path logDirectory,
+      String filePrefix,
+      ZoneId logZone,
+      AuditTrailActorVisibility actorVisibility,
+      ReadObserver observer,
+      int concurrentScans,
+      int cacheEntries,
+      int cacheSeconds) {
+    if (concurrentScans < 1 || cacheEntries < 0 || cacheSeconds < 0) {
+      throw new IllegalArgumentException("Invalid audit scan or cache limits");
+    }
+    this.scanSlots = new Semaphore(concurrentScans);
+    this.cacheEntries = cacheEntries;
+    this.cacheNanos = TimeUnit.SECONDS.toNanos(cacheSeconds);
+    this.logDirectory = logDirectory;
+    this.filePrefix = filePrefix;
+    this.logZone = logZone;
+    this.actorVisibility = actorVisibility;
+    this.observer = observer;
+  }
+
+  /**
+   * Returns at most {@code ceiling + 1} authorized events from one consistent file-manifest
+   * attempt. A second inconsistent attempt fails without returning accumulated results.
+   */
+  public List<AuditTrailSearchResult> search(Request request) {
+    Objects.requireNonNull(request, "Audit search request");
+    AuditTrailSearchElement restricted =
+        request.bypassActorDirectory()
+            ? new AuditTrailSearchElement(new VisibilityConfig(request))
+            : actorVisibility.restrict(new VisibilityConfig(request), request.actor());
+    if (!request.bypassActorDirectory()
+        && restricted.getUsernames().isEmpty()
+        && !actorVisibility.isSysAdmin(request.actor())) {
+      return List.of();
+    }
+
+    // Bound file enumeration and cache lookups too, so saturation never creates a waiting queue.
+    if (!scanSlots.tryAcquire()) {
+      throw failure("audit-capacity", 0, null);
+    }
+    try {
+      var manifest = enumerate();
+      CacheKey key =
+          new CacheKey(
+              request.fromInclusive(),
+              request.toExclusive(),
+              Set.copyOf(restricted.getDomains()),
+              Set.copyOf(restricted.getActions()),
+              request.oid(),
+              request.actor().getId(),
+              request.actor().getUsername(),
+              Set.copyOf(restricted.getUsernames()),
+              request.bypassActorDirectory(),
+              request.ceiling(),
+              request.search(),
+              request.searchableFields(),
+              request.relatedIdentifierFields(),
+              request.descriptionsSafe());
+      CachedScan hit;
+      synchronized (cache) {
+        cache
+            .entrySet()
+            .removeIf(entry -> System.nanoTime() - entry.getValue().created() >= cacheNanos);
+        hit = cache.get(key);
+      }
+      if (hit != null) {
+        try {
+          // SEARCH auditing appends to today's log. Reuse only after certifying that every
+          // appended event is outside this completed-day snapshot, regardless of its filters.
+          certify(hit.manifest(), request);
+          return hit.results();
+        } catch (StrictReadException ex) {
+          org.slf4j.LoggerFactory.getLogger(ApiV2AuditStrictSearch.class)
+              .warn("Invalidating audit cache after a file change", ex);
+          synchronized (cache) {
+            cache.remove(key);
+          }
+        }
+      }
+      StrictReadException firstFailure;
+      try {
+        return attempt(request, restricted, 1, key, manifest);
+      } catch (StrictReadException ex) {
+        firstFailure = ex;
+      }
+      try {
+        // A retried scan may have a different manifest. Do not cache it under the original key.
+        return attempt(request, restricted, 2, null, null);
+      } catch (StrictReadException ex) {
+        throw new StrictReadException(ex.getSafeFile(), ex.getLineNumber(), firstFailure);
+      }
+    } finally {
+      scanSlots.release();
+    }
+  }
+
+  private List<AuditTrailSearchResult> attempt(
+      Request request,
+      AuditTrailSearchElement restricted,
+      int attemptNumber,
+      CacheKey key,
+      Map<Path, FileManifest> originalManifest) {
+    Map<Path, FileManifest> manifest = enumerate();
+    observer.afterManifest(attemptNumber, List.copyOf(manifest.values()));
+    List<AuditTrailSearchResult> results = new ArrayList<>();
+    for (FileManifest file : manifest.values()) {
+      if (!overlaps(file, request)) {
+        continue;
+      }
+      observer.beforeOpen(attemptNumber, file);
+      scan(file, request, restricted, results);
+      if (results.size() > request.ceiling()) {
+        return List.copyOf(results);
+      }
+    }
+    observer.afterRead(attemptNumber, List.copyOf(manifest.values()));
+    certify(manifest, request);
+    List<AuditTrailSearchResult> completed = List.copyOf(results);
+    if (key != null
+        && originalManifest.equals(manifest)
+        && manifest.equals(enumerate())
+        && cacheEntries > 0
+        && cacheNanos > 0) {
+      synchronized (cache) {
+        cache.put(key, new CachedScan(System.nanoTime(), completed, Map.copyOf(manifest)));
+        while (cache.size() > cacheEntries) {
+          cache.remove(cache.keySet().iterator().next());
+        }
+      }
+    }
+    return completed;
+  }
+
+  private record CacheKey(
+      Instant from,
+      Instant to,
+      Set<AuditDomain> domains,
+      Set<AuditAction> actions,
+      String oid,
+      Long actorId,
+      String actorName,
+      Set<String> visibleActors,
+      boolean bypassDirectory,
+      int ceiling,
+      String text,
+      Set<String> searchableFields,
+      Set<String> relatedFields,
+      boolean safeDescriptions) {}
+
+  private record CachedScan(
+      long created, List<AuditTrailSearchResult> results, Map<Path, FileManifest> manifest) {}
+
+  private Map<Path, FileManifest> enumerate() {
+    Map<Path, FileManifest> manifests = new LinkedHashMap<>();
+    Set<Path> canonicalPaths = new HashSet<>();
+    try (DirectoryStream<Path> entries = Files.newDirectoryStream(logDirectory)) {
+      List<Path> matches = new ArrayList<>();
+      for (Path entry : entries) {
+        if (entry.getFileName().toString().startsWith(filePrefix)) {
+          matches.add(entry);
+        }
+      }
+      matches.sort(Comparator.comparing(path -> path.getFileName().toString()));
+      for (Path path : matches) {
+        BasicFileAttributes attributes = attributes(path);
+        if (!attributes.isRegularFile()) {
+          throw failure(path.getFileName().toString(), 0, null);
+        }
+        Path canonical = path.toRealPath(LinkOption.NOFOLLOW_LINKS);
+        if (!canonicalPaths.add(canonical)) {
+          throw failure(path.getFileName().toString(), 0, null);
+        }
+        manifests.put(
+            canonical,
+            new FileManifest(
+                canonical,
+                canonical.getFileName().toString(),
+                attributes.fileKey(),
+                attributes.size(),
+                attributes.lastModifiedTime()));
+      }
+      return manifests;
+    } catch (StrictReadException ex) {
+      throw ex;
+    } catch (IOException | SecurityException ex) {
+      throw new StrictReadException(logDirectory.getFileName().toString(), 0, ex);
+    }
+  }
+
+  private boolean overlaps(FileManifest file, Request request) {
+    Optional<BoundaryLine> firstBoundary = firstNonblankLine(file);
+    if (firstBoundary.isEmpty()) {
+      return false;
+    }
+    Instant first = parseBoundaryTimestamp(firstBoundary.get(), file, false);
+    Instant last = parseBoundaryTimestamp(lastNonblankLine(file), file, true);
+    return last.compareTo(request.fromInclusive()) >= 0
+        && first.compareTo(request.toExclusive()) < 0;
+  }
+
+  private Optional<BoundaryLine> firstNonblankLine(FileManifest file) {
+    try (FileChannel channel = open(file);
+        InputStream input = boundedInputStream(channel, file.size());
+        BufferedReader reader =
+            new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+      int lineNumber = 0;
+      String line;
+      while ((line = reader.readLine()) != null) {
+        lineNumber++;
+        if (!line.isBlank()) {
+          return Optional.of(new BoundaryLine(line, lineNumber));
+        }
+      }
+      return Optional.empty();
+    } catch (StrictReadException ex) {
+      throw ex;
+    } catch (IOException | SecurityException ex) {
+      throw failure(file.safeName(), 0, ex);
+    }
+  }
+
+  private BoundaryLine lastNonblankLine(FileManifest file) {
+    if (file.size() == 0) {
+      throw failure(file.safeName(), 1, null);
+    }
+    try (FileChannel channel = open(file)) {
+      long position = file.size();
+      ByteBuffer block = ByteBuffer.allocate(TAIL_READ_BLOCK_SIZE);
+      ByteArrayOutputStream reversed = new ByteArrayOutputStream();
+      boolean firstBlock = true;
+      while (position > 0) {
+        int blockSize = (int) Math.min(TAIL_READ_BLOCK_SIZE, position);
+        position -= blockSize;
+        readBlock(channel, block, position, blockSize);
+        if (firstBlock && block.get(blockSize - 1) != '\n') {
+          throw failure(file.safeName(), 0, null);
+        }
+        firstBlock = false;
+        for (int index = blockSize - 1; index >= 0; index--) {
+          byte value = block.get(index);
+          if (value == '\n') {
+            String candidate = reverseUtf8(reversed);
+            if (!candidate.isBlank()) {
+              // Line 0 means unknown; counting a tail line would scan excluded files in full.
+              return new BoundaryLine(candidate, 0);
+            }
+            reversed.reset();
+          } else if (value != '\r') {
+            reversed.write(value);
+          }
+        }
+      }
+      String candidate = reverseUtf8(reversed);
+      if (!candidate.isBlank()) {
+        return new BoundaryLine(candidate, 1);
+      }
+      throw failure(file.safeName(), 1, null);
+    } catch (StrictReadException ex) {
+      throw ex;
+    } catch (IOException | SecurityException ex) {
+      throw failure(file.safeName(), 0, ex);
+    }
+  }
+
+  private static void readBlock(FileChannel channel, ByteBuffer block, long position, int size)
+      throws IOException {
+    block.clear();
+    block.limit(size);
+    while (block.hasRemaining()) {
+      int read = channel.read(block, position + block.position());
+      if (read <= 0) {
+        throw new IOException("Audit file changed during read");
+      }
+    }
+  }
+
+  private static String reverseUtf8(ByteArrayOutputStream reversed) {
+    byte[] bytes = reversed.toByteArray();
+    for (int left = 0, right = bytes.length - 1; left < right; left++, right--) {
+      byte swap = bytes[left];
+      bytes[left] = bytes[right];
+      bytes[right] = swap;
+    }
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  private static byte readByte(FileChannel channel, long position) throws IOException {
+    ByteBuffer one = ByteBuffer.allocate(1);
+    int read = channel.read(one, position);
+    if (read != 1) {
+      throw new IOException("Audit file changed during read");
+    }
+    return one.array()[0];
+  }
+
+  private Instant parseBoundaryTimestamp(BoundaryLine boundary, FileManifest file, boolean latest) {
+    Matcher matcher = LOG_LINE_TIMESTAMP.matcher(boundary.content());
+    if (!matcher.find()) {
+      throw failure(file.safeName(), boundary.lineNumber(), null);
+    }
+    try {
+      List<Instant> candidates = timestamps(matcher.group(1));
+      return candidates.get(latest ? candidates.size() - 1 : 0);
+    } catch (DateTimeException ex) {
+      throw failure(file.safeName(), boundary.lineNumber(), ex);
+    }
+  }
+
+  private void scan(
+      FileManifest file,
+      Request request,
+      AuditTrailSearchElement restricted,
+      List<AuditTrailSearchResult> results) {
+    try (FileChannel channel = open(file);
+        InputStream input = boundedInputStream(channel, file.size());
+        BufferedReader reader =
+            new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+      int lineNumber = 0;
+      String line;
+      while ((line = reader.readLine()) != null) {
+        lineNumber++;
+        if (line.isBlank()) {
+          continue;
+        }
+        Optional<ParsedLine> parsed = parseAuditLine(line, file, lineNumber);
+        if (parsed.isPresent() && matches(parsed.get(), request, restricted, file, lineNumber)) {
+          results.add(parsed.get().result());
+          if (results.size() > request.ceiling()) {
+            return;
+          }
+        }
+      }
+    } catch (StrictReadException ex) {
+      throw ex;
+    } catch (IOException | SecurityException ex) {
+      throw failure(file.safeName(), 0, ex);
+    }
+  }
+
+  private Optional<ParsedLine> parseAuditLine(String line, FileManifest file, int lineNumber) {
+    var fields =
+        AuditLogLineFormat.parse(
+            line,
+            malformed -> {
+              if (AUDIT_PREFIX.matcher(malformed).find()) {
+                throw failure(file.safeName(), lineNumber, null);
+              }
+            });
+    if (fields.isEmpty()) {
+      return Optional.empty();
+    }
+    var parsed = fields.get();
+    try {
+      List<Instant> candidates = timestamps(parsed.timestamp());
+      Instant timestamp = candidates.get(0);
+      AuditDomain domain = AuditDomain.valueOf(parsed.domain());
+      AuditAction action = AuditAction.valueOf(parsed.action());
+      AuditData data = AuditData.fromJson(parsed.data());
+      if (data == null) {
+        throw failure(file.safeName(), lineNumber, null);
+      }
+      HistoricData event =
+          new HistoricData(domain, action, parsed.fullName(), data, parsed.username());
+      event.setTimestamp(Date.from(timestamp));
+      if (parsed.description() != null) {
+        event.setDescription(parsed.description());
+      }
+      return Optional.of(
+          new ParsedLine(
+              timestamp,
+              candidates,
+              domain,
+              action,
+              parsed.username(),
+              new AuditTrailSearchResult(event, timestamp.toEpochMilli())));
+    } catch (DateTimeException | IllegalArgumentException ex) {
+      throw failure(file.safeName(), lineNumber, ex);
+    }
+  }
+
+  private List<Instant> timestamps(String value) {
+    LocalDateTime localTimestamp = LocalDateTime.parse(value.trim(), TIMESTAMP_FORMAT);
+    List<ZoneOffset> validOffsets = logZone.getRules().getValidOffsets(localTimestamp);
+    if (validOffsets.isEmpty()) {
+      throw new DateTimeException("Audit timestamp falls in a clock gap");
+    }
+    return validOffsets.stream().map(localTimestamp::toInstant).sorted().toList();
+  }
+
+  private static boolean matches(
+      ParsedLine line,
+      Request request,
+      AuditTrailSearchElement restricted,
+      FileManifest file,
+      int lineNumber) {
+    if (!restricted.getDomains().contains(line.domain())
+        || !restricted.getActions().contains(line.action())
+        || !identifierMatches(line, request)
+        || !actorMatches(restricted, line.username())
+        || !textMatches(line, request)) {
+      return false;
+    }
+    boolean included = inWindow(line.timestamp(), request);
+    if (line.candidates().stream()
+        .anyMatch(candidate -> inWindow(candidate, request) != included)) {
+      throw failure(
+          file.safeName(),
+          lineNumber,
+          new DateTimeException("Ambiguous audit timestamp affects inclusion"));
+    }
+    return included;
+  }
+
+  private static boolean inWindow(Instant timestamp, Request request) {
+    return !timestamp.isBefore(request.fromInclusive())
+        && timestamp.isBefore(request.toExclusive());
+  }
+
+  private static boolean identifierMatches(ParsedLine line, Request request) {
+    if (request.oid() == null) {
+      return true;
+    }
+    Map<String, Object> data = line.result().getEvent().getData().getData();
+    return request.oid().equals(data.get("id"))
+        || request.relatedIdentifierFields().stream()
+            .anyMatch(field -> request.oid().equals(data.get(field)));
+  }
+
+  private static boolean textMatches(ParsedLine line, Request request) {
+    String search = request.search();
+    if (search == null) {
+      return true;
+    }
+    HistoricData event = line.result().getEvent();
+    return containsIgnoreCase(line.username(), search)
+        || containsIgnoreCase(event.getFullName(), search)
+        || (request.descriptionsSafe() && containsIgnoreCase(event.getDescription(), search))
+        || containsIgnoreCase(line.action().name(), search)
+        || containsData(event.getData().getData(), request.searchableFields(), search);
+  }
+
+  private static boolean containsIgnoreCase(String value, String search) {
+    return value != null && value.toLowerCase(Locale.ROOT).contains(search);
+  }
+
+  private static boolean containsData(Map<String, Object> data, Set<String> fields, String search) {
+    return data.entrySet().stream()
+        .filter(entry -> fields.contains(entry.getKey()))
+        .anyMatch(
+            entry ->
+                containsIgnoreCase(entry.getKey(), search)
+                    || containsValue(entry.getValue(), search));
+  }
+
+  private static boolean containsValue(Object value, String search) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Map<?, ?> map) {
+      return map.entrySet().stream()
+          .anyMatch(
+              entry ->
+                  containsIgnoreCase(String.valueOf(entry.getKey()), search)
+                      || containsValue(entry.getValue(), search));
+    }
+    if (value instanceof Iterable<?> iterable) {
+      for (Object item : iterable) {
+        if (containsValue(item, search)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return containsIgnoreCase(value.toString(), search);
+  }
+
+  private static boolean actorMatches(AuditTrailSearchElement restricted, String username) {
+    if (restricted.getUsernames().isEmpty()) {
+      return true;
+    }
+    if (restricted.getUsernames().contains(username)) {
+      return true;
+    }
+    if (username.contains(OPERATE_AS_DELIMITER)) {
+      String[] operatedAs = username.split(OPERATE_AS_DELIMITER, 2);
+      return restricted.getUsernames().contains(operatedAs[0])
+          || restricted.getUsernames().contains(operatedAs[1]);
+    }
+    return false;
+  }
+
+  private void certify(Map<Path, FileManifest> original, Request request) {
+    // The scan reads original sizes only. Files must keep their keys and never shrink; unchanged
+    // sizes require unchanged mtimes. Appends must end in a newline, with every audit event at or
+    // after toExclusive regardless of other filters. After append validation, size, mtime and key
+    // must still match the certification manifest.
+    Map<Path, FileManifest> current = enumerate();
+    if (!original.keySet().equals(current.keySet())) {
+      throw new StrictReadException("audit-manifest", 0, null);
+    }
+    for (Map.Entry<Path, FileManifest> entry : original.entrySet()) {
+      FileManifest before = entry.getValue();
+      FileManifest after = current.get(entry.getKey());
+      if (!sameIdentity(before, after) || after.size() < before.size()) {
+        throw failure(before.safeName(), 0, null);
+      }
+      if (after.size() == before.size()) {
+        if (!after.modifiedTime().equals(before.modifiedTime())) {
+          throw failure(before.safeName(), 0, null);
+        }
+        continue;
+      }
+      validateAppend(before, after, request);
+    }
+  }
+
+  private void validateAppend(FileManifest before, FileManifest after, Request request) {
+    try (FileChannel channel = open(after)) {
+      channel.position(before.size());
+      long appendedSize = after.size() - before.size();
+      try (InputStream input = boundedInputStream(channel, appendedSize);
+          BufferedReader reader =
+              new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+        int lineNumber = 0;
+        String line;
+        while ((line = reader.readLine()) != null) {
+          lineNumber++;
+          if (line.isBlank()) {
+            continue;
+          }
+          Optional<ParsedLine> parsed = parseAuditLine(line, after, lineNumber);
+          if (parsed.isPresent() && parsed.get().timestamp().isBefore(request.toExclusive())) {
+            throw failure(after.safeName(), lineNumber, null);
+          }
+        }
+      }
+      BasicFileAttributes finalAttributes = attributes(after.path());
+      if (finalAttributes.size() != after.size()
+          || !finalAttributes.lastModifiedTime().equals(after.modifiedTime())
+          || !Objects.equals(finalAttributes.fileKey(), after.fileKey())) {
+        throw failure(after.safeName(), 0, null);
+      }
+      if (appendedSize > 0 && readByte(channel, after.size() - 1) != '\n') {
+        throw failure(after.safeName(), 0, null);
+      }
+    } catch (StrictReadException ex) {
+      throw ex;
+    } catch (IOException | SecurityException ex) {
+      throw failure(after.safeName(), 0, ex);
+    }
+  }
+
+  private static boolean sameIdentity(FileManifest before, FileManifest after) {
+    return before.fileKey() != null
+        && after.fileKey() != null
+        && Objects.equals(before.fileKey(), after.fileKey());
+  }
+
+  private static BasicFileAttributes attributes(Path path) throws IOException {
+    return Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+  }
+
+  private static FileChannel open(FileManifest file) throws IOException {
+    try {
+      Set<PosixFilePermission> permissions =
+          Files.getPosixFilePermissions(file.path(), LinkOption.NOFOLLOW_LINKS);
+      if (!permissions.contains(PosixFilePermission.OWNER_READ)
+          && !permissions.contains(PosixFilePermission.GROUP_READ)
+          && !permissions.contains(PosixFilePermission.OTHERS_READ)) {
+        throw new IOException("Audit file has no POSIX read permissions");
+      }
+    } catch (UnsupportedOperationException ignored) {
+      // The provider does not expose POSIX permissions; FileChannel.open remains authoritative.
+    }
+    return FileChannel.open(file.path(), READ_OPTIONS);
+  }
+
+  private static InputStream boundedInputStream(FileChannel channel, long maxCount)
+      throws IOException {
+    // validateAppend checks the channel's final byte after the reader closes.
+    return BoundedInputStream.builder()
+        .setInputStream(Channels.newInputStream(channel))
+        .setMaxCount(maxCount)
+        .setPropagateClose(false)
+        .get();
+  }
+
+  private static StrictReadException failure(String safeName, int lineNumber, Throwable cause) {
+    return new StrictReadException(safeName, lineNumber, cause);
+  }
+
+  /** Exact filters for one bounded scan. */
+  public record Request(
+      Instant fromInclusive,
+      Instant toExclusive,
+      Set<AuditDomain> domains,
+      Set<AuditAction> actions,
+      String oid,
+      Set<String> requestedUsernames,
+      User actor,
+      int ceiling,
+      boolean bypassActorDirectory,
+      String search,
+      Set<String> searchableFields,
+      Set<String> relatedIdentifierFields,
+      boolean descriptionsSafe) {
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory,
+        String search,
+        Set<String> searchableFields,
+        Set<String> relatedIdentifierFields) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          search,
+          searchableFields,
+          relatedIdentifierFields,
+          false);
+    }
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          false,
+          null,
+          Set.of(),
+          Set.of());
+    }
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          null,
+          Set.of(),
+          Set.of());
+    }
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory,
+        String search) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          search,
+          Set.of(),
+          Set.of());
+    }
+
+    public Request {
+      Objects.requireNonNull(fromInclusive, "Audit start");
+      Objects.requireNonNull(toExclusive, "Audit end");
+      Objects.requireNonNull(domains, "Audit domains");
+      Objects.requireNonNull(actions, "Audit actions");
+      Objects.requireNonNull(requestedUsernames, "Audit usernames");
+      Objects.requireNonNull(actor, "Audit actor");
+      if (!fromInclusive.isBefore(toExclusive)) {
+        throw new IllegalArgumentException("Audit interval must be non-empty");
+      }
+      if (ceiling < 1) {
+        throw new IllegalArgumentException("Audit result ceiling must be positive");
+      }
+      domains = Set.copyOf(domains);
+      actions = Set.copyOf(actions);
+      requestedUsernames = Set.copyOf(requestedUsernames);
+      search = search == null ? null : search.trim().toLowerCase(Locale.ROOT);
+      search = search == null || search.isBlank() ? null : search;
+      searchableFields = Set.copyOf(searchableFields);
+      relatedIdentifierFields = Set.copyOf(relatedIdentifierFields);
+    }
+  }
+
+  record FileManifest(
+      Path path, String safeName, Object fileKey, long size, FileTime modifiedTime) {}
+
+  interface ReadObserver {
+    ReadObserver NONE = new ReadObserver() {};
+
+    default void afterManifest(int attempt, List<FileManifest> manifest) {}
+
+    default void beforeOpen(int attempt, FileManifest file) {}
+
+    default void afterRead(int attempt, List<FileManifest> manifest) {}
+  }
+
+  static final class StrictReadException extends RuntimeException {
+    @Getter private final String safeFile;
+    @Getter private final int lineNumber;
+
+    StrictReadException(String safeFile, int lineNumber, Throwable cause) {
+      super("Cannot consistently read audit file " + safeFile + " at line " + lineNumber, cause);
+      this.safeFile = safeFile;
+      this.lineNumber = lineNumber;
+    }
+  }
+
+  private record BoundaryLine(String content, int lineNumber) {}
+
+  private record ParsedLine(
+      Instant timestamp,
+      List<Instant> candidates,
+      AuditDomain domain,
+      AuditAction action,
+      String username,
+      AuditTrailSearchResult result) {}
+
+  private static final class VisibilityConfig implements IAuditTrailSearchConfig {
+    private final Request request;
+
+    private VisibilityConfig(Request request) {
+      this.request = request;
+    }
+
+    @Override
+    public Date getDateFrom() {
+      return null;
+    }
+
+    @Override
+    public void setDateFrom(Date ignored) {}
+
+    @Override
+    public Date getDateTo() {
+      return null;
+    }
+
+    @Override
+    public void setDateTo(Date ignored) {}
+
+    @Override
+    public Set<String> getUsernames() {
+      return request.requestedUsernames();
+    }
+
+    @Override
+    public Set<AuditDomain> getDomains() {
+      return request.domains();
+    }
+
+    @Override
+    public Set<AuditAction> getActions() {
+      return request.actions();
+    }
+
+    @Override
+    public String getOid() {
+      return request.oid();
+    }
+  }
+}

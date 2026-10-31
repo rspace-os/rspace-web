@@ -355,6 +355,52 @@ Set `exposedOperations` in `ApiV2ResourceSpec` to choose HTTP routes and OpenAPI
 access checks, including for anonymous callers. For read-only collections, expose `LIST`, `COUNT`,
 and `READ` and use a read-only access policy.
 
+### Default audit route
+
+Each registered resource also has this route:
+
+| Method and route | Result |
+| --- | --- |
+| `GET /api/v2/widgets/{id}/audit` | A page of audit events for one readable resource. |
+
+The caller must authenticate with an API key or OAuth bearer token and have resource read access.
+The audit handler applies its normal subject visibility rules.
+
+The list route accepts `page`, `limit`, `start`, `end`, repeated `actions`, and an optional
+`snapshotDate`/`snapshotFingerprint` pair. Pagination is one-based. The first page omits the pair;
+the response selects the latest completed UTC day permitted by `end` and returns both values.
+The requested `end` selects completed UTC days, rather than an arbitrary event cutoff.
+For compatibility, an `end` at exactly the final millisecond of a UTC day includes that day.
+Every later page sends both values unchanged. The response's `totalDocs` is the number of matching
+events for that snapshot. To request a minimal page when only the total is needed, use
+`GET /api/v2/widgets/{id}/audit?limit=1` and read `totalDocs`.
+
+Use `q` for case-insensitive literal text search on an audit route.
+A search covers at most 183 days. Wider windows return `400` and
+`errors.api.v2.audit.range.tooWide` to avoid truncated results that look complete. Page longer
+periods one window at a time. With no dates, the server uses the last 183 days.
+`start` after `end` is `400`.
+
+The list is a daily bounded-consistency snapshot over the exact half-open interval from `start`
+inclusive to midnight after `snapshotDate` exclusive in UTC. The server filters unreadable payload fields, assigns
+each event a deterministic `eventId`, sorts the complete result, fingerprints it, and only then
+slices the requested page. Exact duplicate events remain separate rows. Neither hash is a signature
+or evidence that the source log has not been changed.
+
+If the bounded result changes between pages, the server returns `409` and the client must restart
+from page one. A malformed, unreadable, or unstable eligible audit file returns `503`; the server
+does not return a partial page. A result above `api.v2.audit.resultCeiling` returns `400` and the
+client must choose a narrower date range. The default is 1,000.
+
+The framework reads `@AuditTrailData` and the single `@AuditTrailIdentifier` method from the entity.
+A resource without this metadata returns an empty audit result. Use a stable identifier that is
+unique across audit domains. An entity in the `UNKNOWN` audit domain must include the resource name
+in its audit identifier.
+
+The response contains only audit properties with matching readable REST API v2 fields or
+relationships. Excluding the audit identifier and audit-only properties prevents field-access
+bypasses.
+
 ## Resource configuration
 
 ### `@ApiV2ResourceDefinition`
@@ -774,3 +820,37 @@ binding assignments to `ReplaceResourceAccessRequest`. Malformed fields return
 field names and array indices, such as `assignments[0].role`. All rows are
 validated before the named-assignment limit; `audience:all-users` does not count
 toward that limit.
+
+The v1 Audit Trail page and v2 audit search share the audit line format, including usernames
+containing `#`, operate-as usernames, empty descriptions, and the legacy `COPY` action.
+V1 skips malformed lines and retains its lenient timestamp parsing in the JVM default zone.
+V2 rejects malformed audit lines and uses strict, zone-aware timestamps.
+
+V2 first authorizes access to the requested record, including lifecycle-hidden records only
+when the resource's audit operations allow it. It filters historical payloads to fields the
+caller can read now. Descriptions are omitted by default. A resource may override
+`ResourceOperations.auditDescriptionsSafe()` only when all its historical descriptions are safe
+for every reader. Text search follows the same field and description rules, so hidden values
+cannot be discovered through matching or counts. V1 retains its existing actor-directory search
+and payload/description behavior. V2 exposes only completed UTC days and returns `503` rather
+than silently skipping unreadable or malformed eligible audit lines.
+
+Both readers use `AuditLogLineFormat` for anchored line syntax, username characters, empty
+descriptions and legacy action names. They deliberately differ in malformed-line and timestamp
+policy. V1's `LogLineParser` skips invalid lines and parses dates leniently in the JVM default
+zone. V2's `ApiV2AuditStrictSearch` rejects clock gaps and malformed audit lines. During a DST
+overlap it checks record, actor, action and visible text first. A matching event returns `503`
+only if its two candidate instants differ on inclusion in the requested interval. Otherwise it
+uses the earlier instant. File boundaries use the earliest first and latest last candidate so
+an ambiguous boundary cannot hide a matching event.
+
+V2 scans are limited by `api.v2.audit.concurrentScans` with a default of 2; excess requests return
+`503` immediately. `api.v2.audit.cacheEntries` defaults to 32 and `api.v2.audit.cacheSeconds` to 10;
+either may be zero to disable caching. The cache stores at most the bounded scan result per entry,
+not pages. Keys include the interval, resource audit identity, filters, caller, current actor
+visibility, readable search fields, description permission and file manifest. Every request
+rechecks record and field access and actor visibility before reuse. File identity, size or
+modification-time changes invalidate reuse unless append certification proves that every added
+event is outside the snapshot. This allows reuse after recording the search itself. Failed, retried and over-ceiling scans are not cached.
+Successful searches, including cache hits and empty results, emit an audit `SEARCH` event only
+after snapshot validation succeeds.

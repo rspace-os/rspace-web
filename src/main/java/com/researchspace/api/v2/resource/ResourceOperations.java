@@ -72,8 +72,21 @@ public interface ResourceOperations<T, ID> {
   /** Audit-only authorization hook, deliberately independent of generic access-document routes. */
   default void requireAuditAccess(T resource, User subject) {}
 
+  /** Whether every audit description for this resource is safe for its readers. */
+  default boolean auditDescriptionsSafe() {
+    return false;
+  }
+
   /** Extra safe payload fields admitted for related events in a resource lifecycle audit. */
   default Set<String> relatedAuditFields() {
+    return Set.of();
+  }
+
+  /**
+   * Trusted top-level payload fields that link related audit events to this resource's audit ID.
+   * Values must be server-derived relationships, never user-controlled text.
+   */
+  default Set<String> relatedAuditIdentifierFields() {
     return Set.of();
   }
 
