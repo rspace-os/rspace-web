@@ -10,10 +10,12 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.ContainerReadSummary;
 import com.researchspace.model.record.IRecordFactory;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -36,6 +38,20 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
   public ResourcePage<Container> getReadableResources(
       ResourceRequest request, AccessResult access) {
     return readableResourcePage(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public ResourcePage<ContainerReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access) {
+    if (access.isDenied()) return new ResourcePage<>(List.of(), 0);
+    return COLLECTION_QUERY.projectedPage(
+        criteriaBuilderFactory(),
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+        RelationshipReadAccess.none(),
+        ContainerReadSummary.class,
+        List.of("id", "editInfo.name", "containerType", "deleted"));
   }
 
   @Override
