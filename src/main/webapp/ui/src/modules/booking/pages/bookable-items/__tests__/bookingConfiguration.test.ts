@@ -46,7 +46,7 @@ describe("booking configuration reads", () => {
     server.use(
       http.get("/api/v2/booking-configurations", ({ request: received }) => {
         request = received;
-        return HttpResponse.json(collectionPage([configuration], 2));
+        return HttpResponse.json(collectionPage([configuration], 2, false));
       }),
     );
 

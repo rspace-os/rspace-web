@@ -77,6 +77,7 @@ async function fetchOwnerAttentionPage(page: number, token: string, signal: Abor
   const search = new URLSearchParams({
     page: String(page),
     limit: "100",
+    totals: "true",
     "fields[booking-configurations]": "id,ownerHealth",
   });
   const response = await fetchWithUiToken(`/api/v2/booking-configurations?${search}`, {

@@ -11,8 +11,11 @@ const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   updatedAt: "2026-08-01T09:00:00Z",
 }));
 
-export function collectionPage(docs: readonly unknown[], limit = 20) {
-  return apiV2ListResult(docs, docs.length, limit, 1);
+export function collectionPage(docs: readonly unknown[], limit = 20, totals = true) {
+  const result = apiV2ListResult(docs, docs.length, limit, 1);
+  if (totals) return result;
+  const { totalDocs: _totalDocs, totalPages: _totalPages, ...page } = result;
+  return page;
 }
 
 const hazardClass = [
@@ -162,7 +165,11 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
       const targetId = where.match(/^target==([^;]+)$/)?.[1].replaceAll('"', "");
       if (!targetId) return undefined;
       return HttpResponse.json(
-        collectionPage(bookableItemFixtures.filter((fixture) => fixture.target.globalId === targetId)),
+        collectionPage(
+          bookableItemFixtures.filter((fixture) => fixture.target.globalId === targetId),
+          20,
+          new URL(request.url).searchParams.get("totals") === "true",
+        ),
       );
     }),
     http.get("/api/v2/bookings", ({ request }) => {

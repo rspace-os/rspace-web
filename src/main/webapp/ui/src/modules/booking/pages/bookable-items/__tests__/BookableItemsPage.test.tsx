@@ -195,11 +195,12 @@ describe("BookableItemsPage", () => {
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const params = new URL(request.url).searchParams;
         if (params.get("fields[booking-configurations]") === "id,ownerHealth") {
+          expect(params.get("totals")).toBe("true");
           return HttpResponse.json(collectionPage([{ id: 7, ownerHealth: { hasEffectiveOwner: false } }]));
         }
         const page = Number(params.get("page"));
         if ((params.get("where") ?? "").includes("id=in=(7)")) {
-          filteredPages.push(String(page));
+          if (params.get("totals") !== "true") filteredPages.push(String(page));
           return HttpResponse.json(pagedCollectionResponse(page === 1 ? [bookingConfiguration] : [], page, 1));
         }
         return HttpResponse.json(
@@ -372,8 +373,8 @@ describe("BookableItemsPage", () => {
     expect(screen.getAllByRole("alertdialog", { name: "booking:bookableItems.archiveDialog.title" })).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.archive" }));
 
-    expect(await screen.findByText("Electron microscope")).toBeVisible();
-    expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument());
+    expect(screen.getByText("Electron microscope")).toBeVisible();
     expect(deleteRequest?.method).toBe("DELETE");
     expect(deleteRequest?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
@@ -387,7 +388,7 @@ describe("BookableItemsPage", () => {
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const where = new URL(request.url).searchParams.get("where");
-        if (where) searchRequests.push(where);
+        if (where && new URL(request.url).searchParams.get("totals") !== "true") searchRequests.push(where);
         return HttpResponse.json(collectionPage([bookingConfiguration]));
       }),
     );
@@ -406,7 +407,7 @@ describe("BookableItemsPage", () => {
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       // Answers like the backend: the document carries the selected fields only.
       http.get("/api/v2/booking-configurations", ({ request }) => {
-        collectionRequests += 1;
+        if (new URL(request.url).searchParams.get("totals") !== "true") collectionRequests += 1;
         const selected = new URL(request.url).searchParams.get("fields[booking-configurations]")?.split(",") ?? [];
         const sparse = Object.fromEntries(
           Object.entries(bookingConfiguration).filter(([field]) => selected.includes(field)),
