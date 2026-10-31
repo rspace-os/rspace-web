@@ -252,15 +252,15 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                     <Badge
                       variant={period === "upcoming" ? "secondary" : "outline"}
                       className="pointer-events-none min-w-5 px-1"
-                  aria-label={
-                    upcomingCount.data.totalIsLowerBound
-                      ? t("myBookings.count.lowerBoundAccessible")
-                      : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
-                  }
-                >
-                  {upcomingCount.data.totalIsLowerBound
-                    ? t("myBookings.count.lowerBound")
-                    : upcomingCount.data.totalDocs}
+                      aria-label={
+                        upcomingCount.data.totalIsLowerBound
+                          ? t("myBookings.count.lowerBoundAccessible")
+                          : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
+                      }
+                    >
+                      {upcomingCount.data.totalIsLowerBound
+                        ? t("myBookings.count.lowerBound")
+                        : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
                     </Badge>
                   )}
                   {value === "upcoming" && upcomingCount.isPending && (

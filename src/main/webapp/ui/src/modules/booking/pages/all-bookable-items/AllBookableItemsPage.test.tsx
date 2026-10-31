@@ -256,7 +256,7 @@ describe("AllBookableItemsPage", () => {
     const [location] = await screen.findAllByRole("link", { name: "WB user1a" });
     expect(location).toHaveAttribute("href", "/globalId/BE1");
     expect(location.parentElement?.textContent).toBe("WB user1a");
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent(/\d/));
     await expectAccessible(container);
   });
 

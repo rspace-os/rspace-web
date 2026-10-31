@@ -99,8 +99,6 @@ export function confocalBooking({
 export function confocalBookingPage(docs: readonly unknown[]) {
   return {
     docs,
-    totalDocs: docs.length,
-    totalPages: docs.length ? 1 : 0,
     page: 1,
     hasNextPage: false,
   };

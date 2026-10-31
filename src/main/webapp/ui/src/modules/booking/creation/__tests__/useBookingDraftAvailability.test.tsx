@@ -8,7 +8,7 @@ import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormState } from "../BookingForm";
 import type { BookableItemOption } from "../bookableItemOption";
 import { useBookingDraftAvailability } from "../useBookingDraftAvailability";
-import { confocalBooking, confocalBookingPage, confocalTarget as target } from "./creationTestFixtures";
+import { confocalBooking, confocalTarget as target } from "./creationTestFixtures";
 
 const draft: BookingWindowDraft = {
   startDate: "2026-10-19",

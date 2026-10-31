@@ -35,19 +35,6 @@ function queryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function emptyPage() {
-  return HttpResponse.json({
-    docs: [],
-    page: 1,
-    hasNextPage: false,
-    limit: 100,
-    pagingCounter: 1,
-    hasPrevPage: false,
-    prevPage: null,
-    nextPage: null,
-  });
-}
-
 function scheduleBooking({ id, targetId, name }: { id: number; targetId: string; name: string }) {
   return confocalBooking({
     id,
@@ -58,19 +45,6 @@ function scheduleBooking({ id, targetId, name }: { id: number; targetId: string;
     targetName: name,
     timezone: "Europe/Berlin",
     purpose: "Private purpose",
-  });
-}
-
-function pageWith(booking: ReturnType<typeof scheduleBooking>) {
-  return HttpResponse.json({
-    docs: [booking],
-    page: 1,
-    hasNextPage: false,
-    limit: 100,
-    pagingCounter: 1,
-    hasPrevPage: false,
-    prevPage: null,
-    nextPage: null,
   });
 }
 

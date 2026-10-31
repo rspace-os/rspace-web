@@ -433,7 +433,7 @@ describe("AddBookingPage", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("booking:bookings.errors.overlapSummary");
-    expect(within(alert).getByRole("listitem")).toHaveTextContent(/booking:bookings\.errors\.overlapBooking · 0?9:30/);
+    expect(within(alert).getByRole("listitem")).toMatchTextContent(/booking:bookings\.errors\.overlapBooking · 0?9:30/);
     expect(screen.queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
