@@ -1,3 +1,5 @@
+import { createMemoryHistory, createRootRoute, createRouter, RouterContextProvider } from "@tanstack/react-router";
+import type { PropsWithChildren } from "react";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
 
@@ -20,6 +22,21 @@ import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { DayTimeline, DayTimelineEventCard, type DayTimelineViewState } from "./DayTimeline";
 import { dayTimelineEvents, LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
+
+async function timelineWrapper() {
+  const I18nWrapper = await createRealI18nWrapper({
+    resources: { booking: bookingEnglish, common: commonEnglish },
+    defaultNS: "common",
+  });
+  const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
+  return function TimelineWrapper({ children }: PropsWithChildren) {
+    return (
+      <RouterContextProvider router={router}>
+        <I18nWrapper>{children}</I18nWrapper>
+      </RouterContextProvider>
+    );
+  };
+}
 
 describe("DayTimeline table row", () => {
   it("synchronizes differently sized rows in either direction without React renders or scroll echoes", async () => {
@@ -72,10 +89,7 @@ describe("DayTimeline table row", () => {
 
   it("reuses the expandable event card outside the timeline", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimelineEventCard
@@ -122,10 +136,7 @@ describe("DayTimeline table row", () => {
 
   it("shows both dates and day offsets for an event crossing the displayed day", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimelineEventCard
@@ -162,10 +173,7 @@ describe("DayTimeline table row", () => {
   });
 
   it("uses the item name in its accessible label and hides detail controls", async () => {
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimeline
@@ -190,10 +198,7 @@ describe("DayTimeline table row", () => {
 
   it("closes event details when another card or the surrounding page is clicked", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     render(
       <DayTimeline
         date="2026-08-17"
@@ -254,10 +259,7 @@ describe("DayTimeline table row", () => {
 
   it("renders clock-change bookings with distinct offsets and selectable elapsed positions", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const onRangeSelect = vi.fn();
     render(
       <DayTimeline
@@ -315,10 +317,7 @@ describe("DayTimeline table row", () => {
 
   it("snaps drag selection to the resource increment and disables creation while leased", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const onRangeSelect = vi.fn();
     const { rerender } = render(
       <DayTimeline
