@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -32,6 +33,21 @@ class BookingConfigurationOwnershipManagerTest {
   private final User incoming = mock(User.class);
   private final User subject = mock(User.class);
   private final User actor = mock(User.class);
+
+  @Test
+  void inheritedConfigurationFollowsItemOwnershipWithoutAnAclWrite() {
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setState(BookingConfigurationState.ARCHIVED);
+    when(configurationDao.findByTarget(target)).thenReturn(Optional.of(configuration));
+    when(protectedAccess.isInherited(configuration)).thenReturn(true);
+
+    manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
+
+    verify(configurationDao, never()).lockByTarget(target);
+    org.mockito.Mockito.verifyNoInteractions(accessManager);
+  }
 
   @Test
   void unconfiguredInstrumentNeedsNoBookingMutation() {

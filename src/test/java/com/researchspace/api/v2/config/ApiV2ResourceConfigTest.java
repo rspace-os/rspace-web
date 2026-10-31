@@ -9,8 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.controller.ApiV2CrudController;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -28,13 +31,20 @@ import com.researchspace.dao.ExtraFieldDao;
 import com.researchspace.inventory.api.v2.InstrumentResourceOperations;
 import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.service.MaintenanceManager;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.ResolvedRuntimeField;
+import com.researchspace.model.collection.RuntimeCollectionFields;
+import com.researchspace.model.collection.RuntimeFieldBinding;
+import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldNamespaces;
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
@@ -43,6 +53,8 @@ import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
@@ -55,8 +67,75 @@ import org.springframework.web.method.HandlerMethod;
 class ApiV2ResourceConfigTest {
 
   @Test
+  void bookingTargetsResolveTheRegisteredInstrumentRuntimeContract() {
+    try (AnnotationConfigApplicationContext context = newContext()) {
+      context.register(ApiV2ResourceConfig.class);
+      context.refresh();
+      ApiV2ResourceCatalog catalog = context.getBean(ApiV2ResourceCatalog.class);
+      assertTrue(catalog.find("instruments").isPresent());
+      assertEquals(
+          List.of("customFields", "extraFields"),
+          catalog.runtimeFieldsOf("instruments").stream()
+              .map(RuntimeCollectionFields::namespace)
+              .toList());
+      var field =
+          new ResolvedRuntimeField(
+              new RuntimeFieldDefinition(
+                  "SF1",
+                  "customFields.SF1",
+                  "Safety level",
+                  RuntimeFieldValueType.TEXT,
+                  "IT1",
+                  "Template",
+                  List.of()),
+              new RuntimeFieldBinding(
+                  InventoryEntityField.class,
+                  "instrumentEntity.id",
+                  "data",
+                  Map.of("templateField.id", 1L)));
+      var actor = new User("actor");
+      when(context
+              .getBean(InstrumentCustomFieldManager.class)
+              .resolveAll(Set.of("customFields.SF1"), actor))
+          .thenReturn(Map.of("customFields.SF1", field));
+      var registration = catalog.find("booking-configurations").orElseThrow();
+      var request =
+          ApiV2ResourceRequestParser.filtered(
+              "target.customFields.SF1==BSL-2",
+              registration.description(),
+              catalog.registry(),
+              registration.runtimeFieldContext(actor));
+      assertEquals(field, request.runtime().find("target.customFields.SF1"));
+      assertEquals("target", request.runtime().relationshipFor("target.customFields.SF1"));
+
+      var document =
+          new ObjectMapper()
+              .valueToTree(new ApiV2OpenApiGenerator(catalog, "Test", "2").generate());
+      String metadata = document.toString();
+      assertTrue(metadata.contains("target.customFields"));
+      assertTrue(metadata.contains("target.extraFields"));
+      assertTrue(metadata.contains("/api/v2/instruments/fields/customFields"));
+    }
+  }
+
+  @Test
+  void endpointCatalogCollectsContributedSpecs() throws Exception {
+    try (AnnotationConfigApplicationContext context = newContext()) {
+      context.registerBean(
+          com.researchspace.api.v2.resource.ApiV2EndpointSpec.class,
+          () ->
+              new com.researchspace.api.v2.resource.ApiV2EndpointSpec(
+                  Object.class, com.researchspace.model.collection.AccessFunction.anyone()));
+      context.register(ApiV2ResourceConfig.class);
+      context.refresh();
+      var endpoint = new HandlerMethod(new Object(), Object.class.getMethod("toString"));
+      assertTrue(context.getBean(ApiV2EndpointCatalog.class).isPublic(endpoint));
+    }
+  }
+
+  @Test
   void genericMutationsRequireAuthenticationBeforeRequestBodyBinding() {
-    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog();
+    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog(List.of());
     ApiV2CrudController controller = new ApiV2CrudController(mock(ApiV2ResourceCatalog.class));
     HandlerMethod create = handler(controller, "create");
     HandlerMethod list = handler(controller, "list");

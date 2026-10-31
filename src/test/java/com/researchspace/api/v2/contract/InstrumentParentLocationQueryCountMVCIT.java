@@ -170,8 +170,7 @@ class InstrumentParentLocationQueryCountMVCIT {
                     .param("limit", "20");
             if (sparse) request.param("fields[" + resource + "]", "id,target");
             JsonNode docs = measuredRequest(request, false).body().path("docs");
-            assertEquals(1, docs.size());
-            if (unreadableTarget) assertTrue(docs.get(0).path("target").isNull());
+            assertEquals(unreadableTarget ? 0 : 1, docs.size());
             snapshots.set(
                 resource + "-" + depth + "-" + sparse + "-" + unreadableTarget,
                 normalizeSnapshot(docs));
@@ -442,7 +441,7 @@ class InstrumentParentLocationQueryCountMVCIT {
           };
       ids.add(instrumentId);
       fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
-      fixture.booking(instrumentId, BOOKING_START, BOOKING_END);
+      fixture.booking(instrumentId, BOOKING_START, BOOKING_END, fixture.sysadminKey());
     }
     if (count > 3) {
       new TransactionTemplate(transactionManager)

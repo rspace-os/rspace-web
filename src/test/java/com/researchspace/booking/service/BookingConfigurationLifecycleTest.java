@@ -177,7 +177,6 @@ class BookingConfigurationLifecycleTest {
     second.setEnabled(true);
     int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
-    when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<BookingConfiguration> removed = manager.archiveConfigurations(request, actor, actor);
 
@@ -203,7 +202,6 @@ class BookingConfigurationLifecycleTest {
     int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any()))
         .thenReturn(List.of(active, alreadyArchived));
-    when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<BookingConfiguration> archived = manager.archiveConfigurations(request, actor, actor);
 
@@ -250,7 +248,7 @@ class BookingConfigurationLifecycleTest {
 
     verify(timeSlotBookings).removeAllByConfigurationId(42L);
     verify(calendarSubscriptions).deleteByConfigurationId(42L);
-    verify(dao).removeConfigurationAndAccess(configuration);
+    verify(dao).remove(42L);
     verify(events).publishEvent(any(BookingConfigurationPermanentDeleteAuditEvent.class));
   }
 
@@ -267,7 +265,7 @@ class BookingConfigurationLifecycleTest {
 
     verify(dao, never()).lockById(any());
     verify(timeSlotBookings, never()).removeAllByConfigurationId(any());
-    verify(dao, never()).removeConfigurationAndAccess(any());
+    verify(dao, never()).remove(any());
   }
 
   @Test

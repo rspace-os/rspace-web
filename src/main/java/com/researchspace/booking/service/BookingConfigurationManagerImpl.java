@@ -1,11 +1,14 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -14,9 +17,6 @@ import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
-import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -33,16 +33,8 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.resourceaccess.ResourceAccess;
-import com.researchspace.model.resourceaccess.ResourceAudience;
-import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
-import com.researchspace.model.resourceaccess.ResourceGranteeKind;
-import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.CollectionMutationException;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -56,6 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -65,6 +58,8 @@ import org.springframework.stereotype.Service;
 @Service("bookingConfigurationManager")
 public class BookingConfigurationManagerImpl implements BookingConfigurationManager {
 
+  private final AuditDao auditDao;
+
   private final BookingConfigurationDao bookingConfigurationDao;
   private final BookingConfigurationDefaultsDao defaultsDao;
   private final InstrumentDao instrumentDao;
@@ -72,12 +67,14 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final ApplicationEventPublisher events;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final CollectionDescription<BookingConfiguration> description;
-  private final ResourceAccessManager accessManager;
-  private final MessageSourceUtils messages;
+  private final BookingItemPermissions itemPermissions;
   private final BookingCalendarSubscriptionDao calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
+  @Autowired
   public BookingConfigurationManagerImpl(
+      AuditDao auditDao,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao bookingConfigurationDao,
       @Qualifier("bookingConfigurationDefaultsDao") BookingConfigurationDefaultsDao defaultsDao,
       InstrumentDao instrumentDao,
@@ -88,11 +85,12 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
               com.researchspace.booking.config.BookingResourceAccessConfiguration
                   .BOOKING_CONFIGURATION_DESCRIPTION)
           CollectionDescription<BookingConfiguration> description,
-      ResourceAccessManager accessManager,
-      MessageSourceUtils messages,
+      BookingItemPermissions itemPermissions,
       @Qualifier("bookingCalendarSubscriptionDao")
           BookingCalendarSubscriptionDao calendarSubscriptions,
-      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings) {
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings,
+      BookingCalendarPermissionGateDao permissionGate) {
+    this.auditDao = auditDao;
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
     this.instrumentDao = instrumentDao;
@@ -100,16 +98,28 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.events = events;
     this.resourceRegistry = resourceRegistry;
     this.description = description;
-    this.accessManager = accessManager;
-    this.messages = messages;
+    this.itemPermissions = itemPermissions;
     this.calendarSubscriptions = calendarSubscriptions;
     this.timeSlotBookings = timeSlotBookings;
+    this.permissionGate = permissionGate;
   }
 
   @Override
   public ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request, User actor) {
+    return getConfigurations(request, actor, null);
+  }
+
+  @Override
+  public ResourcePage<BookingConfiguration> getConfigurations(
+      ResourceRequest request,
+      User actor,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
     ResourcePage<BookingConfiguration> page =
-        bookingConfigurationDao.getResources(authorizeRead(request, actor), targetAccess(actor));
+        restriction == null
+            ? bookingConfigurationDao.getResources(
+                authorizeRead(request, actor), targetAccess(actor))
+            : bookingConfigurationDao.getCalendarResources(
+                authorizeRead(request, actor), targetAccess(actor), restriction);
     prepareAccessProjection(page.resources(), actor);
     return page;
   }
@@ -129,6 +139,18 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             .findFirst();
     configuration.ifPresent(value -> prepareAccessProjection(List.of(value), actor));
     return configuration;
+  }
+
+  @Override
+  public Optional<BookingConfiguration> getConfigurationForAudit(Long id, User actor) {
+    Optional<BookingConfiguration> current = getConfiguration(id, actor);
+    if (current.isPresent()
+        || !actor.hasSysadminRole()
+        || bookingConfigurationDao.getSafeNull(id).isPresent()) {
+      return current;
+    }
+    return Optional.ofNullable(auditDao.getNewestRevisionForEntity(BookingConfiguration.class, id))
+        .map(AuditedEntity::getEntity);
   }
 
   private ResourceRequest authorizeRead(ResourceRequest request, User actor) {
@@ -160,6 +182,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (creates.size() > ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
+    permissionGate.lockShared();
     BookingConfigurationDefaults defaults =
         BookingConfigurationDefaultsManagerImpl.requiredDefaults(defaultsDao);
     Date now = new Date();
@@ -199,58 +222,13 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     Instrument instrument =
         instrumentDao.lockById(target.id()).orElseThrow(InvalidBookableTargetException::new);
     validateLockedTarget(target, instrument);
-    requireCanCreateFor(instrument, subject);
     configuration.replaceTarget(target);
-    configuration.setResourceAccess(initialAccess(defaults, subject, actor, timestamp));
+    requireCapability(configuration, subject, BookingResourceRoleScheme.EDIT_CONFIGURATION);
+    // Booking access is inherited from the current Inventory target. New configurations do not
+    // create an independent ResourceAccess aggregate or copy Booking sharing defaults.
     validateSettings(configuration);
     validate(configuration);
     return configuration;
-  }
-
-  private ResourceAccess initialAccess(
-      BookingConfigurationDefaults defaults, User subject, User actor, Date timestamp) {
-    ResourceAccess access =
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, actor, timestamp);
-    access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, subject));
-
-    access.addAssignment(
-        ResourceRoleAssignment.forAudience(
-            defaults.getDefaultSharedWith() == BookingDefaultSharedWith.ALL_USERS
-                ? BookingResourceRoleScheme.BOOKER
-                : BookingResourceRoleScheme.NO_ACCESS,
-            ResourceAudience.ALL_USERS,
-            messages.getMessage(ResourceAudience.ALL_USERS.messageKey())));
-
-    if (defaults.getDefaultSharedWith() == BookingDefaultSharedWith.SELECTED) {
-      defaults.getSelectedAccessGrantees().stream()
-          .map(BookingConfigurationManagerImpl::selectedDefaultAssignment)
-          .flatMap(Optional::stream)
-          .filter(
-              assignment ->
-                  !assignment.getGranteeKey().equals(ResourceGranteeKeys.user(subject.getId())))
-          .forEach(access::addAssignment);
-    }
-    long namedAssignments =
-        access.getAssignments().stream()
-            .filter(assignment -> assignment.getGranteeKind() != ResourceGranteeKind.AUDIENCE)
-            .count();
-    if (namedAssignments > ResourceAccessManager.MAX_NAMED_ASSIGNMENTS) {
-      throw new ResourceAccessException(ResourceAccessException.Reason.ASSIGNMENT_LIMIT);
-    }
-    return access;
-  }
-
-  private static Optional<ResourceRoleAssignment> selectedDefaultAssignment(
-      BookingDefaultAccessGrantee grantee) {
-    if (grantee.getGranteeKind() == ResourceGranteeKind.USER && grantee.getUser() != null) {
-      return Optional.of(
-          ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, grantee.getUser()));
-    }
-    if (grantee.getGranteeKind() == ResourceGranteeKind.GROUP && grantee.getGroup() != null) {
-      return Optional.of(
-          ResourceRoleAssignment.forGroup(BookingResourceRoleScheme.BOOKER, grantee.getGroup()));
-    }
-    return Optional.empty();
   }
 
   @Override
@@ -360,7 +338,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (configuration.getConfigurationVersion() != expectedVersion) {
       throw new BookingConcurrentModificationException();
     }
-    int assignmentCount = configuration.getResourceAccess().getAssignments().size();
     String targetName =
         instrumentDao
             .getSafeNull(configuration.getTarget().id())
@@ -377,9 +354,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             configuration.getState(),
             bookingCount,
             subscriptionCount,
-            assignmentCount,
             Instant.now());
-    bookingConfigurationDao.removeConfigurationAndAccess(configuration);
+    bookingConfigurationDao.remove(id);
     events.publishEvent(
         new BookingConfigurationPermanentDeleteAuditEvent(actor, subject, snapshot));
     return Optional.of(id);
@@ -549,27 +525,19 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     }
   }
 
-  private static void requireCanCreateFor(Instrument instrument, User subject) {
-    if (subject.hasSysadminRole()) {
-      return;
-    }
-    if (instrument.getOwner() == null
-        || instrument.getOwner().getId() == null
-        || !instrument.getOwner().getId().equals(subject.getId())) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
-  }
-
   private boolean canRead(BookingConfiguration configuration, User subject) {
-    return accessManager
-        .resolve(configuration.getResourceAccess(), subject)
+    return itemPermissions
+        .resolve(configuration, subject)
         .hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY);
   }
 
+  /**
+   * Rechecks the target after the configuration lock, so a concurrent Inventory change cannot
+   * authorize a configuration mutation from a stale target snapshot.
+   */
   private void requireCapability(
       BookingConfiguration configuration, User subject, String capability) {
-    ResolvedResourceAccess access =
-        accessManager.resolveForMutation(configuration.getResourceAccess(), subject);
+    ResolvedResourceAccess access = itemPermissions.resolveForMutation(configuration, subject);
     if (!access.hasCapability(capability)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
@@ -579,56 +547,33 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (configurations.isEmpty()) {
       return;
     }
-    List<ResourceAccess> persisted =
-        configurations.stream()
-            .map(BookingConfiguration::getResourceAccess)
-            .filter(access -> access.getId() != null)
-            .toList();
     java.util.Map<Long, ResolvedResourceAccess> resolvedById =
-        persisted.isEmpty() ? java.util.Map.of() : accessManager.resolveAll(persisted, subject);
+        itemPermissions.resolveAll(configurations, subject);
     configurations.forEach(
         configuration -> {
-          ResourceAccess aggregate = configuration.getResourceAccess();
           ResolvedResourceAccess resolved =
-              aggregate.getId() == null
-                  ? accessManager.resolve(aggregate, subject)
-                  : resolvedById.getOrDefault(aggregate.getId(), ResolvedResourceAccess.none());
+              resolvedById.getOrDefault(configuration.getId(), ResolvedResourceAccess.none());
           configuration.prepareAccessProjection(
               resolved.effectiveRole().orElse(null),
               resolved.roleSources(),
-              capabilities(aggregate, subject, resolved),
-              new BookingOwnerHealth(hasEffectiveOwner(aggregate)));
+              capabilities(resolved),
+              null);
         });
   }
 
-  private BookingConfigurationCapabilities capabilities(
-      ResourceAccess aggregate, User subject, ResolvedResourceAccess resolved) {
+  private BookingConfigurationCapabilities capabilities(ResolvedResourceAccess resolved) {
     return new BookingConfigurationCapabilities(
         resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION),
         resolved.hasCapability(BookingResourceRoleScheme.VIEW_AUDIT),
-        resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS),
-        resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS),
-        resolved.hasCapability(BookingResourceRoleScheme.MANAGE_OWNERS),
+        resolved.hasCapability(BookingResourceRoleScheme.READ_RESOURCE),
+        false,
+        false,
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_BOOKING),
         resolved.hasCapability(BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS),
         resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_BLOCKOUT),
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION),
-        accessManager.canLeave(aggregate, subject));
-  }
-
-  private static boolean hasEffectiveOwner(ResourceAccess aggregate) {
-    return aggregate.getAssignments().stream()
-        .filter(assignment -> assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER))
-        .anyMatch(
-            assignment ->
-                switch (assignment.getGranteeKind()) {
-                  case USER -> assignment.getUser() != null && assignment.getUser().isEnabled();
-                  case GROUP ->
-                      assignment.getGroup() != null
-                          && assignment.getGroup().getEnabledMemberSize() > 0;
-                  case AUDIENCE -> false;
-                });
+        false);
   }
 
   private static ResourceRequest idRequest(Long id) {

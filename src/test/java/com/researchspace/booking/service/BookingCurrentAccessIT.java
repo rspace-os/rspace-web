@@ -17,7 +17,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
+import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.Hibernate;
@@ -53,7 +53,7 @@ class BookingCurrentAccessIT extends RealTransactionSpringTestBase {
     User subject = createAndSaveUser(getRandomName(10));
     initUser(piUser);
     initUser(subject);
-    Group group = createGroupForPiAndUsers(piUser, new User[] {subject});
+    Group group = createGroupForPiAndUsers(piUser, new User[] {owner, subject});
     ApiInstrument created = createBasicInstrumentForUser(owner, "Current authorization scope");
     Instrument instrument = initializedInstrument(created.getId());
     ResolvedBookableTarget target =
@@ -66,56 +66,52 @@ class BookingCurrentAccessIT extends RealTransactionSpringTestBase {
     new TransactionTemplate(getTxMger())
         .executeWithoutResult(
             transaction -> {
-              BookingConfiguration persisted =
-                  sessionFactory
-                      .getCurrentSession()
-                      .find(BookingConfiguration.class, configuration.getId());
-              Group persistedGroup =
-                  sessionFactory.getCurrentSession().find(Group.class, group.getId());
-              persisted
-                  .getResourceAccess()
-                  .addAssignment(
-                      ResourceRoleAssignment.forGroup(
-                          BookingResourceRoleScheme.MANAGER, persistedGroup));
+              Instrument persisted =
+                  sessionFactory.getCurrentSession().find(Instrument.class, instrument.getId());
+              persisted.setSharingMode(InventorySharingMode.OWNER_GROUPS);
               sessionFactory.getCurrentSession().flush();
             });
 
-    TransactionStatus staleTransaction = openTransaction();
-    try {
-      User staleSubject = userMgr.getUserByUsername(subject.getUsername());
-      assertTrue(
-          staleSubject.getGroups().stream().anyMatch(value -> group.getId().equals(value.getId())));
-      assertTrue(
-          configurationManager.getConfiguration(configuration.getId(), staleSubject).isPresent());
+    User staleSubject =
+        new TransactionTemplate(getTxMger())
+            .execute(
+                transaction -> {
+                  User stale = userMgr.getUserByUsername(subject.getUsername());
+                  assertTrue(
+                      stale.getGroups().stream()
+                          .anyMatch(value -> group.getId().equals(value.getId())));
+                  assertTrue(
+                      configurationManager
+                          .getConfiguration(configuration.getId(), stale)
+                          .isPresent());
+                  return stale;
+                });
 
-      TransactionTemplate revoke = new TransactionTemplate(getTxMger());
-      revoke.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-      revoke.executeWithoutResult(
-          transaction -> {
-            int removed =
-                sessionFactory
-                    .getCurrentSession()
-                    .createNativeMutationQuery(
-                        "DELETE FROM UserGroup WHERE user_id = :userId AND group_id = :groupId")
-                    .setParameter("userId", staleSubject.getId())
-                    .setParameter("groupId", group.getId())
-                    .executeUpdate();
-            assertEquals(1, removed);
-          });
+    TransactionTemplate revoke = new TransactionTemplate(getTxMger());
+    revoke.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    revoke.executeWithoutResult(
+        transaction -> {
+          int removed =
+              sessionFactory
+                  .getCurrentSession()
+                  .createNativeMutationQuery(
+                      "DELETE FROM UserGroup WHERE user_id = :userId AND group_id = :groupId")
+                  .setParameter("userId", staleSubject.getId())
+                  .setParameter("groupId", group.getId())
+                  .executeUpdate();
+          assertEquals(1, removed);
+        });
 
-      assertTrue(
-          staleSubject.getGroups().stream().anyMatch(value -> group.getId().equals(value.getId())));
-      assertThrows(
-          AuthorizationException.class,
-          () ->
-              configurationManager.updateConfiguration(
-                  configuration.getId(),
-                  new BookingConfigurationManager.Patch(false, null),
-                  staleSubject,
-                  staleSubject));
-    } finally {
-      getTxMger().rollback(staleTransaction);
-    }
+    assertTrue(
+        staleSubject.getGroups().stream().anyMatch(value -> group.getId().equals(value.getId())));
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            configurationManager.updateConfiguration(
+                configuration.getId(),
+                new BookingConfigurationManager.Patch(false, null),
+                staleSubject,
+                staleSubject));
 
     new TransactionTemplate(getTxMger())
         .executeWithoutResult(

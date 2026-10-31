@@ -75,7 +75,7 @@ export const BookingConfigurationSchema = v.pipe(
       }),
       NO_BOOKING_CAPABILITIES,
     ),
-    ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.boolean() })),
+    ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.optional(v.boolean()) })),
   }),
   v.forward(
     v.check((configuration) =>

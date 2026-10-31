@@ -1,7 +1,5 @@
 package com.researchspace.booking.api.v2;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.controller.ApiV2ConditionalRequest;
@@ -9,7 +7,6 @@ import com.researchspace.api.v2.controller.ResourceAccessController;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
-import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
@@ -33,7 +30,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -267,7 +263,7 @@ public final class BookingSettingsController {
       })
   public ResponseEntity<SettingsDocument> get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     var defaults = manager.getDefaults(caller.subject());
     return versioned(defaults, SettingsDocument.from(defaults, institutionClock));
   }
@@ -291,7 +287,7 @@ public final class BookingSettingsController {
       })
   public ResponseEntity<AdminSettingsDocument> getAdmin(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     var defaults = manager.getAdminDefaults(caller.subject());
     return versioned(defaults, AdminSettingsDocument.from(defaults, institutionClock));
   }
@@ -322,7 +318,7 @@ public final class BookingSettingsController {
           @RequestParam(defaultValue = "20")
           int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return new ResourceGranteeDirectoryDocument(
         directoryManager.searchForSettings(
             ResourceAccessController.validateQuery(query),
@@ -353,7 +349,7 @@ public final class BookingSettingsController {
           @RequestHeader(name = HttpHeaders.IF_MATCH, required = false)
           String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     var defaults =
         manager.updateDefaults(
             patch.schedulingPatch(),
@@ -372,11 +368,5 @@ public final class BookingSettingsController {
         .eTag("\"" + defaults.getConfigurationVersion() + "\"")
         .header(HttpHeaders.CACHE_CONTROL, "no-transform")
         .body(body);
-  }
-
-  private void requireEnabledRead(User actor) {
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
-      throw new NotFoundException();
-    }
   }
 }

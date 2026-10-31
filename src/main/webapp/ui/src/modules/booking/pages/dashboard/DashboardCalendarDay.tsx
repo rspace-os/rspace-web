@@ -49,7 +49,7 @@ function RestrictedBookingRow({ heading, period, label }: { heading: string; per
 }
 
 export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayButton>) {
-  const { t } = useTranslation("booking");
+  const { t } = useTranslation(["booking", "common"]);
   const context = useContext(DashboardCalendarContext);
   if (!context) throw new Error("DashboardCalendarDay must be rendered inside DashboardCalendarContext");
   const { bookingsByDay, timeZone, locale, openDayKey, setOpenDayKey } = context;
@@ -128,24 +128,23 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
         </div>
         <ul className="min-h-[15.5rem] space-y-1">
           {visibleBookings.map((booking) =>
-            booking.privacy === "busy" ? (
-              <RestrictedBookingRow
-                key={booking.id}
-                heading={booking.target.value.name}
-                period={formatAgendaPeriod(booking.start, booking.end, timeZone, locale)}
-                label={t("calendar.busy")}
-              />
-            ) : (
-              <BookingSummaryAccordion
-                key={booking.id}
-                accordionName={accordionName}
-                heading={booking.target.value.name}
-                summaryLabel={booking.target.value.name}
-                period={formatAgendaPeriod(booking.start, booking.end, timeZone, locale)}
-                purpose={booking.purpose}
-                detailsBookingId={booking.id}
-              />
-            ),
+            (() => {
+              const itemName = booking.target?.value.name ?? t("common:values.unknownItem");
+              const period = formatAgendaPeriod(booking.start, booking.end, timeZone, locale);
+              return booking.privacy === "busy" ? (
+                <RestrictedBookingRow key={booking.id} heading={itemName} period={period} label={t("calendar.busy")} />
+              ) : (
+                <BookingSummaryAccordion
+                  key={booking.id}
+                  accordionName={accordionName}
+                  heading={itemName}
+                  summaryLabel={itemName}
+                  period={period}
+                  purpose={booking.purpose}
+                  detailsBookingId={booking.id}
+                />
+              );
+            })(),
           )}
         </ul>
         {pageCount > 1 ? (

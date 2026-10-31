@@ -40,6 +40,8 @@ class BookingCalendarFeedGeneratorTest {
 
   @BeforeEach
   void setUp() {
+    when(messages.getMessageForLocale("booking:calendar.feed.unknownItem", Locale.ENGLISH))
+        .thenReturn("Unknown item");
     when(messages.getMessageForLocale("booking:calendar.feed.booking", Locale.ENGLISH))
         .thenReturn("Booking");
     when(messages.getMessageForLocale("booking:calendar.feed.maintenance", Locale.ENGLISH))
@@ -56,6 +58,22 @@ class BookingCalendarFeedGeneratorTest {
               }
               return (key.endsWith("bookedBy") ? "Booked by: " : "Purpose: ") + arguments[0];
             });
+  }
+
+  @Test
+  void personalFeedRedactsAnInaccessibleItem() throws Exception {
+    CalendarSource source =
+        new CalendarSource(
+            "booking:calendar.feed.myBookings",
+            "UTC",
+            List.of(event(7L, BookingPrivacy.FULL, "Ada (ada)", "My booking", false)),
+            true);
+    Calendar parsed = parse(generator.generate(source, SERVER, Locale.ENGLISH, 100_000));
+    VEvent event = firstEvent(parsed);
+    assertEquals("Unknown item - Booking", firstEventSummary(parsed));
+    assertFalse(event.getProperty(Property.URL).isPresent());
+    assertTrue(
+        event.getProperty(Property.DESCRIPTION).orElseThrow().getValue().contains("My booking"));
   }
 
   @Test

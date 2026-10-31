@@ -75,12 +75,14 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-cancellation-reason.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1173-booking-calendar-permission-gate.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscriptions.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-notification-subscriptions.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1225.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-custom-field-index.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-extra-field-index.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-scheduledmaintenance-nullable-stopuserlogindate.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-booking-drop-resource-access.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed-edge-cases.xml"/>
 

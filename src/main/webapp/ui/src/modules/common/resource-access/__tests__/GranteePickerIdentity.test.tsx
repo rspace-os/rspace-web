@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { GranteePicker } from "@/modules/common/resource-access/GranteePicker";
 import type { ResourceGranteeDirectoryEntry } from "@/modules/common/resource-access/schemas";
 
@@ -30,7 +31,7 @@ function picker(queryClient: QueryClient, token: string) {
 }
 
 describe("GranteePicker query identity", () => {
-  it("does not reuse a grantee result when the same search moves to a new token", async () => {
+  it("does not reuse a grantee result when the same search moves to a new identity", async () => {
     const user = userEvent.setup();
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const authorizationHeaders: string[] = [];
@@ -56,6 +57,7 @@ describe("GranteePicker query identity", () => {
       }),
     );
 
+    queryClient.setQueryData(currentUserQueryKeys.me(), { id: 11, session: { operatedAs: false } });
     const view = render(picker(queryClient, "token-a"));
     try {
       const search = await screen.findByLabelText("common:resourceAccess.addUserOrGroup");
@@ -64,7 +66,10 @@ describe("GranteePicker query identity", () => {
       expect(within(aliceOption).getByText("Alice")).toBeVisible();
       expect(authorizationHeaders).toEqual(["Bearer token-a"]);
 
-      view.rerender(picker(queryClient, "token-b"));
+      act(() => {
+        queryClient.setQueryData(currentUserQueryKeys.me(), { id: 22, session: { operatedAs: false } });
+        view.rerender(picker(queryClient, "token-b"));
+      });
       await waitFor(() => expect(authorizationHeaders).toContain("Bearer token-b"));
 
       expect(screen.queryByRole("option")).not.toBeInTheDocument();

@@ -11,19 +11,18 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.QueryConstraint;
-import com.researchspace.model.collection.ResourceRoleMembershipConstraint;
-import com.researchspace.service.resourceaccess.ResourceRoleSchemeRegistry;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class BookingEventReadAccessTest {
 
-  private final BookingEventReadAccess access =
-      new BookingEventReadAccess(
-          new ResourceRoleSchemeRegistry(List.of(new BookingResourceRoleScheme())));
+  private final BookingEventReadAccess access = new BookingEventReadAccess();
   private final User subject = mock(User.class);
 
   @BeforeEach
@@ -38,8 +37,11 @@ class BookingEventReadAccessTest {
     assertTrue(access.check(new AccessContext(null, Operation.READ, "bookings")).isDenied());
   }
 
-  @Test
-  void combinesCurrentRoleAndOwnBookingBranches() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void combinesCurrentTargetReadAndOwnBookingBranches(boolean sysadmin) {
+    when(subject.hasSysadminRole()).thenReturn(sysadmin);
+
     AccessResult.AllowedWhere result =
         assertInstanceOf(
             AccessResult.AllowedWhere.class,
@@ -47,19 +49,14 @@ class BookingEventReadAccessTest {
     QueryConstraint.Or disjunction =
         assertInstanceOf(QueryConstraint.Or.class, result.constraint());
 
-    assertInstanceOf(ResourceRoleMembershipConstraint.class, disjunction.children().get(0));
+    FilterExpression.Comparison target =
+        assertInstanceOf(FilterExpression.Comparison.class, disjunction.children().get(0));
+    assertEquals("target", target.field());
+    assertEquals(Operator.EXISTS, target.operator());
     FilterExpression.Comparison own =
         assertInstanceOf(FilterExpression.Comparison.class, disjunction.children().get(1));
     assertEquals("requesterId", own.field());
+    assertEquals(Operator.EQUAL, own.operator());
     assertEquals(List.of(12L), own.values());
-  }
-
-  @Test
-  void sysadminStillUsesCurrentTargetReadPredicate() {
-    when(subject.hasSysadminRole()).thenReturn(true);
-
-    assertInstanceOf(
-        AccessResult.AllowedWhere.class,
-        access.check(new AccessContext(subject, Operation.READ, "bookings")));
   }
 }

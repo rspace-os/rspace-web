@@ -3,6 +3,9 @@ package com.researchspace.booking.api.v2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -32,6 +35,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +68,37 @@ class TimeSlotBookingResourceOperationsTest {
             ResourceOperation.CREATE,
             ResourceOperation.UPDATE),
         spec.exposedOperations());
+  }
+
+  @Test
+  void limitsRequesterFiltersToEventsWhoseRequesterTheSubjectMaySee() {
+    when(actor.getId()).thenReturn(7L);
+    ResourceRequest request =
+        new ResourceRequest(
+            new com.researchspace.model.collection.FilterExpression.Comparison(
+                "requesterId",
+                com.researchspace.model.collection.Operator.EQUAL,
+                List.of(42L),
+                false),
+            List.of(),
+            new ResourceRequest.Page(1, 20),
+            com.researchspace.model.collection.FieldSelection.all(),
+            com.researchspace.model.collection.IncludeTree.empty());
+    var guarded =
+        com.researchspace.model.booking.BookingRequesterFilters.visibleRequestersOnly(
+            request.filter(), 7L);
+    when(manager.getBookings(any(ResourceRequest.class), eq(actor)))
+        .thenReturn(new com.researchspace.model.collection.ResourcePage<>(List.of(), 0));
+    when(manager.countBookings(any(ResourceRequest.class), eq(actor))).thenReturn(0L);
+
+    operations.find(request, actor);
+    operations.count(request, actor);
+
+    var captured = org.mockito.ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(manager).getBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
+    verify(manager).countBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
   }
 
   @Test
@@ -127,7 +162,7 @@ class TimeSlotBookingResourceOperationsTest {
   }
 
   @Test
-  void derivedPrivateFieldsAreNullableAndNeverQueryable() {
+  void derivedPrivateFieldsAreNullableAndUnsortable() {
     User requester = mock(User.class);
     TimeSlotBooking booking = booking(requester);
 
@@ -138,12 +173,11 @@ class TimeSlotBookingResourceOperationsTest {
     assertEquals("busy", busy.get("privacy"));
     assertEquals(false, busy.get("canEdit"));
     assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("purpose").sortable());
-    assertFalse(
+    assertTrue(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireField("purpose")
             .operators()
-            .iterator()
-            .hasNext());
+            .contains(com.researchspace.model.collection.Operator.CONTAINS));
     assertFalse(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireField("state")

@@ -126,6 +126,7 @@ export function CalendarResourceSchedule({
       return { day, start: Date.parse(bounds.start), end: Date.parse(bounds.end) };
     });
     for (const event of events) {
+      if (!event.target) continue;
       const occurrence = editorPositions?.get(event.id) ?? event;
       const eventStart = Date.parse(occurrence.start);
       const eventEnd = Date.parse(occurrence.end);
@@ -146,8 +147,8 @@ export function CalendarResourceSchedule({
       [
         ...new Map(
           (includeEventResources
-            ? [...(resources ?? []), ...events.map((event) => event.target)]
-            : (resources ?? events.map((event) => event.target))
+            ? [...(resources ?? []), ...events.flatMap((event) => (event.target ? [event.target] : []))]
+            : (resources ?? events.flatMap((event) => (event.target ? [event.target] : [])))
           ).map((resource) => [resource.globalId, resource]),
         ).values(),
       ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
