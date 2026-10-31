@@ -43,6 +43,29 @@ describe("feature flag queries", () => {
     expect(new URL(request?.url ?? "http://localhost").searchParams.get("limit")).toBe("100");
   });
 
+  test("follows hasNextPage without totals", async () => {
+    const pages: string[] = [];
+    server.use(
+      http.get("/api/v2/feature-flags", ({ request }) => {
+        const page = new URL(request.url).searchParams.get("page") ?? "";
+        pages.push(page);
+        const { totalDocs: _totalDocs, totalPages: _totalPages, ...response } = validFlagResponse;
+        return HttpResponse.json({
+          ...response,
+          docs: page === "1" ? [] : validFlagResponse.docs,
+          page: Number(page),
+          hasNextPage: page === "1",
+          nextPage: page === "1" ? 2 : null,
+        });
+      }),
+    );
+
+    const result = await getFeatureFlags("token");
+
+    expect(result.flags[FEATURE_FLAGS.bookingEnabled].value).toBe(true);
+    expect(pages).toEqual(["1", "2"]);
+  });
+
   test("rejects an unsuccessful response", async () => {
     server.use(
       http.get("/api/v2/feature-flags", () => new HttpResponse(null, { status: 500, statusText: "Server Error" })),

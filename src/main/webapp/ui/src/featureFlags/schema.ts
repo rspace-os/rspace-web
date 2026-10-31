@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { FEATURE_FLAGS, type FeatureFlagName } from "./generatedFeatureFlags";
 
 export const featureFlagNames = Object.values(FEATURE_FLAGS) as ReadonlyArray<FeatureFlagName>;
@@ -19,7 +19,7 @@ const FeatureFlagDocumentSchema = v.object({
   ...FeatureFlagEntrySchema.entries,
 });
 
-export const FeatureFlagPageSchema = v2ListEnvelope(v.unknown());
+export const FeatureFlagPageSchema = v2PageEnvelope(v.unknown());
 
 const disabledFeatureFlag = (): FeatureFlagEntry => ({
   value: false,
