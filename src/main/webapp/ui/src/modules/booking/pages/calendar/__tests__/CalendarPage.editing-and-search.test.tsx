@@ -14,7 +14,8 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -73,7 +74,7 @@ describe("CalendarPage", () => {
         }),
       );
       await renderCalendar();
-      await user.click(await screen.findByRole("button", { name: "Agenda" }));
+      await chooseLayout(user, "Agenda");
       await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
       const card = screen.getByRole("dialog");
       await user.click(within(card).getByRole("button", { name: "Edit" }));
@@ -117,7 +118,7 @@ describe("CalendarPage", () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json(collectionPage([{ ...bookableItemFixtures[0], maxBookingDurationMinutes: 60 }])),
       ),
@@ -128,7 +129,7 @@ describe("CalendarPage", () => {
       }),
     );
     await renderCalendar();
-    await user.click(await screen.findByRole("button", { name: "Agenda" }));
+    await chooseLayout(user, "Agenda");
     await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
     const card = screen.getByRole("dialog");
     await user.click(within(card).getByRole("button", { name: "Edit" }));
@@ -333,7 +334,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     await renderCalendar();
 
-    await user.click(await screen.findByRole("button", { name: "Agenda" }));
+    await chooseLayout(user, "Agenda");
     await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
     await user.click(await screen.findByRole("button", { name: "Edit" }));
     await user.type(await screen.findByRole("textbox", { name: "Purpose" }), " updated");
@@ -377,15 +378,15 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Someone else changed this booking while you were editing. Your changes are kept");
-    expect(alert).not.toHaveTextContent("private server detail");
+    expect(alert).toMatchTextContent("Someone else changed this booking while you were editing. Your changes are kept");
+    expect(alert).not.toMatchTextContent("private server detail");
     await waitFor(() => expect(alert).toHaveFocus());
     expect(screen.getByRole("textbox", { name: "Purpose" })).toHaveValue("Cell imaging updated");
     await waitFor(() => expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled());
 
     // The explanation lasts while the draft is edited further; it is not the save's transient error.
     await user.type(screen.getByRole("textbox", { name: "Purpose" }), "!");
-    expect(screen.getByRole("alert")).toHaveTextContent("Someone else changed this booking while you were editing.");
+    expect(screen.getByRole("alert")).toMatchTextContent("Someone else changed this booking while you were editing.");
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(saves.map(({ ifMatch }) => ifMatch)).toEqual(['"0"', '"1"']));
