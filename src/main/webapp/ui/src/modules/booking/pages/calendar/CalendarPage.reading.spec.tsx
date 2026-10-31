@@ -533,13 +533,13 @@ describe("Calendar page", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/add");
     await expect.poll(() => new URLSearchParams(history.location.search).get("target")).toBe("IN123");
     await expect.element(page.getByRole("heading", { name: "Add Booking" })).toBeVisible();
-    await expect.element(page.getByRole("button", { name: "Booking rules" })).toBeVisible();
+    await expect.element(page.getByRole("complementary", { name: "Booking rules" })).toBeVisible();
     const fullStart = page.getByRole("group", { name: "Start" });
     const fullEnd = page.getByRole("group", { name: "End" });
     await expect.element(fullStart.getByLabelText("Start date")).toHaveValue("2026-08-18");
-    await expect.element(fullStart.getByLabelText("Time")).toHaveValue("09:15");
+    await expect.element(fullStart.getByLabelText("Start time", { exact: true })).toHaveValue("09:15");
     await expect.element(fullEnd.getByLabelText("End date")).toHaveValue("2026-08-18");
-    await expect.element(fullEnd.getByLabelText("Time")).toHaveValue("10:45");
+    await expect.element(fullEnd.getByLabelText("End time", { exact: true })).toHaveValue("10:45");
     await expect
       .element(page.getByRole("textbox", { name: "Purpose" }))
       .toHaveValue("Carry this draft into the full form");
