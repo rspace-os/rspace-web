@@ -181,26 +181,37 @@ public final class ApiV2AuditStrictSearch {
               request.search(),
               request.searchableFields(),
               request.relatedIdentifierFields(),
-              request.descriptionsSafe(),
-              manifest);
+              request.descriptionsSafe());
+      CachedScan hit;
       synchronized (cache) {
         cache
             .entrySet()
             .removeIf(entry -> System.nanoTime() - entry.getValue().created() >= cacheNanos);
-        CachedScan hit = cache.get(key);
-        if (hit != null) {
+        hit = cache.get(key);
+      }
+      if (hit != null) {
+        try {
+          // SEARCH auditing appends to today's log. Reuse only after certifying that every
+          // appended event is outside this completed-day snapshot, regardless of its filters.
+          certify(hit.manifest(), request);
           return hit.results();
+        } catch (StrictReadException ex) {
+          org.slf4j.LoggerFactory.getLogger(ApiV2AuditStrictSearch.class)
+              .warn("Invalidating audit cache after a file change", ex);
+          synchronized (cache) {
+            cache.remove(key);
+          }
         }
       }
       StrictReadException firstFailure;
       try {
-        return attempt(request, restricted, 1, key);
+        return attempt(request, restricted, 1, key, manifest);
       } catch (StrictReadException ex) {
         firstFailure = ex;
       }
       try {
         // A retried scan may have a different manifest. Do not cache it under the original key.
-        return attempt(request, restricted, 2, null);
+        return attempt(request, restricted, 2, null, null);
       } catch (StrictReadException ex) {
         throw new StrictReadException(ex.getSafeFile(), ex.getLineNumber(), firstFailure);
       }
@@ -210,7 +221,11 @@ public final class ApiV2AuditStrictSearch {
   }
 
   private List<AuditTrailSearchResult> attempt(
-      Request request, AuditTrailSearchElement restricted, int attemptNumber, CacheKey key) {
+      Request request,
+      AuditTrailSearchElement restricted,
+      int attemptNumber,
+      CacheKey key,
+      Map<Path, FileManifest> originalManifest) {
     Map<Path, FileManifest> manifest = enumerate();
     observer.afterManifest(attemptNumber, List.copyOf(manifest.values()));
     List<AuditTrailSearchResult> results = new ArrayList<>();
@@ -228,12 +243,12 @@ public final class ApiV2AuditStrictSearch {
     certify(manifest, request);
     List<AuditTrailSearchResult> completed = List.copyOf(results);
     if (key != null
-        && key.manifest().equals(manifest)
+        && originalManifest.equals(manifest)
         && manifest.equals(enumerate())
         && cacheEntries > 0
         && cacheNanos > 0) {
       synchronized (cache) {
-        cache.put(key, new CachedScan(System.nanoTime(), completed));
+        cache.put(key, new CachedScan(System.nanoTime(), completed, Map.copyOf(manifest)));
         while (cache.size() > cacheEntries) {
           cache.remove(cache.keySet().iterator().next());
         }
@@ -256,10 +271,10 @@ public final class ApiV2AuditStrictSearch {
       String text,
       Set<String> searchableFields,
       Set<String> relatedFields,
-      boolean safeDescriptions,
-      Map<Path, FileManifest> manifest) {}
+      boolean safeDescriptions) {}
 
-  private record CachedScan(long created, List<AuditTrailSearchResult> results) {}
+  private record CachedScan(
+      long created, List<AuditTrailSearchResult> results, Map<Path, FileManifest> manifest) {}
 
   private Map<Path, FileManifest> enumerate() {
     Map<Path, FileManifest> manifests = new LinkedHashMap<>();

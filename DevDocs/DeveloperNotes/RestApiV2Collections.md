@@ -850,6 +850,7 @@ either may be zero to disable caching. The cache stores at most the bounded scan
 not pages. Keys include the interval, resource audit identity, filters, caller, current actor
 visibility, readable search fields, description permission and file manifest. Every request
 rechecks record and field access and actor visibility before reuse. File identity, size or
-modification-time changes invalidate reuse. Failed, retried and over-ceiling scans are not cached.
+modification-time changes invalidate reuse unless append certification proves that every added
+event is outside the snapshot. This allows reuse after recording the search itself. Failed, retried and over-ceiling scans are not cached.
 Successful searches, including cache hits and empty results, emit an audit `SEARCH` event only
 after snapshot validation succeeds.

@@ -203,6 +203,27 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void cacheSurvivesCertifiedAppendsOutsideSnapshotButNotHistoricalAppends() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    AtomicInteger scans = new AtomicInteger();
+    var scanner =
+        search(
+            new ReadObserver() {
+              @Override
+              public void afterManifest(int attempt, List<FileManifest> files) {
+                scans.incrementAndGet();
+              }
+            });
+    assertEquals(1, scanner.search(request(10)).size());
+    append(log, event("04 Jan 2026 12:00:00,000", "BC1") + "\n");
+    assertEquals(1, scanner.search(request(10)).size());
+    assertEquals(1, scans.get());
+    append(log, event("02 Jan 2026 12:00:00,000", "BC1") + "\n");
+    assertEquals(2, scanner.search(request(10)).size());
+    assertEquals(2, scans.get());
+  }
+
+  @Test
   void configuredCacheBoundEvictsOlderQueries() throws IOException {
     write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
     AtomicInteger scans = new AtomicInteger();
@@ -253,7 +274,12 @@ class ApiV2AuditStrictSearchTest {
     restricted.setUsernames(Set.of("another-user"));
     assertTrue(scanner.search(request(10)).isEmpty());
     assertEquals(2, scans.get());
-    write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n\n");
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + event("02 Jan 2026 12:00:00,000", "BC1")
+            + "\n");
     assertTrue(scanner.search(request(10)).isEmpty());
     assertEquals(3, scans.get());
   }
