@@ -101,6 +101,7 @@ type CatalogueSearch = {
   availabilityWindow?: CatalogueAvailabilityWindow;
   page?: number;
   pageSize?: number;
+  totals?: boolean;
 };
 
 export type CatalogueAvailability = "available-now" | "free-later-today";
@@ -142,9 +143,9 @@ export async function fetchBookingCatalogue(
 ): Promise<BookingCataloguePage> {
   const parameters = new URLSearchParams({
     page: String(search.page ?? 1),
-    totals: "true",
     limit: String(search.pageSize ?? 20),
   });
+  if (search.totals) parameters.set("totals", "true");
   appendItemFilters(parameters, search);
   if (search.availability && search.availabilityWindow) {
     parameters.set("availability", search.availability);
@@ -191,7 +192,6 @@ export async function fetchBookingCatalogueLocations(
 ) {
   const parameters = new URLSearchParams({
     page: String(search.page ?? 1),
-    totals: "true",
     limit: String(search.pageSize ?? 20),
   });
   if (search.q?.trim()) parameters.set("q", search.q.trim());

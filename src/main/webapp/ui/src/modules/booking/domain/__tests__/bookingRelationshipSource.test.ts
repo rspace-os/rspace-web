@@ -69,6 +69,7 @@ describe("booking relationship source", () => {
     expect(bookingInstrumentSource.browsable).toBe(true);
     await expect(bookingInstrumentSource.search("", "token", signal())).resolves.toEqual([]);
     expect(requested?.searchParams.has("q")).toBe(false);
+    expect(requested?.searchParams.has("totals")).toBe(false);
   });
 });
 
@@ -100,6 +101,7 @@ describe("booking location source", () => {
 
     expect(bookingLocationSource.browsable).toBe(true);
     expect(requested?.searchParams.has("q")).toBe(false);
+    expect(requested?.searchParams.has("totals")).toBe(false);
     expect(options.map(({ value, label }) => ({ value, label }))).toEqual([
       { value: "IC12", label: "Cold room" },
       { value: "IC7", label: "WB ada" },

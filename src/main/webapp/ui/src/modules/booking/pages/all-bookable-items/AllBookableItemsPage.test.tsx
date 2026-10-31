@@ -544,10 +544,11 @@ describe("AllBookableItemsPage", () => {
     await renderPage();
 
     expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent("2"));
-    expect(screen.getByRole("button", { name: "Free later" })).toHaveTextContent("1");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent("2"));
+    expect(screen.getByRole("button", { name: "Free later" })).toMatchTextContent("1");
     expect(requests.map(pageRequest)).toEqual(["1/20"]);
     expect(requests[0].searchParams.has("availability")).toBe(false);
+    expect(requests[0].searchParams.get("totals")).toBe("true");
     expect(countRequests).toHaveLength(1);
     expect(countRequests[0].searchParams.has("page")).toBe(false);
   });
@@ -1028,7 +1029,7 @@ describe("AllBookableItemsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(countRequests).toBe(2));
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent("2");
+    expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent("2");
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(router.state.location.search.availability).toBe("free-later-today");
   });
@@ -1129,7 +1130,7 @@ describe("AllBookableItemsPage", () => {
     await renderPage(`/booking/all-items?where=${encodeURIComponent(where)}`);
 
     const issue = await screen.findByRole("alert");
-    expect(issue).toHaveTextContent("invalid or unavailable field");
+    expect(issue).toMatchTextContent("invalid or unavailable field");
     expect(requests).toHaveLength(0);
   });
 });
