@@ -92,6 +92,7 @@ export function auditRangeToQuery(range: AuditDateRange): { start: string; end: 
 
 export async function fetchBookingConfigurationAudit(input: {
   configurationId: number;
+  q?: string;
   start?: string;
   end?: string;
   page: number;
@@ -111,6 +112,7 @@ export async function fetchBookingConfigurationAudit(input: {
     page: String(input.page + 1),
     limit: String(AUDIT_PAGE_SIZE),
   });
+  if (input.q !== undefined) parameters.set("q", input.q);
   if (input.start !== undefined) parameters.set("start", input.start);
   if (input.end !== undefined) parameters.set("end", input.end);
   if (input.snapshot !== undefined) {

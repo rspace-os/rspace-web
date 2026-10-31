@@ -57,12 +57,14 @@ describe("fetchBookingConfigurationAudit", () => {
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
         captured = request;
+        if (new URL(request.url).searchParams.has("search")) return new HttpResponse(null, { status: 400 });
         return HttpResponse.json(page());
       }),
     );
 
     const result = await fetchBookingConfigurationAudit({
       configurationId: 7,
+      q: "Updated booking",
       page: 1,
       start: "2026-08-01T00:00:00.000Z",
       end: "2026-08-26T00:00:00.000Z",
@@ -73,6 +75,7 @@ describe("fetchBookingConfigurationAudit", () => {
     const url = new URL(captured?.url ?? "http://invalid");
     expect(Object.fromEntries(url.searchParams)).toEqual({
       page: "2",
+      q: "Updated booking",
       limit: "20",
       start: "2026-08-01T00:00:00.000Z",
       end: "2026-08-26T00:00:00.000Z",

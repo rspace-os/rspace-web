@@ -181,8 +181,9 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
       const docs = detailBookingEvents.filter((booking) => booking.target.globalId === targetId);
       return HttpResponse.json(collectionPage(docs));
     }),
-    http.get("/api/v2/booking-configurations/7/audit", () =>
-      HttpResponse.json({
+    http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+      if (new URL(request.url).searchParams.has("search")) return new HttpResponse(null, { status: 400 });
+      return HttpResponse.json({
         ...collectionPage([
           {
             eventId: "a".repeat(64),
@@ -197,8 +198,8 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
         ]),
         snapshotDate: "2026-08-25",
         snapshotFingerprint: "b".repeat(64),
-      }),
-    ),
+      });
+    }),
     http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
       HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
     ),
