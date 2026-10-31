@@ -25,14 +25,15 @@ import org.springframework.test.context.web.WebAppConfiguration;
  * is the whole point of testing at this layer.
  *
  * <p>Listeners match the base class, which notably excludes {@code
- * TransactionalTestExecutionListener}: work commits for real rather than rolling back. Keep tests
- * using this annotation read-only, or have them clean up after themselves.
+ * TransactionalTestExecutionListener}: work commits for real rather than rolling back. The database
+ * cleaner runs after the outer test class, including all nested classes. Fixtures must still
+ * restore in-memory state in their per-test teardown.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Tag("integration")
 @DisabledIfSystemProperty(named = "fast", matches = ".*")
-@ExtendWith(SpringExtension.class)
+@ExtendWith({SpringExtension.class, ApiV2DatabaseCleanerExtension.class})
 @WebAppConfiguration
 @ActiveProfiles(profiles = "dev")
 @ContextConfiguration(

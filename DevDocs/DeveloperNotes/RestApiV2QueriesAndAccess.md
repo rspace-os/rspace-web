@@ -616,7 +616,7 @@ Follow these harness rules:
 
 | # | Requirement |
 | --- | --- |
-| 1. | **Work commits.** The annotation omits `TransactionalTestExecutionListener`, so nothing rolls back. Create rows through `ApiV2Fixture` and it removes them in `cleanUp()`, checking the delete status to catch broken delete routes rather than silently orphaning data. |
+| 1. | **Work commits.** The annotation omits `TransactionalTestExecutionListener`, so nothing rolls back. The annotation registers `DatabaseCleaner` before each test and cleans committed rows after the outer class and all its nested classes finish. `ApiV2Fixture.cleanUp()` still runs after each test to check delete routes and restore in-memory state. |
 | 2. | **Collections are shared.** Another test's rows are in the same table. Never assert a raw `totalDocs` against a whole collection. Tag rows with `fixture.marker()` and scope every query to it, for example `?where=message==<marker>`. |
 
 Build the `MockMvc` yourself only for a test that must not have the fixture's filters, such as one
