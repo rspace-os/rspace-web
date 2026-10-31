@@ -52,7 +52,7 @@ const meta = {
   component: RecurringBookingPrototype,
   parameters: { layout: "fullscreen" },
   beforeEach: async () => {
-    await prototypeWorker.start({ onUnhandledRequest: "bypass", quiet: true });
+    await prototypeWorker.start({ onUnhandledFrame: "bypass", quiet: true });
     return () => prototypeWorker.stop();
   },
   decorators: [
