@@ -43,7 +43,6 @@ class BookingIncrementScenariosTest {
     item.setTimeZone(vector.get("timezone").asText());
     item.setSlotGranularityMinutes(vector.get("slotGranularityMinutes").asLong());
     item.setIncrementUnit(BookingIncrementUnit.valueOf(vector.get("incrementUnit").asText()));
-    item.setAlignToIncrement(vector.get("alignToIncrement").asBoolean());
     Date start = Date.from(Instant.parse(vector.get("start").asText()));
     Date end = Date.from(Instant.parse(vector.get("end").asText()));
 
@@ -57,7 +56,6 @@ class BookingIncrementScenariosTest {
     assertEquals(
         switch (expected) {
           case "precision", "duration" -> BookingPolicyException.Reason.GRANULARITY;
-          case "alignment" -> BookingPolicyException.Reason.ALIGNMENT;
           case "dayEndMissing" -> BookingPolicyException.Reason.DAY_END_MISSING;
           default -> throw new IllegalArgumentException("Unknown interval result " + expected);
         },
@@ -71,7 +69,6 @@ class BookingIncrementScenariosTest {
         new BookingSchedulingSettings(
             vector.get("slotGranularityMinutes").asLong(),
             BookingIncrementUnit.valueOf(vector.get("incrementUnit").asText()),
-            vector.get("alignToIncrement").asBoolean(),
             BookingOpeningHoursCodec.openingHours(vector.get("openingHours")),
             0,
             0,

@@ -24,7 +24,6 @@ const unit = (name: "Minutes" | "Hours" | "Days") =>
   within(screen.getByRole("group", { name: "booking:settings.fields.incrementUnit" })).getByRole("button", {
     name: `booking:settings.fields.increment${name}`,
   });
-const alignment = () => screen.getByRole("checkbox", { name: "booking:settings.fields.alignToIncrement" });
 const maximum = () => screen.getByRole("spinbutton", { name: "booking:settings.fields.maximumDuration" });
 const save = () => screen.getByRole("button", { name: "booking:settings.actions.save" });
 const openDay = (day: string) =>
@@ -42,7 +41,7 @@ async function setNumber(user: ReturnType<typeof userEvent.setup>, input: HTMLEl
 }
 
 describe("Booking settings time increment", () => {
-  it("rejects an aligned 60-minute increment with no on-the-hour start in 09:15-10:15", async () => {
+  it("accepts a 60-minute increment in 09:15-10:15", async () => {
     const user = userEvent.setup();
     const submitted = serve({
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "09:15", end: "10:15" })),
@@ -50,19 +49,11 @@ describe("Booking settings time increment", () => {
     renderBookingSettingsPage();
 
     await setNumber(user, await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" }), "60");
-    expect(increment()).toHaveAttribute("aria-invalid", "true");
-    expect(increment()).toHaveAccessibleDescription("booking:settings.errors.incrementAlignedOpening");
-    await user.click(save());
-    expect(submitted).toHaveLength(0);
-
-    await user.click(alignment());
-    expect(screen.queryByText("booking:settings.errors.incrementAlignedOpening")).not.toBeInTheDocument();
     await user.click(save());
     await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
     expect(submitted[0]).toMatchObject({
       slotGranularityMinutes: 60,
       incrementUnit: "MINUTES",
-      alignToIncrement: false,
     });
   });
 
@@ -205,41 +196,5 @@ describe("Booking settings time increment", () => {
     expect(submitted[0]).toMatchObject({ slotGranularityMinutes: 1440, incrementUnit: "DAYS" });
     await waitFor(() => expect(unit("Days")).toHaveAttribute("aria-pressed", "true"));
     expect(increment()).toHaveValue(1);
-  });
-
-  it("shows Start on clock intervals off from one day without changing the stored choice", async () => {
-    const user = userEvent.setup();
-    const submitted = serve();
-    renderBookingSettingsPage();
-
-    await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" });
-    expect(alignment()).toBeChecked();
-    expect(alignment()).toHaveAccessibleDescription("booking:settings.fields.alignToIncrementDescription");
-
-    await setNumber(user, increment(), "1440");
-    expect(alignment()).not.toBeChecked();
-    expect(alignment()).toHaveAttribute("aria-disabled", "true");
-    expect(alignment()).toHaveAccessibleDescription(
-      "booking:settings.fields.alignToIncrementDescription booking:settings.fields.alignToIncrementUnavailable",
-    );
-    await setNumber(user, increment(), "60");
-    expect(alignment()).toBeChecked();
-    expect(alignment()).not.toHaveAttribute("aria-disabled");
-
-    // A cleared choice is kept through an unavailable increment too.
-    await user.click(alignment());
-    await user.click(unit("Hours"));
-    expect(alignment()).toHaveAttribute("aria-disabled", "true");
-    await setNumber(user, increment(), "1");
-    expect(alignment()).not.toBeChecked();
-    expect(alignment()).not.toHaveAttribute("aria-disabled");
-    await user.click(alignment());
-
-    await user.click(unit("Days"));
-    expect(alignment()).not.toBeChecked();
-    expect(alignment()).toHaveAttribute("aria-disabled", "true");
-    await user.click(save());
-    await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
-    expect(submitted[0]).toMatchObject({ slotGranularityMinutes: 1440, incrementUnit: "DAYS", alignToIncrement: true });
   });
 });

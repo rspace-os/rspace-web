@@ -109,7 +109,6 @@ describe("BookableItemPage", () => {
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(await screen.findByText("booking:bookableItemDetails.hours")).toBeVisible();
-    expect(screen.getByText("booking:bookableItemDetails.alignmentUnavailable")).toBeVisible();
 
     // 24 Hours is not shown as 1 Day, and an unsaved unit change does not outlive Cancel.
     let increment = await edit();
@@ -134,7 +133,7 @@ describe("BookableItemPage", () => {
     expect(screen.queryByText("booking:settings.errors.incrementWholeDays")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
     await waitFor(() => expect(patches).toHaveLength(1));
-    expect(patches[0]).toMatchObject({ slotGranularityMinutes: 2880, incrementUnit: "DAYS", alignToIncrement: true });
+    expect(patches[0]).toMatchObject({ slotGranularityMinutes: 2880, incrementUnit: "DAYS" });
     expect(await screen.findByText("booking:bookableItemDetails.days")).toBeVisible();
 
     increment = await edit();

@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.context.WebApplicationContext;
 
-/** Increment unit and start alignment through the collection API, storage and Envers history. */
+/** Increment unit through the collection API, storage and Envers history. */
 @ApiV2WebIntegrationTest
 class BookingIncrementUnitMVCIT {
 
@@ -53,15 +53,14 @@ class BookingIncrementUnitMVCIT {
   }
 
   @Test
-  void freshSchemaDefaultsToAlignedFifteenMinutes() {
+  void freshSchemaDefaultsToFifteenMinutes() {
     Map<String, Object> defaults =
         jdbcTemplate.queryForMap(
-            "select slotGranularityMinutes, incrementUnit, alignToIncrement"
+            "select slotGranularityMinutes, incrementUnit"
                 + " from BookingConfigurationDefaults where id = 1");
 
     assertEquals(15L, ((Number) defaults.get("slotGranularityMinutes")).longValue());
     assertEquals("MINUTES", defaults.get("incrementUnit"));
-    assertEquals(Boolean.TRUE, defaults.get("alignToIncrement"));
   }
 
   @Test
@@ -75,15 +74,13 @@ class BookingIncrementUnitMVCIT {
         .perform(get(path).header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.slotGranularityMinutes").value(15))
-        .andExpect(jsonPath("$.incrementUnit").value("MINUTES"))
-        .andExpect(jsonPath("$.alignToIncrement").value(true));
+        .andExpect(jsonPath("$.incrementUnit").value("MINUTES"));
 
     patchConfiguration(
             path, "\"0\"", "{\"slotGranularityMinutes\":1440,\"incrementUnit\":\"HOURS\"}")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.slotGranularityMinutes").value(1440))
-        .andExpect(jsonPath("$.incrementUnit").value("HOURS"))
-        .andExpect(jsonPath("$.alignToIncrement").value(true));
+        .andExpect(jsonPath("$.incrementUnit").value("HOURS"));
     mockMvc
         .perform(get(path).header("apiKey", fixture.userKey()))
         .andExpect(jsonPath("$.incrementUnit").value("HOURS"));
@@ -94,8 +91,7 @@ class BookingIncrementUnitMVCIT {
         .andExpect(jsonPath("$.incrementUnit").value("DAYS"));
     patchConfiguration(path, "\"2\"", "{\"allowDoubleBooking\":true}")
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.incrementUnit").value("DAYS"))
-        .andExpect(jsonPath("$.alignToIncrement").value(true));
+        .andExpect(jsonPath("$.incrementUnit").value("DAYS"));
 
     for (String invalid :
         List.of(
@@ -116,12 +112,11 @@ class BookingIncrementUnitMVCIT {
 
     Map<String, Object> stored =
         jdbcTemplate.queryForMap(
-            "select slotGranularityMinutes, incrementUnit, alignToIncrement, configurationVersion"
+            "select slotGranularityMinutes, incrementUnit, configurationVersion"
                 + " from BookingConfiguration where id = ?",
             id);
     assertEquals(1440L, ((Number) stored.get("slotGranularityMinutes")).longValue());
     assertEquals("DAYS", stored.get("incrementUnit"));
-    assertEquals(Boolean.TRUE, stored.get("alignToIncrement"));
     assertEquals(3L, ((Number) stored.get("configurationVersion")).longValue());
     assertEquals(
         List.of("MINUTES", "HOURS", "DAYS", "DAYS"),

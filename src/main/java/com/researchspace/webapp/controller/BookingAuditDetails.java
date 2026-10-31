@@ -53,7 +53,6 @@ final class BookingAuditDetails {
           "openingHours",
           "slotGranularityMinutes",
           "incrementUnit",
-          "alignToIncrement",
           "maxBookingDurationMinutes",
           "bufferBeforeMinutes",
           "bufferAfterMinutes",

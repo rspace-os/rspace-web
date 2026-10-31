@@ -27,8 +27,8 @@ public final class BookingSchedulingPolicy {
   record ConflictInterval(Date start, Date end) {}
 
   /**
-   * Validates whole-minute endpoints, the time increment and its start alignment, the item maximum
-   * and opening coverage, then returns the conflict interval.
+   * Validates whole-minute endpoints, the time increment, the item maximum and opening coverage,
+   * then returns the conflict interval.
    */
   public ConflictInterval validate(BookingConfiguration configuration, Date start, Date end) {
     ZoneId zone = ZoneId.of(configuration.getTimeZone());
@@ -43,7 +43,7 @@ public final class BookingSchedulingPolicy {
     if (rule instanceof DayIncrement days) {
       requireDayIncrement(localStart, localEnd, days.days());
     } else if (rule instanceof ElapsedIncrement elapsed) {
-      requireElapsedIncrement(localStart, startInstant, endInstant, elapsed);
+      requireElapsedIncrement(startInstant, endInstant, elapsed);
     }
     requireMaximumDuration(startInstant, endInstant, configuration.getMaxBookingDurationMinutes());
     requireOpeningCoverage(settings, startInstant, endInstant, zone);
@@ -80,16 +80,9 @@ public final class BookingSchedulingPolicy {
     }
   }
 
-  /**
-   * An aligned start sits on the increment's grid from local midnight; the end only has to follow a
-   * positive whole number of increments in elapsed time, so it may be off the grid.
-   */
+  /** The elapsed length must be a positive whole number of increments. */
   private static void requireElapsedIncrement(
-      ZonedDateTime localStart, Instant start, Instant end, ElapsedIncrement increment) {
-    if (increment.aligned()
-        && localStart.toLocalTime().toSecondOfDay() / 60 % increment.minutes() != 0) {
-      throw new BookingPolicyException(Reason.ALIGNMENT);
-    }
+      Instant start, Instant end, ElapsedIncrement increment) {
     long elapsedMinutes = Duration.between(start, end).toMinutes();
     if (elapsedMinutes <= 0 || elapsedMinutes % increment.minutes() != 0) {
       throw new BookingPolicyException(Reason.GRANULARITY);

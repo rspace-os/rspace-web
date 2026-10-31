@@ -32,12 +32,10 @@ const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", dele
 const settings = {
   slotGranularityMinutes: 5,
   incrementUnit: "MINUTES",
-  alignToIncrement: true,
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:00" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
   ],
-
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -339,9 +337,7 @@ describe("AddBookableItemPage", () => {
         timezone: "Europe/Berlin",
         slotGranularityMinutes: 5,
         incrementUnit: "MINUTES",
-        alignToIncrement: true,
         openingHours: settings.openingHours,
-
         bufferBeforeMinutes: 0,
         bufferAfterMinutes: 0,
         maxBookingDurationMinutes: 0,

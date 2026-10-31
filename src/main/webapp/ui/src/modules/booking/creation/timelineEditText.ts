@@ -22,7 +22,6 @@ export function hiddenEdgeDescription(
   if (action.kind === "enabled") return t("timelineEdit.continuationHint");
   const midnightDate = formatPlainDate(edge === "start" ? date : addCalendarDays(date, 1), locale);
   return {
-    alignment: t("timelineEdit.unavailable.alignment", { date: midnightDate, timezone: displayTimezone }),
     dayEndMissing: t("timelineEdit.unavailable.dayEndMissing", { date: midnightDate, timezone: displayTimezone }),
     duration: t("timelineEdit.unavailable.duration", { date: midnightDate, timezone: displayTimezone }),
     precision: t("timelineEdit.unavailable.precision", { date: midnightDate, timezone: displayTimezone }),

@@ -141,6 +141,7 @@ export async function fetchBookingConfigurationAudit(input: {
   const parameters = new URLSearchParams({
     page: String(input.page + 1),
     limit: String(AUDIT_PAGE_SIZE),
+    totals: "true",
   });
   if (input.q !== undefined && input.q.trim() !== "") parameters.set("q", input.q.trim());
   if (input.start !== undefined) parameters.set("start", input.start);
@@ -213,7 +214,7 @@ function openingValue(key: string, value: unknown, locale: string, timeLocale: s
 /** Translated words for recorded booleans and enumerated values, so they read as the rest of the UI does. */
 export type RecordedValueWords = { yes: string; no: string; values: Readonly<Record<string, string>> };
 
-const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking", "alignToIncrement"]);
+const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking"]);
 const ENUMERATED_KEYS = new Set(["state", "kind", "incrementUnit"]);
 
 /** Booleans as Yes/No, states, kinds and increment units by their labels, and a target by its global ID. */
@@ -288,7 +289,7 @@ export const bookingConfigurationAuditQuery = (
       "audit",
       input.start,
       input.end,
-      input.search,
+      input.q,
       input.actions,
       input.page,
       input.snapshot?.snapshotDate ?? null,

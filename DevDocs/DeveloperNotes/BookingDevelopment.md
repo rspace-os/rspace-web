@@ -10,7 +10,7 @@ The [master changelog](../../src/main/resources/sqlUpdates/liquibase-master.xml)
 creates each Booking table and its Envers history once, in dependency order, with
 its final settings, display, lifecycle and event columns. `openingHours` stores
 independent weekday intervals directly. Increment units default to `MINUTES` and
-alignment to `true`; the singleton starts with a fifteen-minute increment.
+the singleton starts with a fifteen-minute increment.
 
 The resource-access tables precede Booking configuration creation. The separate
 [`changeLog-booking-drop-resource-access.xml`](../../src/main/resources/sqlUpdates/changeLog-booking-drop-resource-access.xml)
@@ -33,7 +33,7 @@ They use reserved IDs and bypass Envers, so they create no audit revisions. See 
 for execution guards, and their [original SQL](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
 and [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql) for fixture values.
 The seed creates no independent Booking ACLs. It includes one-day increments and
-unaligned fifteen-minute starts, and skips occupied fixture IDs.
+off-grid fifteen-minute starts, and skips occupied fixture IDs.
 
 ## Service-created development fixtures
 
@@ -124,7 +124,7 @@ without historical checksums, increment-schema detection or shared-hours
 backfills. Rebuild development databases from the baseline after updating this
 stack; do not reuse a database with the earlier Booking changesets applied.
 
-The original seed creates its fifteen-minute, one-day and unaligned examples in
+The original seed creates its fifteen-minute, one-day and off-grid examples in
 one guarded operation. It skips databases with existing configurations or
 occupied fixture IDs. The edge-case seed runs only while its seven items retain
-their initial schedule, increment, alignment and configuration version.
+their initial schedule, increment and configuration version.

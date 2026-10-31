@@ -71,7 +71,6 @@ export function validateBookingWindow(
     schedulingTimezone: resolvedSchedulingTimezone,
     slotGranularityMinutes,
     incrementUnit,
-    alignToIncrement,
     maxBookingDurationMinutes,
     enforceOpeningHours = true,
     allowPolicyMismatch = false,
@@ -79,7 +78,7 @@ export function validateBookingWindow(
   }: BookingWindowPolicy,
 ) {
   const result = resolveBookingWindow(value, timezones);
-  const rule = incrementRule({ slotGranularityMinutes, incrementUnit, alignToIncrement });
+  const rule = incrementRule({ slotGranularityMinutes, incrementUnit });
   const violation: IncrementViolation | null = result.window
     ? incrementViolation(rule, result.window.start, result.window.end, resolvedSchedulingTimezone)
     : null;

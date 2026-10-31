@@ -20,14 +20,14 @@ Booking separates display preferences from scheduling rules:
 The opening-hours editor keeps each start/end pair on one row, including weekday
 exceptions. On narrow screens, Open all day wraps onto a separate row.
 
-The increment and alignment rules are defined in
+The increment rules are defined in
 [Typed scheduling increments](Booking.md#typed-scheduling-increments).
 
-Booking forms snap an aligned start to the scheduling-zone grid on blur and snap the end
+Booking forms keep the entered whole-minute start and snap the end
 to the start plus the nearest whole number of increments (calendar days for Days),
 announcing each adjustment. Both timelines use `creation/timelineRange.ts`: moves keep
 the duration basis, resizes keep the other endpoint fixed, and every candidate is a
-complete interval checked against increment, alignment, opening hours and maxima. An
+complete interval checked against increment, opening hours and maxima. An
 endpoint on another day shows a striped continuation; double-click or Enter/Space moves
 it to the displayed day's midnight when the result is valid, and a single click only
 focuses it. Drag-to-create and the calendar's Add button produce proposals through the

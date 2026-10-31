@@ -90,12 +90,8 @@ class BookingSchedulingPolicyFuzzTest {
         };
     Instant shiftedStart = start.plusMillis(shiftMillis);
     Instant shiftedEnd = end.plusMillis(shiftMillis);
-    assertRejection(
-        shiftMillis == 60_000 ? Reason.ALIGNMENT : Reason.GRANULARITY,
-        configuration,
-        shiftedStart,
-        shiftedEnd,
-        false);
+    if (shiftMillis < 60_000)
+      assertRejection(Reason.GRANULARITY, configuration, shiftedStart, shiftedEnd, false);
     assertRejection(Reason.GRANULARITY, configuration, start, shiftedEnd, false);
     if (shiftMillis < 60_000) {
       assertRejection(Reason.GRANULARITY, configuration, shiftedStart, end, true);
@@ -157,32 +153,23 @@ class BookingSchedulingPolicyFuzzTest {
     Instant start =
         Instant.parse(anchor.instant()).plus(data.consumeInt(0, 1439), ChronoUnit.MINUTES);
     Instant end = start.plus((long) increment * data.consumeInt(1, 2), ChronoUnit.MINUTES);
-    int localStartMinute =
-        start.atZone(ZoneId.of(anchor.zone())).toLocalTime().toSecondOfDay() / 60;
     long elapsedMinutes = Duration.between(start, end).toMinutes();
     configuration.setMaxBookingDurationMinutes(elapsedMinutes);
     BookingSchedulingPolicy policy = new BookingSchedulingPolicy();
 
-    for (boolean aligned : new boolean[] {false, true}) {
-      configuration.setAlignToIncrement(aligned);
-      if (aligned && increment < 1440 && localStartMinute % increment != 0) {
-        assertRejection(Reason.ALIGNMENT, configuration, start, end, false);
-      } else {
-        assertConflict(
-            configuration, start, end, policy.validate(configuration, date(start), date(end)));
-        if (increment > 1) {
-          assertRejection(
-              Reason.GRANULARITY, configuration, start, end.plus(1, ChronoUnit.MINUTES), false);
-        }
-      }
-      // Maintenance ignores alignment, duration increments and the finite item maximum.
-      Instant maintenanceEnd = end.plus(1, ChronoUnit.MINUTES);
-      assertConflict(
-          configuration,
-          start,
-          maintenanceEnd,
-          policy.validateMaintenance(configuration, date(start), date(maintenanceEnd)));
+    assertConflict(
+        configuration, start, end, policy.validate(configuration, date(start), date(end)));
+    if (increment > 1) {
+      assertRejection(
+          Reason.GRANULARITY, configuration, start, end.plus(1, ChronoUnit.MINUTES), false);
     }
+    // Maintenance ignores duration increments and the finite item maximum.
+    Instant maintenanceEnd = end.plus(1, ChronoUnit.MINUTES);
+    assertConflict(
+        configuration,
+        start,
+        maintenanceEnd,
+        policy.validateMaintenance(configuration, date(start), date(maintenanceEnd)));
   }
 
   @FuzzTest(maxDuration = "30s")
@@ -197,7 +184,6 @@ class BookingSchedulingPolicyFuzzTest {
     LocalDateTime localEnd = localStart.plusDays(days);
     BookingConfiguration configuration = configuration(data, zone, incrementDays * 1440);
     configuration.setIncrementUnit(BookingIncrementUnit.DAYS);
-    configuration.setAlignToIncrement(data.consumeBoolean());
     Instant start = localStart.atZone(ZoneId.of(zone)).toInstant();
     Instant end = localEnd.atZone(ZoneId.of(zone)).toInstant();
     assertEquals(localStart.toLocalTime(), end.atZone(ZoneId.of(zone)).toLocalTime());

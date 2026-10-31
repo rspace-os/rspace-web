@@ -52,7 +52,6 @@ public final class BookingSettingsController {
   public record SettingsDocument(
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
-      boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
@@ -69,7 +68,6 @@ public final class BookingSettingsController {
       return new SettingsDocument(
           defaults.getSlotGranularityMinutes(),
           defaults.getIncrementUnit(),
-          defaults.isAlignToIncrement(),
           defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
@@ -87,7 +85,6 @@ public final class BookingSettingsController {
   public record AdminSettingsDocument(
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
-      boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
@@ -106,7 +103,6 @@ public final class BookingSettingsController {
       return new AdminSettingsDocument(
           defaults.getSlotGranularityMinutes(),
           defaults.getIncrementUnit(),
-          defaults.isAlignToIncrement(),
           defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
@@ -131,11 +127,6 @@ public final class BookingSettingsController {
                   "Unit of the time increment. DAYS counts calendar days in the item's timezone"
                       + " and needs slotGranularityMinutes to be a whole number of days.")
           BookingIncrementUnit incrementUnit,
-      @Schema(
-              description =
-                  "Whether booking starts follow the increment from local midnight. Ignored for"
-                      + " DAYS and for increments of 1440 minutes or more.")
-          Boolean alignToIncrement,
       @ArraySchema(
               arraySchema =
                   @Schema(
@@ -196,7 +187,6 @@ public final class BookingSettingsController {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
           incrementUnit,
-          alignToIncrement,
           decode(
               openingHours,
               BookingOpeningHoursCodec::openingHours,

@@ -32,7 +32,6 @@ public interface BookingCatalogueManager {
       String timezone,
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
-      boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,

@@ -7,7 +7,6 @@ import { confocalTarget, confocalTargetWith } from "./creationTestFixtures";
 const item = confocalTargetWith({
   slotGranularityMinutes: 90,
   incrementUnit: "HOURS",
-  alignToIncrement: false,
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
 });
 
@@ -20,7 +19,6 @@ describe("BookingItemInformationContent", () => {
     expect(fact("booking:bookableItemDetails.fields.granularity")).toHaveTextContent(
       "booking:bookableItemDetails.hours",
     );
-    expect(screen.queryByText("booking:bookableItemDetails.fields.alignToIncrement")).not.toBeInTheDocument();
   });
 
   it("shows a day increment in its stored unit", () => {
@@ -30,7 +28,6 @@ describe("BookingItemInformationContent", () => {
           ...item,
           slotGranularityMinutes: 1440,
           incrementUnit: "DAYS",
-          alignToIncrement: true,
           openingHours: confocalTarget.openingHours,
         }}
         displayTimezone="America/New_York"

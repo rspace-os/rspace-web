@@ -10,7 +10,6 @@ import {
   type IncrementSettings,
   type IncrementViolation,
   snapEndToIncrement,
-  snapStartToGrid,
 } from "@/modules/booking/domain/bookingIncrement";
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import {
@@ -56,7 +55,6 @@ type EndIssue = (
 export const UNRESTRICTED_INCREMENT: IncrementSettings = {
   slotGranularityMinutes: 1,
   incrementUnit: "MINUTES",
-  alignToIncrement: false,
 };
 
 export function ZonedBookingWindowFields({
@@ -64,7 +62,6 @@ export function ZonedBookingWindowFields({
   schedulingTimezone,
   slotGranularityMinutes,
   incrementUnit = "MINUTES",
-  alignToIncrement = true,
   maxBookingDurationMinutes,
   openingHours,
   enforceOpeningHours = true,
@@ -83,7 +80,6 @@ export function ZonedBookingWindowFields({
   schedulingTimezone?: string;
   slotGranularityMinutes: number;
   incrementUnit?: IncrementSettings["incrementUnit"];
-  alignToIncrement?: boolean;
   maxBookingDurationMinutes: number;
   openingHours: readonly OpeningHoursEntry[];
   enforceOpeningHours?: boolean;
@@ -132,7 +128,6 @@ export function ZonedBookingWindowFields({
         schedulingTimezone: resolvedSchedulingTimezone,
         slotGranularityMinutes,
         incrementUnit,
-        alignToIncrement,
         maxBookingDurationMinutes,
         openingHours,
         enforceOpeningHours,
@@ -145,7 +140,6 @@ export function ZonedBookingWindowFields({
       resolvedSchedulingTimezone,
       slotGranularityMinutes,
       incrementUnit,
-      alignToIncrement,
       maxBookingDurationMinutes,
       openingHours,
       enforceOpeningHours,
@@ -172,7 +166,7 @@ export function ZonedBookingWindowFields({
   const endIssueContextKey = [
     slotGranularityMinutes,
     incrementUnit,
-    alignToIncrement,
+
     zones.start,
     zones.end,
     resolvedSchedulingTimezone,
@@ -219,16 +213,6 @@ export function ZonedBookingWindowFields({
     value[`${name}Date`] === originalValue[`${name}Date`] &&
     value[`${name}Time`] === originalValue[`${name}Time`] &&
     value[`${name}Occurrence`] === originalValue[`${name}Occurrence`];
-  // Only an aligned start moves to the clock grid; the end follows the start by whole increments.
-  const snapStart = () => {
-    if (originalEndpoint("start")) return;
-    if (rule.kind !== "elapsed" || !rule.aligned) return;
-    const instant = typedInstant("start");
-    if (!instant) return;
-    applySnap("start", snapStartToGrid(instant, rule.minutes, resolvedSchedulingTimezone), (time) =>
-      t("bookings.form.startSnapped", { time, increment }),
-    );
-  };
   const endSnapNote = (time: string, date: string) => t("bookings.form.endSnapped", { time, date, increment });
   const snapEnd = () => {
     if (originalEndpoint("end")) return;
@@ -397,14 +381,6 @@ export function ZonedBookingWindowFields({
           ? { id: endpointErrorId, message: t("bookings.errors.occurrenceRequired") }
           : undefined,
       onSelect: (choice) => {
-        // Choosing the occurrence resolves the start, so an aligned start snaps now rather than on blur.
-        if (name === "start" && rule.kind === "elapsed" && rule.aligned) {
-          const snapped = snapStartToGrid(endpointResolution[choice], rule.minutes, resolvedSchedulingTimezone);
-          if (snapped !== endpointResolution[choice]) {
-            applySnap("start", snapped, (time) => t("bookings.form.startSnapped", { time, increment }), true);
-            return;
-          }
-        }
         change({ [occurrenceKey]: choice });
       },
     });
@@ -420,8 +396,7 @@ export function ZonedBookingWindowFields({
       id: `${fieldId}-${name}-time`,
       "aria-label": endpointLabels[name].time,
       type: "time",
-      // Only an aligned start has a clock grid; every other time is a whole minute.
-      step: name === "start" && rule.kind === "elapsed" && rule.aligned ? rule.minutes * 60 : 60,
+      step: 60,
       required: true,
       "aria-invalid":
         showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined,
@@ -429,7 +404,7 @@ export function ZonedBookingWindowFields({
       disabled,
       value: value[`${name}Time`],
       onChange: (event: ChangeEvent<HTMLInputElement>) => changeTime(name, event.currentTarget.value),
-      onBlur: name === "start" ? snapStart : snapEnd,
+      onBlur: name === "end" ? snapEnd : undefined,
     };
     if (!onTimezoneChange || name !== "start") return <Input {...inputProps} />;
     const timezoneLabel = t("bookings.form.changeTimezone");
@@ -598,11 +573,6 @@ export function ZonedBookingWindowFields({
   const incrementError = (current: IncrementViolation | null) => {
     // The end field already names the missing Day end the snap found.
     if (activeEndIssue?.kind === "missing" && (current === "duration" || current === "dayEndMissing")) return null;
-    if (current === "alignment") {
-      return (
-        <FieldError>{t("bookings.errors.alignment", { increment, timezone: resolvedSchedulingTimezone })}</FieldError>
-      );
-    }
     if (current === "dayEndMissing" && missingDayEnd) {
       return (
         <FieldError>

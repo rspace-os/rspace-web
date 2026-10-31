@@ -18,7 +18,6 @@ class BookingSettingsValidationTest {
       new BookingSchedulingSettings(
           5,
           BookingIncrementUnit.MINUTES,
-          true,
           List.of(
               new BookingOpeningHoursEntry(1, "09:00", "17:00"),
               new BookingOpeningHoursEntry(6, "10:00", "16:00")),
@@ -84,7 +83,6 @@ class BookingSettingsValidationTest {
         new BookingSchedulingSettings(
             2880,
             BookingIncrementUnit.MINUTES,
-            true,
             List.of(
                 new BookingOpeningHoursEntry(7, "00:00", "24:00"),
                 new BookingOpeningHoursEntry(1, "00:00", "24:00")),
@@ -104,7 +102,6 @@ class BookingSettingsValidationTest {
         new BookingSchedulingSettings(
             527040,
             BookingIncrementUnit.MINUTES,
-            true,
             BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
             0,
             0,

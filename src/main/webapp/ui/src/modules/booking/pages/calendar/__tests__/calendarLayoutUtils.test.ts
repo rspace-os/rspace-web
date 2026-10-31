@@ -34,17 +34,13 @@ describe("calendar date layout", () => {
   });
 });
 
-function policy(
-  slotGranularityMinutes: number,
-  { timezone = "UTC", incrementUnit = "MINUTES" as IncrementUnit, alignToIncrement = true } = {},
-) {
+function policy(slotGranularityMinutes: number, { timezone = "UTC", incrementUnit = "MINUTES" as IncrementUnit } = {}) {
   return timelinePolicy({
     timezone,
     slotGranularityMinutes,
     incrementUnit,
-    alignToIncrement,
-    ...ALWAYS_OPEN,
 
+    ...ALWAYS_OPEN,
     maxBookingDurationMinutes: 0,
   });
 }
@@ -67,10 +63,10 @@ describe("nextFreeRange", () => {
     ).toBeUndefined();
   });
 
-  it("fits a short window after aligning the start and respects the item maximum", () => {
+  it("fits a short window from its first free minute and respects the item maximum", () => {
     expect(nextFreeRange([], "2026-10-05", "UTC", 607, 640, policy(15))).toEqual({
-      startMinute: 615,
-      endMinute: 630,
+      startMinute: 607,
+      endMinute: 637,
     });
     expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, { ...policy(15), maxBookingDurationMinutes: 30 })).toEqual(
       {
@@ -80,31 +76,22 @@ describe("nextFreeRange", () => {
     );
   });
 
-  it("proposes a whole number of increments starting on the grid", () => {
+  it("proposes a whole number of increments from the first free minute", () => {
     expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(120))).toEqual({
       startMinute: 600,
       endMinute: 720,
     });
-    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(45))).toEqual({ startMinute: 630, endMinute: 720 });
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(45))).toEqual({ startMinute: 600, endMinute: 690 });
   });
-  it("starts an unaligned proposal at the window start", () => {
-    expect(nextFreeRange([], "2026-10-05", "UTC", 607, 1080, policy(45, { alignToIncrement: false }))).toEqual({
+  it("starts a proposal at the window start", () => {
+    expect(nextFreeRange([], "2026-10-05", "UTC", 607, 1080, policy(45, {}))).toEqual({
       startMinute: 607,
       endMinute: 697,
     });
   });
   it("extends a Day proposal past the displayed day at the same local time", () => {
     // 5 October 2026 has 24 hours in UTC, so a two-day proposal is 2880 elapsed minutes.
-    expect(
-      nextFreeRange(
-        [],
-        "2026-10-05",
-        "UTC",
-        600,
-        1080,
-        policy(2880, { incrementUnit: "DAYS", alignToIncrement: false }),
-      ),
-    ).toEqual({
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(2880, { incrementUnit: "DAYS" }))).toEqual({
       startMinute: 600,
       endMinute: 600 + 2880,
     });

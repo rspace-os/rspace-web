@@ -3,10 +3,9 @@ import * as React from "react";
 import type { DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
 import { proposeDayRange, type TimelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { incrementRule, isStartAligned } from "@/modules/booking/domain/bookingIncrement";
+import { incrementRule } from "@/modules/booking/domain/bookingIncrement";
 import {
   addCalendarDays,
-  dayMinuteToZonedTime,
   sliceAcrossZonedDay,
   wallClockToDayMinute,
   zonedDayBounds,
@@ -64,9 +63,7 @@ export function periodDates(date: string, view: CalendarView): readonly string[]
 }
 
 /**
- * The first free proposal in a wall-clock window: whole increments from the first start on the item's grid, or from
- * the window start when the item is unaligned. Day increments, and elapsed increments longer than the day, start at
- * the window start and may end on a later date; a single day's events cannot show those dates are free.
+ * The first free proposal starts at the first whole minute in a gap, with a whole number of increments.
  */
 export function nextFreeRange(
   events: readonly BookingListDocument[],
@@ -94,7 +91,7 @@ export function nextFreeRange(
     ...events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone)),
     ...unavailable,
   ].toSorted((left, right) => left.startMinute - right.startMinute);
-  // The first aligned start in a gap leaves the most room for whole increments.
+  // The first free minute in a gap leaves the most room for whole increments.
   const gaps: Array<{ from: number; to: number }> = [];
   let cursor = Math.ceil(startWindow);
   for (const block of occupied) {
@@ -104,16 +101,10 @@ export function nextFreeRange(
   }
   if (cursor < endWindow) gaps.push({ from: cursor, to: endWindow });
   for (const { from, to } of gaps) {
-    for (let minute = from; minute < to; minute++) {
-      const start = dayMinuteToZonedTime(date, timezone, minute).toInstant();
-      if (!isStartAligned(rule, start, policy.schedulingTimezone)) continue;
-      const duration =
-        Math.floor(Math.min(preferredDuration, to - minute, maximumDuration) / rule.minutes) * rule.minutes;
-      if (duration <= 0) break;
-      const proposal = proposeDayRange({ startMinute: minute, endMinute: minute + duration }, date, timezone, policy);
-      if (proposal && proposal.startMinute >= from && proposal.endMinute <= to) return proposal;
-      break;
-    }
+    const duration = Math.floor(Math.min(preferredDuration, to - from, maximumDuration) / rule.minutes) * rule.minutes;
+    if (duration <= 0) continue;
+    const proposal = proposeDayRange({ startMinute: from, endMinute: from + duration }, date, timezone, policy);
+    if (proposal && proposal.startMinute >= from && proposal.endMinute <= to) return proposal;
   }
   return undefined;
 }

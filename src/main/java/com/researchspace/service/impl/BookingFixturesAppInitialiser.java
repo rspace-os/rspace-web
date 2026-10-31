@@ -803,8 +803,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             .filter(day -> !closed.contains(day))
             .map(day -> new BookingOpeningHoursEntry(day.getValue(), "00:00", "24:00"))
             .toList();
-    return new BookingSchedulingSettings.Patch(
-        null, null, null, openingHours, null, null, null, null);
+    return new BookingSchedulingSettings.Patch(null, null, openingHours, null, null, null, null);
   }
 
   private static List<BookingOpeningHoursEntry> schedule(String start, String end, int... days) {

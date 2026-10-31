@@ -1,10 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { TFunction } from "i18next";
-import {
-  alignmentAvailable,
-  INCREMENT_UNIT_MINUTES,
-  type IncrementSettings,
-} from "@/modules/booking/domain/bookingIncrement";
+import { INCREMENT_UNIT_MINUTES, type IncrementSettings } from "@/modules/booking/domain/bookingIncrement";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 
 /** The increment in its stored unit: "90 minutes", "1.5 hours", "24 hours" or "1 day", never re-derived. */
@@ -38,17 +34,7 @@ export function formatBookingLength(
   return formatDurationMinutes(localStart.until(localEnd, { largestUnit: "minute" }).minutes, locale);
 }
 
-/** Label/value facts for a read-out of the increment and whether starts follow its clock intervals. */
+/** Label and value for the increment. */
 export function incrementFacts(settings: IncrementSettings, t: TFunction<"booking">): Array<[string, string]> {
-  return [
-    [t("bookableItemDetails.fields.granularity"), formatIncrement(settings, t)],
-    [
-      t("bookableItemDetails.fields.alignToIncrement"),
-      !alignmentAvailable(settings)
-        ? t("bookableItemDetails.alignmentUnavailable")
-        : settings.alignToIncrement
-          ? t("bookableItemDetails.yes")
-          : t("bookableItemDetails.no"),
-    ],
-  ];
+  return [[t("bookableItemDetails.fields.granularity"), formatIncrement(settings, t)]];
 }

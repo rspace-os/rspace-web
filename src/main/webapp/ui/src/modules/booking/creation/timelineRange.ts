@@ -5,9 +5,7 @@ import {
   type IncrementViolation,
   incrementRule,
   incrementViolation,
-  isStartAligned,
   snapEndToIncrement,
-  snapStartToGrid,
 } from "@/modules/booking/domain/bookingIncrement";
 import {
   ALWAYS_OPEN,
@@ -59,7 +57,6 @@ export function timelinePolicy(item: PolicySource, eventKind: "BOOKING" | "MAINT
       ...ALWAYS_OPEN,
       slotGranularityMinutes: 1,
       incrementUnit: "MINUTES",
-      alignToIncrement: false,
       schedulingTimezone: item.timezone,
       maxBookingDurationMinutes: 0,
       enforceOpeningHours: false,
@@ -69,7 +66,6 @@ export function timelinePolicy(item: PolicySource, eventKind: "BOOKING" | "MAINT
     openingHours: item.openingHours,
     slotGranularityMinutes: item.slotGranularityMinutes,
     incrementUnit: item.incrementUnit,
-    alignToIncrement: item.alignToIncrement,
     schedulingTimezone: item.timezone,
     maxBookingDurationMinutes: item.maxBookingDurationMinutes,
     enforceOpeningHours: true,
@@ -82,7 +78,6 @@ export function unrestrictedTimelinePolicy(timezone: string): TimelinePolicy {
     ...ALWAYS_OPEN,
     slotGranularityMinutes: 1,
     incrementUnit: "MINUTES",
-    alignToIncrement: false,
     schedulingTimezone: timezone,
     maxBookingDurationMinutes: 0,
     enforceOpeningHours: false,
@@ -219,7 +214,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
     const cached = moves.get(candidateStart.epochNanoseconds);
     if (cached !== undefined) return cached ?? undefined;
     let result: TimelineRange | null = null;
-    const candidateEnd = isStartAligned(rule, candidateStart, timezone) ? movedEnd(candidateStart) : undefined;
+    const candidateEnd = movedEnd(candidateStart);
     // The moved interval must stay on the displayed day; its true start is never clamped into it.
     if (
       candidateEnd &&
@@ -252,10 +247,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
       for (let increments = firstIncrement; ; increments++) {
         const candidate = fixed.add({ minutes: sign * increments * rule.minutes });
         if (edge === "end" ? compare(candidate, dayEnd) > 0 : compare(candidate, dayStart) < 0) break;
-        const onDay =
-          edge === "end"
-            ? compare(candidate, dayStart) > 0
-            : compare(candidate, dayEnd) < 0 && isStartAligned(rule, candidate, timezone);
+        const onDay = edge === "end" ? compare(candidate, dayStart) > 0 : compare(candidate, dayEnd) < 0;
         if (onDay) candidates.push(candidate);
       }
     } else {
@@ -371,7 +363,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
 }
 
 /**
- * A creation proposal from a rough start and end: an aligned start moves to the scheduling-zone grid, then the end
+ * A creation proposal from a rough start and end: the start stays at its whole minute and the end
  * becomes the nearest whole number of increments. Day increments keep the start's local time and may end on a
  * later date. An end on a skipped or repeated local time gives no proposal, since only the form can ask which
  * occurrence to use.
@@ -380,8 +372,7 @@ function proposeTimelineRange(roughStart: string, roughEnd: string, policy: Time
   const rule = incrementRule(policy);
   const timezone = policy.schedulingTimezone;
   const wholeStart = toWholeMinute(Temporal.Instant.from(roughStart)).toString();
-  const start =
-    rule.kind === "elapsed" && rule.aligned ? snapStartToGrid(wholeStart, rule.minutes, timezone) : wholeStart;
+  const start = wholeStart;
   const snap = snapEndToIncrement(rule, start, roughEnd, timezone);
   return snap.kind === "instant" ? { start, end: snap.instant } : undefined;
 }

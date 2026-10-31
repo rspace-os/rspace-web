@@ -148,23 +148,6 @@ class TimeSlotBookingProblemContractTest {
   }
 
   @Test
-  void alignmentHasItsOwnCodeAndNoExtensionMembers() throws Exception {
-    JsonNode body =
-        body(
-            advice.handleBookingPolicy(
-                new BookingPolicyException(BookingPolicyException.Reason.ALIGNMENT)));
-
-    assertEquals(
-        json.readTree(
-            """
-            {"title":"The start time must fall on this bookable item's time increment, counted from midnight in its timezone.",
-             "status":400,"code":"errors.api.v2.booking.alignment",
-             "detail":"The start time must fall on this bookable item's time increment, counted from midnight in its timezone."}
-            """),
-        body);
-  }
-
-  @Test
   void aMissingDayEndNamesTheLocalTimeDateAndZoneInTheDetail() throws Exception {
     JsonNode body =
         body(

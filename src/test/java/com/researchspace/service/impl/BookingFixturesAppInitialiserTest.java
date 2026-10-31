@@ -242,7 +242,6 @@ class BookingFixturesAppInitialiserTest {
             new BookingSchedulingSettings(
                 BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES,
                 BookingSchedulingSettings.DEFAULT_INCREMENT_UNIT,
-                BookingSchedulingSettings.DEFAULT_ALIGN_TO_INCREMENT,
                 BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,

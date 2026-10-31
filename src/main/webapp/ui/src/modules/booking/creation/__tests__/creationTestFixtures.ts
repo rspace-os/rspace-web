@@ -30,7 +30,6 @@ export const confocalTarget: BookableItemOption = {
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
   incrementUnit: "MINUTES",
-  alignToIncrement: true,
   openingHours: ALL_ISO_WEEKDAYS.map(
     (dayOfWeek): OpeningHoursEntry => ({
       dayOfWeek,

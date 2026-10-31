@@ -453,7 +453,7 @@ describe("BookingForm", () => {
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("");
-    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "300");
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "60");
     expect(within(end).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
     expect(screen.getByText("booking:bookings.form.openAllDay")).toBeVisible();
 
@@ -469,8 +469,8 @@ describe("BookingForm", () => {
 
   it.each([
     [1, "60"],
-    [15, "900"],
-  ])("uses the configured %i-minute increment for aligned starts", async (increment, step) => {
+    [15, "60"],
+  ])("uses the configured %i-minute increment with whole-minute starts", async (increment, step) => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
@@ -490,67 +490,70 @@ describe("BookingForm", () => {
     expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "60");
   });
 
-  it.each(["add", "edit"] as const)("snaps typed %s-form times to the nearest configured interval", async (mode) => {
-    const user = userEvent.setup();
-    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
-    const form =
-      mode === "add" ? (
-        <BookingForm
-          mode="add"
-          eventKind="BOOKING"
-          initialTarget={{ ...target, slotGranularityMinutes: 10 }}
-          initialDate="2026-08-17"
-          token="token"
-          pending={false}
-          onSubmit={submit}
-        />
-      ) : (
-        <BookingForm
-          mode="edit"
-          booking={{
-            ...editableBooking,
-            start: "2026-08-17T07:00:00Z",
-            end: "2026-08-17T08:00:00Z",
-          }}
-          configuration={{ ...target, slotGranularityMinutes: 10 }}
-          token="token"
-          pending={false}
-          onSubmit={submit}
-        />
+  it.each(["add", "edit"] as const)(
+    "keeps typed %s-form starts and snaps the end to a duration multiple",
+    async (mode) => {
+      const user = userEvent.setup();
+      const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+      server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+      const form =
+        mode === "add" ? (
+          <BookingForm
+            mode="add"
+            eventKind="BOOKING"
+            initialTarget={{ ...target, slotGranularityMinutes: 10 }}
+            initialDate="2026-08-17"
+            token="token"
+            pending={false}
+            onSubmit={submit}
+          />
+        ) : (
+          <BookingForm
+            mode="edit"
+            booking={{
+              ...editableBooking,
+              start: "2026-08-17T07:00:00Z",
+              end: "2026-08-17T08:00:00Z",
+            }}
+            configuration={{ ...target, slotGranularityMinutes: 10 }}
+            token="token"
+            pending={false}
+            onSubmit={submit}
+          />
+        );
+      renderForm(form);
+
+      const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+      const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+      const startTime = within(start).getByLabelText("booking:bookings.form.time");
+      const endTime = within(end).getByLabelText("booking:bookings.form.time");
+      if (mode === "edit") {
+        await user.clear(startTime);
+        await user.clear(endTime);
+      }
+      await user.type(startTime, "09:04");
+      await user.tab();
+      expect(startTime).toHaveValue("09:04");
+      await user.type(endTime, "10:06");
+      await user.tab();
+      expect(endTime).toHaveValue("10:04");
+
+      await user.click(
+        screen.getByRole("button", {
+          name: mode === "add" ? "booking:bookings.form.submit" : "booking:bookings.form.save",
+        }),
       );
-    renderForm(form);
-
-    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
-    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
-    const startTime = within(start).getByLabelText("booking:bookings.form.time");
-    const endTime = within(end).getByLabelText("booking:bookings.form.time");
-    if (mode === "edit") {
-      await user.clear(startTime);
-      await user.clear(endTime);
-    }
-    await user.type(startTime, "09:04");
-    await user.tab();
-    expect(startTime).toHaveValue("09:00");
-    await user.type(endTime, "10:06");
-    await user.tab();
-    expect(endTime).toHaveValue("10:10");
-
-    await user.click(
-      screen.getByRole("button", {
-        name: mode === "add" ? "booking:bookings.form.submit" : "booking:bookings.form.save",
-      }),
-    );
-    if (mode === "add") {
-      expect(screen.queryByText("booking:bookings.errors.durationMultiple")).not.toBeInTheDocument();
-    }
-    expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
-    expect(submit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        window: { start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:10:00Z" },
-      }),
-    );
-  });
+      if (mode === "add") {
+        expect(screen.queryByText("booking:bookings.errors.durationMultiple")).not.toBeInTheDocument();
+      }
+      expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
+      expect(submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          window: { start: "2026-08-17T07:04:00Z", end: "2026-08-17T08:04:00Z" },
+        }),
+      );
+    },
+  );
 
   it("supports a compact dialog with an initial window, dirty state, and controlled cancellation", async () => {
     const user = userEvent.setup();
@@ -585,18 +588,18 @@ describe("BookingForm", () => {
     const startTime = screen.getByLabelText("booking:bookings.form.startTime");
     const endTime = screen.getByLabelText("booking:bookings.form.endTime");
     expect(startTime).toHaveValue("09:00");
-    expect(startTime).toHaveAttribute("step", "600");
+    expect(startTime).toHaveAttribute("step", "60");
     expect(endTime).toHaveValue("10:00");
     await waitFor(() => expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: false })));
 
     await user.clear(startTime);
     await user.type(startTime, "09:04");
     await user.tab();
-    expect(startTime).toHaveValue("09:00");
+    expect(startTime).toHaveValue("09:04");
     await user.clear(endTime);
     await user.type(endTime, "10:06");
     await user.tab();
-    expect(endTime).toHaveValue("10:10");
+    expect(endTime).toHaveValue("10:04");
     await user.type(screen.getByRole("textbox", { name: "booking:bookings.form.purpose" }), "Imaging");
     await waitFor(() =>
       expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: true, purpose: "Imaging" })),
@@ -934,20 +937,6 @@ describe("BookingForm", () => {
     );
     expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.form.policyMismatchPurpose");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
-
-  it("uses the maintenance notes label for an unchanged off-grid interval", async () => {
-    renderForm(
-      <BookingForm
-        mode="edit"
-        booking={{ ...editableBooking, kind: "MAINTENANCE" }}
-        configuration={{ ...target, slotGranularityMinutes: 45 }}
-        token="token"
-        pending={false}
-        onSubmit={async () => undefined}
-      />,
-    );
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.form.policyMismatchNotes");
   });
 
   it("preserves maintenance exemptions from duration and opening hours rules", async () => {

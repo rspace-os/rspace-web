@@ -25,9 +25,7 @@ const twoDayConfiguration = {
   timezone: "UTC",
   slotGranularityMinutes: 2880,
   incrementUnit: "DAYS",
-  alignToIncrement: false,
   openingHours: [...ALWAYS_OPEN.openingHours],
-
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
