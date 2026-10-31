@@ -199,7 +199,7 @@ describe("BookingEventPage", () => {
     );
 
     const label = await screen.findByText("When");
-    expect(label.nextElementSibling).toHaveTextContent(when);
+    expect(label.nextElementSibling).toMatchTextContent(when);
   });
 
   it("keeps role-lost details readable without configuration capabilities", async () => {
