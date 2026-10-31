@@ -60,7 +60,7 @@ describe("BookableItemPage", () => {
     );
     expect(screen.getByText("booking:bookableItemDetails.upcoming")).toBeVisible();
     expect(screen.getByText("booking:bookableItemDetails.past")).toBeVisible();
-    await waitFor(() => expect(eventFilters).toHaveLength(2));
+    await waitFor(() => expect(eventFilters).toHaveLength(4));
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByText("08:00–17:30")).toBeVisible();
@@ -75,7 +75,7 @@ describe("BookableItemPage", () => {
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.edit" })).toBeVisible();
     const boundaries = eventFilters.map((where) => where.match(/end=(?:gt|le)=([^;]+)/)?.[1]);
     expect(boundaries[0]).toBeTruthy();
-    expect(boundaries[0]).toBe(boundaries[1]);
+    expect(new Set(boundaries).size).toBe(1);
     await expectAccessible(container);
   });
 

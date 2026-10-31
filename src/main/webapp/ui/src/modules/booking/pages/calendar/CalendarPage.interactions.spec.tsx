@@ -45,6 +45,13 @@ describe("Calendar page", () => {
       .element(event.getByRole("button", { name: "Hide details", exact: false }))
       .toHaveAttribute("aria-expanded", "true");
     const expandedPosition = indicator?.getBoundingClientRect();
+    const details = page.getByRole("dialog").filter({ hasText: "Confocal microscope" }).element();
+    const facts = details.querySelector("dl");
+    const firstFact = facts?.firstElementChild;
+    expect(facts).not.toBeNull();
+    expect(firstFact).not.toBeNull();
+    expect(firstFact?.getBoundingClientRect().left).toBe(facts?.getBoundingClientRect().left);
+    expect(firstFact?.getBoundingClientRect().right).toBe(facts?.getBoundingClientRect().right);
 
     expect(expandedPosition?.top).toBe(collapsedPosition?.top);
     expect(expandedPosition?.right).toBe(collapsedPosition?.right);

@@ -1,8 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Booking } from "@/modules/booking/domain/booking";
-import type { CollectionConfig } from "@/modules/common/collection/config";
+import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
@@ -12,12 +13,16 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/comm
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
 
-type BookingEventListProps = {
+export type BookingEventListProps = {
   globalId: string;
   timezone: string;
   period: BookingEventPeriod;
   cutoff: string;
 };
+
+export function BookingEventList(props: BookingEventListProps) {
+  return <BookingEventTable {...props} key={`${props.globalId}:${props.period}:${props.cutoff}`} />;
+}
 
 function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventListProps) {
   const { t, i18n } = useTranslation("booking");
@@ -41,16 +46,21 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
         defaultColumns: ["start", "kind", "bookedBy", "purpose"],
         pagination: { defaultLimit: 10, limits: [10] },
         labels: {
-          singularKey: "booking:calendar.event",
+          singularKey: "booking:calendar.event" satisfies CollectionTranslationKey,
           pluralKey:
             period === "upcoming" ? "booking:bookableItemDetails.upcoming" : "booking:bookableItemDetails.past",
         },
         fields: [
-          { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false },
+          {
+            name: "id",
+            type: "number",
+            labelKey: "booking:calendar.fields.id" satisfies CollectionTranslationKey,
+            list: false,
+          },
           {
             name: "start",
             type: "dateTime",
-            labelKey: "booking:bookings.form.time",
+            labelKey: "booking:bookings.form.time" satisfies CollectionTranslationKey,
             list: {
               width: 280,
               minWidth: 220,
@@ -60,24 +70,27 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
               ),
             },
           },
-          { name: "end", type: "dateTime", labelKey: "booking:myBookings.fields.end", list: false },
+          {
+            name: "end",
+            type: "dateTime",
+            labelKey: "booking:myBookings.fields.end" satisfies CollectionTranslationKey,
+            list: false,
+          },
           {
             name: "kind",
             type: "text",
-            labelKey: "booking:bookableItemDetails.events.kind",
-            label: t("bookableItemDetails.events.kind"),
+            labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
             list: {
               width: 180,
               renderCell: ({ row }) =>
-                t(row.kind === "MAINTENANCE" ? "bookings.form.typeBlockout" : "bookings.form.typeBooking"),
+                row.kind === "MAINTENANCE" ? t("bookings.form.typeBlockout") : t("bookings.form.typeBooking"),
             },
           },
           {
             name: "bookedBy",
             type: "text",
             nullable: true,
-            labelKey: "booking:bookableItemDetails.events.actor",
-            label: t("bookableItemDetails.events.actor"),
+            labelKey: "booking:bookableItemDetails.events.actor" satisfies CollectionTranslationKey,
             list: {
               width: 220,
               renderCell: ({ row }) => {
@@ -96,14 +109,14 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             name: "createdBy",
             type: "text",
             nullable: true,
-            labelKey: "booking:bookableItemDetails.events.actor",
+            labelKey: "booking:bookableItemDetails.events.actor" satisfies CollectionTranslationKey,
             list: false,
           },
           {
             name: "purpose",
             type: "text",
             nullable: true,
-            labelKey: "booking:bookableItemDetails.events.purpose",
+            labelKey: "booking:bookableItemDetails.events.purpose" satisfies CollectionTranslationKey,
             list: {
               renderCell: ({ row }) => (row.kind === "MAINTENANCE" || row.privacy === "full" ? row.purpose : null),
             },
@@ -112,6 +125,26 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       } satisfies CollectionConfig<Booking>),
     [formatter, period, t],
   );
+  const queryPrefix = ["api-v2", "bookings", "bookable-item-events", globalId, period, cutoff];
+  const totals = useQuery({
+    queryKey: [...queryPrefix, "totals"],
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const result = await fetchBookableItemEvents({
+        globalId,
+        period,
+        cutoff,
+        page: 0,
+        limit: 1,
+        token,
+        signal,
+        totals: true,
+      });
+      if (result.totalDocs === undefined) throw new Error("Booking totals response omitted totalDocs");
+      return result.totalDocs;
+    },
+  });
   const table = useTableList<Booking>({
     config,
     dataSource: {
@@ -136,7 +169,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
           token,
           signal,
         });
-        return { rows: result.docs, rowCount: result.totalDocs };
+        return { rows: result.docs, hasNextPage: result.hasNextPage };
       },
       keepPreviousData: true,
       retry: false,
@@ -195,14 +228,17 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
   return (
     <TableList
       {...table.tableProps}
+      features={{
+        ...table.tableProps.features,
+        pagination:
+          table.tableProps.features.pagination === false
+            ? false
+            : { ...table.tableProps.features.pagination, rowCount: totals.data },
+      }}
       hideHeader
       emptyDescription={t("bookableItemDetails.events.empty")}
       presentations={{ table: "wide", cards: "narrow" }}
       rowActions={rowActions}
     />
   );
-}
-
-export function BookingEventList(props: BookingEventListProps) {
-  return <BookingEventTable {...props} key={`${props.globalId}:${props.period}:${props.cutoff}`} />;
 }

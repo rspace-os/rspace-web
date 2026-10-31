@@ -134,6 +134,13 @@ the content and facts columns. Keep these placeholders aligned when changing a
 page layout. Availability-filter counts reserve space before their values arrive
 so they do not wrap the narrow-screen toolbar on completion.
 
+Before mounting the Booking shell or sidebar, AppShell waits for feature flags. Disabled or
+unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
+When Booking is enabled, the Inventory sidebar links to `/booking`; the legacy global AppBar
+does not include a separate Booking link.
+Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
+non-string values) and use their normal display-timezone defaults.
+
 The resource-week skeleton shares its date headers and column sizing with the
 loaded grid. It reserves four anonymous rows before the catalogue arrives, then
 uses the authorized resource names while their events are still loading.
@@ -162,3 +169,5 @@ The shared transport helpers do not parse Booking-specific problem extensions.
 
 The Booking API scheduling-timezone write contract is in
 [Booking](Booking.md#scheduling-timezone-writes).
+
+Bookable-item event tables cache totals separately from page requests under the bookings query prefix. Page navigation uses `hasNextPage`, and pagination shows "of many" until the total is available. The upcoming-bookings badge uses `/api/v2/bookings/count?max=100` and displays `99+` when the server marks the total as a lower bound.

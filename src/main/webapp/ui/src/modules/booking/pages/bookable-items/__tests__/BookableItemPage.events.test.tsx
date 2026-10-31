@@ -114,7 +114,7 @@ describe("BookableItemPage", () => {
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    await waitFor(() => expect(eventRequests).toBe(2));
+    await waitFor(() => expect(eventRequests).toBe(4));
   });
 
   it("does not show the configuration update timestamp in booking rules", async () => {
@@ -147,11 +147,11 @@ describe("BookableItemPage", () => {
 
     const times = await screen.findAllByRole("time");
     const utcText = times[0].textContent;
-    expect(eventRequests).toBe(2);
+    expect(eventRequests).toBe(4);
     timezone = "Europe/Berlin";
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] });
 
     await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
-    expect(eventRequests).toBe(2);
+    expect(eventRequests).toBe(4);
   });
 });

@@ -888,6 +888,8 @@ export default interface Resources {
           "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
           "title": "The audit results changed"
         },
+        "descriptionParts": "{description}; {part}",
+        "descriptionWithSubject": "{description}; On behalf of {name}",
         "empty": "No recorded changes in this period.",
         "emptyStable": "This period starts after the latest completed UTC day, so its stable daily snapshot is empty.",
         "error": {
@@ -910,6 +912,7 @@ export default interface Resources {
         "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
         "next": "Next",
         "nextPage": "Next, page {page, number}",
+        "onBehalfOf": "On behalf of {name}",
         "page": "Page {page, number} of {totalPages, number}",
         "pagination": "Audit event pages",
         "period": "Period",
@@ -1416,7 +1419,8 @@ export default interface Resources {
         "hideDetails": "Hide details for {title}, {period}",
         "label": "{title}, {period}",
         "labelWithNotes": "{title}, {period}. {notes}",
-        "showDetails": "Show details for {title}, {period}"
+        "showDetails": "Show details for {title}, {period}",
+        "titleWithBooker": "{title} · {booker}"
       },
       "expanded": {
         "bookedBy": "Booked by",
@@ -1523,7 +1527,9 @@ export default interface Resources {
       "count": {
         "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
         "error": "The upcoming booking count could not be loaded.",
-        "loading": "Loading upcoming count"
+        "loading": "Loading upcoming count",
+        "lowerBound": "99+",
+        "lowerBoundAccessible": "More than 99 upcoming bookings"
       },
       "description": "View and manage bookings requested by this user.",
       "empty": {
@@ -5150,6 +5156,7 @@ export default interface Resources {
       },
       "showRightPanel": "Show right panel",
       "sidebar": {
+        "bookingSystem": "Booking System",
         "exportData": "Export Data",
         "igsnIds": "IGSN IDs",
         "itemsListLabel": "List existing Inventory items",
