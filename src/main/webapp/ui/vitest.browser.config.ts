@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { msw } from "msw/vite";
@@ -102,9 +103,8 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
-  // worker-only serves /mockServiceWorker.js from the installed msw.
-  // browserMocks.ts calls setupWorker itself.
-  plugins: [react(), tinymceAssetsPlugin(), pdfWorkerAssetPlugin(), msw({ mode: "worker-only" })],
+  // browserMocks.ts owns the worker; MSW serves its script.
+  plugins: [react(), tailwindcss(), tinymceAssetsPlugin(), pdfWorkerAssetPlugin(), msw({ mode: "worker-only" })],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the

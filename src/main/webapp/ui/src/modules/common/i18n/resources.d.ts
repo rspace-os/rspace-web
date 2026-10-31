@@ -811,12 +811,14 @@ export default interface Resources {
       "invite": "Invite",
       "logOut": "Log Out",
       "login": "Login",
+      "moreActions": "More actions",
       "move": "Move",
       "next": "Next",
       "no": "No",
       "none": "None",
       "ok": "OK",
       "open": "Open",
+      "previous": "Previous",
       "publish": "Publish",
       "remove": "Remove",
       "republish": "Republish",
@@ -826,6 +828,7 @@ export default interface Resources {
       "save": "Save",
       "search": "Search",
       "select": "Select",
+      "set": "Set",
       "share": "Share",
       "sign": "Sign",
       "submit": "Submit",
@@ -846,9 +849,11 @@ export default interface Resources {
       "warning": "Warning"
     },
     "apiDocs": {
+      "pageTitle": "RSpace API Documentation | ResearchSpace",
       "sources": {
         "eln": "RSpace ELN",
-        "inventory": "RSpace Inventory"
+        "inventory": "RSpace Inventory",
+        "v2": "RSpace v2 (beta)"
       }
     },
     "apiErrors": {
@@ -890,6 +895,7 @@ export default interface Resources {
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
+      "logIn": "Log In",
       "logOut": "Log Out",
       "mainLinks": "main links",
       "mainNavigation": "Main Navigation",
@@ -924,7 +930,22 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
-      }
+      },
+      "switchSection": "Switch section",
+      "userIdentity": "{fullName} ({username})"
+    },
+    "calendar": {
+      "chooseMonth": "Choose the Month",
+      "chooseYear": "Choose the Year",
+      "day": "{today, select, yes {Today, } other {}}{date}{selected, select, yes {, selected} other {}}",
+      "navigation": "",
+      "nextMonth": "Go to the Next Month",
+      "previousMonth": "Go to the Previous Month",
+      "weekNumber": "Week {week, number}",
+      "weekNumberHeader": "Week Number"
+    },
+    "collectionForm": {
+      "fieldHelp": "About {label}"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
@@ -1043,6 +1064,7 @@ export default interface Resources {
       "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
+      "brand": "Support",
       "chatWithUs": "Chat with us",
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
@@ -1126,6 +1148,23 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "maintenanceMode": {
+      "description": "Scheduled maintenance is in progress now. Please try again later.",
+      "heading": "Maintenance mode",
+      "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+    },
+    "notFound": {
+      "message": "Page not found"
+    },
+    "pageTitles": {
+      "withProduct": "{pageTitle} | RSpace"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "morePages": "More pages",
+      "nextPage": "Go to next page",
+      "previousPage": "Go to previous page"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -1447,6 +1486,11 @@ export default interface Resources {
       "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
     },
+    "sidebar": {
+      "description": "Displays the mobile sidebar.",
+      "title": "Sidebar",
+      "toggle": "Toggle sidebar"
+    },
     "stoichiometry": {
       "addReagent": {
         "addChemical": "Add Chemical",
@@ -1693,7 +1737,8 @@ export default interface Resources {
     "values": {
       "noValue": "No Value",
       "none": "None",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "unknownItem": "Unknown item"
     },
     "versionLockPicker": {
       "columns": {
@@ -5746,6 +5791,20 @@ export default interface Resources {
           }
         },
         "v2": {
+          "audit": {
+            "range": {
+              "inverted": "The audit search start date must not be after its end date.",
+              "tooWide": "The audit search range must not exceed {0} days."
+            },
+            "results": {
+              "tooMany": "The audit search returned too many results. Choose a narrower date range."
+            },
+            "snapshot": {
+              "changed": "The audit results changed while you were paging through them. Start again to view a fresh snapshot.",
+              "invalid": "The audit snapshot date and fingerprint must be supplied together and in the required format."
+            },
+            "unavailable": "The audit trail is temporarily unavailable. Try again later."
+          },
           "authenticationRequired": "Authentication is required.",
           "bulk": {
             "filter": {
@@ -5771,6 +5830,16 @@ export default interface Resources {
           },
           "forbidden": "You do not have permission to perform this action.",
           "invalidRequest": "The request contains an invalid value.",
+          "maintenance": {
+            "endDate": {
+              "required": "End date is required."
+            },
+            "patch": "The maintenance patch is invalid.",
+            "startDate": {
+              "required": "Start date is required."
+            },
+            "window": "End date must be after start date."
+          },
           "methodNotAllowed": "This HTTP method is not supported for this resource.",
           "missingParameter": "A required request parameter is missing.",
           "notAcceptable": "The requested response content type is not available.",
