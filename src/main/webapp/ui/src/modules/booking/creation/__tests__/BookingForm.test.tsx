@@ -658,6 +658,22 @@ describe("BookingForm", () => {
     );
   });
 
+  it.each(["stacked", "inline"] as const)("explains an unchanged policy mismatch in the %s layout", async (layout) => {
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={editableBooking}
+        configuration={{ ...target, maxBookingDurationMinutes: 30 }}
+        layout={layout}
+        token="token"
+        pending={false}
+        onSubmit={async () => undefined}
+      />,
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.form.policyMismatchPurpose");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("allows an unchanged over-limit interval on a purpose-only edit", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();

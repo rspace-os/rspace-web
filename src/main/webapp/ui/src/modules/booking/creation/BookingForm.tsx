@@ -185,7 +185,7 @@ export function BookingForm(props: BookingFormProps) {
     }
   }
   const allowPolicyMismatch = Boolean(originalDraft && sameWindowDraft(draft, originalDraft));
-  const window = useMemo(
+  const validation = useMemo(
     () =>
       target
         ? validateBookingWindow(draft, displayTimezone, {
@@ -195,10 +195,11 @@ export function BookingForm(props: BookingFormProps) {
             openingHours: target.openingHours,
             enforceOpeningHours: eventKind !== "MAINTENANCE",
             allowPolicyMismatch,
-          }).window
+          })
         : undefined,
     [draft, displayTimezone, target, eventKind, allowPolicyMismatch],
   );
+  const window = validation?.window;
   const selectTarget = (next: BookableItemOption | undefined) => {
     setTarget(next);
     setDraft((current) => ({
@@ -365,6 +366,13 @@ export function BookingForm(props: BookingFormProps) {
               </div>
             ) : (
               windowFields
+            )}
+            {allowPolicyMismatch && validation?.policyInvalid && (
+              <p role="status" className="text-sm text-muted-foreground">
+                {eventKind === "MAINTENANCE"
+                  ? t("bookings.form.policyMismatchNotes")
+                  : t("bookings.form.policyMismatchPurpose")}
+              </p>
             )}
             {bookingInPast && <FieldError id={pastStartErrorId}>{t("bookings.warnings.past")}</FieldError>}
           </>
