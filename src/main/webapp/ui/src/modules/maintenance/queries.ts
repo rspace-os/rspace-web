@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 
 // The maintenance collection is public because logged-out users read this status.
 export type MaintenanceStatus = "in-progress" | "clear";
@@ -12,7 +12,7 @@ export const maintenanceStatusQueryKeys = {
 
 const POLL_INTERVAL_MS = 30 * 1000;
 
-const MaintenanceStatusEnvelopeSchema = v2ListEnvelope(v.object({ canUserLoginNow: v.boolean() }));
+const MaintenanceStatusEnvelopeSchema = v2PageEnvelope(v.object({ canUserLoginNow: v.boolean() }));
 
 export async function getMaintenanceStatus(): Promise<MaintenanceStatus> {
   const parameters = new URLSearchParams({

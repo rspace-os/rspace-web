@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 
 const MaintenanceSchema = v.object({
   id: v.pipe(v.number(), v.integer()),
   startDate: v.pipe(v.string(), v.isoTimestamp()),
 });
 
-const MaintenancesEnvelopeSchema = v2ListEnvelope(MaintenanceSchema);
+const MaintenancesEnvelopeSchema = v2PageEnvelope(MaintenanceSchema);
 
 export type NextMaintenance = { startDate: Date };
 
