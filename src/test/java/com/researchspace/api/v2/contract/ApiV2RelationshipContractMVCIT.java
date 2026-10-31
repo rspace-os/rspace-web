@@ -157,6 +157,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(
               get(CONFIGURATIONS)
+                  .param("totals", "true")
                   .header("apiKey", fixture.otherUserKey())
                   .param("where", "id==" + id))
           .andExpect(jsonPath("$.totalDocs").value(1));
@@ -166,7 +167,11 @@ class ApiV2RelationshipContractMVCIT {
     @DisplayName("a depth beyond the permitted maximum is refused")
     void aDepthBeyondTheMaximumIsRefused() throws Exception {
       mockMvc
-          .perform(get(CONFIGURATIONS).header("apiKey", fixture.userKey()).param("depth", "11"))
+          .perform(
+              get(CONFIGURATIONS)
+                  .param("totals", "true")
+                  .header("apiKey", fixture.userKey())
+                  .param("depth", "11"))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }
@@ -280,6 +285,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(
               get(CONFIGURATIONS)
+                  .param("totals", "true")
                   .header("apiKey", fixture.userKey())
                   .param("where", "target.name=contains=" + fixture.marker()))
           .andExpect(status().isOk())
@@ -295,6 +301,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(
               get(CONFIGURATIONS)
+                  .param("totals", "true")
                   .header("apiKey", fixture.otherUserKey())
                   .param("where", "target.name=contains=" + fixture.marker()))
           .andExpect(status().isOk())
@@ -307,6 +314,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(
               get(CONFIGURATIONS)
+                  .param("totals", "true")
                   .header("apiKey", fixture.userKey())
                   .param("where", "target.nosuchfield==1"))
           .andExpect(status().isBadRequest())
@@ -325,7 +333,11 @@ class ApiV2RelationshipContractMVCIT {
       String where = "id==%d;createdBy.value==me".formatted(id);
 
       mockMvc
-          .perform(get(CONFIGURATIONS).header("apiKey", sysadminKey).param("where", where))
+          .perform(
+              get(CONFIGURATIONS)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", where))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").value(1))
           .andExpect(jsonPath("$.docs[0].id").value(id));
@@ -344,13 +356,21 @@ class ApiV2RelationshipContractMVCIT {
       String where = "id==%d;createdBy.id==me".formatted(id);
 
       mockMvc
-          .perform(get(CONFIGURATIONS).header("apiKey", sysadminKey).param("where", where))
+          .perform(
+              get(CONFIGURATIONS)
+                  .param("totals", "true")
+                  .header("apiKey", sysadminKey)
+                  .param("where", where))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").value(1))
           .andExpect(jsonPath("$.docs[0].id").value(id));
 
       mockMvc
-          .perform(get(CONFIGURATIONS).header("apiKey", fixture.userKey()).param("where", where))
+          .perform(
+              get(CONFIGURATIONS)
+                  .param("totals", "true")
+                  .header("apiKey", fixture.userKey())
+                  .param("where", where))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.totalDocs").value(0));
     }
@@ -421,6 +441,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(
               get(CONFIGURATIONS)
+                  .param("totals", "true")
                   .header("apiKey", sysadminKey)
                   .param("where", "createdAt=ge=1970-01-01T00:00:00Z")
                   .param("sort", "-createdAt,id"))

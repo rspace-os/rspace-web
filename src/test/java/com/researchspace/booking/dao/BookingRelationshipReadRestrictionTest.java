@@ -44,6 +44,27 @@ class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
   }
 
   @Test
+  void pageFetchesActorsAndAccessAlongsideConfigurations() {
+    User requester = createInitAndLoginAnyUser();
+    TimeSlotBooking created = bookingFor(requester, "Fetched scope", false);
+    var session = sessionFactory.getCurrentSession();
+    session.flush();
+    session.clear();
+
+    TimeSlotBooking loaded =
+        bookingDao
+            .getReadableResources(oneRowPage(), targetsNamed("Fetched scope"))
+            .resources()
+            .get(0);
+    assertEquals(created.getId(), loaded.getId());
+    assertTrue(org.hibernate.Hibernate.isInitialized(loaded.getRequester()), "requester");
+    assertTrue(org.hibernate.Hibernate.isInitialized(loaded.getCreatedBy()), "creator");
+    assertTrue(
+        org.hibernate.Hibernate.isInitialized(loaded.getBookingConfiguration().getResourceAccess()),
+        "configuration access");
+  }
+
+  @Test
   void filteringThroughTargetsAppliesTheirReadRuleBeforePaginationAndCount() {
     User requester = createInitAndLoginAnyUser();
     TimeSlotBooking readable = bookingFor(requester, "Readable scope", false);

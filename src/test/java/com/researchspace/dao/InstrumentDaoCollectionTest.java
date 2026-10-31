@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.researchspace.Constants;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
-import com.researchspace.Constants;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;

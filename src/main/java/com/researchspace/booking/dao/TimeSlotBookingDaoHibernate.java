@@ -53,7 +53,13 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
         request.restrict(ACTIVE),
         null,
         targetAccess,
-        List.of("bookingConfiguration"));
+        List.of(
+            "bookingConfiguration",
+            "bookingConfiguration.resourceAccess",
+            "bookingConfiguration.createdBy",
+            "bookingConfiguration.updatedBy",
+            "requester",
+            "createdBy"));
   }
 
   @Override

@@ -89,6 +89,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==%d;state==CANCELLED".formatted(bookingId)))
         .andExpect(status().isOk())
@@ -97,6 +98,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==%d;state==CONFIRMED".formatted(bookingId)))
         .andExpect(status().isOk())
@@ -122,6 +124,7 @@ class TimeSlotBookingReadMVCIT {
     mockMvc
         .perform(
             get("/api/v2/bookings")
+                .param("totals", "true")
                 .header("apiKey", fixture.userKey())
                 .param("where", "id==" + bookingId))
         .andExpect(status().isOk())
