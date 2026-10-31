@@ -133,3 +133,9 @@ return 404, as do the feature-specific directory and catalogue reads.
 The bounded `booking-configuration-targets` and `booking-settings/access-grantees`
 lookups return `{docs: [...]}` without paging metadata. Catalogue lists retain
 `docs` and their existing paging members.
+
+## Audit scope
+
+Configuration audit history requires the current target type and ID in each audit payload.
+Rows for another target, or rows without a target, are excluded before applying limits
+and caching results.
