@@ -6,18 +6,13 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
-import com.researchspace.service.resourceaccess.ResourceAccessException.Reason;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
-import java.util.List;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -53,33 +48,17 @@ public class BookingConfigurationDefaultsManagerImpl
   @Override
   public BookingConfigurationDefaults getAdminDefaults(User actor) {
     requireSysadmin(actor);
-    return initializeSelectedGrantees(requiredDefaults());
+    return requiredDefaults();
   }
 
   @Override
   public BookingConfigurationDefaults updateDefaults(
       BookingSchedulingSettings.Patch schedulingPatch,
       BookingDisplaySettings.Patch displayPatch,
-      long expectedVersion,
-      User subject,
-      User actor) {
-    return updateDefaults(
-        schedulingPatch, displayPatch, null, null, expectedVersion, subject, actor);
-  }
-
-  @Override
-  public BookingConfigurationDefaults updateDefaults(
-      BookingSchedulingSettings.Patch schedulingPatch,
-      BookingDisplaySettings.Patch displayPatch,
-      BookingDefaultSharedWith defaultSharedWith,
-      List<String> selectedGranteeKeys,
       long expectedVersion,
       User subject,
       User actor) {
     requireSysadmin(subject);
-    if (defaultSharedWith != null || selectedGranteeKeys != null) {
-      throw new ResourceAccessException(Reason.INHERITED_READ_ONLY);
-    }
     permissionGate.lockShared();
     BookingConfigurationDefaults defaults = lockedDefaults();
     if (defaults.getConfigurationVersion() != expectedVersion) {
@@ -94,23 +73,9 @@ public class BookingConfigurationDefaultsManagerImpl
     validateSettings(defaults);
     validate(defaults);
     BookingConfigurationDefaults saved = defaultsDao.saveAndFlush(defaults);
-    initializeSelectedGrantees(saved);
     events.publishEvent(
         new BookingConfigurationDefaultsAuditEvent(actor, subject, saved, AuditAction.WRITE));
     return saved;
-  }
-
-  private static BookingConfigurationDefaults initializeSelectedGrantees(
-      BookingConfigurationDefaults defaults) {
-    Hibernate.initialize(defaults.getSelectedAccessGrantees());
-    defaults
-        .getSelectedAccessGrantees()
-        .forEach(
-            grantee -> {
-              Hibernate.initialize(grantee.getUser());
-              Hibernate.initialize(grantee.getGroup());
-            });
-    return defaults;
   }
 
   private BookingConfigurationDefaults requiredDefaults() {

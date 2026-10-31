@@ -131,9 +131,6 @@
           }
         },
         "bookingConfiguration": {
-          "defaultSharing": {
-            "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
-          },
           "lifecycleConflict": "Restore the archived booking configuration before changing it.",
           "stale": "The booking settings changed after this page was loaded. Reload and try again.",
           "granularity": {

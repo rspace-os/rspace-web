@@ -1667,35 +1667,6 @@ export default interface Resources {
       "actions": {
         "save": "Save settings"
       },
-      "defaultSharing": {
-        "addNamed": "Add {name}",
-        "addUserOrGroup": "Add user or group",
-        "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
-        "error": "Users and groups could not be searched.",
-        "loading": "Searching users and groups…",
-        "noResults": "No matching users or groups.",
-        "options": {
-          "ALL_USERS": {
-            "description": "Everyone, including future users, can create bookings.",
-            "label": "All users"
-          },
-          "ONLY_ME": {
-            "description": "Only the creator receives access as Owner.",
-            "label": "Only me"
-          },
-          "SELECTED": {
-            "description": "Exactly the users and groups selected below receive Booker access.",
-            "label": "Selected users and groups"
-          }
-        },
-        "removeNamed": "Remove {name}",
-        "required": "Add at least one user or group.",
-        "search": "Search",
-        "searchResults": "User and group search results",
-        "selected": "Selected users and groups",
-        "title": "Default shared with",
-        "unavailable": "Unavailable"
-      },
       "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
       "displayDefaults": {
         "description": "These defaults apply to users who have not saved their own Booking preferences.",
@@ -7271,9 +7242,6 @@ export default interface Resources {
             },
             "concurrentModification": "The booking configuration changed. Reload it and try again.",
             "create": "The booking configuration is invalid.",
-            "defaultSharing": {
-              "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
-            },
             "granularity": {
               "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
             },
@@ -7355,6 +7323,7 @@ export default interface Resources {
             "duplicateGrantee": "Each user or group can have only one direct role.",
             "forbidden": "You do not have permission to manage access to this resource.",
             "ifMatchRequired": "The current access version is required.",
+            "inheritedReadOnly": "Access to this resource is inherited and cannot be changed here.",
             "invalidGrantee": "The selected user or group is no longer available.",
             "invalidRole": "The selected role is not valid for this resource.",
             "ownerRequired": "At least one direct Owner must remain.",

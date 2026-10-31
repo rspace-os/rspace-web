@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,10 +14,8 @@ import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
@@ -148,26 +145,6 @@ class BookingConfigurationDefaultsManagerTest {
                 secondAdmin));
 
     assertEquals(true, defaults.isAllowDoubleBooking());
-  }
-
-  @Test
-  void rejectsIndependentDefaultSharingModeEvenWithoutSelectedGrantees() {
-    User sysadmin = sysadmin();
-    ResourceAccessException error =
-        assertThrows(
-            ResourceAccessException.class,
-            () ->
-                manager.updateDefaults(
-                    BookingSchedulingSettings.Patch.empty(),
-                    BookingDisplaySettings.Patch.empty(),
-                    BookingDefaultSharedWith.ONLY_ME,
-                    null,
-                    0,
-                    sysadmin,
-                    sysadmin));
-
-    assertEquals(ResourceAccessException.Reason.INHERITED_READ_ONLY, error.reason());
-    verify(dao, never()).lockSingleton();
   }
 
   private static User sysadmin() {

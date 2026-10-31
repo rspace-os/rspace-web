@@ -58,17 +58,6 @@ export const BookingAdminSettingsSchema = v.pipe(
   v.object({
     ...schedulingSettingsEntries,
     ...bookingDisplayPreferencesEntries,
-    defaultSharedWith: v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
-    selectedAccessGrantees: v.array(
-      v.object({
-        kind: v.picklist(["USER", "GROUP"]),
-        id: v.number(),
-        key: v.string(),
-        name: v.string(),
-        detail: v.optional(v.nullable(v.string())),
-        available: v.boolean(),
-      }),
-    ),
     configurationVersion: v.number(),
   }),
   v.forward(

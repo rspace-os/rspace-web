@@ -251,10 +251,6 @@
           "customTimezone" : {
             "type" : "string"
           },
-          "defaultSharedWith" : {
-            "enum" : [ "ALL_USERS", "SELECTED", "ONLY_ME" ],
-            "type" : "string"
-          },
           "institutionTimezone" : {
             "type" : "string"
           },
@@ -265,12 +261,6 @@
           "openingHours" : {
             "items" : {
               "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
-            },
-            "type" : "array"
-          },
-          "selectedAccessGrantees" : {
-            "items" : {
-              "$ref" : "#/components/schemas/SelectedAccessGrantee"
             },
             "type" : "array"
           },
@@ -3427,30 +3417,6 @@
         },
         "type" : "object"
       },
-      "SelectedAccessGrantee" : {
-        "properties" : {
-          "available" : {
-            "type" : "boolean"
-          },
-          "detail" : {
-            "type" : "string"
-          },
-          "id" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "key" : {
-            "type" : "string"
-          },
-          "kind" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "Session" : {
         "properties" : {
           "canChangeFeatureFlagBaselines" : {
@@ -3558,10 +3524,6 @@
           "customTimezoneValid" : {
             "type" : "boolean"
           },
-          "defaultSharedWith" : {
-            "enum" : [ "ALL_USERS", "SELECTED", "ONLY_ME" ],
-            "type" : "string"
-          },
           "maxBookingDurationMinutes" : {
             "format" : "int64",
             "maximum" : 527040,
@@ -3576,12 +3538,6 @@
             },
             "maxItems" : 7,
             "minItems" : 1
-          },
-          "selectedGranteeKeys" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
           },
           "slotGranularityMinutes" : {
             "format" : "int64",
@@ -7896,71 +7852,6 @@
         } ],
         "summary" : "Get global Booking defaults",
         "tags" : [ "BookingSettingsController" ],
-        "x-rspace-operation" : "CUSTOM"
-      }
-    },
-    "/api/v2/booking-settings/access-grantees" : {
-      "get" : {
-        "operationId" : "searchBookingSettingsAccessGrantees",
-        "parameters" : [ {
-          "description" : "Case-insensitive search text.",
-          "in" : "query",
-          "name" : "q",
-          "required" : true,
-          "schema" : {
-            "minLength" : 2,
-            "type" : "string"
-          }
-        }, {
-          "description" : "Maximum results to return.",
-          "in" : "query",
-          "name" : "limit",
-          "required" : true,
-          "schema" : {
-            "default" : 20,
-            "format" : "int32",
-            "maximum" : 50,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ResourceGranteeDirectoryDocument"
-                }
-              }
-            },
-            "description" : "Eligible users and groups in docs, without paging metadata."
-          },
-          "400" : {
-            "$ref" : "#/components/responses/BadRequest"
-          },
-          "401" : {
-            "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "$ref" : "#/components/responses/Forbidden"
-          },
-          "404" : {
-            "$ref" : "#/components/responses/NotFound"
-          },
-          "429" : {
-            "$ref" : "#/components/responses/TooManyRequests"
-          },
-          "500" : {
-            "$ref" : "#/components/responses/UnexpectedError"
-          }
-        },
-        "security" : [ {
-          "apiKey" : [ ]
-        }, {
-          "bearerAuth" : [ ]
-        } ],
-        "summary" : "Search eligible default-access grantees",
-        "tags" : [ "booking-directories" ],
         "x-rspace-operation" : "CUSTOM"
       }
     },
