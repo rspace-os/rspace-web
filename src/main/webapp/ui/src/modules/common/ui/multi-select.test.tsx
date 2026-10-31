@@ -31,7 +31,7 @@ test.each([true, false])("offers a trimmed custom value first only when allowed:
   );
   await user.type(screen.getByRole("combobox", { name: "Tags" }), "  Ap  ");
   if (allowCustomValues) {
-    expect((await screen.findAllByRole("option"))[0]).toHaveTextContent(/^Ap$/);
+    expect((await screen.findAllByRole("option"))[0]).toHaveAccessibleName("Ap");
   } else {
     expect(screen.queryByRole("option", { name: "Ap" })).not.toBeInTheDocument();
   }
