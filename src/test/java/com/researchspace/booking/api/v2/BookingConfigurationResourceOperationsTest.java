@@ -1,6 +1,7 @@
 package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -149,6 +150,13 @@ class BookingConfigurationResourceOperationsTest {
             .orElseThrow());
 
     verify(manager).archiveConfiguration(42L, 3L, actor, actor);
+  }
+
+  @Test
+  void excludesTargetlessRelatedAuditRowsWhenCreationTimeIsUnknown() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setCreatedAt(null);
+    assertNull(operations.relatedAuditFallbackFrom(configuration));
   }
 
   @ParameterizedTest

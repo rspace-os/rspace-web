@@ -213,6 +213,11 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public java.time.Instant relatedAuditFallbackFrom(BookingConfiguration configuration) {
+    return configuration.getCreatedAt() == null ? null : configuration.getCreatedAt().toInstant();
+  }
+
+  @Override
   public Set<String> relatedAuditFields() {
     return Set.of(
         "bookingConfigurationId",

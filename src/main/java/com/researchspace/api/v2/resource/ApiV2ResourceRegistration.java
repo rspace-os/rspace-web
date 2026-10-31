@@ -193,6 +193,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.requiredAuditFields(description.entityType().cast(entity));
   }
 
+  java.time.Instant relatedAuditFallbackFrom(Object entity) {
+    return operations.relatedAuditFallbackFrom(description.entityType().cast(entity));
+  }
+
   boolean auditBypassesActorDirectory() {
     return operations.auditBypassesActorDirectory();
   }

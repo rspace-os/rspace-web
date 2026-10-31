@@ -40,8 +40,7 @@ one configuration in either lifecycle state. Only a sysadmin acting as themselve
 may do this. It removes live operational data and retains audit history. Bulk
 permanent deletion is not supported.
 
-Booking settings have a separate sysadmin-only grantee directory at
-`GET /api/v2/booking-settings/access-grantees` for creation defaults.
+The `booking-drop-default-sharing` changeset permanently drops stored default-sharing settings and their audit history.
 
 ## Access
 
@@ -102,15 +101,15 @@ parsing accepts known compression-proxy tag alterations.
 When Booking is disabled, settings writes and configuration and booking writes
 return 404, as do the feature-specific directory and catalogue reads.
 
-The bounded `booking-configuration-targets` and `booking-settings/access-grantees`
-lookups return `{docs: [...]}` without paging metadata. Catalogue lists retain
+The bounded `booking-configuration-targets` lookup returns `{docs: [...]}` without paging metadata. Catalogue lists retain
 `docs` and their existing paging members.
 
 ## Audit scope
 
-Configuration audit history requires the current target type and ID in each audit payload.
-Rows for another target, or rows without a target, are excluded before applying limits
-and caching results.
+Configuration audit history requires the current target type and ID in direct audit payloads.
+Related booking rows without a target are included only from the configuration creation time.
+Unknown creation time disables that fallback. Mismatched targets are excluded before limits and caching.
+
 ## Scheduling timezone writes
 
 The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
