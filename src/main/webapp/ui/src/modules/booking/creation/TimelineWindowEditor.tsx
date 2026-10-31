@@ -263,7 +263,7 @@ export function TimelineWindowEditor({
           <button
             type="button"
             aria-label={t("calendar.windowEditor.start")}
-            className="absolute inset-y-0 left-0 w-3 cursor-ew-resize touch-none border-primary border-r bg-background/80"
+            className="absolute inset-y-0 left-0 w-6 cursor-ew-resize touch-none border-primary border-r bg-background/80"
             onPointerDown={(event) => begin("start", event)}
             onPointerMove={move}
             onPointerUp={finish}
@@ -276,7 +276,7 @@ export function TimelineWindowEditor({
           <button
             type="button"
             aria-label={t("calendar.windowEditor.end")}
-            className="absolute inset-y-0 right-0 w-3 cursor-ew-resize touch-none border-primary border-l bg-background/80"
+            className="absolute inset-y-0 right-0 w-6 cursor-ew-resize touch-none border-primary border-l bg-background/80"
             onPointerDown={(event) => begin("end", event)}
             onPointerMove={move}
             onPointerUp={finish}

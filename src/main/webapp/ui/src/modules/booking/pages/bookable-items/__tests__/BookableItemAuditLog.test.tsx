@@ -62,21 +62,31 @@ beforeEach(() => {
 });
 
 describe("BookableItemAuditLog", () => {
-  it("labels the permanent-deletion timestamp and retains other recorded field names", async () => {
+  it("labels the permanent-deletion timestamp and retains unknown recorded field names", async () => {
+    const user = userEvent.setup();
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", () =>
         HttpResponse.json(
-          auditPage([{ ...event, action: "DELETE", payload: { deletedAt: "2026-08-25T10:42:18Z", enabled: true } }]),
+          auditPage([
+            {
+              ...event,
+              action: "DELETE",
+              payload: { deletedAt: "2026-08-25T10:42:18Z", enabled: true, customField: "retained" },
+            },
+          ]),
         ),
       ),
     );
     renderAudit();
 
-    const table = within(await screen.findByRole("table"));
-    expect(await table.findByText("booking:bookableItemDetails.audit.values.deletedAt")).toBeVisible();
-    expect(table.getByText("2026-08-25T10:42:18Z")).toBeVisible();
-    expect(table.getByText("enabled")).toBeVisible();
-    expect(table.queryByText("deletedAt")).not.toBeInTheDocument();
+    const item = within(await screen.findByRole("article"));
+    await user.click(item.getByRole("button", { name: "common:actions.expand" }));
+    expect(await item.findByText("booking:bookableItemDetails.audit.values.deletedAt")).toBeVisible();
+    expect(item.getByText("2026-08-25T10:42:18Z")).toBeVisible();
+    expect(item.getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
+    expect(item.getByText("customField")).toBeVisible();
+    expect(item.getByText("retained")).toBeVisible();
+    expect(item.queryByText("deletedAt")).not.toBeInTheDocument();
   });
 
   it("loads a fresh daily snapshot and renders exact duplicates as separate rows", async () => {

@@ -369,7 +369,7 @@ describe("AvailabilityBar", () => {
         `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance blockout"}, 09:00–10:00`,
       );
       expect(
-        within(dialog).getByText(kind === "BOOKING" ? "Booked by Ada Lovelace (ada)" : "Maintenance blockout"),
+        within(dialog).getByText(kind === "BOOKING" ? "Booked by Ada Lovelace" : "Maintenance blockout"),
       ).toBeVisible();
       await user.click(disclosure);
 
@@ -460,7 +460,7 @@ describe("AvailabilityBar", () => {
           kind: "BOOKING",
           privacy: "full",
           purpose: "Cell imaging",
-          bookedBy: "Ada Lovelace (ada)",
+          bookedBy: "Ada Lovelace",
         }),
       ],
       showBookingContextDetails: false,
@@ -468,13 +468,13 @@ describe("AvailabilityBar", () => {
 
     await user.hover(
       await screen.findByRole("button", {
-        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event",
+        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event",
       }),
     );
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByLabelText("Show details for Confocal microscope, 09:00–10:00"));
 
-    expect(within(dialog).getByText("Booked by Ada Lovelace (ada)")).toBeVisible();
+    expect(within(dialog).getByText("Booked by Ada Lovelace")).toBeVisible();
     expect(within(dialog).getByText("Cell imaging")).toBeVisible();
     expect(within(dialog).queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
     expect(within(dialog).queryByText("Booked by")).not.toBeInTheDocument();

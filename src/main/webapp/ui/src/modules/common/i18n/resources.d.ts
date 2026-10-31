@@ -847,6 +847,7 @@ export default interface Resources {
         "available": "Available: {ranges}.",
         "blockout": "Blocked out: {ranges}.",
         "booking": "Booked: {ranges}.",
+        "gap": "Gap before or after a booking: {ranges}.",
         "overlap": "Booked and blocked out: {ranges}."
       },
       "slice": {

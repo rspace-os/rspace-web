@@ -46,12 +46,10 @@ describe("the All Bookable Items page", () => {
     [1376, true],
   ] as const)("fits usable availability inside its cell at %s px (quick=%s)", async (width, quick) => {
     await withViewport(width, async () => {
-      window.history.replaceState(
-        {},
-        "",
-        `/booking/all-items?date=2026-08-17${quick ? "&availability=available-now" : ""}`,
-      );
-      render(<AllBookableItemsStory containerWidth={width - 346} />);
+      history = createMemoryHistory({
+        initialEntries: [`/booking/all-items?date=2026-08-17${quick ? "&availability=available-now" : ""}`],
+      });
+      render(<AllBookableItemsStory history={history} containerWidth={width - 346} />);
       await expect.element(pageObj.confocalAvailability).toBeVisible();
       if (quick) await expect.element(pageObj.availableNow).toHaveAttribute("aria-pressed", "true");
       const bar = pageObj.confocalAvailability.element();

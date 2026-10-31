@@ -233,7 +233,7 @@ describe("BookableItemPage", () => {
       state: "CONFIRMED" as const,
       privacy: "full" as const,
       purpose: "Future calibration",
-      bookedBy: "Ada Lovelace (ada)",
+      bookedBy: "Ada Lovelace",
       canEdit: true,
       canCancel: false,
       createdAt: "2026-08-01T09:00:00Z",
