@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { Booking } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import {
   bookableItemEventsQuery,
@@ -134,7 +135,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       } satisfies CollectionConfig<Booking>),
     [i18n.language, period, t, timeFormat, timezone],
   );
-  const queryPrefix = ["api-v2", "bookings", "bookable-item-events", globalId, period, cutoff];
+  const queryPrefix = bookingKeys.itemEvents(globalId, period, cutoff);
   const totals = useQuery({
     queryKey: [...queryPrefix, "totals"],
     staleTime: Infinity,
