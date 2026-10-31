@@ -72,9 +72,9 @@ public class BookingNotificationRecipientReader {
    * Selects enabled subscribers who can read the target and want this event. Actors receive their
    * own events unless their snapshot preference disables own-action notifications.
    *
-   * <p>For cancellations by somebody other than the requester, the requester is added when they are
-   * active, Booking-enabled, and can still read the target. The requester is selected without their
-   * event preference because the cancellation is about their booking.
+   * <p>For cancellations or time changes by somebody other than the requester, the requester is
+   * added when they are active, Booking-enabled, and can still read the target. The requester is
+   * selected without their event preference because the cancellation is about their booking.
    *
    * <p>The candidate query is the first consistent read and establishes the snapshot used by all
    * later feature-flag, permission, and display-default reads. Returned users are detached when
@@ -101,7 +101,8 @@ public class BookingNotificationRecipientReader {
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId);
     boolean includeRequester =
-        NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(event)
+        (NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(event)
+                || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(event))
             && requesterId != null
             && !Objects.equals(actorId, requesterId);
     User requester = includeRequester ? users.getSafeNull(requesterId).orElse(null) : null;

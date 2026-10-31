@@ -19,12 +19,12 @@ existing subscriptions. Subscriptions survive archive, restore and replacement o
 booking configuration because they belong to the instrument. Explicit off is persisted.
 
 Subscriber delivery also requires the corresponding global My Profile event preference.
-Creation or time changes and cancellation are independently filtered. When someone else cancels or reschedules a booking,
+Creation and time changes share one event filter; cancellation has a separate filter. When someone else cancels or reschedules a booking,
 the active requester also receives an in-app notification if Booking is enabled and they
 still have item read access, even without a subscription or with cancellation notifications
 turned off. A requester who also subscribes receives just one notification.
 
-The My Profile email preference still gates every email, including requester cancellations.
+The My Profile email preference still gates every email, including requester cancellations and time changes.
 The requester override bypasses only the event preference in notification creation; it never
 bypasses `BROADCAST_NOTIFICATIONS_BY_EMAIL` in the email broadcaster.
 Subscribers receive notifications about their own booking creations, changes and cancellations by default.

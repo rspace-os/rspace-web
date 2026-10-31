@@ -66,8 +66,11 @@ class BookingNotificationRecipientReaderTest {
             Clock.systemUTC());
   }
 
-  @Test
-  void addsSubscribedCancellationRequesterOnlyOnce() {
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(
+      value = NotificationType.class,
+      names = {"NOTIFICATION_BOOKING_CANCELLED", "NOTIFICATION_BOOKING_CHANGED"})
+  void addsSubscribedAffectedRequesterOnlyOnce(NotificationType event) {
     User requester = user("cancel-requester", 3L);
     BookableItemNotificationSubscription subscription = subscriptionFor(requester);
     when(subscriptions.findEnabledByInstrument(INSTRUMENT_ID)).thenReturn(List.of(subscription));
@@ -76,9 +79,24 @@ class BookingNotificationRecipientReaderTest {
         .thenReturn(readableAccess());
 
     List<BookingNotificationRecipient> selected =
-        reader.selectRecipients(
-            INSTRUMENT_ID, NotificationType.NOTIFICATION_BOOKING_CANCELLED, 99L, requester.getId());
+        reader.selectRecipients(INSTRUMENT_ID, event, 99L, requester.getId());
 
+    assertEquals(List.of(requester.getId()), selected.stream().map(r -> r.user().getId()).toList());
+    assertTrue(selected.get(0).requester());
+  }
+
+  @Test
+  void notifiesAnAffectedRequesterWithoutSubscriptionOrEventPreference() {
+    User requester = user("changed-requester", 3L);
+    requester.setPreference(
+        new UserPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, requester, "false"));
+    when(subscriptions.findEnabledByInstrument(INSTRUMENT_ID)).thenReturn(List.of());
+    when(users.getSafeNull(requester.getId())).thenReturn(Optional.of(requester));
+    when(permissions.resolve(any(BookableTargetReference.class), eq(requester)))
+        .thenReturn(readableAccess());
+    List<BookingNotificationRecipient> selected =
+        reader.selectRecipients(
+            INSTRUMENT_ID, NotificationType.NOTIFICATION_BOOKING_CHANGED, 99L, requester.getId());
     assertEquals(List.of(requester.getId()), selected.stream().map(r -> r.user().getId()).toList());
     assertTrue(selected.get(0).requester());
   }
@@ -102,6 +120,10 @@ class BookingNotificationRecipientReaderTest {
 
   @ParameterizedTest
   @CsvSource({
+    "owner,NOTIFICATION_BOOKING_CHANGED,true,true,true,1",
+    "owner,NOTIFICATION_BOOKING_CHANGED,false,true,true,0",
+    "owner,NOTIFICATION_BOOKING_CHANGED,true,false,true,0",
+    "owner,NOTIFICATION_BOOKING_CHANGED,true,true,false,0",
     "owner,NOTIFICATION_BOOKING_CREATED,true,true,true,1",
     "owner,NOTIFICATION_BOOKING_CANCELLED,true,true,true,1",
     "subscriber,NOTIFICATION_BOOKING_CREATED,true,true,true,1",
@@ -125,7 +147,7 @@ class BookingNotificationRecipientReaderTest {
         new UserPreference(
             Preference.BOOKING_NOTIFY_OWN_ACTIONS, actor, Boolean.toString(ownActions)));
     Preference eventPreference =
-        event == NotificationType.NOTIFICATION_BOOKING_CREATED
+        event != NotificationType.NOTIFICATION_BOOKING_CANCELLED
             ? Preference.NOTIFICATION_BOOKING_CREATED_PREF
             : Preference.NOTIFICATION_BOOKING_CANCELLED_PREF;
     actor.setPreference(new UserPreference(eventPreference, actor, Boolean.toString(wantsEvent)));

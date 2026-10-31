@@ -164,7 +164,7 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
         BookingNotificationTestFixtures.notificationsFor(
             communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CHANGED);
     assertEquals(1, notifications.size());
-    assertPersistedForOwner(notifications.get(0), owner);
+    assertPersistedForRecipient(notifications.get(0), owner);
     assertNotNull(notifications.get(0).getNotificationDataObject());
   }
 
