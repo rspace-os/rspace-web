@@ -216,6 +216,7 @@ export function DayTimelineEventCard({
     >
       {compactCard}
       <PopoverContent
+        positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
         id={detailsId}
         align="start"
         side="bottom"
@@ -225,7 +226,7 @@ export function DayTimelineEventCard({
         sticky
         finalFocus={false}
         className={cn(
-          "w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-sm border p-0 shadow-xl ring-4",
+          "max-sm:w-screen max-sm:max-h-[90dvh] max-sm:overflow-y-auto max-sm:rounded-b-none w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-sm border p-0 shadow-xl ring-4",
           expandedCardClassName,
           isBlockout ? "border-amber-600 ring-amber-500/15" : "border-primary ring-ring/20",
         )}

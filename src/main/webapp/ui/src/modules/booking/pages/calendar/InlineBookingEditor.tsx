@@ -192,7 +192,7 @@ export function InlineBookingEditor({
           tone={event.kind === "MAINTENANCE" ? "maintenance" : "booking"}
         />
       ) : null}
-      <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
+      <div className="flex min-h-0 max-h-[min(22rem,45vh)] max-sm:max-h-[60dvh] flex-col border-border border-t">
         <BookingForm
           key={formEvent.version}
           mode="edit"

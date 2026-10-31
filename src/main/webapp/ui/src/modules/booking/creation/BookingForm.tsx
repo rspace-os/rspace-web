@@ -418,6 +418,7 @@ export function BookingForm(props: BookingFormProps) {
       </div>
       {inline ? null : compact ? (
         <ActionBar
+          className="sticky bottom-0 z-10 bg-popover"
           actions={[
             ...(props.onMoreOptions
               ? [
