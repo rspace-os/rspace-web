@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Booking } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -125,7 +126,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       } satisfies CollectionConfig<Booking>),
     [formatter, period, t],
   );
-  const queryPrefix = ["api-v2", "bookings", "bookable-item-events", globalId, period, cutoff];
+  const queryPrefix = bookingKeys.itemEvents(globalId, period, cutoff);
   const totals = useQuery({
     queryKey: [...queryPrefix, "totals"],
     staleTime: Infinity,
