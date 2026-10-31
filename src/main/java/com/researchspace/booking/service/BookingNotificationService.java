@@ -7,6 +7,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.OwnerBookingNotificationData;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
@@ -25,19 +26,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookingNotificationService {
 
   private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
+  private static final String CHANGED_MESSAGE_KEY = "bookingNotifications.changed";
   private static final String CANCELLED_MESSAGE_KEY = "bookingNotifications.cancelled";
 
   private final InstrumentDao instrumentDao;
   private final CommunicationManager communicationManager;
   private final MessageSource messageSource;
+  private final BookingDisplayPreferencesManager displayPreferences;
 
   public BookingNotificationService(
       InstrumentDao instrumentDao,
       CommunicationManager communicationManager,
-      MessageSource messageSource) {
+      MessageSource messageSource,
+      BookingDisplayPreferencesManager displayPreferences) {
     this.instrumentDao = instrumentDao;
     this.communicationManager = communicationManager;
     this.messageSource = messageSource;
+    this.displayPreferences = displayPreferences;
   }
 
   /**
@@ -64,6 +69,13 @@ public class BookingNotificationService {
 
     NotificationConfig config = new NotificationConfig();
     config.setNotificationType(notificationType);
+    var preferences = displayPreferences.get(owner, owner);
+    String zone =
+        preferences.timezoneMode() == com.researchspace.model.booking.BookingTimezoneMode.CUSTOM
+            ? preferences.customTimezone()
+            : preferences.institutionTimezone();
+    config.setNotificationData(
+        new OwnerBookingNotificationData(instrument.orElseThrow().getName(), zone));
     config.setBroadcast(true);
     config.setPolicyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY);
     config.setRecordAuthorisationRequired(false);
@@ -94,6 +106,7 @@ public class BookingNotificationService {
     return switch (notificationType) {
       case NOTIFICATION_BOOKING_CREATED -> CREATED_MESSAGE_KEY;
       case NOTIFICATION_BOOKING_CANCELLED -> CANCELLED_MESSAGE_KEY;
+      case NOTIFICATION_BOOKING_CHANGED -> CHANGED_MESSAGE_KEY;
       default ->
           throw new IllegalArgumentException(
               "Unsupported booking notification type: " + notificationType);

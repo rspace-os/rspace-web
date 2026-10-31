@@ -160,7 +160,11 @@
     "documentUnshared": "Document Unshared",
     "processCompleted": "Process Completed",
     "processFailed": "Process Failed",
-    "requestStatusChange": "Request Status Change"
+    "requestStatusChange": "Request Status Change",
+    "bookingCreatedSubject": "Booking Created: {0}",
+    "bookingCancelledSubject": "Booking Cancelled: {0}",
+    "bookingChanged": "Booking Changed",
+    "bookingChangedSubject": "Booking Changed: {0}"
   },
   "notifications": {
     "concerning": "concerning",

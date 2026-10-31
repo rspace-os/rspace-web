@@ -41,13 +41,20 @@ class BookingNotificationServiceTest {
 
   private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
   private final CommunicationManager communicationManager = mock(CommunicationManager.class);
+  private final BookingDisplayPreferencesManager displayPreferences =
+      mock(BookingDisplayPreferencesManager.class);
   private final BookingNotificationService service =
-      new BookingNotificationService(instrumentDao, communicationManager, new JsonMessageSource());
+      new BookingNotificationService(
+          instrumentDao, communicationManager, new JsonMessageSource(), displayPreferences);
 
   @ParameterizedTest
   @EnumSource(
       value = NotificationType.class,
-      names = {"NOTIFICATION_BOOKING_CREATED", "NOTIFICATION_BOOKING_CANCELLED"})
+      names = {
+        "NOTIFICATION_BOOKING_CREATED",
+        "NOTIFICATION_BOOKING_CANCELLED",
+        "NOTIFICATION_BOOKING_CHANGED"
+      })
   void notifiesCurrentOwnerWithRenderedMessageAndConfig(NotificationType notificationType) {
     User actor = user("actor");
     User owner = user("owner");
@@ -55,6 +62,7 @@ class BookingNotificationServiceTest {
     TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
     when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
 
+    ownerPreferences(owner);
     service.notify(booking, actor, notificationType);
 
     ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
@@ -62,6 +70,10 @@ class BookingNotificationServiceTest {
     verify(communicationManager).notify(eq(actor), isNull(), config.capture(), message.capture());
 
     assertEquals(notificationType, config.getValue().getNotificationType());
+    assertEquals(
+        new com.researchspace.model.comms.data.OwnerBookingNotificationData(
+            "<Mic & scope>", "Pacific/Auckland"),
+        config.getValue().getNotificationData());
     assertEquals(true, config.getValue().isBroadcast());
     assertEquals(CommunicationNotifyPolicy.ALWAYS_NOTIFY, config.getValue().getPolicyOverride());
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
@@ -72,7 +84,24 @@ class BookingNotificationServiceTest {
                 + "2026-01-02T03:04:05Z to 2026-01-02T04:04:05Z."
             : "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was cancelled. It was "
                 + "scheduled from 2026-01-02T03:04:05Z to 2026-01-02T04:04:05Z.";
+    if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
+      expectedMessage =
+          "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was changed to"
+              + " 2026-01-02T03:04:05Z to 2026-01-02T04:04:05Z.";
+    }
     assertEquals(expectedMessage, message.getValue());
+  }
+
+  private void ownerPreferences(User owner) {
+    when(displayPreferences.get(owner, owner))
+        .thenReturn(
+            new BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences(
+                "08:00",
+                "18:00",
+                com.researchspace.model.booking.BookingTimezoneMode.CUSTOM,
+                "Pacific/Auckland",
+                "UTC",
+                true));
   }
 
   @Test
@@ -83,6 +112,7 @@ class BookingNotificationServiceTest {
     TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, previousOwner);
     when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
 
+    ownerPreferences(currentOwner);
     service.notify(booking, previousOwner, NotificationType.NOTIFICATION_BOOKING_CREATED);
 
     ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
