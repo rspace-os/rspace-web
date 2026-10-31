@@ -6,7 +6,7 @@ import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { afterEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFieldsPage } from "./pageObjects/RenderFieldsPage";
