@@ -14,27 +14,37 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingState;
+import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.RuntimeFieldBinding;
+import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldSelection;
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.resourceaccess.ResourceRoleReadAccess;
+import com.researchspace.service.resourceaccess.ResourceRoleSchemeRegistry;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
 import java.util.List;
@@ -54,8 +64,49 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
 
+  private static final String PROTECTED_CONFIGURATION_RESOURCE =
+      "role-protected-booking-configurations";
   private static final FilterExpression NO_INSTRUMENT_IS_READABLE =
       new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
+
+  private static final CollectionDescription<BookingConfiguration> PROTECTED_CONFIGURATIONS =
+      bookingConfigurations(
+          PROTECTED_CONFIGURATION_RESOURCE,
+          new ResourceRoleReadAccess(
+              new ResourceRoleSchemeRegistry(List.of(new BookingResourceRoleScheme())),
+              BookingResourceRoleScheme.SCHEME_KEY,
+              "resourceAccess.id"));
+  private static final CollectionDescription<TimeSlotBooking> TEST_BOOKINGS =
+      new CollectionDescription<>(
+          "test-bookings",
+          TimeSlotBooking.class,
+          List.of(
+              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
+              Relationship.referenceToOne(
+                  "configuration",
+                  PROTECTED_CONFIGURATION_RESOURCE,
+                  CollectionFieldTypes.longNumber(),
+                  BookingConfiguration.class,
+                  TimeSlotBooking::getBookingConfiguration,
+                  BookingConfiguration::getId,
+                  "bookingConfiguration.id")),
+          "id",
+          List.of(new Sort("id", true)));
+  private static final ResourceRegistry ROLE_PROTECTED_REGISTRY =
+      new ResourceRegistry(List.of(TEST_BOOKINGS, PROTECTED_CONFIGURATIONS));
+  private static final CollectionQueryExecutor<TimeSlotBooking> TEST_BOOKING_QUERY =
+      new CollectionQueryExecutor<>(TimeSlotBooking.class, TEST_BOOKINGS, "booking");
+  private static final ResolvedRuntimeField CONFIGURATION_TIME_ZONE =
+      new ResolvedRuntimeField(
+          new RuntimeFieldDefinition(
+              "timezone",
+              "runtime.timezone",
+              "Timezone",
+              RuntimeFieldValueType.TEXT,
+              "test",
+              "Test",
+              List.of()),
+          new RuntimeFieldBinding(BookingConfiguration.class, "id", "timeZone", Map.of()));
 
   private final InstrumentDao instrumentDao;
   private final BookingConfigurationDao bookingConfigurationDao;
@@ -106,6 +157,35 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             ApiV2BookingConfigurationResource.DESCRIPTION,
             ApiV2UserResource.DESCRIPTION,
             bookingTarget));
+  }
+
+  private static CollectionDescription<BookingConfiguration> bookingConfigurations(
+      String resourceName, AccessFunction readAccess) {
+    return new CollectionDescription<>(
+        resourceName,
+        BookingConfiguration.class,
+        ApiV2BookingConfigurationResource.DESCRIPTION.fields(),
+        ApiV2BookingConfigurationResource.DESCRIPTION.idField(),
+        ApiV2BookingConfigurationResource.DESCRIPTION.defaultSort(),
+        AccessPolicy.readOnly(readAccess));
+  }
+
+  private static ResourceRequest byConfigurationTimeZone(Long bookingId) {
+    String selector = "configuration." + CONFIGURATION_TIME_ZONE.selector();
+    return new ResourceRequest(
+        new FilterExpression.And(
+            List.of(
+                new FilterExpression.Comparison("id", Operator.EQUAL, List.of(bookingId), false),
+                new FilterExpression.Comparison(selector, Operator.EQUAL, List.of("UTC"), false))),
+        null,
+        List.of(new Sort("id", true)),
+        new ResourceRequest.Page(1, 20),
+        ResourceFieldSelections.root(FieldSelection.all()),
+        IncludeTree.empty(),
+        new RuntimeFieldSelection(
+            Map.of(selector, CONFIGURATION_TIME_ZONE),
+            Set.of(),
+            Map.of(selector, "configuration")));
   }
 
   private static ResourceRequest narrowedByTargetName(String term, List<Long> instrumentIds) {
@@ -165,6 +245,37 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     return configuration;
   }
 
+  private TimeSlotBooking bookingFor(BookingConfiguration configuration, User requester) {
+    Date start = new Date();
+    TimeSlotBooking booking = new TimeSlotBooking();
+    booking.setBookingConfiguration(configuration);
+    booking.setRequester(requester);
+    booking.setStartTime(start);
+    booking.setEndTime(new Date(start.getTime() + 3_600_000));
+    booking.setState(BookingState.CONFIRMED);
+    booking.setCreatedBy(requester);
+    booking.setUpdatedBy(requester);
+    sessionFactory.getCurrentSession().persist(booking);
+    sessionFactory.getCurrentSession().flush();
+    return booking;
+  }
+
+  private void assertBookings(ResourceRequest request, User actor, List<Long> expectedIds) {
+    RelationshipReadAccess access = RelationshipReadAccess.forActor(ROLE_PROTECTED_REGISTRY, actor);
+    assertEquals(
+        (long) expectedIds.size(),
+        TEST_BOOKING_QUERY.count(
+            criteriaBuilderFactory, sessionFactory.getCurrentSession(), request, null, access));
+    assertEquals(
+        expectedIds,
+        TEST_BOOKING_QUERY
+            .page(criteriaBuilderFactory, sessionFactory.getCurrentSession(), request, null, access)
+            .resources()
+            .stream()
+            .map(TimeSlotBooking::getId)
+            .toList());
+  }
+
   private long count(ResourceRequest request, RelationshipReadAccess targets) {
     return CONFIGURATIONS.count(
         criteriaBuilderFactory, sessionFactory.getCurrentSession(), request, null, targets);
@@ -189,6 +300,20 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             .resources()
             .size());
     assertEquals(1, count(byTargetName(marker), targets(null)));
+  }
+
+  @Test
+  void relationshipRuntimeFieldEnforcesNestedResourceRoleMembership() {
+    User assigned = createInitAndLoginAnyUser();
+    User unassigned = createInitAndLoginAnyUser();
+    BookingConfiguration configuration =
+        configurationFor(
+            createBasicInstrumentForUser(assigned, "Role protected").getId(), assigned);
+    TimeSlotBooking booking = bookingFor(configuration, assigned);
+    ResourceRequest request = byConfigurationTimeZone(booking.getId());
+
+    assertBookings(request, assigned, List.of(booking.getId()));
+    assertBookings(request, unassigned, List.of());
   }
 
   @Test

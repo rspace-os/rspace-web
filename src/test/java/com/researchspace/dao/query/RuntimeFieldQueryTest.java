@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
@@ -30,6 +32,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,7 +57,7 @@ class RuntimeFieldQueryTest {
       String id, RuntimeFieldValueType type, Operator operator, List<Object> values) {
     ResolvedRuntimeField resolved = field(id, type);
     RuntimeFieldSelection selection =
-        new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), java.util.Set.of());
+        new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), Set.of());
     return TRANSLATOR.translate(
         new FilterExpression.Comparison(resolved.selector(), operator, values, false),
         RelationshipReadAccess.none(),
@@ -65,7 +68,7 @@ class RuntimeFieldQueryTest {
     AccessFunction readAccess =
         AccessFunction.documented(
             "Test relationship target access.",
-            java.util.Set.of(),
+            Set.of(),
             ignored ->
                 AccessResult.allowedWhere(
                     new FilterExpression.Comparison(
@@ -73,7 +76,7 @@ class RuntimeFieldQueryTest {
     return RelationshipReadAccess.forActor(
         new ResourceRegistry(
             List.of(
-                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                ApiV2ContainerResource.DESCRIPTION,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
                 new CollectionDescription<>(
@@ -208,7 +211,7 @@ class RuntimeFieldQueryTest {
                 new FilterExpression.Comparison(selector, Operator.EQUAL, List.of("BSL-2"), false),
                 targetAccess(),
                 new RuntimeFieldSelection(
-                    Map.of(selector, resolved), java.util.Set.of(), Map.of(selector, "target")));
+                    Map.of(selector, resolved), Set.of(), Map.of(selector, "target")));
 
     assertEquals(2, predicate.subqueries().size());
     predicate
@@ -248,6 +251,66 @@ class RuntimeFieldQueryTest {
         () -> translate("SF7", RuntimeFieldValueType.CHOICE, Operator.LIKE, List.of("x")));
   }
 
+  @ParameterizedTest
+  @EnumSource(
+      value = Operator.class,
+      names = {"EQUAL", "NOT_EQUAL", "EXISTS"})
+  void relationshipRuntimePredicatesRequireTargetReadAccessIncludingMissingValues(
+      Operator operator) {
+    ResolvedRuntimeField resolved = field("SF104", RuntimeFieldValueType.TEXT);
+    String selector = "target." + resolved.selector();
+    RuntimeFieldSelection selection =
+        new RuntimeFieldSelection(Map.of(selector, resolved), Set.of(), Map.of(selector, "target"));
+    FilterExpression comparison =
+        new FilterExpression.Comparison(
+            selector, operator, List.of(operator == Operator.EXISTS ? false : "BSL-2"), false);
+    var actor = new User("reader");
+    var target =
+        ApiV2InstrumentResource.description(
+            AccessFunction.documented(
+                "Only one item",
+                Set.of(),
+                ignored ->
+                    AccessResult.allowedWhere(
+                        new FilterExpression.Comparison(
+                            "id", Operator.EQUAL, List.of(42L), false))));
+    var registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2ContainerResource.DESCRIPTION,
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                target));
+    var translator = new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "cfg");
+    Predicate predicate =
+        translator.translate(
+            comparison, RelationshipReadAccess.forActor(registry, actor), selection);
+    assertTrue(predicate.parameters().containsValue(42L));
+    assertEquals(2, predicate.subqueries().size());
+    assertTrue(
+        predicate.subqueries().values().stream()
+            .anyMatch(
+                query ->
+                    query.entityType() == Instrument.class
+                        && query.whereExpression().contains(".id = cfg.target.id")
+                        && query.whereExpression().contains(".id = :")));
+    var deniedTarget =
+        ApiV2InstrumentResource.description(
+            AccessFunction.documented(
+                "No items", Set.of(), ignored -> AccessResult.denied(AccessPolicy.FORBIDDEN)));
+    var deniedRegistry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2ContainerResource.DESCRIPTION,
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                deniedTarget));
+    Predicate unreadableTarget =
+        translator.translate(
+            comparison, RelationshipReadAccess.forActor(deniedRegistry, actor), selection);
+    assertTrue(unreadableTarget.expression().contains("1 = 0"));
+  }
+
   @Test
   void keepsARuntimePredicateAndAStaticOneInTheSameQuery() {
     ResolvedRuntimeField resolved = field("SF104", RuntimeFieldValueType.TEXT);
@@ -260,7 +323,7 @@ class RuntimeFieldQueryTest {
                     new FilterExpression.Comparison(
                         resolved.selector(), Operator.EQUAL, List.of("BSL-2"), false))),
             RelationshipReadAccess.none(),
-            new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), java.util.Set.of()));
+            new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), Set.of()));
 
     assertTrue(predicate.expression().contains("LOWER(item.editInfo.name) LIKE"));
     assertTrue(predicate.expression().contains("EXISTS "));
