@@ -165,46 +165,46 @@ public final class ApiV2AuditStrictSearch {
       throw failure("audit-capacity", 0, null);
     }
     try {
-      var manifest = enumerate();
-      CacheKey key =
-          new CacheKey(
-              request.fromInclusive(),
-              request.toExclusive(),
-              Set.copyOf(restricted.getDomains()),
-              Set.copyOf(restricted.getActions()),
-              request.oid(),
-              request.actor().getId(),
-              request.actor().getUsername(),
-              Set.copyOf(restricted.getUsernames()),
-              request.bypassActorDirectory(),
-              request.ceiling(),
-              request.search(),
-              request.searchableFields(),
-              request.relatedIdentifierFields(),
-              request.descriptionsSafe());
-      CachedScan hit;
-      synchronized (cache) {
-        cache
-            .entrySet()
-            .removeIf(entry -> System.nanoTime() - entry.getValue().created() >= cacheNanos);
-        hit = cache.get(key);
-      }
-      if (hit != null) {
-        try {
-          // SEARCH auditing appends to today's log. Reuse only after certifying that every
-          // appended event is outside this completed-day snapshot, regardless of its filters.
-          certify(hit.manifest(), request);
-          return hit.results();
-        } catch (StrictReadException ex) {
-          org.slf4j.LoggerFactory.getLogger(ApiV2AuditStrictSearch.class)
-              .warn("Invalidating audit cache after a file change", ex);
-          synchronized (cache) {
-            cache.remove(key);
-          }
-        }
-      }
       StrictReadException firstFailure;
       try {
+        var manifest = enumerate();
+        CacheKey key =
+            new CacheKey(
+                request.fromInclusive(),
+                request.toExclusive(),
+                Set.copyOf(restricted.getDomains()),
+                Set.copyOf(restricted.getActions()),
+                request.oid(),
+                request.actor().getId(),
+                request.actor().getUsername(),
+                Set.copyOf(restricted.getUsernames()),
+                request.bypassActorDirectory(),
+                request.ceiling(),
+                request.search(),
+                request.searchableFields(),
+                request.relatedIdentifierFields(),
+                request.descriptionsSafe());
+        CachedScan hit;
+        synchronized (cache) {
+          cache
+              .entrySet()
+              .removeIf(entry -> System.nanoTime() - entry.getValue().created() >= cacheNanos);
+          hit = cache.get(key);
+        }
+        if (hit != null) {
+          try {
+            // SEARCH auditing appends to today's log. Reuse only after certifying that every
+            // appended event is outside this completed-day snapshot, regardless of its filters.
+            certify(hit.manifest(), request);
+            return hit.results();
+          } catch (StrictReadException ex) {
+            org.slf4j.LoggerFactory.getLogger(ApiV2AuditStrictSearch.class)
+                .warn("Invalidating audit cache after a file change", ex);
+            synchronized (cache) {
+              cache.remove(key);
+            }
+          }
+        }
         return attempt(request, restricted, 1, key, manifest);
       } catch (StrictReadException ex) {
         firstFailure = ex;

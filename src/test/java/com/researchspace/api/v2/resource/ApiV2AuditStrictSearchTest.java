@@ -59,6 +59,31 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void retriesInitialEnumerationFailureInTheSameRequest() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    var scanner = search(ReadObserver.NONE);
+    AtomicInteger reads = new AtomicInteger();
+    try (var files = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+      files
+          .when(
+              () ->
+                  Files.readAttributes(
+                      Mockito.eq(log),
+                      Mockito.eq(java.nio.file.attribute.BasicFileAttributes.class),
+                      Mockito.any(LinkOption[].class)))
+          .thenAnswer(
+              invocation -> {
+                if (reads.getAndIncrement() == 0) {
+                  throw new java.nio.file.NoSuchFileException(log.toString());
+                }
+                return invocation.callRealMethod();
+              });
+      assertEquals(1, scanner.search(request(10)).size());
+      assertTrue(reads.get() > 1);
+    }
+  }
+
+  @Test
   void validEventsAndExactDuplicatesArePreservedAndBlankLinesAreIgnored() throws IOException {
     String event = event("01 Jan 2026 12:00:00,000", "BC1");
     write("RSLogs.txt", "\n" + event + "\n\n" + event + "\n");
