@@ -614,7 +614,7 @@
     },
     "form": {
       "cancel": "Cancel",
-      "changeTimezone": "Change Time Zone",
+      "changeTimezone": "Change time zone",
       "closedOnDate": "Closed on this date",
       "date": "Date",
       "earlierOccurrence": "Earlier occurrence ({offset})",
@@ -1173,7 +1173,7 @@
     },
     "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
     "errors": {
-      "invalid": "Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+      "invalid": "Choose a valid same-day window and, for Custom, a valid IANA time zone.",
       "save": "Booking preferences could not be saved."
     },
     "resetComplete": "Global Booking defaults restored.",
@@ -1186,11 +1186,11 @@
       "twentyFourHour": "24-hour ({example})"
     },
     "timezone": {
-      "browser": "Use Browser Timezone ({timezone})",
-      "custom": "Use Custom Timezone",
-      "customLabel": "Custom timezone",
-      "institution": "Use Institution Timezone ({timezone})",
-      "legend": "Default timezone"
+      "browser": "Use browser time zone ({timezone})",
+      "custom": "Use custom time zone",
+      "customLabel": "Custom time zone",
+      "institution": "Use institution time zone ({timezone})",
+      "legend": "Default time zone"
     },
     "title": "Booking preferences"
   },
