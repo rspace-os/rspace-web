@@ -109,5 +109,5 @@ export async function fetchBookingOwnershipCandidates(
     signal,
   });
   if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
-  return parseOrThrow(v2ListEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
+  return parseOrThrow(v2PageEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
 }
