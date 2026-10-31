@@ -82,6 +82,8 @@ describe("AllBookableItemsPage", () => {
               sampleBookingEvents.slice(0, 1).map((booking) => ({
                 ...booking,
                 kind: "BOOKING",
+                start: "2026-08-17T10:00:00Z",
+                end: "2026-08-17T11:00:00Z",
                 canEdit: false,
                 canCancel: false,
                 createdAt: "2026-08-01T09:00:00Z",
