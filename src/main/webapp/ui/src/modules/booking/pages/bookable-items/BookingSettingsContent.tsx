@@ -1,10 +1,12 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { isEqual, pick } from "es-toolkit";
 import { CheckIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
+  type BookingAdminSettings,
   type BookingSettingsInput,
   loadBookingAdminSettings,
   type SchedulingSettings,
@@ -21,30 +23,50 @@ import {
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { Button } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "../preferences/BookingDisplaySettingsFields";
 
+function displayInput(settings: BookingAdminSettings): BookingDisplayPreferencesInput {
+  return pick(settings, [
+    "availabilityWindowStart",
+    "availabilityWindowEnd",
+    "timezoneMode",
+    "customTimezone",
+    "timeFormat",
+  ]);
+}
+
 export function BookingSettingsContent() {
   const { t } = useTranslation("booking");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
-  const loadedSettings = useSuspenseQuery({
+  const settingsQuery = useSuspenseQuery({
     queryKey: ["api-v2", "booking-settings", "admin"],
     queryFn: ({ signal }) => loadBookingAdminSettings(token, signal),
-  }).data;
-  const [settings, setSettings] = useState(loadedSettings);
-  const [editorVersion, setEditorVersion] = useState(0);
-  const [displaySettings, setDisplaySettings] = useState<BookingDisplayPreferencesInput>({
-    availabilityWindowStart: settings.availabilityWindowStart,
-    availabilityWindowEnd: settings.availabilityWindowEnd,
-    timezoneMode: settings.timezoneMode,
-    customTimezone: settings.customTimezone,
-    timeFormat: settings.timeFormat,
+    // A 403 means the caller is not a sysadmin; retrying cannot change that.
+    retry: retryUnlessClientError,
   });
+  const loadedSettings = settingsQuery.data;
+  const [settings, setSettings] = useState(loadedSettings);
+  const [displaySettings, setDisplaySettings] = useState(() => displayInput(settings));
   const form = useForm({ schema: SchedulingSettingsSchema, initialInput: settings });
+  const [reloading, setReloading] = useState(false);
+  // Each adopted baseline starts a new editing session: remounting the fields drops closed-day drafts and the
+  // opening hours that Open all day would restore, for saves, accepted refreshes and reloads alike.
+  const [editorVersion, setEditorVersion] = useState(0);
+  const adoptSettings = useCallback(
+    (next: BookingAdminSettings & { etag: string }) => {
+      setSettings(next);
+      reset(form, { initialInput: next });
+      setDisplaySettings(displayInput(next));
+      setEditorVersion((version) => version + 1);
+    },
+    [form],
+  );
   const mutation = useMutation({
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(
@@ -56,33 +78,25 @@ export function BookingSettingsContent() {
         token,
       ),
     onSuccess: async (saved) => {
-      setSettings(saved);
       queryClient.setQueryData(["api-v2", "booking-settings", "admin"], saved);
-      reset(form, { initialInput: saved });
-      setEditorVersion((version) => version + 1);
-      setDisplaySettings({
-        availabilityWindowStart: saved.availabilityWindowStart,
-        availabilityWindowEnd: saved.availabilityWindowEnd,
-        timezoneMode: saved.timezoneMode,
-        customTimezone: saved.customTimezone,
-        timeFormat: saved.timeFormat,
-      });
+      adoptSettings(saved);
       await queryClient.invalidateQueries({ queryKey: bookingDisplayPreferencesQueryKey });
     },
   });
   const displaySettingsValid = v.safeParse(BookingDisplayPreferencesInputSchema, displaySettings).success;
-  const dirty =
-    isDirty(form) ||
-    JSON.stringify(displaySettings) !==
-      JSON.stringify({
-        availabilityWindowStart: settings.availabilityWindowStart,
-        availabilityWindowEnd: settings.availabilityWindowEnd,
-        timezoneMode: settings.timezoneMode,
-        customTimezone: settings.customTimezone,
-        timeFormat: settings.timeFormat,
-      });
+  const dirty = isDirty(form) || !isEqual(displaySettings, displayInput(settings));
+
+  // Refresh the server baseline only when no local edits (including weekday hours) would be lost.
+  useEffect(() => {
+    if (loadedSettings !== settings && !dirty && !mutation.isPending) {
+      adoptSettings(loadedSettings);
+    }
+  }, [loadedSettings, settings, dirty, mutation.isPending, adoptSettings]);
+
+  const stale = mutation.error instanceof ApiV2ProblemError && mutation.error.status === 412;
 
   const saved = mutation.isSuccess && !dirty;
+  const pending = mutation.isPending || reloading;
 
   return (
     <main className="p-4 sm:p-8">
@@ -96,9 +110,9 @@ export function BookingSettingsContent() {
         of={form}
         className="max-w-2xl space-y-8"
         onChange={() => mutation.reset()}
-        onSubmit={(input) => mutation.mutateAsync(input)}
+        onSubmit={(input) => (pending ? undefined : mutation.mutateAsync(input))}
       >
-        <SchedulingSettingsFields key={editorVersion} form={form} disabled={mutation.isPending} />
+        <SchedulingSettingsFields key={editorVersion} form={form} disabled={pending} />
         <Separator />
         <section className="space-y-4" aria-labelledby="booking-display-defaults-heading">
           <div>
@@ -112,22 +126,37 @@ export function BookingSettingsContent() {
             onChange={setDisplaySettings}
             browserTimezone={browserTimeZone() ?? settings.institutionTimezone}
             institutionTimezone={settings.institutionTimezone}
-            disabled={mutation.isPending}
+            disabled={pending}
           />
         </section>
         {mutation.isError ? (
-          <FieldError>
-            {t(
-              mutation.error instanceof ApiV2ProblemError && mutation.error.status === 412
-                ? "settings.errors.stale"
-                : "settings.errors.save",
-            )}
-          </FieldError>
+          <FieldError>{stale ? t("settings.errors.stale") : t("settings.errors.save")}</FieldError>
+        ) : null}
+        {stale ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending || settingsQuery.isFetching}
+            onClick={async () => {
+              setReloading(true);
+              try {
+                const latest = await settingsQuery.refetch();
+                if (latest.isSuccess) {
+                  adoptSettings(latest.data);
+                  mutation.reset();
+                }
+              } finally {
+                setReloading(false);
+              }
+            }}
+          >
+            {t("settings.actions.reload")}
+          </Button>
         ) : null}
         <Button
           type="submit"
-          disabled={mutation.isPending || !dirty || !displaySettingsValid}
-          aria-busy={mutation.isPending}
+          disabled={pending || !dirty || !displaySettingsValid}
+          aria-busy={pending}
           className={
             saved
               ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
@@ -135,8 +164,12 @@ export function BookingSettingsContent() {
           }
         >
           {saved ? <CheckIcon aria-hidden="true" /> : null}
-          {t(saved ? "preferences.actions.saved" : "settings.actions.save")}
+          {saved ? t("preferences.actions.saved") : t("settings.actions.save")}
         </Button>
+        {/* The disabled button's new label is not announced, so the save is confirmed here too. */}
+        <p role="status" className="sr-only">
+          {saved ? t("preferences.actions.saved") : null}
+        </p>
       </Form>
     </main>
   );

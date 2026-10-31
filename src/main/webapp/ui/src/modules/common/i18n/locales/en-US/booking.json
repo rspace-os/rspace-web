@@ -365,7 +365,7 @@
       "menu": "Actions for {item}",
       "repairAccess": "Repair access for {item}",
       "restore": "Restore",
-      "save": "Save changes",
+      "save": "Save",
       "submit": "Submit",
       "viewDetails": "View details for {item}",
       "viewInventory": "View {globalId} in Inventory"

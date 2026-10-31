@@ -1,6 +1,6 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellIcon, CheckIcon } from "lucide-react";
+import { BellIcon, CheckIcon, SaveIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
@@ -11,7 +11,6 @@ import {
   replaceBookingNotificationSubscription,
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -20,6 +19,7 @@ import {
   BookingNotificationChoiceSchema,
   bookingNotificationChoice,
 } from "../preferences/BookingNotificationChoiceFields";
+import { bookingConfigurationTargetQueryKey } from "./bookingConfiguration";
 
 function ItemNotificationEditor({
   configurationId,
@@ -63,7 +63,7 @@ function ItemNotificationEditor({
       if (error instanceof ApiV2ProblemError && (error.status === 403 || error.status === 404)) {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey }),
-          queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", globalId] }),
+          queryClient.invalidateQueries({ queryKey: bookingConfigurationTargetQueryKey(globalId) }),
         ]);
       }
       setFeedback("saveError");
@@ -117,7 +117,7 @@ function ItemNotificationEditor({
                   : undefined
               }
             >
-              {saved ? <CheckIcon aria-hidden="true" /> : null}
+              {saved ? <CheckIcon aria-hidden="true" /> : <SaveIcon aria-hidden="true" />}
               {saved ? t("preferences.actions.saved") : t("preferences.actions.save")}
             </Button>
             <Button
@@ -130,6 +130,7 @@ function ItemNotificationEditor({
                 setFeedback(null);
               }}
             >
+              <XIcon aria-hidden="true" />
               {t("bookableItemDetails.cancelEdit")}
             </Button>
           </div>
@@ -142,33 +143,10 @@ function ItemNotificationEditor({
 export function BookableItemNotificationSubscription({
   configurationId,
   globalId,
-  canManageNotificationSubscription,
-}: {
-  configurationId: number;
-  globalId: string;
-  canManageNotificationSubscription: boolean;
-}) {
-  const { data: currentUser } = useCurrentUserQuery();
-  return (
-    <BookableItemNotificationSubscriptionForUser
-      key={`${currentUser.id}-${configurationId}-${canManageNotificationSubscription}`}
-      configurationId={configurationId}
-      globalId={globalId}
-      canManageNotificationSubscription={canManageNotificationSubscription}
-      subjectId={currentUser.id}
-    />
-  );
-}
-
-function BookableItemNotificationSubscriptionForUser({
-  configurationId,
-  globalId,
-  canManageNotificationSubscription,
   subjectId,
 }: {
   configurationId: number;
   globalId: string;
-  canManageNotificationSubscription: boolean;
   subjectId: number;
 }) {
   const { t } = useTranslation("booking");
@@ -178,7 +156,6 @@ function BookableItemNotificationSubscriptionForUser({
   const subscription = useQuery({
     queryKey,
     queryFn: ({ signal }) => fetchBookingNotificationSubscription(configurationId, token, signal),
-    enabled: canManageNotificationSubscription,
   });
   const notificationCardHeader = () => (
     <CardHeader>
@@ -186,7 +163,6 @@ function BookableItemNotificationSubscriptionForUser({
     </CardHeader>
   );
 
-  if (!canManageNotificationSubscription) return null;
   if (subscription.isPending) {
     return (
       <Card size="sm" aria-busy="true">
