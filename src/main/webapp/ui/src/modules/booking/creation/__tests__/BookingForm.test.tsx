@@ -18,6 +18,7 @@ import { BookingForm, type BookingFormSubmission } from "../BookingForm";
 import { cataloguePage, editableBooking, confocalTarget as target } from "./creationTestFixtures";
 
 it("shows every independently configured weekday and the scheduling timezone", async () => {
+  server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage)));
   renderForm(
     <BookingForm
       mode="add"
@@ -674,6 +675,35 @@ describe("BookingForm", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("uses the maintenance notes label for an unchanged off-grid interval", async () => {
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={{ ...editableBooking, kind: "MAINTENANCE" }}
+        configuration={{ ...target, slotGranularityMinutes: 45 }}
+        token="token"
+        pending={false}
+        onSubmit={async () => undefined}
+      />,
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.form.policyMismatchNotes");
+  });
+
+  it("preserves maintenance exemptions from duration and opening hours rules", async () => {
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={{ ...editableBooking, kind: "MAINTENANCE" }}
+        configuration={{ ...target, maxBookingDurationMinutes: 30, openingHours: [] }}
+        token="token"
+        pending={false}
+        onSubmit={async () => undefined}
+      />,
+    );
+    await screen.findByRole("textbox", { name: "booking:bookings.form.notes" });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("allows an unchanged over-limit interval on a purpose-only edit", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
@@ -689,8 +719,14 @@ describe("BookingForm", () => {
     );
 
     expect(screen.queryByText("booking:bookings.errors.maximumDuration")).not.toBeInTheDocument();
+    await user.type(await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" }), " updated");
     await user.click(await screen.findByRole("button", { name: "booking:bookings.form.save" }));
-    expect(submit).toHaveBeenCalledOnce();
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        purpose: "Imaging updated",
+        window: { start: editableBooking.start, end: editableBooking.end },
+      }),
+    );
   });
 
   it("preserves off-grid original endpoints during a purpose-only edit", async () => {

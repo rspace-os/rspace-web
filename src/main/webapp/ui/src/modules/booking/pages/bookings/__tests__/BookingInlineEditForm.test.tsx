@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookableItemFixtures } from "../../bookable-items/mocks/bookableItemsMocks";
+import { bookableItemFixtures, collectionPage } from "../../bookable-items/mocks/bookableItemsMocks";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createBookingEventTestRouteTree } from "./bookingEventTestHarness";
 
@@ -88,6 +88,86 @@ function renderEdit() {
 }
 
 describe("BookingInlineEditForm", () => {
+  it.each(["duration", "opening hours", "increment"])(
+    "uses current %s rules only when reserved times change",
+    async (rule) => {
+      const user = userEvent.setup();
+      const patches: unknown[] = [];
+      const booking = {
+        ...document,
+        ...(rule === "increment"
+          ? { start: document.start.replace(":00:00Z", ":02:00Z"), end: document.end.replace(":00:00Z", ":02:00Z") }
+          : {}),
+      };
+      const configuration = {
+        ...bookableItemFixtures[0],
+        ...(rule === "duration" ? { maxBookingDurationMinutes: 60 } : {}),
+        ...(rule === "opening hours"
+          ? { openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "11:00", end: "17:00" })) }
+          : {}),
+        ...(rule === "increment" ? { slotGranularityMinutes: 10 } : {}),
+      };
+      server.use(
+        oauthTokenHandler(true),
+        http.get("/api/v2/bookings/41", () => HttpResponse.json(booking)),
+        http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration]))),
+        http.patch("/api/v2/bookings/41", async ({ request }) => {
+          patches.push(await request.json());
+          return HttpResponse.json({ ...document, version: 8, purpose: "Updated purpose" });
+        }),
+      );
+      renderEdit();
+      const purpose = await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" });
+      expect(screen.getByText("booking:bookings.form.policyMismatchPurpose")).toHaveAttribute("role", "status");
+      await user.clear(purpose);
+      await user.type(purpose, "Updated purpose");
+      const end = within(screen.getByRole("group", { name: "booking:bookings.form.end" })).getByLabelText(
+        "booking:bookings.form.time",
+      );
+      const originalTime = end.getAttribute("value");
+      await user.clear(end);
+      await user.type(end, "12:45");
+      await user.tab();
+      await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+      expect(patches).toEqual([]);
+      expect(screen.queryByText("booking:bookings.form.policyMismatchPurpose")).not.toBeInTheDocument();
+      expect(end).toHaveAttribute("aria-invalid", "true");
+      await user.clear(end);
+      await user.type(end, originalTime ?? "");
+      await user.tab();
+      expect(screen.getByText("booking:bookings.form.policyMismatchPurpose")).toHaveAttribute("role", "status");
+      await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+      await waitFor(() => expect(patches).toEqual([{ purpose: "Updated purpose" }]));
+    },
+  );
+
+  it("saves a compliant reschedule after a maximum duration reduction", async () => {
+    const user = userEvent.setup();
+    const patches: unknown[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...bookableItemFixtures[0], maxBookingDurationMinutes: 60 }])),
+      ),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const patch = await request.json();
+        patches.push(patch);
+        return HttpResponse.json({ ...document, version: 8, end: "2026-10-19T09:00:00Z" });
+      }),
+    );
+    renderEdit();
+    await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" });
+    const end = within(screen.getByRole("group", { name: "booking:bookings.form.end" })).getByLabelText(
+      "booking:bookings.form.time",
+    );
+    await user.clear(end);
+    await user.type(end, "11:00");
+    await user.tab();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+    await waitFor(() => expect(patches).toEqual([{ end: "2026-10-19T09:00:00Z" }]));
+  });
+
   it("saves changed fields against the frozen version and returns to the mounted readout", async () => {
     let current = {
       ...document,

@@ -8,6 +8,7 @@ import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookableItemFixtures, collectionPage } from "../../bookable-items/mocks/bookableItemsMocks";
 import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import {
@@ -22,6 +23,104 @@ beforeEach(() => setupCalendarBookableItems());
 afterAll(() => restoreCalendarScrollTo());
 
 describe("CalendarPage", () => {
+  it.each(["duration", "opening hours", "increment"])(
+    "uses current %s rules only when reserved times change",
+    async (rule) => {
+      const user = userEvent.setup();
+      const patches: unknown[] = [];
+      const booking = {
+        ...ownBooking,
+        ...(rule === "increment"
+          ? { start: ownBooking.start.replace(":00:00Z", ":02:00Z"), end: ownBooking.end.replace(":00:00Z", ":02:00Z") }
+          : {}),
+      };
+      const configuration = {
+        ...bookableItemFixtures[0],
+        ...(rule === "duration" ? { maxBookingDurationMinutes: 60 } : {}),
+        ...(rule === "opening hours"
+          ? { openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "11:00", end: "17:00" })) }
+          : {}),
+        ...(rule === "increment" ? { slotGranularityMinutes: 10 } : {}),
+      };
+      server.use(
+        oauthTokenHandler(true),
+        http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+        http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([booking]))),
+        http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration]))),
+        http.patch("/api/v2/bookings/41", async ({ request }) => {
+          patches.push(await request.json());
+          return HttpResponse.json({ ...ownBooking, version: 8, purpose: "Updated purpose" });
+        }),
+      );
+      await renderCalendar();
+      await user.click(await screen.findByRole("button", { name: "Agenda" }));
+      await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
+      const card = screen.getByRole("dialog");
+      await user.click(within(card).getByRole("button", { name: "Edit" }));
+      const purpose = await screen.findByRole("textbox", { name: "Purpose" });
+      expect(
+        screen.getByText(
+          "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
+        ),
+      ).toHaveAttribute("role", "status");
+      await user.clear(purpose);
+      await user.type(purpose, "Updated purpose");
+      const end = within(card).getByLabelText("End time");
+      const originalTime = end.getAttribute("value");
+      await user.clear(end);
+      await user.type(end, "12:45");
+      await user.tab();
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+      expect(patches).toEqual([]);
+      expect(
+        screen.queryByText(
+          "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
+        ),
+      ).not.toBeInTheDocument();
+      expect(end).toHaveAttribute("aria-invalid", "true");
+      await user.clear(end);
+      await user.type(end, originalTime ?? "");
+      await user.tab();
+      expect(
+        screen.getByText(
+          "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
+        ),
+      ).toHaveAttribute("role", "status");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+      await waitFor(() => expect(patches).toEqual([{ purpose: "Updated purpose" }]));
+    },
+  );
+
+  it("saves a compliant reschedule after a maximum duration reduction", async () => {
+    const user = userEvent.setup();
+    const patches: unknown[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...bookableItemFixtures[0], maxBookingDurationMinutes: 60 }])),
+      ),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const patch = await request.json();
+        patches.push(patch);
+        return HttpResponse.json({ ...ownBooking, version: 8, end: "2026-08-17T09:00:00Z" });
+      }),
+    );
+    await renderCalendar();
+    await user.click(await screen.findByRole("button", { name: "Agenda" }));
+    await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
+    const card = screen.getByRole("dialog");
+    await user.click(within(card).getByRole("button", { name: "Edit" }));
+    await screen.findByRole("textbox", { name: "Purpose" });
+    const end = within(card).getByLabelText("End time");
+    await user.clear(end);
+    await user.type(end, "11:00");
+    await user.tab();
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(patches).toEqual([{ end: "2026-08-17T09:00:00Z" }]));
+  });
+
   it.each(
     ["network", "server"].flatMap((failure) =>
       ["Agenda", "Time grid", "Resources"].map((layout) => ({ failure, layout })),
@@ -66,6 +165,11 @@ describe("CalendarPage", () => {
           committed = true;
           return failure === "network" ? HttpResponse.error() : HttpResponse.json({ status: 503 }, { status: 503 });
         }),
+      );
+      server.use(
+        http.get("/api/v2/booking-configurations", () =>
+          HttpResponse.json(collectionPage([{ ...bookableItemFixtures[0], maxBookingDurationMinutes: 60 }])),
+        ),
       );
       const { queryClient } = await renderCalendar();
       act(() => {
@@ -113,6 +217,7 @@ describe("CalendarPage", () => {
       await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
       expect(saved).toBe(true);
       expect(versions).toEqual(['"0"', '"1"']);
+      expect(patches[0]).toEqual({ purpose: "Keep my calendar draft" });
       expect(patches[1]).toEqual({
         start: ownBooking.start,
         end: ownBooking.end,
