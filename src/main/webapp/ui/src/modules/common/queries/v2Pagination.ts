@@ -15,3 +15,12 @@ export function v2ListEnvelope<TDoc extends v.BaseSchema<unknown, unknown, v.Bas
     nextPage: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1))),
   });
 }
+
+// A collection page may omit totals unless the caller requests totals=true.
+export function v2PageEnvelope<TDoc extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(docSchema: TDoc) {
+  return v.object({
+    ...v2ListEnvelope(docSchema).entries,
+    totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
+    totalPages: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
+  });
+}
