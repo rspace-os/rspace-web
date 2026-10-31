@@ -274,7 +274,9 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                 upcomingCount.isSuccess
                   ? t("myBookings.period.withCount", {
                       label: t("myBookings.period.upcoming"),
-                      count: upcomingCount.data,
+                      count: upcomingCount.data.totalIsLowerBound
+                        ? t("myBookings.count.lowerBound")
+                        : upcomingCount.data.totalDocs,
                     })
                   : t("myBookings.period.upcoming")
               }
@@ -293,6 +295,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                       : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                   }
                 >
+                  {" "}
                   {upcomingCount.data.totalIsLowerBound
                     ? t("myBookings.count.lowerBound")
                     : upcomingCount.data.totalDocs}
