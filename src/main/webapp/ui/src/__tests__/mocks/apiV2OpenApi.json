@@ -416,6 +416,10 @@
           "totalDocs" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "totalIsLowerBound" : {
+            "description" : "True when more than max rows match.",
+            "type" : "boolean"
           }
         },
         "required" : [ "totalDocs" ],
@@ -4662,6 +4666,25 @@
             "type" : "integer"
           }
         }, {
+          "description" : "Include totalDocs and totalPages. Defaults to false.",
+          "in" : "query",
+          "name" : "totals",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
           "in" : "query",
           "name" : "depth",
@@ -4684,6 +4707,9 @@
               "booking-configurations" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               },
@@ -4696,6 +4722,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
@@ -4713,6 +4740,9 @@
               "booking-configurations" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               },
@@ -4725,6 +4755,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
@@ -4766,14 +4797,20 @@
                       "type" : [ "integer", "null" ]
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -5667,6 +5704,16 @@
         "description" : "Counts booking-configurations matching the optional bounded filter.",
         "operationId" : "countBookingConfigurations",
         "parameters" : [ {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
@@ -6281,6 +6328,22 @@
             },
             "description" : "The configuration changed while it was being edited."
           },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.ifMatchRequired",
+                  "detail" : "A strong If-Match header is required.",
+                  "status" : 428,
+                  "title" : "A strong If-Match header is required."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "A strong If-Match header is required."
+          },
           "429" : {
             "$ref" : "#/components/responses/TooManyRequests"
           },
@@ -6336,6 +6399,9 @@
               "booking-configurations" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               },
@@ -6348,6 +6414,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
@@ -6365,6 +6432,9 @@
               "booking-configurations" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               },
@@ -6377,6 +6447,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
@@ -6644,6 +6715,22 @@
           },
           "415" : {
             "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.ifMatchRequired",
+                  "detail" : "A strong If-Match header is required.",
+                  "status" : 428,
+                  "title" : "A strong If-Match header is required."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "A strong If-Match header is required."
           },
           "429" : {
             "$ref" : "#/components/responses/TooManyRequests"
@@ -7045,9 +7132,9 @@
             "type" : "string"
           }
         }, {
-          "description" : "Case-insensitive text contained in the actor, action, description, target, or recorded values.",
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
           "in" : "query",
-          "name" : "search",
+          "name" : "q",
           "required" : false,
           "schema" : {
             "maxLength" : 255,
@@ -7154,14 +7241,20 @@
                       "type" : "string"
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
                   "type" : "object"
                 }
               }
@@ -7721,6 +7814,25 @@
             "type" : "integer"
           }
         }, {
+          "description" : "Include totalDocs and totalPages. Defaults to false.",
+          "in" : "query",
+          "name" : "totals",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
           "in" : "query",
           "name" : "depth",
@@ -7743,6 +7855,9 @@
               "bookings" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               }
@@ -7752,6 +7867,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -7768,6 +7884,9 @@
               "bookings" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               }
@@ -7777,6 +7896,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -7817,14 +7937,20 @@
                       "type" : [ "integer", "null" ]
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -8094,6 +8220,16 @@
         "description" : "Counts bookings matching the optional bounded filter.",
         "operationId" : "countBookings",
         "parameters" : [ {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
@@ -8390,6 +8526,9 @@
               "bookings" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               }
@@ -8399,6 +8538,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -8415,6 +8555,9 @@
               "bookings" : {
                 "type" : "string"
               },
+              "containers" : {
+                "type" : "string"
+              },
               "instruments" : {
                 "type" : "string"
               }
@@ -8424,6 +8567,7 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ],
+            "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -8709,6 +8853,22 @@
           "415" : {
             "$ref" : "#/components/responses/UnsupportedMediaType"
           },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.booking.ifMatchRequired",
+                  "detail" : "A strong If-Match header is required.",
+                  "status" : 428,
+                  "title" : "A strong If-Match header is required."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "A strong If-Match header is required."
+          },
           "429" : {
             "$ref" : "#/components/responses/TooManyRequests"
           },
@@ -8762,9 +8922,9 @@
             "type" : "string"
           }
         }, {
-          "description" : "Case-insensitive text contained in the actor, action, description, target, or recorded values.",
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
           "in" : "query",
-          "name" : "search",
+          "name" : "q",
           "required" : false,
           "schema" : {
             "maxLength" : 255,
@@ -8871,14 +9031,20 @@
                       "type" : "string"
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
                   "type" : "object"
                 }
               }
@@ -9119,6 +9285,25 @@
             "type" : "integer"
           }
         }, {
+          "description" : "Include totalDocs and totalPages. Defaults to false.",
+          "in" : "query",
+          "name" : "totals",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
           "in" : "query",
           "name" : "depth",
@@ -9207,14 +9392,20 @@
                       "type" : [ "integer", "null" ]
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -9300,6 +9491,16 @@
         "description" : "Counts containers matching the optional bounded filter.",
         "operationId" : "countContainers",
         "parameters" : [ {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
           "in" : "query",
           "name" : "where",
@@ -9620,9 +9821,9 @@
             "type" : "string"
           }
         }, {
-          "description" : "Case-insensitive text contained in the actor, action, description, target, or recorded values.",
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
           "in" : "query",
-          "name" : "search",
+          "name" : "q",
           "required" : false,
           "schema" : {
             "maxLength" : 255,
@@ -9729,14 +9930,20 @@
                       "type" : "string"
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
                   "type" : "object"
                 }
               }
@@ -10024,6 +10231,25 @@
             "type" : "integer"
           }
         }, {
+          "description" : "Include totalDocs and totalPages. Defaults to false.",
+          "in" : "query",
+          "name" : "totals",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
           "in" : "query",
           "name" : "depth",
@@ -10120,14 +10346,20 @@
                       "type" : [ "integer", "null" ]
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -10213,6 +10445,16 @@
         "description" : "Counts instruments matching the optional bounded filter.",
         "operationId" : "countInstruments",
         "parameters" : [ {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
@@ -10613,9 +10855,9 @@
             "type" : "string"
           }
         }, {
-          "description" : "Case-insensitive text contained in the actor, action, description, target, or recorded values.",
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
           "in" : "query",
-          "name" : "search",
+          "name" : "q",
           "required" : false,
           "schema" : {
             "maxLength" : 255,
@@ -10722,14 +10964,20 @@
                       "type" : "string"
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
                   "type" : "object"
                 }
               }
@@ -11111,6 +11359,25 @@
             "type" : "integer"
           }
         }, {
+          "description" : "Include totalDocs and totalPages. Defaults to false.",
+          "in" : "query",
+          "name" : "totals",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
           "in" : "query",
           "name" : "depth",
@@ -11199,14 +11466,20 @@
                       "type" : [ "integer", "null" ]
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -11719,6 +11992,16 @@
         "description" : "Counts maintenances matching the optional bounded filter.",
         "operationId" : "countMaintenances",
         "parameters" : [ {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
           "in" : "query",
           "name" : "where",
@@ -12266,9 +12549,9 @@
             "type" : "string"
           }
         }, {
-          "description" : "Case-insensitive text contained in the actor, action, description, target, or recorded values.",
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
           "in" : "query",
-          "name" : "search",
+          "name" : "q",
           "required" : false,
           "schema" : {
             "maxLength" : 255,
@@ -12375,14 +12658,20 @@
                       "type" : "string"
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
                   "type" : "object"
                 }
               }
@@ -12695,6 +12984,25 @@
             "type" : "integer"
           }
         }, {
+          "description" : "Include totalDocs and totalPages. Defaults to false.",
+          "in" : "query",
+          "name" : "totals",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
           "in" : "query",
           "name" : "depth",
@@ -12783,14 +13091,20 @@
                       "type" : [ "integer", "null" ]
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -12876,6 +13190,16 @@
         "description" : "Counts users matching the optional bounded filter.",
         "operationId" : "countUsers",
         "parameters" : [ {
+          "description" : "Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.",
+          "in" : "query",
+          "name" : "max",
+          "required" : false,
+          "schema" : {
+            "maximum" : 1E+4,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
           "in" : "query",
           "name" : "where",
@@ -13387,9 +13711,9 @@
             "type" : "string"
           }
         }, {
-          "description" : "Case-insensitive text contained in the actor, action, description, target, or recorded values.",
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
           "in" : "query",
-          "name" : "search",
+          "name" : "q",
           "required" : false,
           "schema" : {
             "maxLength" : 255,
@@ -13496,14 +13820,20 @@
                       "type" : "string"
                     },
                     "totalDocs" : {
+                      "description" : "Present only when totals=true.",
                       "format" : "int64",
                       "type" : "integer"
                     },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
                     "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
                       "type" : "integer"
                     }
                   },
-                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint", "totalDocs", "totalPages" ],
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
                   "type" : "object"
                 }
               }
