@@ -305,7 +305,7 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByRole("button", { name: "New Booking" })).not.toBeInTheDocument();
     await pageObj.calendarTrigger.click();
     await expect
-      .element(page.getByText("Calendar links cannot be generated while this booking configuration is archived."))
+      .element(page.getByText("New calendar links cannot be generated while this booking configuration is archived."))
       .toBeVisible();
     expect(calendarCreates).toBe(0);
     await userEvent.keyboard("{Escape}");
