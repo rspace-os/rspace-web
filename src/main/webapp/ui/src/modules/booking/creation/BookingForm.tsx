@@ -210,7 +210,7 @@ export function BookingForm(props: BookingFormProps) {
       });
     }
   }
-  const allowPolicyMismatch = Boolean(originalDraft && sameWindowDraft(draft, originalDraft));
+  const allowPolicyMismatch = Boolean(originalDraft && sameDraft(draft, originalDraft));
   const validation = useMemo(
     () =>
       target
