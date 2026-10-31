@@ -282,6 +282,7 @@ class ApiV2FilterExpansionMVCIT {
                     .header("apiKey", ownerKey)
                     .param("where", where)
                     .param("limit", "100")
+                    .param("totals", "true")
                     .param("fields[booking-configurations]", "id"))
             .andReturn();
     assertEquals(
@@ -318,6 +319,7 @@ class ApiV2FilterExpansionMVCIT {
                     .param("where", where)
                     .param("limit", "1")
                     .param("page", Integer.toString(page))
+                    .param("totals", "true")
                     .param("fields[booking-configurations]", "id"))
             .andReturn();
     assertEquals(
