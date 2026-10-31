@@ -536,9 +536,9 @@ describe("Calendar page", () => {
     await expect.element(page.getByRole("button", { name: "Booking rules" })).toBeVisible();
     const fullStart = page.getByRole("group", { name: "Start" });
     const fullEnd = page.getByRole("group", { name: "End" });
-    await expect.element(fullStart.getByLabelText("Date")).toHaveValue("2026-08-18");
+    await expect.element(fullStart.getByLabelText("Start date")).toHaveValue("2026-08-18");
     await expect.element(fullStart.getByLabelText("Time")).toHaveValue("09:15");
-    await expect.element(fullEnd.getByLabelText("Date")).toHaveValue("2026-08-18");
+    await expect.element(fullEnd.getByLabelText("End date")).toHaveValue("2026-08-18");
     await expect.element(fullEnd.getByLabelText("Time")).toHaveValue("10:45");
     await expect
       .element(page.getByRole("textbox", { name: "Purpose" }))

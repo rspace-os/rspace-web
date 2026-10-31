@@ -121,7 +121,7 @@ describe("Calendar page", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41/edit");
     const purpose = page.getByRole("textbox", { name: "Purpose" });
     await purpose.fill("Updated from event details");
-    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Save changes" }).click();
 
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41");
     await expect.element(page.getByText("Updated from event details", { exact: true })).toBeVisible();
