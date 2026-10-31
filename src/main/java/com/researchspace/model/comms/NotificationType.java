@@ -27,5 +27,8 @@ public enum NotificationType {
   NOTIFICATION_BOOKING_CANCELLED,
 
   /** A cancelled booking returned to its slot. Appended to preserve persisted ordinals. */
-  NOTIFICATION_BOOKING_RESTORED
+  NOTIFICATION_BOOKING_RESTORED,
+
+  /** A booking interval changed. Appended to preserve persisted ordinals. */
+  NOTIFICATION_BOOKING_CHANGED
 }

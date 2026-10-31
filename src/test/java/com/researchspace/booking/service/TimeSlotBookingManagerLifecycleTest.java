@@ -371,6 +371,38 @@ class TimeSlotBookingManagerLifecycleTest {
     assertEquals("Private purpose", existing.getPurpose());
   }
 
+  @Test
+  void timeChangesNotifyButPurposeOnlyAndUnchangedTimesDoNot() {
+    User requester = mock(User.class);
+    TimeSlotBooking existing = booking(41L, 12L, requester);
+    stubReadableBookingAndConfigurationLock(existing);
+    manager
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(null, null, true, "New purpose", null),
+            actor,
+            actor)
+        .orElseThrow();
+    manager
+        .updateBooking(
+            41L, new TimeSlotBookingManager.Patch(start(), end(), false, null, null), actor, actor)
+        .orElseThrow();
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
+    manager
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(
+                null, instant("2026-10-25T10:00:00Z"), false, null, null),
+            actor,
+            actor)
+        .orElseThrow();
+    verify(bookingNotificationService)
+        .notify(
+            eq(existing),
+            eq(actor),
+            argThat(type -> type.name().equals("NOTIFICATION_BOOKING_CHANGED")));
+  }
+
   private void stubReadableBookingAndConfigurationLock(TimeSlotBooking booking) {
     fixture.stubReadableBookingAndConfigurationLock(booking);
   }

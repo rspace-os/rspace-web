@@ -120,6 +120,33 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void intervalChangePersistsOneChangedNotificationForOwner() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    BookingSetup setup = createBookingSetup(owner, "Owner notification changed");
+    User booker = createInitAndLoginAnyUser();
+    shareInstrumentWithBooker(setup, booker);
+    TimeSlotBooking booking = createBooking(setup, booker);
+    bookingManager
+        .updateBooking(
+            booking.getId(),
+            new TimeSlotBookingManager.Patch(
+                Date.from(booking.getStartTime().toInstant().plus(1, ChronoUnit.HOURS)),
+                Date.from(booking.getEndTime().toInstant().plus(1, ChronoUnit.HOURS)),
+                false,
+                null,
+                null),
+            booker,
+            booker)
+        .orElseThrow();
+    var notifications =
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CHANGED);
+    assertEquals(1, notifications.size());
+    assertPersistedForOwner(notifications.get(0), owner);
+    assertNotNull(notifications.get(0).getNotificationDataObject());
+  }
+
+  @Test
   public void archiveCancellationPersistsOneNotificationPerCancelledBooking() throws Exception {
     User owner = createInitAndLoginAnyUser();
     BookingSetup setup = createBookingSetup(owner, "Owner notification archive");

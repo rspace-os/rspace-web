@@ -368,6 +368,9 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                   && patch.state() == BookingState.CANCELLED) {
                 bookingNotificationService.notify(
                     saved, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+              } else if (booking.getKind() == BookingEventKind.BOOKING && intervalChanged) {
+                bookingNotificationService.notify(
+                    saved, actor, NotificationType.NOTIFICATION_BOOKING_CHANGED);
               }
               events.publishEvent(
                   new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.WRITE));
