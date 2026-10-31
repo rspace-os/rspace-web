@@ -5,6 +5,7 @@
     "state" : "ACTIVE",
     "timezone" : "Europe/Berlin",
     "slotGranularityMinutes" : 15,
+    "incrementUnit" : "MINUTES",
     "openingHours" : [ {
       "dayOfWeek" : 1,
       "start" : "00:00",
@@ -86,6 +87,7 @@
     "state" : "ACTIVE",
     "timezone" : "Europe/Berlin",
     "slotGranularityMinutes" : 15,
+    "incrementUnit" : "MINUTES",
     "openingHours" : [ {
       "dayOfWeek" : 1,
       "start" : "00:00",
@@ -190,6 +192,7 @@
     "start" : "2035-01-15T09:00:00Z",
     "end" : "2035-01-15T10:00:00Z",
     "state" : "CONFIRMED",
+    "cancellationReason" : null,
     "purpose" : null,
     "bookedBy" : "System Admin (sysadmin1)",
     "createdBy" : "System Admin (sysadmin1)",
@@ -229,6 +232,7 @@
     "start" : "2035-01-15T09:00:00Z",
     "end" : "2035-01-15T10:00:00Z",
     "state" : "CONFIRMED",
+    "cancellationReason" : null,
     "purpose" : null,
     "bookedBy" : "System Admin (sysadmin1)",
     "createdBy" : "System Admin (sysadmin1)",
