@@ -1,5 +1,6 @@
 import { type FocusEventHandler, type Ref, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useDebounce from "@/hooks/ui/useDebounce";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { RelationshipOptionAvailabilitySource } from "@/modules/common/relationship-picker/types";
 import {
@@ -78,6 +79,7 @@ export function RelationshipPicker({
   browseWhenEmpty = false,
   browseEmptyMessage,
   minimumSearchLength,
+  searchDebounceMs = 0,
 }: {
   /** Sources searched in parallel and merged in declaration order. */
   sources: readonly RelationshipSource[];
@@ -115,11 +117,15 @@ export function RelationshipPicker({
   browseEmptyMessage?: string;
   /** The shortest term the sources search; a shorter one asks for more characters instead of reporting no matches. */
   minimumSearchLength?: number;
+  searchDebounceMs?: number;
 }) {
   const { t } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const anchor = useComboboxAnchor();
   const [term, setTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const debounceSearch = useDebounce(setSearchTerm, searchDebounceMs);
+  const debouncing = searchDebounceMs > 0 && searchTerm !== term;
   const hasSearchTerm = term.trim() !== "";
   const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && term.trim().length < minimumSearchLength;
   const showsOptions = hasSearchTerm || browseWhenEmpty;
@@ -141,7 +147,7 @@ export function RelationshipPicker({
   });
   const { options, failed, loading } = useRelationshipOptions({
     sources,
-    term,
+    term: searchDebounceMs > 0 ? searchTerm : term,
     token,
     authScope,
     labels,
@@ -157,12 +163,12 @@ export function RelationshipPicker({
   // Keeps the selected options selectable while a fresh search is in flight, so a chip never
   // disappears from the list mid-typing.
   const items = useMemo(() => {
-    const shown = showsOptions ? [...options] : [];
+    const shown = showsOptions && !debouncing ? [...options] : [];
     for (const option of selected) {
       if (!shown.some((candidate) => sameOption(candidate, option))) shown.push(option);
     }
     return shown;
-  }, [showsOptions, options, selected]);
+  }, [showsOptions, debouncing, options, selected]);
   const emptyMessage = showsOptions
     ? failed
       ? t("relationshipPicker.failed")
@@ -173,8 +179,14 @@ export function RelationshipPicker({
           : t("relationshipPicker.empty")
     : t("relationshipPicker.enterSearchTerm");
   const handleInputValueChange = (nextTerm: string, { reason }: { reason: string }) => {
-    if (reason === "input-change") setTerm(nextTerm);
-    if (reason === "input-clear" || reason === "clear-press" || reason === "item-press") setTerm("");
+    if (reason === "input-change") {
+      setTerm(nextTerm);
+      debounceSearch(nextTerm);
+    }
+    if (reason === "input-clear" || reason === "clear-press" || reason === "item-press") {
+      setTerm("");
+      debounceSearch("");
+    }
   };
   const unavailableStatus = (option: RelationshipOptionWithSource) => availability.unavailable[String(option.value)];
   const optionIsDisabled = (option: RelationshipOptionWithSource) =>

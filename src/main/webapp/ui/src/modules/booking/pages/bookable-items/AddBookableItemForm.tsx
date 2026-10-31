@@ -229,6 +229,7 @@ export function AddBookableItemForm({
             className="w-full rounded-sm"
             browseWhenEmpty
             browseEmptyMessage={t("bookableItems.targetSearch.noEligible")}
+            searchDebounceMs={250}
             minimumSearchLength={MINIMUM_TARGET_QUERY_LENGTH}
           />
         </div>

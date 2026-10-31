@@ -140,6 +140,20 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("AddBookableItemPage", () => {
+  it("debounces instrument searches while the user types", async () => {
+    const user = userEvent.setup({ delay: 30 });
+    const terms: string[] = [];
+    server.use(
+      targetsHandler((url) => terms.push(url.searchParams.get("q") ?? "")),
+      availabilityHandler(),
+    );
+    renderPage();
+    const picker = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.type(picker, "Confocal");
+    await screen.findByRole("option", { name: "Confocal microscope IN123" });
+    expect(terms.filter(Boolean)).toEqual(["Confocal"]);
+  });
+
   it("keeps manual edits while retrying a failed initial target lookup", async () => {
     const user = userEvent.setup();
     const spare = { id: 456, name: "Spare microscope", globalId: "IN456", deleted: false };
