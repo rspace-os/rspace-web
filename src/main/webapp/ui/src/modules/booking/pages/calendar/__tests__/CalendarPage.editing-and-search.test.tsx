@@ -115,7 +115,14 @@ describe("CalendarPage", () => {
     await screen.findByRole("textbox", { name: "Purpose" });
     const end = within(card).getByLabelText("End time");
     await user.clear(end);
-    await user.type(end, "11:00");
+    await user.type(
+      end,
+      new Date("2026-08-17T09:00:00Z").toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }),
+    );
     await user.tab();
     await user.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => expect(patches).toEqual([{ end: "2026-08-17T09:00:00Z" }]));
