@@ -242,11 +242,18 @@ public final class ApiV2Fixture {
    * test's rows.
    */
   public long maintenance(Instant start, Instant end) {
+    return maintenance(start, end, marker);
+  }
+
+  /** Creates a maintenance window with a supplied message, including null. */
+  public long maintenance(Instant start, Instant end, String message) {
     String body =
-        """
-        {"startDate":"%s","endDate":"%s","message":"%s"}\
-        """
-            .formatted(start, end, marker);
+        objectMapper
+            .createObjectNode()
+            .put("startDate", start.toString())
+            .put("endDate", end.toString())
+            .put("message", message)
+            .toString();
     long id = idOf(postAsSysadmin("/api/v2/maintenances", body));
     teardown.add(() -> deleteAsSysadmin("/api/v2/maintenances/" + id));
     return id;
