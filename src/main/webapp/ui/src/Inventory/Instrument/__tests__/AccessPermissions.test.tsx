@@ -25,6 +25,10 @@ class ResizeObserver {
   disconnect(): void {}
 }
 
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: () => false,
+}));
+
 vi.mock("../../components/Fields/Attachments/Attachments", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -48,6 +52,9 @@ vi.mock("../../../common/InvApiService", () => ({
 }));
 vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
+    peopleStore: {
+      currentUser: null,
+    },
     searchStore: {
       savedSearches: [{ name: "Dummy saved search", query: "foo" }],
     },

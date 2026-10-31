@@ -178,8 +178,8 @@ describe("BookableItemPage", () => {
     });
     await user.clear(duration);
     await user.type(duration, "60");
-    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/audit"));
+    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123"));
     await act(async () => {
       void router.navigate({
         to: "/booking/bookable-items/$globalId/{-$tab}",
@@ -189,7 +189,7 @@ describe("BookableItemPage", () => {
     });
     const dialog = await screen.findByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
-    expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/audit");
+    expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByRole("spinbutton", { name: "booking:bookableItemDetails.fields.maximumDuration" })).toHaveValue(
       60,
