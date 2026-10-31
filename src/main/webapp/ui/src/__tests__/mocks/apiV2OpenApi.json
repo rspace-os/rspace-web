@@ -13964,7 +13964,7 @@
     },
     "/api/v2/{resource}/{id}/audit" : {
       "get" : {
-        "operationId" : "",
+        "operationId" : "listResourceAuditEvents",
         "parameters" : [ {
           "in" : "path",
           "name" : "resource",
