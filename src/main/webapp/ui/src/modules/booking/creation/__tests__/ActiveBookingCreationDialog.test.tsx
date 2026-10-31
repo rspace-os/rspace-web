@@ -254,8 +254,8 @@ describe("ActiveBookingCreationDialog", () => {
 
       const dialog = await screen.findByTestId("compact-booking-dialog");
       const warning = await within(dialog).findByRole("status");
-      expect(warning).toHaveTextContent("booking:bookings.errors.overlapSummary");
-      expect(within(warning).getByRole("listitem")).toHaveTextContent("Purpose 41");
+      expect(warning).toMatchTextContent("booking:bookings.errors.overlapSummary");
+      expect(within(warning).getByRole("listitem")).toMatchTextContent("Purpose 41");
       expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
       expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeEnabled();
     });
@@ -265,8 +265,8 @@ describe("ActiveBookingCreationDialog", () => {
 
       const dialog = await screen.findByTestId("compact-booking-dialog");
       const alert = await within(dialog).findByRole("alert");
-      expect(alert).toHaveTextContent("booking:bookings.errors.overlapSummary");
-      expect(within(alert).getByRole("listitem")).toHaveTextContent("Purpose 41");
+      expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
+      expect(within(alert).getByRole("listitem")).toMatchTextContent("Purpose 41");
       expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submitMaintenance" })).toBeDisabled();
     });
   });

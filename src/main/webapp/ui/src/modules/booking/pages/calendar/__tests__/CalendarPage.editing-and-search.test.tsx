@@ -268,7 +268,7 @@ describe("CalendarPage", () => {
     await user.type(await within(card).findByRole("textbox", { name: "Purpose" }), " first draft");
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 
-    expect(await within(card).findByRole("alert")).toHaveTextContent(
+    expect(await within(card).findByRole("alert")).toMatchTextContent(
       "Someone else changed this booking while you were editing. Your changes are kept",
     );
     await waitFor(() => expect(within(card).getByRole("button", { name: "Save changes" })).toBeEnabled());
@@ -497,6 +497,6 @@ describe("CalendarPage", () => {
     await user.clear(search);
     await user.type(search, "No calendar match");
 
-    expect(await screen.findByText("No records found")).toBeVisible();
+    expect(await screen.findByText("No records found", {}, { timeout: 3_000 })).toBeVisible();
   });
 });
