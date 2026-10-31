@@ -232,3 +232,15 @@ describe("My Bookings page", () => {
     expect(await table.findByText("booking:myBookings.empty.past")).toBeVisible();
   });
 });
+
+it("links the instrument name to its bookable-item page and keeps the Inventory ID link", async () => {
+  await renderPage();
+  expect((await screen.findAllByRole("link", { name: "Confocal microscope" }))[0]).toHaveAttribute(
+    "href",
+    "/booking/bookable-items/IN123",
+  );
+  expect(screen.getAllByRole("link", { name: "common:tableList.filters.openRecord" })[0]).toHaveAttribute(
+    "href",
+    "/globalId/IN123",
+  );
+});

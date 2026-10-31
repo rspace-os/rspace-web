@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import type { CollectionConfig } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
@@ -47,7 +48,13 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
         list: {
           renderCell: ({ row }) => (
             <InventoryItem
-              name={row.target.value.name}
+              name={
+                row.canViewConfiguration ? (
+                  <BookableItemName name={row.target.value.name} globalId={row.target.globalId} />
+                ) : (
+                  row.target.value.name
+                )
+              }
               globalId={row.target.globalId}
               href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
               idLinkLabel={
