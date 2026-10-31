@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.contract;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,10 +10,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.api.v2.auth.ApiV2BrowserSessionAuthenticator;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import com.researchspace.testutils.BaseManagerTestCaseBase;
+import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.webapp.filter.ApiV2StatelessRequestFilter;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +29,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -122,9 +131,32 @@ class ApiV2RequestContractMVCIT {
     @Test
     @DisplayName("a browser session cookie alone does not authenticate a v2 request")
     void aSessionCookieAloneDoesNotAuthenticate() throws Exception {
-      mockMvc
-          .perform(get(ME).cookie(new Cookie("JSESSIONID", "whatever")))
-          .andExpect(status().isUnauthorized());
+      RSpaceTestUtils.login(fixture.user().getUsername(), BaseManagerTestCaseBase.TESTPASSWD);
+      try {
+        MockHttpSession session = new MockHttpSession(context.getServletContext());
+        MockHttpServletRequest browserRequest = new MockHttpServletRequest();
+        browserRequest.setSession(session);
+        assertTrue(
+            context
+                .getBean(ApiV2BrowserSessionAuthenticator.class)
+                .authenticateIfPresent(browserRequest)
+                .isPresent());
+
+        MockMvc inspectingMvc =
+            MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(
+                    new ApiV2StatelessRequestFilter(),
+                    (request, response, chain) -> {
+                      assertNull(((HttpServletRequest) request).getSession(false));
+                      chain.doFilter(request, response);
+                    })
+                .build();
+        inspectingMvc
+            .perform(get(ME).session(session).cookie(new Cookie("JSESSIONID", session.getId())))
+            .andExpect(status().isUnauthorized());
+      } finally {
+        RSpaceTestUtils.logout();
+      }
     }
 
     @Test
