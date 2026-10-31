@@ -25,6 +25,17 @@ export type BookingWindowDraft = {
   endOccurrence?: "earlier" | "later";
 };
 
+export function sameDraft(left: BookingWindowDraft, right: BookingWindowDraft): boolean {
+  return (
+    left.startDate === right.startDate &&
+    left.startTime === right.startTime &&
+    left.startOccurrence === right.startOccurrence &&
+    left.endDate === right.endDate &&
+    left.endTime === right.endTime &&
+    left.endOccurrence === right.endOccurrence
+  );
+}
+
 export function parsePlainDate(value: string): Temporal.PlainDate {
   return Temporal.PlainDate.from(value);
 }
@@ -83,6 +94,27 @@ export function currentWallClock(
     date: zoned.toPlainDate().toString(),
     minute: zoned.hour * 60 + zoned.minute + zoned.second / 60,
   };
+}
+
+/** Booking endpoints align to local scheduling-zone minutes, not display-zone coordinates. */
+export function isBookingInstantAlignedToGranularity(
+  instant: string,
+  timezone: string,
+  granularityMinutes: number,
+): boolean {
+  if (!Number.isInteger(granularityMinutes) || granularityMinutes <= 0) return false;
+  try {
+    const time = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone);
+    return (
+      time.second === 0 &&
+      time.millisecond === 0 &&
+      time.microsecond === 0 &&
+      time.nanosecond === 0 &&
+      (time.hour * 60 + time.minute) % granularityMinutes === 0
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function instantToWallClockMinute(instant: string, date: string, timezone: string): number {

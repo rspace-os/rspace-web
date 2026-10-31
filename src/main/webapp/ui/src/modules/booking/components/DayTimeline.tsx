@@ -14,6 +14,7 @@ import {
   period,
 } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
+import { expandedEventIdAfterChange } from "./expandedEvent";
 import { centerMinuteForScrollPosition, type useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
 export type { DayTimelineEvent, DayTimelineItem, DayTimelineRange, DayTimelineViewState } from "./DayTimelineEvent";
@@ -390,7 +391,7 @@ export function DayTimeline({
                       variant="timeline"
                       expanded={expandedEventId === event.id}
                       onExpandedChange={(expanded) =>
-                        setExpandedEventId((current) => (expanded ? event.id : current === event.id ? null : current))
+                        setExpandedEventId((current) => expandedEventIdAfterChange(current, event.id, expanded))
                       }
                       collisionBoundary={collisionBoundary}
                       expandedCardClassName={

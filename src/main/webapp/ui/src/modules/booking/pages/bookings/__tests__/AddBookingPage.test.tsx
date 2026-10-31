@@ -7,11 +7,11 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { currentUser as currentUserFixture } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
@@ -22,6 +22,15 @@ import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import AddBookingPage from "@/modules/booking/pages/bookings/AddBookingPage";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeAll(() => vi.stubGlobal("ResizeObserver", ResizeObserverStub));
+afterAll(() => vi.unstubAllGlobals());
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -102,8 +111,21 @@ function page(items: readonly unknown[]) {
   };
 }
 
-function renderPage(hasSysAdminRole = false) {
-  server.use(currentUserHandler(hasSysAdminRole));
+function renderPage(hasSysAdminRole = false, scheduleBookings: readonly unknown[] | null = []) {
+  server.use(
+    currentUserHandler(hasSysAdminRole),
+    http.get("/api/v2/bookings", () =>
+      scheduleBookings === null
+        ? new HttpResponse(null, { status: 503 })
+        : HttpResponse.json({
+            docs: scheduleBookings,
+            totalDocs: scheduleBookings.length,
+            totalPages: scheduleBookings.length ? 1 : 0,
+            page: 1,
+            hasNextPage: false,
+          }),
+    ),
+  );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
     ...inheritedBrowserBookingPreferences,
@@ -214,6 +236,49 @@ describe("AddBookingPage", () => {
     });
     expect(router.state.location.search).toMatchObject({ date: "2026-08-18", target: "IN123" });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+  });
+
+  it("submits a five-minute field-edited range and keeps the entered purpose", async () => {
+    const user = userEvent.setup();
+    let body: unknown;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.post("/api/v2/bookings", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(createdBooking, { status: 201 });
+      }),
+    );
+    renderPage();
+    await fillWindow(user);
+    for (const endpoint of ["start", "end"]) {
+      const date = screen.getByLabelText(`booking:bookings.form.${endpoint}Date`);
+      await user.clear(date);
+      await user.type(date, "2026-10-19");
+    }
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    const endTime = within(end).getByLabelText("booking:bookings.form.time");
+    await user.clear(endTime);
+    await user.type(endTime, "09:05");
+    await user.type(screen.getByLabelText("booking:bookings.form.purpose"), "Microscopy run");
+
+    const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
+    await waitFor(() => {
+      expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("09:00");
+      expect(endTime).toHaveValue("09:05");
+    });
+    const submit = screen.getByRole("button", { name: "booking:bookings.form.submit" });
+    await waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
+    expect(body).toEqual({
+      target: { relationTo: "instruments", value: 123 },
+      start: "2026-10-19T07:00:00Z",
+      end: "2026-10-19T07:05:00Z",
+      purpose: "Microscopy run",
+      kind: "BOOKING",
+    });
   });
 
   it.each([
