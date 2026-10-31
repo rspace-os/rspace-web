@@ -1,6 +1,7 @@
 import { Wrench, X } from "lucide-react";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
@@ -111,7 +112,7 @@ export function ExpandedEventCard({
           <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
           <dd>
             <InventoryItem
-              name={event.item.name}
+              name={<BookableItemName name={event.item.name} globalId={event.item.globalId} />}
               globalId={event.item.globalId}
               href={`/globalId/${event.item.globalId}`}
               idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })}

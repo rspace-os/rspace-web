@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { cn } from "@/modules/common/utils/cn";
@@ -62,7 +63,7 @@ export function BookingSummaryAccordion({
                 <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
                 <dd>
                   <InventoryItem
-                    name={item.name}
+                    name={<BookableItemName name={item.name} globalId={item.globalId} />}
                     globalId={item.globalId}
                     href={`/globalId/${item.globalId}`}
                     idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}

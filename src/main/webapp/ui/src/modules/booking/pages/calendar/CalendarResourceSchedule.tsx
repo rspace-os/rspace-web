@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -33,7 +34,7 @@ function ResourceHeader({ resource }: { resource: BookingCalendarResource }) {
   return (
     <InventoryItem
       locationPlacement="below"
-      name={resource.value.name}
+      name={<BookableItemName name={resource.value.name} globalId={resource.globalId} />}
       globalId={resource.globalId}
       href={`/globalId/${resource.globalId}`}
       idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
