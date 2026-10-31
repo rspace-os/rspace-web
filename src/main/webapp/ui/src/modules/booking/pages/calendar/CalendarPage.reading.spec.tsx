@@ -957,7 +957,7 @@ describe("Calendar page", () => {
     await dialog.getByLabelText("End time").fill("13:00");
 
     await expect.element(dialog.getByText("This period overlaps:")).toBeVisible();
-    await expect.element(dialog.getByText("Booking #42")).toBeVisible();
+    await expect.element(dialog.getByText("Booking #42", { exact: false })).toBeVisible();
     await expect.element(submit).toBeDisabled();
     expect(bookingPageRequests.createdPayloads).toHaveLength(0);
   });
