@@ -15,7 +15,7 @@ const PageSchema = v.object({
 export const CALENDAR_BOOKING_FIELDS =
   "id,version,target,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 
-type CalendarEventFilterScope = { where?: string; q?: string };
+type CalendarEventFilterScope = { where?: string; q?: string; mine?: boolean };
 
 async function fetchPage(
   start: string,
@@ -40,6 +40,7 @@ async function fetchPage(
     "fields[containers]": "id,globalId,name",
   });
   if (scope.q?.trim()) parameters.set("q", scope.q.trim());
+  if (scope.mine) parameters.set("mine", "true");
   const response = await fetchWithUiToken(`/api/v2/booking-calendar/events?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
     signal,
@@ -108,6 +109,7 @@ export function useCalendarEvents({
       authScope,
       scope.where,
       scope.q,
+      Boolean(scope.mine),
     ],
     queryFn: ({ signal }) => loadCalendarEvents({ start, end, token, signal, targetGlobalIds, scope }),
     enabled: enabled && token.length > 0,

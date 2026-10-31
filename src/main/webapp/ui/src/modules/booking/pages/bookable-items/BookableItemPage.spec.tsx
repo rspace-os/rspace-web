@@ -33,61 +33,10 @@ const auditEvent = {
   payload: { maxBookingDurationMinutes: 60 },
 };
 
-function bookableItemAccessHandlers() {
-  return [
-    http.get("/api/v2/booking-configurations/7/access", () =>
-      HttpResponse.json(
-        {
-          scheme: "booking-configurations",
-          version: 3,
-          assignments: [
-            {
-              grantee: {
-                kind: "USER",
-                id: 1,
-                key: "user:1",
-                name: "Ada Lovelace",
-                detail: "ada",
-                available: true,
-                effectiveRole: "OWNER",
-                roleSources: [],
-              },
-              role: "OWNER",
-            },
-            {
-              grantee: {
-                kind: "AUDIENCE",
-                id: "ALL_USERS",
-                key: "audience:all-users",
-                name: "All users",
-                detail: null,
-                available: true,
-                effectiveRole: null,
-                roleSources: [],
-              },
-              role: "BOOKER",
-            },
-          ],
-          caller: {
-            effectiveRole: "OWNER",
-            roleSources: [],
-            capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
-          },
-        },
-        { headers: { ETag: '"3"' } },
-      ),
-    ),
-    http.get("/api/v2/booking-configurations/7/access/grantees", () =>
-      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
-    ),
-  ];
-}
-
 function registerHandlers() {
   worker.use(
     ...bookableItemsHandlers(() => {}),
     ...bookableItemDetailsHandlers(),
-    ...bookableItemAccessHandlers(),
     http.patch("/api/v2/booking-configurations/7", () => new HttpResponse(null, { status: 204 })),
   );
 }
@@ -114,7 +63,7 @@ describe("BookableItemPage", () => {
   test.each([200, 403])("keeps the Access tab mounted while its delayed read returns %s", async (status) => {
     const response = Promise.withResolvers<void>();
     worker.use(
-      http.get("/api/v2/booking-configurations/7/access", async () => {
+      http.get("/api/inventory/v1/instruments/123", async () => {
         await response.promise;
         return status === 200 ? undefined : new HttpResponse(null, { status });
       }),
@@ -124,19 +73,17 @@ describe("BookableItemPage", () => {
       await pageObj.accessTab.click();
       await expect.element(pageObj.accessPanel.getByRole("status")).toHaveClass("sr-only");
       await expect.element(pageObj.heading).toBeVisible();
-      await expect.element(pageObj.accessPanel.getByRole("combobox")).not.toBeInTheDocument();
+      await expect.element(pageObj.accessPanel.getByRole("radio")).not.toBeInTheDocument();
       await expect.element(pageObj.accessPanel.getByRole("table")).not.toBeInTheDocument();
       await expectNoAxeViolations();
       response.resolve();
       if (status === 200) {
-        await expect.element(pageObj.accessPanel.getByRole("combobox", { name: "Add user or group" })).toBeVisible();
-        await expect
-          .element(pageObj.accessPanel.getByRole("list").getByText("All users", { exact: true }))
-          .toBeVisible();
+        await expect.poll(() => pageObj.accessPanel.getByRole("radio").all().length).toBe(3);
+        await expect.element(pageObj.accessPanel.getByRole("checkbox").first()).toBeDisabled();
       } else {
         await expect.element(pageObj.accessPanel.getByRole("alert")).toBeVisible();
         await expect.element(pageObj.accessPanel.getByRole("status")).not.toBeInTheDocument();
-        await expect.element(pageObj.accessPanel.getByRole("combobox")).not.toBeInTheDocument();
+        await expect.element(pageObj.accessPanel.getByRole("radio")).not.toBeInTheDocument();
       }
     } finally {
       response.resolve();
@@ -390,14 +337,8 @@ describe("BookableItemPage", () => {
 
     await pageObj.accessTab.click();
     await expect.element(pageObj.accessPanel).toBeVisible();
-    await expect
-      .poll(() =>
-        page
-          .getByText("Ada Lovelace", { exact: true })
-          .all()
-          .some((candidate) => candidate.element().getClientRects().length > 0),
-      )
-      .toBe(true);
+    await expect.element(pageObj.accessPanel.getByText("Imaging lab", { exact: true })).toBeVisible();
+    await expect.element(pageObj.accessPanel.getByRole("checkbox").first()).toBeDisabled();
     await expect.element(page.getByRole("combobox", { name: "Add user or group" })).not.toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Direct role for", exact: false })).not.toBeInTheDocument();
 
@@ -637,10 +578,13 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.auditPanel).toBeVisible();
   });
 
-  test("mounts the access editor at 320 CSS pixels with keyboard navigation and no overflow", async () => {
+  test("shows read-only inventory access at 320 CSS pixels with no overflow", async () => {
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     await emulateForcedColors();
     await emulateReducedMotion();
-    await withViewport(320, async () => {
+    await page.viewport(320, 900);
+
+    try {
       render(<BookableItemPageStory history={history} />);
       await expect.element(pageObj.heading).toBeVisible();
       pageObj.accessTab.element().focus();
@@ -649,27 +593,17 @@ describe("BookableItemPage", () => {
       expect(pageObj.accessTab.element().getAttribute("aria-controls")).toBe(pageObj.accessPanel.element().id);
       expect(pageObj.accessPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.accessTab.element().id);
 
-      const search = page.getByRole("combobox", { name: "Add user or group" });
-      await userEvent.fill(search, "gr");
-      const graceOption = page.getByRole("option", { name: /Grace Hopper/ });
-      await expect.element(graceOption).toBeVisible();
-      await graceOption.click();
-      const graceRole = page.getByRole("button", { name: "Direct role for Grace Hopper" });
-      await expect.element(graceRole).toHaveTextContent("Booker");
-      await graceRole.click();
-      await expect.element(page.getByRole("menuitem", { name: "Viewer" })).toBeVisible();
-      await userEvent.keyboard("{Escape}");
-      await expect.element(graceRole).toHaveFocus();
+      await expect.element(pageObj.accessPanel.getByRole("radio").first()).toBeVisible();
+      await expect.element(pageObj.accessPanel.getByRole("checkbox").first()).toBeDisabled();
+      await expect.element(page.getByRole("combobox")).not.toBeInTheDocument();
       await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
       await pageObj.heading.hover();
       await expectNoAxeViolations();
       await pageObj.detailsTab.click();
-      const leaveDialog = page.getByRole("alertdialog", { name: "Leave the editor?" });
-      await expect.element(leaveDialog).toBeVisible();
-      await leaveDialog.getByRole("button", { name: "Cancel" }).click();
-      await expect.element(pageObj.accessPanel).toBeVisible();
-      await expect.element(graceRole).toHaveTextContent("Booker");
-    });
+      await expect.element(pageObj.detailsPanel).toBeVisible();
+    } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
   });
 
   test("blocks tab changes during PATCH and restores focus after saving", async () => {
