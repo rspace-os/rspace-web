@@ -218,7 +218,7 @@ describe("BookableItemsPage", () => {
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
   });
 
-  it("lists safe booking targets, owner health, and the Add action", async () => {
+  it("lists depth-1 parented targets, owner health, and the Add action", async () => {
     const user = userEvent.setup();
     const collectionRequests: Request[] = [];
     server.use(
@@ -226,7 +226,19 @@ describe("BookableItemsPage", () => {
       http.get("/api/v2/booking-configurations", ({ request }) => {
         collectionRequests.push(request);
         return HttpResponse.json(
-          collectionPage([{ ...bookingConfiguration, ownerHealth: { hasEffectiveOwner: false } }]),
+          collectionPage([
+            {
+              ...bookingConfiguration,
+              target: {
+                ...bookingConfiguration.target,
+                value: {
+                  ...bookingConfiguration.target.value,
+                  parentContainer: { relationTo: "containers", globalId: "IC456", value: 456 },
+                },
+              },
+              ownerHealth: { hasEffectiveOwner: false },
+            },
+          ]),
         );
       }),
     );

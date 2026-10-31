@@ -311,7 +311,7 @@ function FactsAside({
             <div>
               <dt className="text-muted-foreground">{t("bookableItemDetails.fields.location")}</dt>
               <dd className="min-w-0">
-                {target?.value.parentContainer ? (
+                {target?.value.parentContainer && typeof target.value.parentContainer.value === "object" ? (
                   <InventoryLocationLink
                     name={target.value.parentContainer.value.name}
                     globalId={target.value.parentContainer.globalId}

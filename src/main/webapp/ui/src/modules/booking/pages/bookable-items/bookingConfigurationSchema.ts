@@ -35,7 +35,7 @@ export const BookingConfigurationSchema = v.pipe(
               v.object({
                 relationTo: v.literal("containers"),
                 globalId: v.string(),
-                value: v.object({ id: v.number(), globalId: v.string(), name: v.string() }),
+                value: v.union([v.number(), v.object({ id: v.number(), globalId: v.string(), name: v.string() })]),
               }),
             ),
           ),
