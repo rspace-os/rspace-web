@@ -106,7 +106,8 @@ function SlicePopover({
         delay={0}
         closeDelay={500}
         aria-label={label}
-        onFocus={() => {
+        onFocus={(event) => {
+          if (!event.currentTarget.matches(":focus-visible")) return;
           if (suppressRestoredFocusRef.current) {
             suppressRestoredFocusRef.current = false;
             return;
