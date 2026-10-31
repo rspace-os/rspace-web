@@ -326,6 +326,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     await renderCalendar();
 
+    await user.click(await screen.findByRole("button", { name: "Agenda" }));
     await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
     await user.click(await screen.findByRole("button", { name: "Edit" }));
     await user.type(await screen.findByRole("textbox", { name: "Purpose" }), " updated");
@@ -333,9 +334,9 @@ describe("CalendarPage", () => {
     await user.click(save);
 
     const alert = await screen.findByRole("alert", {}, { timeout: 3_000 });
-    await waitFor(() => expect(alert).toHaveTextContent("Too close to another booking"));
-    expect(alert).not.toHaveTextContent("private server detail");
-    expect(within(alert).getByRole("listitem")).toHaveTextContent("Booking #59");
+    await waitFor(() => expect(alert).toMatchTextContent("Too close to another booking"));
+    expect(alert).not.toMatchTextContent("private server detail");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("Booking #59");
     expect(save).toBeDisabled();
   });
 
