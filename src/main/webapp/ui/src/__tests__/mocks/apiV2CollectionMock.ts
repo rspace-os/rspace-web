@@ -150,5 +150,8 @@ export function apiV2CollectionResponse(resource: string, request: Request, matc
   const limit = Number(url.searchParams.get("limit") ?? listParameters(resource).get("limit")?.schema?.default ?? 20);
   const page = Number(url.searchParams.get("page") ?? 1);
   const start = (page - 1) * limit;
-  return HttpResponse.json(apiV2ListResult(matching.slice(start, start + limit), matching.length, limit, page));
+  const result = apiV2ListResult(matching.slice(start, start + limit), matching.length, limit, page);
+  if (url.searchParams.get("totals") === "true") return HttpResponse.json(result);
+  const { totalDocs: _totalDocs, totalPages: _totalPages, ...slice } = result;
+  return HttpResponse.json(slice);
 }

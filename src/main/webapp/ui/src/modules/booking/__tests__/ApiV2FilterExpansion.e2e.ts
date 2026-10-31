@@ -189,11 +189,11 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
     expect(initialIds).not.toContain(privateConfiguration.id);
 
     const privateIdentityResponse = await apiContext.get(
-      `/api/v2/booking-configurations?limit=100&where=target==${privateInstrument.globalId}`,
+      `/api/v2/booking-configurations?totals=true&limit=100&where=target==${privateInstrument.globalId}`,
       { headers: { apiKey: appUser.apiKey } },
     );
     const unknownIdentityResponse = await apiContext.get(
-      "/api/v2/booking-configurations?limit=100&where=target==IN9999999999999999",
+      "/api/v2/booking-configurations?totals=true&limit=100&where=target==IN9999999999999999",
       { headers: { apiKey: appUser.apiKey } },
     );
     expect(privateIdentityResponse.status()).toBe(unknownIdentityResponse.status());
