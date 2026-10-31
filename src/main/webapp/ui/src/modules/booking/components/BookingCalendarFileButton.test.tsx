@@ -68,10 +68,10 @@ describe("BookingCalendarFileButton", () => {
     const button = screen.getByRole("button", {
       name: ".ics file for Confocal microscope, 12 Sep 2026, 10:00–12:00",
     });
-    expect(button).not.toHaveTextContent(".ics file");
+    expect(button).not.toMatchTextContent(".ics file");
     await userEvent.click(button);
 
-    expect(await screen.findByRole("status")).toHaveTextContent("Downloaded confocal-microscope.ics");
+    expect(await screen.findByRole("status")).toMatchTextContent("Downloaded confocal-microscope.ics");
   });
 
   it("saves the file the server named and says no subscription changed", async () => {
@@ -106,7 +106,7 @@ describe("BookingCalendarFileButton", () => {
       screen.getByRole("button", { name: ".ics file for Confocal microscope, 12 Sep 2026, 10:00–12:00" }),
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await screen.findByRole("alert")).toMatchTextContent(
       "The calendar file for Confocal microscope, 12 Sep 2026, 10:00–12:00 could not be downloaded.",
     );
     expect(saved).toBeNull();
