@@ -146,6 +146,11 @@ public class ScheduledMaintenanceController extends BaseController {
     }
 
     User user = userManager.getAuthenticatedUserInSession();
+    // Completed windows must have a cutoff no later than their start.
+    if (scheduledMaintenance.getStopUserLoginDate() != null
+        && scheduledMaintenance.getStopUserLoginDate().after(scheduledMaintenance.getStartDate())) {
+      scheduledMaintenance.setStopUserLoginDate(scheduledMaintenance.getStartDate());
+    }
     scheduledMaintenance.setEndDate(new Date());
     maintenanceManager.saveScheduledMaintenance(scheduledMaintenance, user);
     return OK_RESPONSE;

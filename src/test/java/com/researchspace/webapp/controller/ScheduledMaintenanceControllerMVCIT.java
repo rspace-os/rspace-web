@@ -360,6 +360,14 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
               .before(Date.from(beforeRequest.truncatedTo(ChronoUnit.SECONDS))));
       assertTrue(saved.getStopUserLoginDate().after(saved.getStartDate()));
       assertFalse(saved.getCanUserLoginNow());
+      MvcResult finished =
+          mockMvc
+              .perform(post("/system/maintenance/ajax/finishNow").principal(sysUserPrincipal))
+              .andExpect(status().isOk())
+              .andReturn();
+      assertNull(finished.getResolvedException());
+      assertEquals("OK", finished.getResponse().getContentAsString());
+      assertFalse(maintenanceManager.getScheduledMaintenance(maintenance.getId()).isActiveNow());
     } finally {
       maintenanceManager.removeScheduledMaintenance(maintenance.getId(), sysUser);
     }
