@@ -306,7 +306,7 @@ describe("BookableItemPage", () => {
     const dialog = page.getByRole("alertdialog", { name: "Permanently delete configuration?" });
     const confirm = dialog.getByRole("button", { name: "Delete permanently" });
     const itemName = dialog.getByRole("textbox", { name: "Item name" });
-    await expect.element(dialog).toHaveTextContent("access assignments");
+    await expect.element(dialog).toMatchTextContent("access assignments");
     await expect.element(confirm).toBeDisabled();
     await userEvent.fill(itemName, "confocal microscope");
     await expect.element(confirm).toBeDisabled();
