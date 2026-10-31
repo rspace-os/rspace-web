@@ -39,8 +39,8 @@ export function useCanOpenBookableItemsAdministration(): boolean {
 
 const ReadableCountSchema = v.object({ totalDocs: v.number() });
 async function countReadableBookingConfigurations(token: string, signal: AbortSignal): Promise<number> {
-  const parameters = new URLSearchParams({ limit: "1", "fields[booking-configurations]": "id" });
-  const response = await fetchWithUiToken(`/api/v2/booking-configurations?${parameters}`, {
+  const parameters = new URLSearchParams({ max: "1" });
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations/count?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });

@@ -74,14 +74,14 @@ function renderAt(
   { readableConfigurations, eligibleTargets }: AdministrationAccess = { readableConfigurations: 1, eligibleTargets: 0 },
 ) {
   server.use(
-    // Answers only the sidebar's unfiltered count; a test's own lookup handler serves filtered reads.
+    // List pages omit totals unless requested; the sidebar uses the count endpoint.
     http.get("/api/v2/booking-configurations", ({ request }) =>
-      new URL(request.url).searchParams.has("where")
-        ? undefined
-        : HttpResponse.json(
-            collectionResponse([], { limit: 1, totalDocs: readableConfigurations, totalPages: readableConfigurations }),
-          ),
+      new URL(request.url).searchParams.has("where") ? undefined : HttpResponse.json({ docs: [] }),
     ),
+    http.get("/api/v2/booking-configurations/count", ({ request }) => {
+      expect(new URL(request.url).searchParams.get("max")).toBe("1");
+      return HttpResponse.json({ totalDocs: Math.min(readableConfigurations, 1) });
+    }),
     http.get("/api/v2/booking-configuration-targets", () =>
       HttpResponse.json({
         docs: Array.from({ length: eligibleTargets }, (_, index) => ({
@@ -263,7 +263,7 @@ describe("booking layout", () => {
     expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
   });
 
-  it("shows Bookable items but not Settings to users who can read a booking configuration", async () => {
+  it("keeps Administration when all owned instruments are configured and list pages omit totals", async () => {
     renderAt("/booking", false, undefined, { readableConfigurations: 3, eligibleTargets: 0 });
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
@@ -289,7 +289,7 @@ describe("booking layout", () => {
     let signalRequests = 0;
     server.events.on("request:start", ({ request }) => {
       const path = new URL(request.url).pathname;
-      if (path === "/api/v2/booking-configurations" || path === "/api/v2/booking-configuration-targets") {
+      if (path === "/api/v2/booking-configurations/count" || path === "/api/v2/booking-configuration-targets") {
         signalRequests += 1;
       }
     });
