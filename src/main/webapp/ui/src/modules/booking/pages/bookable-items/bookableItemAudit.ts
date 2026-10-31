@@ -118,7 +118,6 @@ export async function fetchBookingConfigurationAudit(input: {
   q?: string;
   start?: string;
   end?: string;
-  search?: string;
   actions?: readonly AuditAction[];
   page: number;
   snapshot?: AuditSnapshot;
@@ -137,10 +136,9 @@ export async function fetchBookingConfigurationAudit(input: {
     page: String(input.page + 1),
     limit: String(AUDIT_PAGE_SIZE),
   });
-  if (input.q !== undefined) parameters.set("q", input.q);
+  if (input.q !== undefined && input.q.trim() !== "") parameters.set("q", input.q.trim());
   if (input.start !== undefined) parameters.set("start", input.start);
   if (input.end !== undefined) parameters.set("end", input.end);
-  if (input.search !== undefined && input.search.trim() !== "") parameters.set("search", input.search.trim());
   for (const action of input.actions ?? []) parameters.append("actions", action);
   if (input.snapshot !== undefined) {
     parameters.set("snapshotDate", input.snapshot.snapshotDate);
