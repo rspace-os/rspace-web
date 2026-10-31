@@ -8,6 +8,7 @@ import { useBookableItemConfiguration } from "@/modules/booking/creation/Bookabl
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import { ApiV2ProblemError, BookingUnavailableError, fetchBooking } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { currentWallClock, formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -101,6 +102,7 @@ export function BookingEventContent() {
   const canViewItem = document.canViewConfiguration && target !== null;
   const refreshBooking = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+    await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
   };
   const _location = target?.value.parentContainer;
   const eventName = target?.value.name ?? t("common:values.unknownItem");
@@ -185,9 +187,8 @@ export function BookingEventContent() {
               )}
               token={token}
               eventKind={document.kind}
-              onDeleted={() => {
-                requestAnimationFrame(() => stateBadgeRef.current?.focus());
-              }}
+              finalFocus={stateBadgeRef}
+              onDeleted={() => undefined}
             />
           ) : null}
         </div>
@@ -216,9 +217,9 @@ export function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={editing ? "grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_30rem]" : detailColumnsClassName}>
+        <div className={editing ? "grid gap-6 @4xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)]" : detailColumnsClassName}>
           {editing && bookingItem.data ? (
-            <div className="hidden @4xl:col-start-2 @4xl:row-start-1 @4xl:block">
+            <div className="hidden min-w-0 @4xl:col-start-2 @4xl:row-start-1 @4xl:block">
               <BookingItemInformationCard
                 item={bookingItem.data}
                 displayTimezone={preferences.timeZone}

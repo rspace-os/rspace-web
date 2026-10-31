@@ -113,6 +113,14 @@ describe("recorded audit values", () => {
       ["end", "—"],
     ]);
   });
+
+  it("keeps cancellation reasons as free text and omits null reasons", () => {
+    expect(recordedValues({ state: "CANCELLED", cancellationReason: "2026-10-09T08:00:00Z" }, "en-US")).toEqual([
+      ["state", "CANCELLED"],
+      ["cancellationReason", "2026-10-09T08:00:00Z"],
+    ]);
+    expect(recordedValues({ state: "CONFIRMED", cancellationReason: null }, "en-US")).toEqual([["state", "CONFIRMED"]]);
+  });
 });
 
 function page(docs = [event]) {

@@ -14,6 +14,7 @@ import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.service.FeatureFlagManager;
@@ -173,6 +174,52 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                   subject)
               .isEmpty());
     }
+  }
+
+  @Test
+  public void cancellationReasonPersistsInBookingAndEnversHistory() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Cancellation reason history");
+    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
+    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    TimeSlotBookingManager.Create create =
+        new TimeSlotBookingManager.Create(
+            new ResolvedBookableTarget(setup.target(), setup.instrument()),
+            Date.from(start),
+            Date.from(start.plus(1, ChronoUnit.HOURS)),
+            null);
+    TimeSlotBooking booking = bookingManager.createBooking(create, owner, owner);
+
+    var cancelled =
+        bookingManager
+            .updateBooking(
+                booking.getId(),
+                new TimeSlotBookingManager.Patch(
+                    null,
+                    null,
+                    false,
+                    null,
+                    BookingState.CANCELLED,
+                    "  Instrument needs recalibration  "),
+                booking.getVersion(),
+                owner,
+                owner)
+            .orElseThrow();
+
+    assertEquals("Instrument needs recalibration", cancelled.getCancellationReason());
+    assertEquals(
+        "Instrument needs recalibration",
+        jdbcTemplate.queryForObject(
+            "SELECT cancellationReason FROM TimeSlotBooking WHERE id = ?",
+            String.class,
+            booking.getId()));
+    assertEquals(
+        "Instrument needs recalibration",
+        jdbcTemplate.queryForObject(
+            "SELECT cancellationReason FROM TimeSlotBooking_AUD"
+                + " WHERE id = ? AND cancellationReason IS NOT NULL ORDER BY REV DESC LIMIT 1",
+            String.class,
+            booking.getId()));
   }
 
   @Test

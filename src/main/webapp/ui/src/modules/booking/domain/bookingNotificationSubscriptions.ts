@@ -1,6 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQueryClient } from "@tanstack/react-query";
 import * as v from "valibot";
+import { bookingSubscriptionKeys } from "@/modules/booking/domain/bookingKeys";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
+import { apiV2Root } from "@/modules/common/queries/apiV2QueryKeys";
 import { requestBooking } from "./booking";
 
 const bookingNotificationPreferenceEntries = {
@@ -44,15 +47,6 @@ const BookingNotificationSubscriptionListSchema = v.strictObject({
   docs: v.array(BookingNotificationSubscriptionSchema),
 });
 const UpdatedCountSchema = v.strictObject({ updatedCount: v.pipe(v.number(), v.integer(), v.minValue(0)) });
-
-export const bookingNotificationPreferencesQueryKey = (subjectId: number) =>
-  ["api-v2", "users", subjectId, "booking-notification-preferences"] as const;
-
-export const bookingNotificationSubscriptionsQueryKey = {
-  all: (subjectId: number) => ["api-v2", "users", subjectId, "booking-notification-subscriptions"] as const,
-  item: (subjectId: number, configurationId: number) =>
-    [...bookingNotificationSubscriptionsQueryKey.all(subjectId), "item", configurationId] as const,
-};
 
 const preferencesPath = "/api/v2/users/me/booking-notification-preferences";
 const subscriptionsPath = "/api/v2/users/me/booking-notification-subscriptions";
@@ -126,12 +120,31 @@ export async function unsubscribeFromAllBookingNotificationSubscriptions(token: 
 export function useReplaceBookingNotificationPreferences(subjectId: number) {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
-  return useMutation({
+  return useApiV2Mutation({
+    meta: { invalidates: [bookingSubscriptionKeys.notifications(subjectId)] },
     mutationFn: (input: BookingNotificationPreferencesInput) => replaceBookingNotificationPreferences(input, token),
     onSuccess: async (preferences) => {
-      queryClient.setQueryData(bookingNotificationPreferencesQueryKey(subjectId), preferences);
-      // Item subscriptions report the created/cancelled toggles as their effective state.
-      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
+      queryClient.setQueryData(bookingNotificationPreferencesQuery(subjectId, token).queryKey, preferences);
     },
   });
 }
+
+export const bookingNotificationPreferencesQuery = (subjectId: number, token: string) =>
+  queryOptions({
+    queryKey: [...apiV2Root("users"), subjectId, "booking-notification-preferences"] as const,
+    queryFn: ({ signal }) => fetchBookingNotificationPreferences(token, signal),
+  });
+
+export const bookingNotificationSubscriptionQuery = (subjectId: number, configurationId: number, token: string) =>
+  queryOptions({
+    queryKey: [...bookingSubscriptionKeys.notifications(subjectId), "item", configurationId] as const,
+    queryFn: ({ signal }) => fetchBookingNotificationSubscription(configurationId, token, signal),
+  });
+
+export const bookingNotificationPreferencesQueryKey = (subjectId: number) =>
+  bookingNotificationPreferencesQuery(subjectId, "").queryKey;
+export const bookingNotificationSubscriptionsQueryKey = {
+  all: bookingSubscriptionKeys.notifications,
+  item: (subjectId: number, configurationId: number) =>
+    bookingNotificationSubscriptionQuery(subjectId, configurationId, "").queryKey,
+};

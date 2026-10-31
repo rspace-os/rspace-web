@@ -1,4 +1,6 @@
+import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -111,10 +113,15 @@ const BookingAvailabilityIdentitySchema = {
   state: v.picklist(["CONFIRMED", "CANCELLED"]),
   kind: v.optional(BookingEventKindSchema, "BOOKING"),
 };
-const BookingFullPrivacyEntries = {
+const BookingListPrivacyEntries = {
   purpose: v.nullable(v.string()),
   bookedBy: v.nullable(v.string()),
   createdBy: v.optional(v.nullable(v.string())),
+};
+
+const BookingFullPrivacyEntries = {
+  ...BookingListPrivacyEntries,
+  cancellationReason: v.nullable(v.string()),
 };
 
 const BookingFullManagementEntries = {
@@ -140,6 +147,7 @@ function bookingSchema<
       ...identity,
       privacy: v.literal("busy"),
       purpose: v.null(),
+      cancellationReason: v.null(),
       bookedBy: v.null(),
       createdBy: v.optional(v.nullable(v.string())),
       canEdit: v.literal(false),
@@ -175,8 +183,9 @@ const BookingMutationSchema = withEndAfterStart(bookingSchema(MutationTargetSche
 const BookingListDocumentObjectSchema = v.object({
   ...BookingReadIdentitySchema,
   canViewConfiguration: v.boolean(),
-  requesterId: v.number(),
-  ...BookingFullPrivacyEntries,
+  /** Null when the caller can see only a busy event. */
+  requesterId: v.nullable(v.number()),
+  ...BookingListPrivacyEntries,
   privacy: v.picklist(["full", "busy"]),
   ...BookingFullManagementEntries,
 });
@@ -198,7 +207,7 @@ export type BookingSummary = v.InferOutput<typeof BookingSummarySchema>;
 export type Booking = v.InferOutput<typeof BookingSchema>;
 export type BookingDetails = v.InferOutput<typeof BookingDetailsSchema>;
 export type BookingListDocument = v.InferOutput<typeof BookingListDocumentSchema>;
-type BookingMutation = v.InferOutput<typeof BookingMutationSchema>;
+export type BookingMutation = v.InferOutput<typeof BookingMutationSchema>;
 
 export const BookingCreateSchema = v.object({
   target: v.object({ relationTo: v.literal("instruments"), value: v.number() }),
@@ -213,7 +222,9 @@ export const BookingUpdateSchema = v.partial(
     start: v.string(),
     end: v.string(),
     purpose: v.nullable(v.pipe(v.string(), v.maxLength(1000))),
-    state: v.literal("CANCELLED"),
+    cancellationReason: v.pipe(v.string(), v.maxLength(500)),
+    // CONFIRMED only restores a cancelled booking; the server rejects it together with other changes.
+    state: v.picklist(["CANCELLED", "CONFIRMED"]),
   }),
 );
 
@@ -235,7 +246,7 @@ export class ApiV2ProblemError extends Error {
 export class BookingUnavailableError extends Error {}
 
 export const BOOKING_READ_FIELDS =
-  "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
+  "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,cancellationReason,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 export async function parseApiV2Problem(response: Response): Promise<ApiV2ProblemError> {
   const body: unknown = await response.json().catch(() => null);
   if (body && typeof body === "object") {
@@ -311,6 +322,29 @@ export function updateBooking(
   });
 }
 
-export function cancelBooking(id: number, version: number, token: string): Promise<BookingMutation> {
-  return updateBooking(id, version, { state: "CANCELLED" }, token);
+export function cancelBooking(id: number, version: number, token: string, reason?: string): Promise<BookingMutation> {
+  const cancellationReason = reason?.trim();
+  return updateBooking(
+    id,
+    version,
+    cancellationReason ? { state: "CANCELLED", cancellationReason } : { state: "CANCELLED" },
+    token,
+  );
 }
+
+/** Returns a cancelled booking to its slot, if it has not started and the slot is still free. */
+export function restoreBooking(id: number, version: number, token: string): Promise<BookingMutation> {
+  return updateBooking(id, version, { state: "CONFIRMED" }, token);
+}
+
+export const bookingQueryOptions = (id: number | undefined, token: string) =>
+  queryOptions({
+    queryKey: [...bookingKeys.all, id] as const,
+    queryFn: id === undefined ? skipToken : ({ signal }) => fetchBooking(id, token, signal),
+    retry: (failureCount, error) =>
+      failureCount < 2 &&
+      !(
+        error instanceof BookingUnavailableError ||
+        (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500)
+      ),
+  });

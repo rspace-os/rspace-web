@@ -716,12 +716,6 @@ class TimeSlotBookingSchedulingTest {
 
   private static TimeSlotBooking event(
       long id, BookingEventKind kind, String startValue, String endValue) {
-    TimeSlotBooking event = new TimeSlotBooking();
-    event.setId(id);
-    event.setKind(kind);
-    event.setStartTime(instant(startValue));
-    event.setEndTime(instant(endValue));
-    event.setPurpose("Private purpose");
-    return event;
+    return TimeSlotBookingManagerTest.event(id, kind, startValue, endValue);
   }
 }

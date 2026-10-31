@@ -194,7 +194,7 @@ Some scheduling problems add RFC 9457 extension members. Each is present only on
 field, and the server does not format its times into `detail`. The server checks the requested
 interval first; only when that is free does it check the interval widened by the item's buffers,
 so `buffer` means that moving the booking slightly would resolve the conflict. Both checks apply to
-create, time-changing edits, and maintenance. Double booking permits booking-on-booking
+create, time-changing edits, restoration, and maintenance. Double booking permits booking-on-booking
 overlap; maintenance still conflicts with every booking and maintenance event.
 
 ## Booking catalogue availability quick filters
@@ -295,3 +295,36 @@ The catalogue's client filter mapping sends a supported top-level availability p
 the server's `availability` parameter with today's display-zone window. Contradictory categories
 or an availability predicate inside an OR group cannot be restored as a server quick filter;
 the client reports the unavailable rule and preserves the saved expression for explicit reset.
+
+## Booking cancellation reasons
+
+`PATCH /api/v2/bookings/{id}` accepts an optional `cancellationReason` with
+`state: "CANCELLED"`. It is trimmed, blank becomes null, and the maximum length is
+500 characters. A non-null normalized reason without cancellation is rejected with
+`errors.api.v2.booking.cancellationReason.requiresCancel`. The API field validator
+rejects overlong input with `errors.api.v2.booking.patch` and an `invalidParams`
+entry for `cancellationReason`; the manager also enforces the limit with
+`errors.api.v2.booking.cancellationReason.length`. Creation does not accept the field.
+
+The readable field is nullable and redacted to null for BUSY readers. It has no query
+capabilities. Clients with explicit field projections must include `cancellationReason`
+to display it. For example, with the current version in `If-Match`:
+
+```json
+{ "state": "CANCELLED", "cancellationReason": "Instrument needs recalibration" }
+```
+
+Repeating a cancellation with the current version and the same normalized reason is a
+no-op; a different reason returns a state-transition conflict.
+
+A cancelled booking can be restored with `{ "state": "CONFIRMED" }` and its current version in
+`If-Match`. Restoring re-books the same slot under today's rules. The start must still be in the future,
+the bookable item must be enabled, and the slot must pass the current scheduling policy and be free
+of other bookings and buffers (the usual `overlap` and `buffer` conflicts, with `conflict`). No other
+field may change in the same request. The restore clears the cancellation reason, is audited as
+`WRITE`, and notifies subscribers with a "restored" message. My Bookings uses it for Undo.
+Replaying the original stale version after a successful cancellation uses the existing
+concurrency error contract. Refresh to inspect the saved result rather than automatically
+resubmitting with a newer version.
+
+Maintenance cancellation stores and audits the reason but sends no notification.

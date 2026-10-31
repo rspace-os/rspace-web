@@ -1,11 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { VerticalDayTimeline } from "@/modules/booking/components/VerticalDayTimeline";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { type BookingWindowDraft, isPlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingWindowDraft,
+  isPlainDate,
+  sameTimeZone,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 import { fetchDayBookings } from "@/modules/booking/domain/fetchDayBookings";
 import { Button } from "@/modules/common/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/modules/common/ui/sheet";
@@ -17,6 +22,7 @@ function draftDay(value: string): string | undefined {
 
 export function BookingDayTimelineAside({
   target,
+  formContainerRef,
   draft,
   timezone,
   token,
@@ -25,6 +31,7 @@ export function BookingDayTimelineAside({
   onInteractionChange,
 }: {
   target: BookableItemOption | undefined;
+  formContainerRef: RefObject<HTMLDivElement | null>;
   draft: BookingWindowDraft;
   timezone: string;
   token: string;
@@ -37,23 +44,21 @@ export function BookingDayTimelineAside({
   const [date, setDate] = useState(startDate ?? todayInTimeZone(timezone));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
-  const asideRef = useRef<HTMLElement>(null);
   const desktopTimelineRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setDate(startDate ?? todayInTimeZone(timezone));
   }, [startDate, timezone, target?.globalId]);
   useEffect(() => {
-    const container = asideRef.current?.closest('[class~="@container"]');
     const desktopTimeline = desktopTimelineRef.current;
-    if (!container || !desktopTimeline) return;
+    if (!desktopTimeline) return;
     const observer = new ResizeObserver(() => {
       if (getComputedStyle(desktopTimeline).display !== "none") setMobileOpen(false);
     });
-    observer.observe(container);
+    observer.observe(desktopTimeline);
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    const form = asideRef.current?.closest('[class~="@container"]')?.querySelector("form");
+    const form = formContainerRef.current;
     if (!form) return;
     if (typeof IntersectionObserver === "undefined") {
       setFormVisible(true);
@@ -62,7 +67,7 @@ export function BookingDayTimelineAside({
     const observer = new IntersectionObserver(([entry]) => setFormVisible(entry.isIntersecting));
     observer.observe(form);
     return () => observer.disconnect();
-  }, []);
+  }, [formContainerRef]);
   const bounds = zonedDayBounds(date, timezone);
   const schedule = useQuery({
     queryKey: ["api-v2", "bookings", "day-schedule", target?.globalId, bounds.start, bounds.end, token],
@@ -71,11 +76,13 @@ export function BookingDayTimelineAside({
     staleTime: 30_000,
   });
   const tabClassName = "h-14 w-14 gap-0 rounded-r-none rounded-l-xl border-r-0 px-0 shadow-lg";
+  // The heading names the zone, so an alias of the item's zone (Asia/Calcutta for Asia/Kolkata) reads as the item's.
+  const timelineTimezone = target && sameTimeZone(target.timezone, timezone) ? target.timezone : timezone;
   const timeline = (
     <VerticalDayTimeline
       date={date}
       onDateChange={setDate}
-      timezone={timezone}
+      timezone={timelineTimezone}
       itemName={target?.name}
       scheduleWindow={
         target
@@ -85,7 +92,7 @@ export function BookingDayTimelineAside({
             }
           : undefined
       }
-      events={(schedule.data ?? []).map((booking) => toTimelineEvent(booking, date, timezone))}
+      events={(schedule.data ?? []).map((booking) => toTimelineEvent(booking, date, timelineTimezone))}
       schedule={
         !target
           ? { status: "no-target" }
@@ -111,7 +118,7 @@ export function BookingDayTimelineAside({
     />
   );
   return (
-    <aside ref={asideRef} className="min-w-0 @4xl:sticky @4xl:top-4 @4xl:self-start">
+    <aside className="min-w-0 @4xl:sticky @4xl:top-4 @4xl:self-start">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
           render={

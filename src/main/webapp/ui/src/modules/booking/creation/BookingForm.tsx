@@ -14,7 +14,7 @@ import { BookingItemInformationCard } from "@/modules/booking/creation/BookingIt
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
-import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { todayInTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   ALL_ISO_WEEKDAYS,
   ALWAYS_OPEN,
@@ -26,7 +26,6 @@ import {
   type BookingWindowDraft,
   bookingDateTimeLocale,
   bookingLocale,
-  currentWallClock,
   formatWallClockTime,
   isPlainDate,
   sameDraft,
@@ -170,7 +169,6 @@ type BookingFormCommonProps = {
   onCancel?: () => void;
   onMoreOptions?: () => void;
   onStateChange?: (state: BookingFormState) => void;
-  onWindowAdjustmentApplied?: (draft: BookingWindowDraft, targetGlobalId?: string) => void;
   onDraftChange?: (draft: BookingWindowDraft, targetGlobalId?: string) => void;
   onTargetChange?: (target: BookableItemOption | undefined) => void;
   warning?: ReactNode;
@@ -261,7 +259,8 @@ export function BookingForm(props: BookingFormProps) {
   // unless the viewer picks another, optionally a separate one for the end. A picked zone keeps the entered wall clock,
   // so the instants move.
   const displayTimezone = props.displayTimezone ?? (editing ? fixedTarget?.timezone : initialTarget?.timezone) ?? "UTC";
-  const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
+  const [selectedTarget, setSelectedTarget] = useState<BookableItemOption | undefined>(initialTarget);
+  const target = editing ? props.configuration : selectedTarget;
   const [timezoneChoice, setTimezoneChoice] = useState<string>();
   // Set only while the end has its own zone.
   const [endTimezoneChoice, setEndTimezoneChoice] = useState<string>();
@@ -272,9 +271,7 @@ export function BookingForm(props: BookingFormProps) {
     props.mode === "edit" ? draftFromInstants(props.booking.start, props.booking.end, formTimezones) : undefined;
   const addDraft = initialWindow
     ? convertDraft(initialWindow, displayTimezone, formTimezones)
-    : emptyDraft(
-        initialDate ?? (initialTarget ? currentWallClock(new Date().toISOString(), formTimezone).date : undefined),
-      );
+    : emptyDraft(initialDate ?? (initialTarget ? todayInTimeZone(formTimezone) : undefined));
   const [draft, setDraft] = useState<BookingWindowDraft>(() => originalDraft ?? addDraft);
   const displayDraft = useMemo(
     () => convertDraft(draft, formTimezones, displayTimezone),
@@ -312,31 +309,13 @@ export function BookingForm(props: BookingFormProps) {
     const next = convertDraft(adjustment, displayTimezone, formTimezones);
     setDraft((current) => (sameDraft(next, current) ? current : next));
   }, [props.windowAdjustment, props.windowAdjustmentTarget, target?.globalId, displayTimezone, formTimezones]);
-  useEffect(() => {
-    const adjustment = props.windowAdjustment;
-    const adjustmentTarget = props.windowAdjustmentTarget ?? target?.globalId;
-    if (
-      adjustment &&
-      adjustment === appliedWindowAdjustment.current &&
-      adjustmentTarget === target?.globalId &&
-      sameDraft(adjustment, displayDraft)
-    ) {
-      props.onWindowAdjustmentApplied?.(adjustment, adjustmentTarget);
-    }
-  }, [
-    displayDraft,
-    props.windowAdjustment,
-    props.windowAdjustmentTarget,
-    props.onWindowAdjustmentApplied,
-    target?.globalId,
-  ]);
   if (initialTarget !== previousInitialTarget) {
     setPreviousInitialTarget(initialTarget);
-    if (!editing && !target && initialTarget) {
-      const date = currentWallClock(new Date().toISOString(), formTimezone).date;
+    if (!editing && !selectedTarget && initialTarget) {
+      const date = todayInTimeZone(formTimezone);
       const seedDates = !draft.startDate && !initialDate;
       const nextDraft = seedDates ? { ...draft, startDate: date, endDate: date } : draft;
-      setTarget(initialTarget);
+      setSelectedTarget(initialTarget);
       setDraft(nextDraft);
       setInitialState({
         ...initialState,
@@ -364,8 +343,8 @@ export function BookingForm(props: BookingFormProps) {
   const window = validation?.window;
   const selectTarget = (next: BookableItemOption | undefined) => {
     props.onTargetChange?.(next);
-    setTarget(next);
-    const today = currentWallClock(new Date().toISOString(), formTimezone).date;
+    setSelectedTarget(next);
+    const today = todayInTimeZone(formTimezone);
     setDraft((current) => ({
       ...current,
       ...(next && !current.startDate ? { startDate: today, endDate: today } : {}),
@@ -418,7 +397,7 @@ export function BookingForm(props: BookingFormProps) {
   const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));
   useEffect(() => {
     notifyStateChange({ target, draft: displayDraft, window, enteredWindow, purpose: purposeValue, eventKind, dirty });
-  }, [dirty, displayDraft, enteredWindow, eventKind, purposeValue, target, window]);
+  }, [dirty, displayDraft, enteredWindow, eventKind, purposeValue, target, window, props.windowAdjustment]);
   const compact = props.density === "compact";
   const inline = props.layout === "inline";
   const submitLabel = editing
@@ -472,13 +451,7 @@ export function BookingForm(props: BookingFormProps) {
   );
 
   return (
-    <Form
-      id={formId}
-      of={form}
-      className={cn(!inline && "max-w-2xl", compact && "flex min-h-0 flex-col")}
-      aria-busy={busy}
-      onSubmit={submit}
-    >
+    <Form id={formId} of={form} className={cn(compact && "flex min-h-0 flex-col")} aria-busy={busy} onSubmit={submit}>
       <div className={compact ? "min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" : "space-y-6"}>
         {fixedTarget && !compact && !inline ? (
           <div className="space-y-1">
@@ -519,9 +492,7 @@ export function BookingForm(props: BookingFormProps) {
             <p className="text-sm text-muted-foreground">
               {openingHoursSummary(
                 target,
-                isPlainDate(draft.startDate)
-                  ? draft.startDate
-                  : currentWallClock(new Date().toISOString(), formTimezone).date,
+                isPlainDate(draft.startDate) ? draft.startDate : todayInTimeZone(formTimezone),
                 formTimezone,
                 timeFormat,
                 t,
@@ -589,7 +560,7 @@ export function BookingForm(props: BookingFormProps) {
               disabled: busy || props.submissionBlocked,
               onClick: () => void submit({ purpose: purposeValue }),
             },
-            { label: t("bookings.form.cancel"), onClick: props.onCancel, alwaysVisible: true },
+            { label: t("bookings.form.cancel"), onClick: props.onCancel, disabled: busy, alwaysVisible: true },
           ]}
         />
       ) : (

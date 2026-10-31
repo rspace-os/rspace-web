@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { type BookingDetails, fetchBooking } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
 const cancelledBooking = {
@@ -23,6 +24,7 @@ const cancelledBooking = {
   state: "CANCELLED",
   privacy: "full",
   purpose: null,
+  cancellationReason: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
   canCancel: false,
@@ -173,8 +175,88 @@ describe("DeleteBookingDialog", () => {
     expect(requests[0].headers.get("Authorization")).toBe("Bearer token");
     expect(requests[0].headers.get("If-Match")).toBe('"0"');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
-    expect(invalidate).toHaveBeenCalledOnce();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
+    expect(invalidate).toHaveBeenCalledTimes(2);
     expect(onDeleted).toHaveBeenCalledOnce();
+  });
+
+  it("trims a reason into the cancellation PATCH and omits whitespace-only reasons", async () => {
+    const user = userEvent.setup();
+    const requests: Request[] = [];
+    server.use(
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        requests.push(request.clone());
+        return HttpResponse.json({ ...cancelledBooking, cancellationReason: "Needs recalibration" });
+      }),
+    );
+    renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" }),
+      "  Needs recalibration  ",
+    );
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(await screen.findByRole("button", { name: "booking:bookings.actions.cancel" })).toBeVisible();
+    expect(await requests[0].json()).toEqual({ state: "CANCELLED", cancellationReason: "Needs recalibration" });
+
+    server.use(
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        requests.push(request.clone());
+        return HttpResponse.json(cancelledBooking);
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    await user.type(screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" }), "   ");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(await requests[1].json()).toEqual({ state: "CANCELLED" });
+  });
+
+  it("keeps the typed reason after a failed request and shows reason validation errors", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.patch("/api/v2/bookings/41", () =>
+        HttpResponse.json(
+          { status: 400, code: "errors.api.v2.booking.cancellationReason.length", detail: "Too long" },
+          { status: 400 },
+        ),
+      ),
+    );
+    renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const reason = screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" });
+    await user.type(reason, "A reason");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.cancellationReasonLength");
+    expect(reason).toHaveValue("A reason");
+  });
+
+  it("does not retry after a stale response and preserves the reason", async () => {
+    const user = userEvent.setup();
+    let requests = 0;
+    server.use(
+      http.patch("/api/v2/bookings/41", () => {
+        requests += 1;
+        return HttpResponse.json(
+          { status: 412, code: "errors.api.v2.booking.concurrentModification", detail: "stale" },
+          { status: 412 },
+        );
+      }),
+    );
+    renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const reason = screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" });
+    await user.type(reason, "Changed equipment");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.deleteStale");
+    expect(reason).toHaveValue("Changed equipment");
+    expect(requests).toBe(1);
   });
 
   it.each([
@@ -197,7 +279,8 @@ describe("DeleteBookingDialog", () => {
     expect(screen.getByRole("alertdialog")).toBeVisible();
     if (status !== 403) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
-      expect(invalidate).toHaveBeenCalledOnce();
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
+      expect(invalidate).toHaveBeenCalledTimes(2);
     }
   });
 
@@ -344,5 +427,40 @@ describe("DeleteBookingDialog", () => {
     await user.click(within(dialog).getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
 
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("clears the reason whenever an uncontrolled dialog is reopened", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const reason = screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" });
+    await user.type(reason, "Do not keep this");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" })).toHaveValue("");
+  });
+
+  it("clears the reason on a controlled closed-to-open transition", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderDialog(vi.fn(), false, "BOOKING", { open: false });
+    const props = {
+      bookingId: 41,
+      bookingVersion: 0,
+      itemName: "Confocal microscope",
+      period: "08:00–09:00",
+      token: "token",
+      onDeleted: vi.fn(),
+      onOpenChange: vi.fn(),
+    } satisfies ComponentProps<typeof DeleteBookingDialog>;
+
+    rerender(<DeleteBookingDialog {...props} open />);
+    const reason = await screen.findByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" });
+    await user.type(reason, "Do not keep this");
+    rerender(<DeleteBookingDialog {...props} open={false} />);
+    rerender(<DeleteBookingDialog {...props} open />);
+
+    expect(screen.getByRole("textbox", { name: "booking:bookings.cancelDialog.reasonLabel" })).toHaveValue("");
   });
 });

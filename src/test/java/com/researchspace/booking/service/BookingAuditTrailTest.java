@@ -158,6 +158,25 @@ class BookingAuditTrailTest {
   }
 
   @Test
+  void timeSlotBookingAuditSerializesTheCancellationReason() {
+    User actor = TestFactory.createAnyUser("sysadmin");
+    TimeSlotBooking booking = new TimeSlotBooking();
+    booking.setId(42L);
+    booking.setState(BookingState.CANCELLED);
+    booking.setCancellationReason("Instrument needs recalibration\nBefore next run");
+
+    SavedRecord saved =
+        savedRecord(
+            listener ->
+                listener.timeSlotBookingChanged(
+                    new TimeSlotBookingAuditEvent(actor, actor, booking, AuditAction.WRITE)));
+
+    assertEquals(
+        "Instrument needs recalibration\nBefore next run",
+        saved.data().getData().get("cancellationReason"));
+  }
+
+  @Test
   void allBookingAuditPayloadTypesUseTheBookingDomain() {
     assertEquals(
         AuditDomain.BOOKING,
@@ -180,10 +199,12 @@ class BookingAuditTrailTest {
     User actor = TestFactory.createAnyUser("sysadmin");
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(7L);
+    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
     TimeSlotBooking booking = new TimeSlotBooking();
     booking.setId(42L);
     booking.setBookingConfiguration(configuration);
     booking.setState(BookingState.CANCELLED);
+    booking.setCancellationReason("Instrument needs recalibration");
     booking.setStartTime(Date.from(Instant.parse("2026-10-05T09:00:00Z")));
     booking.setEndTime(Date.from(Instant.parse("2026-10-05T10:00:00Z")));
 
@@ -214,8 +235,11 @@ class BookingAuditTrailTest {
     assertEquals("booking-configurations:7", parsed.getData().get("bookingConfigurationId"));
     assertEquals("CANCELLED", parsed.getData().get("state"));
     assertEquals("BOOKING", parsed.getData().get("kind"));
+    assertEquals("Instrument needs recalibration", parsed.getData().get("cancellationReason"));
     assertTrue(parsed.getData().containsKey("start"));
     assertTrue(parsed.getData().containsKey("end"));
+    assertTrue(
+        record.getData().toJson().contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":12}"));
   }
 
   private record SavedRecord(HistoricData historicData, AuditData data) {}

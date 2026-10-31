@@ -1,6 +1,9 @@
+import { queryOptions } from "@tanstack/react-query";
 import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { bookingSubscriptionKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
+import { apiV2Root } from "@/modules/common/queries/apiV2QueryKeys";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
@@ -47,20 +50,13 @@ export type UserCalendarSubscriptionStatus = CalendarSubscriptionStatus & { etag
 export type UserCalendarSubscriptionCreated = CalendarSubscriptionCreated & { etag: string };
 export type ItemCalendarLink = v.InferOutput<typeof ItemCalendarLinksSchema>[number];
 
-export const calendarSubscriptionQueryKey = (configurationId: number) =>
-  ["api-v2", "booking-configurations", configurationId, "calendar-subscription"] as const;
-
 function calendarSubscriptionPath(configurationId: number): string {
   return `/api/v2/booking-configurations/${configurationId}/calendar-subscription`;
 }
 
 const userCalendarSubscriptionPath = "/api/v2/users/me/booking-calendar-subscription";
 
-export const userCalendarSubscriptionQueryKey = ["api-v2", "users", "me", "booking-calendar-subscription"] as const;
-
 const itemCalendarLinksPath = "/api/v2/users/me/bookable-item-calendar-subscriptions";
-
-export const itemCalendarLinksQueryKey = ["api-v2", "users", "me", "bookable-item-calendar-subscriptions"] as const;
 
 async function requireSuccess(response: Response): Promise<Response> {
   if (!response.ok) throw await parseApiV2Problem(response);
@@ -175,3 +171,28 @@ export function calendarApplicationUrls(feedUrl: string): {
     other: webcal,
   };
 }
+
+export const bookableItemCalendarSubscriptionQuery = (configurationId: number, token: string) =>
+  queryOptions({
+    queryKey: bookingSubscriptionKeys.calendar(configurationId),
+    queryFn: ({ signal }) => fetchCalendarSubscriptionStatus(configurationId, token, signal),
+    retry: false,
+  });
+
+export const userCalendarSubscriptionQuery = (token: string) =>
+  queryOptions({
+    queryKey: [...apiV2Root("users"), "me", "booking-calendar-subscription"] as const,
+    queryFn: ({ signal }) => fetchUserCalendarSubscriptionStatus(token, signal),
+    retry: false,
+  });
+
+export const itemCalendarLinksQuery = (token: string) =>
+  queryOptions({
+    queryKey: [...apiV2Root("users"), "me", "bookable-item-calendar-subscriptions"] as const,
+    queryFn: ({ signal }) => fetchItemCalendarLinks(token, signal),
+  });
+
+export const calendarSubscriptionQueryKey = (configurationId: number) =>
+  bookableItemCalendarSubscriptionQuery(configurationId, "").queryKey;
+export const userCalendarSubscriptionQueryKey = userCalendarSubscriptionQuery("").queryKey;
+export const itemCalendarLinksQueryKey = itemCalendarLinksQuery("").queryKey;

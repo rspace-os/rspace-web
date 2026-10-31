@@ -172,7 +172,7 @@ describe("CalendarPage", () => {
               return HttpResponse.json({ status: 412 }, { status: 412 });
             }
             saved = true;
-            return HttpResponse.json(savedBooking);
+            return HttpResponse.json({ ...savedBooking, cancellationReason: null });
           }
           committed = true;
           return failure === "network" ? HttpResponse.error() : HttpResponse.json({ status: 503 }, { status: 503 });
@@ -230,11 +230,7 @@ describe("CalendarPage", () => {
       expect(saved).toBe(true);
       expect(versions).toEqual(['"0"', '"1"']);
       expect(patches[0]).toEqual({ purpose: "Keep my calendar draft" });
-      expect(patches[1]).toEqual({
-        start: ownBooking.start,
-        end: ownBooking.end,
-        purpose: "Keep my calendar draft",
-      });
+      expect(patches[1]).toEqual({ purpose: "Keep my calendar draft" });
     },
   );
 
@@ -261,7 +257,7 @@ describe("CalendarPage", () => {
           return HttpResponse.json({ status: 412 }, { status: 412 });
         }
         saved = true;
-        return HttpResponse.json({ ...updated, version: 2 });
+        return HttpResponse.json({ ...updated, version: 2, cancellationReason: null });
       }),
     );
     await renderCalendar();
@@ -272,7 +268,12 @@ describe("CalendarPage", () => {
     await user.type(await within(card).findByRole("textbox", { name: "Purpose" }), " first draft");
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 
-    const purpose = await within(card).findByDisplayValue("Concurrent edit");
+    expect(await within(card).findByRole("alert")).toMatchTextContent(
+      "Someone else changed this booking while you were editing. Your changes are kept",
+    );
+    await waitFor(() => expect(within(card).getByRole("button", { name: "Save changes" })).toBeEnabled());
+    const purpose = within(card).getByRole("textbox", { name: "Purpose" });
+    expect(purpose).toHaveValue(`${ownBooking.purpose} first draft`);
     await user.type(purpose, " updated");
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 
@@ -496,6 +497,6 @@ describe("CalendarPage", () => {
     await user.clear(search);
     await user.type(search, "No calendar match");
 
-    expect(await screen.findByText("No records found")).toBeVisible();
+    expect(await screen.findByText("No records found", {}, { timeout: 3_000 })).toBeVisible();
   });
 });

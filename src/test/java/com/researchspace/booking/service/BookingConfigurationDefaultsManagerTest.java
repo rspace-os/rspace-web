@@ -54,7 +54,7 @@ class BookingConfigurationDefaultsManagerTest {
     BookingConfigurationDefaults updated =
         manager.updateDefaults(
             new BookingSchedulingSettings.Patch(15L, hours("08:00", "18:00"), 10L, 20L, 120L, true),
-            new BookingDisplaySettings.Patch("09:00", "17:00", null, null),
+            new BookingDisplaySettings.Patch("09:00", "17:00", null, null, null),
             0,
             sysadmin,
             sysadmin);
