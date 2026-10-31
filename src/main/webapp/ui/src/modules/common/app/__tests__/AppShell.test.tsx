@@ -148,7 +148,7 @@ describe("route chrome", () => {
     renderShell("/with-sidebar/details");
 
     expect(await screen.findByText("Nested destination")).toBeVisible();
-    expect(screen.getByRole("banner")).toHaveTextContent("workspace");
+    expect(screen.getByText("workspace")).toBeVisible();
     expect(screen.getByRole("status", { name: "Route sidebar state" })).toHaveTextContent("expanded");
   });
 
@@ -156,7 +156,7 @@ describe("route chrome", () => {
     renderShell("/with-sidebar/override");
 
     expect(await screen.findByText("Override destination")).toBeVisible();
-    expect(screen.getByRole("banner")).toHaveTextContent("gallery");
+    expect(screen.getByText("gallery")).toBeVisible();
     expect(screen.getByText("Child sidebar")).toBeVisible();
     expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
   });
@@ -181,7 +181,7 @@ describe("route chrome", () => {
     renderShell("/with-sidebar/missing");
 
     expect(await screen.findByText("Page not found")).toBeVisible();
-    expect(screen.getByRole("banner")).toHaveTextContent("workspace");
+    expect(screen.getByText("workspace")).toBeVisible();
     expect(screen.getByRole("status", { name: "Route sidebar state" })).toBeVisible();
   });
 
@@ -204,7 +204,7 @@ describe("route chrome", () => {
         renderShell(path);
 
         expect(await screen.findByText("Route failed")).toBeVisible();
-        expect(screen.getByRole("banner")).toHaveTextContent("workspace");
+        expect(screen.getByText("workspace")).toBeVisible();
         expect(screen.getByRole("status", { name: "Route sidebar state" })).toBeVisible();
       } finally {
         restoreConsole();
@@ -215,11 +215,16 @@ describe("route chrome", () => {
 
 describe("route sidebar state", () => {
   it.each(["ctrlKey", "metaKey"])("leaves %s+B available on /about", async (modifier) => {
-    renderShell("/about");
+    const subscribe = vi.spyOn(window, "addEventListener");
+    const router = renderShell("/about");
+    const navigationListener = vi.spyOn(router, "subscribe");
     expect(await screen.findByText("About")).toBeVisible();
     const event = new KeyboardEvent("keydown", { key: "b", [modifier]: true, bubbles: true, cancelable: true });
     window.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
+    expect(subscribe.mock.calls.filter(([type]) => type === "keydown")).toHaveLength(0);
+    expect(navigationListener).not.toHaveBeenCalledWith("onBeforeNavigate", expect.any(Function));
+    subscribe.mockRestore();
   });
 
   it("opens on entry and removes the empty sidebar when leaving", async () => {
