@@ -8,12 +8,12 @@ import {
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { upcomingBookingWhere } from "../my-bookings/bookingCountFilter";
 
 const DASHBOARD_BOOKING_FIELDS = `${BOOKING_READ_FIELDS},requesterId`;
-const DashboardBookingPageSchema = v2ListEnvelope(BookingListDocumentSchema);
+const DashboardBookingPageSchema = v2PageEnvelope(BookingListDocumentSchema);
 type DashboardBookingPage = v.InferOutput<typeof DashboardBookingPageSchema>;
 
 const MAX_MONTHLY_PAGES = 10;
@@ -85,17 +85,11 @@ function deduplicateAndSort(bookings: readonly BookingListDocument[]): BookingLi
 
 function validatePage(page: DashboardBookingPage, requestedPage: number): number | null {
   if (page.page !== requestedPage) throw new Error("Dashboard booking pagination did not advance");
-  if (
-    (page.totalDocs === 0 && page.totalPages !== 0) ||
-    (page.totalDocs > 0 && page.totalPages === 0) ||
-    (page.totalPages > 0 && page.page > page.totalPages) ||
-    page.hasNextPage !== page.page < page.totalPages ||
-    (!page.hasNextPage && page.nextPage !== null)
-  ) {
+  if (!page.hasNextPage && page.nextPage !== null) {
     throw new Error("Malformed dashboard booking pagination");
   }
   if (page.hasNextPage) {
-    if (page.nextPage === null || page.nextPage !== page.page + 1 || page.nextPage > page.totalPages) {
+    if (page.nextPage === null || page.nextPage !== page.page + 1) {
       throw new Error("Dashboard booking pagination did not advance");
     }
     return page.nextPage;
@@ -123,16 +117,16 @@ export async function fetchMonthlyDashboardBookings({
   const where = `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;start=lt=${end};end=gt=${start}`;
   const bookings: BookingListDocument[] = [];
   let pageNumber = 1;
+  let pagesFetched = 0;
 
   while (true) {
     const page = await fetchDashboardBookingPage(where, pageNumber, token, signal);
-    if (page.totalDocs > MAX_MONTHLY_RAW_DOCUMENTS || page.totalPages > MAX_MONTHLY_PAGES) {
-      throw new TooManyDashboardBookingsError();
-    }
+    pagesFetched += 1;
     const nextPage = validatePage(page, pageNumber);
     bookings.push(...page.docs);
     if (bookings.length > MAX_MONTHLY_RAW_DOCUMENTS) throw new TooManyDashboardBookingsError();
     if (nextPage === null) break;
+    if (pagesFetched >= MAX_MONTHLY_PAGES) throw new TooManyDashboardBookingsError();
     pageNumber = nextPage;
   }
 

@@ -57,7 +57,7 @@ describe("dashboard booking data", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
-        return HttpResponse.json(collectionResponse(docs, { page: 1, totalDocs: docs.length, totalPages: 2 }));
+        return HttpResponse.json(collectionResponse(docs, { page: 1, hasNextPage: true }));
       }),
     );
 
@@ -104,8 +104,8 @@ describe("dashboard booking data", () => {
         requests.push(url);
         return HttpResponse.json(
           Number(url.searchParams.get("page")) === 1
-            ? collectionResponse([first, duplicate], { page: 1, totalDocs: 3, totalPages: 2 })
-            : collectionResponse([second], { page: 2, totalDocs: 3, totalPages: 2 }),
+            ? collectionResponse([first, duplicate], { page: 1, hasNextPage: true })
+            : collectionResponse([second], { page: 2 }),
         );
       }),
     );
@@ -127,21 +127,57 @@ describe("dashboard booking data", () => {
     expect(requests[1].searchParams.get("page")).toBe("2");
   });
 
-  it("stops immediately when monthly metadata exceeds the safe bound", async () => {
+  it.each([
+    { rowsPerPage: 1, expectedRequests: 10 },
+    { rowsPerPage: 501, expectedRequests: 2 },
+  ])(
+    "caps accumulated monthly rows and pages: $rowsPerPage rows per page",
+    async ({ rowsPerPage, expectedRequests }) => {
+      let requests = 0;
+      const booking = dashboardBookingFixture(1, 1, testBookingOverrides);
+      server.use(
+        http.get("/api/v2/bookings", ({ request }) => {
+          requests += 1;
+          return HttpResponse.json(
+            collectionResponse(
+              Array.from({ length: rowsPerPage }, () => booking),
+              {
+                page: Number(new URL(request.url).searchParams.get("page")),
+                hasNextPage: true,
+              },
+            ),
+          );
+        }),
+      );
+
+      await expect(
+        fetchMonthlyDashboardBookings({
+          requesterId: -1,
+          start: "2026-07-27T22:00:00Z",
+          end: "2026-09-06T22:00:00Z",
+          token: "token",
+        }),
+      ).rejects.toBeInstanceOf(TooManyDashboardBookingsError);
+      expect(requests).toBe(expectedRequests);
+    },
+  );
+
+  it("accepts exactly ten pages and 1,000 raw rows without totals", async () => {
     let requests = 0;
+    const booking = dashboardBookingFixture(1, 1, testBookingOverrides);
     server.use(
-      http.get("/api/v2/bookings", () => {
+      http.get("/api/v2/bookings", ({ request }) => {
         requests += 1;
+        const url = new URL(request.url);
+        expect(url.searchParams.has("totals")).toBe(false);
+        const page = Number(url.searchParams.get("page"));
         return HttpResponse.json(
           collectionResponse(
-            [
-              dashboardBookingFixture(1, 1, {
-                ...testBookingOverrides,
-                start: "2026-08-01T10:00:00Z",
-                end: "2026-08-01T11:00:00Z",
-              }),
-            ],
-            { page: 1, totalDocs: 1_001, totalPages: 11 },
+            Array.from({ length: 100 }, () => booking),
+            {
+              page,
+              hasNextPage: page < 10,
+            },
           ),
         );
       }),
@@ -154,8 +190,8 @@ describe("dashboard booking data", () => {
         end: "2026-09-06T22:00:00Z",
         token: "token",
       }),
-    ).rejects.toBeInstanceOf(TooManyDashboardBookingsError);
-    expect(requests).toBe(1);
+    ).resolves.toEqual([booking]);
+    expect(requests).toBe(10);
   });
 
   it("rejects nonadvancing pagination and later-page failures", async () => {
@@ -170,7 +206,7 @@ describe("dashboard booking data", () => {
                 end: "2026-08-01T11:00:00Z",
               }),
             ],
-            { page: 1, totalDocs: 2, totalPages: 2 },
+            { page: 1, hasNextPage: true },
           ),
           nextPage: 1,
         }),
@@ -198,7 +234,7 @@ describe("dashboard booking data", () => {
                 end: "2026-08-01T11:00:00Z",
               }),
             ],
-            { page: 1, totalDocs: 3, totalPages: 3 },
+            { page: 1, hasNextPage: true },
           ),
           nextPage: 3,
         });
@@ -226,7 +262,7 @@ describe("dashboard booking data", () => {
                     end: "2026-08-01T11:00:00Z",
                   }),
                 ],
-                { page: 1, totalDocs: 2, totalPages: 2 },
+                { page: 1, hasNextPage: true },
               ),
             )
           : new HttpResponse(null, { status: 503 }),
@@ -247,7 +283,7 @@ describe("dashboard booking data", () => {
     const requests: RequestInit[] = [];
     const originalFetch = globalThis.fetch;
     const response = (docs: readonly BookingListDocument[], page: number) =>
-      new Response(JSON.stringify(collectionResponse(docs, { page, totalDocs: 2, totalPages: 2 })), {
+      new Response(JSON.stringify(collectionResponse(docs, { page, hasNextPage: true })), {
         headers: { "Content-Type": "application/json" },
       });
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
