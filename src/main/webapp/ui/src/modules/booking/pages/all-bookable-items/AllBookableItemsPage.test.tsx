@@ -197,7 +197,7 @@ describe("AllBookableItemsPage", () => {
     );
     await renderPage();
     await screen.findAllByRole("link", { name: "Book" });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent(/\d/));
     expect(bookings).toHaveBeenCalledTimes(1);
   });
 
