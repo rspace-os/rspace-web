@@ -8611,6 +8611,15 @@
                       "title" : "The interval violates the scheduling policy."
                     }
                   },
+                  "errors.api.v2.booking.startInPast" : {
+                    "summary" : "The booking start must be in the future.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.startInPast",
+                      "detail" : "The booking start must be in the future.",
+                      "status" : 400,
+                      "title" : "The booking start must be in the future."
+                    }
+                  },
                   "errors.api.v2.booking.window" : {
                     "summary" : "The booking interval is invalid.",
                     "value" : {
@@ -8626,7 +8635,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking interval is invalid. The booking interval exceeds 366 days."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 366 days."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
@@ -9324,6 +9333,15 @@
                       "title" : "The interval violates the scheduling policy."
                     }
                   },
+                  "errors.api.v2.booking.startInPast" : {
+                    "summary" : "The booking start must be in the future.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.startInPast",
+                      "detail" : "The booking start must be in the future.",
+                      "status" : 400,
+                      "title" : "The booking start must be in the future."
+                    }
+                  },
                   "errors.api.v2.booking.window" : {
                     "summary" : "The booking interval is invalid.",
                     "value" : {
@@ -9339,7 +9357,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking interval is invalid. The booking interval exceeds 366 days."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 366 days."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"

@@ -1,3 +1,14 @@
+import { beforeAll as beforeBookingCatalog } from "vitest";
+import appI18n from "@/modules/common/i18n";
+
+beforeBookingCatalog(async () => {
+  appI18n.addResourceBundle(
+    "en-US",
+    "booking",
+    (await import("@/modules/common/i18n/locales/en-US/booking.json")).default,
+  );
+});
+
 import "@/__tests__/__mocks__/matchMedia";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -51,7 +62,7 @@ describe("CalendarPage", () => {
       server.use(
         oauthTokenHandler(true),
         http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-        http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([booking]))),
+        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))),
         http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration]))),
         http.patch("/api/v2/bookings/41", async ({ request }) => {
           patches.push(await request.json());
@@ -152,9 +163,7 @@ describe("CalendarPage", () => {
       };
       const savedBooking = { ...ownBooking, version: 2, purpose: "Keep my calendar draft" };
       server.use(
-        oauthTokenHandler(true),
-        http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-        http.get("/api/v2/bookings", async () => {
+        http.get("/api/v2/booking-calendar/events", async () => {
           if (committed) await reading;
           return HttpResponse.json(collectionResponse([saved ? savedBooking : committed ? updated : ownBooking]));
         }),
@@ -242,9 +251,7 @@ describe("CalendarPage", () => {
     const versions: (string | null)[] = [];
     const updated = { ...ownBooking, version: 1, purpose: "Concurrent edit" };
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () =>
+      http.get("/api/v2/booking-calendar/events", () =>
         HttpResponse.json(collectionResponse([saved ? { ...updated, version: 2 } : rejected ? updated : ownBooking])),
       ),
       http.patch("/api/v2/bookings/41", ({ request }) => {
@@ -281,9 +288,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     let forbidden = false;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () =>
+      http.get("/api/v2/booking-calendar/events", () =>
         HttpResponse.json(collectionResponse([{ ...ownBooking, canEdit: !forbidden }])),
       ),
       http.patch("/api/v2/bookings/41", () => {
@@ -315,11 +320,10 @@ describe("CalendarPage", () => {
       ),
       ...bookableItemsHandlers((request) => {
         const url = new URL(request.url);
-        if (url.pathname === "/api/v2/booking-catalogue") catalogueSearches.push(url.searchParams.get("q") ?? "");
+        if (url.pathname === "/api/v2/booking-catalogue/calendar")
+          catalogueSearches.push(url.searchParams.get("q") ?? "");
       }),
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
     );
     const user = userEvent.setup();
     await renderCalendar();
@@ -332,12 +336,12 @@ describe("CalendarPage", () => {
     expect(screen.getByRole("button", { name: "Time grid" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     await waitFor(() => expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument());
-    expect(screen.getByText("Mass spectrometer")).toBeVisible();
+    expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
     expect(catalogueSearches.filter(Boolean)).toEqual(["Mass"]);
   });
 
-  it("keeps event matches from resources outside the current catalogue page", async () => {
+  it("loads purpose-matching resources from server pagination rather than appending off-page events", async () => {
     const ownTarget = ownBooking.target;
     if (!ownTarget) throw new Error("The calendar fixture must include a target");
     const offPageEvent: BookingListDocument = {
@@ -351,13 +355,32 @@ describe("CalendarPage", () => {
       purpose: "QuasarPurposeMarker",
     };
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", ({ request }) => {
-        const where = new URL(request.url).searchParams.get("where") ?? "";
-        return HttpResponse.json(
-          collectionResponse(where.includes("target=in=") ? [ownBooking] : [ownBooking, offPageEvent]),
-        );
+      http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
+        const query = new URL(request.url).searchParams.get("q");
+        const item = bookableItemFixtures[0];
+        return HttpResponse.json({
+          items: [
+            {
+              ...item,
+              configurationId: item.id,
+              targetId: query ? 999 : 123,
+              targetType: "INSTRUMENT",
+              globalId: query ? "IN999" : "IN123",
+              name: query ? "Off-page microscope" : "Confocal microscope",
+              location: null,
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 20,
+          facets: { types: ["INSTRUMENT"] },
+        });
+      }),
+      http.get("/api/v2/booking-calendar/events", ({ request }) => {
+        const url = new URL(request.url);
+        const matching = url.searchParams.get("q");
+        if (matching) expect(url.searchParams.get("where")).toContain("target=in=(IN999)");
+        return HttpResponse.json(collectionResponse([matching ? offPageEvent : ownBooking]));
       }),
     );
 
@@ -369,7 +392,7 @@ describe("CalendarPage", () => {
     await user.type(search, "QuasarPurposeMarker");
 
     expect(await screen.findByRole("article", { name: /Off-page microscope/ }, { timeout: 3_000 })).toBeVisible();
-    expect(await screen.findByText(/additional resource with a matching event/)).toBeVisible();
+    expect(await screen.findByText("1–1 of 1 record")).toBeVisible();
     await user.clear(search);
     await user.type(search, "IN999");
     expect(await screen.findByRole("article", { name: /Off-page microscope/ }, { timeout: 3_000 })).toBeVisible();
@@ -399,10 +422,8 @@ describe("CalendarPage", () => {
     });
     const catalogueRequests: Array<{ q: string | null; page: number }> = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const url = new URL(request.url);
         const page = Number(url.searchParams.get("page") ?? "1");
         catalogueRequests.push({ q: url.searchParams.get("q"), page });
@@ -436,11 +457,7 @@ describe("CalendarPage", () => {
   });
 
   it("shows an empty state when a calendar search has no matches", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))));
 
     const user = userEvent.setup();
     await renderCalendar();
