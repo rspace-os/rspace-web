@@ -271,7 +271,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
       fetchBookingConfigurationAudit({
         configurationId,
         ...bounds,
-        search,
+        q: search,
         actions: action === "" ? undefined : [action],
         page,
         snapshot,

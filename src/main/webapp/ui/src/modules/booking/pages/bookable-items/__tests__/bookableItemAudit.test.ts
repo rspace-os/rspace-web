@@ -118,11 +118,10 @@ describe("fetchBookingConfigurationAudit", () => {
 
     const result = await fetchBookingConfigurationAudit({
       configurationId: 7,
-      q: "Updated booking",
+      q: " PurposeMarker ",
       page: 1,
       start: "2026-08-01T00:00:00.000Z",
       end: "2026-08-26T00:00:00.000Z",
-      search: " PurposeMarker ",
       actions: ["WRITE"],
       snapshot: { snapshotDate: "2026-08-25", snapshotFingerprint: fingerprint },
       token: "secret",
@@ -131,11 +130,10 @@ describe("fetchBookingConfigurationAudit", () => {
     const url = new URL(captured?.url ?? "http://invalid");
     expect(Object.fromEntries(url.searchParams)).toEqual({
       page: "2",
-      q: "Updated booking",
+      q: "PurposeMarker",
       limit: "20",
       start: "2026-08-01T00:00:00.000Z",
       end: "2026-08-26T00:00:00.000Z",
-      search: "PurposeMarker",
       actions: "WRITE",
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,

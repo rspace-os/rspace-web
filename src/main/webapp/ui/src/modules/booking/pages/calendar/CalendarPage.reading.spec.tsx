@@ -654,13 +654,13 @@ describe("Calendar page", () => {
       rendered.unmount();
       browserHistory.destroy();
       window.history.replaceState({}, "", originalUrl);
-      // MSW 2.15 installs a beforeunload listener that stops its browser worker
+      // MSW installs a beforeunload listener that stops its browser worker
       // even when another listener prevents the synthetic event. Restart it so
       // later tests keep receiving the suite's request handlers.
       worker.stop();
       await worker.start({
         quiet: true,
-        onUnhandledRequest: "bypass",
+        onUnhandledFrame: "bypass",
         serviceWorker: { url: "/mockServiceWorker.js" },
       });
     }

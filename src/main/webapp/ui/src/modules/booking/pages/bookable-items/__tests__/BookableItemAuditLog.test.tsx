@@ -115,7 +115,9 @@ describe("BookableItemAuditLog", () => {
     const requests: URL[] = [];
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
-        requests.push(new URL(request.url));
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
         return HttpResponse.json(auditPage([event]));
       }),
     );
@@ -127,7 +129,7 @@ describe("BookableItemAuditLog", () => {
     await user.keyboard("{Enter}");
     await waitFor(() => expect(requests).toHaveLength(2));
 
-    expect(requests[1].searchParams.get("search")).toBe("PayloadMarker");
+    expect(requests[1].searchParams.get("q")).toBe("PayloadMarker");
     expect(requests[1].searchParams.get("page")).toBe("1");
     expect(requests[1].searchParams.has("snapshotFingerprint")).toBe(false);
   });
@@ -139,6 +141,7 @@ describe("BookableItemAuditLog", () => {
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
         const page = Number(url.searchParams.get("page"));
         return HttpResponse.json(
           auditPage([{ ...event, eventId: `${page}`.repeat(64) }], {
@@ -169,7 +172,7 @@ describe("BookableItemAuditLog", () => {
     await waitFor(() => expect(requests).toHaveLength(4));
     expect(Object.fromEntries(requests[3].searchParams)).toMatchObject({
       page: "1",
-      search: "PayloadMarker",
+      q: "PayloadMarker",
       actions: "WRITE",
     });
     expect(requests[3].searchParams.has("snapshotFingerprint")).toBe(false);
@@ -180,7 +183,9 @@ describe("BookableItemAuditLog", () => {
     const requests: URL[] = [];
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
-        requests.push(new URL(request.url));
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
         return HttpResponse.json(auditPage([event]));
       }),
     );
@@ -227,6 +232,7 @@ describe("BookableItemAuditLog", () => {
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
         const page = Number(url.searchParams.get("page"));
         return HttpResponse.json(
           auditPage([{ ...event, eventId: `${page}`.repeat(64) }], {
