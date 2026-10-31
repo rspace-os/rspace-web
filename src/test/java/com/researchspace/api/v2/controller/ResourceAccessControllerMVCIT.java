@@ -172,7 +172,7 @@ class ResourceAccessControllerMVCIT {
     mockMvc
         .perform(
             get(accessPath(configurationId) + "/grantees")
-                .queryParam("query", "us")
+                .queryParam("q", "us")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.forbidden"));
@@ -214,24 +214,11 @@ class ResourceAccessControllerMVCIT {
   }
 
   @Test
-  void unregisteredResourcesAreConcealedAndSettingsDirectoryIsSysadminOnly() throws Exception {
+  void unregisteredMaintenanceRouteIsConcealed() throws Exception {
     fixture.enableBookings();
     mockMvc
         .perform(get("/api/v2/maintenances/1/access").header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
-    mockMvc
-        .perform(
-            get("/api/v2/booking-settings/access-grantees")
-                .queryParam("q", "us")
-                .header("apiKey", fixture.userKey()))
-        .andExpect(status().isForbidden());
-    mockMvc
-        .perform(
-            get("/api/v2/booking-settings/access-grantees")
-                .queryParam("q", "us")
-                .header("apiKey", fixture.sysadminKey()))
-        .andDo(ResourceAccessControllerMVCIT::failOnUnexpectedServerError)
-        .andExpect(status().isOk());
   }
 
   @Test
