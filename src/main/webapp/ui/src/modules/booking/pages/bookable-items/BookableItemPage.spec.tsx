@@ -526,8 +526,8 @@ describe("BookableItemPage", () => {
       await pageObj.auditTab.click();
 
       const alert = pageObj.auditPanel.getByRole("alert");
-      await expect.element(alert).toHaveTextContent(title);
-      await expect.element(alert).not.toHaveTextContent("Do not display");
+      await expect.element(alert).toMatchTextContent(title);
+      await expect.element(alert).not.toMatchTextContent("Do not display");
       await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
       await expectNoAxeViolations();
     },
