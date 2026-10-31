@@ -14,6 +14,17 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 
+const queryUserResponse = {
+  ...currentUserResponse,
+  id: 123,
+  homeFolderId: 456,
+  workbenchId: 789,
+  profileImageApiUrl: "/api/v2/users/me/profile-image",
+  capabilities: { ...currentUserResponse.capabilities, canPublish: false },
+  livechat: { enabled: true, serverKey: "server-key" },
+  session: { ...currentUserResponse.session, canUseDevtools: true },
+};
+
 beforeEach(() => {
   mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
 });
@@ -37,8 +48,8 @@ describe("current-user query", () => {
     server.use(
       http.get("/api/v2/users/me", () =>
         HttpResponse.json({
-          ...currentUserResponse,
-          session: { ...currentUserResponse.session, lastSession: "15 July 2026" },
+          ...queryUserResponse,
+          session: { ...queryUserResponse.session, lastSession: "15 July 2026" },
         }),
       ),
     );
@@ -51,11 +62,11 @@ describe("current-user query", () => {
     server.use(
       http.get("/api/v2/users/me", ({ request: receivedRequest }) => {
         request = receivedRequest;
-        return HttpResponse.json(currentUserResponse);
+        return HttpResponse.json(queryUserResponse);
       }),
     );
 
-    await expect(getCurrentUser("token")).resolves.toEqual(currentUserResponse);
+    await expect(getCurrentUser("token")).resolves.toEqual(queryUserResponse);
     expect(request?.headers.get("Authorization")).toBe("Bearer token");
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
@@ -72,7 +83,7 @@ describe("current-user query", () => {
       http.get("/api/v2/users/me", () => {
         requestCount += 1;
         return HttpResponse.json({
-          ...currentUserResponse,
+          ...queryUserResponse,
           email: requestCount === 1 ? "before@example.com" : "after@example.com",
         });
       }),

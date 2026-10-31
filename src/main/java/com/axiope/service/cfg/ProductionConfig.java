@@ -151,9 +151,11 @@ public class ProductionConfig extends BaseConfig {
   @Bean
   @Profile("!prod-test")
   public GlobalInitManager globalInitManager(
-      @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker) {
+      @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker,
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
+    inits.add(featureFlagInitialisor);
     inits.add(licenseServerChecker());
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
@@ -174,9 +176,11 @@ public class ProductionConfig extends BaseConfig {
   /** Removes sanity checker from test setup */
   @Bean
   @Profile("!prod")
-  public GlobalInitManager globalInitManagerTest() {
+  public GlobalInitManager globalInitManagerTest(
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
+    inits.add(featureFlagInitialisor);
     inits.add(loadfromCSV());
     inits.add(indexer());
     inits.add(chemistryIndexer());

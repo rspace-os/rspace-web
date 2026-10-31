@@ -37,6 +37,10 @@ vi.mock("@/modules/common/app/AppBar", () => {
   return { default: AppBar, PublicAppBar: AppBar };
 });
 
+vi.mock("@/featureFlags/FeatureFlagDevtoolsMount", () => ({
+  default: () => <output aria-label="Feature flag devtools" />,
+}));
+
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
@@ -121,6 +125,25 @@ function chromeRoutes() {
         }),
       ]),
     ]),
+  ]);
+}
+
+function devtoolsRoutes() {
+  const rootRoute = shellRoot();
+  return rootRoute.addChildren([
+    createRoute({ getParentRoute: () => rootRoute, path: "/plain", component: () => null }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/public",
+      beforeLoad: () => ({ appBar: { currentPage: "rspace", authenticated: false } }),
+      component: () => null,
+    }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/without-app-bar",
+      beforeLoad: () => ({ appBar: false as const }),
+      component: () => null,
+    }),
   ]);
 }
 
@@ -225,6 +248,12 @@ describe("route sidebar state", () => {
     expect(subscribe.mock.calls.filter(([type]) => type === "keydown")).toHaveLength(0);
     expect(navigationListener).not.toHaveBeenCalledWith("onBeforeNavigate", expect.any(Function));
     subscribe.mockRestore();
+  });
+
+  it.each(["/plain", "/public", "/without-app-bar"] as const)("mounts feature flag devtools on %s", async (path) => {
+    renderShell(path, devtoolsRoutes());
+
+    expect(await screen.findByRole("status", { name: "Feature flag devtools" })).toBeVisible();
   });
 
   it("opens on entry and removes the empty sidebar when leaving", async () => {

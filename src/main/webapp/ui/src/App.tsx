@@ -11,13 +11,14 @@ import Analytics from "./components/Analytics";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
 import LoaderCircular from "./components/LoadingCircular";
+import FeatureFlagDevtoolsMount from "./featureFlags/FeatureFlagDevtoolsMount";
 import I18nRoot from "./modules/common/i18n/I18nRoot";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
 
 const queryClient = new QueryClient();
 
-function App(): React.ReactNode {
+function App({ canUseDevtools = false }: { canUseDevtools?: boolean }): React.ReactNode {
   const { authStore, peopleStore, unitStore } = useStores();
   const [loadingDone, setLoadingDone] = useState(false);
 
@@ -55,6 +56,7 @@ function App(): React.ReactNode {
                   <Analytics>
                     <Router />
                   </Analytics>
+                  <FeatureFlagDevtoolsMount canUseDevtools={canUseDevtools} />
                 </QueryClientProvider>
               </ThemeProvider>
             </StyledEngineProvider>
@@ -77,7 +79,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <I18nRoot namespaces={["inventory", "common", "about"]} fallback={<LoaderCircular />}>
-        <App />
+        <App canUseDevtools={domContainer.dataset.canUseDevtools === "true"} />
       </I18nRoot>,
     );
   }

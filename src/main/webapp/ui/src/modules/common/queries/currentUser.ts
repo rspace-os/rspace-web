@@ -1,4 +1,4 @@
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import * as React from "react";
 import * as v from "valibot";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -19,6 +19,9 @@ const CurrentUserCapabilitiesSchema = v.object({
 const CurrentUserSessionSchema = v.object({
   operatedAs: v.boolean(),
   lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
+  canUseDevtools: v.boolean(),
+  canOverrideFeatureFlags: v.boolean(),
+  canChangeFeatureFlagBaselines: v.boolean(),
 });
 
 const CurrentUserLivechatSchema = v.object({
@@ -72,7 +75,11 @@ export async function getCurrentUser(token: string): Promise<CurrentUser> {
 
 export function useCurrentUserQuery() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  return useSuspenseQuery({
+  return useSuspenseQuery(currentUserQueryOptions(token));
+}
+
+export function currentUserQueryOptions(token: string) {
+  return queryOptions({
     queryKey: currentUserQueryKeys.me(),
     queryFn: () => getCurrentUser(token),
     staleTime: Infinity,
