@@ -102,8 +102,9 @@ The Booking index shows the dashboard. Its upcoming list and monthly overview us
 independent queries for the authenticated requester. The monthly calendar shows six
 Monday-first weeks in the display timezone, including adjacent-month days. Booking
 ends are exclusive, so a reservation ending at midnight is not counted on the next day.
-Monthly reads follow at most ten API pages of 100 bookings; an interval exceeding
-1,000 bookings shows an explicit limit state instead of partial results. Offset
+Monthly reads follow `hasNextPage` without requesting totals, up to ten API pages
+of 100 bookings. The caps count fetched pages and raw rows before deduplication;
+exceeding either cap shows an explicit limit state instead of partial results. Offset
 pagination remains best effort during concurrent changes.
 
 Calendar badges show exact counts up to 99 and `99+` above that, while accessible
