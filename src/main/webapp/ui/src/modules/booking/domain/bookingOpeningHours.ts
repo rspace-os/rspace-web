@@ -4,7 +4,7 @@ import * as v from "valibot";
 /** ISO 8601 weekdays, matching Java's DayOfWeek numbering. */
 export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
 
-const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+export const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const IsoWeekdaySchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7));
 export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
 export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);
@@ -124,4 +124,15 @@ export function openingIntervals(
     }
   }
   return merged.map((opening) => ({ start: opening.start.toString(), end: opening.end.toString() }));
+}
+
+/** Every instant of a non-empty booking window must be open. */
+export function coversInterval(settings: OpeningSchedule, timezone: string, interval: OpeningInterval): boolean {
+  if (Temporal.Instant.compare(interval.start, interval.end) >= 0) return false;
+  const openings = openingIntervals(settings, timezone, interval);
+  return (
+    openings.length === 1 &&
+    Temporal.Instant.compare(openings[0].start, interval.start) === 0 &&
+    Temporal.Instant.compare(openings[0].end, interval.end) === 0
+  );
 }
