@@ -16,9 +16,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.researchspace.api.v2.json.ApiV2JsonBody;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
+import com.researchspace.booking.api.v2.BookingDisplayPreferencesController;
+import com.researchspace.booking.api.v2.BookingNotificationSubscriptionController;
+import com.researchspace.booking.api.v2.BookingSettingsController;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -133,6 +137,41 @@ class WebDefaultConfigTest {
     assertFalse(ApiV2JsonMappers.isStrictBody(other, Detail.class));
     assertFalse(ApiV2JsonMappers.isStrictBody(registered, ApiV2JsonBody.class));
     assertTrue(registered.getObjectMappersForType(JsonNode.class).isEmpty());
+  }
+
+  @Test
+  void productionConverterRegistersEveryFixedShapeApiV2Body() throws Exception {
+    WebConfig config = new WebConfig();
+    config.defaultConfig = new WebDefaultConfig();
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        config,
+        "jsonBodyTypes",
+        List.of(
+            new com.researchspace.booking.api.v2.BookingApiV2JsonConfiguration()
+                .strictRequestBodyTypes()));
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+    config.extendMessageConverters(new ArrayList<>(List.of(converter)));
+
+    for (Class<?> type :
+        List.of(
+            BookingSettingsController.SettingsPatch.class,
+            BookingDisplayPreferencesController.Replacement.class,
+            BookingNotificationSubscriptionController.PreferenceReplacement.class,
+            BookingNotificationSubscriptionController.SubscriptionReplacement.class,
+            BookingNotificationSubscriptionController.Lookup.class,
+            BookingNotificationSubscriptionController.BulkReplacement.class)) {
+      assertTrue(ApiV2JsonMappers.isStrictBody(converter, type), type.getName());
+    }
+    ObjectMapper lookupMapper =
+        converter
+            .getObjectMappersForType(BookingNotificationSubscriptionController.Lookup.class)
+            .get(org.springframework.http.MediaType.APPLICATION_JSON);
+    assertThrows(
+        MismatchedInputException.class,
+        () ->
+            lookupMapper.readValue(
+                "{\"configurationIds\":[15.0]}",
+                BookingNotificationSubscriptionController.Lookup.class));
   }
 
   @Test

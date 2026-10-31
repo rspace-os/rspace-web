@@ -9,8 +9,10 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
@@ -38,9 +40,26 @@ const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 export const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
 
 export function setupPage() {
+  let notificationSubscription = {
+    configurationId: 7,
+    enabled: false,
+    version: 0,
+    createdEnabled: true,
+    cancelledEnabled: true,
+    emailEnabled: false,
+  };
+  server.use(
+    http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+      HttpResponse.json(notificationSubscription),
+    ),
+    http.put("/api/v2/booking-configurations/7/notification-subscription", () => {
+      notificationSubscription = { ...notificationSubscription, enabled: true, version: 1 };
+      return HttpResponse.json(notificationSubscription);
+    }),
+  );
   mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   mockedUseCurrentUserQuery.mockReturnValue({
-    data: { hasSysAdminRole: true, session: { operatedAs: false } },
+    data: { id: 1, hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
 }
 

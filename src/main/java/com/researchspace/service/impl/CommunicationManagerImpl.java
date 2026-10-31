@@ -458,10 +458,13 @@ public class CommunicationManagerImpl implements CommunicationManager {
   public void notify(User originator, BaseRecord record, NotificationConfig config, String sysMsg) {
     Set<User> toNotify = getPotentialListOfNotificationTargets(record, config);
 
-    toNotify.remove(originator);
+    if (!config.isIncludeOriginator()) {
+      toNotify.remove(originator);
+    }
     Set<User> toRemove = new HashSet<>();
     for (User u : toNotify) {
-      if (!u.wantsNotificationFor(config.getNotificationType())) {
+      if (!config.isNotificationEventPreferenceOverride()
+          && !u.wantsNotificationFor(config.getNotificationType())) {
         toRemove.add(u);
       }
     }

@@ -1,11 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingNotificationSubscriptionsQueryKey,
+  updateBookingNotificationSubscriptions,
+} from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
@@ -27,6 +30,7 @@ type AllBookableItemsDataOptions = {
   routeAvailability?: AvailabilityQuickFilter;
   target?: string;
   mine: boolean;
+  subjectId: number;
   where?: string;
   q?: string;
   types?: readonly string[];
@@ -40,6 +44,7 @@ export function useAllBookableItemsData({
   routeAvailability,
   target,
   mine,
+  subjectId,
   where,
   q,
   types,
@@ -58,12 +63,14 @@ export function useAllBookableItemsData({
     [commonT, t],
   );
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const { data: currentUser } = useCurrentUserQuery();
+  const queryClient = useQueryClient();
+  const [selectedNotificationIds, setSelectedNotificationIds] = useState<ReadonlySet<string>>(new Set());
+  const [notificationFeedback, setNotificationFeedback] = useState<{ enabled: boolean; count: number }>();
   const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
   const runtimeFieldState = useApiV2RuntimeFields<AllBookableItem>({
     resourceName: "booking-configurations",
     selectors: runtimeSelectors,
-    request: { token, authScope: currentUser.id },
+    request: { token, authScope: subjectId },
   });
   const config = useMemo(
     () =>
@@ -119,7 +126,7 @@ export function useAllBookableItemsData({
     clock,
     candidateWhere,
     !runtimeFilterBlocked,
-    currentUser.id,
+    subjectId,
     { q, types, mine },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
@@ -168,6 +175,16 @@ export function useAllBookableItemsData({
     staleTime: 30_000,
   });
   const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const notificationSubscriptionMutation = useMutation({
+    mutationFn: ({ configurationIds, enabled }: { configurationIds: readonly number[]; enabled: boolean }) =>
+      updateBookingNotificationSubscriptions(configurationIds, enabled, token),
+    onMutate: () => setNotificationFeedback(undefined),
+    onSuccess: async (subscriptions, variables) => {
+      setSelectedNotificationIds(new Set());
+      setNotificationFeedback({ enabled: variables.enabled, count: subscriptions.length });
+      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
+    },
+  });
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
@@ -181,12 +198,11 @@ export function useAllBookableItemsData({
     quickMode || useQuickAvailability ? [] : availabilityRows,
     bounds,
     token,
-    currentUser.id,
+    subjectId,
   );
 
   return {
     config,
-    currentUser,
     runtimeFieldState,
     preferences,
     userToday,
@@ -202,6 +218,10 @@ export function useAllBookableItemsData({
     quickFilterError,
     catalogue,
     rows,
+    selectedNotificationIds,
+    setSelectedNotificationIds,
+    notificationFeedback,
+    notificationSubscriptionMutation,
     useQuickAvailability,
     availability,
   };
