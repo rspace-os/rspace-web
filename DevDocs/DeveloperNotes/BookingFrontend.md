@@ -200,6 +200,8 @@ and prevents submission until the matching adjustment is acknowledged. Keep
 that bridge shared when adding another form consumer.
 
 The browsed-day query uses raw confirmed bookings from `fetchDayBookings`.
+It follows `hasNextPage` and `nextPage` without requesting totals, and rejects a target
+batch exceeding ten pages or 1,000 bookings rather than displaying a partial schedule.
 Availability checks stay in the owning page and cover the entire committed
 draft, independently of the browsed date or whether the narrow-layout schedule
 sheet is open. On narrow layouts, a floating Day schedule button appears at

@@ -22,6 +22,16 @@ const busy = {
   createdAt: bounds.start,
   updatedAt: bounds.start,
 };
+const pageEnvelope = (docs: readonly unknown[], page = 1, hasNextPage = false, nextPage: number | null = null) => ({
+  docs,
+  page,
+  hasNextPage,
+  nextPage,
+  limit: 100,
+  pagingCounter: (page - 1) * 100 + 1,
+  hasPrevPage: page > 1,
+  prevPage: page > 1 ? page - 1 : null,
+});
 const load = () => fetchDayBookings(["IN1"], bounds, "test-token", new AbortController().signal);
 
 describe("day schedule fetch", () => {
@@ -34,21 +44,16 @@ describe("day schedule fetch", () => {
           `target=in=(IN1);start=lt=${bounds.end};end=gt=${bounds.start};state==CONFIRMED`,
         );
         expect(params.get("depth")).toBe("1");
+        expect(params.has("totals")).toBe(false);
         expect(params.get("fields[instruments]")).toBe("id,globalId,name,deleted");
         expect(request.headers.get("Authorization")).toBe("Bearer test-token");
         const page = Number(params.get("page"));
         pages.push(String(page));
-        return HttpResponse.json({
-          docs: [{ ...busy, id: page }],
-          totalDocs: 2,
-          totalPages: 2,
-          page,
-          hasNextPage: page === 1,
-        });
+        return HttpResponse.json(pageEnvelope([{ ...busy, id: page }], page, page === 1, page === 1 ? 3 : null));
       }),
     );
     const bookings = await load();
-    expect(pages).toEqual(["1", "2"]);
+    expect(pages).toEqual(["1", "3"]);
     expect(bookings).toHaveLength(2);
     expect(toTimelineEvent(bookings[0], "2026-09-25", "UTC")).toEqual({
       id: "1",
@@ -64,9 +69,17 @@ describe("day schedule fetch", () => {
 
   it("rejects the result cap instead of presenting a partial free schedule", async () => {
     server.use(
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json({ docs: [], totalDocs: 1001, totalPages: 11, page: 1, hasNextPage: true }),
-      ),
+      http.get("/api/v2/bookings", ({ request }) => {
+        const page = Number(new URL(request.url).searchParams.get("page"));
+        return HttpResponse.json(
+          pageEnvelope(
+            Array.from({ length: 100 }, (_, index) => ({ ...busy, id: (page - 1) * 100 + index })),
+            page,
+            true,
+            page + 1,
+          ),
+        );
+      }),
     );
     await expect(load()).rejects.toThrow("1,000");
   });
@@ -75,26 +88,20 @@ describe("day schedule fetch", () => {
     server.use(
       http.get("/api/v2/bookings", ({ request }) =>
         new URL(request.url).searchParams.get("page") === "1"
-          ? HttpResponse.json({ docs: [busy], totalDocs: 2, totalPages: 2, page: 1, hasNextPage: true })
+          ? HttpResponse.json(pageEnvelope([busy], 1, true))
           : new HttpResponse(null, { status: 503 }),
       ),
     );
     await expect(load()).rejects.toThrow("503");
   });
 
-  it("rejects repeated booking IDs across pages even when the total count matches", async () => {
+  it("rejects repeated booking IDs across pages without totals", async () => {
     const pages: number[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
         const page = Number(new URL(request.url).searchParams.get("page"));
         pages.push(page);
-        return HttpResponse.json({
-          docs: [busy],
-          totalDocs: 2,
-          totalPages: 2,
-          page,
-          hasNextPage: page === 1,
-        });
+        return HttpResponse.json(pageEnvelope([busy], page, page === 1));
       }),
     );
 
@@ -102,19 +109,9 @@ describe("day schedule fetch", () => {
     expect(pages).toEqual([1, 2]);
   });
 
-  it("rejects a pagination envelope that changes while loading", async () => {
-    server.use(
-      http.get("/api/v2/bookings", ({ request }) => {
-        const page = Number(new URL(request.url).searchParams.get("page"));
-        return HttpResponse.json({
-          docs: [busy],
-          totalDocs: 2,
-          totalPages: page === 1 ? 2 : 3,
-          page,
-          hasNextPage: true,
-        });
-      }),
-    );
-    await expect(load()).rejects.toThrow("changed during pagination");
+  it("rejects a nextPage that repeats the current page", async () => {
+    const nextPage = 1;
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(pageEnvelope([busy], 1, true, nextPage))));
+    await expect(load()).rejects.toThrow("inconsistent pagination metadata");
   });
 });

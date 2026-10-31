@@ -68,10 +68,13 @@ function booking({
 function page(docs: readonly unknown[]) {
   return HttpResponse.json({
     docs,
-    totalDocs: docs.length,
-    totalPages: docs.length ? 1 : 0,
     page: 1,
     hasNextPage: false,
+    limit: 100,
+    pagingCounter: 1,
+    hasPrevPage: false,
+    prevPage: null,
+    nextPage: null,
   });
 }
 

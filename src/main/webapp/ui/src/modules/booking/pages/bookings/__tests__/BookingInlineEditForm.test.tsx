@@ -72,10 +72,13 @@ function renderEdit(scheduleBookings: readonly unknown[] = [], preferences = inh
     http.get("/api/v2/bookings", () =>
       HttpResponse.json({
         docs: scheduleBookings,
-        totalDocs: scheduleBookings.length,
-        totalPages: scheduleBookings.length ? 1 : 0,
         page: 1,
         hasNextPage: false,
+        limit: 100,
+        pagingCounter: 1,
+        hasPrevPage: false,
+        prevPage: null,
+        nextPage: null,
       }),
     ),
   );

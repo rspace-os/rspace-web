@@ -48,7 +48,16 @@ function queryClient() {
 }
 
 function emptyPage() {
-  return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+  return HttpResponse.json({
+    docs: [],
+    page: 1,
+    hasNextPage: false,
+    limit: 100,
+    pagingCounter: 1,
+    hasPrevPage: false,
+    prevPage: null,
+    nextPage: null,
+  });
 }
 
 function scheduleBooking({ id, targetId, name }: { id: number; targetId: string; name: string }) {
@@ -76,7 +85,16 @@ function scheduleBooking({ id, targetId, name }: { id: number; targetId: string;
 }
 
 function pageWith(booking: ReturnType<typeof scheduleBooking>) {
-  return HttpResponse.json({ docs: [booking], totalDocs: 1, totalPages: 1, page: 1, hasNextPage: false });
+  return HttpResponse.json({
+    docs: [booking],
+    page: 1,
+    hasNextPage: false,
+    limit: 100,
+    pagingCounter: 1,
+    hasPrevPage: false,
+    prevPage: null,
+    nextPage: null,
+  });
 }
 
 function asideTree({
@@ -171,7 +189,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     const client = queryClient();
     render(asideTree({ client }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("booking:dayTimeline.vertical.loadError");
+    expect(await screen.findByRole("alert")).toMatchTextContent("booking:dayTimeline.vertical.loadError");
     expect(requests).toBe(1);
     await user.click(screen.getByRole("button", { name: "booking:dayTimeline.vertical.retry" }));
 
