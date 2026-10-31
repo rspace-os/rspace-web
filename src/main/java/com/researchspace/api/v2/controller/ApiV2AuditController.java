@@ -30,7 +30,9 @@ public final class ApiV2AuditController {
     this.auditLog = auditLog;
   }
 
-  @Operation(summary = "List audit events for a readable resource")
+  @Operation(
+      operationId = "listResourceAuditEvents",
+      summary = "List audit events for a readable resource")
   @GetMapping("/{resource}/{id}/audit")
   public ApiV2AuditPage<ApiV2AuditEvent> list(
       @PathVariable String resource,
