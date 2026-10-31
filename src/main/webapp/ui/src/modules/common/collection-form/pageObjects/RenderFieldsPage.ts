@@ -1,0 +1,100 @@
+import { type Locator, page, userEvent } from "vitest/browser";
+
+export class RenderFieldsPage {
+  readonly smallContainer: Locator = page.getByRole("region", { name: "Small form container" });
+  readonly recordDetailsSection: Locator = page.getByRole("group", { name: "Record details" });
+  readonly relationshipsSection: Locator = page.getByRole("group", { name: "Relationships" });
+  readonly title: Locator = page.getByRole("textbox", { name: "Title" });
+  readonly notes: Locator = page.getByRole("textbox", { name: "Notes" });
+  readonly notesDescription: Locator = page.getByText("The human-readable name of the record.");
+  readonly score: Locator = page.getByRole("spinbutton", { name: "Score" });
+  readonly enabled: Locator = page.getByRole("checkbox", { name: "Enabled" });
+  readonly statusGroups: Locator = page.getByRole("radiogroup", { name: "Status" });
+  readonly subscriptionGroup: Locator = this.statusGroups.nth(0);
+  readonly modifiedAt: Locator = page.getByLabelText("Modified");
+  readonly status: Locator = page.getByRole("combobox", { name: "Status" });
+  readonly cardStatusGroup: Locator = this.statusGroups;
+  readonly constantStatusOption: Locator = page.getByRole("option", { name: "draft" });
+  readonly objectStatusOption: Locator = page.getByRole("option", { name: "In review" });
+  readonly richStatusOption: Locator = page.getByText("Ready to publish");
+  readonly owner: Locator = page.getByRole("combobox", { name: "Owner" });
+  readonly collaborators: Locator = page.getByRole("combobox", { name: "Collaborators" });
+  readonly richRelationshipContent: Locator = page.getByText("Rear admiral and computer scientist");
+  readonly hiddenId: Locator = page.getByRole("textbox", { name: "ID" });
+  readonly values: Locator = page.getByRole("status", { name: "Form values" });
+
+  async setTitle(value: string): Promise<void> {
+    await userEvent.fill(this.title, value);
+  }
+
+  async setNotes(value: string): Promise<void> {
+    await userEvent.fill(this.notes, value);
+  }
+
+  async setScore(value: string): Promise<void> {
+    await userEvent.fill(this.score, value);
+  }
+
+  async toggleEnabled(): Promise<void> {
+    await userEvent.click(this.enabled);
+  }
+
+  private async chooseOption(control: Locator, label: string): Promise<void> {
+    await userEvent.click(control);
+    await userEvent.click(page.getByRole("option", { name: label }));
+  }
+
+  async chooseStatus(label: string): Promise<void> {
+    await this.chooseOption(this.status, label);
+  }
+
+  cardStatus(label: string): Locator {
+    return page.getByRole("radio", { name: label });
+  }
+
+  subscriptionOption(label: string): Locator {
+    return this.subscriptionGroup.getByRole("radio", { name: label });
+  }
+
+  async toggleAllowOff(): Promise<void> {
+    await userEvent.click(this.enabled);
+  }
+
+  async chooseSubscription(label: string): Promise<void> {
+    await userEvent.click(this.subscriptionGroup.getByText(label));
+  }
+
+  async chooseCardStatus(label: string): Promise<void> {
+    await userEvent.click(this.cardStatus(label));
+  }
+
+  async chooseNextCardStatus(from: string): Promise<void> {
+    await userEvent.click(this.cardStatus(from));
+    await userEvent.keyboard("{ArrowRight}");
+  }
+
+  async openStatus(): Promise<void> {
+    await userEvent.click(this.status);
+  }
+
+  async typeStatus(value: string): Promise<void> {
+    await userEvent.fill(this.status, value);
+  }
+
+  async chooseOwner(label: string): Promise<void> {
+    await this.chooseOption(this.owner, label);
+  }
+
+  async openOwner(): Promise<void> {
+    await userEvent.click(this.owner);
+  }
+
+  async addCollaborator(label: string): Promise<void> {
+    await this.chooseOption(this.collaborators, label);
+    await userEvent.keyboard("{Escape}");
+  }
+
+  async removeCollaborator(label: string): Promise<void> {
+    await userEvent.click(page.getByRole("button", { name: `Remove ${label} from Collaborators` }));
+  }
+}

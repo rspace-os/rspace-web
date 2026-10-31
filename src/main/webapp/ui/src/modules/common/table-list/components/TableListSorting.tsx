@@ -1,25 +1,13 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { Namespace } from "i18next";
 import { Trash2Icon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig, SortDirection, SortRule } from "@/modules/common/collection/config";
 import { fieldLabel } from "@/modules/common/collection/labels";
 import { Button } from "@/modules/common/ui/button";
+import { useTableListDragSensors } from "../hooks/dragSensors";
 import { SortableControlRow } from "./SortableControlRow";
 
 function SortableSortingRow({
@@ -79,13 +67,8 @@ export function TableListSorting<TDocument>({
   onChange: (sorting: readonly SortRule<TDocument>[]) => void;
   onClose: () => void;
 }) {
-  const { i18n, t } = useTranslation("common");
-  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const { t } = useTranslation<Namespace>("common");
+  const sensors = useTableListDragSensors();
   const reorder = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
     const sourceIndex = sorting.findIndex((rule) => rule.field === active.id);
@@ -124,7 +107,7 @@ export function TableListSorting<TDocument>({
             >
               {sorting.map((rule, index) => {
                 const field = config.fields.find((candidate) => candidate.name === rule.field);
-                const label = field ? fieldLabel(field, translate) : rule.field;
+                const label = field ? fieldLabel(field, t) : rule.field;
                 return (
                   <SortableSortingRow
                     key={rule.field}
