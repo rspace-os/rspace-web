@@ -4,16 +4,21 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.record.IRecordFactory;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 import org.hibernate.query.Query;
 import org.hibernate.type.StandardBasicTypes;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +27,21 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, Long>
     implements ContainerDao {
+
+  private static final CollectionQueryExecutor<Container> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(
+          Container.class, ApiV2ContainerResource.DESCRIPTION, "collectionContainer");
+
+  @Override
+  public ResourcePage<Container> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    return readableResourcePage(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public long countReadableResources(ResourceRequest request, AccessResult access) {
+    return countReadableResources(COLLECTION_QUERY, request, access);
+  }
 
   @Autowired protected IRecordFactory recordFactory;
 
@@ -63,14 +83,8 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
       User user) {
 
     // prepare permission limiting query fragment
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String ownedByAndPermittedItemsQueryFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    InventoryReadQueryContext context = readQueryContext(user);
+    String ownedByAndPermittedItemsQueryFragment = context.ownedByAndPermitted(this, ownedBy);
 
     // prepare type limiting fragment query
     String typeQueryFragment =
@@ -96,9 +110,7 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
                     + ownedByAndPermittedItemsQueryFragment
                     + typeQueryFragment,
                 Long.class);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQueryBase, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Long> countQueryWithParams = context.bind(countQueryBase, ownedBy);
     long allContainersCount = countQueryWithParams.getSingleResult();
     if (allContainersCount == 0) {
       return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
@@ -116,14 +128,7 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
             .setFirstResult(startPosition)
             .setMaxResults(maxResult);
 
-    Query<Container> containerPageQueryWithParams =
-        addQueryParams(
-            ownedBy,
-            user,
-            containerQueryBase,
-            visibleOwners,
-            userGroupMembers,
-            userGroupsUniqueNames);
+    Query<Container> containerPageQueryWithParams = context.bind(containerQueryBase, ownedBy);
     List<Container> pageOfContainers = containerPageQueryWithParams.list();
     return new SearchResultsImpl<>(pageOfContainers, pgCrit, allContainersCount);
   }
@@ -186,5 +191,25 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
             Container.class)
         .setParameter("fileProperty", fileProperty)
         .list();
+  }
+
+  @Override
+  public Set<Long> getReadableActiveContainerIds(Set<Long> containerIds, User actor) {
+    if (containerIds.isEmpty()) {
+      return Set.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(actor);
+    String readableContainerPredicate = context.readableContainerPredicate(this, "container");
+    String hql =
+        "select container.id from Container container "
+            + "where container.id in (:containerIds) and container.deleted=false and "
+            + readableContainerPredicate;
+    Query<Long> query =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(hql, Long.class)
+            .setParameterList("containerIds", containerIds);
+    context.bind(query, null);
+    return new LinkedHashSet<>(query.list());
   }
 }
