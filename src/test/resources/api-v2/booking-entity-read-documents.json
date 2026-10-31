@@ -40,29 +40,23 @@
     "allowDoubleBooking" : false,
     "configurationVersion" : "<configurationVersion>",
     "createdByName" : "System Admin (sysadmin1)",
-    "effectiveRole" : "BOOKER",
+    "effectiveRole" : "OWNER",
     "roleSources" : [ {
-      "kind" : "AUDIENCE",
-      "role" : "BOOKER",
-      "grantee" : {
-        "kind" : "AUDIENCE",
-        "key" : "audience:all-users",
-        "id" : "<id>",
-        "name" : "All users"
-      }
+      "kind" : "IMPLICIT",
+      "role" : "OWNER"
     } ],
     "capabilities" : {
+      "canViewAudit" : true,
+      "canViewAccess" : true,
       "canLeaveConfiguration" : false,
       "canSubscribeCalendar" : true,
-      "canManageAllEvents" : false,
+      "canManageAllEvents" : true,
       "canCreateBooking" : true,
       "canManageOwners" : false,
       "canManageOwnBookings" : true,
-      "canEditConfiguration" : false,
-      "canCreateBlockout" : false,
-      "canManageAssignments" : false,
-      "canViewAudit" : false,
-      "canViewAccess" : false
+      "canEditConfiguration" : true,
+      "canCreateBlockout" : true,
+      "canManageAssignments" : false
     },
     "createdAt" : "<createdAt>",
     "updatedAt" : "<updatedAt>",
@@ -74,77 +68,7 @@
     "createdBy" : null,
     "updatedBy" : null
   } ],
-  "booking-configurations-0-false-true" : [ {
-    "id" : "<id>",
-    "enabled" : true,
-    "state" : "ACTIVE",
-    "timezone" : "Europe/Berlin",
-    "slotGranularityMinutes" : 15,
-    "openingHours" : [ {
-      "dayOfWeek" : 1,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 2,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 3,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 4,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 5,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 6,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 7,
-      "start" : "00:00",
-      "end" : "24:00"
-    } ],
-    "bufferBeforeMinutes" : 0,
-    "bufferAfterMinutes" : 0,
-    "maxBookingDurationMinutes" : 0,
-    "allowDoubleBooking" : false,
-    "configurationVersion" : "<configurationVersion>",
-    "createdByName" : "System Admin (sysadmin1)",
-    "effectiveRole" : "BOOKER",
-    "roleSources" : [ {
-      "kind" : "AUDIENCE",
-      "role" : "BOOKER",
-      "grantee" : {
-        "kind" : "AUDIENCE",
-        "key" : "audience:all-users",
-        "id" : "<id>",
-        "name" : "All users"
-      }
-    } ],
-    "capabilities" : {
-      "canLeaveConfiguration" : false,
-      "canSubscribeCalendar" : true,
-      "canManageAllEvents" : false,
-      "canCreateBooking" : true,
-      "canManageOwners" : false,
-      "canManageOwnBookings" : true,
-      "canEditConfiguration" : false,
-      "canCreateBlockout" : false,
-      "canManageAssignments" : false,
-      "canViewAudit" : false,
-      "canViewAccess" : false
-    },
-    "createdAt" : "<createdAt>",
-    "updatedAt" : "<updatedAt>",
-    "target" : null,
-    "createdBy" : null,
-    "updatedBy" : null
-  } ],
+  "booking-configurations-0-false-true" : [ ],
   "booking-configurations-0-true-false" : [ {
     "id" : "<id>",
     "target" : {
@@ -153,10 +77,7 @@
       "globalId" : "<globalId>"
     }
   } ],
-  "booking-configurations-0-true-true" : [ {
-    "id" : "<id>",
-    "target" : null
-  } ],
+  "booking-configurations-0-true-true" : [ ],
   "booking-configurations-1-false-false" : [ {
     "id" : "<id>",
     "enabled" : true,
@@ -198,29 +119,23 @@
     "allowDoubleBooking" : false,
     "configurationVersion" : "<configurationVersion>",
     "createdByName" : "System Admin (sysadmin1)",
-    "effectiveRole" : "BOOKER",
+    "effectiveRole" : "OWNER",
     "roleSources" : [ {
-      "kind" : "AUDIENCE",
-      "role" : "BOOKER",
-      "grantee" : {
-        "kind" : "AUDIENCE",
-        "key" : "audience:all-users",
-        "id" : "<id>",
-        "name" : "All users"
-      }
+      "kind" : "IMPLICIT",
+      "role" : "OWNER"
     } ],
     "capabilities" : {
+      "canViewAudit" : true,
+      "canViewAccess" : true,
       "canLeaveConfiguration" : false,
       "canSubscribeCalendar" : true,
-      "canManageAllEvents" : false,
+      "canManageAllEvents" : true,
       "canCreateBooking" : true,
       "canManageOwners" : false,
       "canManageOwnBookings" : true,
-      "canEditConfiguration" : false,
-      "canCreateBlockout" : false,
-      "canManageAssignments" : false,
-      "canViewAudit" : false,
-      "canViewAccess" : false
+      "canEditConfiguration" : true,
+      "canCreateBlockout" : true,
+      "canManageAssignments" : false
     },
     "createdAt" : "<createdAt>",
     "updatedAt" : "<updatedAt>",
@@ -242,77 +157,7 @@
     "createdBy" : null,
     "updatedBy" : null
   } ],
-  "booking-configurations-1-false-true" : [ {
-    "id" : "<id>",
-    "enabled" : true,
-    "state" : "ACTIVE",
-    "timezone" : "Europe/Berlin",
-    "slotGranularityMinutes" : 15,
-    "openingHours" : [ {
-      "dayOfWeek" : 1,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 2,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 3,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 4,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 5,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 6,
-      "start" : "00:00",
-      "end" : "24:00"
-    }, {
-      "dayOfWeek" : 7,
-      "start" : "00:00",
-      "end" : "24:00"
-    } ],
-    "bufferBeforeMinutes" : 0,
-    "bufferAfterMinutes" : 0,
-    "maxBookingDurationMinutes" : 0,
-    "allowDoubleBooking" : false,
-    "configurationVersion" : "<configurationVersion>",
-    "createdByName" : "System Admin (sysadmin1)",
-    "effectiveRole" : "BOOKER",
-    "roleSources" : [ {
-      "kind" : "AUDIENCE",
-      "role" : "BOOKER",
-      "grantee" : {
-        "kind" : "AUDIENCE",
-        "key" : "audience:all-users",
-        "id" : "<id>",
-        "name" : "All users"
-      }
-    } ],
-    "capabilities" : {
-      "canLeaveConfiguration" : false,
-      "canSubscribeCalendar" : true,
-      "canManageAllEvents" : false,
-      "canCreateBooking" : true,
-      "canManageOwners" : false,
-      "canManageOwnBookings" : true,
-      "canEditConfiguration" : false,
-      "canCreateBlockout" : false,
-      "canManageAssignments" : false,
-      "canViewAudit" : false,
-      "canViewAccess" : false
-    },
-    "createdAt" : "<createdAt>",
-    "updatedAt" : "<updatedAt>",
-    "target" : null,
-    "createdBy" : null,
-    "updatedBy" : null
-  } ],
+  "booking-configurations-1-false-true" : [ ],
   "booking-configurations-1-true-false" : [ {
     "id" : "<id>",
     "target" : {
@@ -331,10 +176,7 @@
       "globalId" : "<globalId>"
     }
   } ],
-  "booking-configurations-1-true-true" : [ {
-    "id" : "<id>",
-    "target" : null
-  } ],
+  "booking-configurations-1-true-true" : [ ],
   "bookings-0-false-false" : [ {
     "id" : "<id>",
     "version" : 0,
@@ -345,8 +187,8 @@
     "end" : "2035-01-15T10:00:00Z",
     "state" : "CONFIRMED",
     "purpose" : null,
-    "bookedBy" : "first last (<user>)",
-    "createdBy" : "first last (<user>)",
+    "bookedBy" : "System Admin (sysadmin1)",
+    "createdBy" : "System Admin (sysadmin1)",
     "privacy" : "full",
     "canEdit" : true,
     "canCancel" : true,
@@ -359,26 +201,7 @@
       "globalId" : "<globalId>"
     }
   } ],
-  "bookings-0-false-true" : [ {
-    "id" : "<id>",
-    "version" : 0,
-    "timezone" : "Europe/Berlin",
-    "requesterId" : "<requesterId>",
-    "kind" : "BOOKING",
-    "start" : "2035-01-15T09:00:00Z",
-    "end" : "2035-01-15T10:00:00Z",
-    "state" : "CONFIRMED",
-    "purpose" : null,
-    "bookedBy" : "first last (<user>)",
-    "createdBy" : "first last (<user>)",
-    "privacy" : "full",
-    "canEdit" : false,
-    "canCancel" : false,
-    "canViewConfiguration" : true,
-    "createdAt" : "<createdAt>",
-    "updatedAt" : "<updatedAt>",
-    "target" : null
-  } ],
+  "bookings-0-false-true" : [ ],
   "bookings-0-true-false" : [ {
     "id" : "<id>",
     "target" : {
@@ -387,10 +210,7 @@
       "globalId" : "<globalId>"
     }
   } ],
-  "bookings-0-true-true" : [ {
-    "id" : "<id>",
-    "target" : null
-  } ],
+  "bookings-0-true-true" : [ ],
   "bookings-1-false-false" : [ {
     "id" : "<id>",
     "version" : 0,
@@ -401,8 +221,8 @@
     "end" : "2035-01-15T10:00:00Z",
     "state" : "CONFIRMED",
     "purpose" : null,
-    "bookedBy" : "first last (<user>)",
-    "createdBy" : "first last (<user>)",
+    "bookedBy" : "System Admin (sysadmin1)",
+    "createdBy" : "System Admin (sysadmin1)",
     "privacy" : "full",
     "canEdit" : true,
     "canCancel" : true,
@@ -425,26 +245,7 @@
       "globalId" : "<globalId>"
     }
   } ],
-  "bookings-1-false-true" : [ {
-    "id" : "<id>",
-    "version" : 0,
-    "timezone" : "Europe/Berlin",
-    "requesterId" : "<requesterId>",
-    "kind" : "BOOKING",
-    "start" : "2035-01-15T09:00:00Z",
-    "end" : "2035-01-15T10:00:00Z",
-    "state" : "CONFIRMED",
-    "purpose" : null,
-    "bookedBy" : "first last (<user>)",
-    "createdBy" : "first last (<user>)",
-    "privacy" : "full",
-    "canEdit" : false,
-    "canCancel" : false,
-    "canViewConfiguration" : true,
-    "createdAt" : "<createdAt>",
-    "updatedAt" : "<updatedAt>",
-    "target" : null
-  } ],
+  "bookings-1-false-true" : [ ],
   "bookings-1-true-false" : [ {
     "id" : "<id>",
     "target" : {
@@ -463,8 +264,5 @@
       "globalId" : "<globalId>"
     }
   } ],
-  "bookings-1-true-true" : [ {
-    "id" : "<id>",
-    "target" : null
-  } ]
+  "bookings-1-true-true" : [ ]
 }
