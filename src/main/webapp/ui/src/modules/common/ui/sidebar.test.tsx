@@ -51,3 +51,19 @@ test.each(["ctrlKey", "metaKey"])("toggles by default with %s", (modifier) => {
   expect(fireEvent.keyDown(window, { key: "b", [modifier]: true })).toBe(false);
   expect(screen.getByLabelText("Sidebar state")).toHaveTextContent("collapsed");
 });
+
+test.each([{ ctrlKey: true }, { metaKey: true }])("preserves a handled shortcut (%o)", (modifier) => {
+  render(
+    <SidebarProvider>
+      <button type="button" onKeyDown={(event) => event.preventDefault()}>
+        {"Editor command"}
+      </button>
+      <State />
+    </SidebarProvider>,
+  );
+  fireEvent.keyDown(screen.getByRole("button", { name: "Editor command" }), {
+    key: "b",
+    ...modifier,
+  });
+  expect(screen.getByLabelText("Sidebar state")).toHaveTextContent("expanded");
+});

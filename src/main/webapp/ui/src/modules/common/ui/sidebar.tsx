@@ -81,6 +81,7 @@ function SidebarProvider({
   React.useEffect(() => {
     if (!keyboardShortcut) return;
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       const target = event.target;
       if (
         target instanceof Element &&
