@@ -20,15 +20,16 @@ export function BookableItemFactsAside({
     {
       id: "location",
       label: t("bookableItemDetails.fields.location"),
-      value: target?.value.parentContainer && typeof target.value.parentContainer.value === "object" ? (
-        <InventoryLocationLink
-          name={target.value.parentContainer.value.name}
-          globalId={target.value.parentContainer.globalId}
-          compact
-        />
-      ) : (
-        t("bookableItemDetails.notAvailable")
-      ),
+      value:
+        target?.value.parentContainer && typeof target.value.parentContainer.value === "object" ? (
+          <InventoryLocationLink
+            name={target.value.parentContainer.value.name}
+            globalId={target.value.parentContainer.globalId}
+            compact
+          />
+        ) : (
+          t("bookableItemDetails.notAvailable")
+        ),
     },
     {
       id: "createdBy",
