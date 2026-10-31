@@ -132,6 +132,7 @@ describe("the All Bookable Items page", () => {
     render(<AllBookableItemsStory />);
 
     await expect.element(pageObj.availabilitySlice("Confocal microscope", 11)).toBeVisible();
+    await userEvent.keyboard("{Tab}");
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
 
     await expect.element(pageObj.availabilityDetails).toBeVisible();
@@ -183,6 +184,7 @@ describe("the All Bookable Items page", () => {
     render(<AllBookableItemsStory />);
 
     await expect.element(pageObj.availabilitySlice("Confocal microscope", 11)).toBeVisible();
+    await userEvent.keyboard("{Tab}");
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
     await expect.element(pageObj.availabilityDetails).toBeVisible();
 
