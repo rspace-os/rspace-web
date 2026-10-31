@@ -114,8 +114,7 @@ Booking notifications keep their booking ID, instrument identity, and UTC instan
 JSON data field. The dashboard and notification dialog format these details using the recipient's
 current display preferences. Browser mode uses the timezone captured at login, falling back to the
 institution zone when the session timezone is missing or unusable. Custom and Institution modes use
-their configured zones. Each time includes its UTC offset so repeated daylight-saving hours remain
-distinguishable.
+their configured zones. Each time uses one zone label, such as `13:00 GMT (Europe/London)` or `14:00 BST (Europe/London)`. The abbreviation or offset distinguishes repeated daylight-saving hours.
 
 Dashboard messages keep the app language's words and date order. With Automatic, the clock follows
 the first usable locale in `Accept-Language` preference order. Language-only locales such as `en` are

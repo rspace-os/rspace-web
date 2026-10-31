@@ -549,6 +549,7 @@
       "itemLoad": "RSpace could not load bookable items.",
       "itemRequired": "Select a bookable item.",
       "load": "RSpace could not load this booking.",
+      "maintenanceConflict": "Maintenance: {label}",
       "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
       "maximumDurationLimit": "This booking exceeds the bookable item's maximum duration of {duration}.",
       "noLongerEditable": "This booking is no longer editable.",
@@ -566,8 +567,7 @@
       "startInPast": "The booking starts in the past and cannot be created.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
-      "windowRequired": "Enter a valid start and end.",
-      "maintenanceConflict": "Maintenance: {label}"
+      "windowRequired": "Enter a valid start and end."
     },
     "feedback": {
       "eventAdded": "Booking added for {itemName}, {date}, {start} to {end}.",

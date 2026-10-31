@@ -17,6 +17,8 @@ Booking separates display preferences from scheduling rules:
   the process timezone. Legacy RSpace code uses the same fallback when its browser/session zone
   is absent; a valid legacy session zone can still differ.
 
+Word dates and numeric dates on Booking pages follow the browser region. Explicit H12 and H24 preferences override the clock without changing the date order. Reuse `formatDurationMinutes` for duration readouts and `formatInstantRange` for ranges, including opening hours. Editable duration fields still name their input unit.
+
 The opening-hours editor keeps each start/end pair on one row, including weekday
 exceptions. On narrow screens, Open all day wraps onto a separate row.
 
