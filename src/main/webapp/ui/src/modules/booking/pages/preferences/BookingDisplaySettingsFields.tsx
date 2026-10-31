@@ -46,7 +46,7 @@ function RadioList<Value extends string>({
 
 /** An afternoon time written with `format`'s clock, so each Time format option shows what it looks like. */
 function timeFormatExample(format: BookingTimeFormat): string {
-  return formatWallClockTime("14:30", bookingDateTimeLocale(format));
+  return format === "H12" ? "2:30 PM" : formatWallClockTime("14:30", bookingDateTimeLocale(format));
 }
 
 export function BookingDisplaySettingsFields({
