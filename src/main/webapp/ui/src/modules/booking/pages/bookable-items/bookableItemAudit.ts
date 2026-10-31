@@ -252,7 +252,12 @@ export function recordedValues(
       if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
         const date = new Date(value);
         if (Number.isFinite(date.getTime())) {
-          return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+          return [
+            key,
+            formatBookingDateTime(date.toISOString(), "UTC", bookingDateTimeLocale(timeFormat), timeFormat, {
+              timeStyle: "long",
+            }),
+          ];
         }
       }
       const opening = openingValue(key, value, locale, bookingDateTimeLocale(timeFormat));

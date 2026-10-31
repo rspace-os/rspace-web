@@ -3,6 +3,7 @@ import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import { bookingDateTimeLocale } from "@/modules/booking/domain/bookingTime";
 import { bookingConfigurationAuditQuery } from "@/modules/booking/pages/bookable-items/bookableItemAudit";
 import type { CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
@@ -113,7 +114,7 @@ function requestError(error: unknown): RequestError | null {
 }
 
 export function BookableItemAuditLog({ configurationId }: { configurationId: number }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const [today] = useState(() => new Date());
   const [draft, setDraft] = useState<AuditDateRange>(() => auditPresetRange(30, today));
@@ -240,7 +241,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const formattedResultDate =
     resultDate === undefined
       ? null
-      : new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeZone: "UTC" }).format(
+      : new Intl.DateTimeFormat(bookingDateTimeLocale(), { dateStyle: "medium", timeZone: "UTC" }).format(
           new Date(`${resultDate}T00:00:00Z`),
         );
   const statusText = audit.isPending

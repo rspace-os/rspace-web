@@ -93,7 +93,7 @@ export function VerticalDayTimeline({
   editing,
   scheduleWindow,
 }: VerticalDayTimelineProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
@@ -138,7 +138,9 @@ export function VerticalDayTimeline({
   const dayEvents = schedule.status === "success" ? positionedEvents : [];
   const denseLanes = dayEvents.some(({ laneCount }) => canvasWidth > 0 && canvasWidth / laneCount < MINIMUM_LANE_WIDTH);
   const dateHeading = Temporal.PlainDate.from(date).toLocaleString(bookingDateTimeLocale(), { dateStyle: "full" });
-  const compactDateHeading = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "medium" });
+  const compactDateHeading = Temporal.PlainDate.from(date).toLocaleString(bookingDateTimeLocale(), {
+    dateStyle: "medium",
+  });
   const resolvedDraftDay = editingRange ? currentWallClock(editingRange.start, timezone).date : undefined;
   const isDraftDay = !resolvedDraftDay || resolvedDraftDay === date;
   const draftStartMinute = editingRange ? instantToDayMinute(editingRange.start, date, timezone) : 0;
