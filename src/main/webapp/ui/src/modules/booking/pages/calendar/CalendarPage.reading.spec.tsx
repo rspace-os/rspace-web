@@ -105,7 +105,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.search).toHaveValue("");
     await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
     await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters none applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
     expect(new URLSearchParams(window.location.search).get("calendar-resources.q")).toBe("Confocal");
     await expect
