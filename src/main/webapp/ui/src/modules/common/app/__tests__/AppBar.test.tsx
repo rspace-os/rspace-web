@@ -222,8 +222,11 @@ describe("AccountMenu", () => {
       ),
     );
 
-    const accountMenu = screen.getByRole("button", { name: "Account Menu" });
+    const accountMenu = screen.getByRole("button", { name: /^Account Menu / });
     expect(within(accountMenu).getByText(initials)).toBeVisible();
+    expect(accountMenu).toHaveAccessibleName(
+      `Account Menu ${identity.slice(0, identity.lastIndexOf(" ("))} (${initials})`,
+    );
     await user.click(accountMenu);
 
     expect(await screen.findByText(identity)).toBeVisible();
@@ -236,7 +239,7 @@ describe("AccountMenu", () => {
     const user = userEvent.setup();
     renderAccountMenu(<AccountMenu currentUser={{ ...currentUserResponse, hasPiRole }} bannerImageUrl="" />);
 
-    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
 
     expect(await screen.findByRole("menuitem", { name: "common:appBar.sections.myRSpace.title" })).toHaveAttribute(
       "href",
@@ -258,7 +261,7 @@ describe("AccountMenu", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
 
     expect(await screen.findByText("common:appBar.operatingAs")).toBeInTheDocument();
     expect(screen.getByText("0000-0001-2345-6789")).toBeInTheDocument();
@@ -282,7 +285,7 @@ describe("AccountMenu", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
     await user.click(await screen.findByRole("menuitem", { name: "common:appBar.release" }));
 
     expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
@@ -299,7 +302,7 @@ describe("AccountMenu", () => {
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />);
 
-    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
     await user.click(await screen.findByRole("menuitem", { name: "common:appBar.logOut" }));
 
     expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
@@ -312,7 +315,7 @@ describe("AccountMenu", () => {
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />);
 
-    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
     await user.click(await screen.findByRole("menuitem", { name: "common:appBar.logOut" }));
 
     expect(signOut).toHaveBeenCalledOnce();

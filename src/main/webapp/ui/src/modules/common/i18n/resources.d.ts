@@ -896,6 +896,7 @@ export default interface Resources {
     "appBar": {
       "aboutRSpace": "About RSpace",
       "accountMenu": "Account Menu",
+      "accountMenuAccessible": "{label} {name} ({initials})",
       "apps": "Apps",
       "brandingAlt": "branding",
       "closeSidebar": "close sidebar",
@@ -7435,6 +7436,7 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
+          "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
           "validation": "{0}"
         },
         "file": {

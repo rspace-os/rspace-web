@@ -66,7 +66,11 @@ export default function AccountMenu({
           render={
             <MenuTrigger
               className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-              aria-label={t("appBar.accountMenu")}
+              aria-label={t("appBar.accountMenuAccessible", {
+                label: t("appBar.accountMenu"),
+                initials: userInitials(fullName),
+                name: fullName,
+              })}
             />
           }
         >
