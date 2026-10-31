@@ -27,6 +27,7 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.BookingSchedulingSettings;
@@ -131,7 +132,8 @@ public final class BookingConfigurationResourceOperations
                 .requestExample(
                     Map.ofEntries(
                         Map.entry("enabled", true),
-                        Map.entry("slotGranularityMinutes", 5),
+                        Map.entry("slotGranularityMinutes", 15),
+                        Map.entry("incrementUnit", "MINUTES"),
                         Map.entry(
                             "openingHours",
                             List.of(
@@ -356,6 +358,7 @@ public final class BookingConfigurationResourceOperations
   private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
     return new BookingSchedulingSettings.Patch(
         BookingDocumentValues.value(document, "slotGranularityMinutes", Long.class),
+        BookingDocumentValues.value(document, "incrementUnit", BookingIncrementUnit.class),
         openingHours(document),
         BookingDocumentValues.value(document, "bufferBeforeMinutes", Long.class),
         BookingDocumentValues.value(document, "bufferAfterMinutes", Long.class),

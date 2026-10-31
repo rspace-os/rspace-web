@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.booking.service.*;
 import com.researchspace.service.MessageSourceUtils;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.StaticMessageSource;
@@ -53,7 +56,7 @@ class BookingApiV2ControllerAdviceTest {
       if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
       register(reason.errorCode());
       check(
-          advice.handleBookingPolicy(new BookingPolicyException(reason)),
+          advice.handleBookingPolicy(policyFailure(reason)),
           HttpStatus.BAD_REQUEST,
           reason.errorCode());
     }
@@ -153,7 +156,7 @@ class BookingApiV2ControllerAdviceTest {
                 .findFirst()
                 .orElseThrow();
         check(
-            shared.handleResourceException(mapping.translate(new BookingPolicyException(reason))),
+            shared.handleResourceException(mapping.translate(policyFailure(reason))),
             HttpStatus.BAD_REQUEST,
             reason.errorCode());
       }
@@ -167,6 +170,13 @@ class BookingApiV2ControllerAdviceTest {
     String key = "errors.api.v2.bookingCalendar.subscriptionConflict";
     register(key);
     check(advice.handleUserSubscriptionConflict(), HttpStatus.PRECONDITION_FAILED, key);
+  }
+
+  private BookingPolicyException policyFailure(BookingPolicyException.Reason reason) {
+    return reason == BookingPolicyException.Reason.DAY_END_MISSING
+        ? BookingPolicyException.dayEndMissing(
+            LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"))
+        : new BookingPolicyException(reason);
   }
 
   private void register(String key) {

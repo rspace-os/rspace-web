@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { proposeDayRange, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
@@ -366,6 +367,15 @@ describe("DayTimeline table row", () => {
       defaultNS: "common",
     });
     const onRangeSelect = vi.fn();
+    const policy = timelinePolicy({
+      timezone: "Europe/Berlin",
+      slotGranularityMinutes: 15,
+      incrementUnit: "MINUTES",
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+      maxBookingDurationMinutes: 0,
+    });
+    const proposeQuarterHours = (range: { startMinute: number; endMinute: number }) =>
+      proposeDayRange(range, "2026-08-17", "Europe/Berlin", policy);
     const { rerender } = render(
       <DayTimeline
         date="2026-08-17"
@@ -374,7 +384,7 @@ describe("DayTimeline table row", () => {
         startWindow={0}
         endWindow={24 * 60}
         variant="table-row"
-        snapIncrementMinutes={15}
+        proposeSelection={proposeQuarterHours}
         onRangeSelect={onRangeSelect}
       />,
       { wrapper },
@@ -397,9 +407,9 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 539 } },
     ]);
-    expect(screen.getByText("08:00 AM–09:00 AM")).toBeVisible();
+    expect(screen.getByText("08:01 AM–09:01 AM")).toBeVisible();
     await user.pointer("[/MouseLeft]");
-    expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 480, endMinute: 540 }, expect.any(HTMLElement));
+    expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 481, endMinute: 541 }, expect.any(HTMLElement));
 
     rerender(
       <DayTimeline
@@ -409,7 +419,7 @@ describe("DayTimeline table row", () => {
         startWindow={0}
         endWindow={24 * 60}
         variant="table-row"
-        snapIncrementMinutes={15}
+        proposeSelection={proposeQuarterHours}
         creationDisabled
         onRangeSelect={onRangeSelect}
       />,
@@ -422,6 +432,59 @@ describe("DayTimeline table row", () => {
     ]);
     expect(onRangeSelect).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    { incrementUnit: "MINUTES", slotGranularityMinutes: 15, endMinute: 622, label: "10:07 AM–10:22 AM" },
+    { incrementUnit: "DAYS", slotGranularityMinutes: 1440, endMinute: 2047, label: "10:07 AM–10:07 AM (+1)" },
+  ] as const)(
+    "retains the clicked minute for unaligned $incrementUnit proposals",
+    async ({ incrementUnit, slotGranularityMinutes, endMinute, label }) => {
+      const user = userEvent.setup();
+      const wrapper = await createRealI18nWrapper({
+        resources: { booking: bookingEnglish, common: commonEnglish },
+        defaultNS: "common",
+      });
+      const onRangeSelect = vi.fn();
+      const policy = timelinePolicy({
+        timezone: "UTC",
+        slotGranularityMinutes,
+        incrementUnit,
+        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+        maxBookingDurationMinutes: 0,
+      });
+      render(
+        <DayTimeline
+          date="2026-08-17"
+          timezone="UTC"
+          events={[]}
+          startWindow={0}
+          endWindow={1440}
+          proposeSelection={(range) => proposeDayRange(range, "2026-08-17", "UTC", policy)}
+          onRangeSelect={onRangeSelect}
+        />,
+        { wrapper },
+      );
+      const canvas = screen.getByTestId("day-timeline-canvas");
+      vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        right: 1440,
+        bottom: 100,
+        width: 1440,
+        height: 100,
+        toJSON: () => ({}),
+      });
+      await user.pointer([
+        { target: canvas, coords: { clientX: 607 } },
+        { keys: "[MouseLeft>]", target: canvas },
+      ]);
+      expect(screen.getByText(label)).toBeVisible();
+      await user.pointer("[/MouseLeft]");
+      expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 607, endMinute }, expect.any(HTMLElement));
+    },
+  );
 
   it("shades closed periods behind events and fully shades a closed day", async () => {
     const wrapper = await createRealI18nWrapper({

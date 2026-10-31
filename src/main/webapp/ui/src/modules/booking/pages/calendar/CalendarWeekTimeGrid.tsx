@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigg
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingActions } from "./BookingEventActions";
+import { CALENDAR_EVENT_FOCUS_HIGHLIGHT_CLASS } from "./calendarEventFocus";
 import { formatDate, scrollCalendarWithArrowKeys } from "./calendarLayoutUtils";
 import {
   collapseWeekGridLanes,
@@ -45,7 +46,7 @@ function OverflowBookings({
   const { t } = useTranslation("booking");
   const popupRef = React.useRef<HTMLDivElement>(null);
   const dateLabel = formatDate(day, { dateStyle: "full" });
-  const bookings = React.useMemo(() => overflow.hidden.map(({ booking }) => booking), [overflow.hidden]);
+  const bookings = overflow.hidden.map(({ booking }) => booking);
   return (
     <Popover>
       <PopoverTrigger
@@ -202,9 +203,14 @@ export function CalendarWeekTimeGrid({
                     <li
                       key={item.event.id}
                       data-event-id={item.event.id}
+                      data-calendar-event-focus={`${day}:${item.event.id}`}
                       data-lane={item.lane}
                       data-lane-count={item.laneCount}
-                      className={cn("absolute z-10 px-0.5 py-px", expanded && "z-[15]")}
+                      className={cn(
+                        "absolute z-10 px-0.5 py-px",
+                        CALENDAR_EVENT_FOCUS_HIGHLIGHT_CLASS,
+                        expanded && "z-[15]",
+                      )}
                       style={box}
                     >
                       <DayTimelineEventCard

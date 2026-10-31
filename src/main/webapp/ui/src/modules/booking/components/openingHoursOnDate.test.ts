@@ -50,12 +50,12 @@ describe("openingWindowsOnDate", () => {
     expect(
       openingWindowsOnDate("2026-09-25", "America/Los_Angeles", {
         ...tokyo,
-        openingHours: tokyo.openingHours.filter((entry) => [1, 2, 3, 4, 5, 7].includes(entry.dayOfWeek)),
+        openingHours: tokyo.openingHours.filter((entry) => entry.dayOfWeek !== 6),
       }),
     ).toEqual([]);
   });
 
-  it("uses each weekday's own hours", () => {
+  it("uses a weekday exception's hours", () => {
     expect(
       openingWindowsOnDate("2026-09-25", "Asia/Tokyo", {
         ...tokyo,

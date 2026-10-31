@@ -1,5 +1,6 @@
 import * as React from "react";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { type BookingWindowDraft, instantToDayMinute } from "@/modules/booking/domain/bookingTime";
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 import { VerticalDayTimeline } from "./VerticalDayTimeline";
@@ -90,12 +91,17 @@ export function VerticalDayTimelineStory({
       schedule={{ status: "success" }}
       scheduleWindow={{
         timezone: TIMEZONE,
-        openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+        openingHours: ALWAYS_OPEN.openingHours,
       }}
       editing={{
         draft,
-        schedulingTimeZone: TIMEZONE,
-        slotGranularityMinutes: 5,
+        policy: timelinePolicy({
+          timezone: TIMEZONE,
+          openingHours: ALWAYS_OPEN.openingHours,
+          slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES",
+          maxBookingDurationMinutes: 0,
+        }),
         targetKey: "IN123",
         onChange: setDraft,
       }}

@@ -6,6 +6,7 @@ import { CalendarIcon, CalendarPlusIcon, CheckIcon, CopyIcon, LoaderCircleIcon, 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import { bookableItemCalendarSubscriptionQuery } from "@/modules/booking/pages/bookable-items/bookableItemCalendarSubscription";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/modules/common/ui/input-group";
 import {
@@ -21,7 +22,6 @@ import {
   calendarApplicationUrls,
   calendarSubscriptionQueryKey,
   createCalendarSubscription,
-  fetchCalendarSubscriptionStatus,
   revokeCalendarSubscription,
   rotateCalendarSubscription,
 } from "./bookableItemCalendarSubscription";
@@ -38,8 +38,15 @@ export function CalendarSubscriptionPopover({
   const { t } = useTranslation(["booking", "common"]);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const openRef = useRef(open);
+  openRef.current = open;
   const [clipboardError, setClipboardError] = useState(false);
+  const [linkFeedback, setLinkFeedback] = useState<"replaced" | "disconnected" | "copied" | null>(null);
+  const linkFeedbackMessages = {
+    replaced: t("bookableItemDetails.calendarSubscription.replaced"),
+    disconnected: t("bookableItemDetails.calendarSubscription.disconnected"),
+    copied: t("bookableItemDetails.calendarSubscription.copied"),
+  };
   const [focusGoogle, setFocusGoogle] = useState(false);
   // Both break calendars that use the current link, so each is confirmed first.
   const [confirming, setConfirming] = useState<"replace" | "disconnect" | null>(null);
@@ -50,65 +57,149 @@ export function CalendarSubscriptionPopover({
   const copyLabelId = `${fieldId}-label`;
   const autoGenerateOnOpenRef = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const googleLinkRef = useRef<HTMLAnchorElement>(null);
+  const focusCreateRef = useRef(false);
+  const focusRetryRef = useRef(false);
+  const focusOriginRef = useRef<Element | null>(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const retryButtonRef = useRef<HTMLButtonElement>(null);
 
   const queryKey = calendarSubscriptionQueryKey(configurationId);
   const status = useQuery({
-    queryKey,
-    queryFn: ({ signal }) => fetchCalendarSubscriptionStatus(configurationId, token, signal),
+    ...bookableItemCalendarSubscriptionQuery(configurationId, token),
     enabled: open,
-    retry: false,
   });
 
-  const resetCopy = () => {
-    setCopied(false);
+  const beginChange = () => {
     setClipboardError(false);
+    setLinkFeedback(null);
+    focusCreateRef.current = false;
+    focusRetryRef.current = false;
+    focusOriginRef.current = document.activeElement;
   };
+  const restoreFocusIfUnmoved = useCallback((target: HTMLElement, headingMayRetainFocus = false) => {
+    const active = document.activeElement;
+    if (
+      !focusOriginRef.current ||
+      active === focusOriginRef.current ||
+      active === document.body ||
+      (headingMayRetainFocus && active === headingRef.current)
+    )
+      target.focus();
+    focusOriginRef.current = null;
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: () => createCalendarSubscription(configurationId, token),
     retry: false,
     onMutate: () => {
-      resetCopy();
+      beginChange();
       // A fresh link supersedes any earlier replace conflict.
       rotateMutation.reset();
     },
     onSuccess: async (created) => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, created);
-      setFocusGoogle(true);
+      if (openRef.current) setFocusGoogle(true);
     },
   });
   const rotateMutation = useMutation({
     mutationFn: (etag: string) => rotateCalendarSubscription(configurationId, token, etag),
     retry: false,
-    onMutate: resetCopy,
+    onMutate: beginChange,
     onSuccess: async (rotated) => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, rotated);
+      if (!openRef.current) return;
       setConfirming(null);
+      setLinkFeedback("replaced");
+      setFocusGoogle(true);
     },
     onError: async (error) => {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
+        const refreshed = await status.refetch();
+        if (!openRef.current) return;
+        setConfirming(null);
+        if (refreshed.isSuccess && refreshed.data.subscriptionUrl === null) {
+          setLinkFeedback("disconnected");
+          focusCreateRef.current = true;
+        } else if (
+          refreshed.isSuccess
+            ? refreshed.data.subscriptionUrl !== null
+            : status.data !== undefined && status.data.subscriptionUrl !== null
+        ) {
+          setFocusGoogle(true);
+        } else {
+          focusRetryRef.current = true;
+        }
+        return;
+      }
+      if (!openRef.current) return;
       setConfirming(null);
-      if (error instanceof ApiV2ProblemError && error.status === 412) await status.refetch();
+      setFocusGoogle(true);
     },
   });
   const revokeMutation = useMutation({
     mutationFn: () => revokeCalendarSubscription(configurationId, token),
     retry: false,
-    onMutate: resetCopy,
+    onMutate: beginChange,
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey, exact: true });
-      setConfirming(null);
-      await status.refetch();
+      const refreshed = await status.refetch();
+      if (!openRef.current) return;
+      if (refreshed.isSuccess && refreshed.data.subscriptionUrl === null) {
+        setConfirming(null);
+        setLinkFeedback("disconnected");
+        focusCreateRef.current = true;
+      } else if (
+        refreshed.isSuccess
+          ? refreshed.data.subscriptionUrl !== null
+          : status.data !== undefined && status.data.subscriptionUrl !== null
+      ) {
+        setConfirming(null);
+        setFocusGoogle(true);
+      } else {
+        setConfirming(null);
+        focusRetryRef.current = true;
+      }
     },
-    onError: () => setConfirming(null),
+    onError: () => {
+      if (!openRef.current) return;
+      setConfirming(null);
+      setFocusGoogle(true);
+    },
   });
   const changing = createMutation.isPending || rotateMutation.isPending || revokeMutation.isPending;
 
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
+
+  useEffect(() => {
+    if (!open || changing) return;
+    const target =
+      focusCreateRef.current && subscriptionUrl === null && status.isSuccess
+        ? createButtonRef.current
+        : focusRetryRef.current && (status.isError || createMutation.isError)
+          ? retryButtonRef.current
+          : null;
+    if (!target) return;
+    restoreFocusIfUnmoved(target, true);
+    focusCreateRef.current = false;
+    focusRetryRef.current = false;
+  }, [
+    changing,
+    createMutation.isError,
+    open,
+    restoreFocusIfUnmoved,
+    status.data,
+    status.isError,
+    status.isSuccess,
+    subscriptionUrl,
+  ]);
+
+  const create = createMutation.mutate;
   const createSubscription = useCallback(() => {
-    if (status.data?.subscriptionUrl === null) createMutation.mutate();
-  }, [createMutation, status.data]);
+    if (status.data?.subscriptionUrl === null) create();
+  }, [create, status.data]);
 
   useEffect(() => {
     if (archived || !open || !autoGenerateOnOpenRef.current || status.isFetching || !status.isSuccess) return;
@@ -118,32 +209,39 @@ export function CalendarSubscriptionPopover({
 
   const focusGoogleAction = useCallback(
     (element: HTMLAnchorElement | null) => {
+      googleLinkRef.current = element;
       if (!open || !focusGoogle || !element) return;
-      element.focus();
+      restoreFocusIfUnmoved(element, true);
       setFocusGoogle(false);
     },
-    [open, focusGoogle],
+    [open, focusGoogle, restoreFocusIfUnmoved],
   );
 
   const close = () => {
     autoGenerateOnOpenRef.current = false;
+    openRef.current = false;
     setOpen(false);
     setFocusGoogle(false);
+    focusCreateRef.current = false;
+    focusRetryRef.current = false;
+    focusOriginRef.current = null;
+    setLinkFeedback(null);
     setConfirming(null);
-    resetCopy();
+    setClipboardError(false);
     rotateMutation.reset();
     revokeMutation.reset();
   };
 
   const copyLink = async () => {
     if (subscriptionUrl === null) return;
-    setCopied(false);
     setClipboardError(false);
+    setLinkFeedback(null);
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
-      setCopied(true);
+      setLinkFeedback("copied");
     } catch {
       setClipboardError(true);
+      setLinkFeedback(null);
     }
   };
 
@@ -187,20 +285,10 @@ export function CalendarSubscriptionPopover({
                 aria-label={t("bookableItemDetails.calendarSubscription.copy")}
                 onClick={() => void copyLink()}
               >
-                {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
+                {linkFeedback === "copied" ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
-          {copied ? (
-            <p role="status" aria-live="polite">
-              {t("bookableItemDetails.calendarSubscription.copied")}
-            </p>
-          ) : null}
-          {clipboardError ? (
-            <p role="alert" className="text-destructive">
-              {t("bookableItemDetails.calendarSubscription.copyError")}
-            </p>
-          ) : null}
         </div>
         {manageLink()}
       </div>
@@ -214,11 +302,9 @@ export function CalendarSubscriptionPopover({
         {confirming ? (
           <div className="space-y-2">
             <p className="text-sm">
-              {t(
-                confirming === "replace"
-                  ? "bookableItemDetails.calendarSubscription.replaceWarning"
-                  : "bookableItemDetails.calendarSubscription.disconnectWarning",
-              )}
+              {confirming === "replace"
+                ? t("bookableItemDetails.calendarSubscription.replaceWarning")
+                : t("bookableItemDetails.calendarSubscription.disconnectWarning")}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -233,11 +319,9 @@ export function CalendarSubscriptionPopover({
                     : revokeMutation.mutate()
                 }
               >
-                {t(
-                  confirming === "replace"
-                    ? "bookableItemDetails.calendarSubscription.replaceConfirm"
-                    : "bookableItemDetails.calendarSubscription.disconnectConfirm",
-                )}
+                {confirming === "replace"
+                  ? t("bookableItemDetails.calendarSubscription.replaceConfirm")
+                  : t("bookableItemDetails.calendarSubscription.disconnectConfirm")}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(null)}>
                 {t("common:actions.cancel")}
@@ -302,7 +386,13 @@ export function CalendarSubscriptionPopover({
       return (
         <div className="space-y-3">
           <p role="alert">{t("bookableItemDetails.calendarSubscription.statusError")}</p>
-          <Button type="button" variant="outline" disabled={status.isFetching} onClick={() => void status.refetch()}>
+          <Button
+            ref={retryButtonRef}
+            type="button"
+            variant="outline"
+            disabled={status.isFetching}
+            onClick={() => void status.refetch()}
+          >
             {t("bookableItemDetails.calendarSubscription.retry")}
           </Button>
         </div>
@@ -319,7 +409,7 @@ export function CalendarSubscriptionPopover({
       return (
         <div className="space-y-3">
           <p role="alert">{t("bookableItemDetails.calendarSubscription.generateError")}</p>
-          <Button type="button" variant="outline" disabled={changing} onClick={createSubscription}>
+          <Button ref={retryButtonRef} type="button" variant="outline" disabled={changing} onClick={createSubscription}>
             {t("bookableItemDetails.calendarSubscription.retry")}
           </Button>
         </div>
@@ -329,10 +419,13 @@ export function CalendarSubscriptionPopover({
     if ((revokeMutation.isSuccess || rotateMutation.isError) && !createMutation.isPending) {
       return (
         <div className="space-y-3">
-          <p role="status" className="text-muted-foreground">
-            {t("bookableItemDetails.calendarSubscription.disconnected")}
-          </p>
-          <Button type="button" variant="outline" disabled={changing} onClick={createSubscription}>
+          <Button
+            ref={createButtonRef}
+            type="button"
+            variant="outline"
+            disabled={changing}
+            onClick={createSubscription}
+          >
             {t("bookableItemDetails.calendarSubscription.trigger")}
           </Button>
         </div>
@@ -352,6 +445,7 @@ export function CalendarSubscriptionPopover({
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
           autoGenerateOnOpenRef.current = !archived;
+          openRef.current = true;
           setOpen(true);
         } else close();
       }}
@@ -370,7 +464,7 @@ export function CalendarSubscriptionPopover({
         role="dialog"
         aria-labelledby={headingId}
         aria-describedby={descriptionId}
-        initialFocus={headingRef}
+        initialFocus={() => googleLinkRef.current ?? headingRef.current}
         align="end"
         collisionPadding={8}
         className="w-[min(24rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] rounded-sm"
@@ -389,7 +483,13 @@ export function CalendarSubscriptionPopover({
             <XIcon aria-hidden="true" />
           </PopoverClose>
         </PopoverHeader>
+        <p role="status" className="sr-only">
+          {linkFeedback ? linkFeedbackMessages[linkFeedback] : null}
+        </p>
         {content()}
+        <p role="alert" className={clipboardError ? "text-sm text-destructive" : "sr-only"}>
+          {clipboardError ? t("bookableItemDetails.calendarSubscription.copyError") : null}
+        </p>
       </PopoverContent>
     </Popover>
   );

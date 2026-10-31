@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingDayTimelineAside } from "@/modules/booking/creation/BookingDayTimelineAside";
@@ -15,6 +15,7 @@ import {
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingFormFeedback } from "./bookingFormFeedback";
@@ -25,7 +26,9 @@ export function AddBookingContent() {
   const transferredDraft = useLocation({
     select: (location) => bookingCreationDraftFromHistoryState(location.state, search.target),
   });
+  const searchStr = useLocation({ select: (location) => location.searchStr });
   const navigate = useNavigate({ from: "/booking/calendar/bookings/add/" });
+  const notices = useBookingNotices();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const initialTarget = useBookableItem(search.target, token);
@@ -42,17 +45,14 @@ export function AddBookingContent() {
   };
   const mutation = useCreateBooking(token);
   const resetMutation = mutation.reset;
-  const updatePageState = useCallback(
-    (state: BookingFormState) => {
-      draftBridge.onStateChange(state);
-      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
-      resetMutation();
-    },
-    [draftBridge.onStateChange, mutation.error, mutation.isError, resetMutation],
-  );
-  const updateTarget = useCallback(() => {
+  const updatePageState = (state: BookingFormState) => {
+    draftBridge.onStateChange(state);
+    if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
+    resetMutation();
+  };
+  const updateTarget = () => {
     draftBridge.onTargetChange();
-  }, [draftBridge.onTargetChange]);
+  };
   const availability = useBookingDraftAvailability({
     formState: draftBridge.formState,
     displayTimezone: preferences.timeZone,
@@ -75,7 +75,18 @@ export function AddBookingContent() {
     t,
   });
   const submit = async (submission: BookingFormSubmission) => {
-    await mutation.mutateAsync(submission);
+    const created = await mutation.mutateAsync(submission);
+    notices.notify(
+      "calendar",
+      createBookingEventNotice({
+        event: created,
+        message: t("bookings.feedback.eventAdded", {
+          itemName: submission.target.name,
+        }),
+        timeZone: preferences.timeZone,
+        searchStr,
+      }),
+    );
     await navigate({
       to: "/booking/calendar",
       search: { date: submission.returnDate, target: submission.target.globalId },

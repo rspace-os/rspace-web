@@ -1,4 +1,5 @@
 import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -112,8 +113,35 @@ describe("BookingEventList", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "common:tableList.actions.nextPage" })).toBeDisabled(),
     );
-    await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+    await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     expect(requests.filter((url) => url.searchParams.get("totals") === "true")).toHaveLength(2);
+  });
+
+  it("refetches the cached total after a booking mutation invalidates bookings", async () => {
+    let total = 1;
+    let totalsRequests = 0;
+    server.use(
+      http.post("/api/v2/bookings", () => {
+        total += 1;
+        return HttpResponse.json({}, { status: 201 });
+      }),
+      http.get("/api/v2/bookings", ({ request }) => {
+        if (new URL(request.url).searchParams.has("totals")) totalsRequests += 1;
+        return HttpResponse.json(bookableItemEventResponse([fullBooking], { totalDocs: total }));
+      }),
+    );
+    const { queryClient } = renderList();
+    await screen.findByText("common:tableList.results");
+    expect(totalsRequests).toBe(1);
+    const mutation = queryClient.getMutationCache().build(queryClient, {
+      mutationFn: () => fetch("/api/v2/bookings", { method: "POST" }),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
+    });
+    await mutation.execute(undefined);
+    expect(totalsRequests).toBe(2);
+    expect(
+      queryClient.getQueryData([...bookingKeys.itemEvents("IN12", "upcoming", "2026-08-24T12:00:00Z"), "totals"]),
+    ).toBe(2);
   });
 
   it.each([["clock preference", "Change time format", /AM|am/]] as const)(

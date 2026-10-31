@@ -1,20 +1,32 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type BookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
+import * as v from "valibot";
+import {
+  type BookingSettings,
+  SchedulingSettingsFields,
+  schedulingSettingsFieldNames,
+} from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingConfigurationKeys } from "@/modules/booking/domain/bookingKeys";
+import {
+  bookingCatalogueKeys,
+  bookingConfigurationKeys,
+  bookingKeys,
+  bookingTargetKeys,
+} from "@/modules/booking/domain/bookingKeys";
+import { useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
 import { instrumentRelationshipOption, type RelationshipSource } from "@/modules/common/relationship-picker/sources";
-import { Button } from "@/modules/common/ui/button";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -22,12 +34,15 @@ import {
   type BookingConfigurationInput,
   BookingConfigurationInputSchema,
   bookingConfigurationFields,
-  invalidateBookingCatalogueQueries,
 } from "./bookingConfiguration";
 import { BookingTargetSchema, MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationTargets";
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+
+function pick<T, K extends keyof T>(source: T, keys: readonly K[]): Pick<T, K> {
+  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
+}
 
 // The JVM institution zone may be an alias (e.g. Etc/UTC) missing from Intl's canonical list.
 function withInstitutionTimeZone(institutionTimezone: string) {
@@ -38,14 +53,23 @@ function withInstitutionTimeZone(institutionTimezone: string) {
   );
 }
 
-async function createBookingConfiguration(input: BookingConfigurationInput, token: string): Promise<void> {
+const CreatedBookingConfigurationSchema = v.object({
+  id: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  target: v.optional(v.object({ globalId: v.string() })),
+});
+
+async function createBookingConfiguration(input: BookingConfigurationInput, token: string) {
   const response = await fetchWithUiToken("/api/v2/booking-configurations", {
     method: "POST",
     headers: apiV2JsonHeaders(token),
     body: JSON.stringify(input),
   });
-  if (response.ok) return;
-  throw await parseApiV2Problem(response);
+  if (!response.ok) throw await parseApiV2Problem(response);
+  try {
+    return parseOrThrow(CreatedBookingConfigurationSchema, await response.json());
+  } catch {
+    return undefined;
+  }
 }
 
 type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
@@ -92,13 +116,16 @@ export function AddBookableItemForm({
   defaults,
   token,
   initialTargetId,
+  initialTargetName,
 }: {
   defaults: BookingSettings;
   token: string;
   initialTargetId?: number;
+  initialTargetName?: string;
 }) {
   const { t } = useTranslation("booking");
   const queryClient = useQueryClient();
+  const notices = useBookingNotices();
   const navigate = useNavigate({ from: "/booking/bookable-items/add/" });
   const form = useForm({
     schema: BookingConfigurationInputSchema,
@@ -106,33 +133,59 @@ export function AddBookableItemForm({
       ...(initialTargetId === undefined ? {} : { target: { relationTo: "instruments", value: initialTargetId } }),
       enabled: true,
       timezone: defaults.institutionTimezone,
-      slotGranularityMinutes: defaults.slotGranularityMinutes,
-      openingHours: defaults.openingHours,
-      bufferBeforeMinutes: defaults.bufferBeforeMinutes,
-      bufferAfterMinutes: defaults.bufferAfterMinutes,
-      maxBookingDurationMinutes: defaults.maxBookingDurationMinutes,
-      allowDoubleBooking: defaults.allowDoubleBooking,
+      ...pick(defaults, schedulingSettingsFieldNames),
     },
   });
   const fields = useMemo(() => withInstitutionTimeZone(defaults.institutionTimezone), [defaults.institutionTimezone]);
   const targetField = useField(form, { path: ["target"] });
+  const [selectedTargetName, setSelectedTargetName] = useState(initialTargetName);
   const target = targetSelection(targetField.input);
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
-  const createMutation = useMutation({
+  const createMutation = useApiV2Mutation({
+    meta: {
+      invalidates: [
+        bookingConfigurationKeys.all,
+        bookingCatalogueKeys.all,
+        bookingKeys.catalogue(),
+        bookingTargetKeys.all,
+      ],
+    },
     mutationFn: (input: BookingConfigurationInput) => createBookingConfiguration(input, token),
-    onSuccess: async () => {
+    onSuccess: async (created, input) => {
+      const globalId = created?.target?.globalId ?? `IN${input.target.value}`;
+      notices.notify("bookable-items", {
+        id: `bookable-item-${globalId}`,
+        tone: "success",
+        message: t("bookableItems.feedback.added", {
+          item: selectedTargetName ?? globalId,
+        }),
+        actions: (
+          <>
+            <Link
+              to="/booking/bookable-items/$globalId/{-$tab}"
+              params={{ globalId, tab: undefined }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              {t("bookableItems.feedback.viewDetails")}
+            </Link>
+            {input.enabled ? (
+              <Link
+                to="/booking/calendar"
+                search={{ target: globalId }}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                {t("bookableItems.feedback.viewCalendar")}
+              </Link>
+            ) : null}
+          </>
+        ),
+      });
       // The new configuration is readable, and its instrument is no longer an eligible target.
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        invalidateBookingCatalogueQueries(queryClient),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
-      ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "availability"] });
+        await queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.availability() });
       }
     },
   });
@@ -167,6 +220,7 @@ export function AddBookableItemForm({
                 id === null ? { relationTo: undefined, value: undefined } : { relationTo: "instruments", value: id },
               );
             }}
+            onOptionChange={(option) => setSelectedTargetName(option?.label)}
             disabled={createMutation.isPending}
             id="booking-configuration-target-search"
             name="target"

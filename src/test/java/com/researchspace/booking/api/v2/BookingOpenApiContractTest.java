@@ -1,7 +1,6 @@
 package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
@@ -11,6 +10,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockServletContext;
@@ -42,10 +42,16 @@ class BookingOpenApiContractTest {
               .generate();
       var mapper = new ObjectMapper();
       var paths = mapper.valueToTree(document).path("paths");
-      assertEquals(6, paths.size());
-      assertTrue(paths.has("/api/v2/booking-settings/admin"));
-      assertTrue(paths.has("/api/v2/booking-catalogue"));
-      assertTrue(paths.has("/api/v2/booking-configuration-targets"));
+      assertEquals(
+          Set.of(
+              "/api/v2/booking-settings",
+              "/api/v2/booking-settings/admin",
+              "/api/v2/booking-settings/access-grantees",
+              "/api/v2/booking-catalogue",
+              "/api/v2/booking-catalogue/availability-counts",
+              "/api/v2/booking-catalogue/locations",
+              "/api/v2/booking-configuration-targets"),
+          mapper.convertValue(paths, java.util.Map.class).keySet());
       var responses = paths.path("/api/v2/booking-settings/admin").path("patch").path("responses");
       assertEquals(
           java.util.Set.of("200", "400", "403", "404", "412", "428"),

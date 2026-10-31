@@ -142,7 +142,7 @@ export function DayTimeline({
   expandedCardClassName,
   renderEventActions,
   renderBlockoutActions,
-  snapIncrementMinutes = 5,
+  proposeSelection,
   creationDisabled = false,
   onRangeSelect,
 }: {
@@ -166,7 +166,11 @@ export function DayTimeline({
   variant?: "detail" | "table-row";
   itemName?: string;
   expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
-  snapIncrementMinutes?: number;
+  /**
+   * Turns a dragged range into a valid proposal for the item, which may extend past the day; without it the drag
+   * selects whole minutes. Returning undefined offers nothing for that range.
+   */
+  proposeSelection?: (range: DayTimelineRange) => DayTimelineRange | undefined;
   creationDisabled?: boolean;
   onRangeSelect?: (range: DayTimelineRange, trigger: HTMLElement) => void;
 } & DayTimelineActionRenderers) {
@@ -207,7 +211,7 @@ export function DayTimeline({
   const density = peakHourlyDensity(positionedEvents, dayMinutes);
   const densityHourWidth =
     hourWidth ?? BASE_HOUR_WIDTH + Math.max(0, density - EVENTS_PER_BASE_HOUR) * DENSITY_WIDTH_STEP;
-  const visibleMinutes = Math.max(snapIncrementMinutes, endWindow - startWindow);
+  const visibleMinutes = Math.max(5, endWindow - startWindow);
   const nowEdge =
     nowMinute === undefined ? null : nowMinute < startWindow ? "before" : nowMinute > endWindow ? "after" : "inside";
 
@@ -259,12 +263,17 @@ export function DayTimeline({
     scrollerRef.current = node;
     setCollisionBoundary(node);
   }, []);
-  const snapMinute = (minute: number) =>
-    Math.min(dayMinutes, Math.max(0, Math.round(minute / snapIncrementMinutes) * snapIncrementMinutes));
   const minuteAt = (clientX: number, canvas: HTMLElement) => {
     const box = canvas.getBoundingClientRect();
-    return snapMinute(((clientX - box.left) / box.width) * dayMinutes);
+    return Math.min(dayMinutes, Math.max(0, Math.round(((clientX - box.left) / box.width) * dayMinutes)));
   };
+  // The proposal a drag would create, so the preview shows exactly what releasing selects.
+  const selection = (drag: { from: number; to: number }): DayTimelineRange | undefined => {
+    const raw = { startMinute: Math.min(drag.from, drag.to), endMinute: Math.max(drag.from, drag.to) };
+    if (proposeSelection) return proposeSelection(raw);
+    return raw.endMinute > raw.startMinute ? raw : undefined;
+  };
+  const dragSelection = dragRange ? selection(dragRange) : undefined;
   // React bubbles events out of portals, so a click inside an event's popover must not start a range.
   const freeCanvas = (target: EventTarget | null, canvas: HTMLElement) =>
     target instanceof HTMLElement && canvas.contains(target) && !target.closest("article, button, a");
@@ -347,9 +356,10 @@ export function DayTimeline({
                 !freeCanvas(event.target, event.currentTarget)
               )
                 return;
-              const from = Math.min(dayMinutes - snapIncrementMinutes, minuteAt(event.clientX, event.currentTarget));
+              const from = Math.min(dayMinutes - 1, minuteAt(event.clientX, event.currentTarget));
               if (event.nativeEvent.isTrusted) event.currentTarget.setPointerCapture(event.pointerId);
-              setDragRange({ from, to: from + snapIncrementMinutes, pointerId: event.pointerId });
+              // A click without a drag proposes the shortest valid booking from that minute.
+              setDragRange({ from, to: from + 1, pointerId: event.pointerId });
             }}
             onPointerMove={(event) => {
               if (!dragRange || dragRange.pointerId !== event.pointerId || creationDisabled) return;
@@ -361,11 +371,10 @@ export function DayTimeline({
                 setDragRange(null);
                 return;
               }
-              const startMinute = Math.min(dragRange.from, dragRange.to);
-              const endMinute = Math.max(dragRange.from, dragRange.to);
+              const proposal = selection(dragRange);
               setDragRange(null);
-              if (endMinute - startMinute < snapIncrementMinutes) return;
-              onRangeSelect({ startMinute, endMinute }, scrollerRef.current ?? event.currentTarget);
+              if (!proposal) return;
+              onRangeSelect(proposal, scrollerRef.current ?? event.currentTarget);
             }}
             onPointerCancel={(event) => {
               if (dragRange?.pointerId === event.pointerId) setDragRange(null);
@@ -407,7 +416,7 @@ export function DayTimeline({
                 return (
                   <li
                     key={event.id}
-                    className="absolute z-10"
+                    className="absolute z-10 data-[calendar-event-focus-highlight=true]:ring-4 data-[calendar-event-focus-highlight=true]:ring-ring data-[calendar-event-focus-highlight=true]:ring-offset-2"
                     style={{
                       left: `${(startMinute / dayMinutes) * 100}%`,
                       width: `${((visualEndMinute - startMinute) / dayMinutes) * 100}%`,
@@ -415,6 +424,7 @@ export function DayTimeline({
                       height: EVENT_CARD_HEIGHT,
                     }}
                     data-event-id={event.id}
+                    data-calendar-event-focus={`${date}:${event.id}`}
                     data-lane={lane}
                   >
                     <DayTimelineEventCard
@@ -440,28 +450,21 @@ export function DayTimeline({
                 );
               })}
             </ol>
-            {dragRange ? (
+            {dragSelection ? (
+              // Clipped to the day; a proposal that continues onto later days keeps its true end in the label.
               <div
                 aria-hidden="true"
+                data-testid="day-timeline-selection"
                 className="pointer-events-none absolute z-40 rounded-sm border-2 border-primary bg-primary/20"
                 style={{
                   top: eventAreaTop,
                   bottom: 0,
-                  left: `${(Math.min(dragRange.from, dragRange.to) / dayMinutes) * 100}%`,
-                  width: `${(Math.abs(dragRange.to - dragRange.from) / dayMinutes) * 100}%`,
+                  left: `${(Math.max(0, dragSelection.startMinute) / dayMinutes) * 100}%`,
+                  width: `${((Math.min(dayMinutes, dragSelection.endMinute) - Math.max(0, dragSelection.startMinute)) / dayMinutes) * 100}%`,
                 }}
               >
                 <span className="absolute top-1 left-1 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
-                  {period(
-                    {
-                      startMinute: Math.min(dragRange.from, dragRange.to),
-                      endMinute: Math.max(dragRange.from, dragRange.to),
-                    },
-                    date,
-                    timezone,
-                    "–",
-                    timeFormat,
-                  )}
+                  {period(dragSelection, date, timezone, timeFormat)}
                 </span>
               </div>
             ) : null}

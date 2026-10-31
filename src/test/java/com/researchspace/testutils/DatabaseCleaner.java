@@ -90,9 +90,10 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from BookableItemCalendarSubscription");
     jdbcTemplate.update("delete from BookingConfigurationDefaults_AUD");
     jdbcTemplate.update(
-        "update BookingConfigurationDefaults set slotGranularityMinutes = 5, openingHours = ?,"
-            + " bufferBeforeMinutes = 0, bufferAfterMinutes = 0, maxBookingDurationMinutes = 0,"
-            + " allowDoubleBooking = 0, defaultSharedWith = 'ALL_USERS', configurationVersion = 0",
+        "update BookingConfigurationDefaults set slotGranularityMinutes = 15, incrementUnit ="
+            + " 'MINUTES', openingHours = ?, bufferBeforeMinutes = 0,"
+            + " bufferAfterMinutes = 0, maxBookingDurationMinutes = 0, allowDoubleBooking = 0,"
+            + " defaultSharedWith = 'ALL_USERS', configurationVersion = 0",
         BookingOpeningHoursCodec.openingHoursJson(BookingSchedulingSettings.DEFAULT_OPENING_HOURS));
 
     jdbcTemplate.update("delete from OAuthApp where id > 0");

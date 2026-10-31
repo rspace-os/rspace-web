@@ -39,6 +39,7 @@ const item: BookableItemOption = {
   name: "test instrument booking in japan time zone",
   timezone: "Asia/Tokyo",
   slotGranularityMinutes: 15,
+  incrementUnit: "MINUTES",
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "10:00", end: "16:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,

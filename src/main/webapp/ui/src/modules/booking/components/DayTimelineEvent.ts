@@ -3,14 +3,17 @@ import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain
 import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import {
   bookingDateTimeLocale,
+  bookingLocale,
   clockChangeOffsetLabel,
   dayMinuteToZonedTime,
   formatPlainDate,
+  formatTimeWithDayOffset,
   formatWallClockTime,
   instantToDayMinute,
   parsePlainDate,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 
 /**
  * Closed hours in a day timeline: a solid muted base with a diagonal hatch, so they stand apart from the timelines'
@@ -93,11 +96,6 @@ export function formatDayDate(date: string, timeFormat: BookingTimeFormat = "AUT
   return formatPlainDate(date, bookingDateTimeLocale(timeFormat));
 }
 
-/** ` (+1)` / ` (-1)` for a time on a later or earlier date than the one it is read against; empty on the same date. */
-export function formatDayOffset(days: number) {
-  return days === 0 ? "" : ` (${days > 0 ? "+" : ""}${days})`;
-}
-
 export function formatMinuteWithDayOffset(
   date: string,
   timezone: string,
@@ -105,22 +103,26 @@ export function formatMinuteWithDayOffset(
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ) {
   const time = dayMinuteToZonedTime(date, timezone, minute);
-  const dayLabel = formatDayOffset(parsePlainDate(date).until(time.toPlainDate()).days);
-  // Offsets distinguish both occurrences of the repeated hour on clock-change days.
-  const zoneLabel = clockChangeOffsetLabel(time, date);
-  return `${formatWallClockTime(time.toPlainTime().toString({ smallestUnit: "minute" }), bookingDateTimeLocale(timeFormat))}${zoneLabel}${dayLabel}`;
+  const locale = bookingDateTimeLocale(timeFormat);
+  const days = parsePlainDate(date).until(time.toPlainDate()).days;
+  const zoneLabel = clockChangeOffsetLabel(time, date).trim();
+  const clock = formatWallClockTime(time.toPlainTime().toString({ smallestUnit: "minute" }), locale);
+  const formatted = zoneLabel
+    ? i18n.t("booking:time.rangeWithOffset", { period: clock, offset: zoneLabel, lng: bookingLocale() })
+    : clock;
+  return formatTimeWithDayOffset(formatted, days, locale);
 }
 
 export function period(
   eventOrRange: DayTimelineEvent | DayTimelineRange,
   date: string,
   timezone: string,
-  separator = "–",
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ) {
   const start = formatMinuteWithDayOffset(date, timezone, eventOrRange.startMinute, timeFormat);
   const end = formatMinuteWithDayOffset(date, timezone, eventOrRange.endMinute, timeFormat);
-  return `${start}${separator}${end}`;
+  const lng = bookingLocale();
+  return i18n.t("booking:time.range", { start, end, lng });
 }
 
 /**

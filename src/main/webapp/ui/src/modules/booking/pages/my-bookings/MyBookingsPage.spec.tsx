@@ -103,8 +103,8 @@ describe("the My Bookings page", () => {
       timeZoneName: "shortOffset",
       timeZone: instrumentTimeZone,
     }).format(new Date(upcomingBooking.start));
-    await expect.element(tooltip).toHaveTextContent(expectedInstrumentDateTime);
-    await expect.element(tooltip).toHaveTextContent(instrumentTimeZone);
+    await expect.element(tooltip).toMatchTextContent(expectedInstrumentDateTime);
+    await expect.element(tooltip).toMatchTextContent(instrumentTimeZone);
     const tooltipText = tooltip.element().textContent ?? "";
     expect(tooltipText).not.toContain("Scope training");
     expect(tooltipText).not.toContain("Test User");

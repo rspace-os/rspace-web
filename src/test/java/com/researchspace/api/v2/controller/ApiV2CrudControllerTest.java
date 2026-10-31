@@ -105,11 +105,11 @@ class ApiV2CrudControllerTest {
         .perform(get(ENDPOINT))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty())
-        .andExpect(jsonPath("$.totalDocs").value(0))
+        .andExpect(jsonPath("$.totalDocs").doesNotExist())
         .andExpect(jsonPath("$.limit").value(20))
         .andExpect(jsonPath("$.page").value(1))
         .andExpect(jsonPath("$.pagingCounter").value(1))
-        .andExpect(jsonPath("$.totalPages").value(0))
+        .andExpect(jsonPath("$.totalPages").doesNotExist())
         .andExpect(jsonPath("$.hasPrevPage").value(false))
         .andExpect(jsonPath("$.hasNextPage").value(false))
         .andExpect(jsonPath("$.prevPage").isEmpty())
@@ -152,7 +152,7 @@ class ApiV2CrudControllerTest {
             new ResourcePage<>(List.of(first, second), 3), new ResourcePage<>(List.of(third), 3));
 
     mockMvc
-        .perform(get(ENDPOINT).param("limit", "2"))
+        .perform(get(ENDPOINT).param("limit", "2").param("totals", "true"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs.length()").value(2))
         .andExpect(jsonPath("$.docs[0].startDate", isoDateTime()))
@@ -168,7 +168,7 @@ class ApiV2CrudControllerTest {
         .andExpect(jsonPath("$.nextPage").value(2));
 
     mockMvc
-        .perform(get(ENDPOINT).param("limit", "2").param("page", "2"))
+        .perform(get(ENDPOINT).param("limit", "2").param("page", "2").param("totals", "true"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs.length()").value(1))
         .andExpect(jsonPath("$.docs[0].message").value("Third window"))

@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import useDebounce from "@/hooks/ui/useDebounce";
 import { type BookableItemOption, bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingEventKind } from "@/modules/booking/domain/booking";
-import { fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
-import { fetchBookingConfigurationByTarget } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
+import { bookableItemsPickerQuery, enabledBookingPickerTargetQuery } from "@/modules/booking/domain/bookingCatalogue";
+import { bookingConfigurationPickerTargetQuery } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { Button } from "@/modules/common/ui/button";
 import {
   Combobox,
@@ -18,62 +18,21 @@ import {
 import { Label } from "@/modules/common/ui/label";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 
-export async function loadBookableItems(
-  search: { term?: string; target?: string; page?: number; eventKind?: BookingEventKind },
-  token: string,
-  signal: AbortSignal,
-): Promise<{ options: readonly BookableItemOption[]; totalPages: number }> {
-  const result = await fetchBookingCatalogue(
-    {
-      q: search.term,
-      target: search.target,
-      capability: search.eventKind === "MAINTENANCE" ? "CREATE_BLOCKOUT" : "CREATE_BOOKING",
-      page: search.page,
-      pageSize: 20,
-    },
-    token,
-    signal,
-  );
-  return {
-    options: result.items
-      .filter((item) =>
-        search.eventKind === "MAINTENANCE" ? item.capabilities.canCreateBlockout : item.capabilities.canCreateBooking,
-      )
-      .map((item) => ({
-        configurationId: item.configurationId,
-        targetId: item.targetId,
-        globalId: item.globalId,
-        name: item.name,
-        timezone: item.timezone,
-        slotGranularityMinutes: item.slotGranularityMinutes,
-        openingHours: item.openingHours,
-        bufferBeforeMinutes: item.bufferBeforeMinutes,
-        bufferAfterMinutes: item.bufferAfterMinutes,
-        maxBookingDurationMinutes: item.maxBookingDurationMinutes,
-        allowDoubleBooking: item.allowDoubleBooking,
-        capabilities: item.capabilities,
-      })),
-    totalPages: Math.max(1, Math.ceil(result.total / result.pageSize)),
-  };
-}
+export { loadBookableItems } from "@/modules/booking/domain/bookingCatalogue";
 
 export function useBookableItem(target: string | undefined, token: string) {
   return useQuery({
-    queryKey: ["api-v2", "booking-configurations", "enabled-picker", "target", target],
-    enabled: Boolean(target && token),
-    queryFn: ({ signal }) => loadBookableItems({ target }, token, signal),
+    ...enabledBookingPickerTargetQuery(target, token),
+    enabled: Boolean(token),
     select: (page) => page.options.find((option) => option.globalId === target),
-    retry: false,
   });
 }
 
 export function useBookableItemConfiguration(target: string | undefined, token: string) {
   return useQuery({
-    queryKey: ["api-v2", "booking-configurations", "picker", "target", target],
-    enabled: Boolean(target && token),
-    queryFn: ({ signal }) => fetchBookingConfigurationByTarget(target ?? "", token, signal),
+    ...bookingConfigurationPickerTargetQuery(target, token),
+    enabled: Boolean(token),
     select: (configuration) => bookableItemOption(configuration),
-    retry: false,
   });
 }
 
@@ -98,9 +57,8 @@ export function BookableItemPicker({
     setTerm(value);
   }, 250);
   const query = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "picker", term.trim(), page, eventKind],
+    ...bookableItemsPickerQuery(term, page, eventKind, token),
     enabled: Boolean(token) && !disabled,
-    queryFn: ({ signal }) => loadBookableItems({ term, page, eventKind }, token, signal),
   });
   return (
     <div className="space-y-2">

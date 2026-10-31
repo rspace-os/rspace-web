@@ -8,11 +8,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
+import type { BookingConfiguration } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
 import {
-  type BookingConfiguration,
-  findBookingConfigurationByTarget,
-} from "@/modules/booking/pages/bookable-items/bookingConfiguration";
-import { searchBookingTargets } from "@/modules/booking/pages/bookable-items/bookingConfigurationTargets";
+  bookingRouteTargetQuery,
+  inventoryBookingConfigurationQuery,
+} from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 
 type BookingActionProps = {
@@ -32,15 +32,13 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
   const { t } = useTranslation("inventory");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const configuration = useQuery({
-    queryKey: ["api-v2", "booking-configurations", "inventory-action", globalId],
-    queryFn: ({ signal }) => findBookingConfigurationByTarget(globalId, token, signal),
+    ...inventoryBookingConfigurationQuery(globalId, token),
   });
   // Owners can always set an unconfigured instrument up; anyone else can if the Add form would offer it,
   // such as a sysadmin.
   const checkEligibility = configuration.isSuccess && configuration.data === null && !isOwner;
   const eligibleTargets = useQuery({
-    queryKey: ["api-v2", "booking-configuration-targets", "route-target", globalId],
-    queryFn: ({ signal }) => searchBookingTargets(globalId, token, signal),
+    ...bookingRouteTargetQuery(globalId, token),
     enabled: checkEligibility,
   });
 

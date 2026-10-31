@@ -189,6 +189,6 @@ class BookingCalendarDownloadControllerMVCIT {
   /** Booking creation rejects starts that are not on a five-minute boundary. */
   private static Instant alignedStart() {
     Instant candidate = Instant.now().plus(2, ChronoUnit.DAYS);
-    return candidate.truncatedTo(ChronoUnit.HOURS).plus(1, ChronoUnit.HOURS);
+    return Instant.ofEpochSecond(((candidate.getEpochSecond() + 899) / 900) * 900);
   }
 }

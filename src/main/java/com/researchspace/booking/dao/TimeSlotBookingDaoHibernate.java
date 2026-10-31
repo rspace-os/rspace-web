@@ -57,7 +57,7 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
       ResourceRequest request,
       RelationshipReadAccess targetAccess,
       com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
-    return collectionQuery.page(
+    return collectionQuery.pageWithBatchedFetch(
         criteriaBuilderFactory,
         getSession(),
         request.restrict(ACTIVE),

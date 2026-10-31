@@ -26,6 +26,8 @@ export const configuration = {
   ...bookableItemFixtures[0],
   configurationVersion: 0,
   timezone: "UTC",
+  slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:30" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },

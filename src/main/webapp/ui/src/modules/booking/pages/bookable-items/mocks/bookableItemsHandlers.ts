@@ -128,6 +128,9 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       if (new URL(request.url).searchParams.has("query")) return new HttpResponse(null, { status: 400 });
       return HttpResponse.json({ docs: [eligibleBookingTargetFixture] });
     }),
+    http.get("/api/v2/booking-configurations/count", () =>
+      HttpResponse.json({ totalDocs: 1, totalIsLowerBound: true }),
+    ),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
@@ -182,6 +185,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
         name: fixture.target.value.name,
         timezone: fixture.timezone,
         slotGranularityMinutes: fixture.slotGranularityMinutes,
+        incrementUnit: fixture.incrementUnit,
         openingHours: fixture.openingHours,
         bufferBeforeMinutes: fixture.bufferBeforeMinutes,
         bufferAfterMinutes: fixture.bufferAfterMinutes,
@@ -228,7 +232,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
         total: locations.length,
       });
     }),
-    http.get("/api/v2/instruments", () => HttpResponse.json(collectionPage([]))),
+    http.get("/api/v2/instruments", ({ request }) => apiV2CollectionResponse("instruments", request, [])),
     http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
       const url = new URL(request.url);
       const ids = url.searchParams.get("ids");
@@ -294,7 +298,7 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
       const targetId = where.match(/target==([^;]+)/)?.[1].replaceAll('"', "");
       if (!targetId) return undefined;
       const docs = detailBookingEvents.filter((booking) => booking.target.globalId === targetId);
-      return HttpResponse.json(collectionPage(docs));
+      return apiV2CollectionResponse("bookings", request, docs);
     }),
     http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
       if (new URL(request.url).searchParams.has("search")) return new HttpResponse(null, { status: 400 });

@@ -241,18 +241,23 @@ class BookingFixturesAppInitialiserTest {
         patch.merge(
             new BookingSchedulingSettings(
                 BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES,
+                BookingSchedulingSettings.DEFAULT_INCREMENT_UNIT,
                 BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
                 BookingSchedulingSettings.DEFAULT_MAX_BOOKING_DURATION_MINUTES,
                 BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING));
-    assertTrue(BookingSchedulingSettings.isGranularityValid(settings.slotGranularityMinutes()));
+    assertTrue(
+        BookingSchedulingSettings.isGranularityValid(
+            settings.slotGranularityMinutes(), settings.incrementUnit()));
     assertTrue(BookingSchedulingSettings.areOpeningHoursValid(settings.openingHours()));
     assertTrue(BookingSchedulingSettings.isBufferValid(settings.bufferBeforeMinutes()));
     assertTrue(BookingSchedulingSettings.isBufferValid(settings.bufferAfterMinutes()));
     assertTrue(
         BookingSchedulingSettings.isMaximumDurationValid(
-            settings.maxBookingDurationMinutes(), settings.slotGranularityMinutes()));
+            settings.maxBookingDurationMinutes(),
+            settings.slotGranularityMinutes(),
+            settings.incrementUnit()));
     return settings;
   }
 

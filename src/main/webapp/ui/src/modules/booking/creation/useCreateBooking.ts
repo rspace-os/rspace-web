@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import * as v from "valibot";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
@@ -6,6 +6,7 @@ import { ApiV2ProblemError, BookingEventKindSchema, createBooking } from "@/modu
 import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import type { BookingFormSubmission } from "./BookingForm";
 import type { BookableItemOption } from "./bookableItemOption";
 
@@ -73,6 +74,7 @@ const BOOKING_PROBLEM_KEYS = {
   "errors.api.v2.booking.overlap": "bookings.errors.overlap",
   [BUFFER_CODE]: "bookings.errors.overlap",
   "errors.api.v2.booking.granularity": "bookings.errors.granularity",
+  "errors.api.v2.booking.dayEndMissing": "bookings.errors.dayEndMissingRejected",
   "errors.api.v2.booking.openingHours": "bookings.errors.openingHours",
   "errors.api.v2.booking.target.unavailable": "bookings.errors.targetUnavailable",
   "errors.api.v2.forbidden": "bookings.errors.forbidden",
@@ -94,6 +96,12 @@ export function bookingProblemKey(error: unknown): BookingProblemKey {
     return "bookings.errors.concurrentModification";
   }
   return isMappedBookingProblemCode(error.code) ? BOOKING_PROBLEM_KEYS[error.code] : "bookings.errors.generic";
+}
+
+export function bookingCreationProblemKey(
+  error: unknown,
+): ReturnType<typeof bookingProblemKey> | "bookings.errors.outcomeUncertain" {
+  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
 export function bookingProblemMessage(
@@ -128,10 +136,6 @@ export function bookingProblemMessage(
     if (limit) return maximumDurationMessage(limit, t);
   }
   return t(bookingProblemKey(error));
-}
-
-export function bookingCreationProblemKey(error: unknown): BookingProblemKey | "bookings.errors.outcomeUncertain" {
-  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
 /** The maximum-duration rejection with the limit spelled out, shared with the client-side check. */
@@ -175,7 +179,8 @@ export function isBookingOutcomeUncertain(error: unknown): boolean {
 
 export function useCreateBooking(token: string) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useApiV2Mutation({
+    meta: { invalidates: [bookingKeys.all] },
     retry: false,
     mutationFn: (submission: BookingFormSubmission) =>
       createBooking(
@@ -188,21 +193,15 @@ export function useCreateBooking(token: string) {
         },
         token,
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
-      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
-    },
     onError: (error) => {
       if (
         isBookingOutcomeUncertain(error) ||
         isBookingConflictError(error) ||
         (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.concurrentModification")
       ) {
-        void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
         void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
         void queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all });
       }
     },

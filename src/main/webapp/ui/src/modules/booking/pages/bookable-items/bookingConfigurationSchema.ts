@@ -1,25 +1,30 @@
 import * as v from "valibot";
-import {
-  schedulingSettingsEntries,
-  validMaximumBookingDuration,
-} from "@/modules/booking/configuration/schedulingSettings";
+import { type SchedulingSettings, schedulingSettingsEntries } from "@/modules/booking/configuration/schedulingSettings";
 import { isValidTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { validIncrementForSchedule, validMaximumForIncrement } from "@/modules/booking/domain/bookingIncrement";
 import { RoleSourceSchema } from "@/modules/common/resource-access/schemas";
 
-const NO_BOOKING_CAPABILITIES = {
-  canEditConfiguration: false,
-  canViewAudit: false,
-  canViewAccess: false,
-  canManageAssignments: false,
-  canManageOwners: false,
-  canCreateBooking: false,
-  canManageOwnBookings: false,
-  canManageAllEvents: false,
-  canCreateBlockout: false,
-  canSubscribeCalendar: false,
-  canLeaveConfiguration: false,
-  canManageNotificationSubscription: false,
+const bookingCapabilityFields = {
+  canEditConfiguration: v.boolean(),
+  canViewAudit: v.boolean(),
+  canViewAccess: v.boolean(),
+  canManageAssignments: v.boolean(),
+  canManageOwners: v.boolean(),
+  canCreateBooking: v.boolean(),
+  canManageOwnBookings: v.boolean(),
+  canManageAllEvents: v.boolean(),
+  canCreateBlockout: v.boolean(),
+  canSubscribeCalendar: v.boolean(),
+  canLeaveConfiguration: v.boolean(),
+  canManageNotificationSubscription: v.optional(v.boolean(), false),
 };
+const NO_BOOKING_CAPABILITIES = Object.fromEntries(Object.keys(bookingCapabilityFields).map((key) => [key, false])) as {
+  [Key in keyof typeof bookingCapabilityFields]: false;
+};
+
+const validConfigurationMaximumDuration = (settings: SchedulingSettings) =>
+  validMaximumForIncrement(settings.maxBookingDurationMinutes, settings);
+const validConfigurationIncrement = (settings: SchedulingSettings) => validIncrementForSchedule(settings);
 
 export const BookingConfigurationSchema = v.pipe(
   v.object({
@@ -61,29 +66,11 @@ export const BookingConfigurationSchema = v.pipe(
     ),
     effectiveRole: v.optional(v.nullable(v.string()), null),
     roleSources: v.optional(v.array(RoleSourceSchema), []),
-    capabilities: v.optional(
-      v.object({
-        canEditConfiguration: v.boolean(),
-        canViewAudit: v.boolean(),
-        canViewAccess: v.boolean(),
-        canManageAssignments: v.boolean(),
-        canManageOwners: v.boolean(),
-        canCreateBooking: v.boolean(),
-        canManageOwnBookings: v.boolean(),
-        canManageAllEvents: v.boolean(),
-        canCreateBlockout: v.boolean(),
-        canSubscribeCalendar: v.boolean(),
-        canLeaveConfiguration: v.boolean(),
-        canManageNotificationSubscription: v.optional(v.boolean(), false),
-      }),
-      NO_BOOKING_CAPABILITIES,
-    ),
+    capabilities: v.optional(v.object(bookingCapabilityFields), NO_BOOKING_CAPABILITIES),
     ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.optional(v.boolean()) })),
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((settings) => validConfigurationMaximumDuration(settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -101,10 +88,12 @@ export const BookingConfigurationInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((settings) => validConfigurationMaximumDuration(settings)),
     ["maxBookingDurationMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validConfigurationIncrement(settings)),
+    ["slotGranularityMinutes"],
   ),
 );
 
@@ -116,10 +105,12 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((settings) => validConfigurationMaximumDuration(settings)),
     ["maxBookingDurationMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validConfigurationIncrement(settings)),
+    ["slotGranularityMinutes"],
   ),
 );
 

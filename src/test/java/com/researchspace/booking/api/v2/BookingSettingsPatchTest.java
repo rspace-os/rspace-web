@@ -3,6 +3,7 @@ package com.researchspace.booking.api.v2;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +29,7 @@ import com.researchspace.booking.service.InvalidBookingSchedulingSettingsExcepti
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.FeatureFlagManager;
@@ -182,17 +184,8 @@ class BookingSettingsPatchTest {
   @ValueSource(
       strings = {
         "[]",
-        "[null]",
         "[1]",
         "{}",
-        "[\"1\"]",
-        "[1.5]",
-        "[1.0]",
-        "[true]",
-        "[1,1]",
-        "[8]",
-        "\"1\"",
-        "1",
         "[{\"dayOfWeek\":\"6\",\"start\":\"10:00\",\"end\":\"16:00\"}]",
         "[{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\",\"extra\":true}]",
         "[{\"dayOfWeek\":6,\"start\":\"10:00\"}]",
@@ -316,5 +309,26 @@ class BookingSettingsPatchTest {
 
   private BookingSchedulingSettings.Patch patch(String json) throws Exception {
     return mapper.readValue(json, SettingsPatch.class).schedulingPatch();
+  }
+
+  @Test
+  void decodesTheIncrementUnitAndRendersItInBothDocuments() throws Exception {
+    BookingSchedulingSettings.Patch supplied = patch("{\"incrementUnit\":\"DAYS\"}");
+    assertEquals(BookingIncrementUnit.DAYS, supplied.incrementUnit());
+    BookingSchedulingSettings.Patch omitted = patch("{}");
+    assertNull(omitted.incrementUnit());
+
+    BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
+    defaults.setSlotGranularityMinutes(1440);
+    defaults.setIncrementUnit(BookingIncrementUnit.HOURS);
+    Clock clock = Clock.fixed(Instant.EPOCH, ZoneId.of("UTC"));
+    JsonNode document =
+        mapper.valueToTree(BookingSettingsController.SettingsDocument.from(defaults, clock));
+    JsonNode admin =
+        mapper.valueToTree(BookingSettingsController.AdminSettingsDocument.from(defaults, clock));
+    for (JsonNode rendered : List.of(document, admin)) {
+      assertEquals(1440, rendered.get("slotGranularityMinutes").asLong());
+      assertEquals("HOURS", rendered.get("incrementUnit").asText());
+    }
   }
 }

@@ -49,6 +49,7 @@ class ApiV2BookingConfigurationResourceTest {
           "state",
           "timezone",
           "slotGranularityMinutes",
+          "incrementUnit",
           "openingHours",
           "bufferBeforeMinutes",
           "bufferAfterMinutes",
@@ -106,6 +107,7 @@ class ApiV2BookingConfigurationResourceTest {
             "enabled",
             "state",
             "slotGranularityMinutes",
+            "incrementUnit",
             "openingHours",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
@@ -258,6 +260,7 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals("ACTIVE", rendered.get("state"));
     assertEquals("Europe/Berlin", rendered.get("timezone"));
     assertEquals(15L, rendered.get("slotGranularityMinutes"));
+    assertEquals("MINUTES", rendered.get("incrementUnit"));
     assertEquals(
         List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
         rendered.get("openingHours"));
@@ -536,5 +539,31 @@ class ApiV2BookingConfigurationResourceTest {
             new BookingOpeningHoursEntry(1, "00:00", "24:00"),
             new BookingOpeningHoursEntry(6, "10:00", "16:00")),
         configuration.getOpeningHours());
+  }
+
+  @Test
+  void parsesTheIncrementUnitByNameAndRejectsAnyOtherValue() throws Exception {
+    ParsedDocument document = parseUpdate(mapper.readTree("{\"incrementUnit\": \"DAYS\"}"));
+
+    assertEquals(BookingIncrementUnit.DAYS, document.values().get("incrementUnit"));
+    assertEquals(
+        DocumentValidationException.Reason.INVALID_VALUE,
+        updateViolation("{\"incrementUnit\": \"WEEKS\"}"));
+    assertEquals(
+        DocumentValidationException.Reason.INVALID_VALUE,
+        updateViolation("{\"incrementUnit\": \"days\"}"));
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE, updateViolation("{\"incrementUnit\": 1}"));
+  }
+
+  private ParsedDocument parseUpdate(String json) throws Exception {
+    return parseUpdate(mapper.readTree(json));
+  }
+
+  private DocumentValidationException.Reason updateViolation(String json) {
+    DocumentValidationException failure =
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(json));
+    assertEquals(1, failure.getViolations().size());
+    return failure.getViolations().get(0).reason();
   }
 }

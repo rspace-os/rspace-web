@@ -6,7 +6,7 @@ import { BookingForm, type BookingFormState } from "@/modules/booking/creation/B
 import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
-import type { TimelineMovePolicy } from "@/modules/booking/creation/timelineMove";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { useBookingDraftAvailability } from "@/modules/booking/creation/useBookingDraftAvailability";
 import {
   bookingProblemFeedback,
@@ -16,6 +16,7 @@ import {
   withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import {
   AlertDialog,
@@ -38,6 +39,8 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const pathname = useLocation({ select: (location) => location.pathname });
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const notices = useBookingNotices();
   const endCreation = useBookingCreationStore((state) => state.endCreation);
   const mutation = useCreateBooking(token);
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
@@ -123,15 +126,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   };
 
   const resetMutation = mutation.reset;
-  const updateFormState = React.useCallback(
-    (state: BookingFormState) => {
-      setFormState(state);
-      setWindowAdjustment(undefined);
-      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
-      resetMutation();
-    },
-    [mutation.error, mutation.isError, resetMutation],
-  );
+  const updateFormState = (state: BookingFormState) => {
+    setFormState(state);
+    setWindowAdjustment(undefined);
+    if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
+    resetMutation();
+  };
 
   const maintenance = creation.eventKind === "MAINTENANCE";
   const availabilityTarget = formState?.target ?? creation.target;
@@ -161,11 +161,6 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
-  const movementPolicy: TimelineMovePolicy = {
-    maxBookingDurationMinutes: maintenance ? 0 : (availabilityTarget?.maxBookingDurationMinutes ?? 0),
-    openingHours: availabilityTarget?.openingHours ?? [],
-    enforceOpeningHours: Boolean(availabilityTarget) && !maintenance,
-  };
 
   return (
     <>
@@ -174,9 +169,9 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           creation={creation}
           draft={markerDraft}
           timeZone={preferences.timeZone}
-          schedulingTimezone={availabilityTarget?.timezone ?? preferences.timeZone}
-          snapIncrementMinutes={availabilityTarget?.slotGranularityMinutes}
-          movementPolicy={movementPolicy}
+          policy={
+            availabilityTarget ? timelinePolicy(availabilityTarget, maintenance ? "MAINTENANCE" : "BOOKING") : undefined
+          }
           onChange={creation.timelineAdjustable ? setWindowAdjustment : undefined}
         />
       ) : null}
@@ -206,7 +201,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
         >
           <PopoverHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">
             <PopoverTitle>
-              {t(maintenance ? "bookings.compact.maintenanceTitle" : "bookings.compact.bookingTitle")}
+              {maintenance ? t("bookings.compact.maintenanceTitle") : t("bookings.compact.bookingTitle")}
             </PopoverTitle>
             {maintenance ? (
               <PopoverDescription>{t("bookings.compact.maintenanceDescription")}</PopoverDescription>
@@ -257,7 +252,23 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             onMoreOptions={maintenance ? undefined : openMoreOptions}
             onStateChange={updateFormState}
             onSubmit={async (submission) => {
-              await mutation.mutateAsync(submission);
+              const created = await mutation.mutateAsync(submission);
+              notices.notify(
+                creation.originHost ?? "calendar",
+                createBookingEventNotice({
+                  event: created,
+                  message:
+                    submission.eventKind === "MAINTENANCE"
+                      ? t("bookings.feedback.maintenanceAdded", {
+                          itemName: submission.target.name,
+                        })
+                      : t("bookings.feedback.eventAdded", {
+                          itemName: submission.target.name,
+                        }),
+                  timeZone: preferences.timeZone,
+                  searchStr,
+                }),
+              );
               finish();
             }}
           />

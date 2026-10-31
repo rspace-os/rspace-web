@@ -1,4 +1,5 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import appI18n from "@/modules/common/i18n";
 
 beforeBookingCatalog(async () => {
@@ -76,6 +77,7 @@ const optionDocument = {
   },
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES" as const,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
@@ -111,6 +113,7 @@ const catalogueOption = {
   name: optionDocument.target.value.name,
   timezone: optionDocument.timezone,
   slotGranularityMinutes: optionDocument.slotGranularityMinutes,
+  incrementUnit: "MINUTES" as const,
   openingHours: optionDocument.openingHours,
   bufferBeforeMinutes: optionDocument.bufferBeforeMinutes,
   bufferAfterMinutes: optionDocument.bufferAfterMinutes,
@@ -235,7 +238,7 @@ describe("AddBookingPage", () => {
       kind: "BOOKING",
     });
     expect(router.state.location.search).toMatchObject({ date: "2026-08-18", target: "IN123" });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
   });
 
   it("submits a five-minute field-edited range and keeps the entered purpose", async () => {
@@ -336,7 +339,9 @@ describe("AddBookingPage", () => {
             {
               ...catalogueOption,
               timezone: "America/New_York",
-              openingHours: catalogueOption.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+              openingHours: catalogueOption.openingHours.filter((entry) =>
+                [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+              ),
             },
           ]),
         ),

@@ -52,6 +52,7 @@ describe("CalendarPage", () => {
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
       expect(eventRequests.some((request) => request.searchParams.get("mine") === "true")).toBe(true);
+      expect(new URLSearchParams(window.location.search).has("myItemsOnly")).toBe(true);
     });
   });
 

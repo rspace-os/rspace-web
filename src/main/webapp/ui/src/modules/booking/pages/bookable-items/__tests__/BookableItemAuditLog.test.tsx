@@ -33,6 +33,8 @@ const event = {
     enabled: true,
     bookingConfigurationId: "booking-configurations:7",
     openingHours: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+    slotGranularityMinutes: 1440,
+    incrementUnit: "HOURS",
   },
   target: "bookings:41",
 };
@@ -114,6 +116,14 @@ describe("BookableItemAuditLog", () => {
     expect(
       within(item).getByText("booking:bookableItemDetails.audit.values.openingHours").nextElementSibling,
     ).toHaveTextContent("booking:bookableItemDetails.audit.weekdayRange");
+    expect(
+      within(item).getByText("booking:bookableItemDetails.audit.values.incrementUnit").nextElementSibling,
+    ).toHaveTextContent("booking:settings.fields.incrementHours");
+    // With its unit recorded, 1440 minutes reads as 24 hours rather than a raw minute count.
+    expect(
+      within(item).getByText("booking:bookableItemDetails.fields.granularity").nextElementSibling,
+    ).toHaveTextContent("booking:bookableItemDetails.hours");
+    expect(within(item).queryByText("booking:bookableItemDetails.audit.values.increment")).not.toBeInTheDocument();
     await expectAccessible(container);
   });
 

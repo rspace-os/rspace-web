@@ -73,16 +73,16 @@ its existing exemptions from opening hours and maximum duration. Changing the sc
 `EDIT_CONFIGURATION`. Creation and time edits validate the locked current configuration,
 serializing concurrent settings changes. Existing bookings are not moved or cancelled.
 
-Apply the additive independent-hours migration before running this application.
-Legacy columns remain for migration and historical data; application code no
-longer reads or writes them. See [booking database migrations](BookingDevelopment.md).
+Booking tables are created with `openingHours` directly. Rebuild development
+databases that used earlier stack schemas. See [booking database migrations](BookingDevelopment.md).
+Audit snapshots use the same independent `openingHours` schedule as configuration reads.
 
 Buffers before and after confirmed bookings can differ. A maximum booking duration of `0`
 disables the item limit; the absolute 527,040-minute (366-day) elapsed-time cap still applies.
 Double booking permits booking-on-booking overlap, while maintenance conflicts with every
 booking and maintenance event. Maintenance requires `CREATE_BLOCKOUT`, exposed as
 `capabilities.canCreateBlockout`, and whole-minute endpoints. It bypasses opening hours,
-closed weekdays, increment/alignment and the item maximum, but retains the absolute cap.
+closed weekdays, increment and the item maximum, but retains the absolute cap.
 
 The instrument owner and a direct sysadmin subject hold the maintenance capability;
 Inventory editors and readers do not.
@@ -164,12 +164,12 @@ grants no busy-only rows today, and the guard does not depend on that.
 
 ### Booking target runtime fields
 
-`booking-instruments` delegates to `instruments`: `target.customFields` supports filters and
+`target` names the registered `instruments` collection: `target.customFields` supports filters and
 projection; `target.extraFields` supports filters only. The catalogue preserves resolved runtime
 bindings and trusted constraints while owning its paging, sorting and DTO projection. See
 [relationship queries](RestApiV2QueriesAndAccess.md#relationships) for the shared contract.
 
-The `target` picker names `booking-instruments`, uses `globalId` identity and the `IN` prefix.
+The `target` picker names `instruments`, uses `globalId` identity and the `IN` prefix.
 The shared picker metadata, traversal limits and runtime catalog allowlist rules are documented
 in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-reached-through-a-relationship).
 
@@ -328,6 +328,41 @@ concurrency error contract. Refresh to inspect the saved result rather than auto
 resubmitting with a newer version.
 
 Maintenance cancellation stores and audits the reason but sends no notification.
+
+## Typed scheduling increments
+
+The time increment is stored as `slotGranularityMinutes` plus `incrementUnit`
+(`MINUTES`, `HOURS` or `DAYS`). The unit is persisted, so 24 hours
+and 1 day stay distinct after a save. All arithmetic uses a typed rule. The
+frontend's `domain/bookingIncrement.ts` and `BookingSchedulingSettings` on the server
+implement the same contract, pinned by the shared vectors in
+`src/test/resources/booking/incrementScenarios.json`, which both the JUnit and Vitest
+suites read.
+
+- Minutes and hours are elapsed time. A booking's elapsed length must be a positive whole
+  multiple of the increment, so a 90-minute booking across the spring change still lasts
+  90 minutes.
+- Days are calendar days in the item's timezone and must be whole numbers;
+  `slotGranularityMinutes` holds the day count times 1440 as a nominal value only. A Day
+  booking ends at its starting local time, a whole number of increments of local
+  dates later. Noon to noon may last 23, 24 or 25 hours. If that local time does
+  not exist on the end date, the booking is rejected with
+  `errors.api.v2.booking.dayEndMissing` instead of being moved through the gap. Day
+  increments require every weekday to be open from 00:00 to 24:00.
+
+Bookings may start at any whole minute.
+
+The fallback for new configurations is 15 minutes. Maintenance is exempt from
+the increment, as it is from opening hours and the maximum duration.
+
+Settings validation checks that the increment fits one continuous opening period; touching periods merge across midnight and across Sunday into Monday. Bookings must still fit their dates' opening periods.
+
+The maximum booking duration is always elapsed minutes. For minutes and hours it is 0
+or a whole multiple of the increment. For Days it is 0 or at least the nominal increment
+(`days × 1440`) with no divisibility check, because a calendar day across the autumn
+change lasts 25 hours; a 1440-minute maximum therefore rejects that booking, and 1500
+accepts it. The absolute cap is 527,040 elapsed minutes (8,784 hours), which some
+366-calendar-day intervals exceed.
 
 ## Catalogue search
 

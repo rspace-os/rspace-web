@@ -133,8 +133,8 @@ describe("DayTimeline expanded cards", () => {
       );
     expect(currentWallClock(startInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 13 * 60 });
     expect(currentWallClock(endInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 14 * 60 });
-    await expect.element(tooltip).toHaveTextContent("Asia/Calcutta");
-    await expect.element(tooltip).not.toHaveTextContent("Cross-zone run");
+    await expect.element(tooltip).toMatchTextContent("Asia/Calcutta");
+    await expect.element(tooltip).not.toMatchTextContent("Cross-zone run");
 
     await trigger.click();
     const booking = timeline.popup("09:30 AM–10:30 AM");
@@ -182,11 +182,11 @@ describe("DayTimeline expanded cards", () => {
       timeZoneName: "shortOffset",
       timeZone: "America/New_York",
     });
-    await expect.element(tooltip).toHaveTextContent(formatter.format(new Date(startInstant)));
-    await expect.element(tooltip).toHaveTextContent(formatter.format(new Date(endInstant)));
-    await expect.element(tooltip).toHaveTextContent("GMT-4");
-    await expect.element(tooltip).toHaveTextContent("GMT-5");
-    await expect.element(tooltip).toHaveTextContent("America/New_York");
+    await expect.element(tooltip).toMatchTextContent(formatter.format(new Date(startInstant)));
+    await expect.element(tooltip).toMatchTextContent(formatter.format(new Date(endInstant)));
+    await expect.element(tooltip).toMatchTextContent("GMT-4");
+    await expect.element(tooltip).toMatchTextContent("GMT-5");
+    await expect.element(tooltip).toMatchTextContent("America/New_York");
   });
 
   test("preserves the outside destination while restoring focus for Escape", async () => {

@@ -1,5 +1,4 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useMemo } from "react";
 import type { BookingFormState } from "@/modules/booking/creation/BookingForm";
 import { bookingConflicts, calendarAvailabilityRow } from "@/modules/booking/domain/availability";
 import type { BookingEventKind } from "@/modules/booking/domain/booking";
@@ -38,19 +37,15 @@ export function useBookingDraftAvailability({
         !sameInstant(window.start, originalWindow.start) ||
         !sameInstant(window.end, originalWindow.end)),
   );
-  const row = useMemo(
-    () =>
-      target
-        ? calendarAvailabilityRow({
-            ...target,
-            // Opening hours are the form's own check, so closed time must not read as an overlap here.
-            ...ALWAYS_OPEN,
-            // Fetch overlaps even when the target permits double booking so the form can explain them.
-            allowDoubleBooking: false,
-          })
-        : undefined,
-    [target],
-  );
+  const row = target
+    ? calendarAvailabilityRow({
+        ...target,
+        // Opening hours are the form's own check, so closed time must not read as an overlap here.
+        ...ALWAYS_OPEN,
+        // Fetch overlaps even when the target permits double booking so the form can explain them.
+        allowDoubleBooking: false,
+      })
+    : undefined;
   const interval = window
     ? {
         ...window,

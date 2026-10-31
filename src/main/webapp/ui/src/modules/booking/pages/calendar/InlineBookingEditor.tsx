@@ -1,8 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { TriangleAlertIcon } from "lucide-react";
 import * as React from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { BOOKING_ERROR_CLASS_NAME } from "@/modules/booking/components/bookingWarningStyles";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import {
   BookingForm,
@@ -11,6 +13,7 @@ import {
   type EditableBooking,
 } from "@/modules/booking/creation/BookingForm";
 import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import {
   bookingProblemFeedback,
   isBookingConflictError,
@@ -27,9 +30,12 @@ import {
 import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { cn } from "@/modules/common/utils/cn";
 import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
 
 /** A save rejected because the booking changed after the version the draft was saved against. */
@@ -66,6 +72,8 @@ export function InlineBookingEditor({
   const { t } = useTranslation(["booking", "common"]);
   const { t: bookingT } = useTranslation("booking");
   const queryClient = useQueryClient();
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const notices = useBookingNotices();
   const configuration = useBookableItemConfiguration(event.target.globalId, token);
   // The booking the draft started from: the form's defaults and the base of the patch. A refetched `event` (a newer
   // version) never replaces the draft; only discarding it does.
@@ -95,8 +103,9 @@ export function InlineBookingEditor({
   const staleAlertRef = React.useRef<HTMLDivElement>(null);
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
   const [windowAdjustment, setWindowAdjustment] = React.useState<BookingFormState["draft"]>();
-  const mutation = useMutation({
-    mutationFn: ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
+  const mutation = useApiV2Mutation({
+    meta: { invalidates: [bookingKeys.all] },
+    mutationFn: async ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
       // Only the fields changed from where the draft started, so saving over a newer version keeps that version's
       // other changes.
       const patch: BookingUpdate = {
@@ -104,23 +113,33 @@ export function InlineBookingEditor({
         ...(submission.window.end !== base.end ? { end: submission.window.end } : {}),
         ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
       };
-      return Object.keys(patch).length === 0 ? Promise.resolve(event) : updateBooking(event.id, version, patch, token);
+      return Object.keys(patch).length === 0 ? null : updateBooking(event.id, version, patch, token);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
-      await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+    onSuccess: async (updated, { submission }) => {
+      if (updated) {
+        notices.notify(
+          "calendar",
+          createBookingEventNotice({
+            event: updated,
+            message:
+              updated.kind === "MAINTENANCE"
+                ? t("bookings.feedback.maintenanceUpdated", { itemName: submission.target.name })
+                : t("bookings.feedback.eventUpdated", { itemName: submission.target.name }),
+            timeZone: timezone,
+            searchStr,
+          }),
+        );
+      }
       onClose();
     },
     onError: async (error, { version }) => {
       if (isStaleEditError(error)) {
         setRejectedVersion(version);
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
         await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
         return;
       }
       if (isBookingOutcomeUncertain(error)) {
         setUncertainVersion(version);
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
         await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
         return;
       }
@@ -128,25 +147,20 @@ export function InlineBookingEditor({
         error instanceof ApiV2ProblemError &&
         (error.code === "errors.api.v2.forbidden" || error.code === "errors.api.v2.booking.state.transition")
       ) {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
         await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
         await queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all });
       }
     },
   });
   const resetMutation = mutation.reset;
-  const clearMutationErrorOnChange = React.useCallback(
-    (state: BookingFormState) => {
-      setFormState(state);
-      setWindowAdjustment(undefined);
-      if (!mutation.isError) return;
-      resetMutation();
-    },
-    [mutation.isError, resetMutation],
-  );
+  const clearMutationErrorOnChange = (state: BookingFormState) => {
+    setFormState(state);
+    setWindowAdjustment(undefined);
+    if (!mutation.isError) return;
+    resetMutation();
+  };
   React.useEffect(() => {
     if (rejectedVersion !== undefined) staleAlertRef.current?.focus();
   }, [rejectedVersion]);
@@ -249,14 +263,8 @@ export function InlineBookingEditor({
           verticalAnchor={timelineEventElement.closest<HTMLElement>("[data-event-id]") ?? timelineEventElement}
           date={timelineDate}
           timezone={timezone}
-          schedulingTimezone={configuration.data.timezone}
           draft={timelineDraft}
-          snapIncrementMinutes={configuration.data.slotGranularityMinutes}
-          movementPolicy={{
-            maxBookingDurationMinutes: event.kind === "MAINTENANCE" ? 0 : configuration.data.maxBookingDurationMinutes,
-            openingHours: configuration.data.openingHours,
-            enforceOpeningHours: event.kind !== "MAINTENANCE",
-          }}
+          policy={timelinePolicy(configuration.data, event.kind === "MAINTENANCE" ? "MAINTENANCE" : "BOOKING")}
           onChange={setWindowAdjustment}
           tone={event.kind === "MAINTENANCE" ? "maintenance" : "booking"}
         />
@@ -268,7 +276,7 @@ export function InlineBookingEditor({
               ref={staleAlertRef}
               tabIndex={-1}
               variant="destructive"
-              className="border-red-700 bg-red-100 text-red-950 outline-none focus-visible:ring-3 focus-visible:ring-ring/40 *:data-[slot=alert-description]:text-red-950 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200"
+              className={cn(BOOKING_ERROR_CLASS_NAME, "outline-none focus-visible:ring-3 focus-visible:ring-ring/40")}
             >
               <TriangleAlertIcon aria-hidden="true" />
               <AlertDescription>{t("calendar.inlineEditor.staleEdit")}</AlertDescription>

@@ -1,10 +1,42 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { type BookingListDocument, BookingListDocumentSchema } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+
+export function useCalendarEvents({
+  firstDate,
+  lastDate,
+  timezone,
+  token,
+  targetGlobalIds,
+  enabled = true,
+  authScope,
+  scope = {},
+}: {
+  firstDate: string;
+  lastDate: string;
+  timezone: string;
+  token: string;
+  /** Omit for all authorized targets; [] means no matching targets and skips the request. */
+  targetGlobalIds?: readonly string[];
+  enabled?: boolean;
+  /** Cache identity for the authenticated caller; keep distinct across callers because event visibility differs. */
+  authScope?: string | number;
+  scope?: CalendarEventFilterScope;
+}) {
+  const identityScope = useQueryIdentityScope(authScope);
+  const start = zonedDayBounds(firstDate, timezone).start;
+  const end = zonedDayBounds(lastDate, timezone).end;
+  return useQuery({
+    ...calendarEventsQuery({ start, end, token, targetGlobalIds, scope }, identityScope),
+    enabled: enabled && token.length > 0,
+  });
+}
 
 const PageSchema = v.object({
   docs: v.array(BookingListDocumentSchema),
@@ -15,7 +47,7 @@ const PageSchema = v.object({
 export const CALENDAR_BOOKING_FIELDS =
   "id,version,target,location,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 
-type CalendarEventFilterScope = { where?: string; q?: string; mine?: boolean };
+export type CalendarEventFilterScope = { where?: string; q?: string; mine?: boolean };
 
 async function fetchPage(
   start: string,
@@ -75,45 +107,19 @@ export async function loadCalendarEvents({
   return events;
 }
 
-export function useCalendarEvents({
-  firstDate,
-  lastDate,
-  timezone,
-  token,
-  targetGlobalIds,
-  enabled = true,
-  authScope = token,
-  scope = {},
-}: {
-  firstDate: string;
-  lastDate: string;
-  timezone: string;
-  token: string;
-  /** Omit for all authorized targets; [] means no matching targets and skips the request. */
-  targetGlobalIds?: readonly string[];
-  enabled?: boolean;
-  /** Cache identity for the authenticated caller; keep distinct across callers because event visibility differs. */
-  authScope?: string | number;
-  scope?: CalendarEventFilterScope;
-}) {
-  const start = zonedDayBounds(firstDate, timezone).start;
-  const end = zonedDayBounds(lastDate, timezone).end;
-  return useQuery({
+export const calendarEventsQuery = (input: Omit<Parameters<typeof loadCalendarEvents>[0], "signal">, scope: unknown) =>
+  queryOptions({
     queryKey: [
-      "api-v2",
-      "bookings",
-      "calendar-events",
-      start,
-      end,
-      targetGlobalIds?.join(",") ?? "all",
-      authScope,
-      scope.where,
-      scope.q,
-      Boolean(scope.mine),
-    ],
-    queryFn: ({ signal }) => loadCalendarEvents({ start, end, token, signal, targetGlobalIds, scope }),
-    enabled: enabled && token.length > 0,
+      ...bookingKeys.calendarEvents(),
+      scope,
+      input.start,
+      input.end,
+      input.targetGlobalIds?.join(",") ?? "all",
+      input.scope?.where,
+      input.scope?.q,
+      Boolean(input.scope?.mine),
+    ] as const,
+    queryFn: ({ signal }) => loadCalendarEvents({ ...input, signal }),
     staleTime: 30_000,
     meta: navigationProgressQueryMeta,
   });
-}

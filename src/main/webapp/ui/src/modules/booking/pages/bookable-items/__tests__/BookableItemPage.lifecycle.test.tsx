@@ -1,3 +1,4 @@
+import { bookingCatalogueKeys } from "@/modules/booking/domain/bookingKeys";
 import "@/__tests__/__mocks__/matchMedia";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -68,7 +69,7 @@ describe("BookableItemPage", () => {
       }),
     );
     const user = userEvent.setup();
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient, router } = renderPage();
     queryClient.setQueryData(catalogueQueryKey, []);
 
@@ -99,7 +100,7 @@ describe("BookableItemPage", () => {
       }),
     );
     const user = userEvent.setup();
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient } = renderPage();
     queryClient.setQueryData(catalogueQueryKey, []);
 
@@ -118,7 +119,7 @@ describe("BookableItemPage", () => {
 
   it("invalidates availability after leaving a configuration", async () => {
     const user = userEvent.setup();
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const leaveConfiguration = {
       ...configuration,
       capabilities: { ...configuration.capabilities, canLeaveConfiguration: true },

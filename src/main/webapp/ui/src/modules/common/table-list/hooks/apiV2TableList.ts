@@ -7,7 +7,7 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/config";
-import { apiV2ListKey } from "@/modules/common/queries/apiV2QueryKeys";
+import { apiV2ListKey, apiV2Root } from "@/modules/common/queries/apiV2QueryKeys";
 import { type ApiV2CollectionAdapter, type ApiV2DocumentSchema, createApiV2CollectionAdapter } from "../api-v2/adapter";
 import { type ApiV2CollectionFetchOptions, createApiV2CollectionFetcher, projectedState } from "../api-v2/fetcher";
 import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
@@ -189,8 +189,7 @@ export function useApiV2TableList<
   // refreshes this active query along with the current page.
   const totals = useQuery({
     queryKey: [
-      "api-v2",
-      resourceName,
+      ...apiV2Root(resourceName),
       endpoint,
       authScope,
       "totals",

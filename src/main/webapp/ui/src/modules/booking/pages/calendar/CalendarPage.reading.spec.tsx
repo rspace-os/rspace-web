@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -21,7 +22,6 @@ import { bookableItemFixtures } from "../bookable-items/mocks/bookableItemsMocks
 import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { noParentBooking } from "./__tests__/calendarTestHarness";
 import { CalendarPageStory } from "./CalendarPage.story";
-import { currentUser } from "./calendarFixtures";
 import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
 
 // Register before this file's browserSetup beforeAll starts the per-file worker. Firefox can
@@ -31,7 +31,10 @@ registerHandlers();
 let history: RouterHistory;
 let browserUrl: string;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await page.viewport(1440, 900);
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
   browserUrl = window.location.href;
   resetBookingPageRequests();
@@ -175,7 +178,7 @@ describe("Calendar page", () => {
       http.get("/api/v2/instruments/fields/customFields", () => HttpResponse.json({ fields: [], hasMore: false })),
     );
     history.push("/booking/calendar?date=2026-08-17&calendar-resources.where=target.customFields.SF999%3D%3Dx");
-    await expect.element(page.getByRole("alert")).toHaveTextContent("target.customFields.SF999==x");
+    await expect.element(page.getByRole("alert")).toMatchTextContent("target.customFields.SF999==x");
     await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
     expect(bookingPageRequests.calendarBookingRequests).toHaveLength(count);
     await page.getByRole("button", { name: "Reset saved view" }).click();
@@ -193,7 +196,7 @@ describe("Calendar page", () => {
     );
     render(<CalendarPageStory history={history} />);
     await calendar.chooseView("Agenda");
-    await expect.element(page.getByRole("alert")).toHaveTextContent("Booking events are unavailable.");
+    await expect.element(page.getByRole("alert")).toMatchTextContent("Booking events are unavailable.");
     await calendar.search.fill("Cell imaging");
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     await expect.element(page.getByRole("alert")).not.toBeInTheDocument();
@@ -733,7 +736,12 @@ describe("Calendar page", () => {
                 ...bookableItemOption(confocal),
                 configurationVersion: confocal.configurationVersion,
                 targetType: "INSTRUMENT",
-                openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+                openingHours: bookableItemOption(confocal).openingHours.map((entry) => ({
+                  ...entry,
+                  start: "00:00",
+                  end: "24:00",
+                })),
+
                 effectiveRole: confocal.effectiveRole,
                 capabilities: confocal.capabilities,
                 location: {
@@ -773,7 +781,11 @@ describe("Calendar page", () => {
       const scrollerBounds = scroller.element().getBoundingClientRect();
       const dayLengthMinutes = 25 * 60;
       const positionAt = (minute: number) => ({
-        x: canvasBounds.left - scrollerBounds.left + (minute / dayLengthMinutes) * canvasBounds.width,
+        x:
+          canvasBounds.left -
+          scrollerBounds.left -
+          scroller.element().clientLeft +
+          (minute / dayLengthMinutes) * canvasBounds.width,
         y: canvasBounds.top - scrollerBounds.top + 60,
       });
       // Target the viewport so Playwright does not center the oversized canvas and hide the drag origin.
@@ -992,9 +1004,9 @@ describe("Calendar page", () => {
     });
     const fullStart = page.getByRole("group", { name: "Start" });
     const fullEnd = page.getByRole("group", { name: "End" });
-    await expect.element(fullStart.getByLabelText("Date")).toHaveValue("2026-08-18");
+    await expect.element(fullStart.getByLabelText("Start date")).toHaveValue("2026-08-18");
     await expect.element(fullStart.getByLabelText("Start time", { exact: true })).toHaveValue("09:15");
-    await expect.element(fullEnd.getByLabelText("Date")).toHaveValue("2026-08-18");
+    await expect.element(fullEnd.getByLabelText("End date")).toHaveValue("2026-08-18");
     await expect.element(fullEnd.getByLabelText("End time", { exact: true })).toHaveValue("10:45");
     await expect
       .element(page.getByRole("textbox", { name: "Purpose" }))
@@ -1036,6 +1048,47 @@ describe("Calendar page", () => {
     await confirmation.getByRole("button", { name: "Discard changes" }).click();
     await expect.element(dirtyDialog).not.toBeInTheDocument();
     await expect.poll(() => history.location.search).toContain("date=2026-08-16");
+  });
+
+  test("preserves the previous history entry when Back cancels a pending event focus", async () => {
+    const originalUrl = window.location.href;
+    const previousUrl = "/booking/calendar?date=2026-08-16&layout=agenda&calendar-resources.q=previous";
+    window.history.replaceState({}, "", previousUrl);
+    const browserHistory = createBrowserHistory();
+    let release = () => {};
+    let started = false;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("where")?.includes("IN123")) {
+          started = true;
+          await held;
+        }
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const rendered = render(<CalendarPageStory history={browserHistory} />);
+    try {
+      await expect.element(calendar.heading).toBeVisible();
+      browserHistory.push(
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=pending-back",
+      );
+      await expect.poll(() => started).toBe(true);
+      browserHistory.back();
+      await expect.poll(() => window.location.pathname + window.location.search).toBe(previousUrl);
+      release();
+      await expect.element(calendar.search).toHaveValue("previous");
+      expect(window.location.pathname + window.location.search).toBe(previousUrl);
+      browserHistory.forward();
+      await expect.poll(() => new URLSearchParams(window.location.search).get("date")).toBe("2026-08-17");
+    } finally {
+      release();
+      rendered.unmount();
+      browserHistory.destroy();
+      window.history.replaceState({}, "", originalUrl);
+    }
   });
 
   test("keeps beforeunload protection after cancelling a dirty discard dialog", async () => {
@@ -1131,7 +1184,7 @@ describe("Calendar page", () => {
     await dialog.getByLabelText("End time").fill("13:00");
 
     await expect.element(dialog.getByText("This period overlaps:")).toBeVisible();
-    await expect.element(dialog.getByText("Booking #42")).toBeVisible();
+    await expect.element(dialog.getByText("Booking #42", { exact: false })).toBeVisible();
     await expect.element(submit).toBeDisabled();
     expect(bookingPageRequests.createdPayloads).toHaveLength(0);
   });
@@ -1153,7 +1206,9 @@ describe("Calendar page", () => {
     const submit = dialog.getByRole("button", { name: "Book", exact: true });
     await submit.click();
 
-    await expect.element(dialog.getByText("RSpace could not confirm whether the booking was saved.")).toBeVisible();
+    await expect
+      .element(dialog.getByText("RSpace could not confirm whether the booking was saved.", { exact: false }))
+      .toBeVisible();
     await expect
       .element(dialog.getByRole("link", { name: "Check My Bookings" }))
       .toHaveAttribute("href", "/booking/my-bookings?period=upcoming");
@@ -1195,6 +1250,8 @@ describe("Calendar page", () => {
     );
     const newBooking = page.getByRole("button", { name: "New Booking" });
     const moreCreationOptions = page.getByRole("button", { name: "More event creation options" });
+    await expect.element(newBooking).toBeVisible();
+    await expect.element(moreCreationOptions).toBeVisible();
     await expect
       .poll(() => {
         const bookingElement = newBooking.element();
