@@ -209,7 +209,7 @@ describe("BookableItemAuditLog", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookableItemDetails.audit.conflict.title");
+    expect(alert).toMatchTextContent("booking:bookableItemDetails.audit.conflict.title");
     expect(alert).toHaveFocus();
     expect(screen.queryByText("Ada Lovelace")).not.toBeInTheDocument();
     await user.click(within(alert).getByRole("button", { name: "booking:bookableItemDetails.audit.restart" }));
@@ -232,8 +232,8 @@ describe("BookableItemAuditLog", () => {
     const { container } = renderAudit();
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(`booking:${title}`);
-    expect(alert).not.toHaveTextContent("Internal detail");
+    expect(alert).toMatchTextContent(`booking:${title}`);
+    expect(alert).not.toMatchTextContent("Internal detail");
     expect(screen.queryByText("Ada Lovelace")).not.toBeInTheDocument();
     await expectAccessible(container);
   });

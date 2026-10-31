@@ -81,7 +81,7 @@ describe("BookableItemPage", () => {
       60,
     );
     const notice = await screen.findByRole("alert");
-    expect(notice).toHaveTextContent("booking:bookableItemDetails.backgroundError");
+    expect(notice).toMatchTextContent("booking:bookableItemDetails.backgroundError");
     await expectAccessible(notice);
     server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))));
     await user.click(within(notice).getByRole("button", { name: "common:actions.retry" }));
