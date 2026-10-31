@@ -283,10 +283,28 @@ public final class ApiV2Fixture {
 
   /** Removes every row this fixture created, most recent first. */
   public void cleanUp() {
-    for (int i = teardown.size() - 1; i >= 0; i--) {
-      teardown.get(i).run();
+    Throwable failure = null;
+    try {
+      for (int i = teardown.size() - 1; i >= 0; i--) {
+        try {
+          teardown.get(i).run();
+        } catch (RuntimeException | Error thrown) {
+          if (failure == null) {
+            failure = thrown;
+          } else if (failure != thrown) {
+            failure.addSuppressed(thrown);
+          }
+        }
+      }
+    } finally {
+      teardown.clear();
     }
-    teardown.clear();
+    if (failure instanceof RuntimeException runtimeException) {
+      throw runtimeException;
+    }
+    if (failure instanceof Error error) {
+      throw error;
+    }
   }
 
   private User createUser() {
