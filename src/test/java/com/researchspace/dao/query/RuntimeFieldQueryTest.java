@@ -1,25 +1,36 @@
 package com.researchspace.dao.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.collection.AccessFunction;
+import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResolvedRuntimeField;
+import com.researchspace.model.collection.ResourceMember;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -48,6 +59,34 @@ class RuntimeFieldQueryTest {
         new FilterExpression.Comparison(resolved.selector(), operator, values, false),
         RelationshipReadAccess.none(),
         selection);
+  }
+
+  private static RelationshipReadAccess targetAccess() {
+    AccessFunction readAccess =
+        AccessFunction.documented(
+            "Test relationship target access.",
+            java.util.Set.of(),
+            ignored ->
+                AccessResult.allowedWhere(
+                    new FilterExpression.Comparison(
+                        "deleted", Operator.EQUAL, List.of(false), false)));
+    return RelationshipReadAccess.forActor(
+        new ResourceRegistry(
+            List.of(
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                new CollectionDescription<>(
+                    ApiV2InstrumentResource.RESOURCE_NAME,
+                    ApiV2InstrumentResource.DESCRIPTION.entityType(),
+                    Stream.<ResourceMember<Instrument>>concat(
+                            ApiV2InstrumentResource.DESCRIPTION.fields().stream(),
+                            ApiV2InstrumentResource.DESCRIPTION.relationships().stream())
+                        .toList(),
+                    ApiV2InstrumentResource.DESCRIPTION.idField(),
+                    ApiV2InstrumentResource.DESCRIPTION.defaultSort(),
+                    AccessPolicy.readOnly(readAccess)))),
+        null);
   }
 
   private static Subquery onlySubquery(Predicate predicate) {
@@ -157,6 +196,49 @@ class RuntimeFieldQueryTest {
             .whereExpression()
             .endsWith("(rsqlTarget0.data IS NOT NULL AND rsqlTarget0.data <> '')"));
     assertTrue(absent.expression().startsWith("(NOT EXISTS "));
+  }
+
+  @Test
+  void compilesAFieldReachedThroughARelationshipWithoutNestingSubqueries() {
+    ResolvedRuntimeField resolved = field("SF104", RuntimeFieldValueType.TEXT);
+    String selector = "target." + resolved.selector();
+    Predicate predicate =
+        new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "cfg")
+            .translate(
+                new FilterExpression.Comparison(selector, Operator.EQUAL, List.of("BSL-2"), false),
+                targetAccess(),
+                new RuntimeFieldSelection(
+                    Map.of(selector, resolved), java.util.Set.of(), Map.of(selector, "target")));
+
+    assertEquals(2, predicate.subqueries().size());
+    predicate
+        .subqueries()
+        .forEach(
+            (name, subquery) ->
+                predicate
+                    .subqueries()
+                    .keySet()
+                    .forEach(
+                        other ->
+                            assertFalse(
+                                subquery.whereExpression().contains(other),
+                                "a subquery body cannot reference another subquery by name")));
+    Subquery values =
+        predicate.subqueries().values().stream()
+            .filter(subquery -> subquery.entityType() == InventoryEntityField.class)
+            .findFirst()
+            .orElseThrow();
+    assertTrue(
+        values.whereExpression().startsWith("rsqlTarget1.instrumentEntity.id = cfg.target.id"),
+        values.whereExpression());
+    Subquery readable =
+        predicate.subqueries().values().stream()
+            .filter(subquery -> subquery.entityType() == Instrument.class)
+            .findFirst()
+            .orElseThrow();
+    assertTrue(
+        readable.whereExpression().contains(".deleted = :"),
+        "the target's own read rule must still be repeated: " + readable.whereExpression());
   }
 
   @Test

@@ -128,7 +128,8 @@ public class ResourceAccessController {
         caller.subject());
   }
 
-  static String validateQuery(String query) {
+  /** Validates bounded directory search text for feature controllers. */
+  public static String validateQuery(String query) {
     String trimmed = query == null ? "" : query.trim();
     if (trimmed.length() < 2) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
@@ -136,7 +137,8 @@ public class ResourceAccessController {
     return trimmed;
   }
 
-  static int validateLimit(int limit) {
+  /** Validates the shared directory result bound. */
+  public static int validateLimit(int limit) {
     if (limit < 1 || limit > 50) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
     }

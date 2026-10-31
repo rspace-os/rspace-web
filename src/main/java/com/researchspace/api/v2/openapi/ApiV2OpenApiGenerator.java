@@ -159,16 +159,6 @@ public final class ApiV2OpenApiGenerator {
         .components(Json31.mapper().convertValue(components, Components.class));
   }
 
-  private static Map<String, Object> privateNoStoreHeaders() {
-    return ordered(
-        "Cache-Control",
-        ordered(
-            "description",
-            "Prevents storage of caller-specific subscription state.",
-            "schema",
-            ordered("type", "string", "const", "private, no-store")));
-  }
-
   private void addPaths(
       Map<String, Object> paths,
       ApiV2ResourceRegistration<?, ?> resource,
