@@ -183,6 +183,7 @@ class ApiV2CalendarRequesterFilterMVCIT {
                     .header("apiKey", ownerKey)
                     .param("where", where)
                     .param("limit", "100")
+                    .param("totals", "true")
                     .param("fields[bookings]", "id"))
             .andReturn();
     assertEquals(200, listed.getResponse().getStatus(), listed.getResponse().getContentAsString());
