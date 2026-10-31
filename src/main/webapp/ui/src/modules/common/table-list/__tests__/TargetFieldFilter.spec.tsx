@@ -1,7 +1,7 @@
 import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
-import { page, userEvent } from "@vitest/browser/context";
 import { afterEach, describe, expect, test } from "vitest";
+import { page, userEvent } from "vitest/browser";
 import { TargetFieldFilterStory } from "./TargetFieldFilter.story";
 
 afterEach(() => {
@@ -53,6 +53,6 @@ describe("filtering by a field of a relationship target", () => {
     await userEvent.keyboard("{Escape}");
     await userEvent.click(apply);
 
-    await expect.element(lastQuery).toHaveTextContent("target.name=contains=confocal");
+    await expect.element(lastQuery).toMatchTextContent("target.name=contains=confocal");
   });
 });
