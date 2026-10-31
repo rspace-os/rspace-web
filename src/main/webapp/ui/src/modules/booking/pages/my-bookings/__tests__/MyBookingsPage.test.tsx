@@ -304,7 +304,7 @@ describe("My Bookings page", () => {
 
     const dialog = await screen.findByRole("alertdialog");
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(dialog).toHaveTextContent("booking:bookings.cancelDialog.description");
+    expect(dialog).toMatchTextContent("booking:bookings.cancelDialog.description");
     await user.click(within(dialog).getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
 
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());

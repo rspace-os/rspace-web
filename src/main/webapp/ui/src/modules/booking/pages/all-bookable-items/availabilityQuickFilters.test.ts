@@ -995,7 +995,16 @@ describe("availability quick filters", () => {
   it("treats an item closed on the instrument's weekday as unavailable and follows its exception", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+        HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        }),
       ),
     );
     // 2026-08-17 is a Monday.
@@ -1084,7 +1093,16 @@ describe("availability quick filters", () => {
       }),
       http.get("/api/v2/bookings", () => {
         bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+        return HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        });
       }),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

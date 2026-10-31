@@ -143,10 +143,13 @@ function renderPage(hasSysAdminRole = false, scheduleBookings: readonly unknown[
         ? new HttpResponse(null, { status: 503 })
         : HttpResponse.json({
             docs: scheduleBookings,
-            totalDocs: scheduleBookings.length,
-            totalPages: scheduleBookings.length ? 1 : 0,
             page: 1,
             hasNextPage: false,
+            limit: 100,
+            pagingCounter: 1,
+            hasPrevPage: false,
+            prevPage: null,
+            nextPage: null,
           }),
     ),
   );
@@ -432,7 +435,7 @@ describe("AddBookingPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookings.errors.overlapSummary");
+    expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
     expect(within(alert).getByRole("listitem")).toMatchTextContent(/booking:bookings\.errors\.overlapBooking · 0?9:30/);
     expect(screen.queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
@@ -458,10 +461,10 @@ describe("AddBookingPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookings.errors.buffer");
-    expect(alert).toHaveTextContent("booking:bookings.errors.bufferSummary");
-    expect(alert).not.toHaveTextContent("booking:bookings.errors.overlapSummary");
-    expect(within(alert).getByRole("listitem")).toHaveTextContent("booking:bookings.errors.overlapMaintenance");
+    expect(alert).toMatchTextContent("booking:bookings.errors.buffer");
+    expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
+    expect(alert).not.toMatchTextContent("booking:bookings.errors.overlapSummary");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.overlapMaintenance");
     expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
   });
 

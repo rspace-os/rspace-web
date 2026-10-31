@@ -140,7 +140,7 @@ describe("BookingCalendarFileButton", () => {
     await userEvent.click(screen.getByRole("button", { name: "Download" }));
 
     expect(screen.queryByRole("button", { name: "Download" })).not.toBeInTheDocument();
-    expect(await screen.findByRole("status")).toHaveTextContent("Downloaded confocal-microscope.ics");
+    expect(await screen.findByRole("status")).toMatchTextContent("Downloaded confocal-microscope.ics");
     expect(saved).toEqual({ url: "blob:calendar", download: "confocal-microscope.ics" });
   });
 

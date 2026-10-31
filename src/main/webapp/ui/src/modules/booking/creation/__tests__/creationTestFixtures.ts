@@ -101,6 +101,11 @@ export function confocalBookingPage(docs: readonly unknown[]) {
     docs,
     page: 1,
     hasNextPage: false,
+    limit: 100,
+    pagingCounter: 1,
+    hasPrevPage: false,
+    prevPage: null,
+    nextPage: null,
   };
 }
 

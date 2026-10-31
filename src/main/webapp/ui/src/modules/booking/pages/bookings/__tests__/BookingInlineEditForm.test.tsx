@@ -311,7 +311,7 @@ describe("BookingInlineEditForm", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookings.details.edit.conflict");
+    expect(alert).toMatchTextContent("booking:bookings.details.edit.conflict");
     expect(alert).toHaveFocus();
     expect(screen.getByDisplayValue("Keep this draft")).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookings.form.save" })).toBeDisabled();
@@ -366,9 +366,9 @@ describe("BookingInlineEditForm", () => {
 
     const alert = await screen.findByRole("alert");
     await waitFor(() => expect(alert).toHaveFocus());
-    expect(alert).toHaveTextContent("booking:bookings.errors.bufferAfter");
-    expect(alert).toHaveTextContent("booking:bookings.errors.bufferSummary");
-    expect(within(alert).getByRole("listitem")).toHaveTextContent("booking:bookings.errors.overlapBooking");
+    expect(alert).toMatchTextContent("booking:bookings.errors.bufferAfter");
+    expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.overlapBooking");
     expect(save).toBeDisabled();
   });
 
