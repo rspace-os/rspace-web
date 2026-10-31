@@ -154,7 +154,8 @@ public class BookingNotificationRecipientReader {
     var display = displayPreferences.resolveForNotificationSnapshot(recipient);
     ZoneId displayZone =
         BookingNotificationMessageFormatter.zoneFor(display, null, institutionClock.getZone());
-    return new BookingNotificationRecipient(recipient, displayZone, requester);
+    return new BookingNotificationRecipient(
+        recipient, displayZone, display.timeFormat(), requester);
   }
 
   private static boolean active(User user) {
