@@ -61,7 +61,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     await renderCalendar();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Booking events are unavailable.");
+    expect(await screen.findByRole("alert")).toMatchTextContent("Booking events are unavailable.");
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
