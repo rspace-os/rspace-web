@@ -325,7 +325,7 @@ describe("AllBookableItemsPage", () => {
     );
     const { router } = await renderPage("/booking/all-items?date=2026-08-17&availability=free-later-today");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Could not find available items.");
+    expect(await screen.findByRole("alert")).toMatchTextContent("Could not find available items.");
     expect(screen.queryByText("Finding bookable items…")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(candidateRequests).toBe(2));

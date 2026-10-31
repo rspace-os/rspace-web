@@ -138,9 +138,9 @@ describe("the All Bookable Items page", () => {
     await expect.poll(() => pageObj.availabilityBookingRows.all().length).toBe(11);
     await expect.poll(() => pageObj.availabilityDetailsIsScrollable()).toBe(true);
     expect(pageObj.availabilityDetailsBorderWidth()).toBe("0px");
-    await expect.element(pageObj.availabilityDetails).toHaveTextContent("12:00");
-    await expect.element(pageObj.availabilityDetails).toHaveTextContent("14:00");
-    await expect.element(pageObj.availabilityDetails).not.toHaveTextContent("UTC");
+    await expect.element(pageObj.availabilityDetails).toMatchTextContent("12:00");
+    await expect.element(pageObj.availabilityDetails).toMatchTextContent("14:00");
+    await expect.element(pageObj.availabilityDetails).not.toMatchTextContent("UTC");
     await expect.element(pageObj.availabilityDetails.getByText("Booked", { exact: true })).not.toBeInTheDocument();
     await pageObj.availabilityDetails
       .getByLabelText("Show details for Confocal microscope", { exact: false })
