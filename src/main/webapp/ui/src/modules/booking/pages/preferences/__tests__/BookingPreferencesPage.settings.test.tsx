@@ -1,0 +1,349 @@
+import { notifyManager, QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Link,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { Suspense, useSyncExternalStore } from "react";
+import { describe, expect, it } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import { server } from "@/__tests__/mswServer";
+import {
+  type BookingDisplayPreferencesDocument,
+  bookingDisplayPreferencesQueryKey,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
+import BookingPreferencesPage from "../BookingPreferencesPage";
+import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
+import { renderPage } from "./bookingPreferencesPageTestUtils";
+
+function BookingPreferencesQueryProbe() {
+  const queryClient = useQueryClient();
+  const document = useSyncExternalStore(
+    (onStoreChange) => queryClient.getQueryCache().subscribe(notifyManager.batchCalls(onStoreChange)),
+    () => queryClient.getQueryData<BookingDisplayPreferencesDocument>(bookingDisplayPreferencesQueryKey),
+    () => queryClient.getQueryData<BookingDisplayPreferencesDocument>(bookingDisplayPreferencesQueryKey),
+  );
+  const end = document?.availabilityWindowEnd ?? "pending";
+  return (
+    <p role="status" aria-label={`Cached server end ${end}`}>
+      {end}
+    </p>
+  );
+}
+
+describe("BookingPreferencesPage", () => {
+  it("saves one complete preference and replaces the shared query cache", async () => {
+    let body: unknown;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({
+          ...inheritedBrowserBookingPreferences,
+          ...(body as object),
+          overridden: true,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    const { queryClient, container } = renderPage();
+
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
+    expect(screen.getByRole("combobox", { name: "booking:preferences.timezone.customLabel" })).toBeDisabled();
+    await user.clear(start);
+    await user.type(start, "09:00");
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.saved");
+    expect(body).toEqual({
+      availabilityWindowStart: "09:00",
+      availabilityWindowEnd: "18:00",
+      timezoneMode: "INSTITUTION",
+      customTimezone: null,
+    });
+    await waitFor(() =>
+      expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toMatchObject({
+        availabilityWindowStart: "09:00",
+        timezoneMode: "INSTITUTION",
+        overridden: true,
+      }),
+    );
+    await expectAccessible(container);
+  });
+
+  it("resets an override and immediately caches the current global document", async () => {
+    let reads = 0;
+    let deletes = 0;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => {
+        reads += 1;
+        return HttpResponse.json(reads === 1 ? customNewYorkBookingPreferences : inheritedBrowserBookingPreferences);
+      }),
+      http.delete("/api/v2/users/me/booking-preferences", () => {
+        deletes += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "booking:preferences.actions.reset" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    expect(deletes).toBe(1);
+    expect(reads).toBe(2);
+    expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toEqual(inheritedBrowserBookingPreferences);
+    expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
+  });
+
+  it("adopts an unchanged inherited document after resetting a dirty draft", async () => {
+    let reads = 0;
+    let deletes = 0;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => {
+        reads += 1;
+        return HttpResponse.json(inheritedBrowserBookingPreferences);
+      }),
+      http.delete("/api/v2/users/me/booking-preferences", () => {
+        deletes += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    await user.clear(start);
+    await user.type(start, "09:00");
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.reset" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    expect(deletes).toBe(1);
+    expect(reads).toBe(2);
+    expect(start).toHaveValue("08:00");
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.reset" })).toBeDisabled();
+  });
+
+  it("keeps the dirty draft and navigation guard through matching background data and adopts Save", async () => {
+    let reads = 0;
+    let submittedBody: unknown;
+    const changedPreferences = { ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "20:00" };
+    const matchingPreferences = {
+      ...inheritedBrowserBookingPreferences,
+      availabilityWindowStart: "09:00",
+      timezoneMode: "INSTITUTION",
+      overridden: true,
+    };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => {
+        reads += 1;
+        if (reads === 1) return HttpResponse.json(inheritedBrowserBookingPreferences);
+        return HttpResponse.json(reads === 2 ? changedPreferences : matchingPreferences);
+      }),
+      http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
+        submittedBody = await request.json();
+        return HttpResponse.json(matchingPreferences);
+      }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const destinationLinkLabel = "Go elsewhere";
+    const destinationPageLabel = "Elsewhere page";
+    const rootRoute = createRootRoute({
+      component: () => (
+        <>
+          <Link to="/about" resetScroll={false}>
+            {destinationLinkLabel}
+          </Link>
+          <Outlet />
+        </>
+      ),
+    });
+    const preferencesRoute = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/",
+      component: BookingPreferencesPage,
+    });
+    const destinationRoute = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/about",
+      component: () => <p>{destinationPageLabel}</p>,
+    });
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([preferencesRoute, destinationRoute]),
+      history: createMemoryHistory({ initialEntries: ["/"] }),
+    });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <BookingPreferencesQueryProbe />
+      </QueryClientProvider>,
+    );
+
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    const end = screen.getByLabelText("booking:preferences.availabilityWindow.end");
+    await user.clear(start);
+    await user.type(start, "09:00");
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
+    const save = screen.getByRole("button", { name: "booking:preferences.actions.save" });
+    expect(save).toBeEnabled();
+
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: bookingDisplayPreferencesQueryKey, type: "active" });
+    });
+    expect(reads).toBe(2);
+    expect(await screen.findByRole("status", { name: "Cached server end 20:00" })).toHaveTextContent("20:00");
+    expect(start).toHaveValue("09:00");
+    expect(end).toHaveValue("18:00");
+    expect(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" })).toBeChecked();
+    expect(save).toBeEnabled();
+
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: bookingDisplayPreferencesQueryKey, type: "active" });
+    });
+    expect(reads).toBe(3);
+    expect(await screen.findByRole("status", { name: "Cached server end 18:00" })).toHaveTextContent("18:00");
+    expect(start).toHaveValue("09:00");
+    expect(end).toHaveValue("18:00");
+    expect(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" })).toBeChecked();
+    expect(save).toBeEnabled();
+
+    await user.click(screen.getByRole("link", { name: destinationLinkLabel }));
+    expect(await screen.findByRole("alertdialog")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
+    expect(start).toBeInTheDocument();
+    expect(save).toBeEnabled();
+
+    await user.click(save);
+
+    expect(await screen.findByText("booking:preferences.saved")).toBeInTheDocument();
+    expect(submittedBody).toEqual({
+      availabilityWindowStart: "09:00",
+      availabilityWindowEnd: "18:00",
+      timezoneMode: "INSTITUTION",
+      customTimezone: null,
+    });
+    expect(start).toHaveValue("09:00");
+    expect(end).toHaveValue("18:00");
+    expect(save).toBeDisabled();
+    expect(queryClient.getQueryData(bookingDisplayPreferencesQueryKey)).toEqual(matchingPreferences);
+
+    await user.click(screen.getByRole("link", { name: destinationLinkLabel }));
+    expect(await screen.findByText(destinationPageLabel)).toBeInTheDocument();
+  });
+
+  it("adopts a changed background response when the draft is clean", async () => {
+    let reads = 0;
+    const changedPreferences = { ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "20:00" };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => {
+        reads += 1;
+        return HttpResponse.json(reads === 1 ? inheritedBrowserBookingPreferences : changedPreferences);
+      }),
+    );
+    const { queryClient } = renderPage();
+
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    const end = screen.getByLabelText("booking:preferences.availabilityWindow.end");
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: bookingDisplayPreferencesQueryKey, type: "active" });
+    });
+
+    expect(reads).toBe(2);
+    await waitFor(() => expect(end).toHaveValue("20:00"));
+    expect(start).toHaveValue("08:00");
+    expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+  });
+
+  it("adopts the latest background response when edits return to the original baseline", async () => {
+    let reads = 0;
+    const changedPreferences = { ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "20:00" };
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => {
+        reads += 1;
+        return HttpResponse.json(reads === 1 ? inheritedBrowserBookingPreferences : changedPreferences);
+      }),
+    );
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={null}>
+          <BookingPreferencesPage />
+          <BookingPreferencesQueryProbe />
+        </Suspense>
+      </QueryClientProvider>,
+    );
+
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    const end = screen.getByLabelText("booking:preferences.availabilityWindow.end");
+    const save = screen.getByRole("button", { name: "booking:preferences.actions.save" });
+    await user.clear(start);
+    await user.type(start, "09:00");
+    expect(save).toBeEnabled();
+
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: bookingDisplayPreferencesQueryKey, type: "active" });
+    });
+    expect(reads).toBe(2);
+    expect(await screen.findByRole("status", { name: "Cached server end 20:00" })).toHaveTextContent("20:00");
+    expect(start).toHaveValue("09:00");
+    expect(end).toHaveValue("18:00");
+    expect(save).toBeEnabled();
+
+    await user.clear(start);
+    await user.type(start, "08:00");
+
+    await waitFor(() => expect(end).toHaveValue("20:00"));
+    expect(start).toHaveValue("08:00");
+    expect(save).toBeDisabled();
+  });
+
+  it("keeps invalid windows client-side and reports network failures", async () => {
+    let writes = 0;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.put("/api/v2/users/me/booking-preferences", () => {
+        writes += 1;
+        return HttpResponse.json({ detail: "failure" }, { status: 503 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
+    await user.clear(start);
+    await user.type(start, "19:00");
+    expect(screen.getByRole("alert")).toHaveTextContent("booking:preferences.errors.invalid");
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    expect(writes).toBe(0);
+
+    await user.clear(start);
+    await user.type(start, "09:00");
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:preferences.errors.save");
+    expect(writes).toBe(1);
+    expect(start).toHaveValue("09:00");
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
+  });
+});
