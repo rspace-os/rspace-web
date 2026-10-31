@@ -12,7 +12,7 @@
       <sqlCheck expectedResult="7">
         SELECT COUNT(*) FROM BookingConfiguration
         WHERE openingHours = '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]'
-          AND configurationVersion = 0 AND alignToIncrement = b'1'
+          AND configurationVersion = 0
           AND slotGranularityMinutes = 15 AND incrementUnit = 'MINUTES'
           AND ((id = 910100002 AND timeZone = 'Europe/Berlin')
             OR (id IN (910100003, 910100004) AND timeZone = 'UTC')

@@ -48,9 +48,6 @@
       <column name="incrementUnit" type="VARCHAR(8)" defaultValue="MINUTES">
         <constraints nullable="false"/>
       </column>
-      <column name="alignToIncrement" type="BIT(1)" defaultValueBoolean="true">
-        <constraints nullable="false"/>
-      </column>
       <column name="openingHours" type="VARCHAR(1024)">
         <constraints nullable="false"/>
       </column>
@@ -70,7 +67,6 @@
       <column name="timeFormat" value="AUTOMATIC"/>
       <column name="defaultSharedWith" value="ALL_USERS"/>
       <column name="incrementUnit" value="MINUTES"/>
-      <column name="alignToIncrement" valueBoolean="true"/>
     </insert>
     <sql>
       ALTER TABLE BookingConfigurationDefaults ENGINE=InnoDB,
@@ -101,7 +97,6 @@
       <column name="timeFormat" type="VARCHAR(32)"/>
       <column name="defaultSharedWith" type="VARCHAR(32)"/>
       <column name="incrementUnit" type="VARCHAR(8)"/>
-      <column name="alignToIncrement" type="BIT(1)"/>
       <column name="openingHours" type="VARCHAR(1024)"/>
     </createTable>
     <addPrimaryKey
