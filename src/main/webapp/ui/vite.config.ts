@@ -337,6 +337,12 @@ export default defineConfig(async ({ mode }) => {
 
   const config: UserConfig = {
     base: "/ui/dist/",
+    experimental: {
+      // CSS-relative font URLs also work when the WAR has a servlet context prefix.
+      renderBuiltUrl(filename) {
+        if (filename.endsWith(".woff2")) return { relative: true };
+      },
+    },
     define: {
       global: "globalThis",
       process: processShim,
