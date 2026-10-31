@@ -61,6 +61,23 @@ Item creation copies the full institution schedule into its draft. Item edits su
 configuration, while a failed or stale save keeps the current draft and its closed-day history.
 Item details show every weekday independently, including closed days, in the scheduling timezone.
 
+## Editing existing reserved times
+
+Both the booking details editor and the calendar inline editor allow purpose edits when the
+original reserved interval no longer meets the current duration, opening-hours or increment
+rules. An informational status message explains this exemption. A current mismatch does not
+establish when the rules changed. Maintenance uses the notes label and retains its existing
+exemptions from opening-hours and configured maximum-duration rules.
+
+Focusing and leaving a time field preserves unchanged off-grid endpoints. Changing either
+endpoint validates the resulting interval against current rules. Invalid changes block saving
+and show field errors. Restoring both original endpoints clears those blocking policy errors
+and permits purpose edits again. A compliant reschedule can be saved normally.
+
+Each editor sends only changed fields. A purpose-only PATCH omits `start` and `end`, so it
+preserves the reserved interval. These rules do not change permissions, lifecycle checks or
+optimistic concurrency. Failed saves retain the draft through the reconciliation described below.
+
 ## Booking window reconciliation
 
 The frontend checks
