@@ -29,6 +29,7 @@ async function fetchPage(
     sort: "start,id",
     page: String(page),
     limit: "100",
+    totals: "true",
     depth: "2",
     "fields[bookings]": CALENDAR_BOOKING_FIELDS,
     "fields[instruments]": "id,globalId,name,deleted,parentContainer",

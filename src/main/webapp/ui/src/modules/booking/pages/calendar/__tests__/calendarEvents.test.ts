@@ -12,6 +12,7 @@ describe("calendar events", () => {
         const url = new URL(request.url);
         requests.push(url);
         if (
+          url.searchParams.get("totals") !== "true" ||
           url.searchParams.get("depth") !== "2" ||
           url.searchParams.get("fields[instruments]") !== "id,globalId,name,deleted,parentContainer" ||
           url.searchParams.get("fields[containers]") !== "id,globalId,name"
