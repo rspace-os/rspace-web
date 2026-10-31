@@ -1,5 +1,5 @@
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
-import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
 import type { TableListFeatures } from "../types";
 import { TableListColumns } from "./TableListColumns";
 import { TableListFilters } from "./TableListFilters";
@@ -20,10 +20,7 @@ export function TableListControlPanel<TDocument>({
   features: TableListFeatures<TDocument>;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
+  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
   onClose: () => void;
 }) {
   const panel = (() => {

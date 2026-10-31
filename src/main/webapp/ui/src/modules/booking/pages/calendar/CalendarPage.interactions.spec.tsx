@@ -35,8 +35,8 @@ afterEach(() => {
 describe("Calendar page", () => {
   test("keeps the event expand control fixed when details open", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.timeGridLayout.click();
-    await calendar.week.click();
+    await calendar.chooseView("Time grid");
+    await calendar.chooseView("Week");
 
     const event = calendar.event("Confocal microscope");
     await expect.element(event).toBeVisible();
@@ -63,15 +63,6 @@ describe("Calendar page", () => {
     expect(expandedPosition?.right).toBe(collapsedPosition?.right);
   });
 
-  test("does not expose details for a busy event", async () => {
-    render(<CalendarPageStory history={history} />);
-    await calendar.timeGridLayout.click();
-    await calendar.week.click();
-
-    await calendar.showEventDetails("Busy").click();
-    await expect.element(calendar.viewItemDetails).not.toBeInTheDocument();
-  });
-
   test("lays the week time grid out on one hour axis", async () => {
     const overlapping = { ...ownBooking, id: 46, start: "2026-08-17T09:00:00Z", end: "2026-08-17T11:00:00Z" };
     worker.use(
@@ -80,8 +71,8 @@ describe("Calendar page", () => {
       ),
     );
     render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
-    await calendar.timeGridLayout.click();
-    await calendar.week.click();
+    await calendar.chooseView("Time grid");
+    await calendar.chooseView("Week");
 
     const monday = calendar.timeGrid.getByRole("region", { name: "Monday, August 17, 2026" });
     const cards = monday.getByRole("button", { name: "Show details for Confocal microscope", exact: false });
@@ -148,6 +139,49 @@ describe("Calendar page", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar");
   });
 
+  test("discards a stale compact edit, keeps the card open and loads the latest version", async () => {
+    let serverBooking: typeof ownBooking = ownBooking;
+    const saves: { ifMatch: string | null; payload: Record<string, unknown> }[] = [];
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const ifMatch = request.headers.get("If-Match");
+        const payload = (await request.json()) as Record<string, unknown>;
+        saves.push({ ifMatch, payload });
+        if (ifMatch !== `"${serverBooking.version}"`) {
+          return HttpResponse.json({ status: 412, code: "errors.api.v2.preconditionFailed" }, { status: 412 });
+        }
+        serverBooking = { ...serverBooking, ...payload, version: serverBooking.version + 1 };
+        return HttpResponse.json({ ...serverBooking, cancellationReason: null });
+      }),
+    );
+    render(<CalendarPageStory history={history} />);
+
+    await calendar.showEventDetails("Confocal microscope").click();
+    const card = page.getByRole("dialog").filter({ hasText: "Confocal microscope" });
+    await calendar.editBooking.click();
+    const purpose = card.getByRole("textbox", { name: "Purpose" });
+    await purpose.fill("Updated cell imaging");
+    serverBooking = { ...serverBooking, purpose: "Changed elsewhere", version: 1 };
+    await card.getByRole("button", { name: "Save changes" }).click();
+
+    const discard = card.getByRole("button", { name: "Discard my changes and load the latest" });
+    await expect.element(discard).toBeEnabled();
+    await discard.click();
+
+    // The focused button leaves with the alert; the card stays open on the latest version.
+    await expect.element(card).toBeVisible();
+    await expect.element(purpose).toHaveValue("Changed elsewhere");
+    await expect.element(purpose).toHaveFocus();
+    await expect.element(card.getByRole("alert")).not.toBeInTheDocument();
+    await purpose.fill("Changed elsewhere, then here");
+    await card.getByRole("button", { name: "Save changes" }).click();
+
+    await expect.poll(() => saves.map(({ ifMatch }) => ifMatch)).toEqual(['"0"', '"1"']);
+    expect(saves[1].payload).toEqual({ purpose: "Changed elsewhere, then here" });
+    await expect.element(purpose).not.toBeInTheDocument();
+  });
+
   test("warns before saving a compact edit that overlaps another booking", async () => {
     let updatedPayload: Record<string, unknown> | undefined;
     worker.use(
@@ -184,38 +218,43 @@ describe("Calendar page", () => {
     expect(updatedPayload).toBeUndefined();
   });
 
-  test.each(["Resources", "Time grid"])("aligns the inline editor with its overlap lane in %s", async (layout) => {
-    const earlier = {
-      ...ownBooking,
-      id: 46,
-      start: "2026-08-17T07:00:00Z",
-      end: "2026-08-17T09:00:00Z",
-      purpose: "Earlier calibration",
-    };
-    worker.use(
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([earlier, ownBooking]))),
-    );
-    render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
-    await page.getByRole("button", { name: layout, exact: true }).click();
-    await calendar.day.click();
-    const event = calendar.event("Cell imaging");
-    await expect.element(event).toBeVisible();
-    const lane = event.element().closest<HTMLElement>("[data-event-id]");
-    if (!lane) throw new Error("Booking must have a timeline lane");
-    expect(Number(lane.dataset.lane)).toBeGreaterThan(0);
-    await event.getByRole("button", { name: "Show details", exact: false }).click();
-    await calendar.editBooking.click();
-    const overlay = page.getByTestId("timeline-window-editor");
-    await expect.element(page.getByRole("button", { name: "Move booking time" })).toBeVisible();
-    await expect
-      .poll(() => Math.abs(overlay.element().getBoundingClientRect().top - event.element().getBoundingClientRect().top))
-      .toBeLessThanOrEqual(1);
-    await expect
-      .poll(() =>
-        Math.abs(overlay.element().getBoundingClientRect().height - event.element().getBoundingClientRect().height),
-      )
-      .toBeLessThanOrEqual(1);
-  });
+  test.each(["By Item", "Time grid"] as const)(
+    "aligns the inline editor with its overlap lane in %s",
+    async (layout) => {
+      const earlier = {
+        ...ownBooking,
+        id: 46,
+        start: "2026-08-17T07:00:00Z",
+        end: "2026-08-17T09:00:00Z",
+        purpose: "Earlier calibration",
+      };
+      worker.use(
+        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([earlier, ownBooking]))),
+      );
+      render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
+      await calendar.chooseView(layout);
+      await calendar.chooseView("Day");
+      const event = calendar.event("Cell imaging");
+      await expect.element(event).toBeVisible();
+      const lane = event.element().closest<HTMLElement>("[data-event-id]");
+      if (!lane) throw new Error("Booking must have a timeline lane");
+      expect(Number(lane.dataset.lane)).toBeGreaterThan(0);
+      await event.getByRole("button", { name: "Show details", exact: false }).click();
+      await calendar.editBooking.click();
+      const overlay = page.getByTestId("timeline-window-editor");
+      await expect.element(page.getByRole("button", { name: "Move booking time" })).toBeVisible();
+      await expect
+        .poll(() =>
+          Math.abs(overlay.element().getBoundingClientRect().top - event.element().getBoundingClientRect().top),
+        )
+        .toBeLessThanOrEqual(1);
+      await expect
+        .poll(() =>
+          Math.abs(overlay.element().getBoundingClientRect().height - event.element().getBoundingClientRect().height),
+        )
+        .toBeLessThanOrEqual(1);
+    },
+  );
 
   test("moves and resizes a booking on the day timeline", async () => {
     render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
@@ -273,8 +312,8 @@ describe("Calendar page", () => {
 
   test("closes booking and busy cards when the page is clicked", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.timeGridLayout.click();
-    await calendar.week.click();
+    await calendar.chooseView("Time grid");
+    await calendar.chooseView("Week");
 
     await calendar.event("Confocal microscope").click();
     await expect

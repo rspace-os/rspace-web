@@ -10,6 +10,16 @@ import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
 import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
 import { renderCalendar } from "./calendarTestHarness";
 
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Turns a quick filter on or off in the Filters menu, then closes it. */
+async function toggleQuickFilter(user: User, name: string) {
+  await user.click(await screen.findByRole("button", { name: /^Filters(?:$|,)/ }));
+  await user.click(await screen.findByRole("switch", { name }));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("switch", { name })).not.toBeInTheDocument());
+}
+
 beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());
 afterAll(() => restoreCalendarScrollTo());
@@ -37,7 +47,7 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     await renderCalendar();
 
-    await user.click(await screen.findByRole("button", { name: "Owned Items" }));
+    await toggleQuickFilter(user, "Owned Items");
 
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
@@ -51,8 +61,7 @@ describe("CalendarPage", () => {
     await renderCalendar();
 
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Resources" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "View: By Item · Day" })).toBeVisible();
     expect(await screen.findByText("Mass spectrometer")).toBeVisible();
     expect(screen.queryByText("No records found")).not.toBeInTheDocument();
   });

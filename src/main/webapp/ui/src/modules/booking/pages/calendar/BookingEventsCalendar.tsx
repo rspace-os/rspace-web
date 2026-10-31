@@ -13,9 +13,9 @@ import type { BookingConfiguration } from "../bookable-items/bookingConfiguratio
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
 import {
+  CalendarAppliedFilters,
   CalendarFilterIssue,
   type CalendarFilterIssueState,
-  CalendarTargetFilterChip,
   type CalendarTargetFilterState,
 } from "./CalendarFilterPanels";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
@@ -251,10 +251,12 @@ export function BookingEventsCalendar({
             eventFilterExpression !== null ||
             mineOnly ||
             myItemsOnly,
+          presentation: "menu",
           buttons: [
             {
               id: "mine",
               label: t("calendar.quickFilters.mine"),
+              description: t("calendar.quickFilters.mineDescription"),
               icon: <CalendarCheck2Icon aria-hidden="true" />,
               pressed: mineOnly,
               onClick: () => onMineChange?.(!mineOnly),
@@ -262,6 +264,7 @@ export function BookingEventsCalendar({
             {
               id: "my-items",
               label: t("calendar.quickFilters.myItems"),
+              description: t("calendar.quickFilters.myItemsDescription"),
               icon: <PackageCheckIcon aria-hidden="true" />,
               pressed: myItemsOnly,
               onClick: () => onMyItemsChange?.(!myItemsOnly),
@@ -296,7 +299,29 @@ export function BookingEventsCalendar({
           );
           return (
             <BookingEditorsContext.Provider value={editorContext}>
-              {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
+              <CalendarAppliedFilters
+                targetFilter={targetFilter}
+                quickFilters={[
+                  ...(mineOnly
+                    ? [
+                        {
+                          id: "mine",
+                          label: t("calendar.quickFilters.mine"),
+                          onRemove: () => onMineChange?.(false),
+                        },
+                      ]
+                    : []),
+                  ...(myItemsOnly
+                    ? [
+                        {
+                          id: "my-items",
+                          label: t("calendar.quickFilters.myItems"),
+                          onRemove: () => onMyItemsChange?.(false),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
               {eventFilterIssue ? <CalendarFilterIssue {...eventFilterIssue} /> : null}
               {layout === "resources" && resourceTableProps?.status !== "loading" && extraEventResourceCount > 0 ? (
@@ -360,6 +385,7 @@ export function BookingEventsCalendar({
                   events={calendarEvents}
                   timezone={timezone}
                   today={todayValue}
+                  search={eventFiltering === false ? "" : eventFiltering.value.search}
                   isLoading={isLoading}
                 />
               )}

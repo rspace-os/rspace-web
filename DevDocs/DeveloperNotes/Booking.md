@@ -328,3 +328,11 @@ concurrency error contract. Refresh to inspect the saved result rather than auto
 resubmitting with a newer version.
 
 Maintenance cancellation stores and audits the reason but sends no notification.
+
+## Catalogue search
+
+Booking catalogue text search matches instrument names, descriptions, readable immediate-parent
+location names, and exact `IN` global IDs. Creation pickers send the required `capability` so
+permission filtering happens before pagination and totals are calculated. Empty result sets
+have no type facets. The administration collection also accepts exact instrument IDs in its
+text search; invalid or out-of-range IDs remain ordinary name searches.

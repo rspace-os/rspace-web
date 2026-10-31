@@ -17,6 +17,7 @@ import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-ite
 import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
+import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
 import AllBookableItemsPage from "../all-bookable-items/AllBookableItemsPage";
@@ -36,7 +37,7 @@ export function BookingPreferencesPageStory({
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
   queryClient.setQueryData(
-    ["api-v2", "openapi", "booking-configurations"],
+    apiV2MetadataKey("booking-configurations"),
     apiV2CollectionMetadataFromOpenApi(bookableItemsOpenApi, "booking-configurations"),
   );
 

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { type BookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingConfigurationKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
@@ -123,6 +124,7 @@ export function AddBookableItemForm({
       // The new configuration is readable, and its instrument is no longer an eligible target.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
         invalidateBookingCatalogueQueries(queryClient),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
       ]);

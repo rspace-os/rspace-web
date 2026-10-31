@@ -73,3 +73,8 @@ export async function fetchRuntimeFieldDefinitions(
     return field === undefined ? [] : [field];
   });
 }
+
+export type RuntimeFieldCatalogForNamespace = {
+  namespace: string;
+  definitions: readonly RuntimeFieldDefinition[];
+};

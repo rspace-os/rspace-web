@@ -24,7 +24,7 @@ import {
   type BookingUpdate,
   updateBooking,
 } from "@/modules/booking/domain/booking";
-import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
+import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
@@ -133,6 +133,7 @@ export function InlineBookingEditor({
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+        await queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all });
       }
     },
   });
