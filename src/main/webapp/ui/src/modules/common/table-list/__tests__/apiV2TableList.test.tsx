@@ -114,7 +114,10 @@ function renderHarness(searchParams = "", props: ComponentProps<typeof Harness> 
 function collectionHandler(requests: string[]) {
   return http.get("/api/v2/instruments", ({ request }) => {
     requests.push(new URL(request.url).searchParams.get("where") ?? "");
-    return HttpResponse.json({ ...v2ListEnvelope([{ id: 1, name: "Centrifuge" }]), limit: 20 });
+    return HttpResponse.json({
+      ...v2ListEnvelope([{ id: 1, name: "Centrifuge" }], new URL(request.url).searchParams.get("totals") === "true"),
+      limit: 20,
+    });
   });
 }
 const catalog = (fields = [definition()]) => HttpResponse.json({ fields, hasMore: false, page: 1, limit: 50 });
@@ -122,6 +125,98 @@ const where = "customFields.SF104==hazardous";
 const invalidTarget = "target==XX43";
 const params = (rule: string) => new URLSearchParams({ "instruments.where": rule }).toString();
 afterEach(() => window.localStorage.clear());
+
+describe("API v2 optional totals", () => {
+  it("caches one total per filter/sort, pages without totals, and refreshes totals after mutations", async () => {
+    const requests: URLSearchParams[] = [];
+    let total = 21;
+    server.use(
+      http.get("/api/v2/instruments", ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        requests.push(params);
+        const page = Number(params.get("page") ?? 1);
+        return HttpResponse.json({
+          ...v2ListEnvelope([{ id: page, name: `Instrument ${page}` }], params.get("totals") === "true"),
+          ...(params.get("totals") === "true" ? { totalDocs: total, totalPages: 2 } : {}),
+          page,
+          limit: 20,
+          hasNextPage: page === 1,
+          nextPage: page === 1 ? 2 : null,
+        });
+      }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(
+      () =>
+        useApiV2TableList({
+          resourceName: "instruments",
+          config,
+          documentSchema,
+          metadata,
+          table: { queryString: false },
+        }),
+      {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={client}>
+            <Suspense fallback={null}>{children}</Suspense>
+          </QueryClientProvider>
+        ),
+      },
+    );
+    const countRequests = () => requests.filter((params) => params.get("totals") === "true");
+    await waitFor(() => expect(result.current?.tableProps.features.pagination).toMatchObject({ rowCount: 21 }));
+    act(() => result.current.setPage({ pageIndex: 1, pageSize: 20 }));
+    await waitFor(() => expect(result.current.tableProps.rows[0]?.name).toBe("Instrument 2"));
+    expect(requests.filter((params) => params.get("page") === "2").every((params) => !params.has("totals"))).toBe(true);
+    expect(countRequests()).toHaveLength(1);
+    expect(result.current.tableProps.features.pagination).toMatchObject({ hasNextPage: false, rowCount: 21 });
+    act(() => result.current.setSorting([{ field: "name", direction: "desc" }]));
+    await waitFor(() => expect(countRequests()).toHaveLength(2));
+    act(() =>
+      result.current.setFilters({
+        search: "",
+        expression: { kind: "comparison", field: "name", operator: "equals", value: "Centrifuge" },
+      }),
+    );
+    await waitFor(() => expect(countRequests()).toHaveLength(3));
+    total = 22;
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ["api-v2", "instruments"] });
+    });
+    await waitFor(() => expect(result.current.tableProps.features.pagination).toMatchObject({ rowCount: 22 }));
+    expect(countRequests()).toHaveLength(4);
+    expect(countRequests().at(-1)?.get("where")).toBe("name==Centrifuge");
+    expect(countRequests().at(-1)?.get("sort")).toBe("-name");
+  });
+
+  it("shows an unknown total while counting and disables next from the last slice", async () => {
+    const user = userEvent.setup();
+    const { promise, resolve } = Promise.withResolvers<void>();
+    server.use(
+      http.get("/api/v2/instruments", async ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        if (params.get("totals") === "true") await promise;
+        const page = Number(params.get("page") ?? 1);
+        return HttpResponse.json({
+          ...v2ListEnvelope([{ id: page, name: `Instrument ${page}` }], params.get("totals") === "true"),
+          ...(params.get("totals") === "true" ? { totalDocs: 21, totalPages: 2 } : {}),
+          page,
+          limit: 20,
+          hasNextPage: page === 1,
+          nextPage: page === 1 ? 2 : null,
+        });
+      }),
+    );
+    renderHarness();
+    await screen.findByRole("cell", { name: "Instrument 1" });
+    expect(screen.getByText("common:tableList.resultsUnknown")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.nextPage" }));
+    await screen.findByRole("cell", { name: "Instrument 2" });
+    expect(screen.getByRole("button", { name: "common:tableList.actions.nextPage" })).toBeDisabled();
+    resolve();
+    await screen.findByText("common:tableList.results");
+  });
+});
 
 describe("API v2 saved views", () => {
   it("keeps the adapter stable across rerenders after changing caller scope", async () => {
@@ -204,7 +299,7 @@ describe("API v2 saved views", () => {
     await user.click(await screen.findByRole("button", { name: "Select definition" }));
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
     await user.click(screen.getByRole("button", { name: "Change catalogue" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("catalog error"));
+    await waitFor(() => expect(screen.getByRole("status")).toMatchTextContent("catalog error"));
     expect(catalogRequests).not.toHaveBeenCalled();
   });
 
@@ -250,10 +345,10 @@ describe("API v2 saved views", () => {
     await waitFor(() => expect(requestedMissing).toHaveBeenCalledOnce());
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
     finish();
-    expect(await screen.findByRole("alert")).toHaveTextContent(missing);
+    expect(await screen.findByRole("alert")).toMatchTextContent(missing);
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
     expect(new URLSearchParams(history.location.search).get("instruments.where")).toBe(missing);
-    expect(requests).toEqual([where]);
+    expect(requests).toEqual([where, where]);
   });
 
   it("supports disabled persistence without a Nuqs provider", async () => {
@@ -279,7 +374,7 @@ describe("API v2 saved views", () => {
       </QueryClientProvider>,
     );
     await screen.findByRole("cell", { name: "Centrifuge" });
-    expect(requests).toEqual([""]);
+    expect(requests).toEqual(["", ""]);
   });
 
   it("fetches when a saved sort is disabled for the table", async () => {
@@ -292,7 +387,7 @@ describe("API v2 saved views", () => {
       </Providers>,
     );
     await screen.findByRole("cell", { name: "Centrifuge" });
-    expect(requests).toEqual([""]);
+    expect(requests).toEqual(["", ""]);
   });
 
   it("hydrates new fields on back and forward navigation without broad requests", async () => {
@@ -366,7 +461,7 @@ describe("API v2 saved views", () => {
     await screen.findByRole("alert");
     expect(screen.queryByRole("cell", { name: "Centrifuge" })).not.toBeInTheDocument();
     expect(fieldRequests).toBe(2);
-    expect(requests).toEqual([where]);
+    expect(requests).toEqual([where, where]);
   });
 
   it("never broadens a valid local-storage filter during URL restoration", async () => {
@@ -402,7 +497,7 @@ describe("API v2 saved views", () => {
     expect(requests).toEqual([]);
     finish();
     await screen.findByRole("cell", { name: "Centrifuge" });
-    expect(requests).toEqual([where]);
+    expect(requests).toEqual([where, where]);
   });
 
   it("preserves a missing saved field and only fetches after explicit reset", async () => {
@@ -413,11 +508,11 @@ describe("API v2 saved views", () => {
       http.get("/api/v2/instruments/fields/customFields", () => catalog([])),
     );
     renderHarness(params(where));
-    expect(await screen.findByRole("alert")).toHaveTextContent(where);
+    expect(await screen.findByRole("alert")).toMatchTextContent(where);
     expect(requests).toEqual([]);
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
     await screen.findByRole("cell", { name: "Centrifuge" });
-    expect(requests).toEqual([""]);
+    expect(requests).toEqual(["", ""]);
   });
 
   it("preserves an invalid URL picker identity and only fetches after explicit reset", async () => {
@@ -425,11 +520,11 @@ describe("API v2 saved views", () => {
     const requests: string[] = [];
     server.use(collectionHandler(requests));
     renderHarness(params(invalidTarget));
-    expect(await screen.findByRole("alert")).toHaveTextContent(invalidTarget);
+    expect(await screen.findByRole("alert")).toMatchTextContent(invalidTarget);
     expect(requests).toEqual([]);
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
     await screen.findByRole("cell", { name: "Centrifuge" });
-    expect(requests).toEqual([""]);
+    expect(requests).toEqual(["", ""]);
   });
 
   it("preserves an invalid local-storage picker list and only fetches after explicit reset", async () => {
@@ -440,13 +535,13 @@ describe("API v2 saved views", () => {
     window.localStorage.setItem("rspace.tableList.instruments.view", stored);
     server.use(collectionHandler(requests));
     renderHarness();
-    expect(await screen.findByRole("alert")).toHaveTextContent(invalidList);
+    expect(await screen.findByRole("alert")).toMatchTextContent(invalidList);
     expect(requests).toEqual([]);
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
     await screen.findByRole("cell", { name: "Centrifuge" });
     expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBeNull();
-    expect(requests).toEqual([""]);
+    expect(requests).toEqual(["", ""]);
   });
 
   it("retries a failed catalog without losing the saved rule", async () => {
@@ -460,12 +555,12 @@ describe("API v2 saved views", () => {
       ),
     );
     renderHarness(params(where));
-    expect(await screen.findByRole("alert")).toHaveTextContent(where);
+    expect(await screen.findByRole("alert")).toMatchTextContent(where);
     expect(requests).toEqual([]);
     fail = false;
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.retry" }));
     await screen.findByRole("cell", { name: "Centrifuge" });
-    expect(requests).toEqual([where]);
+    expect(requests).toEqual([where, where]);
   });
 
   it("preserves malformed stored views and blocks collection requests", async () => {

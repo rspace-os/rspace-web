@@ -40,18 +40,26 @@ const metadata: ApiV2CollectionMetadata<ResearchRecord> = {
   pagination: { defaultLimit: 5, maximumLimit: 100 },
 };
 
-const storyFetch: typeof globalThis.fetch = async () =>
-  new Response(
+const storyFetch: typeof globalThis.fetch = async (input) => {
+  const params = new URL(String(input), "http://localhost").searchParams;
+  const page = Number(params.get("page") ?? 1);
+  const limit = Number(params.get("limit") ?? 5);
+  const total = storyRecords.length;
+  return new Response(
     JSON.stringify({
-      ...v2ListEnvelope(storyRecords.slice(0, 5)),
-      totalDocs: 37,
-      limit: 5,
-      totalPages: 8,
-      hasNextPage: true,
-      nextPage: 2,
+      ...v2ListEnvelope(storyRecords.slice((page - 1) * limit, page * limit)),
+      ...(params.get("totals") === "true" ? { totalDocs: total, totalPages: Math.ceil(total / limit) } : {}),
+      limit,
+      page,
+      pagingCounter: (page - 1) * limit + 1,
+      hasPrevPage: page > 1,
+      prevPage: page > 1 ? page - 1 : null,
+      hasNextPage: page * limit < total,
+      nextPage: page * limit < total ? page + 1 : null,
     }),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
+};
 
 function ApiV2Demo() {
   const table = useApiV2TableList({

@@ -11,7 +11,7 @@ import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import type { CollectionPage, CollectionQueryState } from "../types";
 import {
   createApiV2FilterFields,
@@ -175,9 +175,9 @@ export function createApiV2CollectionAdapter<TDocument>({
     // is run-time state that a static type cannot narrow.
     parseResponse: (input, selected) => {
       const projection = v.pick(responseSchema, selected as unknown as [string, ...string[]]);
-      const result = parseOrThrow(v2ListEnvelope(projection), input);
+      const result = parseOrThrow(v2PageEnvelope(projection), input);
       const rows = withExpandedTargetFields(result.docs as TDocument[], input, relationshipNames.map(String));
-      return { rows, rowCount: result.totalDocs };
+      return { rows, rowCount: result.totalDocs, hasNextPage: result.hasNextPage };
     },
   };
 }

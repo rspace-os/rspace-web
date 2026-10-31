@@ -85,7 +85,7 @@ describe("createApiV2CollectionFetcher", () => {
         },
         { signal: new AbortController().signal },
       ),
-    ).resolves.toEqual({ rows: [], rowCount: 12 });
+    ).resolves.toEqual({ rows: [], rowCount: 12, hasNextPage: true });
   });
 
   it("raises the request depth for a visible target field", async () => {
@@ -179,7 +179,8 @@ describe("createApiV2CollectionFetcher", () => {
     const fetchCollection = createApiV2CollectionFetcher(adapter, { projection });
     await expect(fetchCollection(state, { signal: new AbortController().signal })).resolves.toEqual({
       rows: [{ id: "one", title: "One", score: 1, capability: true }],
-      rowCount: 1,
+      rowCount: undefined,
+      hasNextPage: false,
     });
   });
 

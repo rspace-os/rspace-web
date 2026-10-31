@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
@@ -128,7 +129,10 @@ export function useApiV2TableList<
     visibleFields: restoredColumns ?? rowConfig.defaultColumns,
     sorting: restoredSorting ?? rowConfig.defaultSort ?? [],
   };
-  const fetchCollection = useMemo(() => createApiV2CollectionFetcher(adapter, request), [adapter, request]);
+  const fetchCollection = useMemo(
+    () => createApiV2CollectionFetcher(adapter, { ...request, totals: false }),
+    [adapter, request],
+  );
   // Acknowledge each restored signature so later edits may diverge and fetch.
   // A new signature must match its saved state before it is acknowledged.
   const [restoredSignature, setRestoredSignature] = useState<string | null>(null);
@@ -183,6 +187,32 @@ export function useApiV2TableList<
       enabled: ready,
     },
   });
+  // Count identity excludes paging and projection. Prefix invalidation after writes
+  // refreshes this active query along with the current page.
+  const totals = useQuery({
+    queryKey: [
+      "api-v2",
+      resourceName,
+      endpoint,
+      authScope,
+      "totals",
+      {
+        filters: result.state.filters,
+        sorting: result.state.sorting,
+        baseFilter: request?.baseFilter,
+      },
+    ],
+    enabled: ready(result.state),
+    staleTime: Infinity,
+    gcTime: query?.gcTime,
+    retry: query?.retry,
+    queryFn: async ({ signal }) => {
+      const fetchTotals = createApiV2CollectionFetcher(adapter, { ...request, totals: true });
+      const page = await fetchTotals({ ...result.state, page: { pageIndex: 0, pageSize: 1 } }, { signal });
+      if (page.rowCount === undefined) throw new Error("API V2 totals response omitted totalDocs");
+      return page.rowCount;
+    },
+  });
   useEffect(() => {
     if (!blocked && matchesSaved(result.state) && restoredSignature !== saved.signature) {
       setRestoredSignature(saved.signature);
@@ -192,6 +222,16 @@ export function useApiV2TableList<
     ...result,
     tableProps: {
       ...result.tableProps,
+      features: {
+        ...result.tableProps.features,
+        pagination:
+          result.tableProps.features.pagination === false
+            ? false
+            : {
+                ...result.tableProps.features.pagination,
+                rowCount: totals.data,
+              },
+      },
       stateSync: persistenceEnabled
         ? createElement(SavedTableViewReader, {
             key: config.slug,

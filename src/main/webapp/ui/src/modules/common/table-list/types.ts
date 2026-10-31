@@ -42,7 +42,8 @@ export type CollectionQueryState<TDocument> = {
 
 export type CollectionPage<TDocument> = {
   rows: readonly TDocument[];
-  rowCount: number;
+  rowCount?: number;
+  hasNextPage?: boolean;
 };
 
 type CollectionFetchContext = {
@@ -96,7 +97,8 @@ export type TableListFeatures<TDocument> = {
     | false
     | {
         value: PageState;
-        rowCount: number;
+        rowCount?: number;
+        hasNextPage?: boolean;
         onChange: (value: PageState) => void;
       };
   columns:

@@ -7,6 +7,8 @@ export type ApiV2CollectionProjection<TDocument> = "visible" | { fixed: readonly
 
 export type ApiV2CollectionFetchOptions<TDocument> = {
   endpoint?: string;
+  /** Request a total alongside this page. Normal page requests omit totals. */
+  totals?: boolean;
   depth?: number;
   /** Cache identity for authorization supplied through headers or a token getter. Change it when the user or tenant changes. */
   authScope?: string | number;
@@ -78,6 +80,7 @@ export function createApiV2CollectionFetcher<TDocument>(
       "visible",
       options.baseFilter,
     );
+    if (options.totals) parameters.set("totals", "true");
     const response = await request(`${endpoint}?${parameters}`, {
       method: "GET",
       headers,

@@ -1849,8 +1849,10 @@ export default interface Resources {
       "loading": "Loading records",
       "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
       "page": "Page {page, number} of {pages, number}",
+      "pageUnknown": "Page {page, number}",
       "refreshing": "Refreshing records",
       "results": "{first, number}–{last, number} of {total, plural, one {# record} other {# records}}",
+      "resultsUnknown": "{first, number}–{last, number} of many",
       "rows": "Rows",
       "rowsPerPage": "Rows per page",
       "savedView": {

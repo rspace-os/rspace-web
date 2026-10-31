@@ -440,6 +440,8 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
         <TableListPagination
           value={features.pagination.value}
           rowCount={clientSide ? table.getPrePaginatedRowModel().rows.length : features.pagination.rowCount}
+          hasNextPage={clientSide ? undefined : features.pagination.hasNextPage}
+          pageRowCount={table.getRowModel().rows.length}
           limits={config.pagination?.limits}
           onChange={features.pagination.onChange}
         />
