@@ -140,7 +140,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
         total: locations.length,
       });
     }),
-    http.get("/api/v2/instruments", () => HttpResponse.json(collectionPage([]))),
+    http.get("/api/v2/instruments", ({ request }) => apiV2CollectionResponse("instruments", request, [])),
     http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
       const url = new URL(request.url);
       const ids = url.searchParams.get("ids");
@@ -179,7 +179,7 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
       const targetId = where.match(/target==([^;]+)/)?.[1].replaceAll('"', "");
       if (!targetId) return undefined;
       const docs = detailBookingEvents.filter((booking) => booking.target.globalId === targetId);
-      return HttpResponse.json(collectionPage(docs));
+      return apiV2CollectionResponse("bookings", request, docs);
     }),
     http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
       if (new URL(request.url).searchParams.has("search")) return new HttpResponse(null, { status: 400 });
