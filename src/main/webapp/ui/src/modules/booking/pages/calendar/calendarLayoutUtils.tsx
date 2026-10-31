@@ -153,7 +153,12 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
       id: String(event.id),
       kind: "blockout",
       title: i18n.t("booking:bookings.maintenanceLabel"),
-      item: { name: event.target.value.name, globalId: event.target.globalId, location },
+      item: {
+        name: event.target.value.name,
+        globalId: event.target.globalId,
+        canViewConfiguration: event.canViewConfiguration,
+        location,
+      },
       createdBy: event.createdBy ?? undefined,
       notes: event.purpose ?? undefined,
       ...slice,
@@ -168,6 +173,7 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
     item: {
       name: event.target.value.name,
       globalId: event.target.globalId,
+      canViewConfiguration: event.canViewConfiguration,
       location,
     },
     notes: event.purpose ?? undefined,

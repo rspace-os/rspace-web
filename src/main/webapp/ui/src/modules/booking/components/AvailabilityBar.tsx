@@ -362,6 +362,7 @@ export function AvailabilityBar({
                                   : t("availabilityBar.slice.sources.booking")
                             }
                             period={formatTimeRange(source)}
+                            canViewConfiguration={source.booking.canViewConfiguration}
                             purpose={source.booking.purpose}
                             maintenance={maintenance}
                             item={maintenance || showBookingContextDetails ? item : undefined}

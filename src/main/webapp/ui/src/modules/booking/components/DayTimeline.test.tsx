@@ -87,52 +87,68 @@ describe("DayTimeline table row", () => {
     expect(onRender).not.toHaveBeenCalled();
   });
 
-  it("reuses the expandable event card outside the timeline", async () => {
-    const user = userEvent.setup();
-    const wrapper = await timelineWrapper();
+  it.each([true, false, undefined])(
+    "gates expanded item links on configuration access (%s)",
+    async (canViewConfiguration) => {
+      const user = userEvent.setup();
+      const wrapper = await timelineWrapper();
 
-    render(
-      <DayTimelineEventCard
-        date="2026-08-17"
-        event={{
-          id: "flow-card",
-          kind: "booking",
-          privacy: "full",
-          title: "Confocal microscope",
-          bookedBy: "Ada",
-          item: {
-            name: "Confocal microscope",
-            globalId: "IN123",
-            location: { name: "Imaging lab", globalId: "IC123" },
-          },
-          canEdit: false,
-          notes: "Cell imaging",
-          startMinute: 480,
-          endMinute: 540,
-        }}
-      />,
-      { wrapper },
-    );
+      render(
+        <DayTimelineEventCard
+          date="2026-08-17"
+          event={{
+            id: "flow-card",
+            kind: "booking",
+            privacy: "full",
+            title: "Confocal microscope",
+            bookedBy: "Ada",
+            item: {
+              name: "Confocal microscope",
+              canViewConfiguration,
+              globalId: "IN123",
+              location: { name: "Imaging lab", globalId: "IC123" },
+            },
+            canEdit: false,
+            notes: "Cell imaging",
+            startMinute: 480,
+            endMinute: 540,
+          }}
+        />,
+        { wrapper },
+      );
 
-    expect(screen.getByText("17-08-2026")).toBeVisible();
-    expect(screen.getByText("08:00 - 09:00")).toBeVisible();
-    const details = screen.getByRole("button", { name: "Show details for Confocal microscope · Ada, 08:00–09:00" });
-    details.focus();
-    await user.keyboard("{Enter}");
+      expect(screen.getByText("17-08-2026")).toBeVisible();
+      expect(screen.getByText("08:00 - 09:00")).toBeVisible();
+      const details = screen.getByRole("button", {
+        name: "Show details for Confocal microscope · Ada, 08:00–09:00",
+      });
+      details.focus();
+      await user.keyboard("{Enter}");
 
-    expect(details).toHaveAttribute("aria-expanded", "true");
-    const popup = screen.getByRole("dialog", { name: "08:00–09:00" });
-    expect(within(popup).getByText("17-08-2026")).toBeVisible();
-    expect(within(popup).queryByText("Start")).not.toBeInTheDocument();
-    expect(within(popup).queryByText("End")).not.toBeInTheDocument();
-    expect(within(popup).getByText("Cell imaging")).toBeVisible();
-    expect(within(popup).getByText("Ada")).toBeVisible();
-    expect(within(popup).getByRole("link", { name: "Open inventory record IN123" })).toHaveAttribute(
-      "href",
-      "/globalId/IN123",
-    );
-    expect(within(popup).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC123");
-  });
+      expect(details).toHaveAttribute("aria-expanded", "true");
+      const popup = screen.getByRole("dialog", { name: "08:00–09:00" });
+      expect(within(popup).getByText("17-08-2026")).toBeVisible();
+      expect(within(popup).queryByText("Start")).not.toBeInTheDocument();
+      expect(within(popup).queryByText("End")).not.toBeInTheDocument();
+      expect(within(popup).getByText("Cell imaging")).toBeVisible();
+      expect(within(popup).getByText("Ada")).toBeVisible();
+      if (canViewConfiguration) {
+        expect(within(popup).getByRole("link", { name: "Confocal microscope" })).toHaveAttribute(
+          "href",
+          "/booking/bookable-items/IN123",
+        );
+        expect(within(popup).getByRole("link", { name: "Open inventory record IN123" })).toHaveAttribute(
+          "href",
+          "/globalId/IN123",
+        );
+      } else {
+        expect(within(popup).getByText("Confocal microscope")).toBeVisible();
+        expect(within(popup).queryByRole("link", { name: "Confocal microscope" })).not.toBeInTheDocument();
+        expect(within(popup).queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+      }
+      expect(within(popup).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC123");
+    },
+  );
 
   it("shows both dates and day offsets for an event crossing the displayed day", async () => {
     const user = userEvent.setup();

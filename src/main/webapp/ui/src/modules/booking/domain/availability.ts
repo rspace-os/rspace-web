@@ -33,6 +33,7 @@ export type AvailabilitySource = {
     id: number;
     kind: BookingEventKind;
     privacy: "full" | "busy";
+    canViewConfiguration?: boolean;
     purpose: string | null;
     bookedBy: string | null;
     createdBy?: string | null;
@@ -246,6 +247,7 @@ function sourcedInterval(
               id: booking.id,
               kind: booking.kind,
               privacy: booking.privacy,
+              canViewConfiguration: booking.canViewConfiguration,
               purpose: booking.purpose,
               bookedBy: booking.bookedBy,
               createdBy: booking.createdBy,

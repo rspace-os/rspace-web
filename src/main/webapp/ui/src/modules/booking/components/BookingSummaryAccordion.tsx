@@ -22,6 +22,7 @@ type BookingSummaryAccordionProps = {
   purpose: string | null;
   maintenance?: boolean;
   item?: BookingSummaryItem;
+  canViewConfiguration?: boolean;
   actor?: string | null;
   detailsBookingId?: number;
 };
@@ -34,6 +35,7 @@ export function BookingSummaryAccordion({
   purpose,
   maintenance = false,
   item,
+  canViewConfiguration = false,
   actor,
   detailsBookingId,
 }: BookingSummaryAccordionProps) {
@@ -63,10 +65,14 @@ export function BookingSummaryAccordion({
                 <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
                 <dd>
                   <InventoryItem
-                    name={<BookableItemName name={item.name} globalId={item.globalId} />}
+                    name={
+                      canViewConfiguration ? <BookableItemName name={item.name} globalId={item.globalId} /> : item.name
+                    }
                     globalId={item.globalId}
-                    href={`/globalId/${item.globalId}`}
-                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}
+                    href={canViewConfiguration ? `/globalId/${item.globalId}` : undefined}
+                    idLinkLabel={
+                      canViewConfiguration ? t("dayTimeline.expanded.openItem", { globalId: item.globalId }) : undefined
+                    }
                     idPlacement="title"
                     className="p-0"
                   >

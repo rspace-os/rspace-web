@@ -14,6 +14,7 @@ type BaseEvent = {
 export type DayTimelineItem = {
   name: string;
   globalId: string;
+  canViewConfiguration?: boolean;
   location?: { name: string; globalId: string };
 };
 

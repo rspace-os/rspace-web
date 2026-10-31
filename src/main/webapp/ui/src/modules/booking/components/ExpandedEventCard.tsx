@@ -112,10 +112,20 @@ export function ExpandedEventCard({
           <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
           <dd>
             <InventoryItem
-              name={<BookableItemName name={event.item.name} globalId={event.item.globalId} />}
+              name={
+                event.item.canViewConfiguration ? (
+                  <BookableItemName name={event.item.name} globalId={event.item.globalId} />
+                ) : (
+                  event.item.name
+                )
+              }
               globalId={event.item.globalId}
-              href={`/globalId/${event.item.globalId}`}
-              idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })}
+              href={event.item.canViewConfiguration ? `/globalId/${event.item.globalId}` : undefined}
+              idLinkLabel={
+                event.item.canViewConfiguration
+                  ? t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })
+                  : undefined
+              }
               idPlacement="title"
               className="p-0"
             >
