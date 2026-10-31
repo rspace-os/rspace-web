@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.axiope.webapp.jsp.EscapeXmlELResolver;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager;
 import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.model.User;
@@ -18,7 +19,10 @@ import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.el.ELProcessor;
 import jakarta.servlet.http.HttpSession;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -27,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -175,6 +180,31 @@ class DashboardBookingNotificationMessagesTest {
         messages.get(7L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"),
         messages.get(7L));
     assertFalse(messages.get(7L).contains("AM"), messages.get(7L));
+  }
+
+  @Test
+  void jspRendersBookingLinksWithoutUnescapingUserMarkup() throws Exception {
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+    BookingNotificationData data = data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z");
+    data.setInstrumentName("<img src=x onerror=alert(1)>");
+    Notification notification = bookingNotification(1L, "Stored message", data);
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(List.of(notification), "recipient", session, null);
+    ELProcessor el = new ELProcessor();
+    el.getELManager().addELResolver(new EscapeXmlELResolver());
+    el.defineBean("bookingNotificationMessages", messages);
+    el.defineBean("notification", notification);
+    el.defineFunction(
+        "f", "unescapeXml", "org.apache.commons.text.StringEscapeUtils", "unescapeXml");
+    String jsp =
+        Files.readString(Path.of("src/main/webapp/WEB-INF/pages/dashboard/notifications_ajax.jsp"));
+    var output =
+        Pattern.compile("<c:out value=\"\\$\\{([^}]+)}\" escapeXml=\"false\"").matcher(jsp);
+    assertTrue(output.find());
+    String rendered = (String) el.eval(output.group(1));
+    assertTrue(rendered.contains("<a href=\"/booking/calendar/bookings/42\">42</a>"), rendered);
+    assertTrue(rendered.contains("&lt;img src=x onerror=alert(1)&gt;"), rendered);
+    assertFalse(rendered.contains("<img"), rendered);
   }
 
   private static Notification bookingNotification(
