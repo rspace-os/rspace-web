@@ -60,6 +60,15 @@ public class DocConverterProdConfig {
   @Value("${aspose.use.dummy.converter:false}")
   private boolean useDummyConverter;
 
+  @Value("${sample.pdf:}")
+  private String samplePdfPath;
+
+  @Value("${sample.png:}")
+  private String samplePngPath;
+
+  @Value("${sample.doc:}")
+  private String sampleDocPath;
+
   @Autowired DocConverterBaseConfig baseCfg;
 
   // these 2 mechanisms are needed for test and production to work.
@@ -133,8 +142,7 @@ public class DocConverterProdConfig {
     delegates.add(baseCfg.pdfToImageConverter());
     String licensePath = getLicensePath();
     if (useDummyConverter) {
-      delegates.add(new DummyConversionService());
-      log.info("Using dummy conversion service returning sample files.");
+      delegates.add(dummyConversionService());
     } else if (asposeEnabled) {
       if (!StringUtils.isBlank(asposeWebAppUrl)) {
         delegates.add(asposeWebAppService());
@@ -162,6 +170,30 @@ public class DocConverterProdConfig {
     }
     composite.setDelegates(delegates);
     return composite;
+  }
+
+  // built here, not as a bean, so the sample.* paths must be passed in explicitly
+  private DocumentConversionService dummyConversionService() {
+    if (!isSampleSet(samplePdfPath, "sample.pdf")
+        || !isSampleSet(samplePngPath, "sample.png")
+        || !isSampleSet(sampleDocPath, "sample.doc")) {
+      warnNoConversions();
+      return nullService();
+    }
+    DummyConversionService dummy = new DummyConversionService();
+    dummy.setPdfPath(samplePdfPath);
+    dummy.setImagePath(samplePngPath);
+    dummy.setDocPath(sampleDocPath);
+    log.info("Using dummy conversion service returning sample files.");
+    return dummy;
+  }
+
+  private boolean isSampleSet(String filePath, String propertyName) {
+    if (StringUtils.isBlank(filePath)) {
+      log.warn("Dummy converter enabled but property '{}' is not set", propertyName);
+      return false;
+    }
+    return isReadable(filePath);
   }
 
   @Bean
