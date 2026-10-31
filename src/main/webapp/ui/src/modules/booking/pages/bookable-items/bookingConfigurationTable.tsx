@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
@@ -32,7 +33,7 @@ export const bookingConfigurationConfig = {
             "div",
             { className: "grid gap-1" },
             createElement(InventoryItem, {
-              name: row.target.value.name,
+              name: createElement(BookableItemName, { name: row.target.value.name, globalId: row.target.globalId }),
               globalId: row.target.globalId,
               compact: true,
               size: "xs",

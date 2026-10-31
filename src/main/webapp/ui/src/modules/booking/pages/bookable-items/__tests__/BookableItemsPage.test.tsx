@@ -245,7 +245,8 @@ describe("BookableItemsPage", () => {
     );
     const { container } = renderBookableItemsPage();
 
-    const targetName = await screen.findByText("Confocal microscope");
+    const targetName = await screen.findByRole("link", { name: "Confocal microscope" });
+    expect(targetName).toHaveAttribute("href", "/booking/bookable-items/IN123");
     const targetCell = targetName.closest("td");
     expect(targetCell).not.toBeNull();
     expect(
