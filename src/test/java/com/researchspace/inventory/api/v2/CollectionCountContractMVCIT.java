@@ -28,7 +28,13 @@ class CollectionCountContractMVCIT extends SpringTransactionalTest {
       for (var resource : catalog.routableResources()) {
         if (!resource.supports(ResourceOperation.COUNT)
             || !resource.supports(ResourceOperation.LIST)) continue;
-        for (String where : java.util.List.of("", "id=gt=0")) {
+        String id = resource.description().idField();
+        var selector = resource.description().requirePublicFilterSelector(id);
+        String filtered =
+            selector.operators().contains(com.researchspace.model.collection.Operator.GREATER_THAN)
+                ? id + "=gt=0"
+                : id + "=exists=true";
+        for (String where : java.util.List.of("", filtered)) {
           var count =
               mvc.perform(
                       get("/api/v2/" + resource.resourceName() + "/count")
