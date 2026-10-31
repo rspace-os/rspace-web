@@ -145,10 +145,10 @@ describe("RenderFields", () => {
     await form.toggleEnabled();
     await form.chooseStatus("Published");
 
-    await expect.element(form.values).toHaveTextContent('"title":"Updated title"');
-    await expect.element(form.values).toHaveTextContent('"score":17');
-    await expect.element(form.values).toHaveTextContent('"enabled":false');
-    await expect.element(form.values).toHaveTextContent('"status":"published"');
+    await expect.element(form.values).toMatchTextContent('"title":"Updated title"');
+    await expect.element(form.values).toMatchTextContent('"score":17');
+    await expect.element(form.values).toMatchTextContent('"enabled":false');
+    await expect.element(form.values).toMatchTextContent('"status":"published"');
   });
 
   test("renders string, object, and React select options", async () => {
@@ -298,14 +298,14 @@ describe("RenderFields card select", () => {
 
     await form.chooseNextCardStatus("Draft");
     await expect.element(form.cardStatus("In review")).toBeChecked();
-    await expect.element(form.values).toHaveTextContent('"status":"review"');
+    await expect.element(form.values).toMatchTextContent('"status":"review"');
 
     await form.toggleEnabled();
     await expect.element(form.cardStatus("Published")).not.toBeDisabled();
     await expect.element(form.cardStatus("Archived")).toBeDisabled();
     await form.chooseCardStatus("Published");
     await expect.element(form.cardStatus("Published")).toBeChecked();
-    await expect.element(form.values).toHaveTextContent('"status":"published"');
+    await expect.element(form.values).toMatchTextContent('"status":"published"');
   });
 });
 
@@ -323,7 +323,7 @@ describe("RenderFields radio select", () => {
     await form.chooseSubscription("Off");
 
     await expect.element(form.subscriptionOption("Off")).toBeChecked();
-    await expect.element(form.values).toHaveTextContent('"subscription":"off"');
+    await expect.element(form.values).toMatchTextContent('"subscription":"off"');
     await expectNoAxeViolations();
   });
 

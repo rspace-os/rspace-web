@@ -68,8 +68,8 @@ describe("RelationshipField", () => {
     await form.addCollaborator("Katherine Johnson");
     await form.removeCollaborator("Grace Hopper");
 
-    await expect.element(form.values).toHaveTextContent('"ownerId":{"relationTo":"users","value":"user-2"}');
-    await expect.element(form.values).toHaveTextContent('"collaboratorIds":["user-3"]');
+    await expect.element(form.values).toMatchTextContent('"ownerId":{"relationTo":"users","value":"user-2"}');
+    await expect.element(form.values).toMatchTextContent('"collaboratorIds":["user-3"]');
   });
 
   test("renders, preserves, and removes remote has-many relationship selections", async () => {
@@ -105,15 +105,15 @@ describe("RelationshipField", () => {
 
     const values = page.getByRole("status", { name: "Form values" });
     await expect.element(page.getByText("First instrument")).toBeVisible();
-    await expect.element(page.getByText("IN2")).toBeVisible();
-    await expect.element(values).toHaveTextContent('"instrumentIds":[1,2]');
+    await expect.element(page.getByText("IN2 (unavailable)")).toBeVisible();
+    await expect.element(values).toMatchTextContent('"instrumentIds":[1,2]');
 
     await userEvent.type(page.getByRole("combobox", { name: "Collaborators" }), "Third");
     const thirdInstrumentOption = page.getByRole("option").filter({ hasText: "Third instrument" });
     const thirdInstrumentName = thirdInstrumentOption.getByText("Third instrument", { exact: true });
     await expect.element(thirdInstrumentName).toBeVisible();
     await userEvent.click(thirdInstrumentName);
-    await expect.element(values).toHaveTextContent('"instrumentIds":[1,2,3]');
+    await expect.element(values).toMatchTextContent('"instrumentIds":[1,2,3]');
 
     const search = requests.find(({ url }) => url.searchParams.get("where") === "name=contains=Third");
     expect(search?.url.searchParams.get("where")).toBe("name=contains=Third");
@@ -121,12 +121,12 @@ describe("RelationshipField", () => {
     expect(search?.url.searchParams.get("limit")).toBe("20");
     expect(search?.authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
 
-    await userEvent.click(page.getByRole("button", { name: "Remove IN2" }));
-    await expect.element(values).toHaveTextContent('"instrumentIds":[1,3]');
+    await userEvent.click(page.getByRole("button", { name: "Remove IN2 (unavailable)" }));
+    await expect.element(values).toMatchTextContent('"instrumentIds":[1,3]');
     await userEvent.click(page.getByRole("button", { name: "Remove First instrument" }));
-    await expect.element(values).toHaveTextContent('"instrumentIds":[3]');
+    await expect.element(values).toMatchTextContent('"instrumentIds":[3]');
     await userEvent.click(page.getByRole("button", { name: "Remove Third instrument" }));
-    await expect.element(values).toHaveTextContent('"instrumentIds":[]');
+    await expect.element(values).toMatchTextContent('"instrumentIds":[]');
   });
 
   test("renders React content supplied for a relationship option", async () => {
