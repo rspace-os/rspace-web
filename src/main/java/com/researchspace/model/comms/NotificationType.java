@@ -24,5 +24,8 @@ public enum NotificationType {
   NOTIFICATION_BOOKING_CREATED,
 
   /** A booking on an instrument owned by the notification recipient was cancelled. */
-  NOTIFICATION_BOOKING_CANCELLED
+  NOTIFICATION_BOOKING_CANCELLED,
+
+  /** A cancelled booking returned to its slot. Appended to preserve persisted ordinals. */
+  NOTIFICATION_BOOKING_RESTORED
 }
