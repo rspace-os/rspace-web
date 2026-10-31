@@ -388,7 +388,7 @@ describe("AddBookableItemPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookableItems.availability.alreadyConfigured");
+    expect(alert).toMatchTextContent("booking:bookableItems.availability.alreadyConfigured");
     expect(
       within(alert).getByRole("link", { name: "booking:bookableItems.availability.viewExisting" }),
     ).toHaveAttribute("href", "/booking/bookable-items/IN123");
