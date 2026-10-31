@@ -47,7 +47,7 @@ public class BookingConfigurationDaoHibernate
   @Override
   public ResourcePage<BookingConfiguration> getResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
-    return collectionQuery.page(
+    return collectionQuery.pageWithBatchedFetch(
         criteriaBuilderFactory,
         getSession(),
         request,

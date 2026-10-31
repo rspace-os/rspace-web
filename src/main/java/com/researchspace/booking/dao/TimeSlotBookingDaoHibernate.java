@@ -47,7 +47,7 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   @Override
   public ResourcePage<TimeSlotBooking> getReadableResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
-    return collectionQuery.page(
+    return collectionQuery.pageWithBatchedFetch(
         criteriaBuilderFactory,
         getSession(),
         request.restrict(ACTIVE),
