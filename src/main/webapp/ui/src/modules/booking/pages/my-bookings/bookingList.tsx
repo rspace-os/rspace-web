@@ -20,7 +20,7 @@ function dateTime(
   return (
     <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
       {/* On a clock-change day the offset tells the two occurrences of a repeated hour apart. */}
-      <time dateTime={value}>{formatBookingDateTime(value, timeZone, i18n.language, timeFormat)}</time>
+      <time dateTime={value}>{formatBookingDateTime(value, timeZone, undefined, timeFormat)}</time>
     </BookingInstrumentTimeTooltip>
   );
 }

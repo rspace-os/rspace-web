@@ -74,7 +74,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
                   instrumentTimeZone={row.timezone}
                 >
                   <time dateTime={row.start}>
-                    {formatBookingPeriod(row.start, row.end, timezone, i18n.language, timeFormat)}
+                    {formatBookingPeriod(row.start, row.end, timezone, undefined, timeFormat)}
                   </time>
                 </BookingInstrumentTimeTooltip>
               ),

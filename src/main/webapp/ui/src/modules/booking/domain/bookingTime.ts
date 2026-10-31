@@ -322,7 +322,7 @@ function dateTimeFormatter(
 export function formatBookingDateTime(
   value: string,
   timeZone: string,
-  locale = bookingLocale(),
+  locale = bookingDateTimeLocale(),
   timeFormat: BookingTimeFormat = "AUTOMATIC",
   options: { timeStyle?: "short" | "long" } = {},
 ): string {
@@ -342,7 +342,7 @@ export function formatBookingPeriod(
   start: string,
   end: string,
   timezone: string,
-  locale = bookingLocale(),
+  locale = bookingDateTimeLocale(),
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const formatter = dateTimeFormatter(timezone, locale, timeFormat);

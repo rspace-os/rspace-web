@@ -9,6 +9,7 @@ import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHou
 import {
   addCalendarDays,
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   currentWallClock,
   instantToDayMinute,
   zonedDayBounds,
@@ -136,7 +137,7 @@ export function VerticalDayTimeline({
   const positionedEvents = React.useMemo(() => layoutVerticalTimelineEvents(events, dayMinutes), [events, dayMinutes]);
   const dayEvents = schedule.status === "success" ? positionedEvents : [];
   const denseLanes = dayEvents.some(({ laneCount }) => canvasWidth > 0 && canvasWidth / laneCount < MINIMUM_LANE_WIDTH);
-  const dateHeading = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" });
+  const dateHeading = Temporal.PlainDate.from(date).toLocaleString(bookingDateTimeLocale(), { dateStyle: "full" });
   const compactDateHeading = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "medium" });
   const resolvedDraftDay = editingRange ? currentWallClock(editingRange.start, timezone).date : undefined;
   const isDraftDay = !resolvedDraftDay || resolvedDraftDay === date;

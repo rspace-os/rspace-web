@@ -118,12 +118,9 @@ function AuditTarget({ target }: { target: AuditRow["target"] }) {
 }
 
 function AuditTimestamp({ value }: { value: string }) {
-  const { i18n } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return (
-    <time dateTime={value}>
-      {formatBookingDateTime(value, "UTC", i18n.language, timeFormat, { timeStyle: "long" })}
-    </time>
+    <time dateTime={value}>{formatBookingDateTime(value, "UTC", undefined, timeFormat, { timeStyle: "long" })}</time>
   );
 }
 

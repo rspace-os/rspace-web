@@ -189,9 +189,9 @@ export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" |
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
 
 function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
-  const { i18n, t } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return value
-    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", i18n.language, timeFormat)
+    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", undefined, timeFormat)
     : t("bookableItemDetails.notAvailable");
 }

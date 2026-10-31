@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { ClockChangeWarning } from "@/modules/booking/components/ClockChangeWarning";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
+import { formatBookingDateTime, formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -19,7 +19,7 @@ import { Panel, useBookingEvent } from "./BookingEventContext";
 type BookingFact = [label: string, value: ReactNode];
 
 export function BookingDetailsView() {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
   const durationMinutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
@@ -30,9 +30,9 @@ export function BookingDetailsView() {
         <TransRichText
           i18nKey="booking:bookings.details.periodWithDuration"
           values={{
-            start: formatBookingDateTime(booking.start, displayTimeZone, i18n.language, timeFormat),
-            end: formatBookingDateTime(booking.end, displayTimeZone, i18n.language, timeFormat),
-            duration: t("bookableItemDetails.minutes", { count: durationMinutes }),
+            start: formatBookingDateTime(booking.start, displayTimeZone, undefined, timeFormat),
+            end: formatBookingDateTime(booking.end, displayTimeZone, undefined, timeFormat),
+            duration: formatDurationMinutes(durationMinutes),
           }}
           components={{
             period: (
