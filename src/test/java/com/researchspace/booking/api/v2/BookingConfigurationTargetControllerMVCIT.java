@@ -90,15 +90,15 @@ class BookingConfigurationTargetControllerMVCIT {
               .queryParam("limit", "50")
               .header("apiKey", fixture.userKey());
       if (query != null) {
-        request.queryParam("query", query);
+        request.queryParam("q", query);
       }
       mockMvc
           .perform(request)
           .andDo(BookingConfigurationTargetControllerMVCIT::failOnUnexpectedServerError)
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$[*].id", hasItem((int) earlier)))
-          .andExpect(jsonPath("$[*].id", hasItem((int) later)))
-          .andExpect(jsonPath("$[*].id", not(hasItem((int) somebodyElses))));
+          .andExpect(jsonPath("$.docs[*].id", hasItem((int) earlier)))
+          .andExpect(jsonPath("$.docs[*].id", hasItem((int) later)))
+          .andExpect(jsonPath("$.docs[*].id", not(hasItem((int) somebodyElses))));
     }
     java.util.List<Integer> browsed =
         com.jayway.jsonpath.JsonPath.read(
@@ -110,7 +110,7 @@ class BookingConfigurationTargetControllerMVCIT {
                 .andReturn()
                 .getResponse()
                 .getContentAsString(),
-            "$[*].id");
+            "$.docs[*].id");
     org.junit.jupiter.api.Assertions.assertTrue(
         browsed.indexOf((int) earlier) < browsed.indexOf((int) later), browsed::toString);
     mockMvc
@@ -119,7 +119,7 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("limit", "1")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(1));
+        .andExpect(jsonPath("$.docs.length()").value(1));
 
     fixture.bookingConfiguration(earlier, "UTC", fixture.userKey());
     mockMvc
@@ -128,8 +128,8 @@ class BookingConfigurationTargetControllerMVCIT {
                 .queryParam("limit", "50")
                 .header("apiKey", fixture.userKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].id", not(hasItem((int) earlier))))
-        .andExpect(jsonPath("$[*].id", hasItem((int) later)));
+        .andExpect(jsonPath("$.docs[*].id", not(hasItem((int) earlier))))
+        .andExpect(jsonPath("$.docs[*].id", hasItem((int) later)));
   }
 
   @Test
