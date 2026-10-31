@@ -29,7 +29,7 @@ const CurrentUserLivechatSchema = v.object({
 const CurrentUserResponseSchema = v.object({
   id: v.pipe(v.number(), v.integer()),
   username: v.string(),
-  email: v.pipe(v.string(), v.rfcEmail()),
+  email: v.string(),
   firstName: v.string(),
   lastName: v.string(),
   homeFolderId: v.nullable(v.pipe(v.number(), v.integer())),

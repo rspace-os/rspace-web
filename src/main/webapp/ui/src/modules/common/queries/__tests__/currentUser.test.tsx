@@ -19,10 +19,13 @@ beforeEach(() => {
 });
 
 describe("current-user query", () => {
-  it.each(["o'brien@uni.ac.uk", "admin@localhost"])("accepts RFC email %s", async (email) => {
-    server.use(http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUserResponse, email })));
-    await expect(getCurrentUser("token")).resolves.toMatchObject({ email });
-  });
+  it.each(["", "legacy address", "o'brien@uni.ac.uk", "admin@localhost"])(
+    "accepts server-provided email %s",
+    async (email) => {
+      server.use(http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUserResponse, email })));
+      await expect(getCurrentUser("token")).resolves.toMatchObject({ email });
+    },
+  );
 
   it("rejects malformed current-user responses", async () => {
     server.use(http.get("/api/v2/users/me", () => HttpResponse.json({ username: "ada" })));

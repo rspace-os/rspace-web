@@ -15,7 +15,7 @@ const AppConfigResponseSchema = v.object({
     }),
   ),
   deploymentDescription: v.nullable(v.string()),
-  deploymentHelpEmail: v.nullable(v.pipe(v.string(), v.rfcEmail())),
+  deploymentHelpEmail: v.nullable(v.string()),
 });
 
 export type AppConfig = v.InferOutput<typeof AppConfigResponseSchema>;
