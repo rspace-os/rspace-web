@@ -266,8 +266,8 @@ describe("AllBookableItemsPage", () => {
     const { router } = await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}&q=scope`);
 
     const issue = await screen.findByRole("alert");
-    expect(issue).toHaveTextContent("invalid or unavailable field");
-    expect(issue).toHaveTextContent(original);
+    expect(issue).toMatchTextContent("invalid or unavailable field");
+    expect(issue).toMatchTextContent(original);
     expect(requests).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Reset saved view" }));
     await waitFor(() => expect(router.state.location.search.where).toBeUndefined());

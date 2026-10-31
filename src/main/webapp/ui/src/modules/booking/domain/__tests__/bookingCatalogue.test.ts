@@ -8,9 +8,10 @@ describe("calendar catalogue", () => {
     server.use(
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const params = new URL(request.url).searchParams;
-        if ([...params.keys()].some((key) => !["page", "limit", "start", "end"].includes(key))) {
+        if ([...params.keys()].some((key) => !["page", "limit", "totals", "start", "end"].includes(key))) {
           return new HttpResponse(null, { status: 400 });
         }
+        expect(params.get("totals")).toBe("true");
         expect(params.get("start")).toBe("2026-10-30T00:00:00Z");
         expect(params.get("end")).toBe("2026-10-31T00:00:00Z");
         return HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, facets: { types: [] } });

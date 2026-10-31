@@ -18,9 +18,9 @@ describe("BookingFormAlerts", () => {
     render(<BookingFormAlerts error="Conflict" conflicts={[conflict]} displayTimezone="UTC" />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("Conflict");
-    expect(alert).toHaveTextContent("Cell imaging");
-    expect(alert).toHaveTextContent("10:00");
+    expect(alert).toMatchTextContent("Conflict");
+    expect(alert).toMatchTextContent("Cell imaging");
+    expect(alert).toMatchTextContent("10:00");
     expect(alert).toHaveClass("bg-red-100");
   });
 
@@ -28,7 +28,7 @@ describe("BookingFormAlerts", () => {
     render(<BookingFormAlerts conflicts={[conflict]} displayTimezone="UTC" conflictSeverity="warning" />);
 
     const alert = screen.getByRole("status");
-    expect(alert).toHaveTextContent("Cell imaging");
+    expect(alert).toMatchTextContent("Cell imaging");
     expect(alert).toHaveClass("bg-amber-100");
   });
 
@@ -36,7 +36,7 @@ describe("BookingFormAlerts", () => {
     render(<BookingFormAlerts conflicts={[conflict]} displayTimezone="Europe/Berlin" />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("12:00");
-    expect(alert).not.toHaveTextContent("10:00");
+    expect(alert).toMatchTextContent("12:00");
+    expect(alert).not.toMatchTextContent("10:00");
   });
 });

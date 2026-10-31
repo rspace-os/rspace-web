@@ -120,7 +120,7 @@ describe("ActiveBookingCreationDialog", () => {
 
     const dialog = await screen.findByTestId("compact-booking-dialog");
     const alert = await within(dialog).findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookings.errors.overlapSummary");
+    expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
     expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submitMaintenance" })).toBeDisabled();
   });
 
@@ -129,7 +129,7 @@ describe("ActiveBookingCreationDialog", () => {
 
     const dialog = await screen.findByTestId("compact-booking-dialog");
     const alert = await within(dialog).findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookings.errors.overlapSummary");
+    expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
     expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
   });
 
@@ -138,9 +138,9 @@ describe("ActiveBookingCreationDialog", () => {
 
     const dialog = await screen.findByTestId("compact-booking-dialog");
     const warning = await within(dialog).findByRole("status");
-    expect(warning).toHaveTextContent("booking:bookings.errors.overlapSummary");
-    expect(warning).not.toHaveTextContent("Private purpose");
-    expect(warning).not.toHaveTextContent("Private requester");
+    expect(warning).toMatchTextContent("booking:bookings.errors.overlapSummary");
+    expect(warning).not.toMatchTextContent("Private purpose");
+    expect(warning).not.toMatchTextContent("Private requester");
     expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeEnabled();
   });
 

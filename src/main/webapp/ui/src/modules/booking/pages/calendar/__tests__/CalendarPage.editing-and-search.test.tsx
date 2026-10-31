@@ -62,7 +62,7 @@ describe("CalendarPage", () => {
       server.use(
         oauthTokenHandler(true),
         http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-        http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([booking]))),
+        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))),
         http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration]))),
         http.patch("/api/v2/bookings/41", async ({ request }) => {
           patches.push(await request.json());
