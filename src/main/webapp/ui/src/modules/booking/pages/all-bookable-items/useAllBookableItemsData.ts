@@ -181,6 +181,7 @@ export function useAllBookableItemsData({
       fetchBookingCatalogue(
         {
           q,
+          totals: true,
           types,
           mine,
           where: serverWhere,

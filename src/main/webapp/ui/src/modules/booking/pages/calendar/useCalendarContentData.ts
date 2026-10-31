@@ -293,6 +293,7 @@ export function useCalendarContentData() {
         const result = await fetchBookingCatalogue(
           {
             q: calendarSearch,
+            totals: true,
             where: itemWhereParameter,
             start,
             end,
