@@ -1972,9 +1972,6 @@ export default interface Resources {
       "preferences": "Preferences",
       "settings": "Settings"
     },
-    "toolbar": {
-      "jumpToDateAccessible": "{label}, {date}"
-    },
     "time": {
       "dateAndRange": "{date}; {period}",
       "dateTimeRange": "{start} – {end}",
@@ -1983,6 +1980,9 @@ export default interface Resources {
       "rangeAndEndDate": "{period} · {date}",
       "rangeWithOffset": "{period} {offset}",
       "withDayOffset": "{time} ({days})"
+    },
+    "toolbar": {
+      "jumpToDateAccessible": "{label}, {date}"
     }
   },
   "common": {

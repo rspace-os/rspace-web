@@ -111,6 +111,7 @@ class BookingNotificationServiceTest {
     assertEquals("<Mic & scope>", data.getInstrumentName());
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
     assertEquals("Europe/Berlin", data.getEmailDisplayTimezone());
+    assertEquals(BookingTimeFormat.AUTOMATIC, data.getEmailTimeFormat());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
     // The saved message is also the email body, so it links with absolute URLs.
@@ -228,6 +229,13 @@ class BookingNotificationServiceTest {
                 config ->
                     ((BookingNotificationData) config.getNotificationData())
                         .getEmailDisplayTimezone())
+            .toList());
+    assertEquals(
+        List.of(BookingTimeFormat.AUTOMATIC, BookingTimeFormat.H24),
+        configs.getAllValues().stream()
+            .map(
+                config ->
+                    ((BookingNotificationData) config.getNotificationData()).getEmailTimeFormat())
             .toList());
     assertTrue(messages.getAllValues().get(0).contains("Jan 2, 2026, 4:04 AM"));
     assertTrue(messages.getAllValues().get(0).contains("Europe/Berlin, UTC+01:00"));

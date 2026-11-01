@@ -1214,9 +1214,6 @@
     "preferences": "Preferences",
     "settings": "Settings"
   },
-  "toolbar": {
-    "jumpToDateAccessible": "{label}, {date}"
-  },
   "time": {
     "dateAndRange": "{date}; {period}",
     "dateTimeRange": "{start} – {end}",
@@ -1225,5 +1222,8 @@
     "rangeAndEndDate": "{period} · {date}",
     "rangeWithOffset": "{period} {offset}",
     "withDayOffset": "{time} ({days})"
+  },
+  "toolbar": {
+    "jumpToDateAccessible": "{label}, {date}"
   }
 }

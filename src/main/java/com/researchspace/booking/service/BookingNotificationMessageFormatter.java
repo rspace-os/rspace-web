@@ -285,7 +285,7 @@ public class BookingNotificationMessageFormatter {
         instant.toString(),
         validZone(data.getEmailDisplayTimezone()).orElse(java.time.ZoneOffset.UTC),
         locale,
-        null);
+        hourCycleKeyword(data.getEmailTimeFormat(), null));
   }
 
   /** Formats an instant with the {@code hc} keyword {@code hourCycle}, or the locale's if null. */
