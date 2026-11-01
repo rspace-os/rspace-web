@@ -134,7 +134,7 @@ describe("CalendarPage", () => {
     await screen.findByRole("region", { name: "Resource booking schedule" });
 
     await toggleQuickFilter(user, "My Bookings");
-    expect(screen.getByRole("button", { name: "Filters, 1 applied" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Filters 1 applied" })).toBeVisible();
     const remove = screen.getByRole("button", { name: "Remove My Bookings filter" });
 
     await user.click(remove);

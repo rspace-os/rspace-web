@@ -97,7 +97,7 @@ describe("Calendar page", () => {
     expect(bookingPageRequests.collectionQueries.some((query) => query.includes("eventWhere=purpose=="))).toBe(true);
     expect(new URLSearchParams(history.location.search).get("calendar-resources.where")).toBe("target==IN123");
     await expect.element(page.getByRole("button", { name: "Bookable items, 1 applied" })).not.toBeInTheDocument();
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters 1 applied");
   });
 
   test("filters Calendar events by target fields and target custom fields", async () => {
@@ -346,7 +346,7 @@ describe("Calendar page", () => {
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect.element(calendar.removeMine).toBeVisible();
-    await expect.element(calendar.filters).toHaveAccessibleName("Filters, 2 applied");
+    await expect.element(calendar.filters).toHaveAccessibleName("Filters 2 applied");
     await calendar.chooseView("Week");
     await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Week");
     const requestsBeforeReset = bookingPageRequests.calendarBookingRequests.length;
