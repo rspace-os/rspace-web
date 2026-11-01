@@ -119,7 +119,7 @@ describe("DayTimeline table row", () => {
 
     const short = card(56);
     expect(short.container.querySelector("[data-event-time]")).toBeInTheDocument();
-    expect(within(short.container).queryByText("Ada Lovelace (ada)")).not.toBeInTheDocument();
+    expect(within(short.container).queryByText("Ada Lovelace")).not.toBeInTheDocument();
     expect(within(short.container).getByText("Confocal microscope", { selector: "span[title]" })).toHaveClass(
       "truncate",
     );
@@ -549,6 +549,30 @@ describe("DayTimeline table row", () => {
       expect(onRangeSelect).toHaveBeenCalledWith({ startMinute, endMinute }, expect.any(HTMLElement));
     },
   );
+
+  it("shows the booker's full name without their login in calendar chips", async () => {
+    const wrapper = await timelineWrapper();
+    render(
+      <DayTimelineEventCard
+        date="2026-08-17"
+        timezone="UTC"
+        event={{
+          id: "named",
+          kind: "booking",
+          privacy: "full",
+          title: "Scope",
+          bookedBy: "Ada Lovelace (ada)",
+          item: { name: "Scope", globalId: "IN123" },
+          canEdit: false,
+          startMinute: 480,
+          endMinute: 540,
+        }}
+      />,
+      { wrapper },
+    );
+    expect(screen.queryByText("Ada Lovelace (ada)")).not.toBeInTheDocument();
+    expect(screen.getByText("Ada Lovelace").parentElement).toHaveAttribute("title", "Ada Lovelace");
+  });
 
   it("shades closed periods behind events and fully shades a closed day", async () => {
     const wrapper = await createRealI18nWrapper({
