@@ -546,13 +546,15 @@ describe("Calendar page", () => {
     await calendar.chooseView("Week");
 
     const event = calendar.event("Confocal microscope");
-    await expect.element(event.getByText("AL", { exact: true })).toBeVisible();
+    const initials = event.getByTitle("Ada Lovelace", { exact: true });
+    await expect.element(initials).toBeVisible();
+    await expect.element(initials).toHaveTextContent("AL");
     await expect.element(event.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
-    await expect.element(calendar.event("Busy").getByText("AL", { exact: true })).not.toBeInTheDocument();
+    await expect.element(calendar.event("Busy").getByTitle("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
 
     await calendar.chooseView("Month");
     await expect.element(event).toBeVisible();
-    await expect.element(event.getByText("AL", { exact: true })).toBeVisible();
+    await expect.element(initials).toBeVisible();
     await expect.poll(() => event.element().scrollHeight <= event.element().clientHeight + 1).toBe(true);
     await expectNoAxeViolations();
   });
@@ -568,13 +570,11 @@ describe("Calendar page", () => {
     await calendar.chooseView("Time grid");
     await expect.element(calendar.timeGrid).toBeVisible();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    const compactIdentity = calendar.event("Confocal microscope").getByText("AL", { exact: true });
+    const compactIdentity = calendar.event("Confocal microscope").getByTitle("Ada Lovelace", { exact: true });
     await expect.element(compactIdentity).toBeVisible();
-    await expect.element(compactIdentity).toHaveAttribute("title", "Ada Lovelace");
+    await expect.element(compactIdentity).toHaveTextContent("AL");
     await expect.element(calendar.event("Busy")).toBeVisible();
-    await expect
-      .element(calendar.event("Busy").getByText("Ada Lovelace (ada)", { exact: true }))
-      .not.toBeInTheDocument();
+    await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
     await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(3);
     expect(bookingPageRequests.calendarBookingRequests[0].searchParams.get("fields[bookings]")).toBe(
       calendarBookingFields,
