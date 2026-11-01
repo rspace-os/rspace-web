@@ -204,15 +204,15 @@ export function CalendarSubscriptionPopover({
     if (status.data?.subscriptionUrl === null) create();
   }, [create, status.data]);
 
-  const focusGoogleAction = useCallback(
-    (element: HTMLAnchorElement | null) => {
-      googleLinkRef.current = element;
-      if (!open || !focusGoogle || !element) return;
-      restoreFocusIfUnmoved(element, true);
+  useEffect(() => {
+    if (!open || changing || !focusGoogle) return;
+    // Wait for the removed action's focus fallback before choosing the calendar link.
+    const frame = requestAnimationFrame(() => {
+      if (googleLinkRef.current) restoreFocusIfUnmoved(googleLinkRef.current, true);
       setFocusGoogle(false);
-    },
-    [open, focusGoogle, restoreFocusIfUnmoved],
-  );
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, changing, focusGoogle, restoreFocusIfUnmoved]);
 
   const close = () => {
     openRef.current = false;
@@ -254,7 +254,7 @@ export function CalendarSubscriptionPopover({
               {t("bookableItemDetails.calendarSubscription.apple")}
             </a>
             <a
-              ref={focusGoogleAction}
+              ref={googleLinkRef}
               className={buttonVariants({ variant: "outline", className: "min-w-0 px-2" })}
               href={apps.google}
               target="_blank"
