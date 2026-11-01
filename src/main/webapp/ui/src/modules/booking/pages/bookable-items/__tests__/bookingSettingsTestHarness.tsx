@@ -19,8 +19,6 @@ export const bookingSettingsFixture = {
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
   institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
   configurationVersion: 0,
 };
 
