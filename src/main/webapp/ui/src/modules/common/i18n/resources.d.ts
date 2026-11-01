@@ -933,8 +933,6 @@ export default interface Resources {
           "availabilityWindowEnd": "Availability window end",
           "availabilityWindowStart": "Availability window start",
           "buffer": "Gap before and after bookings",
-          "bufferAfter": "Buffer after (minutes)",
-          "bufferBefore": "Buffer before (minutes)",
           "cancellationReason": "Cancellation reason",
           "configuration": "Booking configuration",
           "configurationVersion": "Configuration version",
@@ -1021,8 +1019,6 @@ export default interface Resources {
         "requester": "Requester"
       },
       "fields": {
-        "bufferAfter": "Buffer after",
-        "bufferBefore": "Buffer before",
         "createdAt": "Created at",
         "createdBy": "Created by",
         "doubleBooking": "Allow double booking",
@@ -1286,8 +1282,6 @@ export default interface Resources {
       "editTitle": "Edit Booking",
       "errors": {
         "buffer": "Too close to another booking. This item needs {duration} before and after each booking.",
-        "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
-        "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
         "bufferSummary": "This period is within the buffer time of:",
         "bufferUnknown": "Too close to another booking.",
         "cancellationReasonLength": "The cancellation reason must be 500 characters or fewer.",
@@ -1399,8 +1393,6 @@ export default interface Resources {
       "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
       "itemInformation": {
         "buffer": "Buffer",
-        "bufferAfter": "{count, number}m after",
-        "bufferBefore": "{count, number}m before",
         "bufferBoth": "{duration} before and after",
         "closedDay": "{day}: closed",
         "day": "{day}: {hours}",
@@ -1882,8 +1874,6 @@ export default interface Resources {
       "fields": {
         "allowDoubleBooking": "Allow double booking",
         "buffer": "Gap before and after bookings (minutes)",
-        "bufferAfter": "Buffer after booking (minutes)",
-        "bufferBefore": "Buffer before booking (minutes)",
         "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
         "granularity": "Time increment",
         "incrementDays": "Days",
