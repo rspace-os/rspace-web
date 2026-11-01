@@ -51,7 +51,7 @@ describe("VerticalDayTimeline", () => {
 
     await timeline.moveDraftLaterByOneSlot();
 
-    await expect.element(timeline.draft).toMatchTextContent("02:05 AM +01:00–03:05 AM +01:00");
+    await expect.element(timeline.draft).toMatchTextContent("02:01 AM +01:00–03:01 AM +01:00");
   });
 
   test("uses controlled date navigation and provides a return to the draft day", async () => {

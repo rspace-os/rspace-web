@@ -371,7 +371,7 @@ describe("BookableItemPage", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/config/bookable-items");
     await expect.element(page.getByRole("heading", { name: "Bookable Items", exact: true })).toBeVisible();
     const notices = page.getByRole("list", { name: "Recent changes" });
-    await expect.element(notices).toHaveTextContent("Confocal microscope was permanently deleted.");
+    await expect.element(notices).toMatchTextContent("Confocal microscope was permanently deleted.");
     await expect.element(notices.getByRole("link")).not.toBeInTheDocument();
   });
 
@@ -711,7 +711,7 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.auditTab).not.toBeDisabled();
     await expect
       .element(page.getByRole("list", { name: "Recent changes" }))
-      .toHaveTextContent("Booking configuration saved.");
+      .toMatchTextContent("Booking configuration saved.");
   });
 
   test("focuses an invalid field and associates correction guidance", async () => {

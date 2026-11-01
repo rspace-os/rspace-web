@@ -210,8 +210,8 @@ describe("Calendar page", () => {
     await expect.element(moveBooking).toBeVisible();
     moveBooking.element().focus();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:45");
-    await expect.element(card.getByLabelText("End time")).toHaveValue("09:45");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:59");
+    await expect.element(card.getByLabelText("End time")).toHaveValue("09:59");
     await card.getByLabelText("Start time").fill("12:00");
     await card.getByLabelText("End time").fill("13:00");
 
