@@ -37,6 +37,7 @@ import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import jakarta.persistence.OptimisticLockException;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -339,6 +340,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               if (!booking.getStartTime().toInstant().isAfter(clock.instant())) {
                 throw new BookingStateTransitionException();
               }
+              Instant previousStart = booking.getStartTime().toInstant();
+              Instant previousEnd = booking.getEndTime().toInstant();
               Date start = patch.start() == null ? booking.getStartTime() : patch.start();
               Date end = patch.end() == null ? booking.getEndTime() : patch.end();
               boolean intervalChanged =
@@ -380,8 +383,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                 bookingNotificationService.notify(
                     saved, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
               } else if (booking.getKind() == BookingEventKind.BOOKING && intervalChanged) {
-                bookingNotificationService.notify(
-                    saved, actor, NotificationType.NOTIFICATION_BOOKING_CHANGED);
+                bookingNotificationService.notifyChanged(saved, actor, previousStart, previousEnd);
               }
               events.publishEvent(
                   new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.WRITE));

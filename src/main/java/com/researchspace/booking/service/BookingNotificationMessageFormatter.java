@@ -222,7 +222,13 @@ public class BookingNotificationMessageFormatter {
           formatInstant(data.getEndTime(), zone, locale, hourCycle),
           href(linkBase, BOOKING_PATH, data.getBookingId()),
           href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier()),
-          StringEscapeUtils.escapeHtml4(data.getCancellationReason())
+          StringEscapeUtils.escapeHtml4(data.getCancellationReason()),
+          data.getPreviousStartTime() == null
+              ? null
+              : formatInstant(data.getPreviousStartTime(), zone, locale, hourCycle),
+          data.getPreviousEndTime() == null
+              ? null
+              : formatInstant(data.getPreviousEndTime(), zone, locale, hourCycle)
         },
         locale);
   }
@@ -277,8 +283,14 @@ public class BookingNotificationMessageFormatter {
   }
 
   private static String messageKey(NotificationType type, BookingNotificationData data) {
-    if (type == NotificationType.NOTIFICATION_BOOKING_RESTORED) return RESTORED_MESSAGE_KEY;
-    if (type == NotificationType.NOTIFICATION_BOOKING_CHANGED) return CHANGED_MESSAGE_KEY;
+    if (NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type)) {
+      return data.getPreviousStartTime() != null && data.getPreviousEndTime() != null
+          ? "bookingNotifications.changedWithPrevious"
+          : CHANGED_MESSAGE_KEY;
+    }
+    if (NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)) {
+      return RESTORED_MESSAGE_KEY;
+    }
     if (NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)) {
       return data.isRestored() ? RESTORED_MESSAGE_KEY : CREATED_MESSAGE_KEY;
     }

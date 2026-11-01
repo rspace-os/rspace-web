@@ -29,6 +29,34 @@ class BookingNotificationMessageFormatterTest {
           new JsonMessageSource(), "https://rspace.example.org//");
 
   @Test
+  void changedMessagesIncludeBothIntervalsInTheRecipientsClockAndZone() {
+    BookingNotificationData data = data("2026-11-09T11:00:00Z", "2026-11-09T12:00:00Z");
+    data.setPreviousStartTime("2026-11-09T10:00:00Z");
+    data.setPreviousEndTime("2026-11-09T11:00:00Z");
+    String message =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CHANGED,
+            data,
+            ZoneId.of("Europe/London"),
+            Locale.UK,
+            Locale.UK,
+            BookingTimeFormat.H24);
+    assertTrue(message.contains("was changed from"), message);
+    assertTrue(message.contains("10:00 GMT (Europe/London)"), message);
+    assertTrue(message.contains("12:00 GMT (Europe/London)"), message);
+    String email =
+        formatter.formatForEmail(
+            NotificationType.NOTIFICATION_BOOKING_CHANGED,
+            data,
+            ZoneId.of("Europe/London"),
+            Locale.UK,
+            BookingTimeFormat.H24);
+    assertTrue(email.contains("was changed from"), email);
+    assertTrue(email.contains("10:00 GMT (Europe/London)"), email);
+    assertTrue(email.contains("12:00 GMT (Europe/London)"), email);
+  }
+
+  @Test
   void identifiesTheLondonZoneInWinterAndSummer() {
     for (String[] example :
         new String[][] {
