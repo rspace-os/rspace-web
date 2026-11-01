@@ -1744,11 +1744,7 @@ function addDownloadButtonToTables($tables) {
     $table.wrap("<div class='tableDownloadWrap' style='display:flex;'></div>");
     var wrap$ = $table.closest('div');
     wrap$.append($tableDownloadButton);
-    var leftMargin = $tableDownloadButton.width() + 6;
-    if ($table.attr('width') < 60) {
-      leftMargin += 10;
-    }
-    $tableDownloadButton.css('bottom', 13).css('left', leftMargin).css('align-self', 'flex-end');
+    $tableDownloadButton.css('bottom', 13).css('align-self', 'flex-end');
     $tableDownloadButton.hide();
   });
 }
