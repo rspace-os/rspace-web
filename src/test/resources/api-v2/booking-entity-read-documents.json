@@ -35,8 +35,7 @@
       "start" : "00:00",
       "end" : "24:00"
     } ],
-    "bufferBeforeMinutes" : 0,
-    "bufferAfterMinutes" : 0,
+    "bufferMinutes" : 0,
     "maxBookingDurationMinutes" : 0,
     "allowDoubleBooking" : false,
     "configurationVersion" : "<configurationVersion>",
@@ -47,18 +46,18 @@
       "role" : "OWNER"
     } ],
     "capabilities" : {
-      "canViewAudit" : true,
+      "canManageAssignments" : false,
       "canViewAccess" : true,
-      "canLeaveConfiguration" : false,
-      "canSubscribeCalendar" : true,
       "canManageNotificationSubscription" : true,
-      "canManageAllEvents" : true,
       "canCreateBooking" : true,
-      "canManageOwners" : false,
       "canManageOwnBookings" : true,
-      "canEditConfiguration" : true,
+      "canLeaveConfiguration" : false,
+      "canViewAudit" : true,
       "canCreateBlockout" : true,
-      "canManageAssignments" : false
+      "canEditConfiguration" : true,
+      "canSubscribeCalendar" : true,
+      "canManageAllEvents" : true,
+      "canManageOwners" : false
     },
     "createdAt" : "<createdAt>",
     "updatedAt" : "<updatedAt>",
@@ -117,8 +116,7 @@
       "start" : "00:00",
       "end" : "24:00"
     } ],
-    "bufferBeforeMinutes" : 0,
-    "bufferAfterMinutes" : 0,
+    "bufferMinutes" : 0,
     "maxBookingDurationMinutes" : 0,
     "allowDoubleBooking" : false,
     "configurationVersion" : "<configurationVersion>",
@@ -129,18 +127,18 @@
       "role" : "OWNER"
     } ],
     "capabilities" : {
-      "canViewAudit" : true,
+      "canManageAssignments" : false,
       "canViewAccess" : true,
-      "canLeaveConfiguration" : false,
-      "canSubscribeCalendar" : true,
       "canManageNotificationSubscription" : true,
-      "canManageAllEvents" : true,
       "canCreateBooking" : true,
-      "canManageOwners" : false,
       "canManageOwnBookings" : true,
-      "canEditConfiguration" : true,
+      "canLeaveConfiguration" : false,
+      "canViewAudit" : true,
       "canCreateBlockout" : true,
-      "canManageAssignments" : false
+      "canEditConfiguration" : true,
+      "canSubscribeCalendar" : true,
+      "canManageAllEvents" : true,
+      "canManageOwners" : false
     },
     "createdAt" : "<createdAt>",
     "updatedAt" : "<updatedAt>",
