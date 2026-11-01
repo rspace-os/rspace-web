@@ -340,7 +340,7 @@ describe("My Bookings page", () => {
     );
     // No row is left to take focus (jsdom lays nothing out), so focus falls back to the selected period.
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "booking:myBookings.period.upcoming" })).toHaveFocus(),
+      expect(screen.getByRole("button", { name: "booking:myBookings.period.withCount" })).toHaveFocus(),
     );
   });
 
