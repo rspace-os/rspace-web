@@ -85,6 +85,7 @@ function TimeRange({
     onTypedAllDay(typedAllDay);
     onChange(next);
   };
+  const showMidnightHelp = !allDay && (hours.end === "24:00" || hours.end === "00:00");
   const midnightHelpId = `${id}-midnight`;
   const errorId = `${id}-error`;
   const input = (boundary: keyof OpeningInterval) => (
@@ -98,7 +99,9 @@ function TimeRange({
       value={boundary === "end" && hours.end === "24:00" ? "00:00" : hours[boundary]}
       aria-invalid={invalid || undefined}
       aria-describedby={
-        [boundary === "end" ? midnightHelpId : null, invalid ? errorId : null].filter(Boolean).join(" ") || undefined
+        [boundary === "end" && showMidnightHelp ? midnightHelpId : null, invalid ? errorId : null]
+          .filter(Boolean)
+          .join(" ") || undefined
       }
       onChange={(event) => {
         const value = event.currentTarget.value;
@@ -109,13 +112,15 @@ function TimeRange({
   return (
     <fieldset aria-labelledby={labelledBy} className="min-w-0 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 max-w-full items-center gap-2">
-          {input("start")}
-          <span aria-hidden="true" className="shrink-0 text-muted-foreground">
-            {"–"}
-          </span>
-          {input("end")}
-        </div>
+        {!allDay && (
+          <div className="flex min-w-0 max-w-full items-center gap-2">
+            {input("start")}
+            <span aria-hidden="true" className="shrink-0 text-muted-foreground">
+              {"–"}
+            </span>
+            {input("end")}
+          </div>
+        )}
         <label className="flex items-center gap-2 text-sm whitespace-nowrap" htmlFor={`${id}-all-day`}>
           <Checkbox
             id={`${id}-all-day`}
@@ -127,11 +132,13 @@ function TimeRange({
           {t("settings.openingHours.openAllDay")}
         </label>
       </div>
-      <FieldDescription id={midnightHelpId}>
-        {t("settings.openingHours.midnightEnd", {
-          midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
-        })}
-      </FieldDescription>
+      {showMidnightHelp && (
+        <FieldDescription id={midnightHelpId}>
+          {t("settings.openingHours.midnightEnd", {
+            midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
+          })}
+        </FieldDescription>
+      )}
       {invalid ? <FieldError id={errorId}>{error}</FieldError> : null}
     </fieldset>
   );

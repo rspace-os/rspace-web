@@ -429,13 +429,11 @@ describe("AddBookableItemPage", () => {
     const start = within(dayHours).getByLabelText("booking:settings.fields.openingStart");
     const end = within(dayHours).getByLabelText("booking:settings.fields.openingEnd");
     await user.click(openAllDay);
-    expect(start).toBeDisabled();
-    expect(end).toBeDisabled();
+    expect(start).not.toBeInTheDocument();
+    expect(end).not.toBeInTheDocument();
     await user.click(openAllDay);
-    expect(start).toHaveValue("10:00");
-    expect(end).toHaveValue("12:00");
-    expect(start).toBeEnabled();
-    expect(end).toBeEnabled();
+    expect(within(dayHours).getByLabelText("booking:settings.fields.openingStart")).toHaveValue("10:00");
+    expect(within(dayHours).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("12:00");
     await user.click(openAllDay);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 

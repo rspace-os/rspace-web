@@ -221,7 +221,7 @@ describe("BookingSettingsPage", () => {
     expect(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" })).not.toBeChecked();
   });
 
-  it("shows full-day closing as 00:00 while preserving the 24:00 API value", async () => {
+  it("hides full-day time fields while preserving the 24:00 API value", async () => {
     const user = userEvent.setup();
     let submitted: Record<string, unknown> | undefined;
     const fullDaySettings = {
@@ -242,10 +242,10 @@ describe("BookingSettingsPage", () => {
     );
     renderBookingSettingsPage();
 
-    const openingEnd = within(await screen.findByRole("group", { name: "Monday" })).getByLabelText(
+    const openingEnd = within(await screen.findByRole("group", { name: "Monday" })).queryByLabelText(
       "booking:settings.fields.openingEnd",
     );
-    expect(openingEnd).toHaveValue("00:00");
+    expect(openingEnd).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("group", { name: "Monday" })).getByRole("checkbox", {
         name: "booking:settings.openingHours.openAllDay",
