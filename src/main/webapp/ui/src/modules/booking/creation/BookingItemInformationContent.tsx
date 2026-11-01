@@ -81,8 +81,14 @@ function WeeklyOpeningHours({
     const [first] = week;
     return first?.hours && week.every((day) => day.hours === first.hours) ? first.hours : null;
   };
-  const dayLine = (dayOfWeek: number, hours: string | null) => {
-    const day = formatIsoWeekday(dayOfWeek);
+  const dayLine = (dayOfWeek: number, hours: string | null, lastDay = dayOfWeek) => {
+    const day =
+      dayOfWeek === lastDay
+        ? formatIsoWeekday(dayOfWeek)
+        : t("time.openingRange", {
+            start: formatIsoWeekday(dayOfWeek, "short"),
+            end: formatIsoWeekday(lastDay, "short"),
+          });
     return hours === null
       ? t("bookings.itemInformation.closedDay", { day })
       : t("bookings.itemInformation.day", { day, hours });
@@ -125,13 +131,28 @@ function WeeklyOpeningHours({
       </ul>
     );
   }
+  const groups: WeekdayOpening[][] = [];
+  for (const day of days) {
+    const previous = groups.at(-1)?.at(-1);
+    const itemHours = (weekday: number) => itemDays?.days.find((entry) => entry.dayOfWeek === weekday)?.hours;
+    if (
+      previous &&
+      previous.dayOfWeek + 1 === day.dayOfWeek &&
+      previous.hours === day.hours &&
+      itemHours(previous.dayOfWeek) === itemHours(day.dayOfWeek)
+    )
+      groups.at(-1)?.push(day);
+    else groups.push([day]);
+  }
   return (
     <ul className={listClassName}>
-      {days.map(({ dayOfWeek, hours: dayHours }) => {
+      {groups.map((group) => {
+        const { dayOfWeek, hours: dayHours } = group[0];
+        const lastDay = group.at(-1)?.dayOfWeek ?? dayOfWeek;
         const itemHours = itemDays?.days.find((candidate) => candidate.dayOfWeek === dayOfWeek)?.hours ?? null;
         return line(
           dayOfWeek,
-          dayLine(dayOfWeek, dayHours),
+          dayLine(dayOfWeek, dayHours, lastDay),
           dayHours === null || itemHours === null ? null : itemHours,
         );
       })}
@@ -152,7 +173,7 @@ export function BookingItemInformationContent({
   displayTimezone: string;
   date?: string;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const referenceDate = date && isPlainDate(date) ? date : todayInTimeZone(displayTimezone);
   const allDayLabel = t("settings.openingHours.openAllDay");
@@ -184,14 +205,12 @@ export function BookingItemInformationContent({
       item.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),
     ],
   ];
-  const buffer: string[] = [];
-  if (item.bufferBeforeMinutes > 0) {
-    buffer.push(t("bookings.itemInformation.bufferBefore", { count: item.bufferBeforeMinutes }));
-  }
-  if (item.bufferAfterMinutes > 0) {
-    buffer.push(t("bookings.itemInformation.bufferAfter", { count: item.bufferAfterMinutes }));
-  }
-  if (buffer.length > 0) facts.push([t("bookings.itemInformation.buffer"), formatList(buffer, i18n.resolvedLanguage)]);
+  const buffer = Math.max(item.bufferBeforeMinutes, item.bufferAfterMinutes);
+  if (buffer > 0)
+    facts.push([
+      t("bookings.itemInformation.buffer"),
+      t("bookings.itemInformation.bufferBoth", { duration: formatDurationMinutes(buffer) }),
+    ]);
 
   return (
     <>
@@ -207,7 +226,7 @@ export function BookingItemInformationContent({
       </CardContent>
       <Separator className="h-px" />
       <CardContent className="py-4">
-        <dl className="grid grid-cols-2 items-baseline gap-x-4 gap-y-2 text-sm">
+        <dl className="grid grid-cols-[minmax(0,1fr)_max-content] items-baseline gap-x-4 gap-y-2 text-sm">
           {facts.map(([label, value]) => (
             <div className="contents" key={label}>
               <dt className="text-muted-foreground">{label}</dt>

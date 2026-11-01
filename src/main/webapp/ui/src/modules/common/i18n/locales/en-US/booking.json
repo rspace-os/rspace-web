@@ -641,6 +641,7 @@
       "buffer": "Buffer",
       "bufferAfter": "{count, number}m after",
       "bufferBefore": "{count, number}m before",
+      "bufferBoth": "{duration} before and after",
       "closedDay": "{day}: closed",
       "day": "{day}: {hours}",
       "doubleBookingAllowed": "Double booking allowed",
