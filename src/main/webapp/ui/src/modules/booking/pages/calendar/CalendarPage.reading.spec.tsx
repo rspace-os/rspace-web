@@ -540,34 +540,20 @@ describe("Calendar page", () => {
     });
   });
 
-  test("renders visible booking identities as user badges without leaking busy identities", async () => {
+  test("renders compact booking initials without leaking busy identities or login suffixes", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.chooseView("Time grid");
     await calendar.chooseView("Week");
 
-    const visibleIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace", { exact: true });
-    await expect.element(visibleIdentity).toBeVisible();
-    expect(visibleIdentity.element().closest('[data-slot="user-badge"]')).not.toBeNull();
-    await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
+    const event = calendar.event("Confocal microscope");
+    await expect.element(event.getByText("AL", { exact: true })).toBeVisible();
+    await expect.element(event.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
+    await expect.element(calendar.event("Busy").getByText("AL", { exact: true })).not.toBeInTheDocument();
 
     await calendar.chooseView("Month");
-    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    await expect
-      .poll(() => {
-        const event = calendar.event("Confocal microscope").element();
-        const badge = event.querySelector<HTMLElement>('[data-slot="user-badge"]');
-        const title = Array.from(event.querySelectorAll<HTMLElement>("span")).find(
-          (element) => element.textContent === "Confocal microscope",
-        );
-        const badgeBox = badge?.getBoundingClientRect();
-        const titleBox = title?.getBoundingClientRect();
-        return {
-          badgeIsCompact: (badge?.getBoundingClientRect().height ?? Infinity) <= 20,
-          contentFits: event.scrollHeight <= event.clientHeight + 1,
-          identityOnSeparateLine: badgeBox !== undefined && titleBox !== undefined && badgeBox.top >= titleBox.bottom,
-        };
-      })
-      .toEqual({ badgeIsCompact: true, contentFits: true, identityOnSeparateLine: true });
+    await expect.element(event).toBeVisible();
+    await expect.element(event.getByText("AL", { exact: true })).toBeVisible();
+    await expect.poll(() => event.element().scrollHeight <= event.element().clientHeight + 1).toBe(true);
     await expectNoAxeViolations();
   });
 
@@ -582,11 +568,13 @@ describe("Calendar page", () => {
     await calendar.chooseView("Time grid");
     await expect.element(calendar.timeGrid).toBeVisible();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    const compactIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace", { exact: true });
+    const compactIdentity = calendar.event("Confocal microscope").getByText("AL", { exact: true });
     await expect.element(compactIdentity).toBeVisible();
-    expect(compactIdentity.element().closest('[data-slot="user-badge"]')).not.toBeNull();
+    await expect.element(compactIdentity).toHaveAttribute("title", "Ada Lovelace");
     await expect.element(calendar.event("Busy")).toBeVisible();
-    await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
+    await expect
+      .element(calendar.event("Busy").getByText("Ada Lovelace (ada)", { exact: true }))
+      .not.toBeInTheDocument();
     await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(3);
     expect(bookingPageRequests.calendarBookingRequests[0].searchParams.get("fields[bookings]")).toBe(
       calendarBookingFields,
