@@ -241,7 +241,8 @@ public class BookingNotificationMessageFormatter {
     return formatInstant(
         instant.toString(),
         validZone(data.getEmailDisplayTimezone()).orElse(java.time.ZoneOffset.UTC),
-        locale, null);
+        locale,
+        null);
   }
 
   private static String formatInstant(

@@ -41,7 +41,7 @@ describe("notification message rendering", () => {
     const { dom, unescapeHtml, unescapeMessageContent } = loadNotificationClient(
       `<div id="notificationListContents">
         <div class="msgContent bookingNotificationMessage">
-          <a href="/booking/booking/42">Booking 42</a> for &lt;img src=x onerror=&quot;alert(1)&quot;&gt;
+          <a href="/booking/calendar/bookings/42">Booking 42</a> for <a href="/booking/bookable-items/IN4">&lt;img src=x onerror=&quot;alert(1)&quot;&gt;</a>
         </div>
         <div class="msgContent" id="legacyNotification">&lt;strong&gt;Legacy notification&lt;/strong&gt;</div>
       </div>`,
@@ -52,7 +52,8 @@ describe("notification message rendering", () => {
       unescapeMessageContent();
 
       const bookingMessage = dom.window.document.querySelector(".bookingNotificationMessage");
-      expect(bookingMessage?.querySelector("a")).toHaveAttribute("href", "/booking/booking/42");
+      expect(bookingMessage?.querySelector("a")).toHaveAttribute("href", "/booking/calendar/bookings/42");
+      expect(bookingMessage?.querySelectorAll("a")[1]).toHaveAttribute("href", "/booking/bookable-items/IN4");
       expect(bookingMessage?.querySelector("img")).toBeNull();
       expect(bookingMessage?.textContent?.trim()).toBe(`Booking 42 for ${instrumentName}`);
       expect(unescapeHtml.mock.calls).toEqual([
