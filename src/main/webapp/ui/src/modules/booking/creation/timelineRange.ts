@@ -371,9 +371,17 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
 function proposeTimelineRange(roughStart: string, roughEnd: string, policy: TimelinePolicy): TimelineRange | undefined {
   const rule = incrementRule(policy);
   const timezone = policy.schedulingTimezone;
-  const wholeStart = toWholeMinute(Temporal.Instant.from(roughStart)).toString();
-  const start = wholeStart;
-  const snap = snapEndToIncrement(rule, start, roughEnd, timezone);
+  const wholeStart = toWholeMinute(Temporal.Instant.from(roughStart));
+  const midnight = wholeStart.toZonedDateTimeISO(timezone).startOfDay().toInstant();
+  const nearestStep = (instant: Temporal.Instant) => {
+    if (rule.kind !== "elapsed") return instant;
+    const step = BigInt(rule.minutes) * MINUTE_NS;
+    const offset = instant.epochNanoseconds - midnight.epochNanoseconds;
+    return Temporal.Instant.fromEpochNanoseconds(midnight.epochNanoseconds + ((offset + step / 2n) / step) * step);
+  };
+  const start = nearestStep(wholeStart).toString();
+  const end = nearestStep(Temporal.Instant.from(roughEnd)).toString();
+  const snap = snapEndToIncrement(rule, start, end, timezone);
   return snap.kind === "instant" ? { start, end: snap.instant } : undefined;
 }
 

@@ -252,11 +252,19 @@ describe("hidden endpoints", () => {
 });
 
 describe("creation proposals", () => {
-  it("keeps an unaligned start", () => {
+  it("rounds both boundaries to the nearest instrument step", () => {
     const policy = context("2026-08-17", "UTC", "UTC", 17, {}).policy;
     expect(proposeDayRange({ startMinute: 547, endMinute: 600 }, "2026-08-17", "UTC", policy)).toEqual({
-      startMinute: 547,
-      endMinute: 598,
+      startMinute: 544,
+      endMinute: 595,
+    });
+  });
+
+  it("keeps at least one step when both boundaries round to the same time", () => {
+    const policy = context("2026-08-17", "UTC", "UTC", 15, {}).policy;
+    expect(proposeDayRange({ startMinute: 608, endMinute: 609 }, "2026-08-17", "UTC", policy)).toEqual({
+      startMinute: 615,
+      endMinute: 630,
     });
   });
 

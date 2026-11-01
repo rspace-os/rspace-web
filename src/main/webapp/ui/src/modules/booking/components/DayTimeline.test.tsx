@@ -245,8 +245,8 @@ describe("DayTimeline table row", () => {
       { wrapper },
     );
 
-    expect(screen.getByText("08/16/2026 - 08/18/2026")).toBeVisible();
-    expect(screen.getByText("11:30 PM (-1) - 01:30 AM (+1)")).toBeVisible();
+    expect(screen.getByText("08/16/2026–08/18/2026")).toBeVisible();
+    expect(screen.getByText("11:30 PM (-1)–01:30 AM (+1)")).toBeVisible();
     const details = screen.getByRole("button", {
       name: "Show details for Overnight acquisition · Ada, 11:30 PM (-1)–01:30 AM (+1)",
     });
@@ -407,7 +407,7 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 195 } },
     ]);
-    expect(screen.getByText("02:45 AM +02:00–02:15 AM +01:00")).toBeVisible();
+    expect(screen.getAllByText("02:45 AM +02:00–02:15 AM +01:00")[0]).toBeVisible();
     await user.pointer("[/MouseLeft]");
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 165, endMinute: 195 }, expect.any(HTMLElement));
   });
@@ -459,9 +459,9 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 539 } },
     ]);
-    expect(screen.getByText("08:01 AM–09:01 AM")).toBeVisible();
+    expect(screen.getByText("08:00 AM–09:00 AM")).toBeVisible();
     await user.pointer("[/MouseLeft]");
-    expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 481, endMinute: 541 }, expect.any(HTMLElement));
+    expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 480, endMinute: 540 }, expect.any(HTMLElement));
 
     rerender(
       <DayTimeline
@@ -486,11 +486,23 @@ describe("DayTimeline table row", () => {
   });
 
   it.each([
-    { incrementUnit: "MINUTES", slotGranularityMinutes: 15, endMinute: 622, label: "10:07 AM–10:22 AM" },
-    { incrementUnit: "DAYS", slotGranularityMinutes: 1440, endMinute: 2047, label: "10:07 AM–10:07 AM (+1)" },
+    {
+      incrementUnit: "MINUTES",
+      slotGranularityMinutes: 15,
+      startMinute: 600,
+      endMinute: 615,
+      label: "10:00 AM–10:15 AM",
+    },
+    {
+      incrementUnit: "DAYS",
+      slotGranularityMinutes: 1440,
+      startMinute: 607,
+      endMinute: 2047,
+      label: "10:07 AM–10:07 AM (+1)",
+    },
   ] as const)(
-    "retains the clicked minute for unaligned $incrementUnit proposals",
-    async ({ incrementUnit, slotGranularityMinutes, endMinute, label }) => {
+    "previews and commits the snapped $incrementUnit proposal",
+    async ({ incrementUnit, slotGranularityMinutes, startMinute, endMinute, label }) => {
       const user = userEvent.setup();
       const wrapper = await createRealI18nWrapper({
         resources: { booking: bookingEnglish, common: commonEnglish },
@@ -534,7 +546,7 @@ describe("DayTimeline table row", () => {
       ]);
       expect(screen.getByText(label)).toBeVisible();
       await user.pointer("[/MouseLeft]");
-      expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 607, endMinute }, expect.any(HTMLElement));
+      expect(onRangeSelect).toHaveBeenCalledWith({ startMinute, endMinute }, expect.any(HTMLElement));
     },
   );
 
