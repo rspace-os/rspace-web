@@ -257,11 +257,31 @@ and keyboard input. Filters keep a draft order until the user applies them. Sort
 The Columns panel separates shown and hidden fields. A user can reorder shown fields or move a
 field between sections. Hidden-field order is not stored because it does not affect the table.
 
-Each data-column header has a resize handle. A double-click restores the configured width. Widths
-remain local to the mounted table and are not written to the URL or browser storage.
+Each data-column header has a resize handle. Arrow keys resize by 16px. Widths remain local to
+the mounted table and are not written to the URL or browser storage. Tables with `widthMode:
+"fill"` or `"content"` start with fitted, intrinsic widths. The first mouse, touch, or keyboard
+resize captures the rendered widths, applies column size limits, and switches to fixed layout.
+Double-click, Enter, or Space restores the whole fitted layout on these tables, including after
+hiding the last widthMode column. The next resize captures the rendered widths again. Other
+tables reset only the chosen column to its configured width.
+
+Captured layout survives column visibility changes. Resized tables stay at least as wide as
+their container: on capture, column visibility changes, and container changes, spare width goes
+to a visible fill column up to its maximum. Container shrink reduces it down to its minimum.
+Once the user sizes the fill column, its width stays fixed until reset; a presentation-only
+spacer before Actions takes any remainder, including when no fill column is visible. Other
+columns keep their stored widths, so subsequent resizing starts at the visible edge. The table
+scrolls horizontally when the resized columns exceed the container.
 
 `variant="card"` adds a bordered container around the table. It does not turn each record into a
 card. `variant="transparent"` removes that container treatment.
+
+Use `stickyActions="when-fitted"` for wide visual content such as availability bars. Actions
+remain at the right edge while the table fits; when widths exceed the container, all columns
+scroll together so Actions cannot cover the visual. Actions may start offscreen when the table
+overflows; scroll horizontally to reach them. The scroll container reserves trailing padding so
+scrolling an action into view leaves space at the edge. Resetting widths restores stickiness
+when the table fits again. The default keeps Actions sticky during scrolling.
 
 ## Runtime fields
 

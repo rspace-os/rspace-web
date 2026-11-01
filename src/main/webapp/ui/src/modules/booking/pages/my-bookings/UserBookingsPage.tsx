@@ -152,9 +152,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
-      width: 200,
-      minWidth: 200,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <BookingRowActions
           row={row}

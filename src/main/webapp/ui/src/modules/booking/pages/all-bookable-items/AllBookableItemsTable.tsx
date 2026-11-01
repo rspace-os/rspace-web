@@ -262,6 +262,7 @@ export function AllBookableItemsTable({
       <TableList
         {...tableProps}
         alertsRef={attachAlerts}
+        stickyActions="when-fitted"
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
         filterButtons={availabilityFilters}
@@ -271,7 +272,7 @@ export function AllBookableItemsTable({
             id: "availability",
             label: t("calendar.availability"),
             minWidth: 320,
-            width: 320,
+            widthMode: "fill",
             card: { fullWidth: true },
             renderCell: (row) => {
               const target = row.target;
@@ -295,7 +296,7 @@ export function AllBookableItemsTable({
               }
               return (
                 <AvailabilityBar
-                  className="min-w-0 px-1"
+                  className="min-w-0 px-1 in-[td]:min-w-72"
                   intervals={availability.data.get(target.globalId) ?? []}
                   periodStart={new Date(rowsBounds.start)}
                   periodEnd={new Date(rowsBounds.end)}
