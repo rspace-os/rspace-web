@@ -15,10 +15,10 @@ const ADMINISTRATION_ACCESS_STALE_TIME = 10 * 60 * 1000;
 
 const ReadableCountSchema = v.object({ totalDocs: v.number() });
 
-/** Counts the booking configurations the caller can read, with a one-row page of the list endpoint. */
+/** Counts the booking configurations the caller can read, with the capped count endpoint. */
 async function countReadableBookingConfigurations(token: string, signal?: AbortSignal): Promise<number> {
-  const parameters = new URLSearchParams({ limit: "1", "fields[booking-configurations]": "id" });
-  const response = await fetchWithUiToken(`/api/v2/booking-configurations?${parameters}`, {
+  const parameters = new URLSearchParams({ max: "1" });
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations/count?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });

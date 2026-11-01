@@ -128,6 +128,9 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       if (new URL(request.url).searchParams.has("query")) return new HttpResponse(null, { status: 400 });
       return HttpResponse.json({ docs: [eligibleBookingTargetFixture] });
     }),
+    http.get("/api/v2/booking-configurations/count", () =>
+      HttpResponse.json({ totalDocs: 1, totalIsLowerBound: true }),
+    ),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
