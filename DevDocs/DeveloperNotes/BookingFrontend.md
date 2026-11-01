@@ -189,6 +189,16 @@ Item details show every weekday independently, including closed days, in the sch
 
 ## Editing existing reserved times
 
+Below the `sm` breakpoint, expanded calendar events use a full-width bottom panel.
+The compact editor scrolls its fields above a sticky action bar; Escape closes the
+panel and returns focus to the event trigger. Timeline handles stay below the panel.
+
+Instrument names in booking tables and summary cards link to the bookable-item
+view with the SPA router. Separate global-ID badges still open Inventory records.
+The table action column stays pinned to the right while other columns scroll.
+Icon actions expose their labels on hover and keyboard focus.
+
+
 Both the booking details editor and the calendar inline editor allow purpose edits when the
 original reserved interval no longer meets the current duration, opening-hours or increment
 rules. An informational status message explains this exemption. A current mismatch does not
@@ -374,14 +384,6 @@ The Booking API scheduling-timezone write contract is in
 
 Bookable-item event tables cache totals separately from page requests under the bookings query prefix. Page navigation uses `hasNextPage`, and pagination shows "of many" until the total is available. The upcoming-bookings badge uses `/api/v2/bookings/count?max=100` and displays `99+` when the server marks the total as a lower bound.
 
-
-Below the sm breakpoint, expanded calendar events use a full-width bottom panel.
-The compact editor scrolls its fields above sticky actions, and timeline handles
-stay below the panel. Escape returns focus to the event trigger.
-
-Instrument names link to the bookable-item view when configuration access permits it.
-Separate global-ID badges open Inventory records. Table action columns stay pinned
-while other columns scroll, and icon actions expose labels on hover and keyboard focus.
 
 ## Audit DELETE labels
 
