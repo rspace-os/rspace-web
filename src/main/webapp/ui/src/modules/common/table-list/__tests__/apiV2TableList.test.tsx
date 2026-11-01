@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
+import { apiV2Root } from "@/modules/common/queries/apiV2QueryKeys";
 import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
 import { useApiV2RuntimeFields } from "../api-v2/queries";
 import { useApiV2TableList } from "../hooks/apiV2TableList";
@@ -181,7 +182,7 @@ describe("API v2 optional totals", () => {
     await waitFor(() => expect(countRequests()).toHaveLength(3));
     total = 22;
     await act(async () => {
-      await client.invalidateQueries({ queryKey: ["api-v2", "instruments"] });
+      await client.invalidateQueries({ queryKey: apiV2Root("instruments") });
     });
     await waitFor(() => expect(result.current.tableProps.features.pagination).toMatchObject({ rowCount: 22 }));
     expect(countRequests()).toHaveLength(4);
