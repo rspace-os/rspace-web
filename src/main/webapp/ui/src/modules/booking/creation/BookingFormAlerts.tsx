@@ -47,9 +47,7 @@ export function BookingFormAlerts({
         return (
           <li key={booking.id}>
             <span className="font-medium">
-              {booking.kind === "MAINTENANCE"
-                ? t("bookings.errors.maintenanceConflict", { label, defaultValue: "Maintenance: {label}" })
-                : label}
+              {booking.kind === "MAINTENANCE" ? t("bookings.errors.maintenanceConflict", { label }) : label}
             </span>
             {" · "}
             <BookingInstrumentTimeTooltip
