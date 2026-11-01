@@ -445,7 +445,7 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Apply filters" }));
     await expect(canvas.getByText("Cell imaging", { exact: true })).toBeVisible();
     await expect(canvas.queryByText("Protein analysis", { exact: true })).not.toBeInTheDocument();
-    await userEvent.click(canvas.getByRole("button", { name: "Filters, 1 applied" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Filters 1 applied" }));
     await expect(canvas.getByRole("combobox", { name: "Field for filter 1" })).toHaveValue(
       "Bookable item → Extra fields",
     );
@@ -465,7 +465,7 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Apply filters" }));
     await expect(canvas.getByText("Cell imaging", { exact: true })).toBeVisible();
     await expect(canvas.getByText("Protein analysis", { exact: true })).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Filters, 1 applied" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Filters 1 applied" }));
     await userEvent.click(canvas.getByRole("button", { name: "Clear all" }));
     await expect(canvas.getByText("Protein analysis", { exact: true })).toBeVisible();
   },

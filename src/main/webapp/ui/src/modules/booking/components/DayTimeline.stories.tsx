@@ -147,7 +147,7 @@ export const Sub15MinuteEvents: Story = {
       expect(time).not.toBeNull();
       expect(eventDate).toBeNull();
       const { startMinute, endMinute } = denseBookings[index];
-      expect(timeRange).toHaveTextContent(`${clock(startMinute)} - ${clock(endMinute)}`);
+      expect(timeRange).toHaveTextContent(`${clock(startMinute)}–${clock(endMinute)}`);
       if (!card || !time || !timeRange) throw new Error("Timeline card content is missing");
       expect(card).toHaveAttribute("title");
       expect(time.getBoundingClientRect().top).toBeGreaterThan(card.getBoundingClientRect().top);
