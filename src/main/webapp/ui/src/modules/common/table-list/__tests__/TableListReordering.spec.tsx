@@ -185,6 +185,8 @@ describe("TableList drag and drop", () => {
     await expect.element(table.filterState).toHaveTextContent(initialFilters);
     await expect.element(table.commitCounts).toHaveTextContent("0,0,0");
 
+    // Keep the pointer inside the list until auto-scroll exposes the final drop target.
+    await expect.poll(() => table.filterScrollRemaining(), { timeout: 8000 }).toBeLessThanOrEqual(1);
     await table.moveMouseTo(table.filterHandle(12), 12);
     await table.moveMouseTo(table.filterHandle(12), 16);
     await table.finishMouseDrag();

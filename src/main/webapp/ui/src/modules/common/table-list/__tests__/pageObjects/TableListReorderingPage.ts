@@ -85,7 +85,7 @@ export class TableListReorderingPage {
   }
 
   get sortingButton(): Locator {
-    return page.getByRole("button", { name: "Sort, 3 rules active" });
+    return page.getByRole("button", { name: "Sort 3 rules active" });
   }
 
   get columnsButton(): Locator {
@@ -213,6 +213,11 @@ export class TableListReorderingPage {
 
   filterScrollTop(): number {
     return this.filterList.element().scrollTop;
+  }
+
+  filterScrollRemaining(): number {
+    const list = this.filterList.element();
+    return list.scrollHeight - list.clientHeight - list.scrollTop;
   }
 
   filterDraftOrder(): string {
