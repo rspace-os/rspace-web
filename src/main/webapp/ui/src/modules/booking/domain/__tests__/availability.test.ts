@@ -112,6 +112,13 @@ describe("the availability oracle", () => {
     ).toBe("free-later-today");
   });
 
+  it("keeps maintenance buffers occupied until their half-open boundary", () => {
+    const events = [booking("2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z", "MAINTENANCE")];
+    const buffered = row({ bufferMinutes: 15, allowDoubleBooking: true });
+    expect(classify(buffered, "2026-08-17T08:59:00Z", events)).toBe("free-later-today");
+    expect(classify(buffered, "2026-08-17T09:00:00Z", events)).toBe("available-now");
+  });
+
   it("counts maintenance on double-booked items and widens events by their buffers", () => {
     const shared = row({ allowDoubleBooking: true });
     expect(classify(shared, "2026-08-17T09:00:00Z", [booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")])).toBe(

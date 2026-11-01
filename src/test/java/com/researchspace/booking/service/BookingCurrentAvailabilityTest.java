@@ -98,6 +98,19 @@ class BookingCurrentAvailabilityTest {
   }
 
   @Test
+  void keepsMaintenanceBuffersOccupiedUntilTheirHalfOpenBoundary() {
+    BookingConfiguration buffered = configuration("UTC");
+    buffered.setBufferMinutes(15);
+    buffered.setAllowDoubleBooking(true);
+    List<EventInterval> events =
+        List.of(
+            event(BookingEventKind.MAINTENANCE, "2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z"));
+
+    assertEquals(LATER, classify(buffered, events, atUtc("2026-08-17T08:59:00Z")));
+    assertEquals(NOW, classify(buffered, events, UTC_DAY_AT_NINE));
+  }
+
+  @Test
   void isNeitherWhenBusyForTheRestOfTheWindow() {
     List<EventInterval> busyAllDay =
         List.of(event(BookingEventKind.BOOKING, "2026-08-17T00:00:00Z", "2026-08-18T00:00:00Z"));

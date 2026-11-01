@@ -186,6 +186,7 @@ export function InlineBookingEditor({
   const availabilityRow = configuration.data
     ? calendarAvailabilityRow({
         ...configuration.data,
+        eventKind: event.kind,
         // Opening hours are the form's own check, so closed time must not read as an overlap here.
         ...ALWAYS_OPEN,
         // Fetch overlaps even when the configuration permits double booking so the form can explain them.

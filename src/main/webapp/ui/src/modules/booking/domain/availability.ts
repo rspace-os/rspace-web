@@ -224,6 +224,7 @@ export type CalendarAvailabilityRow = OpeningSchedule & {
 };
 
 export function calendarAvailabilityRow(row: {
+  eventKind?: BookingEventKind;
   globalId: string;
   timezone?: string;
   openingHours?: readonly OpeningHoursEntry[];
@@ -239,6 +240,7 @@ export function calendarAvailabilityRow(row: {
     return undefined;
   }
   return {
+    eventKind: row.eventKind,
     globalId: row.globalId,
     timezone: row.timezone,
     openingHours: row.openingHours,
@@ -353,7 +355,7 @@ function bookingInterval(
     booking.end,
     booking,
   );
-  const sharedGapMinutes = booking.kind === "MAINTENANCE" && row.eventKind !== "BOOKING" ? 0 : row.bufferMinutes;
+  const sharedGapMinutes = booking.kind === "MAINTENANCE" && row.eventKind === "MAINTENANCE" ? 0 : row.bufferMinutes;
   return clipInterval(
     {
       ...candidate,

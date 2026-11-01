@@ -105,7 +105,7 @@ describe("calendar availability", () => {
     expect(requests).toBe(2);
   });
 
-  it("classifies maintenance as a blockout with its own interval and details", async () => {
+  it.each([undefined, "MAINTENANCE"] as const)("classifies maintenance with %s intent", async (eventKind) => {
     server.use(
       http.get("/api/v2/bookings", () =>
         HttpResponse.json(
@@ -116,7 +116,7 @@ describe("calendar availability", () => {
       ),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferMinutes: 10, allowDoubleBooking: true }],
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferMinutes: 10, allowDoubleBooking: true, eventKind }],
       "2026-08-17",
       "token",
       new AbortController().signal,
@@ -124,8 +124,8 @@ describe("calendar availability", () => {
     expect(result.get("IN1")).toEqual([
       expect.objectContaining({
         kind: "blockout",
-        startsAt: new Date("2026-08-17T10:00:00Z"),
-        endsAt: new Date("2026-08-17T11:00:00Z"),
+        startsAt: new Date(eventKind === "MAINTENANCE" ? "2026-08-17T10:00:00Z" : "2026-08-17T09:50:00Z"),
+        endsAt: new Date(eventKind === "MAINTENANCE" ? "2026-08-17T11:00:00Z" : "2026-08-17T11:10:00Z"),
         source: expect.objectContaining({ booking: expect.objectContaining({ id: 1, kind: "MAINTENANCE" }) }),
       }),
     ]);
