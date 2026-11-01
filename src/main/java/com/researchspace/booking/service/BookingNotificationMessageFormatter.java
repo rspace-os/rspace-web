@@ -271,12 +271,14 @@ public class BookingNotificationMessageFormatter {
   }
 
   public static boolean isBookingNotification(NotificationType type) {
-    return NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type)
+    return NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type)
         || NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)
         || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(type);
   }
 
   private static String messageKey(NotificationType type, BookingNotificationData data) {
+    if (type == NotificationType.NOTIFICATION_BOOKING_RESTORED) return RESTORED_MESSAGE_KEY;
     if (type == NotificationType.NOTIFICATION_BOOKING_CHANGED) return CHANGED_MESSAGE_KEY;
     if (NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)) {
       return data.isRestored() ? RESTORED_MESSAGE_KEY : CREATED_MESSAGE_KEY;

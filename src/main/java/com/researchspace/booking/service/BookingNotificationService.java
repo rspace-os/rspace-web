@@ -53,13 +53,10 @@ public class BookingNotificationService {
     notify(booking, actor, notificationType, false);
   }
 
-  /**
-   * Notifies subscribers that a cancelled booking was restored to its slot. It uses the "booking
-   * created" type, so the same subscribers and preferences apply, with a "restored" message.
-   */
+  /** Notifies subscribers that a cancelled booking was restored, using the creation preference. */
   @Transactional(propagation = Propagation.MANDATORY)
   public void notifyRestored(TimeSlotBooking booking, User actor) {
-    notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_CREATED, true);
+    notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_RESTORED, true);
   }
 
   private void notify(

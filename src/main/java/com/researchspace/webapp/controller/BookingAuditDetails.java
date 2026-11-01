@@ -192,7 +192,11 @@ final class BookingAuditDetails {
                         + value(key, data.get(key), locale, messages, forDisplay));
     Stream<String> other =
         data.keySet().stream()
-            .filter(key -> !"id".equals(key) && !"defaultSharedWith".equals(key) && !LABEL_KEYS.contains(key))
+            .filter(
+                key ->
+                    !"id".equals(key)
+                        && !"defaultSharedWith".equals(key)
+                        && !LABEL_KEYS.contains(key))
             .sorted()
             .map(key -> key + ": " + value(key, data.get(key), locale, messages, forDisplay));
     return Stream.concat(known, other).collect(joining("; "));

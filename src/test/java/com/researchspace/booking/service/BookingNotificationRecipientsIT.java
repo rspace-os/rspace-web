@@ -194,12 +194,9 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
             owner)
         .orElseThrow();
 
-    List<Notification> after =
-        BookingNotificationTestFixtures.notificationsFor(communicationMgr, owner, CREATED);
     List<Notification> restored =
-        after.stream()
-            .filter(notification -> !notification.getId().equals(before.get(0).getId()))
-            .toList();
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_RESTORED);
     assertEquals(notifyOwnActions ? 1 : 0, restored.size());
     if (notifyOwnActions) {
       assertTrue(restored.get(0).getNotificationMessage().contains("was restored"));

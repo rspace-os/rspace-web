@@ -327,6 +327,30 @@ class BookingNotificationServiceTest {
     verify(communicationManager, never()).notify(any(), any(), any(), any());
   }
 
+  @Test
+  void restoresHaveTheirOwnTypeAndLabel() {
+    User actor = user(1L, "actor");
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument("Scope")));
+    when(recipientReader.selectRecipients(eq(INSTRUMENT_ID), any(), eq(1L), eq(1L)))
+        .thenReturn(
+            List.of(
+                new BookingNotificationRecipient(
+                    actor, ZoneId.of("UTC"), BookingTimeFormat.H24, false)));
+    service.notifyRestored(booking(BOOKING_ID, BookingEventKind.BOOKING, actor), actor);
+    ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
+    ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), message.capture());
+    assertEquals("NOTIFICATION_BOOKING_RESTORED", config.getValue().getNotificationType().name());
+    assertTrue(message.getValue().contains("was restored"));
+    assertTrue(actor.wantsNotificationFor(config.getValue().getNotificationType()));
+    actor.setPreference(
+        new com.researchspace.model.UserPreference(
+            com.researchspace.model.preference.Preference.NOTIFICATION_BOOKING_CREATED_PREF,
+            actor,
+            "false"));
+    assertFalse(actor.wantsNotificationFor(config.getValue().getNotificationType()));
+  }
+
   private static User user(long id, String username) {
     User user = TestFactory.createAnyUser(username);
     user.setId(id);

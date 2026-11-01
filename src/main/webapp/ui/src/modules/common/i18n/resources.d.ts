@@ -6969,7 +6969,7 @@ export default interface Resources {
       "message": {
         "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own",
         "bookingCancelled": "A booking on an instrument I subscribe to is cancelled",
-        "bookingCreated": "A booking is created or changed on an instrument I subscribe to",
+        "bookingCreated": "A booking is created, restored or changed on an instrument I subscribe to",
         "bookingOwnActions": "Notify me about my own booking changes",
         "delivery": {
           "label": "Preferred delivery method"
@@ -8208,6 +8208,8 @@ export default interface Resources {
       "bookingChangedSubject": "Booking Changed: {0}",
       "bookingCreated": "Booking Created",
       "bookingCreatedSubject": "Booking Created: {0}",
+      "bookingRestored": "Booking Restored",
+      "bookingRestoredSubject": "Booking Restored: {0}",
       "documentDeleted": "Document Deleted",
       "documentEdited": "Document Edited",
       "documentShared": "Document Shared",

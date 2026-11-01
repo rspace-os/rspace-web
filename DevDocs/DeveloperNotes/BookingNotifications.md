@@ -88,7 +88,7 @@ notification column, per-row toggle, or access-lost panel.
 `BookingNotificationService` notifies eligible subscribers after creation, time changes and cancellation,
 including archive-triggered cancellations. Maintenance, purpose-only edits, repeated cancellations,
 deleted instruments do not generate notifications. Self-actions follow `notifyOwnActions`.
-Restoring a cancelled booking uses the creation type and switch with the restored message (`BookingNotificationData.restored`).
+Restoring a cancelled booking emits `NOTIFICATION_BOOKING_RESTORED`, with its own label and restored message. It uses the created event preference and the same own-action rules. The reserved RESTORED enum value remains before CHANGED to preserve persisted ordinals.
 
 Enabled subscribers are selected in one read-only `REQUIRES_NEW`, `REPEATABLE_READ`
 transaction. The first consistent SELECT establishes eligibility for that event. Preference
