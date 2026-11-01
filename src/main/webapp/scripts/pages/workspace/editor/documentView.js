@@ -712,7 +712,8 @@ $(document).ready(function () {
     if(!publicView) {
       window.addEventListener("ReactToolbarMounted", () => {
         disableEditing();
-        $('#delete, .templateActionDiv, .fieldHeaderEditButton').hide();
+        // Readers of a shared template may still create a document from it.
+        $('#delete, .templateActionDiv, .fieldHeaderEditButton').not('#createDocFromTemplate').hide();
       });
     } else {
       disableEditing();
