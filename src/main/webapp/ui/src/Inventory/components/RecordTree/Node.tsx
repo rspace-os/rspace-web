@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import useStores from "../../../stores/use-stores";
 import { match } from "../../../util/Util";
 import NameWithBadge from "../NameWithBadge";
 import NavigateToNode from "./NavigateToNode";
@@ -21,6 +22,7 @@ type TreeNodeArgs = {
 export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
+  const { uiStore } = useStores();
   const theme = useTheme();
 
   useEffect(() => {
@@ -63,9 +65,14 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
           itemId={node.globalId || ""}
           disableSelection={search.alwaysFilterOut(node)}
           onKeyDown={(event) => {
-            // The tree ignores Space on a selection-disabled row, so the browser would scroll the panel.
-            if (event.key === " " && event.target === event.currentTarget && search.alwaysFilterOut(node)) {
-              event.preventDefault();
+            if (event.target !== event.currentTarget) return;
+            if (search.alwaysFilterOut(node)) {
+              // The tree ignores Space on a selection-disabled row, so the browser would scroll the panel.
+              if (event.key === " ") event.preventDefault();
+              return;
+            }
+            if ((event.key === " " || event.key === "Enter") && node.globalId === search.tree.selected) {
+              uiStore.setVisiblePanel("right");
             }
           }}
           label={
