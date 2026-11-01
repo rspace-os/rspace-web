@@ -1,3 +1,4 @@
+import { createMemoryHistory, createRootRoute, createRouter, RouterContextProvider } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -38,20 +39,23 @@ describe("CalendarResourceSchedule", () => {
     const user = userEvent.setup();
     const onResourceRangeSelect = vi.fn();
 
+    const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
     render(
-      <CalendarResourceSchedule
-        date="2026-08-17"
-        view="day"
-        events={[]}
-        resources={[resource]}
-        timezone="UTC"
-        today="2026-08-17"
-        availabilityStartMinute={600}
-        availabilityEndMinute={1080}
-        resourceConfigurations={[twoDayConfiguration]}
-        creationDisabled={false}
-        onResourceRangeSelect={onResourceRangeSelect}
-      />,
+      <RouterContextProvider router={router}>
+        <CalendarResourceSchedule
+          date="2026-08-17"
+          view="day"
+          events={[]}
+          resources={[resource]}
+          timezone="UTC"
+          today="2026-08-17"
+          availabilityStartMinute={600}
+          availabilityEndMinute={1080}
+          resourceConfigurations={[twoDayConfiguration]}
+          creationDisabled={false}
+          onResourceRangeSelect={onResourceRangeSelect}
+        />
+      </RouterContextProvider>,
     );
 
     await user.click(screen.getByRole("button", { name: "booking:calendar.actions.addForItem" }));
