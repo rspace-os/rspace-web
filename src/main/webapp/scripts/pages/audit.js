@@ -224,9 +224,12 @@ function init() {
 		setUpAutoCompleteGroupBox('#groupEntry', data.data);
     });
 	setUpAutoCompleteUsernameBox('#userEntry', '/audit/queryableUsers');
-	$.get("/system/ajax/getAllCommunities",function (data) {
- 		setUpAutoCompleteCommunityBox('#communityEntry', data.data);
- 	});
+	// The community filter exists only in the sysadmin section, and /system/** rejects other roles.
+	if ($('#auditSysAdmin').length) {
+		$.get("/system/ajax/getAllCommunities", function (data) {
+			setUpAutoCompleteCommunityBox('#communityEntry', data.data);
+		});
+	}
 	$.get('/audit/actions', function (xhr) {
 		var html = Mustache.render($('#auditactionTemplate').html(), xhr);
 		$(".actionsRow").append(html);
