@@ -62,11 +62,8 @@ class BookingSchedulingPolicyFuzzTest {
     BookingSchedulingPolicy policy = new BookingSchedulingPolicy();
     assertConflict(
         configuration, start, end, policy.validate(configuration, date(start), date(end)));
-    assertConflict(
-        configuration,
-        start,
-        end,
-        policy.validateMaintenance(configuration, date(start), date(end)));
+    assertMaintenanceConflict(
+        start, end, policy.validateMaintenance(configuration, date(start), date(end)));
   }
 
   @FuzzTest(maxDuration = "30s")
@@ -97,13 +94,11 @@ class BookingSchedulingPolicyFuzzTest {
       assertRejection(Reason.GRANULARITY, configuration, shiftedStart, end, true);
       assertRejection(Reason.GRANULARITY, configuration, start, shiftedEnd, true);
     } else {
-      assertConflict(
-          configuration,
+      assertMaintenanceConflict(
           shiftedStart,
           end,
           policy.validateMaintenance(configuration, date(shiftedStart), date(end)));
-      assertConflict(
-          configuration,
+      assertMaintenanceConflict(
           start,
           shiftedEnd,
           policy.validateMaintenance(configuration, date(start), date(shiftedEnd)));
@@ -114,8 +109,7 @@ class BookingSchedulingPolicyFuzzTest {
         configuration, start, end, policy.validate(configuration, date(start), date(end)));
     Instant beyondMaximum = end.plus(granularity, ChronoUnit.MINUTES);
     assertRejection(Reason.MAXIMUM_DURATION, configuration, start, beyondMaximum, false);
-    assertConflict(
-        configuration,
+    assertMaintenanceConflict(
         start,
         beyondMaximum,
         policy.validateMaintenance(configuration, date(start), date(beyondMaximum)));
@@ -130,13 +124,11 @@ class BookingSchedulingPolicyFuzzTest {
     Instant afterClosing = closing.plus(granularity, ChronoUnit.MINUTES);
     assertRejection(Reason.OPENING_HOURS, configuration, beforeOpening, closing, false);
     assertRejection(Reason.OPENING_HOURS, configuration, start, afterClosing, false);
-    assertConflict(
-        configuration,
+    assertMaintenanceConflict(
         beforeOpening,
         closing,
         policy.validateMaintenance(configuration, date(beforeOpening), date(closing)));
-    assertConflict(
-        configuration,
+    assertMaintenanceConflict(
         start,
         afterClosing,
         policy.validateMaintenance(configuration, date(start), date(afterClosing)));
@@ -165,8 +157,7 @@ class BookingSchedulingPolicyFuzzTest {
     }
     // Maintenance ignores duration increments and the finite item maximum.
     Instant maintenanceEnd = end.plus(1, ChronoUnit.MINUTES);
-    assertConflict(
-        configuration,
+    assertMaintenanceConflict(
         start,
         maintenanceEnd,
         policy.validateMaintenance(configuration, date(start), date(maintenanceEnd)));
@@ -222,8 +213,7 @@ class BookingSchedulingPolicyFuzzTest {
     assertEquals(
         new BookingPolicyException.MissingDayEnd(missingTime, gapDate, ZoneId.of(gapZone)),
         failure.missingDayEnd().orElseThrow());
-    assertConflict(
-        missing,
+    assertMaintenanceConflict(
         gapStart,
         shiftedEnd,
         new BookingSchedulingPolicy()
@@ -282,6 +272,12 @@ class BookingSchedulingPolicyFuzzTest {
             .mapToObj(day -> new BookingOpeningHoursEntry(day, "00:00", "24:00"))
             .toList());
     return configuration;
+  }
+
+  private static void assertMaintenanceConflict(
+      Instant start, Instant end, BookingSchedulingPolicy.ConflictInterval actual) {
+    assertEquals(date(start), actual.start());
+    assertEquals(date(end), actual.end());
   }
 
   private static void assertConflict(
