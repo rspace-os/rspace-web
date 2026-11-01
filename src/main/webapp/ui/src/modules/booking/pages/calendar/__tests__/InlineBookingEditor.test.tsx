@@ -48,6 +48,40 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE") {
 }
 
 describe("InlineBookingEditor", () => {
+  it("does not apply booking buffers between maintenance windows", async () => {
+    const user = userEvent.setup();
+    const event = editableEvent("MAINTENANCE");
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...bookableItemFixtures[0], bufferMinutes: 30 }], 2)),
+      ),
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json(
+          collectionResponse([
+            event,
+            { ...overlappingEvent("MAINTENANCE"), start: "2030-10-07T11:30:00Z", end: "2030-10-07T12:30:00Z" },
+          ]),
+        ),
+      ),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+    const root = createRootRoute({
+      component: () => (
+        <InlineBookingEditor event={event} timezone="UTC" token="test-token" onClose={() => undefined} />
+      ),
+    });
+    const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
+    await renderBookingTestPage(router, { queryClient, realI18n: false });
+
+    const endTime = await screen.findByLabelText("booking:bookings.form.endTime");
+    await user.clear(endTime);
+    await user.type(endTime, "11:15");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "booking:bookings.form.save" })).toBeEnabled());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it.each([
     ["maintenance", "BOOKING", true],
     ["booking", "MAINTENANCE", true],
