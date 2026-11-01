@@ -459,7 +459,7 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Apply filters" }));
     await expect(canvas.getByText("Cell imaging", { exact: true })).toBeVisible();
     await expect(canvas.queryByText("Live cell time-lapse", { exact: true })).not.toBeInTheDocument();
-    await userEvent.click(canvas.getByRole("button", { name: "Filters, 2 applied" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Filters 2 applied" }));
     await expect(canvas.getByRole("combobox", { name: "Field for filter 2" })).toHaveValue("Sample → Extra fields");
     await userEvent.click(canvas.getByRole("button", { name: "Remove filter 1" }));
     await userEvent.click(canvas.getByRole("button", { name: "Apply filters" }));

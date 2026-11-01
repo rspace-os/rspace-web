@@ -162,7 +162,7 @@ export const Sub15MinuteEvents: Story = {
     expect(firstDetails).toHaveAttribute("aria-expanded", "true");
     expect(timelineCanvas.getBoundingClientRect().height).toBeCloseTo(heightBeforeOpening, 0);
     const popover = within(document.body);
-    expect(popover.getByText(densePeriod(0))).toBeInTheDocument();
+    expect(popover.getByRole("dialog", { name: densePeriod(0) })).toBeInTheDocument();
     expect(popover.getByText("Sample check 1.")).toBeInTheDocument();
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "false");

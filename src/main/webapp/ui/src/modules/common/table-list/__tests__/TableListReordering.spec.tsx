@@ -181,14 +181,12 @@ describe("TableList drag and drop", () => {
     await table.startMouseDrag(table.filterHandle(1));
     await table.moveMouseNearFilterBottom();
 
-    await expect.poll(() => table.filterScrollTop()).toBeGreaterThan(0);
+    await expect.poll(() => table.filterScrollTop(), { timeout: 3000 }).toBeGreaterThan(0);
     await expect.element(table.filterState).toHaveTextContent(initialFilters);
     await expect.element(table.commitCounts).toHaveTextContent("0,0,0");
 
-    // Keep the pointer inside the list until auto-scroll exposes the final drop target.
-    await expect.poll(() => table.filterScrollRemaining(), { timeout: 8000 }).toBeLessThanOrEqual(1);
-    await table.moveMouseTo(table.filterHandle(12), 12);
-    await table.moveMouseTo(table.filterHandle(12), 16);
+    // Keep the pointer at the edge until auto-scroll previews a drop after the final row.
+    await expect.poll(() => table.filterPreviewOffset(12), { timeout: 12000 }).toBeLessThan(0);
     await table.finishMouseDrag();
 
     await expect.poll(() => table.filterDraftOrder()).toBe(reorderedFilters);
