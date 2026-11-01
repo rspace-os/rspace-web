@@ -49,8 +49,8 @@ type DetailedBookingSource = AvailabilitySource & {
 
 const stateClasses: Record<AvailabilityState, string> = {
   available: "bg-transparent",
-  booking: "bg-blue-600",
-  blockout: "bg-[repeating-linear-gradient(135deg,var(--color-amber-700)_0_3px,var(--color-amber-300)_3px_6px)]",
+  booking: "bg-blue-200",
+  blockout: "bg-muted bg-[repeating-linear-gradient(135deg,var(--color-muted-foreground)_0_1px,transparent_1px_6px)]",
   overlap: "bg-[repeating-linear-gradient(135deg,var(--color-blue-600)_0_3px,var(--color-amber-400)_3px_6px)]",
 };
 
@@ -259,13 +259,34 @@ export function AvailabilityBar({
               <span
                 key={`${slice.startsAt}-${slice.endsAt}-${slice.state}`}
                 data-availability-state={slice.state}
-                className={stateClasses[slice.state]}
+                className={cn(
+                  "relative",
+                  stateClasses[slice.state],
+                  slice.intervals.some(({ source }) => source.booking?.kind === "MAINTENANCE") &&
+                    "bg-[repeating-linear-gradient(90deg,var(--color-amber-700)_0_3px,var(--color-amber-200)_3px_6px)]",
+                )}
                 style={{
                   flexBasis: `${((slice.endsAt - slice.startsAt) / (end - start)) * 100}%`,
                   flexGrow: 0,
                   flexShrink: 0,
                 }}
-              />
+              >
+                {slice.state === "booking" &&
+                  slice.intervals.map(({ source }) => {
+                    const from = Math.max(slice.startsAt, source.startsAt.getTime());
+                    const to = Math.min(slice.endsAt, source.endsAt.getTime());
+                    return to > from ? (
+                      <span
+                        key={source.id}
+                        className="absolute inset-y-0 bg-blue-600"
+                        style={{
+                          left: `${((from - slice.startsAt) / (slice.endsAt - slice.startsAt)) * 100}%`,
+                          width: `${((to - from) / (slice.endsAt - slice.startsAt)) * 100}%`,
+                        }}
+                      />
+                    ) : null;
+                  })}
+              </span>
             ))}
           </div>
           {nowTimestamp !== null && nowLabel !== null && nowPosition !== null && (
@@ -288,8 +309,10 @@ export function AvailabilityBar({
                 left.kind.localeCompare(right.kind) ||
                 left.source.id.localeCompare(right.source.id),
             );
-            const stateLabel = sliceStateLabels[slice.state];
-            const slicePeriod = formatRange(slice);
+            const stateLabel = contributors.some(({ source }) => source.booking?.kind === "MAINTENANCE")
+              ? t("bookings.maintenanceLabel")
+              : sliceStateLabels[slice.state];
+            const slicePeriod = formatList([...new Set(contributors.map(({ source }) => formatRange(source)))], locale);
             const triggerLabel = t("availabilityBar.slice.trigger", {
               itemName: item.name,
               state: stateLabel,
