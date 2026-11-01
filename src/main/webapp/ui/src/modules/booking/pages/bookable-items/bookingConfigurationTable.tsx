@@ -1,6 +1,6 @@
 import { createElement } from "react";
-import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import {
   bookingTimeZoneOptions,
   browserTimeZone,
