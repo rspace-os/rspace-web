@@ -2,6 +2,7 @@ import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { parseAsBoolean, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -135,6 +136,7 @@ export function useCalendarContentData() {
   const [myItemsOnly, setMyItemsOnly] = useQueryState("myItemsOnly", calendarQuickFilterParser);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
+  const creationTarget = useBookableItem(target, token);
   const [requestedView, setView] = useQueryState("view", calendarViewParser);
   const [layout, setLayout] = useQueryState("layout", calendarLayoutParser);
   // Month is not offered in Resources, so a link asking for it opens the week, as switching layouts does.
@@ -392,6 +394,7 @@ export function useCalendarContentData() {
   };
 
   return {
+    creationTarget: creationTarget.data,
     navigate,
     calendarSearch,
     setCalendarSearch,

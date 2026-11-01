@@ -7,6 +7,7 @@ import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
   const {
+    creationTarget,
     navigate,
     calendarSearch,
     setCalendarSearch,
@@ -146,7 +147,12 @@ export function CalendarContent() {
       onViewChange={setView}
       onLayoutChange={setLayout}
       creationAction={
-        <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
+        <BookingCreationButtonGroup
+          ownerId="calendar-toolbar"
+          target={creationTarget}
+          initialDate={selectedDate}
+          size="default"
+        />
       }
       creationDisabled={
         creationActive ||
