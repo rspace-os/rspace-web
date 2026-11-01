@@ -678,6 +678,16 @@ function GalleryAppBar({
                 }}
                 icon={<DynamicAvatar uiNavigationData={uiNavigationData} size="small" />}
                 title={t("appBar.accountMenu")}
+                ariaLabel={FetchingData.match(uiNavigationData, {
+                  loading: () => t("appBar.accountMenu"),
+                  error: () => t("appBar.accountMenu"),
+                  success: ({ userDetails: { fullName } }) =>
+                    t("appBar.accountMenuAccessible", {
+                      label: t("appBar.accountMenu"),
+                      name: fullName,
+                      initials: fullName[0],
+                    }),
+                })}
                 id="account-menu-button"
                 aria-haspopup="menu"
                 aria-controls="account-menu"
