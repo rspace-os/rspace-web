@@ -146,6 +146,9 @@ class BookingNotificationRecipientReaderTest {
 
   @ParameterizedTest
   @CsvSource({
+    "owner,NOTIFICATION_BOOKING_RESTORED,true,true,true,1",
+    "owner,NOTIFICATION_BOOKING_RESTORED,false,true,true,0",
+    "owner,NOTIFICATION_BOOKING_RESTORED,true,false,true,0",
     "owner,NOTIFICATION_BOOKING_CHANGED,true,true,true,1",
     "owner,NOTIFICATION_BOOKING_CHANGED,false,true,true,0",
     "owner,NOTIFICATION_BOOKING_CHANGED,true,false,true,0",
