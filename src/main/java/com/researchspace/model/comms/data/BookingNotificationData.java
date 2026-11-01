@@ -1,5 +1,6 @@
 package com.researchspace.model.comms.data;
 
+import com.researchspace.model.booking.BookingTimeFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,7 +21,7 @@ public class BookingNotificationData extends NotificationData {
   /** Recipient display snapshot used by the email header as well as its saved body. */
   private String emailDisplayTimezone;
 
-  private com.researchspace.model.booking.BookingTimeFormat emailTimeFormat;
+  private BookingTimeFormat emailTimeFormat;
 
   /** Retained for older restored notifications saved under the created type. */
   private boolean restored;

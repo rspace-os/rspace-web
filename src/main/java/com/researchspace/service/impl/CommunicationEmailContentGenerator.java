@@ -8,6 +8,7 @@ import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.NotificationTypeMessages;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +36,7 @@ class CommunicationEmailContentGenerator {
       model.put(
           "bookingTimestamp",
           BookingNotificationMessageFormatter.formatEmailTimestamp(
-              java.time.Instant.now(), data, contentGenerator.getLocale()));
+              Instant.now(), data, contentGenerator.getLocale()));
       return contentGenerator.render(
           eventKey + "Subject", new Object[] {data.getInstrumentName()}, "notification.vm", model);
     }

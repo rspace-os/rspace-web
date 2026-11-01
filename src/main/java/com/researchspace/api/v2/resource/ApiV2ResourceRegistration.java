@@ -36,6 +36,7 @@ import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.ws.rs.NotFoundException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -193,7 +194,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.requiredAuditFields(description.entityType().cast(entity));
   }
 
-  java.time.Instant relatedAuditFallbackFrom(Object entity) {
+  Instant relatedAuditFallbackFrom(Object entity) {
     return operations.relatedAuditFallbackFrom(description.entityType().cast(entity));
   }
 

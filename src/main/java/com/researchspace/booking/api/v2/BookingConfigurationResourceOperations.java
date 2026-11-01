@@ -38,6 +38,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -221,7 +222,7 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
-  public java.time.Instant relatedAuditFallbackFrom(BookingConfiguration configuration) {
+  public Instant relatedAuditFallbackFrom(BookingConfiguration configuration) {
     return configuration.getCreatedAt() == null ? null : configuration.getCreatedAt().toInstant();
   }
 
