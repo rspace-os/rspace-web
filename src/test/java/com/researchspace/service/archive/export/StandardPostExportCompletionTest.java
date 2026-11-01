@@ -6,21 +6,36 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.User;
+import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData.ExportedNfsLinkData;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData.ExportedRecordData;
 import com.researchspace.model.record.Record;
+import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.aws.S3ExportUtilities;
+import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -29,6 +44,11 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
+import software.amazon.awssdk.http.SdkHttpResponse;
 
 public class StandardPostExportCompletionTest {
 
@@ -173,5 +193,46 @@ public class StandardPostExportCompletionTest {
     assertTrue(exportedFolderLink.isFolderLink());
     assertEquals(
         nfsFolder.getFolderExportSummaryMsg(), exportedFolderLink.getFolderExportSummaryMsg());
+  }
+
+  @Test
+  public void s3ExportNotificationShowsPresignedUrlAsLinkText(@TempDir Path tempDir)
+      throws Exception {
+    String s3Url = "https://bucket.s3.eu-west-2.amazonaws.com/archives/a.zip?X-Amz-Expires=3600";
+    File exportFile = Files.writeString(tempDir.resolve("a.zip"), "zip").toFile();
+
+    CommunicationManager commMgr = mock(CommunicationManager.class);
+    Notification notification = new Notification();
+    notification.setId(1L);
+    when(commMgr.systemNotify(any(), any(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(notification);
+    S3ExportUtilities s3 = mock(S3ExportUtilities.class);
+    when(s3.uploadArchiveToS3(exportFile))
+        .thenReturn(SdkHttpResponse.builder().statusCode(200).build());
+    when(s3.isArchiveInS3("a.zip")).thenReturn(true);
+    when(s3.getPresignedUrlForArchiveDownload("a.zip")).thenReturn(new URL(s3Url));
+
+    ReflectionTestUtils.setField(postExport, "commMgr", commMgr);
+    ReflectionTestUtils.setField(postExport, "s3ExportUtilities", s3);
+    ReflectionTestUtils.setField(postExport, "publisher", mock(ApplicationEventPublisher.class));
+    ReflectionTestUtils.setField(postExport, "removalPolicy", ExportRemovalPolicy.FALSE);
+    ReflectionTestUtils.setField(
+        postExport,
+        "velocity",
+        RSpaceTestUtils.setupVelocity(
+            "src/main/resources/velocityTemplates/messageAndNotificationEmails"));
+    ReflectionTestUtils.setField(postExport, "hasS3Access", true);
+    ReflectionTestUtils.setField(postExport, "serverURLPrefix", "http://localhost:8080");
+
+    ArchiveResult result = new ArchiveResult();
+    result.setExportFile(exportFile);
+    postExport.postArchiveCompletionOperations(
+        new ArchiveExportConfig(), TestFactory.createAnyUser("any"), result);
+
+    ArgumentCaptor<String> msg = ArgumentCaptor.forClass(String.class);
+    verify(commMgr).updateNotificationMessage(eq(1L), msg.capture());
+    assertThat(msg.getValue())
+        .contains("<a href='" + s3Url + "'>" + s3Url + "</a>")
+        .doesNotContain("downloadArchive");
   }
 }

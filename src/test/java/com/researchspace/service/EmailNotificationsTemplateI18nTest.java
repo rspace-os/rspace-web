@@ -64,7 +64,6 @@ class EmailNotificationsTemplateI18nTest {
     model.put("exportedRecordsSummary", "The archive includes 3 records.");
     model.put("exportReportLink", "http://example.com/report/1");
     model.put("link", "http://example.com/download");
-    model.put("linkText", "http://example.com/download");
     model.put("removalPolicyMessage", "This archive will never be removed.");
 
     String out = templates.render("exportCompleteNotification.vm", model);
