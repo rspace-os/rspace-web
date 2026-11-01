@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useDebounce from "@/hooks/ui/useDebounce";
@@ -126,9 +127,9 @@ export function BookableItemPicker({
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>{t("bookableItems.primer.description")}</p>
           <p>{t("bookings.form.itemAccess")}</p>
-          <a className="underline" href="/booking/all-items">
+          <Link className="underline" to="/booking/all-items">
             {t("sidebar.allItems")}
-          </a>
+          </Link>
         </div>
       ) : null}
       {query.isLoading ? (
