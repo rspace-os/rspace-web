@@ -16,7 +16,6 @@ import {
   createRouter,
   Outlet,
   RouterContextProvider,
-  RouterProvider,
 } from "@tanstack/react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

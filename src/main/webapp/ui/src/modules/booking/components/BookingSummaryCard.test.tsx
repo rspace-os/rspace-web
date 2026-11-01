@@ -45,7 +45,7 @@ function renderBookingSummaryCard(booking: BookingListDocument) {
 
 describe("BookingSummaryCard", () => {
   it.each([true, false])("gates the item name link on configuration access (%s)", async (canViewConfiguration) => {
-    renderInRouter(bookingListDocument({ ...busyBooking, privacy: "full", canViewConfiguration }));
+    await renderBookingSummaryCard(bookingListDocument({ ...busyBooking, privacy: "full", canViewConfiguration }));
     await screen.findByRole("article");
     if (canViewConfiguration) {
       expect(await screen.findByRole("link", { name: "Confocal microscope" })).toHaveAttribute(
