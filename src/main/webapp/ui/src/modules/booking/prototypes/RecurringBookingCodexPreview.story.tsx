@@ -3,7 +3,7 @@
 
 import { AlertTriangleIcon, CheckIcon, InfoIcon, Repeat2Icon } from "lucide-react";
 import { HttpResponse, http } from "msw";
-import { setupWorker } from "msw/browser";
+
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
@@ -89,12 +89,12 @@ function dayScheduleForRequest(request: Request): Booking[] {
   );
 }
 
-export const prototypeWorker = setupWorker(
+export const prototypeHandlers = [
   http.get("/api/v2/bookings", ({ request }) => {
     const docs = dayScheduleForRequest(request);
     return HttpResponse.json({ docs, totalDocs: docs.length, totalPages: 1, page: 1, hasNextPage: false });
   }),
-);
+];
 
 const weekdays: ReadonlyArray<{ value: CodexWeekday; label: string; short: string }> = [
   { value: 1, label: "Monday", short: "Mon" },

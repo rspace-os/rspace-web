@@ -5,13 +5,13 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { HttpResponse, http } from "msw";
-import { setupWorker } from "msw/browser";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { CreateRecurringPrototype } from "./RecurringBookingFableCreate.story";
 import { SeriesInListsPrototype } from "./RecurringBookingFableLists.story";
 import { CONFLICTING_RULE, DEFAULT_RULE, listEnvelope, storedBookings } from "./RecurringBookingFableModel";
 import { ScopePrototype } from "./RecurringBookingFableSeries.story";
+import { startPrototypeMocks } from "./recurringBookingPrototypeMocks.story";
 
 const refused = () =>
   HttpResponse.json({ status: 501, detail: "Prototype: bookings are never written." }, { status: 501 });
@@ -35,8 +35,6 @@ const handlers = [
   http.delete("/api/v2/bookings/:id", refused),
 ];
 
-const prototypeWorker = setupWorker(...handlers);
-
 // ---------------------------------------------------------------------------
 // Stories
 // ---------------------------------------------------------------------------
@@ -52,8 +50,7 @@ const meta = {
   component: RecurringBookingPrototype,
   parameters: { layout: "fullscreen" },
   beforeEach: async () => {
-    await prototypeWorker.start({ onUnhandledFrame: "bypass", quiet: true });
-    return () => prototypeWorker.stop();
+    return startPrototypeMocks(handlers);
   },
   decorators: [
     (Story) => (

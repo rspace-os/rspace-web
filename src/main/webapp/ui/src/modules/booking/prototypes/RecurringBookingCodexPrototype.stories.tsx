@@ -7,9 +7,10 @@ import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InlineConcept, type Inspection, ReviewConcept } from "./RecurringBookingCodexEntryConcepts.story";
-import { prototypeWorker } from "./RecurringBookingCodexPreview.story";
+import { prototypeHandlers } from "./RecurringBookingCodexPreview.story";
 import { WorkspaceConcept } from "./RecurringBookingCodexWorkspace.story";
 import { type CodexScenario, codexScenarios } from "./recurringBookingCodexFixtures";
+import { startPrototypeMocks } from "./recurringBookingPrototypeMocks.story";
 
 type Concept = "inline" | "review" | "workspace";
 
@@ -154,8 +155,7 @@ const meta = {
   component: PrototypeLab,
   parameters: { layout: "fullscreen" },
   beforeEach: async () => {
-    await prototypeWorker.start({ onUnhandledFrame: "bypass" });
-    return () => prototypeWorker.stop();
+    return startPrototypeMocks(prototypeHandlers);
   },
 } satisfies Meta<typeof PrototypeLab>;
 
