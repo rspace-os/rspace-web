@@ -86,6 +86,17 @@ describe("VerticalDayTimeline", () => {
     }
   });
 
+  test("scrolls to the entered start before an end has been entered", async () => {
+    render(
+      <VerticalDayTimelineStory
+        initialDraft={{ startDate: "2026-10-25", startTime: "15:00", endDate: "2026-10-25", endTime: "" }}
+      />,
+    );
+    const scroller = page.getByTestId("vertical-day-timeline-scroller");
+    await expect.element(scroller).toBeVisible();
+    await expect.poll(() => scroller.element().scrollTop).toBeGreaterThan(500);
+  });
+
   test("scrolls the draft into view when a hidden timeline becomes visible", async () => {
     render(<InitiallyHiddenTimelineStory />);
 

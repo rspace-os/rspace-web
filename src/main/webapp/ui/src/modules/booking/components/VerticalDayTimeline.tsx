@@ -12,6 +12,9 @@ import {
   bookingDateTimeLocale,
   currentWallClock,
   instantToDayMinute,
+  isPlainDate,
+  resolveWallClock,
+  wallClockInstant,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
@@ -141,9 +144,15 @@ export function VerticalDayTimeline({
   const compactDateHeading = Temporal.PlainDate.from(date).toLocaleString(bookingDateTimeLocale(), {
     dateStyle: "medium",
   });
-  const resolvedDraftDay = editingRange ? currentWallClock(editingRange.start, timezone).date : undefined;
+  const draft = editing?.draft;
+  const draftStart =
+    editingRange?.start ??
+    (draft && isPlainDate(draft.startDate) && /^([01]\d|2[0-3]):[0-5]\d$/.test(draft.startTime)
+      ? wallClockInstant(resolveWallClock(draft.startDate, draft.startTime, timezone), draft.startOccurrence)
+      : undefined);
+  const resolvedDraftDay = draftStart ? currentWallClock(draftStart, timezone).date : undefined;
   const isDraftDay = !resolvedDraftDay || resolvedDraftDay === date;
-  const draftStartMinute = editingRange ? instantToDayMinute(editingRange.start, date, timezone) : 0;
+  const draftStartMinute = draftStart ? instantToDayMinute(draftStart, date, timezone) : 0;
   React.useEffect(() => {
     setExpandedEventId(null);
   }, [date, timezone]);
@@ -166,7 +175,7 @@ export function VerticalDayTimeline({
       JSON.stringify(scheduleWindow?.openingHours ?? []),
     ].join("|");
     const draftKey = `${contextKey}|draft`;
-    if (editingRange && resolvedDraftDay === date && lastAutoScrollContext.current !== draftKey) {
+    if (draftStart && resolvedDraftDay === date && lastAutoScrollContext.current !== draftKey) {
       const start = Math.max(0, Math.min(dayMinutes, draftStartMinute));
       scroller.scrollTop = scrollTopForMinute(start);
       lastAutoScrollContext.current = draftKey;
@@ -181,6 +190,7 @@ export function VerticalDayTimeline({
     date,
     dayMinutes,
     draftStartMinute,
+    draftStart,
     editing,
     editingRange,
     openSegments,
