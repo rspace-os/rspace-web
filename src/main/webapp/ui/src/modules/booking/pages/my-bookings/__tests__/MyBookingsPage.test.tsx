@@ -327,16 +327,16 @@ describe("My Bookings page", () => {
     await waitFor(() => expect(moreActions).toHaveFocus());
   });
 
-  it("announces a cancellation from the page and keeps focus in the list once the row is gone", async () => {
-    const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, pastBooking, cancelledBooking];
+  it("keeps cancellation feedback and undo focus after the last row leaves", async () => {
+    const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }];
     server.use(
       http.patch("/api/v2/bookings/41", () => {
         docs[0] = { ...upcomingBooking, state: "CANCELLED", version: 1 };
         return HttpResponse.json(docs[0]);
       }),
     );
-    renderPage(initialPath, 84, undefined, undefined, docs);
     const user = userEvent.setup();
+    await renderPage({ docs });
 
     const table = within(await screen.findByRole("table"));
     await user.click(await table.findByRole("button", { name: "booking:myBookings.actions.more" }));
@@ -345,18 +345,9 @@ describe("My Bookings page", () => {
     await user.click(within(dialog).getByRole("button", { name: "booking:bookings.actions.cancel" }));
 
     await waitFor(() => expect(table.queryByText(upcomingBooking.target.value.name)).not.toBeInTheDocument());
-    // The row, its dialog and the dialog's own status message are gone, so the page announces instead.
-    await waitFor(() =>
-      expect(
-        screen
-          .getAllByRole("status")
-          .some((status) => status.textContent === "booking:myBookings.cancelled.announcement"),
-      ).toBe(true),
-    );
-    // No row is left to take focus (jsdom lays nothing out), so focus falls back to the selected period.
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "booking:myBookings.period.withCount" })).toHaveFocus(),
-    );
+    const feedback = await screen.findByRole("listitem", { name: "booking:myBookings.cancelled.alert" });
+    expect(within(feedback).getByRole("button", { name: "common:tableList.alerts.undo" })).toBeEnabled();
+    await waitFor(() => expect(feedback).toHaveFocus());
   });
 
   it("keeps page actions accessible by name", async () => {
