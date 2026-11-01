@@ -133,10 +133,10 @@ export class CalendarPage {
     scroller.scrollLeft = Math.max(0, startMinute * pixelsPerMinute - 40);
     const canvasBounds = canvas.getBoundingClientRect();
     const scrollerBounds = scroller.getBoundingClientRect();
-    // Half a minute in, so the pointer never sits on the boundary the snap rounds from; above the event lanes.
+    // Target the minute itself; the timeline rounds pointer positions to the nearest minute.
     const positionAt = (minute: number) => ({
-      x: canvasBounds.left - scrollerBounds.left + (minute + 0.5) * pixelsPerMinute,
-      y: canvasBounds.top - scrollerBounds.top + 40,
+      x: canvasBounds.left - scrollerBounds.left - scroller.clientLeft + minute * pixelsPerMinute,
+      y: canvasBounds.top - scrollerBounds.top - scroller.clientTop + 40,
     });
     // Target the scroller, which fits the viewport, so Playwright does not re-center the oversized canvas.
     await userEvent.dragAndDrop(this.timeGridScroller, this.timeGridScroller, {
