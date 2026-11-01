@@ -244,7 +244,7 @@ test("keeps all row actions visible at common desktop widths", async () => {
     pageObj.confocalItemCalendar,
     pageObj.confocalDetails,
     pageObj.confocalEdit,
-    pageObj.confocalCancel,
+    pageObj.confocalMoreActions,
   ]) {
     await expect.element(control).toBeVisible();
     await expect
@@ -254,4 +254,6 @@ test("keeps all row actions visible at common desktop widths", async () => {
       })
       .toBe(true);
   }
+  await pageObj.confocalMoreActions.click();
+  await expect.element(pageObj.cancelMenuItem).toBeVisible();
 });
