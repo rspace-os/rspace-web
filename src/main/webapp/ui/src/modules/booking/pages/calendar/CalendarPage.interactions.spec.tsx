@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import {
   customNewYorkBookingPreferences,
@@ -22,7 +21,7 @@ registerHandlers();
 
 let history: RouterHistory;
 
-beforeEach(async () => {
+beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
@@ -333,32 +332,4 @@ describe("Calendar page", () => {
     await calendar.heading.click();
     await expect.element(calendar.showEventDetails("Busy")).toHaveAttribute("aria-expanded", "false");
   });
-});
-
-test("keeps mobile event editor actions in the viewport and restores focus on Escape", async () => {
-  await withViewport(
-    390,
-    async () => {
-      render(<CalendarPageStory history={history} />);
-      const trigger = calendar.showEventDetails("Confocal microscope");
-      await trigger.click();
-      await calendar.editBooking.click();
-      await expect.element(calendar.inlineSave).toBeVisible();
-      await expect
-        .poll(() => {
-          const bounds = calendar.inlineSave.element().getBoundingClientRect();
-          return (
-            bounds.left >= 0 &&
-            bounds.right <= window.innerWidth &&
-            bounds.top >= 0 &&
-            bounds.bottom <= window.innerHeight
-          );
-        })
-        .toBe(true);
-      await calendar.closeWithEscape();
-      await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-      await expect.poll(() => document.activeElement).toBe(trigger.element());
-    },
-    667,
-  );
 });

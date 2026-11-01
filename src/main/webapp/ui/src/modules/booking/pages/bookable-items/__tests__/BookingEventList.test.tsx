@@ -149,6 +149,7 @@ describe("BookingEventList", () => {
       queryClient.getQueryData([...bookingKeys.itemEvents("IN12", "upcoming", "2026-08-24T12:00:00Z"), "totals"]),
     ).toBe(2);
   });
+
   it.each([["clock preference", "Change time format", /AM|am/]] as const)(
     "reformats the mounted event table when the %s changes without refetching",
     async (_, buttonLabel, expected) => {

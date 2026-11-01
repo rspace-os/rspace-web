@@ -362,7 +362,6 @@ export function AvailabilityBar({
                                 ? t("availabilityBar.slice.bookedBy", { user: actor })
                                 : t("availabilityBar.slice.sources.booking")
                           }
-                          canViewConfiguration={source.booking.canViewConfiguration}
                           period={formatTimeRange(source)}
                           periodTooltip={{
                             start: source.startsAt.toISOString(),
@@ -370,6 +369,7 @@ export function AvailabilityBar({
                             displayTimeZone: timeZone,
                             instrumentTimeZone,
                           }}
+                          canViewConfiguration={source.booking.canViewConfiguration}
                           purpose={source.booking.purpose}
                           maintenance={maintenance}
                           item={maintenance || showBookingContextDetails ? item : undefined}

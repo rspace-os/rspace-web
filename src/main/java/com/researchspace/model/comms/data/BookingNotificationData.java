@@ -7,8 +7,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class BookingNotificationData extends NotificationData {
-  private String emailDisplayTimezone;
-  private com.researchspace.model.booking.BookingTimeFormat emailTimeFormat;
 
   private String bookingId;
   private String instrumentName;
@@ -19,6 +17,11 @@ public class BookingNotificationData extends NotificationData {
   private String previousEndTime;
   private String cancellationReason;
 
-  /** A cancelled booking returned to its slot; formatted as "restored" under the created type. */
+  /** Recipient display snapshot used by the email header as well as its saved body. */
+  private String emailDisplayTimezone;
+
+  private com.researchspace.model.booking.BookingTimeFormat emailTimeFormat;
+
+  /** Retained for older restored notifications saved under the created type. */
   private boolean restored;
 }

@@ -47,8 +47,8 @@ public class BookingNotificationMessageFormatter {
   private static final Logger log =
       LoggerFactory.getLogger(BookingNotificationMessageFormatter.class);
 
-  private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
   private static final String CHANGED_MESSAGE_KEY = "bookingNotifications.changed";
+  private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
   private static final String CANCELLED_MESSAGE_KEY = "bookingNotifications.cancelled";
   private static final String RESTORED_MESSAGE_KEY = "bookingNotifications.restored";
   private static final String CANCELLED_WITH_REASON_MESSAGE_KEY =
@@ -276,10 +276,10 @@ public class BookingNotificationMessageFormatter {
   }
 
   public static boolean isBookingNotification(NotificationType type) {
-    return NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)
-        || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type)
-        || NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)
-        || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(type);
+    return NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type);
   }
 
   private static String messageKey(NotificationType type, BookingNotificationData data) {
@@ -299,14 +299,12 @@ public class BookingNotificationMessageFormatter {
         : CANCELLED_WITH_REASON_MESSAGE_KEY;
   }
 
-  /** Formats the email header in the recipient zone saved with its body. */
+  /** Formats the email header using the recipient snapshot saved with its body. */
   public static String formatEmailTimestamp(
       Instant instant, BookingNotificationData data, Locale locale) {
+    ZoneId zone = validZone(data.getEmailDisplayTimezone()).orElse(ZoneOffset.UTC);
     return formatInstant(
-        instant.toString(),
-        validZone(data.getEmailDisplayTimezone()).orElse(java.time.ZoneOffset.UTC),
-        locale,
-        hourCycleKeyword(data.getEmailTimeFormat(), null));
+        instant.toString(), zone, locale, hourCycleKeyword(data.getEmailTimeFormat(), null));
   }
 
   /** Formats an instant with the {@code hc} keyword {@code hourCycle}, or the locale's if null. */

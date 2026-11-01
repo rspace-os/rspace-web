@@ -777,7 +777,11 @@ describe("Calendar page", () => {
       const scrollerBounds = scroller.element().getBoundingClientRect();
       const dayLengthMinutes = 25 * 60;
       const positionAt = (minute: number) => ({
-        x: canvasBounds.left - scrollerBounds.left + (minute / dayLengthMinutes) * canvasBounds.width,
+        x:
+          canvasBounds.left -
+          scrollerBounds.left -
+          scroller.element().clientLeft +
+          (minute / dayLengthMinutes) * canvasBounds.width,
         y: canvasBounds.top - scrollerBounds.top + 60,
       });
       // Target the viewport so Playwright does not center the oversized canvas and hide the drag origin.

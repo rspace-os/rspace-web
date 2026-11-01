@@ -282,8 +282,8 @@ export function DayTimelineEventCard({
     >
       {compactCard}
       <PopoverContent
-        positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
         portalContainer={portalContainer}
+        positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
         id={detailsId}
         align="start"
         side="bottom"

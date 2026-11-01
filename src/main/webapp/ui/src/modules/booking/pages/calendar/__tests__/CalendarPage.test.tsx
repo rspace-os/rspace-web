@@ -434,8 +434,7 @@ describe("CalendarPage", () => {
     expect(await screen.findByRole("region", { name: "Resource booking schedule" })).toBeVisible();
     expect(screen.queryByRole("button", { name: /^Bookable items(?:,|$)/ })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Search Calendar" })).toBeVisible();
-    expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
-    for (const name of ["View: By Item · Day"]) {
+    for (const name of [/^Jump to date, /, "View: By Item · Day"]) {
       expect(screen.getByRole("button", { name })).toBeVisible();
     }
 

@@ -1401,6 +1401,7 @@ export default interface Resources {
         "buffer": "Buffer",
         "bufferAfter": "{count, number}m after",
         "bufferBefore": "{count, number}m before",
+        "bufferBoth": "{duration} before and after",
         "closedDay": "{day}: closed",
         "day": "{day}: {hours}",
         "doubleBookingAllowed": "Double booking allowed",
@@ -7415,7 +7416,8 @@ export default interface Resources {
     "bookingNotifications": {
       "cancelled": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}.",
       "cancelledWithReason": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}. Reason: {7}",
-      "changed": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed to {3} to {4}.",
+      "changed": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed. It is scheduled from {3} to {4}.",
+      "changedWithPrevious": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed from {8}–{9} to {3}–{4}.",
       "created": "Booking <a href=\"{5}\">{0}</a> was created for instrument <a href=\"{6}\">{1} ({2})</a> from {3} to {4}.",
       "restored": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was restored. It is scheduled from {3} to {4}."
     }

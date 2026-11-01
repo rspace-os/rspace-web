@@ -1183,9 +1183,6 @@
     "wallClockWithOffset": "{time} (UTC{offset})",
     "withDayOffset": "{time} ({days})"
   },
-  "toolbar": {
-    "jumpToDateAccessible": "{label}, {date}"
-  },
   "timelineEdit": {
     "continuationHint": "Double-click or press Enter to apply.",
     "endAtMidnight": "End at midnight after {date}",
@@ -1203,5 +1200,8 @@
       "order": "Midnight would leave the booking with no length.",
       "precision": "Midnight would leave the booking with no length."
     }
+  },
+  "toolbar": {
+    "jumpToDateAccessible": "{label}, {date}"
   }
 }

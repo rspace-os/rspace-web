@@ -207,17 +207,17 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public Optional<BookingConfiguration> findByIdForAudit(Long id, User actor) {
+    return enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty();
+  }
+
+  @Override
   public Map<String, String> requiredAuditFields(BookingConfiguration configuration) {
     return Map.of(
         "target.type",
         configuration.getTarget().type().name(),
         "target.id",
         configuration.getTarget().id().toString());
-  }
-
-  @Override
-  public Optional<BookingConfiguration> findByIdForAudit(Long id, User actor) {
-    return enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty();
   }
 
   @Override

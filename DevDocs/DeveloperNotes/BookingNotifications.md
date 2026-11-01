@@ -19,21 +19,21 @@ existing subscriptions. Subscriptions survive archive, restore and replacement o
 booking configuration because they belong to the instrument. Explicit off is persisted.
 
 Subscriber delivery also requires the corresponding global My Profile event preference.
-Creation and time changes share one event filter; cancellation has a separate filter. When someone else cancels or reschedules a booking,
+Creation and cancellation have separate filters. When someone else cancels a booking,
 the active requester also receives an in-app notification if Booking is enabled and they
 still have item read access, even without a subscription or with cancellation notifications
 turned off. A subscribed requester receives only one notification.
 
-The My Profile email preference still gates every email, including requester cancellations and time changes.
+The My Profile email preference still gates every email, including requester cancellations.
 The requester override bypasses only the event preference in notification creation; it never
 bypasses `BROADCAST_NOTIFICATIONS_BY_EMAIL` in the email broadcaster.
-Subscribers receive notifications about their own booking creations, changes and cancellations by default.
+Subscribers receive notifications about their own booking creations and cancellations by default.
 Restoring your own cancelled booking follows the same rule and uses the restored message.
 The Booking-only `BOOKING_NOTIFY_OWN_ACTIONS` preference can disable these self-action notifications.
 Enabled subscription, matching event preference, active account, Booking access and target read access
 still apply; email follows `BROADCAST_NOTIFICATIONS_BY_EMAIL`. A requester cancelling their own
 booking is selected only as a subscriber. Archiving your own instrument retains one cancellation
-notification per cancelled booking. Maintenance and purpose-only edits do not notify. Notification persistence remains
+notification per cancelled booking. Maintenance does not notify. Notification persistence remains
 inside the booking transaction and external delivery remains after commit.
 
 ## API
@@ -85,10 +85,17 @@ notification column, per-row toggle, or access-lost panel.
 
 ## Delivery and access changes
 
-`BookingNotificationService` notifies eligible subscribers after creation, time changes and cancellation,
-including archive-triggered cancellations. Maintenance, purpose-only edits, repeated cancellations,
+`BookingNotificationService` notifies eligible subscribers after creation and cancellation,
+including archive-triggered cancellations. Interval changes use `NOTIFICATION_BOOKING_CHANGED`.
+Subscribers follow the created preference for changes, since they describe the current active slot.
+When another actor changes the interval, the eligible requester is notified once even without a
+subscription or event preference, as for cancellation. Self-edits require subscription, the created
+preference and `notifyOwnActions`. Purpose-only edits and patches retaining the same interval stay
+silent. Maintenance, repeated cancellations,
 deleted instruments do not generate notifications. Self-actions follow `notifyOwnActions`.
-Restoring a cancelled booking emits `NOTIFICATION_BOOKING_RESTORED`, with its own label and restored message. It uses the created event preference and the same own-action rules. The reserved RESTORED enum value remains before CHANGED to preserve persisted ordinals.
+Restoring a cancelled booking uses `NOTIFICATION_BOOKING_RESTORED` and the creation switch: restoring makes a slot active again. The own-actions preference still applies. Older created notifications carrying `BookingNotificationData.restored` keep their restored message.
+
+Notification types are persisted as integer ordinals. New types are appended; existing ordinals and the integer column remain unchanged, so no schema migration is required.
 
 Enabled subscribers are selected in one read-only `REQUIRES_NEW`, `REPEATABLE_READ`
 transaction. The first consistent SELECT establishes eligibility for that event. Preference
@@ -128,14 +135,12 @@ explicit choices to ICU `h12` or `h23`, using `h23` so midnight is 00:00.
 
 Email has no browser region. Browser timezone mode falls back to the institution zone; Custom and
 Institution modes use their configured zones. With Automatic, the email clock follows the app
-language; an explicit H12 or H24 preference overrides that clock. The stored email message remains
+language; an explicit H12 or H24 preference overrides that clock. The email header uses the same saved recipient zone and clock as the body. Booking email subjects name the event and instrument; other notification subjects and headers retain their existing behavior. The stored email message remains
 human-readable in the recipient's configured timezone.
 
 The dashboard formats structured booking data for the recipient. If structured data is absent
 or fails to format, it logs formatting failures and displays the stored message unchanged.
 Email delivery also respects `BROADCAST_NOTIFICATIONS_BY_EMAIL`.
-
-Subjects identify the lifecycle event and instrument. Header and body use each recipient's saved zone and clock snapshot. Dashboard and notification dialog messages link to the booking and bookable item. Email links are absolute and use `server.urls.prefix`. The legacy UI preserves booking markup across repeated renders; the JSP undoes only the EL resolver's escaping, so escaped user values remain literal.
 
 Cancellation notifications include the optional reason as HTML-escaped text. The complete formatted
 message is stored so a maximum-length reason remains intact in email even when escaping expands it.
@@ -147,6 +152,12 @@ root-relative links; the saved message, which is also the email body, uses absol
 `server.urls.prefix`, like the rest of the notification email. The legacy notification UI leaves
 booking messages as the browser decoded them, so the escaped instrument name stays literal text and
 the links stay clickable.
+The React app-shell and legacy React app bar both link to `/dashboard`; neither renders a
+separate notification list. The workspace notification dialog loads the same
+`notifications_ajax.jsp` fragment and JavaScript as the dashboard. Notifications have no separate
+message-detail view: the Requests and Messages detail view handles `MessageOrRequest` only.
+HTML email links remain clickable, and the plain-text alternative retains each absolute URL.
+
 ## Verification
 
 Run the database integration tests against a separate test database, never the live
@@ -157,9 +168,6 @@ development database. `BookingNotificationSubscriptionLifecycleIT` inherits the 
 Focused tests are in `BookingNotificationServiceTest`, the booking manager tests,
 `CommunicationManagerImplTest`, `BookingOwnerNotificationIT`, and
 `UserProfileControllerMVCIT`. The latter two need the configured MariaDB.
-
-RESTORED is reserved before CHANGED for persisted ordinal compatibility and is wired only
-when restoration is introduced.
 
 The Booking preferences switch “Also notify me about bookings I create or cancel myself”
 uses the notification section’s Save and Cancel controls and Saved status. It applies only

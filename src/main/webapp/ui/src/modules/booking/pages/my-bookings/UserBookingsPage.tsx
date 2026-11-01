@@ -218,6 +218,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                           : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                       }
                     >
+                      {" "}
                       {upcomingCount.data.totalIsLowerBound
                         ? t("myBookings.count.lowerBound")
                         : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
