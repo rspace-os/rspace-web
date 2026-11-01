@@ -590,6 +590,7 @@
       "endTimezone": "End time zone",
       "instrumentTimes": "Instrument time: {start}–{end} ({timezone})",
       "item": "Bookable item",
+      "itemAccess": "Ask the instrument's owner to share it with you in Inventory.",
       "itemChoose": "Choose a bookable item",
       "itemNone": "No bookable items found",
       "itemOption": "{name} ({globalId}) — {timezone}",

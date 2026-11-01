@@ -122,6 +122,15 @@ export function BookableItemPicker({
           ) : null}
         </ComboboxContent>
       </Combobox>
+      {eventKind === "BOOKING" && query.isSuccess && query.data.options.length === 0 && !term ? (
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>{t("bookableItems.primer.description")}</p>
+          <p>{t("bookings.form.itemAccess")}</p>
+          <a className="underline" href="/booking/all-items">
+            {t("sidebar.allItems")}
+          </a>
+        </div>
+      ) : null}
       {query.isLoading ? (
         <p role="status" className="sr-only">
           {t("bookings.loadingConfiguration")}

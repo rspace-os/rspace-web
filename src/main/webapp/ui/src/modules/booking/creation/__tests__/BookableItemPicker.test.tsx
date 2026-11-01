@@ -100,6 +100,17 @@ describe("BookableItemPicker", () => {
     await waitFor(() => expect(pages).toEqual(["1", "2"]));
   });
 
+  it("explains Inventory access and links to All items when no items are available", async () => {
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderPicker();
+    expect(await screen.findByText("booking:bookableItems.primer.description")).toBeVisible();
+    expect(screen.getByText("booking:bookings.form.itemAccess")).toBeVisible();
+    expect(screen.getByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
+      "href",
+      "/booking/all-items",
+    );
+  });
+
   it("shows failure without inventing an option and honors cancellation", async () => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json({}, { status: 500 })));
     const user = userEvent.setup();
