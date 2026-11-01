@@ -4264,7 +4264,7 @@
     },
     "/api/v2/booking-catalogue/availability-counts" : {
       "get" : {
-        "operationId" : "",
+        "operationId" : "countBookingCatalogueAvailability",
         "parameters" : [ {
           "in" : "query",
           "name" : "q",

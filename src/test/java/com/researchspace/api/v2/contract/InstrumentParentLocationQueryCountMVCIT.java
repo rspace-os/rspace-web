@@ -124,7 +124,10 @@ class InstrumentParentLocationQueryCountMVCIT {
     try {
       for (String path : List.of("/api/v2/bookings", "/api/v2/booking-configurations")) {
         statements.logContents = "";
-        JsonNode docs = request(path, rows.instrumentIds(), path.endsWith("/bookings") ? "id,location" : "id").body().path("docs");
+        JsonNode docs =
+            request(path, rows.instrumentIds(), path.endsWith("/bookings") ? "id,location" : "id")
+                .body()
+                .path("docs");
         assertFalse(docs.isEmpty());
         String sql = statements.logContents.toLowerCase(java.util.Locale.ROOT);
         assertTrue(sql.contains("select"), "SQL capture must contain executed statements");
