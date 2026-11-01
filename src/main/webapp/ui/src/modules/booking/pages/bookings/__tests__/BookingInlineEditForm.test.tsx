@@ -109,6 +109,7 @@ describe("BookingInlineEditForm", () => {
       expect(screen.getByText("booking:bookings.form.policyMismatchPurpose")).toHaveAttribute("role", "status");
       await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
       await waitFor(() => expect(patches).toEqual([{ purpose: "Updated purpose" }]));
+      expect(await screen.findByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
     },
   );
 
@@ -144,6 +145,7 @@ describe("BookingInlineEditForm", () => {
     await user.tab();
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
     await waitFor(() => expect(patches).toEqual([{ end: "2026-10-19T09:00:00Z" }]));
+    expect(await screen.findByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
   });
 
   it.each([
@@ -282,10 +284,14 @@ describe("BookingInlineEditForm", () => {
       within(notices).queryByRole("link", { name: "booking:bookings.feedback.viewDetails" }),
     ).not.toBeInTheDocument();
 
-    await router.navigate({ to: "/booking/calendar/bookings/$id", params: { id: "42" } });
+    act(() => {
+      void router.navigate({ to: "/booking/calendar/bookings/$id", params: { id: "42" } });
+    });
     expect(await screen.findByText("Cell imaging")).toBeVisible();
     expect(screen.queryByRole("list", { name: "common:tableList.alerts.label" })).not.toBeInTheDocument();
-    await router.navigate({ to: "/booking/calendar/bookings/$id", params: { id: "41" } });
+    act(() => {
+      void router.navigate({ to: "/booking/calendar/bookings/$id", params: { id: "41" } });
+    });
     expect(await screen.findByText("Updated imaging")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
@@ -315,6 +321,7 @@ describe("BookingInlineEditForm", () => {
     await user.click(save);
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    expect(await screen.findByRole("heading", { name: "booking:bookings.details.title" })).toBeVisible();
     expect(patchRequests).toBe(0);
     expect(screen.queryByRole("list", { name: "common:tableList.alerts.label" })).not.toBeInTheDocument();
   });
@@ -361,6 +368,7 @@ describe("BookingInlineEditForm", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
     expect(patch?.headers.get("If-Match")).toBe('"7"');
     expect(await patch?.json()).toEqual({ start: "2026-10-19T08:01:00Z", end: "2026-10-19T10:01:00Z" });
+    expect(await screen.findByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
   });
 
   it("keeps the draft and permanently blocks save after a conflict without refetching", async () => {
@@ -515,6 +523,7 @@ describe("BookingInlineEditForm", () => {
     const { router } = renderEdit();
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    expect(await screen.findByRole("heading", { name: "booking:bookings.details.title" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookings.form.save" })).not.toBeInTheDocument();
   });
 });
