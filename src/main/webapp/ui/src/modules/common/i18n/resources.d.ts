@@ -1384,6 +1384,7 @@ export default interface Resources {
         "submit": "Book",
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
+        "timezoneLabel": "Time zone: {timezone}",
         "type": "Booking type",
         "typeBlockout": "Maintenance",
         "typeBooking": "Booking"

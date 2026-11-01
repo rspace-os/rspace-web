@@ -25,6 +25,7 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
+import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/modules/common/ui/combobox";
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
@@ -290,7 +291,6 @@ export function ZonedBookingWindowFields({
   const timezoneFieldId = (name: "start" | "end") => `${fieldId}-${name}-timezone`;
   const [timezoneOpen, setTimezoneOpen] = useState(false);
   // Typed text that is not yet a known zone; dropped on blur so the field shows the current zone again.
-  const [timezoneText, setTimezoneText] = useState<Partial<Record<"start" | "end", string>>>({});
   const timezoneOptions = useMemo(
     () => bookingTimeZoneOptions(resolvedDisplayTimezone, resolvedEndTimezone, resolvedSchedulingTimezone),
     [resolvedDisplayTimezone, resolvedEndTimezone, resolvedSchedulingTimezone],
@@ -407,7 +407,9 @@ export function ZonedBookingWindowFields({
       onBlur: name === "end" ? snapEnd : undefined,
     };
     if (!onTimezoneChange || name !== "start") return <Input {...inputProps} />;
-    const timezoneLabel = t("bookings.form.changeTimezone");
+    const timezoneLabel = t("bookings.form.timezoneLabel", {
+      timezone: zones.start,
+    });
     return (
       <div className="flex items-center gap-2">
         <Input {...inputProps} className="min-w-0 flex-1" />
@@ -417,7 +419,7 @@ export function ZonedBookingWindowFields({
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
+                size="sm"
                 aria-label={timezoneLabel}
                 aria-expanded={showTimezoneFields}
                 aria-controls={showTimezoneFields ? `${timezoneFieldId("start")} ${timezoneFieldId("end")}` : undefined}
@@ -427,6 +429,7 @@ export function ZonedBookingWindowFields({
             }
           >
             <GlobeIcon aria-hidden="true" />
+            {timezoneLabel}
           </TooltipTrigger>
           <TooltipContent>{timezoneLabel}</TooltipContent>
         </Tooltip>
@@ -440,30 +443,32 @@ export function ZonedBookingWindowFields({
     return (
       <div id={id} className="space-y-2">
         <Label htmlFor={`${id}-input`}>{endpointLabels[name].timezone}</Label>
-        <Input
-          id={`${id}-input`}
-          role="combobox"
-          aria-expanded="false"
-          list={`${id}-options`}
+        <Combobox
+          autoComplete="both"
+          autoHighlight
+          items={timezoneOptions}
+          value={zones[name]}
           disabled={disabled}
-          value={timezoneText[name] ?? zones[name]}
-          onChange={(event) => {
-            const next = event.currentTarget.value;
-            // Only a known zone reaches the form; a partial name would not resolve.
-            if (timezoneOptions.includes(next)) {
-              setTimezoneText((text) => ({ ...text, [name]: undefined }));
-              if (next !== zones[name]) onTimezoneChange(name, next);
-            } else {
-              setTimezoneText((text) => ({ ...text, [name]: next }));
-            }
+          onValueChange={(zone) => {
+            if (zone) onTimezoneChange(name, zone);
           }}
-          onBlur={() => setTimezoneText((text) => ({ ...text, [name]: undefined }))}
-        />
-        <datalist id={`${id}-options`}>
-          {timezoneOptions.map((timeZone) => (
-            <option key={timeZone} value={timeZone} />
-          ))}
-        </datalist>
+        >
+          <ComboboxInput
+            id={`${id}-input`}
+            aria-label={endpointLabels[name].timezone}
+            triggerLabel={endpointLabels[name].timezone}
+            showClear={false}
+          />
+          <ComboboxContent>
+            <ComboboxList>
+              {(zone: string) => (
+                <ComboboxItem key={zone} value={zone}>
+                  {zone}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
     );
   };

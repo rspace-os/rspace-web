@@ -341,11 +341,12 @@ describe("BookingForm", () => {
       }),
     );
 
-    await user.click(screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.timezoneLabel" }));
     const timezone = screen.getByRole("combobox", { name: "booking:bookings.form.startTimezone" });
     expect(timezone).toHaveValue("Europe/Berlin");
     await user.clear(timezone);
-    await user.type(timezone, "Asia/Tokyo");
+    await user.type(timezone, "Tokyo");
+    await user.click(await screen.findByRole("option", { name: "Asia/Tokyo" }));
 
     // 03:00 now means 03:00 in Tokyo, the instrument's own zone, so the note goes. The end follows the start, and the
     // page sees the moved instants as Berlin wall clocks.
@@ -411,12 +412,13 @@ describe("BookingForm", () => {
       />,
     );
 
-    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.changeTimezone" }));
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.timezoneLabel" }));
     expect(screen.getByRole("combobox", { name: "booking:bookings.form.startTimezone" })).toHaveValue("Europe/Berlin");
     const endZone = screen.getByRole("combobox", { name: "booking:bookings.form.endTimezone" });
     expect(endZone).toHaveValue("Europe/Berlin");
     await user.clear(endZone);
-    await user.type(endZone, "America/New_York");
+    await user.type(endZone, "New_York");
+    await user.click(await screen.findByRole("option", { name: "America/New_York" }));
 
     // 03:00 Berlin to 04:00 New York: both entered times stay and only the end's instant moves.
     expect(screen.getByLabelText("booking:bookings.form.startTime")).toHaveValue("03:00");
@@ -425,7 +427,7 @@ describe("BookingForm", () => {
       expect.objectContaining({ window: { start: "2026-10-12T01:00:00Z", end: "2026-10-12T08:00:00Z" } }),
     );
 
-    const globe = screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" });
+    const globe = screen.getByRole("button", { name: "booking:bookings.form.timezoneLabel" });
     expect(globe).toHaveAttribute("aria-expanded", "true");
     await user.click(globe);
     expect(screen.queryByRole("combobox", { name: "booking:bookings.form.startTimezone" })).not.toBeInTheDocument();
