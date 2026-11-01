@@ -40,8 +40,7 @@ const booking = (id: number, target: string, start: string, end: string) => ({
 
 const schedule = {
   ...ALWAYS_OPEN,
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
+  bufferMinutes: 0,
   allowDoubleBooking: false,
 };
 
@@ -106,7 +105,7 @@ describe("calendar availability", () => {
     expect(requests).toBe(2);
   });
 
-  it("classifies maintenance as a blockout while retaining its details and buffers", async () => {
+  it("classifies maintenance as a blockout with its own interval and details", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
         HttpResponse.json(
@@ -117,7 +116,7 @@ describe("calendar availability", () => {
       ),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, allowDoubleBooking: true }],
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferMinutes: 10, allowDoubleBooking: true }],
       "2026-08-17",
       "token",
       new AbortController().signal,
@@ -125,8 +124,8 @@ describe("calendar availability", () => {
     expect(result.get("IN1")).toEqual([
       expect.objectContaining({
         kind: "blockout",
-        startsAt: new Date("2026-08-17T09:50:00Z"),
-        endsAt: new Date("2026-08-17T11:10:00Z"),
+        startsAt: new Date("2026-08-17T10:00:00Z"),
+        endsAt: new Date("2026-08-17T11:00:00Z"),
         source: expect.objectContaining({ booking: expect.objectContaining({ id: 1, kind: "MAINTENANCE" }) }),
       }),
     ]);
@@ -336,8 +335,7 @@ describe("calendar availability", () => {
           timezone: "America/Los_Angeles",
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
 
-          bufferBeforeMinutes: 0,
-          bufferAfterMinutes: 0,
+          bufferMinutes: 0,
           allowDoubleBooking: false,
         },
       ],
@@ -465,8 +463,7 @@ describe("calendar availability", () => {
       timezone: "UTC",
       openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
 
-      bufferBeforeMinutes: 10,
-      bufferAfterMinutes: 20,
+      bufferMinutes: 20,
       allowDoubleBooking: false,
     };
 
@@ -524,7 +521,7 @@ describe("calendar availability", () => {
       }),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, bufferAfterMinutes: 20 }],
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferMinutes: 20 }],
       displayInterval("2026-08-17", "UTC", "10:00", "11:00"),
       "token",
       new AbortController().signal,

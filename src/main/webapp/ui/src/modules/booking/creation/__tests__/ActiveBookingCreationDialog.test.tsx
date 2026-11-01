@@ -41,8 +41,7 @@ vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
 const target: BookableItemOption = confocalTargetWith({
   timezone: "UTC",
   slotGranularityMinutes: 15,
-  bufferBeforeMinutes: 15,
-  bufferAfterMinutes: 15,
+  bufferMinutes: 15,
 });
 
 const creation: BookingCreationContext = {
@@ -269,8 +268,7 @@ describe("ActiveBookingCreationDialog", () => {
           status: 409,
           code: "errors.api.v2.booking.buffer",
           conflict: { id: 59, kind: "BOOKING", start: "2026-09-28T08:00:00Z", end: "2026-09-28T10:00:00Z" },
-          bufferBeforeMinutes: 15,
-          bufferAfterMinutes: 15,
+          bufferMinutes: 15,
         },
       }),
     );
@@ -300,8 +298,7 @@ describe("ActiveBookingCreationDialog", () => {
       initialDate: "2030-10-07",
       target: creation.target && {
         ...creation.target,
-        bufferBeforeMinutes: 0,
-        bufferAfterMinutes: 0,
+        bufferMinutes: 0,
         allowDoubleBooking: true,
       },
       window: { startDate: "2030-10-07", startTime: "10:00", endDate: "2030-10-07", endTime: "11:00" },

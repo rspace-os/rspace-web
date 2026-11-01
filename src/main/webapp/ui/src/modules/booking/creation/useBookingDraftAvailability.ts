@@ -54,7 +54,7 @@ export function useBookingDraftAvailability({
         elapsedMinutes: (Date.parse(window.end) - Date.parse(window.start)) / 60_000,
       }
     : { start: "", end: "", date: "", timeZone: displayTimezone, elapsedMinutes: 0 };
-  const availability = useCalendarAvailability(row && intervalChanged ? [row] : [], interval, token);
+  const availability = useCalendarAvailability(row && intervalChanged ? [{ ...row, eventKind }] : [], interval, token);
   const checking = Boolean(row && intervalChanged && availability.isPending);
   const intervals = availability.isSuccess ? (availability.data.get(target?.globalId ?? "") ?? []) : [];
   const violation = Boolean(

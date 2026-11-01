@@ -13,8 +13,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * The All bookable items quick-filter classification. The cases mirror the client tests ({@code
@@ -82,12 +80,10 @@ class BookingCurrentAvailabilityTest {
     assertEquals(LATER, classify(shared, maintenanceUntilTen, UTC_DAY_AT_NINE));
   }
 
-  @ParameterizedTest
-  @CsvSource({"10, 20", "20, 10"})
-  void widensEventsByTheSharedBufferGap(int before, int after) {
+  @Test
+  void widensEventsByTheSingleBufferGap() {
     BookingConfiguration buffered = configuration("UTC");
-    buffered.setBufferBeforeMinutes(before);
-    buffered.setBufferAfterMinutes(after);
+    buffered.setBufferMinutes(20);
     List<EventInterval> startsAtQuarterPastNine =
         List.of(event(BookingEventKind.BOOKING, "2026-08-17T09:15:00Z", "2026-08-17T10:00:00Z"));
     List<EventInterval> endedAtQuarterToNine =
@@ -142,8 +138,7 @@ class BookingCurrentAvailabilityTest {
     configuration.setId(1L);
     configuration.setTimeZone(zone);
     configuration.setOpeningHours(hours("00:00", "24:00"));
-    configuration.setBufferBeforeMinutes(0);
-    configuration.setBufferAfterMinutes(0);
+    configuration.setBufferMinutes(0);
     configuration.setAllowDoubleBooking(false);
     return configuration;
   }

@@ -194,7 +194,7 @@ describe("useBookingDraftAvailability", () => {
       ),
     );
     const { result } = renderAvailability({
-      state: formState({ item: { ...target, bufferAfterMinutes: 10, allowDoubleBooking: true } }),
+      state: formState({ item: { ...target, bufferMinutes: 10, allowDoubleBooking: true } }),
     });
 
     await waitFor(() => expect(result.current.checking).toBe(false));

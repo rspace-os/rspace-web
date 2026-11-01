@@ -311,8 +311,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
       User owner,
       Long instrumentId,
       boolean allowDoubleBooking,
-      long bufferBeforeMinutes,
-      long bufferAfterMinutes) {
+      long bufferMinutes,
+      long otherGap) {
     return TimeSlotBookingManagerIT.persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -321,8 +321,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
         owner,
         instrumentId,
         allowDoubleBooking,
-        bufferBeforeMinutes,
-        bufferAfterMinutes);
+        bufferMinutes,
+        otherGap);
   }
 
   private Setup persistConfiguration(
@@ -330,8 +330,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
       Long instrumentId,
       boolean allowDoubleBooking,
       Long slotGranularityMinutes,
-      long bufferBeforeMinutes,
-      long bufferAfterMinutes) {
+      long bufferMinutes,
+      long otherGap) {
     return TimeSlotBookingManagerIT.persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -341,8 +341,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
         instrumentId,
         allowDoubleBooking,
         slotGranularityMinutes,
-        bufferBeforeMinutes,
-        bufferAfterMinutes);
+        bufferMinutes,
+        otherGap);
   }
 
   @Test

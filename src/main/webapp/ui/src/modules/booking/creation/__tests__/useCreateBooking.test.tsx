@@ -41,8 +41,8 @@ function problem(status: number, code: string, body: Record<string, unknown> = {
 
 async function englishT() {
   // Only the messages under test come from the English catalog, with real ICU interpolation; others stay as keys.
-  const { buffer, bufferAfter, bufferBefore, bufferUnknown, maximumDurationLimit } = bookingEnglish.bookings.errors;
-  const errors = { buffer, bufferAfter, bufferBefore, bufferUnknown, maximumDurationLimit };
+  const { buffer, bufferUnknown, maximumDurationLimit } = bookingEnglish.bookings.errors;
+  const errors = { buffer, bufferUnknown, maximumDurationLimit };
   return (await createTestI18n({ booking: { bookings: { errors } } }, "booking")).getFixedT("en-US", "booking");
 }
 
@@ -108,11 +108,10 @@ it.each([
 });
 
 it("reads booking problem members and ignores malformed ones", () => {
-  expect(
-    bookingProblemDetails(
-      problem(409, "errors.api.v2.booking.buffer", { conflict, bufferBeforeMinutes: 15, bufferAfterMinutes: 30 }),
-    ),
-  ).toEqual({ conflict, bufferBeforeMinutes: 15, bufferAfterMinutes: 30 });
+  expect(bookingProblemDetails(problem(409, "errors.api.v2.booking.buffer", { conflict, bufferMinutes: 30 }))).toEqual({
+    conflict,
+    bufferMinutes: 30,
+  });
   expect(
     bookingProblemDetails(
       problem(409, "errors.api.v2.booking.overlap", { conflict: { id: "59" }, maximumDurationMinutes: -1 }),
@@ -160,14 +159,14 @@ it("names the buffer instead of reporting an overlap", async () => {
   const buffer = (body: Record<string, unknown>) =>
     bookingProblemMessage(problem(409, "errors.api.v2.booking.buffer", body), t);
 
-  expect(buffer({ bufferBeforeMinutes: 15, bufferAfterMinutes: 90 })).toBe(
-    "Too close to another booking. This item needs 15 minutes before and 1 hour, 30 minutes after each booking.",
+  expect(buffer({ bufferMinutes: 90 })).toBe(
+    "Too close to another booking. This item needs 1 hour, 30 minutes before and after each booking.",
   );
-  expect(buffer({ bufferBeforeMinutes: 15, bufferAfterMinutes: 0 })).toBe(
-    "Too close to another booking. This item needs 15 minutes before each booking.",
+  expect(buffer({ bufferMinutes: 15 })).toBe(
+    "Too close to another booking. This item needs 15 minutes before and after each booking.",
   );
-  expect(buffer({ bufferBeforeMinutes: 0, bufferAfterMinutes: 1 })).toBe(
-    "Too close to another booking. This item needs 1 minute after each booking.",
+  expect(buffer({ bufferMinutes: 1 })).toBe(
+    "Too close to another booking. This item needs 1 minute before and after each booking.",
   );
   expect(buffer({})).toBe("Too close to another booking.");
 });
@@ -195,14 +194,10 @@ it("lets a listed overlap speak for itself but keeps the buffer sentence", async
     message: undefined,
   });
   expect(
-    bookingProblemFeedback(
-      problem(409, "errors.api.v2.booking.buffer", { conflict, bufferAfterMinutes: 15 }),
-      t,
-      context,
-    ),
+    bookingProblemFeedback(problem(409, "errors.api.v2.booking.buffer", { conflict, bufferMinutes: 15 }), t, context),
   ).toEqual({
     conflict: expect.objectContaining({ id: 59, bufferOnly: true }),
-    message: "Too close to another booking. This item needs 15 minutes after each booking.",
+    message: "Too close to another booking. This item needs 15 minutes before and after each booking.",
   });
   expect(bookingProblemFeedback(problem(409, "errors.api.v2.booking.overlap"), t, context)).toEqual({
     conflict: undefined,
@@ -228,7 +223,7 @@ it("refreshes bookings after a buffer rejection", async () => {
     await result.current
       .mutateAsync({
         ...bookingSubmission,
-        target: { ...bookingSubmission.target, bufferBeforeMinutes: 15, bufferAfterMinutes: 15 },
+        target: { ...bookingSubmission.target, bufferMinutes: 15 },
       })
       .catch(() => undefined);
   });

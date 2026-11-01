@@ -400,14 +400,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       return Map.of();
     }
     long sharedGapMinutes =
-        found.stream()
-            .mapToLong(
-                configuration ->
-                    Math.max(
-                        configuration.getBufferBeforeMinutes(),
-                        configuration.getBufferAfterMinutes()))
-            .max()
-            .orElse(0);
+        found.stream().mapToLong(configuration -> configuration.getBufferMinutes()).max().orElse(0);
     return bookings
         .findConfirmedEventIntervals(
             found.stream().map(BookingConfiguration::getId).toList(),
@@ -544,8 +537,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             configuration.getSlotGranularityMinutes(),
             configuration.getIncrementUnit(),
             configuration.getOpeningHours(),
-            configuration.getBufferBeforeMinutes(),
-            configuration.getBufferAfterMinutes(),
+            configuration.getBufferMinutes(),
             configuration.getMaxBookingDurationMinutes(),
             configuration.isAllowDoubleBooking(),
             configuration.getEffectiveRole(),

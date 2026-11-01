@@ -287,7 +287,7 @@ describe("BookingSettingsPage", () => {
     expect(patches).toBe(0);
   });
 
-  it("preserves asymmetric buffers during an unrelated edit", async () => {
+  it("preserves the single buffer during an unrelated edit", async () => {
     const user = userEvent.setup();
     let body: unknown;
     server.use(
@@ -307,9 +307,8 @@ describe("BookingSettingsPage", () => {
     const buffer = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.buffer",
     });
-    expect(buffer).toHaveValue(null);
-    expect(buffer).not.toBeRequired();
-    expect(screen.getByText("booking:settings.fields.bufferMixed")).toBeVisible();
+    expect(buffer).toHaveValue(3);
+    expect(buffer).toBeRequired();
     await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
@@ -322,8 +321,7 @@ describe("BookingSettingsPage", () => {
       slotGranularityMinutes: 5,
       incrementUnit: "MINUTES",
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
-      bufferBeforeMinutes: 3,
-      bufferAfterMinutes: 7,
+      bufferMinutes: 3,
       maxBookingDurationMinutes: 0,
       allowDoubleBooking: true,
       availabilityWindowStart: "08:00",
@@ -340,7 +338,7 @@ describe("BookingSettingsPage", () => {
     expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeDisabled();
   });
 
-  it("writes one entered buffer value to both stored directions", async () => {
+  it("writes the single entered buffer value", async () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
@@ -357,11 +355,12 @@ describe("BookingSettingsPage", () => {
     const buffer = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.buffer",
     });
+    await user.clear(buffer);
     await user.type(buffer, "12");
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
-    expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
+    expect(body).toMatchObject({ bufferMinutes: 12 });
     expect(body).not.toHaveProperty("configurationVersion");
 
     await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));

@@ -306,6 +306,9 @@ test("keeps all row actions visible at common desktop widths", async () => {
 
 test.each([1280, 1376])("fits the table and purpose beside sticky actions at %s pixels", async (width) => {
   await page.viewport(width, 795);
+  const purpose =
+    "Extended imaging session to compare the complete set of samples across multiple acquisition settings and export the resulting measurements for the weekly analysis meeting.";
+  worker.use(...bookingHandlers(undefined, undefined, [{ ...upcomingBooking, purpose }]));
   render(
     <div style={{ width: width - 346 }}>
       <MyBookingsPageStory history={history} />
@@ -319,4 +322,6 @@ test.each([1280, 1376])("fits the table and purpose beside sticky actions at %s 
       return element.scrollWidth <= (element.parentElement?.clientWidth ?? 0);
     })
     .toBe(true);
+  await page.getByRole("button", { name: purpose, exact: true }).hover();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(purpose);
 });

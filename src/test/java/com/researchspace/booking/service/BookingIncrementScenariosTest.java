@@ -71,7 +71,6 @@ class BookingIncrementScenariosTest {
             BookingIncrementUnit.valueOf(vector.get("incrementUnit").asText()),
             BookingOpeningHoursCodec.openingHours(vector.get("openingHours")),
             0,
-            0,
             vector.get("maxBookingDurationMinutes").asLong(),
             false);
 

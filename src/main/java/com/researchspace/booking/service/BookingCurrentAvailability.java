@@ -96,8 +96,7 @@ final class BookingCurrentAvailability {
   /** Counted events widened by the item's buffers and clipped to {@code [start, end)}. */
   private static List<Interval> busy(
       BookingConfiguration configuration, List<EventInterval> events, Instant start, Instant end) {
-    long sharedGapMinutes =
-        Math.max(configuration.getBufferBeforeMinutes(), configuration.getBufferAfterMinutes());
+    long sharedGapMinutes = configuration.getBufferMinutes();
     return events.stream()
         .filter(
             event ->

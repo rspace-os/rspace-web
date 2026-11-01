@@ -28,8 +28,7 @@ describe("the availability oracle", () => {
     timezone: "UTC",
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
 
-    bufferBeforeMinutes: 0,
-    bufferAfterMinutes: 0,
+    bufferMinutes: 0,
     allowDoubleBooking: false,
     ...overrides,
   });
@@ -124,7 +123,7 @@ describe("the availability oracle", () => {
       ]),
     ).toBe("free-later-today");
     expect(
-      classify(row({ bufferBeforeMinutes: 30 }), "2026-08-17T09:00:00Z", [
+      classify(row({ bufferMinutes: 30 }), "2026-08-17T09:00:00Z", [
         booking("2026-08-17T09:30:00Z", "2026-08-17T10:00:00Z"),
       ]),
     ).toBe("free-later-today");

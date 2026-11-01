@@ -50,10 +50,7 @@ public final class BookingSchedulingPolicy {
     return conflictInterval(configuration, startInstant, endInstant);
   }
 
-  /**
-   * Returns the buffer-expanded conflict interval for maintenance, which is exempt from the
-   * increment.
-   */
+  /** Returns the maintenance interval, without adding a booking buffer. */
   public ConflictInterval validateMaintenance(
       BookingConfiguration configuration, Date start, Date end) {
     // Exempt from the increment, opening hours and maximum, but times are still whole minutes.
@@ -62,13 +59,12 @@ public final class BookingSchedulingPolicy {
     Instant endInstant = end.toInstant();
     requireWholeMinute(startInstant.atZone(zone));
     requireWholeMinute(endInstant.atZone(zone));
-    return conflictInterval(configuration, startInstant, endInstant);
+    return new ConflictInterval(start, end);
   }
 
   private static ConflictInterval conflictInterval(
       BookingConfiguration configuration, Instant start, Instant end) {
-    long sharedGapMinutes =
-        Math.max(configuration.getBufferBeforeMinutes(), configuration.getBufferAfterMinutes());
+    long sharedGapMinutes = configuration.getBufferMinutes();
     return new ConflictInterval(
         Date.from(start.minus(sharedGapMinutes, ChronoUnit.MINUTES)),
         Date.from(end.plus(sharedGapMinutes, ChronoUnit.MINUTES)));

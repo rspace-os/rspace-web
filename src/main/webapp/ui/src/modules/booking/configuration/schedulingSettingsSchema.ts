@@ -21,8 +21,7 @@ export const schedulingSettingsFieldNames = [
   "incrementUnit",
 
   "openingHours",
-  "bufferBeforeMinutes",
-  "bufferAfterMinutes",
+  "bufferMinutes",
   "maxBookingDurationMinutes",
   "allowDoubleBooking",
 ] as const;
@@ -30,8 +29,7 @@ export const schedulingSettingsEntries = {
   slotGranularityMinutes: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_BOOKING_DURATION_MINUTES)),
   incrementUnit: v.picklist(INCREMENT_UNITS),
   openingHours: OpeningHoursSchema,
-  bufferBeforeMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
-  bufferAfterMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
+  bufferMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
   maxBookingDurationMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BOOKING_DURATION_MINUTES)),
   allowDoubleBooking: v.boolean(),
 };
@@ -88,8 +86,7 @@ export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   slotGranularityMinutes: 15,
   incrementUnit: "MINUTES",
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
+  bufferMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };

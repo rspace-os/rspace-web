@@ -63,7 +63,7 @@ export type VerticalDayTimelineProps = {
 };
 
 function scrollTopForMinute(minute: number): number {
-  return Math.max(0, minute * PIXELS_PER_MINUTE - PIXELS_PER_HOUR * 2);
+  return Math.max(0, minute * PIXELS_PER_MINUTE);
 }
 
 function openingSegments(

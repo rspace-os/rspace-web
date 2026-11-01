@@ -427,8 +427,7 @@ describe("BookingInlineEditForm", () => {
           status: 409,
           code: "errors.api.v2.booking.buffer",
           conflict: { id: 59, kind: "BOOKING", start: "2026-10-19T10:00:00Z", end: "2026-10-19T11:00:00Z" },
-          bufferBeforeMinutes: 0,
-          bufferAfterMinutes: 30,
+          bufferMinutes: 0,
         },
       }),
     );
@@ -447,7 +446,7 @@ describe("BookingInlineEditForm", () => {
 
     const alert = await screen.findByRole("alert");
     await waitFor(() => expect(alert).toHaveFocus());
-    expect(alert).toMatchTextContent("booking:bookings.errors.bufferAfter");
+    expect(alert).toMatchTextContent("booking:bookings.errors.buffer");
     expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
     expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.overlapBooking");
     expect(save).toBeDisabled();

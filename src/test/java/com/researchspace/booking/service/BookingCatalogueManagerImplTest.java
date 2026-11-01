@@ -480,8 +480,7 @@ class BookingCatalogueManagerImplTest {
   /** Item 1 is free now, item 2 is booked now and free later, item 3 is closed on Mondays. */
   private void stubAvailabilityCatalogue() {
     BookingConfiguration buffered = open(1);
-    buffered.setBufferBeforeMinutes(10);
-    buffered.setBufferAfterMinutes(20);
+    buffered.setBufferMinutes(20);
     BookingConfiguration closedMonday = open(3);
     closedMonday.setOpeningHours(hours("00:00", "24:00", 2, 3, 4, 5, 6, 7));
     when(configurations.getConfigurations(

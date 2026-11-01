@@ -209,19 +209,18 @@ class BookingConfigurationManagerTest {
                     "UTC",
                     target(13L),
                     new BookingSchedulingSettings.Patch(
-                        1L, hours("18:00", "24:00", 5), 2L, null, 60L, false))),
+                        1L, hours("18:00", "24:00", 5), 2L, 60L, false))),
             actor,
             actor);
 
     assertEquals(15, created.get(0).getSlotGranularityMinutes());
     assertEquals(defaults.getOpeningHours(), created.get(0).getOpeningHours());
-    assertEquals(10, created.get(0).getBufferBeforeMinutes());
+    assertEquals(10, created.get(0).getBufferMinutes());
     assertEquals(120, created.get(0).getMaxBookingDurationMinutes());
     assertTrue(created.get(0).isAllowDoubleBooking());
     assertEquals(1, created.get(1).getSlotGranularityMinutes());
     assertEquals(hours("18:00", "24:00", 5), created.get(1).getOpeningHours());
-    assertEquals(2, created.get(1).getBufferBeforeMinutes());
-    assertEquals(20, created.get(1).getBufferAfterMinutes());
+    assertEquals(2, created.get(1).getBufferMinutes());
     assertEquals(60, created.get(1).getMaxBookingDurationMinutes());
     assertFalse(created.get(1).isAllowDoubleBooking());
     verify(defaultsDao, times(1)).getSafeNull(BookingConfigurationDefaults.SINGLETON_ID);
@@ -275,22 +274,21 @@ class BookingConfigurationManagerTest {
                 true,
                 "UTC",
                 target(12L),
-                new BookingSchedulingSettings.Patch(
-                    0L, hours("18:00", "08:00"), -1L, 10_081L, 8L, false)),
+                new BookingSchedulingSettings.Patch(0L, hours("18:00", "08:00"), -1L, 8L, false)),
             InvalidBookingSchedulingSettingsException.Reason.GRANULARITY),
         Arguments.of(
             new Create(
                 true,
                 "UTC",
                 target(12L),
-                new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null)),
+                new BookingSchedulingSettings.Patch(null, null, null, 7L, null)),
             InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION),
         Arguments.of(
             new Create(
                 true,
                 "UTC",
                 target(12L),
-                new BookingSchedulingSettings.Patch(null, List.of(), null, null, null, null)),
+                new BookingSchedulingSettings.Patch(null, List.of(), null, null, null)),
             InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS),
         Arguments.of(
             new Create(
@@ -298,7 +296,7 @@ class BookingConfigurationManagerTest {
                 "UTC",
                 target(12L),
                 new BookingSchedulingSettings.Patch(
-                    1441L, BookingIncrementUnit.DAYS, null, null, null, null, null)),
+                    1441L, BookingIncrementUnit.DAYS, null, null, null, null)),
             InvalidBookingSchedulingSettingsException.Reason.GRANULARITY),
         Arguments.of(
             new Create(
@@ -306,13 +304,7 @@ class BookingConfigurationManagerTest {
                 "UTC",
                 target(12L),
                 new BookingSchedulingSettings.Patch(
-                    15L,
-                    BookingIncrementUnit.MINUTES,
-                    hours("09:05", "09:19"),
-                    null,
-                    null,
-                    null,
-                    null)),
+                    15L, BookingIncrementUnit.MINUTES, hours("09:05", "09:19"), null, null, null)),
             InvalidBookingSchedulingSettingsException.Reason.GRANULARITY));
   }
 
@@ -510,9 +502,7 @@ class BookingConfigurationManagerTest {
             .updateConfiguration(
                 42L,
                 new Patch(
-                    true,
-                    null,
-                    new BookingSchedulingSettings.Patch(10L, null, null, null, null, null)),
+                    true, null, new BookingSchedulingSettings.Patch(10L, null, null, null, null)),
                 actor,
                 actor)
             .orElseThrow();

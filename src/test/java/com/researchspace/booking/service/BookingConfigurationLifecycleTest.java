@@ -266,7 +266,7 @@ class BookingConfigurationLifecycleTest {
     int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
     BookingSchedulingSettings.Patch schedulingPatch =
-        new BookingSchedulingSettings.Patch(null, null, 15L, null, null, null);
+        new BookingSchedulingSettings.Patch(null, null, 15L, null, null);
 
     List<BookingConfiguration> updated =
         manager.updateConfigurations(request, new Patch(null, null, schedulingPatch), actor, actor);
@@ -274,8 +274,8 @@ class BookingConfigurationLifecycleTest {
     assertEquals(List.of(first, second), updated);
     assertEquals("Europe/Berlin", first.getTimeZone());
     assertEquals("Asia/Tokyo", second.getTimeZone());
-    assertEquals(15, first.getBufferBeforeMinutes());
-    assertEquals(15, second.getBufferBeforeMinutes());
+    assertEquals(15, first.getBufferMinutes());
+    assertEquals(15, second.getBufferMinutes());
     verify(dao, times(2)).saveAndFlush(any());
   }
 

@@ -179,7 +179,7 @@ export function bookingListConfig(
                 >
                   <span className="line-clamp-2 break-words">{row.purpose}</span>
                 </TooltipTrigger>
-                <TooltipContent>{row.purpose}</TooltipContent>
+                <TooltipContent role="tooltip">{row.purpose}</TooltipContent>
               </Tooltip>
             ) : null,
         },

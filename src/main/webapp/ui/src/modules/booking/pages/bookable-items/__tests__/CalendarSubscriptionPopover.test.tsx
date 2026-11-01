@@ -64,7 +64,9 @@ describe("CalendarSubscriptionPopover", () => {
 
     expect(gets).toBe(0);
     await user.click(trigger);
-    const create = await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" });
+    const create = await screen.findByRole("button", {
+      name: "booking:bookableItemDetails.calendarSubscription.create",
+    });
     expect(posts).toBe(0);
     await user.click(create);
 
@@ -186,7 +188,9 @@ describe("CalendarSubscriptionPopover", () => {
       "alert",
     );
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.retry" }));
-    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
+    await user.click(
+      await screen.findByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.create" }),
+    );
     expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.generateError")).toHaveAttribute(
       "role",
       "alert",
@@ -219,7 +223,9 @@ describe("CalendarSubscriptionPopover", () => {
     );
     renderPopover();
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
-    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
+    await user.click(
+      await screen.findByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.create" }),
+    );
     expect(
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("w"));
@@ -465,12 +471,12 @@ describe("CalendarSubscriptionPopover", () => {
     expect(within(dialog).getByRole("status")).toBe(status);
     expect(
       within(dialog).getByRole("button", {
-        name: "booking:preferences.calendarSubscription.create",
+        name: "booking:bookableItemDetails.calendarSubscription.create",
       }),
     ).toHaveFocus();
     await user.click(
       within(dialog).getByRole("button", {
-        name: "booking:preferences.calendarSubscription.create",
+        name: "booking:bookableItemDetails.calendarSubscription.create",
       }),
     );
 
@@ -526,7 +532,9 @@ describe("CalendarSubscriptionPopover", () => {
     );
     expect(within(dialog).getByRole("status")).toBe(status);
     expect(posts).toBe(0);
-    await user.click(within(dialog).getByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.create" }),
+    );
     expect(
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("n"));

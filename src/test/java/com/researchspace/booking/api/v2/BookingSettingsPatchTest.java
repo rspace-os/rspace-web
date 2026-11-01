@@ -268,7 +268,7 @@ class BookingSettingsPatchTest {
             patchRequest(
                 """
                 {"slotGranularityMinutes":null,"openingHours":null,
-                 "bufferBeforeMinutes":null,"bufferAfterMinutes":null,
+                 "bufferMinutes":null,
                  "maxBookingDurationMinutes":null,"allowDoubleBooking":null,
                  "availabilityWindowStart":null,"availabilityWindowEnd":null,"timezoneMode":null,
                  "customTimezone":null}

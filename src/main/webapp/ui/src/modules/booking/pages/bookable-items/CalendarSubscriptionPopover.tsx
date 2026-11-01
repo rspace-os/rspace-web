@@ -76,17 +76,21 @@ export function CalendarSubscriptionPopover({
     focusRetryRef.current = false;
     focusOriginRef.current = document.activeElement;
   };
-  const restoreFocusIfUnmoved = useCallback((target: HTMLElement, headingMayRetainFocus = false) => {
-    const active = document.activeElement;
-    if (
-      !focusOriginRef.current ||
-      active === focusOriginRef.current ||
-      active === document.body ||
-      (headingMayRetainFocus && active === headingRef.current)
-    )
-      target.focus();
-    focusOriginRef.current = null;
-  }, []);
+  const restoreFocusIfUnmoved = useCallback(
+    (target: HTMLElement, headingMayRetainFocus = false) => {
+      const active = document.activeElement;
+      if (
+        !focusOriginRef.current ||
+        active === focusOriginRef.current ||
+        active === document.body ||
+        (headingMayRetainFocus && active === headingRef.current) ||
+        (active?.id === popupId && focusOriginRef.current !== null && !focusOriginRef.current.isConnected)
+      )
+        target.focus();
+      focusOriginRef.current = null;
+    },
+    [popupId],
+  );
 
   const createMutation = useMutation({
     mutationFn: () => createCalendarSubscription(configurationId, token),
@@ -417,7 +421,7 @@ export function CalendarSubscriptionPopover({
             disabled={changing}
             onClick={createSubscription}
           >
-            {t("preferences.calendarSubscription.create")}
+            {t("bookableItemDetails.calendarSubscription.create")}
           </Button>
         </div>
       );

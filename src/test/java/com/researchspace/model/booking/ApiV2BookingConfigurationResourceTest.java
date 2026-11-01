@@ -51,8 +51,7 @@ class ApiV2BookingConfigurationResourceTest {
           "slotGranularityMinutes",
           "incrementUnit",
           "openingHours",
-          "bufferBeforeMinutes",
-          "bufferAfterMinutes",
+          "bufferMinutes",
           "maxBookingDurationMinutes",
           "allowDoubleBooking",
           "configurationVersion",
@@ -109,8 +108,7 @@ class ApiV2BookingConfigurationResourceTest {
             "slotGranularityMinutes",
             "incrementUnit",
             "openingHours",
-            "bufferBeforeMinutes",
-            "bufferAfterMinutes",
+            "bufferMinutes",
             "maxBookingDurationMinutes",
             "allowDoubleBooking"),
         List.copyOf(
@@ -214,8 +212,7 @@ class ApiV2BookingConfigurationResourceTest {
                   "enabled": true,
                   "slotGranularityMinutes": 15,
                   "openingHours": [{"dayOfWeek": 1, "start": "08:00", "end": "18:00"}],
-                  "bufferBeforeMinutes": 10,
-                  "bufferAfterMinutes": 20,
+                  "bufferMinutes": 20,
                   "maxBookingDurationMinutes": 120,
                   "allowDoubleBooking": true,
                   "target": {"relationTo": "instruments", "value": 12}
@@ -237,9 +234,7 @@ class ApiV2BookingConfigurationResourceTest {
             15L,
             "openingHours",
             List.of(new BookingOpeningHoursEntry(1, "08:00", "18:00")),
-            "bufferBeforeMinutes",
-            10L,
-            "bufferAfterMinutes",
+            "bufferMinutes",
             20L,
             "maxBookingDurationMinutes",
             120L,
@@ -264,8 +259,7 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals(
         List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
         rendered.get("openingHours"));
-    assertEquals(10L, rendered.get("bufferBeforeMinutes"));
-    assertEquals(20L, rendered.get("bufferAfterMinutes"));
+    assertEquals(20L, rendered.get("bufferMinutes"));
     assertEquals(120L, rendered.get("maxBookingDurationMinutes"));
     assertEquals(true, rendered.get("allowDoubleBooking"));
     assertEquals(0L, rendered.get("configurationVersion"));

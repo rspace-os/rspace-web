@@ -55,8 +55,7 @@ function RecordedValues({ row }: { row: AuditRow }) {
     slotGranularityMinutes: t("bookableItemDetails.audit.values.increment"),
     incrementUnit: t("bookableItemDetails.audit.values.incrementUnit"),
     maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
-    bufferBeforeMinutes: t("bookableItemDetails.audit.values.bufferBefore"),
-    bufferAfterMinutes: t("bookableItemDetails.audit.values.bufferAfter"),
+    bufferMinutes: t("bookableItemDetails.audit.values.buffer"),
     allowDoubleBooking: t("bookableItemDetails.audit.values.allowDoubleBooking"),
   };
   const words = {

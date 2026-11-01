@@ -11,9 +11,8 @@ import java.util.Set;
 /**
  * One complete set of scheduling rules shared by booking configuration services.
  *
- * <p>For conflicting events on the same configuration, the two buffer values define one shared
- * minimum idle gap: the larger value. The values are not added, and the gap is independent of
- * insertion order.
+ * <p>Bookings require one minimum idle gap before and after their interval. The gap is not added
+ * twice between bookings, and maintenance has no intrinsic gap.
  *
  * <p>{@code openingHours} contains one independent interval for each open ISO weekday. Omitted
  * weekdays are closed. Resolve a day's hours only through {@link #effectiveHours(int)}.
@@ -26,8 +25,7 @@ public record BookingSchedulingSettings(
     long slotGranularityMinutes,
     BookingIncrementUnit incrementUnit,
     List<BookingOpeningHoursEntry> openingHours,
-    long bufferBeforeMinutes,
-    long bufferAfterMinutes,
+    long bufferMinutes,
     long maxBookingDurationMinutes,
     boolean allowDoubleBooking) {
 
@@ -82,8 +80,7 @@ public record BookingSchedulingSettings(
       Long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
       List<BookingOpeningHoursEntry> openingHours,
-      Long bufferBeforeMinutes,
-      Long bufferAfterMinutes,
+      Long bufferMinutes,
       Long maxBookingDurationMinutes,
       Boolean allowDoubleBooking) {
 
@@ -91,22 +88,20 @@ public record BookingSchedulingSettings(
     public Patch(
         Long slotGranularityMinutes,
         List<BookingOpeningHoursEntry> openingHours,
-        Long bufferBeforeMinutes,
-        Long bufferAfterMinutes,
+        Long bufferMinutes,
         Long maxBookingDurationMinutes,
         Boolean allowDoubleBooking) {
       this(
           slotGranularityMinutes,
           null,
           openingHours,
-          bufferBeforeMinutes,
-          bufferAfterMinutes,
+          bufferMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
     }
 
     public static Patch empty() {
-      return new Patch(null, null, null, null, null, null, null);
+      return new Patch(null, null, null, null, null, null);
     }
 
     /** Returns one complete value using {@code current} for every omitted field. */
@@ -117,8 +112,7 @@ public record BookingSchedulingSettings(
               : slotGranularityMinutes,
           incrementUnit == null ? current.incrementUnit() : incrementUnit,
           openingHours == null ? current.openingHours() : openingHours,
-          bufferBeforeMinutes == null ? current.bufferBeforeMinutes() : bufferBeforeMinutes,
-          bufferAfterMinutes == null ? current.bufferAfterMinutes() : bufferAfterMinutes,
+          bufferMinutes == null ? current.bufferMinutes() : bufferMinutes,
           maxBookingDurationMinutes == null
               ? current.maxBookingDurationMinutes()
               : maxBookingDurationMinutes,
@@ -129,8 +123,7 @@ public record BookingSchedulingSettings(
       return slotGranularityMinutes == null
           && incrementUnit == null
           && openingHours == null
-          && bufferBeforeMinutes == null
-          && bufferAfterMinutes == null
+          && bufferMinutes == null
           && maxBookingDurationMinutes == null
           && allowDoubleBooking == null;
     }
@@ -141,8 +134,7 @@ public record BookingSchedulingSettings(
         configuration.getSlotGranularityMinutes(),
         configuration.getIncrementUnit(),
         configuration.getOpeningHours(),
-        configuration.getBufferBeforeMinutes(),
-        configuration.getBufferAfterMinutes(),
+        configuration.getBufferMinutes(),
         configuration.getMaxBookingDurationMinutes(),
         configuration.isAllowDoubleBooking());
   }
@@ -152,8 +144,7 @@ public record BookingSchedulingSettings(
         defaults.getSlotGranularityMinutes(),
         defaults.getIncrementUnit(),
         defaults.getOpeningHours(),
-        defaults.getBufferBeforeMinutes(),
-        defaults.getBufferAfterMinutes(),
+        defaults.getBufferMinutes(),
         defaults.getMaxBookingDurationMinutes(),
         defaults.isAllowDoubleBooking());
   }
@@ -162,8 +153,7 @@ public record BookingSchedulingSettings(
     configuration.setSlotGranularityMinutes(slotGranularityMinutes);
     configuration.setIncrementUnit(incrementUnit);
     configuration.setOpeningHours(openingHours);
-    configuration.setBufferBeforeMinutes(bufferBeforeMinutes);
-    configuration.setBufferAfterMinutes(bufferAfterMinutes);
+    configuration.setBufferMinutes(bufferMinutes);
     configuration.setMaxBookingDurationMinutes(maxBookingDurationMinutes);
     configuration.setAllowDoubleBooking(allowDoubleBooking);
   }
@@ -172,8 +162,7 @@ public record BookingSchedulingSettings(
     defaults.setSlotGranularityMinutes(slotGranularityMinutes);
     defaults.setIncrementUnit(incrementUnit);
     defaults.setOpeningHours(openingHours);
-    defaults.setBufferBeforeMinutes(bufferBeforeMinutes);
-    defaults.setBufferAfterMinutes(bufferAfterMinutes);
+    defaults.setBufferMinutes(bufferMinutes);
     defaults.setMaxBookingDurationMinutes(maxBookingDurationMinutes);
     defaults.setAllowDoubleBooking(allowDoubleBooking);
   }

@@ -58,11 +58,9 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final List<BookingOpeningHoursEntry> STANDARD_FIXTURE_OPENING_HOURS =
       schedule("08:00", "17:00", 1, 2, 3, 4, 5, 6, 7);
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
-      new BookingSchedulingSettings.Patch(
-          null, STANDARD_FIXTURE_OPENING_HOURS, null, null, null, null);
+      new BookingSchedulingSettings.Patch(null, STANDARD_FIXTURE_OPENING_HOURS, null, null, null);
   private static final BookingSchedulingSettings.Patch ALERT_FIXTURE_SETTINGS =
-      new BookingSchedulingSettings.Patch(
-          15L, STANDARD_FIXTURE_OPENING_HOURS, null, null, 60L, false);
+      new BookingSchedulingSettings.Patch(15L, STANDARD_FIXTURE_OPENING_HOURS, null, 60L, false);
 
   /**
    * The restricted-location plate reader is view-only for {@code user1a}: as PI of the owner's
@@ -81,7 +79,6 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               new BookingOpeningHoursEntry(7, "08:00", "17:00")),
           null,
           null,
-          null,
           null);
 
   /** The New York electron microscope closes at weekends and at noon on Fridays. */
@@ -94,7 +91,6 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               new BookingOpeningHoursEntry(3, "08:00", "18:00"),
               new BookingOpeningHoursEntry(4, "08:00", "18:00"),
               new BookingOpeningHoursEntry(5, "08:00", "12:00")),
-          null,
           null,
           null,
           null);
@@ -115,13 +111,12 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               new BookingOpeningHoursEntry(6, "08:00", "20:00")),
           null,
           null,
-          null,
           true);
 
   /** The deleted-location sequencer is open around the clock on weekdays only. */
   static final BookingSchedulingSettings.Patch WEEKDAY_ALL_DAY_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          null, schedule("00:00", "24:00", 1, 2, 3, 4, 5), null, null, null, null);
+          null, schedule("00:00", "24:00", 1, 2, 3, 4, 5), null, null, null);
 
   /**
    * The no-parent centrifuge is open around the clock except on Sundays, so a Saturday booking can
@@ -129,22 +124,21 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
    */
   static final BookingSchedulingSettings.Patch MIDNIGHT_CLOSE_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          null, schedule("00:00", "24:00", 1, 2, 3, 4, 5, 6), null, null, null, null);
+          null, schedule("00:00", "24:00", 1, 2, 3, 4, 5, 6), null, null, null);
 
   /** Auckland's working day falls overnight for a European viewer. */
   static final BookingSchedulingSettings.Patch AUCKLAND_FIXTURE_SETTINGS =
-      new BookingSchedulingSettings.Patch(
-          null, STANDARD_FIXTURE_OPENING_HOURS, null, null, null, null);
+      new BookingSchedulingSettings.Patch(null, STANDARD_FIXTURE_OPENING_HOURS, null, null, null);
 
   /** Honolulu's evening hours fall on the next European day, so the weekdays differ. */
   static final BookingSchedulingSettings.Patch HONOLULU_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          null, schedule("17:00", "23:00", 1, 2, 3, 4, 5, 6), null, null, null, null);
+          null, schedule("17:00", "23:00", 1, 2, 3, 4, 5, 6), null, null, null);
 
   /** Kolkata's UTC+05:30 offset moves quarter-hour slots onto :15 and :45 for most viewers. */
   static final BookingSchedulingSettings.Patch KOLKATA_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          15L, schedule("09:00", "17:30", 1, 2, 3, 4, 5, 6, 7), null, null, null, null);
+          15L, schedule("09:00", "17:30", 1, 2, 3, 4, 5, 6, 7), null, null, null);
 
   private final String devUserPassword;
   private final UserDao userDao;
@@ -803,7 +797,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             .filter(day -> !closed.contains(day))
             .map(day -> new BookingOpeningHoursEntry(day.getValue(), "00:00", "24:00"))
             .toList();
-    return new BookingSchedulingSettings.Patch(null, null, openingHours, null, null, null, null);
+    return new BookingSchedulingSettings.Patch(null, null, openingHours, null, null, null);
   }
 
   private static List<BookingOpeningHoursEntry> schedule(String start, String end, int... days) {

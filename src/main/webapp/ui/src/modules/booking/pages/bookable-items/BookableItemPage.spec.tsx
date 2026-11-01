@@ -401,6 +401,7 @@ describe("BookableItemPage", () => {
       await expect.element(pageObj.heading).toBeVisible();
       pageObj.calendarTrigger.element().focus();
       await userEvent.keyboard("{Enter}");
+      await page.getByRole("button", { name: "Create link", exact: true }).click();
       await expect.element(page.getByRole("link", { name: "Google Calendar" })).toHaveFocus();
       const other = page.getByRole("link", { name: "Other" }).element();
       const calendarUrl = pageObj.calendarUrl.element();
@@ -769,6 +770,7 @@ describe("BookableItemPage", () => {
       );
       expect(longHeading.element().parentElement).toBe(globalId.element().parentElement);
       await pageObj.calendarTrigger.click();
+      await page.getByRole("button", { name: "Create link", exact: true }).click();
       await expect.element(pageObj.calendarUrl).toBeVisible();
       await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
       await expect

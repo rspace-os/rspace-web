@@ -932,6 +932,7 @@ export default interface Resources {
           "allowDoubleBooking": "Allow concurrent bookings",
           "availabilityWindowEnd": "Availability window end",
           "availabilityWindowStart": "Availability window start",
+          "buffer": "Gap before and after bookings",
           "bufferAfter": "Buffer after (minutes)",
           "bufferBefore": "Buffer before (minutes)",
           "cancellationReason": "Cancellation reason",
@@ -972,6 +973,7 @@ export default interface Resources {
         "copy": "Copy link",
         "copyError": "The link could not be copied. Select and copy it manually.",
         "copyPrompt": "Or copy the calendar link below:",
+        "create": "Create link",
         "description": "Subscribe to this bookable item's read-only calendar.",
         "disconnect": "Disconnect",
         "disconnectConfirm": "Disconnect",
@@ -1283,7 +1285,7 @@ export default interface Resources {
       },
       "editTitle": "Edit Booking",
       "errors": {
-        "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
+        "buffer": "Too close to another booking. This item needs {duration} before and after each booking.",
         "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
         "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
         "bufferSummary": "This period is within the buffer time of:",
@@ -1878,7 +1880,7 @@ export default interface Resources {
       },
       "fields": {
         "allowDoubleBooking": "Allow double booking",
-        "buffer": "Buffer before and after bookings (minutes)",
+        "buffer": "Gap before and after bookings (minutes)",
         "bufferAfter": "Buffer after booking (minutes)",
         "bufferBefore": "Buffer before booking (minutes)",
         "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",

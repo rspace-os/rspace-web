@@ -76,7 +76,7 @@ Booking tables are created with `openingHours` directly. Rebuild development
 databases that used earlier stack schemas. See [booking database migrations](BookingDevelopment.md).
 Audit snapshots use the same independent `openingHours` schedule as configuration reads.
 
-Buffers before and after confirmed bookings can differ. A maximum booking duration of `0`
+One `bufferMinutes` value applies before and after every confirmed booking. Maintenance blocks only its own interval; bookings still keep their gap from maintenance and other bookings. A maximum booking duration of `0`
 disables the item limit; the absolute 527,040-minute (366-day) elapsed-time cap still applies.
 Double booking permits booking-on-booking overlap, while maintenance conflicts with every
 booking and maintenance event. Maintenance requires `CREATE_BLOCKOUT`, exposed as
@@ -191,17 +191,18 @@ Some scheduling problems add RFC 9457 extension members. Each is present only on
 | Code | Status | Extension members |
 | --- | --- | --- |
 | `errors.api.v2.booking.overlap` | 409 | `conflict` |
-| `errors.api.v2.booking.buffer` | 409 | `conflict`, `bufferBeforeMinutes`, `bufferAfterMinutes` |
+| `errors.api.v2.booking.buffer` | 409 | `conflict`, `bufferMinutes` |
 | `errors.api.v2.booking.maximumDuration` | 400 | `maximumDurationMinutes` |
 
 `conflict` is `{"id": 59, "kind": "BOOKING", "start": "2026-09-28T08:00:00Z", "end":
 "2026-09-28T10:00:00Z"}`: the first event that blocks the requested interval, as UTC instants.
 `kind` is `BOOKING` or `MAINTENANCE`. It never contains a purpose, requester, or other private
 field, and the server does not format its times into `detail`. The server checks the requested
-interval first; only when that is free does it check the interval widened by the item's buffers,
+interval first; only when that is free does it check the interval widened by the item's single buffer,
 so `buffer` means that moving the booking slightly would resolve the conflict. Both checks apply to
 create, time-changing edits, restoration, and maintenance. Double booking permits booking-on-booking
-overlap; maintenance still conflicts with every booking and maintenance event.
+overlap; maintenance still conflicts with every booking and maintenance event. Adjacent maintenance
+events may touch; a maintenance event must still stay clear of a booking's buffer.
 
 ## Booking catalogue availability quick filters
 
@@ -225,7 +226,7 @@ window, or another `availability` value is a 400 response.
 `BookingCurrentAvailability` classifies each item. Free time is the window's part inside the item's
 opening hours, evaluated per date in its scheduling time zone through
 `BookingSchedulingSettings.effectiveHours` (independent weekday entries, omitted weekdays closed, and a `24:00` close),
-less every confirmed, non-deleted event widened by the item's buffers. Maintenance always counts;
+less every confirmed, non-deleted event widened by the prospective booking's single buffer. Maintenance always counts;
 bookings do unless the item allows double booking. Cancelled events never count. An item is
 available now when `now` is free inside the window, and free later today when it is busy now and
 free time follows before the window ends; before the window starts, any free time makes it free
@@ -377,3 +378,5 @@ location names, and exact `IN` global IDs. Creation pickers send the required `c
 permission filtering happens before pagination and totals are calculated. Empty result sets
 have no type facets. The administration collection also accepts exact instrument IDs in its
 text search; invalid or out-of-range IDs remain ordinary name searches.
+
+The `booking-single-buffer` migration retains the larger legacy before/after value for each configuration and default, including Envers history, then removes the redundant column.

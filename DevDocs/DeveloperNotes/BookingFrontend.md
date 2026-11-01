@@ -465,3 +465,5 @@ stays in the factories. Query owns freshness; the router's preload stale time is
 Calendar and catalogue tables retain their component-driven reads because their
 keys depend on restored table state and selected resources. Dashboard and My bookings
 reads also depend on component clocks or state, so their queries remain in components.
+
+Scheduling forms share one `bufferMinutes` field for the idle gap before and after each booking. Calendar availability shows lighter gap bands around bookings and labels events with their own interval. Maintenance uses a separate pattern and does not acquire a gap of its own.

@@ -72,8 +72,8 @@ export function draftConflicts(
   let blocking = false;
   for (const event of events) {
     if (event.id === excludedBookingId) continue;
-    const before = event.kind === "BOOKING" ? item.bufferBeforeMinutes : 0;
-    const after = event.kind === "BOOKING" ? item.bufferAfterMinutes : 0;
+    const before = event.kind === "BOOKING" ? item.bufferMinutes : 0;
+    const after = event.kind === "BOOKING" ? item.bufferMinutes : 0;
     if (!(start < instantMinute(event.end) + after && end > instantMinute(event.start) - before)) continue;
     if (event.kind === "MAINTENANCE" || !item.allowDoubleBooking) blocking = true;
     conflicts.push({

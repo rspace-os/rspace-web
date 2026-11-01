@@ -215,12 +215,11 @@ export function classifyCurrentDayAvailability(
 }
 
 export type CalendarAvailabilityRow = OpeningSchedule & {
+  eventKind?: BookingEventKind;
   globalId: string;
   timezone: string;
-  /** With bufferAfterMinutes, defines one shared gap using their maximum; see sharedBufferGapMinutes. */
-  bufferBeforeMinutes: number;
-  /** Shares the gap defined by bufferBeforeMinutes, matching server scheduling checks. */
-  bufferAfterMinutes: number;
+  /** Idle minutes required before and after a booking. */
+  bufferMinutes: number;
   allowDoubleBooking: boolean;
 };
 
@@ -228,15 +227,13 @@ export function calendarAvailabilityRow(row: {
   globalId: string;
   timezone?: string;
   openingHours?: readonly OpeningHoursEntry[];
-  bufferBeforeMinutes?: number;
-  bufferAfterMinutes?: number;
+  bufferMinutes?: number;
   allowDoubleBooking?: boolean;
 }): CalendarAvailabilityRow | undefined {
   if (
     row.timezone === undefined ||
     row.openingHours === undefined ||
-    row.bufferBeforeMinutes === undefined ||
-    row.bufferAfterMinutes === undefined ||
+    row.bufferMinutes === undefined ||
     row.allowDoubleBooking === undefined
   ) {
     return undefined;
@@ -245,14 +242,13 @@ export function calendarAvailabilityRow(row: {
     globalId: row.globalId,
     timezone: row.timezone,
     openingHours: row.openingHours,
-    bufferBeforeMinutes: row.bufferBeforeMinutes,
-    bufferAfterMinutes: row.bufferAfterMinutes,
+    bufferMinutes: row.bufferMinutes,
     allowDoubleBooking: row.allowDoubleBooking,
   };
 }
 
-function sharedBufferGapMinutes(row: Pick<CalendarAvailabilityRow, "bufferBeforeMinutes" | "bufferAfterMinutes">) {
-  return Math.max(row.bufferBeforeMinutes, row.bufferAfterMinutes);
+function sharedBufferGapMinutes(row: Pick<CalendarAvailabilityRow, "bufferMinutes">) {
+  return row.bufferMinutes;
 }
 
 function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval: AbsoluteDisplayInterval) {
@@ -357,7 +353,7 @@ function bookingInterval(
     booking.end,
     booking,
   );
-  const sharedGapMinutes = sharedBufferGapMinutes(row);
+  const sharedGapMinutes = booking.kind === "MAINTENANCE" && row.eventKind !== "BOOKING" ? 0 : row.bufferMinutes;
   return clipInterval(
     {
       ...candidate,

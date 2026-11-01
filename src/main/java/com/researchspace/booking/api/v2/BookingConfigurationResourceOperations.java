@@ -143,8 +143,7 @@ public final class BookingConfigurationResourceOperations
                                 Map.of("dayOfWeek", 4, "start", "08:00", "end", "18:00"),
                                 Map.of("dayOfWeek", 5, "start", "08:00", "end", "18:00"),
                                 Map.of("dayOfWeek", 6, "start", "10:00", "end", "16:00"))),
-                        Map.entry("bufferBeforeMinutes", 15),
-                        Map.entry("bufferAfterMinutes", 15),
+                        Map.entry("bufferMinutes", 15),
                         Map.entry("maxBookingDurationMinutes", 120),
                         Map.entry("allowDoubleBooking", false),
                         Map.entry(
@@ -382,8 +381,7 @@ public final class BookingConfigurationResourceOperations
         BookingDocumentValues.value(document, "slotGranularityMinutes", Long.class),
         BookingDocumentValues.value(document, "incrementUnit", BookingIncrementUnit.class),
         openingHours(document),
-        BookingDocumentValues.value(document, "bufferBeforeMinutes", Long.class),
-        BookingDocumentValues.value(document, "bufferAfterMinutes", Long.class),
+        BookingDocumentValues.value(document, "bufferMinutes", Long.class),
         BookingDocumentValues.value(document, "maxBookingDurationMinutes", Long.class),
         BookingDocumentValues.value(document, "allowDoubleBooking", Boolean.class));
   }

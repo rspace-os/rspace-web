@@ -322,6 +322,11 @@ describe("BookableItemPage", () => {
     });
     expect(statusRequests).toBe(0);
     await user.click(trigger);
+    const create = await screen.findByRole("button", {
+      name: "booking:bookableItemDetails.calendarSubscription.create",
+    });
+    expect(createRequests).toBe(0);
+    await user.click(create);
     await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" });
     expect(statusRequests).toBe(1);
     expect(createRequests).toBe(1);

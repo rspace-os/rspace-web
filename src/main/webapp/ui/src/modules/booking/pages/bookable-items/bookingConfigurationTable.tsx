@@ -153,16 +153,9 @@ export const bookingConfigurationConfig = {
       ],
     },
     {
-      name: "bufferBeforeMinutes",
+      name: "bufferMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.bufferBefore" satisfies CollectionTranslationKey,
-      list: false,
-      form: false,
-    },
-    {
-      name: "bufferAfterMinutes",
-      type: "number",
-      labelKey: "booking:settings.fields.bufferAfter" satisfies CollectionTranslationKey,
+      labelKey: "booking:settings.fields.buffer" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },

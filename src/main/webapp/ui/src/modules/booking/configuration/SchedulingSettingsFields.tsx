@@ -211,138 +211,68 @@ export function SchedulingSettingsFields({
 }) {
   const { t } = useTranslation("booking");
   const id = useId();
-  const bufferBefore = useField(form, { path: ["bufferBeforeMinutes"] });
-  const bufferAfter = useField(form, { path: ["bufferAfterMinutes"] });
+  const buffer = useField(form, { path: ["bufferMinutes"] });
   const allowDoubleBooking = useField(form, { path: ["allowDoubleBooking"] });
-  const doubleBookingCheckboxProps = {
-    id: `${id}-double-booking`,
-    checked: allowDoubleBooking.input === true,
-    disabled,
-    inputRef: allowDoubleBooking.props.ref,
-    onCheckedChange: (checked: boolean | "indeterminate") => allowDoubleBooking.onChange(checked),
-  };
-  const mixedBuffers = bufferBefore.input !== bufferAfter.input;
-
-  if (layout === "inline") {
-    const bufferBeforeErrorId = `${id}-buffer-before-error`;
-    const bufferAfterErrorId = `${id}-buffer-after-error`;
-    const bufferBeforeInvalid = Boolean(bufferBefore.errors?.length);
-    const bufferAfterInvalid = Boolean(bufferAfter.errors?.length);
-    const renderInlineBufferField = (
-      field: typeof bufferBefore | typeof bufferAfter,
-      direction: "Before" | "After",
-      label: string,
-      errorId: string,
-      invalid: boolean,
-    ) => {
-      const fieldId = `${id}-buffer-${direction.toLowerCase()}`;
-      return (
-        <Field className="min-w-0">
-          <FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
-          <Input
-            id={fieldId}
-            type="number"
-            min={0}
-            max={MAX_BUFFER_MINUTES}
-            step={1}
-            required
-            disabled={disabled}
-            value={numberInput(field.input) ?? ""}
-            ref={field.props.ref}
-            onFocus={field.props.onFocus}
-            onBlur={field.props.onBlur}
-            aria-invalid={invalid || undefined}
-            aria-describedby={invalid ? errorId : undefined}
-            onChange={(event) => field.onChange(event.currentTarget.valueAsNumber)}
-          />
-          {invalid ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
-        </Field>
-      );
-    };
-
-    return (
-      <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
-        <fieldset className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
-          <legend className="sr-only">{t("settings.fields.legend")}</legend>
-
-          <OpeningHoursEditor form={form} disabled={disabled} layout="inline" />
-
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-granularity`}>{t("bookableItemDetails.fields.granularity")}</FieldLabel>
-            <TimeIncrementField form={form} id={`${id}-granularity`} disabled={disabled} />
-          </div>
-
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-maximum-duration`}>{t("settings.fields.maximumDuration")}</FieldLabel>
-            <MaximumDurationField form={form} id={`${id}-maximum-duration`} disabled={disabled} />
-          </div>
-
-          <div className="grid min-w-0 grid-cols-2 items-start gap-4 @md:col-span-2">
-            {renderInlineBufferField(
-              bufferBefore,
-              "Before",
-              t("bookableItemDetails.fields.bufferBefore"),
-              bufferBeforeErrorId,
-              bufferBeforeInvalid,
-            )}
-            {renderInlineBufferField(
-              bufferAfter,
-              "After",
-              t("bookableItemDetails.fields.bufferAfter"),
-              bufferAfterErrorId,
-              bufferAfterInvalid,
-            )}
-          </div>
-
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-double-booking`}>{t("bookableItemDetails.fields.doubleBooking")}</FieldLabel>
-            <div className="flex min-h-9 items-center">
-              <Checkbox {...doubleBookingCheckboxProps} />
-            </div>
-          </div>
-        </fieldset>
-      </div>
-    );
-  }
-
+  const bufferId = `${id}-buffer`;
+  const errorId = `${bufferId}-error`;
+  const bufferControl = (
+    <div className="space-y-2">
+      <Input
+        id={bufferId}
+        type="number"
+        min={0}
+        max={MAX_BUFFER_MINUTES}
+        step={1}
+        required
+        disabled={disabled}
+        value={numberInput(buffer.input) ?? ""}
+        ref={buffer.props.ref}
+        onFocus={buffer.props.onFocus}
+        onBlur={buffer.props.onBlur}
+        aria-invalid={Boolean(buffer.errors?.length) || undefined}
+        aria-describedby={buffer.errors?.length ? errorId : undefined}
+        onChange={(event) => buffer.onChange(event.currentTarget.valueAsNumber)}
+      />
+      {buffer.errors?.length ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
+    </div>
+  );
+  const doubleBooking = (
+    <Checkbox
+      id={`${id}-double-booking`}
+      checked={allowDoubleBooking.input === true}
+      disabled={disabled}
+      inputRef={allowDoubleBooking.props.ref}
+      onCheckedChange={(checked) => allowDoubleBooking.onChange(checked)}
+    />
+  );
+  const inline = layout === "inline";
+  const rowClass = inline ? RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME : "space-y-2";
   return (
-    <fieldset className="space-y-6">
-      <legend className="text-base font-medium">{t("settings.fields.legend")}</legend>
-      <Field>
-        <FieldLabel htmlFor={`${id}-granularity`}>{t("settings.fields.granularity")}</FieldLabel>
-        <TimeIncrementField form={form} id={`${id}-granularity`} disabled={disabled} />
-      </Field>
-      <OpeningHoursEditor form={form} disabled={disabled} layout="stacked" />
-      <Field>
-        <FieldLabel htmlFor={`${id}-buffer`}>{t("settings.fields.buffer")}</FieldLabel>
-        <Input
-          id={`${id}-buffer`}
-          type="number"
-          min={0}
-          max={MAX_BUFFER_MINUTES}
-          step={1}
-          required={!mixedBuffers}
-          disabled={disabled}
-          value={mixedBuffers ? "" : (numberInput(bufferBefore.input) ?? "")}
-          aria-describedby={mixedBuffers ? `${id}-buffer-mixed` : undefined}
-          onChange={(event) => {
-            const value = event.currentTarget.value === "" ? undefined : event.currentTarget.valueAsNumber;
-            bufferBefore.onChange(value);
-            bufferAfter.onChange(value);
-          }}
-        />
-        {mixedBuffers ? (
-          <FieldDescription id={`${id}-buffer-mixed`}>{t("settings.fields.bufferMixed")}</FieldDescription>
-        ) : null}
-      </Field>
-      <Field>
-        <FieldLabel htmlFor={`${id}-maximum-duration`}>{t("settings.fields.maximumDuration")}</FieldLabel>
-        <MaximumDurationField form={form} id={`${id}-maximum-duration`} disabled={disabled} />
-      </Field>
-      <Field orientation="horizontal">
-        <Checkbox {...doubleBookingCheckboxProps} />
-        <FieldLabel htmlFor={`${id}-double-booking`}>{t("settings.fields.allowDoubleBooking")}</FieldLabel>
-      </Field>
-    </fieldset>
+    <div className={inline ? RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME : undefined}>
+      <fieldset className={inline ? `${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4` : "space-y-6"}>
+        <legend className={inline ? "sr-only" : "text-base font-medium"}>{t("settings.fields.legend")}</legend>
+        <OpeningHoursEditor form={form} disabled={disabled} layout={layout} />
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-granularity`}>
+            {inline ? t("bookableItemDetails.fields.granularity") : t("settings.fields.granularity")}
+          </FieldLabel>
+          <TimeIncrementField form={form} id={`${id}-granularity`} disabled={disabled} />
+        </div>
+        <div className={rowClass}>
+          <FieldLabel htmlFor={bufferId}>{t("settings.fields.buffer")}</FieldLabel>
+          {bufferControl}
+        </div>
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-maximum-duration`}>{t("settings.fields.maximumDuration")}</FieldLabel>
+          <MaximumDurationField form={form} id={`${id}-maximum-duration`} disabled={disabled} />
+        </div>
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-double-booking`}>
+            {inline ? t("bookableItemDetails.fields.doubleBooking") : t("settings.fields.allowDoubleBooking")}
+          </FieldLabel>
+          <div className="flex min-h-9 items-center">{doubleBooking}</div>
+        </div>
+      </fieldset>
+    </div>
   );
 }

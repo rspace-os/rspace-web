@@ -340,8 +340,7 @@ class TimeSlotBookingSchedulingTest {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     BookingConfiguration configuration = existing.getBookingConfiguration();
     configuration.setTimeZone("UTC");
-    configuration.setBufferBeforeMinutes(10);
-    configuration.setBufferAfterMinutes(20);
+    configuration.setBufferMinutes(20);
     stubReadableBookingAndConfigurationLock(existing);
     Date movedStart = instant("2026-10-25T10:00:00Z");
     Date movedEnd = instant("2026-10-25T11:30:00Z");
@@ -440,8 +439,7 @@ class TimeSlotBookingSchedulingTest {
             Instant.parse("2026-08-17T09:00:00Z"),
             Instant.parse("2026-08-17T09:45:00Z")),
         failure.conflict());
-    assertEquals(10, failure.bufferBeforeMinutes());
-    assertEquals(20, failure.bufferAfterMinutes());
+    assertEquals(20, failure.bufferMinutes());
     verify(bookingDao, never()).saveAndFlush(any());
     verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
@@ -451,8 +449,7 @@ class TimeSlotBookingSchedulingTest {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     BookingConfiguration buffered = existing.getBookingConfiguration();
     buffered.setTimeZone("UTC");
-    buffered.setBufferBeforeMinutes(10);
-    buffered.setBufferAfterMinutes(20);
+    buffered.setBufferMinutes(20);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
     when(configurationDao.lockActiveById(4L)).thenReturn(Optional.of(buffered));
     TimeSlotBooking following =
@@ -671,8 +668,7 @@ class TimeSlotBookingSchedulingTest {
   private static BookingConfiguration bufferedConfiguration() {
     BookingConfiguration buffered = configuration(4L, 12L, true);
     buffered.setTimeZone("UTC");
-    buffered.setBufferBeforeMinutes(10);
-    buffered.setBufferAfterMinutes(20);
+    buffered.setBufferMinutes(20);
     return buffered;
   }
 

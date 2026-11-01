@@ -65,8 +65,7 @@ function configuration({
     slotGranularityMinutes: 5,
     incrementUnit: "MINUTES" as const,
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-    bufferBeforeMinutes: 0,
-    bufferAfterMinutes: 0,
+    bufferMinutes: 0,
     maxBookingDurationMinutes: 0,
     allowDoubleBooking: false,
     capabilities: {

@@ -50,7 +50,7 @@ class BookingConfigurationDefaultsManagerTest {
     assertSame(defaults, manager.getDefaults(sysadmin));
     BookingConfigurationDefaults updated =
         manager.updateDefaults(
-            new BookingSchedulingSettings.Patch(15L, hours("08:00", "18:00"), 10L, 20L, 120L, true),
+            new BookingSchedulingSettings.Patch(15L, hours("08:00", "18:00"), 10L, 120L, true),
             new BookingDisplaySettings.Patch("09:00", "17:00", null, null, null),
             0,
             sysadmin,
@@ -58,8 +58,7 @@ class BookingConfigurationDefaultsManagerTest {
 
     assertEquals(15, updated.getSlotGranularityMinutes());
     assertEquals(hours("08:00", "18:00"), updated.getOpeningHours());
-    assertEquals(10, updated.getBufferBeforeMinutes());
-    assertEquals(20, updated.getBufferAfterMinutes());
+    assertEquals(10, updated.getBufferMinutes());
     assertEquals(120, updated.getMaxBookingDurationMinutes());
     assertEquals(true, updated.isAllowDoubleBooking());
     assertEquals("09:00", updated.getAvailabilityWindowStart());
@@ -96,7 +95,7 @@ class BookingConfigurationDefaultsManagerTest {
                 () ->
                     manager.updateDefaults(
                         new BookingSchedulingSettings.Patch(
-                            null, hours("18:00", "08:00"), null, null, null, null),
+                            null, hours("18:00", "08:00"), null, null, null),
                         BookingDisplaySettings.Patch.empty(),
                         0,
                         sysadmin,
@@ -109,7 +108,7 @@ class BookingConfigurationDefaultsManagerTest {
                 InvalidBookingSchedulingSettingsException.class,
                 () ->
                     manager.updateDefaults(
-                        new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null),
+                        new BookingSchedulingSettings.Patch(null, null, null, 7L, null),
                         BookingDisplaySettings.Patch.empty(),
                         0,
                         sysadmin,
@@ -127,7 +126,7 @@ class BookingConfigurationDefaultsManagerTest {
     when(dao.saveAndFlush(defaults)).thenReturn(defaults);
 
     manager.updateDefaults(
-        new BookingSchedulingSettings.Patch(null, null, null, null, null, true),
+        new BookingSchedulingSettings.Patch(null, null, null, null, true),
         BookingDisplaySettings.Patch.empty(),
         1,
         firstAdmin,
@@ -138,7 +137,7 @@ class BookingConfigurationDefaultsManagerTest {
         StaleBookingSettingsException.class,
         () ->
             manager.updateDefaults(
-                new BookingSchedulingSettings.Patch(null, null, null, null, null, false),
+                new BookingSchedulingSettings.Patch(null, null, null, null, false),
                 BookingDisplaySettings.Patch.empty(),
                 1,
                 secondAdmin,

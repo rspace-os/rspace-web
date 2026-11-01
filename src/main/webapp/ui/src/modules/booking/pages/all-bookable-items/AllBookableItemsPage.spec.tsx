@@ -275,7 +275,7 @@ describe("the All Bookable Items page", () => {
   test("shows the fixture maintenance blockout", async () => {
     render(<AllBookableItemsStory history={history} />);
 
-    const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Unavailable", ".*10:00.*11:00.*");
+    const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Maintenance", ".*10:00.*11:00.*");
     await slice.hover();
 
     await expect.element(pageObj.availabilityDetails).toBeVisible();

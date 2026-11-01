@@ -103,7 +103,7 @@ export function AddBookingContent() {
         <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
       )}
       <div className="@container">
-        <div className="grid gap-6 @4xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)]">
+        <div className="grid gap-6 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div ref={formContainerRef} className="min-w-0 space-y-6">
             <BookingForm
               mode="add"
