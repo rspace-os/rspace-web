@@ -546,7 +546,7 @@ describe("Calendar page", () => {
     await calendar.chooseView("Week");
 
     const event = calendar.event("Confocal microscope");
-    const initials = event.getByTitle("Ada Lovelace", { exact: true });
+    const initials = event.getByTitle("Ada Lovelace", { exact: true }).filter({ hasText: /^AL$/ });
     await expect.element(initials).toBeVisible();
     await expect.element(initials).toHaveTextContent("AL");
     await expect.element(event.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
@@ -570,7 +570,10 @@ describe("Calendar page", () => {
     await calendar.chooseView("Time grid");
     await expect.element(calendar.timeGrid).toBeVisible();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    const compactIdentity = calendar.event("Confocal microscope").getByTitle("Ada Lovelace", { exact: true });
+    const compactIdentity = calendar
+      .event("Confocal microscope")
+      .getByTitle("Ada Lovelace", { exact: true })
+      .filter({ hasText: /^AL$/ });
     await expect.element(compactIdentity).toBeVisible();
     await expect.element(compactIdentity).toHaveTextContent("AL");
     await expect.element(calendar.event("Busy")).toBeVisible();
