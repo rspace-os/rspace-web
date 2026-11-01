@@ -55,7 +55,6 @@ export function CalendarSubscriptionPopover({
   const descriptionId = `${popupId}-description`;
   const fieldId = `${popupId}-url`;
   const copyLabelId = `${fieldId}-label`;
-  const autoGenerateOnOpenRef = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const googleLinkRef = useRef<HTMLAnchorElement>(null);
   const focusCreateRef = useRef(false);
@@ -201,12 +200,6 @@ export function CalendarSubscriptionPopover({
     if (status.data?.subscriptionUrl === null) create();
   }, [create, status.data]);
 
-  useEffect(() => {
-    if (archived || !open || !autoGenerateOnOpenRef.current || status.isFetching || !status.isSuccess) return;
-    autoGenerateOnOpenRef.current = false;
-    createSubscription();
-  }, [archived, createSubscription, open, status.isFetching, status.isSuccess]);
-
   const focusGoogleAction = useCallback(
     (element: HTMLAnchorElement | null) => {
       googleLinkRef.current = element;
@@ -218,7 +211,6 @@ export function CalendarSubscriptionPopover({
   );
 
   const close = () => {
-    autoGenerateOnOpenRef.current = false;
     openRef.current = false;
     setOpen(false);
     setFocusGoogle(false);
@@ -415,8 +407,7 @@ export function CalendarSubscriptionPopover({
         </div>
       );
     }
-    // No link after a disconnect, or after a replace found it removed elsewhere: offer to add it again.
-    if ((revokeMutation.isSuccess || rotateMutation.isError) && !createMutation.isPending) {
+    if (!createMutation.isPending) {
       return (
         <div className="space-y-3">
           <Button
@@ -426,7 +417,7 @@ export function CalendarSubscriptionPopover({
             disabled={changing}
             onClick={createSubscription}
           >
-            {t("bookableItemDetails.calendarSubscription.trigger")}
+            {t("preferences.calendarSubscription.create")}
           </Button>
         </div>
       );
@@ -444,7 +435,6 @@ export function CalendarSubscriptionPopover({
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
-          autoGenerateOnOpenRef.current = !archived;
           openRef.current = true;
           setOpen(true);
         } else close();

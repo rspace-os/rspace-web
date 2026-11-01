@@ -39,7 +39,7 @@ describe("CalendarSubscriptionPopover", () => {
     vi.restoreAllMocks();
   });
 
-  it("automatically creates a missing link and shows the simplified calendar choices", async () => {
+  it("creates a missing link only on request and shows the simplified calendar choices", async () => {
     const user = userEvent.setup();
     let gets = 0;
     let posts = 0;
@@ -64,6 +64,9 @@ describe("CalendarSubscriptionPopover", () => {
 
     expect(gets).toBe(0);
     await user.click(trigger);
+    const create = await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" });
+    expect(posts).toBe(0);
+    await user.click(create);
 
     expect(
       await screen.findByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.apple" }),
@@ -183,6 +186,7 @@ describe("CalendarSubscriptionPopover", () => {
       "alert",
     );
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.retry" }));
+    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
     expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.generateError")).toHaveAttribute(
       "role",
       "alert",
@@ -215,6 +219,7 @@ describe("CalendarSubscriptionPopover", () => {
     );
     renderPopover();
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
+    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
     expect(
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("w"));
@@ -460,12 +465,12 @@ describe("CalendarSubscriptionPopover", () => {
     expect(within(dialog).getByRole("status")).toBe(status);
     expect(
       within(dialog).getByRole("button", {
-        name: "booking:bookableItemDetails.calendarSubscription.trigger",
+        name: "booking:preferences.calendarSubscription.create",
       }),
     ).toHaveFocus();
     await user.click(
       within(dialog).getByRole("button", {
-        name: "booking:bookableItemDetails.calendarSubscription.trigger",
+        name: "booking:preferences.calendarSubscription.create",
       }),
     );
 
@@ -521,9 +526,7 @@ describe("CalendarSubscriptionPopover", () => {
     );
     expect(within(dialog).getByRole("status")).toBe(status);
     expect(posts).toBe(0);
-    await user.click(
-      within(dialog).getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
-    );
+    await user.click(within(dialog).getByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
     expect(
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("n"));
