@@ -8105,8 +8105,7 @@ export default interface Resources {
           "python": "Python",
           "r": "R",
           "ruby": "Ruby",
-          "sql": "SQL",
-          "wikiMarkup": "Wiki markup"
+          "sql": "SQL"
         },
         "command": {
           "codeSample": "Code sample",

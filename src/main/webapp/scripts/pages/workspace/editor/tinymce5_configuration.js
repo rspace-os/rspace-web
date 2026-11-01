@@ -80,7 +80,6 @@ var tinymcesetup = {
 		{ text: RS.msg("legacyjs.tinymce.codeSample.r"), value: 'r' },
 		{ text: RS.msg("legacyjs.tinymce.codeSample.ruby"), value: 'ruby' },
 		{ text: RS.msg("legacyjs.tinymce.codeSample.sql"), value: 'sql' },
-		{ text: RS.msg("legacyjs.tinymce.codeSample.wikiMarkup"), value: 'wiki' },
 	],
 	elementpath: false,
 	fontsize_formats: '9px 10px 12px 14px 16px 20px 24px 30px 40px 64px',
