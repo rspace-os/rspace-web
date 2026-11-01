@@ -103,8 +103,7 @@ export function nextFreeRange(
   for (const { from, to } of gaps) {
     const duration = Math.floor(Math.min(preferredDuration, to - from, maximumDuration) / rule.minutes) * rule.minutes;
     if (duration <= 0) continue;
-    const proposal = proposeDayRange({ startMinute: from, endMinute: from + duration }, date, timezone, policy);
-    if (proposal && proposal.startMinute >= from && proposal.endMinute <= to) return proposal;
+    return { startMinute: from, endMinute: from + duration };
   }
   return undefined;
 }
