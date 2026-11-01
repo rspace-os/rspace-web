@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   RouterProvider,
@@ -12,12 +12,13 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
+import type { AppRouterContext } from "@/modules/common/app/router";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
 import { cataloguePage, configuration } from "./creationTestFixtures";
 
 function renderPicker() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const root = createRootRoute();
+  const root = createRootRouteWithContext<AppRouterContext>()();
   const picker = createRoute({
     getParentRoute: () => root,
     path: "/",
@@ -30,11 +31,12 @@ function renderPicker() {
   });
   const router = createRouter({
     routeTree: root.addChildren([picker, allItems]),
+    context: { queryClient },
     history: createMemoryHistory({ initialEntries: ["/"] }),
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router as never} />
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   );
 }
