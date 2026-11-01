@@ -1874,7 +1874,6 @@ export default interface Resources {
       "fields": {
         "allowDoubleBooking": "Allow double booking",
         "buffer": "Gap before and after bookings (minutes)",
-        "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
         "granularity": "Time increment",
         "incrementDays": "Days",
         "incrementDaysUnavailable": "Select Open all day on every day to use Days.",
