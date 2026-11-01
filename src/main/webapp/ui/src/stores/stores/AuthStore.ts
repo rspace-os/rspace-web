@@ -84,11 +84,6 @@ export default class AuthStore {
           ElnApiService.setAuthorizationHeader();
           this.isAuthenticated = true;
           this.isSynchronizing = false;
-
-          // overlapping authenticate() calls (the 401 retry and a scheduled refresh) must leave one timer
-          if (this.timeoutId) {
-            clearTimeout(this.timeoutId);
-          }
           this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
         }),
       )
