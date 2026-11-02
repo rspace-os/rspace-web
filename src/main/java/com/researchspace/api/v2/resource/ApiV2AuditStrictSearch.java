@@ -198,7 +198,8 @@ public final class ApiV2AuditStrictSearch {
                 request.search(),
                 request.searchableFields(),
                 request.relatedIdentifierFields(),
-                request.descriptionsSafe());
+                request.descriptionsSafe(),
+                request.requiredFields());
         CachedScan hit;
         synchronized (cache) {
           cache
@@ -329,7 +330,8 @@ public final class ApiV2AuditStrictSearch {
       String text,
       Set<String> searchableFields,
       Set<String> relatedFields,
-      boolean safeDescriptions) {}
+      boolean safeDescriptions,
+      Map<String, String> requiredFields) {}
 
   private record CachedScan(
       long created, List<AuditTrailSearchResult> results, Map<Path, FileManifest> manifest) {}
@@ -579,6 +581,7 @@ public final class ApiV2AuditStrictSearch {
       int lineNumber) {
     if (!restricted.getDomains().contains(line.domain())
         || !restricted.getActions().contains(line.action())
+        || !requiredFieldsMatch(line, request)
         || !identifierMatches(line, request)
         || !actorMatches(restricted, line.username())
         || !textMatches(line, request)) {
@@ -598,6 +601,19 @@ public final class ApiV2AuditStrictSearch {
   private static boolean inWindow(Instant timestamp, Request request) {
     return !timestamp.isBefore(request.fromInclusive())
         && timestamp.isBefore(request.toExclusive());
+  }
+
+  private static boolean requiredFieldsMatch(ParsedLine line, Request request) {
+    for (var required : request.requiredFields().entrySet()) {
+      Object value = line.result().getEvent().getData().getData();
+      for (String part : required.getKey().split("\\.")) {
+        value = value instanceof Map<?, ?> fields ? fields.get(part) : null;
+      }
+      if (value == null || !required.getValue().equals(value.toString())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private static boolean identifierMatches(ParsedLine line, Request request) {
@@ -787,7 +803,39 @@ public final class ApiV2AuditStrictSearch {
       String search,
       Set<String> searchableFields,
       Set<String> relatedIdentifierFields,
-      boolean descriptionsSafe) {
+      boolean descriptionsSafe,
+      Map<String, String> requiredFields) {
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory,
+        String search,
+        Set<String> searchableFields,
+        Set<String> relatedIdentifierFields,
+        boolean descriptionsSafe) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          search,
+          searchableFields,
+          relatedIdentifierFields,
+          descriptionsSafe,
+          Map.of());
+    }
 
     public Request(
         Instant fromInclusive,
@@ -911,6 +959,7 @@ public final class ApiV2AuditStrictSearch {
       requestedUsernames = Set.copyOf(requestedUsernames);
       search = search == null ? null : search.trim().toLowerCase(Locale.ROOT);
       search = search == null || search.isBlank() ? null : search;
+      requiredFields = Map.copyOf(requiredFields);
       searchableFields = Set.copyOf(searchableFields);
       relatedIdentifierFields = Set.copyOf(relatedIdentifierFields);
     }

@@ -13,6 +13,7 @@ import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInterceptor;
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
+import com.researchspace.api.v2.json.ApiV2JsonBodyTypes;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.webapp.integrations.wopi.WopiAuthorisationInterceptor;
 import com.researchspace.webapp.integrations.wopi.WopiProofKeyValidationInterceptor;
@@ -42,6 +43,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
  */
 @Configuration
 public class WebConfig extends WebMvcConfigurationSupport {
+  private List<ApiV2JsonBodyTypes> jsonBodyTypes = List.of();
+
+  @Autowired
+  void setJsonBodyTypes(List<ApiV2JsonBodyTypes> jsonBodyTypes) {
+    this.jsonBodyTypes = List.copyOf(jsonBodyTypes);
+  }
+
   @Autowired WebDefaultConfig defaultConfig;
 
   @Autowired APIRequestThrottlingInterceptor requestThrottle;
@@ -266,7 +274,12 @@ public class WebConfig extends WebMvcConfigurationSupport {
         jacksonConverter
             .getObjectMapper()
             .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
-        ApiV2JsonMappers.register(jacksonConverter);
+        ApiV2JsonMappers.register(
+            jacksonConverter,
+            jsonBodyTypes.stream()
+                .flatMap(contribution -> contribution.types().stream())
+                .distinct()
+                .toArray(Class<?>[]::new));
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {
