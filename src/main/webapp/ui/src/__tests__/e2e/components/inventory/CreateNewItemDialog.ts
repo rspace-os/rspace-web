@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { ContentGridComponent } from "./ContentGridComponent";
 import { openDialog } from "./DialogHelpers";
 import { type NewContainerFormComponent, newContainerFormComponent } from "./NewContainerFormComponent";
 import { type NewInstrumentFormComponent, newInstrumentFormComponent } from "./NewInstrumentFormComponent";
@@ -13,8 +14,11 @@ export class CreateNewItemDialog {
   private readonly splitSampleRadio: Locator;
   private readonly templateRadio: Locator;
   private readonly instrumentTemplateRadio: Locator;
-  private readonly createButton: Locator;
+  readonly createButton: Locator;
   private readonly cancelButton: Locator;
+  /** Shown once a type is chosen; it is the last control before the location grid. */
+  readonly changeTypeButton: Locator;
+  readonly grid: ContentGridComponent;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Create new items from" });
@@ -29,6 +33,8 @@ export class CreateNewItemDialog {
     this.instrumentTemplateRadio = this.root.getByRole("radio", { name: "Instrument Template", exact: true });
     this.createButton = this.root.getByRole("button", { name: "Create", exact: true });
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
+    this.changeTypeButton = this.root.getByRole("button", { name: "Change", exact: true });
+    this.grid = new ContentGridComponent(page, this.root);
   }
 
   async waitForOpen(): Promise<void> {
@@ -57,6 +63,18 @@ export class CreateNewItemDialog {
       }
       await this.createButton.click();
     }, newContainerFormComponent(this.page));
+  }
+
+  /** Chooses to create a container and waits for the location grid, leaving the location to the caller. */
+  async startContainer(): Promise<ContentGridComponent> {
+    await this.containerOption.click();
+    await this.grid.waitForLoaded();
+    return this.grid;
+  }
+
+  async openNewContainerForm(): Promise<NewContainerFormComponent> {
+    await this.grid.leave();
+    return openDialog(() => this.createButton.click(), newContainerFormComponent(this.page));
   }
 
   async chooseInstrument(): Promise<NewInstrumentFormComponent> {
@@ -109,6 +127,7 @@ export class CreateNewItemDialog {
   }
 
   async cancel(): Promise<void> {
+    await this.grid.leave();
     await this.cancelButton.click();
     await this.root.waitFor({ state: "detached" });
   }

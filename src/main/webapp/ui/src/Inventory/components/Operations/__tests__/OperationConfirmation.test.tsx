@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -8,11 +9,13 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
+import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operations";
 import { operations } from "../operations";
 import type { OriginBlockedReason } from "../operationValidation";
+import { type PlacementSelection, prepareContainer } from "../placement";
 import type { TemplateSelection } from "../TemplateStep";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "../types";
 
@@ -60,6 +63,7 @@ const renderConf = (overrides: {
   origins?: Array<{ globalId: string; name: string }>;
   remember?: boolean;
   onRememberChange?: (remember: boolean) => void;
+  placement?: PlacementSelection;
   english?: boolean;
 }) => {
   const card = (
@@ -77,6 +81,7 @@ const renderConf = (overrides: {
         origins={overrides.origins ?? []}
         remember={overrides.remember ?? false}
         onRememberChange={overrides.onRememberChange}
+        placement={overrides.placement}
       />
     </ThemeProvider>
   );
@@ -413,5 +418,49 @@ describe("the confirmation preview matches the names the server stores", () => {
     });
     expect(screen.getByText("Is Derived From using process: PCR")).toBeInTheDocument();
     expect(screen.getByText("Derived")).toBeInTheDocument();
+  });
+
+  describe("Location row", () => {
+    const aliquot = operations.find((o) => o.key === "aliquot") as InventoryOperation;
+    const none: TemplateSelection = { mode: "none", templateId: null, remember: false };
+    const locationValue = () => screen.getByText("Location").nextElementSibling;
+
+    it("says the new subsamples stay on the workbench when no container was chosen", async () => {
+      renderConf({ op: aliquot, templateSelection: none, placement: { mode: "workbench" }, english: true });
+      expect(await screen.findByText("Location")).toBeInTheDocument();
+      expect(locationValue()).toHaveTextContent("Your workbench");
+    });
+
+    it("names a list container on its own", async () => {
+      const shelf = makeMockContainer({ name: "Shelf", cType: "LIST" });
+      renderConf({
+        op: aliquot,
+        templateSelection: none,
+        placement: { mode: "container", container: shelf },
+        english: true,
+      });
+      expect(await screen.findByText("Location")).toBeInTheDocument();
+      expect(locationValue()).toHaveTextContent("Shelf");
+    });
+
+    it("names a grid container with the chosen locations by their grid labels", async () => {
+      const box = makeMockContainer({
+        name: "Box",
+        cType: "GRID",
+        gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+        locationsCount: 4,
+      });
+      prepareContainer(box, 2);
+      box.locations?.[0].toggleSelected(true);
+      box.locations?.[3].toggleSelected(true);
+      renderConf({
+        op: aliquot,
+        templateSelection: none,
+        placement: { mode: "container", container: box },
+        english: true,
+      });
+      expect(await screen.findByText("Location")).toBeInTheDocument();
+      expect(locationValue()).toHaveTextContent("Box: A1, B2");
+    });
   });
 });

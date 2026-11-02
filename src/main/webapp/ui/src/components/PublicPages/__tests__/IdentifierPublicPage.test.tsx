@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
+import { PHISHING_DESCRIPTION } from "@/__tests__/mocks/inventoryRichTextMocks";
 import axios from "@/common/axios";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
 import IdentifierPublicPage from "../IdentifierPublicPage";
@@ -34,6 +35,21 @@ describe("IdentifierPublicPage", () => {
         expect(screen.getByText("public:headings.dates")).toBeVisible();
       });
       expect(screen.getByRole("group", { name: "public:labels.dates" })).toMatchTextContent("2024-09-05");
+    });
+  });
+
+  describe("Description", () => {
+    test("shows the description without its form controls", async () => {
+      mockAxios.onGet("/api/inventory/v1/public/view/1").reply(200, {
+        identifiers: [{ ...mockIGSNAttrs(), customFieldsOnPublicPage: true }],
+        description: PHISHING_DESCRIPTION,
+        tags: [],
+      });
+
+      render(<IdentifierPublicPage publicId={"1"} />);
+
+      expect(await screen.findByText("Calibrated light microscope.")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Sign in" })).not.toBeInTheDocument();
     });
   });
 });

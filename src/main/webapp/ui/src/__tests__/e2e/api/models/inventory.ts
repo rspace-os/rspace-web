@@ -8,7 +8,16 @@ export interface ApiInventorySample extends ApiInventoryRecordInfo {
   subSamples: ApiInventorySubSample[];
 }
 
-export type ApiInventorySubSample = ApiInventoryRecordInfo;
+export interface ApiInventoryGridLocation {
+  coordX: number;
+  coordY: number;
+}
+
+export interface ApiInventorySubSample extends ApiInventoryRecordInfo {
+  deleted?: boolean;
+  parentContainers?: Array<{ id: number; globalId: string; name: string; cType: string }>;
+  parentLocation?: ApiInventoryGridLocation | null;
+}
 
 export interface ApiInventoryBarcode {
   data: string;
@@ -51,7 +60,35 @@ export interface ApiInventorySampleRevisions {
   revisions: Array<{ revisionId: number; revisionType: string; record: { version: number } }>;
 }
 
+export interface ApiInventorySearchResult {
+  totalHits: number;
+  records: ApiInventoryRecordInfo[];
+}
+
+export interface ApiInventoryBulkMoveRecord {
+  id: number;
+  globalId: string;
+  type: "SUBSAMPLE" | "CONTAINER";
+  parentContainers: [{ id: number }];
+  parentLocation?: ApiInventoryGridLocation;
+}
+
+export interface ApiInventoryBulkResult {
+  status: string;
+  successCount: number;
+  errorCount: number;
+  results: Array<{ record: ApiInventoryRecordInfo | null; error: { errors: string[] } | null }>;
+}
+
+export interface ApiInventoryAliquotRequest {
+  origin: { globalId: string; amountTaken: ApiInventoryQuantity };
+  sampleName: string;
+  count: number;
+  eachAmount: ApiInventoryQuantity;
+}
+
 export interface ApiInventorySubSampleMoveRequest {
   parentContainers: [{ id: number }];
-  parentLocation: { coordX: number; coordY: number };
+  /** Required for a grid container, omitted for a list container. */
+  parentLocation?: { coordX: number; coordY: number };
 }

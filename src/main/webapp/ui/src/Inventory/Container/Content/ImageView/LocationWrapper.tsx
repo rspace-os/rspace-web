@@ -35,13 +35,18 @@ function LocationWrapper({ children, parentRect, location }: LocationWrapperArgs
     }
   }, [parentRect]);
 
+  // Read the position here, not inside the sx callback: MUI runs that callback
+  // while rendering Box, outside this observer, so MobX wouldn't re-render the
+  // marker after setPosition.
+  const { x, y } = location;
+
   return (
     <Box
       component="div"
       sx={(theme) => ({
         position: "absolute",
-        left: location.x,
-        top: location.y,
+        left: x,
+        top: y,
         borderRadius: 5,
         display: "flex",
         alignItems: "center",

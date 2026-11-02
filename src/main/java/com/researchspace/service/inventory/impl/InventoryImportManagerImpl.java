@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
+import com.researchspace.api.v1.controller.InstrumentsApiController;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportInstrumentsSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSamplesSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettings;
@@ -9,6 +10,7 @@ import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInven
 import com.researchspace.api.v1.controller.InventoryImportPostFullValidator.ApiInventoryImportPostFull;
 import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
+import com.researchspace.api.v1.controller.SubSampleApiPutValidator;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
@@ -77,6 +79,8 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   @Autowired private SampleTemplatesApiController templatesController;
   @Autowired private SamplesApiController samplesController;
   @Autowired private ContainersApiController containersController;
+  @Autowired private InstrumentsApiController instrumentsController;
+  @Autowired private SubSampleApiPutValidator subSampleApiPutValidator;
   @Autowired private ContainerApiManager containerManager;
   @Autowired private SampleApiManager sampleManager;
   @Autowired private SubSampleApiManager subSampleManager;
@@ -487,6 +491,10 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
             resultNumber,
             recordErrors,
             csvResult.getCurrentUser());
+        // a row joining a Sample from this import is checked with that Sample at creation
+        if (subSampleCsvResult.getParentSampleGlobalIdForResultNumber(resultNumber) != null) {
+          subSampleApiPutValidator.validate(subSample, recordErrors);
+        }
 
         if (recordErrors.hasErrors()) {
           subSampleCsvResult.changeIntoErrorResult(
@@ -523,7 +531,10 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
             recordErrors,
             csvResult.getCurrentUser());
 
-        if (recordErrors.hasErrors()) {
+        try {
+          instrumentsController.validateCreateInstrumentInput(
+              instrument, recordErrors, csvResult.getCurrentUser());
+        } catch (BindException be) {
           instrumentCsvResult.changeIntoErrorResult(
               instrumentResult, apiControllerAdvice.getApiErrorFromBindException(recordErrors));
         }

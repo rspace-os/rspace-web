@@ -131,6 +131,7 @@
       },
       "import": {
         "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
+        "databaseError": "The database refused the import and nothing was imported. Check the rows for values longer than their fields allow, then try again.",
         "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
         "unrecognizedFileType": "Unrecognized fileType: {0}",
         "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",

@@ -5,7 +5,7 @@ tests (`*.api.spec.ts`) that run against a real RSpace instance.
 
 ## Prerequisites
 
-- Node 24 + pnpm (`corepack enable && pnpm install --frozen-lockfile`)
+- Standalone pnpm (`pnpm install --frozen-lockfile`)
 - Playwright browsers: `pnpm exec playwright install --with-deps`
 - A running RSpace instance (local or remote)
 
@@ -23,7 +23,7 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 |---|---|---|
 | `RSPACE_BASE_URL` | `http://localhost:8080` | Target instance URL |
 | `HEADLESS` | `true` | Set `false` to watch browsers |
-| `E2E_BROWSER` | _(all)_ | Select `chromium`, `firefox`, `webkit`, `mobile`, or `api`. Cloud mode defaults to the three desktop browsers. |
+| `E2E_BROWSER` | _(all)_ | Select `chromium`, `firefox`, `webkit`, `mobile`, or `api`, or a comma-separated list such as `mobile,api`. Cloud mode defaults to the three desktop browsers. |
 | `E2E_CLOUD` | `false` | Set `true` to select community UI specs against RSpace running with `deployment.cloud=true`. |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | `sysWisc23!` | Sysadmin password |
@@ -116,9 +116,11 @@ both the Playwright config and authentication setup. Add or change browser
 projects there so their login state stays consistent with the runner.
 
 CI varies the `cloud` deployment property independently of the browser in
-`.github/workflows/e2e.yml`. Community jobs run unsharded in both mock and real
-integration modes, each with its own server. The same `E2E_CLOUD` value sets
-the server property and selects the test suite.
+`.github/workflows/e2e.yml`. One unsharded community job runs all three desktop
+browsers against its own server in both mock and real integration modes. The
+same `E2E_CLOUD` value sets the server property and selects the test suite.
+Short suites share a job to save runners: `E2E_BROWSER=mobile,api` runs the
+mobile and API projects together.
 
 Accounts created through the signup form and groups created through the UI are
 left behind; only `clientSysadmin.createUser` accounts are disabled at teardown.

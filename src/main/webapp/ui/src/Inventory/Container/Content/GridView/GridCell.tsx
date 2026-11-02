@@ -1,7 +1,8 @@
 import TableCell from "@mui/material/TableCell";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useEffect, useRef } from "react";
+import React, { type ReactNode, useContext, useEffect, useRef } from "react";
+import SearchContext from "@/stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
@@ -45,6 +46,12 @@ export type GridCellArgs = {
   columnsUnderHover: Set<number>;
   columnIndex: number;
   hoverEffect: boolean;
+
+  /**
+   * In a selection-only grid, called when the cell is pressed with the mouse, before it takes
+   * keyboard focus, so the arrow keys and Escape act from the clicked cell.
+   */
+  onPointerFocus: (coord: { x: number; y: number }) => void;
 };
 
 function GridCell({
@@ -55,8 +62,10 @@ function GridCell({
   columnsUnderHover,
   columnIndex,
   hoverEffect,
+  onPointerFocus,
 }: GridCellArgs): ReactNode {
   const cellRef = useRef<HTMLTableCellElement>(null);
+  const { search } = useContext(SearchContext);
 
   const resizeObserver = useRef(
     new ResizeObserver(() => {
@@ -84,8 +93,12 @@ function GridCell({
       align="center"
       onMouseDown={(e: React.MouseEvent) => {
         e.preventDefault();
+        if (!search.uiConfig.dragAndDropDisabled) return;
+        onPointerFocus({ x: location.coordX, y: location.coordY });
+        cellRef.current?.querySelector<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
       }}
       onFocus={() => {
+        if (location.selected || search.uiConfig.dragAndDropDisabled) return;
         location.toggleSelected(true);
       }}
       onMouseEnter={() => {
@@ -102,6 +115,7 @@ function GridCell({
         color: "grey",
         borderBottom: "none",
         "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
+        "&:focus-within": { boxShadow: `inset 0 0 0 2px ${theme.palette.primary.main}` },
         padding: "3px !important",
         width,
         background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",

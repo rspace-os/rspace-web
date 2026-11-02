@@ -1,9 +1,10 @@
+import "@/__tests__/__mocks__/resizeObserver";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import AlertContext from "../../../../stores/contexts/Alert";
-import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockSubSample, subsampleAttrs } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
@@ -25,6 +26,9 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
     },
     authStore: {
       isSynchronizing: false,
+    },
+    moveStore: {
+      isMoving: false,
     },
   }),
 }));
@@ -160,6 +164,33 @@ describe("CreateDialog", () => {
 
       expect(createButton()).toBeEnabled();
       await user.click(createButton());
+    });
+    test("A grid container's location picker does not let the user drag existing items", async () => {
+      const user = userEvent.setup();
+      const container = makeMockContainer({
+        canStoreContainers: true,
+        canStoreSamples: true,
+        cType: "GRID",
+        gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+        locationsCount: 4,
+        contentSummary: { totalCount: 1, subSampleCount: 0, containerCount: 1, instrumentCount: 0 },
+        locations: [
+          { id: 11, coordX: 1, coordY: 1, content: containerAttrs({ id: 9, globalId: "IC9", name: "Rack" }) },
+        ],
+      });
+      vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={container} open={true} onClose={() => {}} />
+          </AlertContext.Provider>
+        </ThemeProvider>,
+      );
+      await user.click(
+        await screen.findByRole("radio", { name: "inventory:container.createOptions.newContainer.label" }),
+      );
+      const [occupied] = (await screen.findAllByRole("cell")).filter((c) => c.hasAttribute("aria-selected"));
+      expect(within(occupied).getByRole("button")).toHaveAttribute("aria-disabled", "true");
     });
     /*
      * Writing a test for picking locations in grid and visual containers is
