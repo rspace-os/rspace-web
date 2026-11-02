@@ -121,6 +121,11 @@ transaction. Rollback suppresses both effects. Without synchronization, delivery
 remains immediate. `NotificationAfterCommitIT` exercises commit, rollback, and
 persistence of a failure notification when a broadcaster throws.
 
+Because the unread-count update now runs after commit, a notification tracker
+failure surfaces to the caller after the notification has already been saved;
+it no longer rolls the notification back. `doCreateNotification` still delivers
+immediately.
+
 ## Transactions in tests
 
 This is covered in the 'Testing' section of
