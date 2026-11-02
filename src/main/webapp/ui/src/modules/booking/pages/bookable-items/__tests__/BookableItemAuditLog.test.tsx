@@ -62,6 +62,23 @@ beforeEach(() => {
 });
 
 describe("BookableItemAuditLog", () => {
+  it("labels the permanent-deletion timestamp and retains other recorded field names", async () => {
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () =>
+        HttpResponse.json(
+          auditPage([{ ...event, action: "DELETE", payload: { deletedAt: "2026-08-25T10:42:18Z", enabled: true } }]),
+        ),
+      ),
+    );
+    renderAudit();
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByText("booking:bookableItemDetails.audit.values.deletedAt")).toBeVisible();
+    expect(table.getByText("2026-08-25T10:42:18Z")).toBeVisible();
+    expect(table.getByText("enabled")).toBeVisible();
+    expect(table.queryByText("deletedAt")).not.toBeInTheDocument();
+  });
+
   it("loads a fresh daily snapshot and renders exact duplicates as separate rows", async () => {
     let request: Request | undefined;
     server.use(
