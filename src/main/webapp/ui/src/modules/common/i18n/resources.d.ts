@@ -4525,7 +4525,7 @@ export default interface Resources {
             "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
             "requestFulfilled": "Request {id} will be marked as fulfilled",
             "subsamplesMoved": "Subsamples that are currently on your bench will be moved to {requester}'s bench",
-            "subsamplesTransferred": "{count, plural, =2 {Both subsamples will be transferred to user {requester}} other {All # subsamples will be transferred to user {requester}}}"
+            "subsamplesTransferred": "{count, plural, =2 {Both subsamples will be transferred to {requester}} other {All # subsamples will be transferred to {requester}}}"
           },
           "heading": "Hand over {sampleName} to {requester}",
           "newSampleHint": "The new sample {sampleName} has now been created and is currently in your own Inventory. If you Cancel the transfer now it will remain in your Inventory until it has been transferred manually.",

@@ -15,29 +15,24 @@ export type FilterOption<T extends string> = { value: T; labelKey: ParseKeys<"in
  * own anchor state and closes itself on selection.
  */
 export default function FilterDropdown<T extends string>({
-  chipLabelKey,
+  chipLabel,
   value,
   options,
   onChange,
 }: {
-  /** An i18n key taking one `{value}` interpolation - the selected option's own translated label. */
-  chipLabelKey: ParseKeys<"inventory">;
+  /** Builds the chip's own text from the selected option's translated label (blank if none). */
+  chipLabel: (selectedLabel: string) => string;
   value: T;
   options: ReadonlyArray<FilterOption<T>>;
   onChange: (value: T) => void;
 }): React.ReactNode {
-  const { t: tRaw } = useTranslation("inventory");
-  // i18next's own overloads infer the options shape from a literal `Key`; a key typed as the
-  // wider ParseKeys<"inventory"> union (needed so the two call sites below can still pass any
-  // real key) defeats that inference. This narrower view of the same function keeps the calls
-  // below trivial while FilterOption's own key fields still validate against the real catalog.
-  const t = tRaw as (key: string, options?: Record<string, unknown>) => string;
+  const { t } = useTranslation("inventory");
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const selectedOption = options.find((option) => option.value === value);
 
   return (
     <DropdownButton
-      name={t(chipLabelKey, { value: selectedOption ? t(selectedOption.labelKey) : "" })}
+      name={chipLabel(selectedOption ? t(selectedOption.labelKey) : "")}
       onClick={({ target }) => setAnchorEl(target as HTMLElement)}
     >
       <StyledMenu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
