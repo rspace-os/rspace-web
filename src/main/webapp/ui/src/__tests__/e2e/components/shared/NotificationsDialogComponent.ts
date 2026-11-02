@@ -55,7 +55,7 @@ export class NotificationsDialogComponent {
   }
 
   async downloadExportArchive(rowText: string): Promise<Buffer> {
-    // The download link's text is its URL, so it has no stable accessible name to query by.
+    // The download link's text is the "Download archive" label.
     const link = this.row(rowText).locator("a[href*='/export/ajax/downloadArchive/']");
     const response = await this.page.request.get(await this.hrefOf(link, rowText));
     await assertOk(response, "GET");

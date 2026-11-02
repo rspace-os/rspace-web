@@ -2722,7 +2722,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     String htmlExportNotificationMsg = htmlNotification.getNotificationMessage();
     assertThat(htmlExportNotificationMsg)
         .as(htmlExportNotificationMsg)
-        .contains("<a href='http://www.google.com'>http://www.google.com</a>");
+        .contains("<a href='http://www.google.com'>Download archive</a>");
     assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("/export/report/");
     assertThat(htmlExportNotificationMsg)
         .as(htmlExportNotificationMsg)

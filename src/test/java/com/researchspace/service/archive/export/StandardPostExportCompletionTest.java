@@ -196,7 +196,7 @@ public class StandardPostExportCompletionTest {
   }
 
   @Test
-  public void s3ExportNotificationShowsPresignedUrlAsLinkText(@TempDir Path tempDir)
+  public void s3ExportNotificationShowsDownloadLabelWithPresignedUrl(@TempDir Path tempDir)
       throws Exception {
     String s3Url = "https://bucket.s3.eu-west-2.amazonaws.com/archives/a.zip?X-Amz-Expires=3600";
     File exportFile = Files.writeString(tempDir.resolve("a.zip"), "zip").toFile();
@@ -232,7 +232,7 @@ public class StandardPostExportCompletionTest {
     ArgumentCaptor<String> msg = ArgumentCaptor.forClass(String.class);
     verify(commMgr).updateNotificationMessage(eq(1L), msg.capture());
     assertThat(msg.getValue())
-        .contains("<a href='" + s3Url + "'>" + s3Url + "</a>")
+        .contains("<a href='" + s3Url + "'>Download archive</a>")
         .doesNotContain("downloadArchive");
   }
 }
