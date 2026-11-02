@@ -24,7 +24,7 @@ export function BookableItemRulesReadOut({ configuration }: { configuration: Boo
         ? t("bookableItemDetails.unlimited")
         : formatDurationMinutes(configuration.maxBookingDurationMinutes),
     ],
-    [t("settings.fields.buffer"), formatDurationMinutes(configuration.bufferMinutes)],
+    [t("bookableItemDetails.fields.buffer"), formatDurationMinutes(configuration.bufferMinutes)],
     [
       t("bookableItemDetails.fields.doubleBooking"),
       configuration.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),

@@ -1019,6 +1019,7 @@ export default interface Resources {
         "requester": "Requester"
       },
       "fields": {
+        "buffer": "Gap before and after bookings",
         "createdAt": "Created at",
         "createdBy": "Created by",
         "doubleBooking": "Allow double booking",
