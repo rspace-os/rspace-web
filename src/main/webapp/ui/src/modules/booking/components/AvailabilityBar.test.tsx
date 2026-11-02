@@ -70,6 +70,75 @@ async function renderRoutedAvailabilityBar(props: Partial<React.ComponentProps<t
 }
 
 describe("AvailabilityBar", () => {
+  it("describes unbuffered source times, overlap intersections, and visible gaps", async () => {
+    await renderAvailabilityBar({
+      periodStart: new Date("2026-08-12T08:00:00Z"),
+      periodEnd: new Date("2026-08-12T12:00:00Z"),
+      intervals: [
+        sourced(
+          "buffered",
+          "2026-08-12T08:45:00Z",
+          "2026-08-12T10:15:00Z",
+          "booking",
+          "2026-08-12T09:00:00Z",
+          "2026-08-12T10:00:00Z",
+        ),
+        sourced("blockout", "2026-08-12T09:30:00Z", "2026-08-12T11:00:00Z", "blockout"),
+      ],
+    });
+    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
+      "Availability period: Aug 12, 2026, 08:00–12:00. Available: Aug 12, 2026, 08:00–08:45 and Aug 12, 2026, 11:00–12:00. Booked: Aug 12, 2026, 09:00–10:00. Blocked out: Aug 12, 2026, 09:30–11:00. Booked and blocked out: Aug 12, 2026, 09:30–10:15. Gap before or after a booking: Aug 12, 2026, 08:45–09:00.",
+    );
+  });
+  it.each([
+    {
+      name: "overnight",
+      timeZone: "UTC",
+      start: "2026-08-12T23:30:00Z",
+      end: "2026-08-13T00:30:00Z",
+      bookingStart: "2026-08-12T23:45:00Z",
+      bookingEnd: "2026-08-13T00:15:00Z",
+      expected:
+        "Booked: Aug 12, 2026, 23:45–Aug 13, 2026, 00:15. Gap before or after a booking: Aug 12, 2026, 23:30–23:45 and Aug 13, 2026, 00:15–00:30.",
+    },
+    {
+      name: "clock-change",
+      timeZone: "Europe/London",
+      start: "2026-10-25T00:45:00Z",
+      end: "2026-10-25T02:00:00Z",
+      bookingStart: "2026-10-25T01:15:00Z",
+      bookingEnd: "2026-10-25T01:45:00Z",
+      expected:
+        "Booked: Oct 25, 2026, 01:15 +00:00–01:45 +00:00. Gap before or after a booking: Oct 25, 2026, 01:45 +01:00–01:15 +00:00 and Oct 25, 2026, 01:45 +00:00–02:00 +00:00.",
+    },
+  ])(
+    "preserves $name dates and offsets in booking and gap descriptions",
+    async ({ timeZone, start, end, bookingStart, bookingEnd, expected }) => {
+      await renderAvailabilityBar({
+        timeZone,
+        periodStart: new Date(start),
+        periodEnd: new Date(end),
+        intervals: [sourced("buffered", start, end, "booking", bookingStart, bookingEnd)],
+      });
+      expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
+        expect.stringContaining(expected),
+      );
+    },
+  );
+
+  it("keeps clock-change offsets in a same-day accessible range", async () => {
+    await renderAvailabilityBar({
+      timeZone: "Europe/London",
+      periodStart: new Date("2026-10-25T00:00:00Z"),
+      intervals: [sourced("clock-change", "2026-10-25T00:30:00Z", "2026-10-25T01:30:00Z")],
+    });
+    expect(
+      screen.getByRole("button", {
+        name: "Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event",
+      }),
+    ).toHaveAccessibleName("Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event");
+  });
+
   it("explains an empty DST display window without drawing a misleading availability bar", async () => {
     await renderAvailabilityBar({ periodEnd: periodStart });
     expect(
@@ -83,7 +152,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available for the full period.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available for the full period.",
     );
     expect(screen.queryByText("Time zone: UTC")).not.toBeInTheDocument();
     await expectAccessible(graphic);
@@ -122,7 +191,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 01:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 12:00 UTC. Blocked out: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 01:00 UTC.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 01:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–12:00. Blocked out: Aug 12, 2026, 00:00–01:00.",
     );
   });
 
@@ -144,7 +213,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC. Blocked out: Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC. Booked and blocked out: Aug 12, 2026, 10:00 UTC–Aug 12, 2026, 11:00 UTC.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 00:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–10:00. Blocked out: Aug 12, 2026, 11:00–12:00. Booked and blocked out: Aug 12, 2026, 10:00–11:00.",
     );
   });
 
@@ -159,12 +228,12 @@ describe("AvailabilityBar", () => {
     expect(screen.getAllByRole("button")).toHaveLength(2);
     expect(
       screen.getByRole("button", {
-        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event",
+        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event",
       }),
     ).toBeVisible();
     expect(
       screen.getByRole("button", {
-        name: "Confocal microscope, Booked, Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC, 1 event",
+        name: "Confocal microscope, Booked, Aug 12, 2026, 11:00–12:00, 1 event",
       }),
     ).toBeVisible();
   });
@@ -179,10 +248,10 @@ describe("AvailabilityBar", () => {
     });
 
     const leftSlice = screen.getByRole("button", {
-      name: "Confocal microscope, Booked, Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 01:00 UTC, 1 event",
+      name: "Confocal microscope, Booked, Aug 12, 2026, 00:00–01:00, 1 event",
     });
     const rightSlice = screen.getByRole("button", {
-      name: "Confocal microscope, Booked, Aug 12, 2026, 23:00 UTC–Aug 13, 2026, 00:00 UTC, 1 event",
+      name: "Confocal microscope, Booked, Aug 12, 2026, 23:00–Aug 13, 2026, 00:00, 1 event",
     });
     await user.click(leftSlice);
     expect(leftSlice).toHaveAttribute("data-popup-open");
@@ -207,7 +276,7 @@ describe("AvailabilityBar", () => {
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 12:00 UTC.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 00:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–12:00.",
     );
   });
 
@@ -281,7 +350,7 @@ describe("AvailabilityBar", () => {
 
     await user.hover(
       await screen.findByRole("button", {
-        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event",
+        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event",
       }),
     );
     const dialog = await screen.findByRole("dialog");
@@ -374,7 +443,7 @@ describe("AvailabilityBar", () => {
     });
 
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 15, 2026, 00:00 UTC. Available: Aug 12, 2026, 00:00 UTC–Aug 14, 2026, 20:00 UTC and Aug 14, 2026, 22:00 UTC–Aug 15, 2026, 00:00 UTC. Booked: Aug 14, 2026, 20:00 UTC–Aug 14, 2026, 22:00 UTC.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 15, 2026, 00:00. Available: Aug 12, 2026, 00:00–Aug 14, 2026, 20:00 and Aug 14, 2026, 22:00–Aug 15, 2026, 00:00. Booked: Aug 14, 2026, 20:00–22:00.",
     );
   });
 
@@ -414,7 +483,7 @@ describe("AvailabilityBar", () => {
     const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00 GMT+2.");
     expect(marker).toHaveStyle({ left: "50%" });
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 GMT+2–Aug 13, 2026, 00:00 GMT+2. Available for the full period. Current time: Aug 12, 2026, 12:00 GMT+2.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available for the full period. Current time: Aug 12, 2026, 12:00 GMT+2.",
     );
     expect(screen.queryByText("Time zone: Europe/Berlin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Available/)).not.toBeInTheDocument();

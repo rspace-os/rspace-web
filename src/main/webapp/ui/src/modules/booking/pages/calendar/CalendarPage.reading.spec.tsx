@@ -292,12 +292,10 @@ describe("Calendar page", () => {
     await calendar.timeGridLayout.click();
     await calendar.week.click();
 
-    const visibleIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace (ada)", { exact: true });
+    const visibleIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace", { exact: true });
     await expect.element(visibleIdentity).toBeVisible();
     expect(visibleIdentity.element().closest('[data-slot="user-badge"]')).not.toBeNull();
-    await expect
-      .element(calendar.event("Busy").getByText("Ada Lovelace (ada)", { exact: true }))
-      .not.toBeInTheDocument();
+    await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
 
     await calendar.month.click();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
@@ -333,13 +331,11 @@ describe("Calendar page", () => {
     await calendar.timeGridLayout.click();
     await expect.element(calendar.timeGrid).toBeVisible();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    const compactIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace (ada)", { exact: true });
+    const compactIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace", { exact: true });
     await expect.element(compactIdentity).toBeVisible();
     expect(compactIdentity.element().closest('[data-slot="user-badge"]')).not.toBeNull();
     await expect.element(calendar.event("Busy")).toBeVisible();
-    await expect
-      .element(calendar.event("Busy").getByText("Ada Lovelace (ada)", { exact: true }))
-      .not.toBeInTheDocument();
+    await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
     await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(3);
     expect(bookingPageRequests.calendarBookingRequests[0].searchParams.get("fields[bookings]")).toBe(
       calendarBookingFields,

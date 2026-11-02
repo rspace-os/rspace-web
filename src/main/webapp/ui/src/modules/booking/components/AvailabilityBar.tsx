@@ -1,4 +1,5 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { Temporal } from "@js-temporal/polyfill";
 import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -261,8 +262,26 @@ export function AvailabilityBar({
     day: "numeric",
     timeZone,
   });
-  const formatRange = ({ startsAt, endsAt }: TimestampInterval) =>
-    `${itemDateTimeFormatter.format(startsAt)}–${itemDateTimeFormatter.format(endsAt)}`;
+  const periodFormatter = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone,
+  });
+  const formatRange = ({ startsAt, endsAt }: TimestampInterval) => {
+    const first = Temporal.Instant.fromEpochMilliseconds(Number(startsAt)).toZonedDateTimeISO(timeZone);
+    const last = Temporal.Instant.fromEpochMilliseconds(Number(endsAt)).toZonedDateTimeISO(timeZone);
+    const clockChanges =
+      first.startOfDay().offset !== first.startOfDay().add({ days: 1 }).offset || first.offset !== last.offset;
+    const startLabel = periodFormatter.format(startsAt);
+    const endLabel = first.toPlainDate().equals(last.toPlainDate())
+      ? timeFormatter.format(endsAt)
+      : periodFormatter.format(endsAt);
+    return clockChanges ? `${startLabel} ${first.offset}–${endLabel} ${last.offset}` : `${startLabel}–${endLabel}`;
+  };
   const formatTimeRange = ({ startsAt, endsAt }: TimestampInterval) =>
     `${timeFormatter.format(startsAt)}–${timeFormatter.format(endsAt)}`;
   const period = formatRange({ startsAt: start, endsAt: end });
@@ -280,7 +299,19 @@ export function AvailabilityBar({
       ? t("availabilityBar.fullAvailable")
       : stateOrder
           .flatMap((state) => {
-            const ranges = slices.filter((slice) => slice.state === state).map(formatRange);
+            const ranges = [
+              ...new Set(
+                slices
+                  .filter((slice) => slice.state === state)
+                  .flatMap((slice) =>
+                    state === "available" || state === "overlap" || !slice.intervals.every(hasValidSource)
+                      ? [formatRange(slice)]
+                      : slice.intervals
+                          .toSorted((left, right) => left.source.startsAt.getTime() - right.source.startsAt.getTime())
+                          .map(({ source }) => formatRange(source)),
+                  ),
+              ),
+            ];
             return ranges.length === 0
               ? []
               : [
@@ -290,7 +321,29 @@ export function AvailabilityBar({
                 ];
           })
           .join(" ");
-  const description = [t("availabilityBar.summary", { period, states }), nowLabel].filter(Boolean).join(" ");
+  const gapRanges = slices.flatMap((slice) => {
+    if (slice.state !== "booking" || !slice.intervals.every(hasValidSource)) return [];
+    return buildAvailabilitySlices(
+      slice.intervals.map((interval) => ({
+        ...interval,
+        startsAt: interval.source.startsAt,
+        endsAt: interval.source.endsAt,
+      })),
+      new Date(slice.startsAt),
+      new Date(slice.endsAt),
+    )
+      .filter((part) => part.state === "available")
+      .map(formatRange);
+  });
+  const gapDescription = gapRanges.length
+    ? t("availabilityBar.ranges.gap", { ranges: formatList(gapRanges, locale) })
+    : "";
+  const description = [
+    t("availabilityBar.summary", { period, states: [states, gapDescription].filter(Boolean).join(" ") }),
+    nowLabel,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const currentSegmentIndex =
     nowTimestamp === null
       ? -1

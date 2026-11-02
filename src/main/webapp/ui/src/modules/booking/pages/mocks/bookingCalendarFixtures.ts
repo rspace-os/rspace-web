@@ -36,7 +36,7 @@ export const ownBooking: BookingListDocument = {
   end: "2026-08-17T10:00:00Z",
   state: "CONFIRMED",
   purpose: "Cell imaging",
-  bookedBy: "Ada Lovelace (ada)",
+  bookedBy: "Ada Lovelace",
   privacy: "full",
   canEdit: true,
   ...timestamps,

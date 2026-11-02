@@ -81,9 +81,9 @@ describe("BookingEventList", () => {
     );
     renderList();
 
-    await screen.findAllByText("Ada Lovelace (ada)");
+    await screen.findAllByText("Ada Lovelace");
     const table = screen.getByRole("table");
-    expect(within(table).getByText("Ada Lovelace (ada)")).toBeVisible();
+    expect(within(table).getByText("Ada Lovelace")).toBeVisible();
     expect(within(table).getByText("Cell imaging")).toBeVisible();
     expect(within(table).getByText("booking:bookableItemDetails.events.busy")).toBeVisible();
     expect(within(table).getAllByRole("time")).toHaveLength(2);

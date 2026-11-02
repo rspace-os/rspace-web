@@ -25,7 +25,7 @@ const sourced = (
             kind: "BOOKING" as const,
             privacy: "full" as const,
             purpose: "Cell imaging",
-            bookedBy: "Ada Lovelace (ada)",
+            bookedBy: "Ada Lovelace",
           },
         }
       : {}),
