@@ -52,9 +52,9 @@ export class OperationWizardComponent {
 
   /**
    * The common case this component is built around: an Aliquot with the default amounts, no
-   * documentation, and no template, naming the new sample `newSampleName`. Leaves whatever opens
-   * once the wizard closes (e.g. a Transfer Ownership dialog, for the Sample Requests flow) for
-   * the caller to interact with.
+   * documentation, no template, and left on the workbench (the Location step's own default),
+   * naming the new sample `newSampleName`. Leaves whatever opens once the wizard closes (e.g. a
+   * Transfer Ownership dialog, for the Sample Requests flow) for the caller to interact with.
    */
   async performAliquot(newSampleName: string): Promise<void> {
     await this.waitForOpen();
@@ -64,7 +64,8 @@ export class OperationWizardComponent {
     await this.selectNoTemplate();
     await this.next(); // template -> amounts
     await this.next(); // amounts -> documentation
-    await this.next(); // documentation -> confirm
+    await this.next(); // documentation -> location
+    await this.next(); // location (leaves "Leave on my workbench" selected) -> confirm
     await this.perform();
   }
 }
