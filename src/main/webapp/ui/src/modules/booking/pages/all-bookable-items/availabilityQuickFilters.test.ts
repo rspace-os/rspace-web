@@ -927,10 +927,13 @@ describe("availability quick filters", () => {
               updatedAt: "2026-08-17T08:00:00Z",
             },
           ],
-          totalDocs: 1,
-          totalPages: 1,
           page: 1,
           hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
         }),
       ),
     );
@@ -952,7 +955,16 @@ describe("availability quick filters", () => {
   it("distinguishes before opening, open now, and after closing", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+        HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        }),
       ),
     );
     const restricted = {
@@ -988,7 +1000,16 @@ describe("availability quick filters", () => {
       }),
       http.get("/api/v2/bookings", () => {
         bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+        return HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        });
       }),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -1021,7 +1042,16 @@ describe("availability quick filters", () => {
   ])("classifies the independent hours at %s", async (time, category) => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+        HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        }),
       ),
     );
     const result = await loadAvailabilityQuickIndex(
@@ -1056,7 +1086,16 @@ describe("availability quick filters", () => {
       }),
       http.get("/api/v2/bookings", () => {
         bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+        return HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        });
       }),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -1080,7 +1119,16 @@ describe("availability quick filters", () => {
       http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([configuration]))),
       http.get("/api/v2/bookings", () => {
         bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+        return HttpResponse.json({
+          docs: [],
+          page: 1,
+          hasNextPage: false,
+          limit: 100,
+          pagingCounter: 1,
+          hasPrevPage: false,
+          prevPage: null,
+          nextPage: null,
+        });
       }),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
