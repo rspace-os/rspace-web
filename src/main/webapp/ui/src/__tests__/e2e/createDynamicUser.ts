@@ -1,7 +1,13 @@
 import type { SysadminClient } from "@/__tests__/e2e/api/clients/SysadminClient";
 import { alphaNumericUnique, DYNAMIC_USER_PASSWORD, E2E_AFFILIATION } from "@/__tests__/e2e/testData";
 
-export type DynamicUser = { username: string; password: string; fullName: string; apiKey: string; email: string };
+export type DynamicUser = {
+  username: string;
+  password: string;
+  fullName: string;
+  apiKey: string;
+  email: string;
+};
 
 // Shared across specs and fixtures
 export async function createDynamicUser(
