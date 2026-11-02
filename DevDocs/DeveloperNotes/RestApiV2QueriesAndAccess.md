@@ -306,8 +306,10 @@ The shared `ResourceAccessEditor` consumes the access document, capabilities, gr
 and concurrency contract. Resource adapters supply translated role labels and notices.
 
 The React `ResourceAccessEditor` keeps its draft within one resource and bearer-token session.
-Changing either starts a fresh editor; access documents and grantee search results use the same
-session boundary in their query keys. A failed background or conflict refresh keeps the loaded
+Changing either starts a fresh editor. Access-document and grantee-search query keys use the
+stable effective-user and operated-as scope from the existing current-user cache, so refreshing a
+token does not create another data cache. `resourceAccessQueries` in `resourceAccess.ts` owns both key and fetcher shapes;
+its resource root also covers the resource's Table List rows. A failed background or conflict refresh keeps the loaded
 document, unsaved draft and navigation guard mounted. After a stale replacement, Retry loading
 latest remains available and saving stays blocked until recovery succeeds. A successful Leave closes
 its confirmation even if the caller retains inherited access. Its optional navigation callback runs
@@ -586,8 +588,9 @@ Declare each non-standard error in the resource spec. Each mapping:
 | 2. | Resolves the response detail from the stable message key. |
 | 3. | Adds the error response to OpenAPI. |
 
-Use `ApiV2ErrorMapping.of` with an argument extractor when a localized detail needs values from
-the exception. Keep runtime translation and the documented response on the same mapping.
+The six-argument `ApiV2ErrorMapping.of` also extracts `ApiV2Problem.Extensions` from the exception,
+for problems whose body carries typed extension members. Add a new member to `ApiV2Problem` as a
+nullable component so OpenAPI documents it.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
 continues through the normal controller-advice chain. Startup fails if a mapping refers to an
