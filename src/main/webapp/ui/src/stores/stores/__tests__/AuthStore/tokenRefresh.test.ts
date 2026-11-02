@@ -1,7 +1,7 @@
 import "@/stores/stores/RootStore";
 import { runInAction } from "mobx";
 import { HttpResponse, http } from "msw";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import getRootStore from "../../getRootStore";
@@ -14,39 +14,30 @@ const fakeJwt = (secondsToExpiry: number) => {
   return `${encode({ alg: "HS256" })}.${encode({ exp: NOW / 1000 + secondsToExpiry })}.signature`;
 };
 
-const countTokenRequests = (secondsToExpiry: number) => {
-  const requests = { count: 0 };
-  server.use(
-    http.get(TOKEN_URL, () => {
-      requests.count++;
-      return HttpResponse.json({ data: fakeJwt(secondsToExpiry) });
-    }),
-  );
-  return requests;
+const serveTokens = (secondsToExpiry: number) => {
+  const tokenEndpoint = vi.fn(() => HttpResponse.json({ data: fakeJwt(secondsToExpiry) }));
+  server.use(http.get(TOKEN_URL, tokenEndpoint));
+  return tokenEndpoint;
 };
 
-const useFakeClock = () => vi.useFakeTimers({ now: NOW, toFake: ["setTimeout", "clearTimeout", "Date"] });
+beforeEach(() => {
+  vi.useFakeTimers({ now: NOW });
+});
 
 afterEach(() => {
-  const { authStore } = getRootStore();
-  if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
-  runInAction(() => {
-    authStore.isAuthenticated = false;
-  });
-  sessionStorage.clear();
   vi.useRealTimers();
-  vi.restoreAllMocks();
+  // The store is a singleton shared by every test in this file.
+  runInAction(() => {
+    getRootStore().authStore.isAuthenticated = false;
+  });
 });
 
 describe("AuthStore token refresh", () => {
   test("stays authenticated while a refresh is in flight", async () => {
-    let releaseResponse = () => {};
-    const responseGate = new Promise<void>((resolve) => {
-      releaseResponse = resolve;
-    });
+    const response = Promise.withResolvers<void>();
     server.use(
       http.get(TOKEN_URL, async () => {
-        await responseGate;
+        await response.promise;
         return HttpResponse.json({ data: fakeJwt(3600) });
       }),
     );
@@ -58,7 +49,7 @@ describe("AuthStore token refresh", () => {
     const refresh = store.authenticate();
     expect(store.isAuthenticated).toBe(true);
 
-    releaseResponse();
+    response.resolve();
     await refresh;
     expect(store.isAuthenticated).toBe(true);
   });
@@ -66,36 +57,32 @@ describe("AuthStore token refresh", () => {
   test.each(["authenticate", "synchronizeWithSessionStorage"] as const)(
     "%s refreshes the token five minutes before it expires",
     async (method) => {
-      useFakeClock();
       sessionStorage.setItem("id_token", fakeJwt(3600));
-      const requests = countTokenRequests(3600);
+      const tokenEndpoint = serveTokens(3600);
       const store = getRootStore().authStore;
 
       await store[method]();
-      const requestsBeforeRefresh = requests.count;
       expect(store.isAuthenticated).toBe(true);
+      tokenEndpoint.mockClear();
 
       await vi.advanceTimersByTimeAsync((3600 - 300 - 1) * 1000);
-      expect(requests.count).toBe(requestsBeforeRefresh);
+      expect(tokenEndpoint).not.toHaveBeenCalled();
 
       await vi.advanceTimersByTimeAsync(1000);
-      await vi.waitFor(() => expect(requests.count).toBe(requestsBeforeRefresh + 1));
+      expect(tokenEndpoint).toHaveBeenCalledTimes(1);
     },
   );
 
   test("waits at least a minute when a fresh token already looks close to expiry", async () => {
-    useFakeClock();
     // A client clock running ~56 minutes fast sees every new one-hour token as expiring in 240 s.
-    const requests = countTokenRequests(240);
+    const tokenEndpoint = serveTokens(240);
 
     await getRootStore().authStore.authenticate();
-    expect(requests.count).toBe(1);
-
     await vi.advanceTimersByTimeAsync(59 * 1000);
-    expect(requests.count).toBe(1);
+    expect(tokenEndpoint).toHaveBeenCalledTimes(1);
 
     await vi.advanceTimersByTimeAsync(1000);
-    await vi.waitFor(() => expect(requests.count).toBe(2));
+    expect(tokenEndpoint).toHaveBeenCalledTimes(2);
   });
 
   // The page stays mounted behind the redirect to /login, so staying at a "leave page?" prompt keeps unsaved work.
@@ -103,7 +90,7 @@ describe("AuthStore token refresh", () => {
     ["an error status", () => new HttpResponse(null, { status: 403 })],
     ["the login page", () => HttpResponse.html("<html>login</html>")],
   ])("stays authenticated when the refresh gets %s", async (_, response) => {
-    const restoreConsole = silenceConsole(["error"], ["Not implemented: navigation"]);
+    onTestFinished(silenceConsole(["error"], ["Not implemented: navigation"]));
     server.use(http.get(TOKEN_URL, response));
     const store = getRootStore().authStore;
     runInAction(() => {
@@ -113,6 +100,5 @@ describe("AuthStore token refresh", () => {
     await store.authenticate();
 
     expect(store.isAuthenticated).toBe(true);
-    restoreConsole();
   });
 });
