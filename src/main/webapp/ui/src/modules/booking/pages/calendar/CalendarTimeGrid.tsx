@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimeline } from "@/modules/booking/components/DayTimeline";
+import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
@@ -13,7 +14,6 @@ import {
   formatDate,
   scrollCalendarWithArrowKeys,
   timelineEditorPositions,
-  toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
 import { BookingEditorsContext } from "./InlineBookingEditor";
