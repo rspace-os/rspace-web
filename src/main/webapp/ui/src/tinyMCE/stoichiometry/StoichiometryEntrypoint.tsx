@@ -263,7 +263,6 @@ class StoichiometryPlugin {
 
     const recordId = editor.getParam("recordId") as number;
     const renderDialog = createDialogRenderer();
-    renderDialog();
 
     const resetDialog = () => {
       renderDialog({

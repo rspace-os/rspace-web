@@ -56,7 +56,6 @@ class PubchemPlugin {
     };
     const closeDialog = () => renderDialog({ open: false, onClose: () => {} });
     const openDialog = () => renderDialog({ open: true, onClose: closeDialog });
-    closeDialog();
 
     // Add a button to the toolbar
     editor.ui.registry.addButton("pubchem", {
