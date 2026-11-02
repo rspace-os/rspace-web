@@ -1,4 +1,3 @@
-import { createRoot } from "react-dom/client";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
 import i18n from "@/modules/common/i18n";
@@ -7,6 +6,7 @@ import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import { type Alert, mkAlert } from "@/stores/contexts/Alert";
 import GalleryPickerRoot from "@/tinyMCE/gallery/GalleryPickerRoot";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
+import { getPluginDialogRoot } from "@/tinyMCE/pluginDialogRoot";
 import type RsSet from "@/util/set";
 
 declare global {
@@ -21,28 +21,41 @@ declare global {
 
 // biome-ignore lint/complexity/useArrowFunction: TinyMCE instantiates plugins with `new`, so this factory must be constructable (an arrow function throws "is not a constructor")
 parent.tinymce.PluginManager.add("gallery", function (editor) {
-  function* renderGallery(domContainer: HTMLElement): Generator<
-    {
-      open: boolean;
-      onClose?: () => void;
-    },
-    void,
-    { open: boolean; onClose?: () => void }
-  > {
-    const root = createRoot(domContainer);
-    let addAlert: ((alert: Alert) => void) | null = null;
-    while (true) {
-      let newProps: { open: boolean; onClose?: () => void } = {
-        open: false,
-        onClose: () => {},
-      };
-      newProps = yield newProps;
-      const handleSubmit = (files: RsSet<GalleryFile>) => {
-        const localFiles = files.toArray().filter((file): file is LocalGalleryFile => file instanceof LocalGalleryFile);
-        localFiles.forEach((file) => {
-          const recordId = file.id;
+  const root = getPluginDialogRoot("tinymce-gallery");
+  let addAlert: ((alert: Alert) => void) | null = null;
 
-          if (recordId === null) {
+  const handleValidateSelection = (file: GalleryFile) => {
+    if (!(file instanceof LocalGalleryFile) && !(file instanceof RemoteFile)) return IsInvalid("Unsupported file type");
+    if (file.isSystemFolder) return IsInvalid("System Folders cannot be inserted");
+    return IsValid();
+  };
+
+  const renderDialog = (props: { open: boolean; onClose?: () => void }) => {
+    const handleSubmit = (files: RsSet<GalleryFile>) => {
+      const localFiles = files.toArray().filter((file): file is LocalGalleryFile => file instanceof LocalGalleryFile);
+      localFiles.forEach((file) => {
+        const recordId = file.id;
+
+        if (recordId === null) {
+          addAlert?.(
+            mkAlert({
+              message: i18n.t("gallery:insertFileFailed", {
+                fileName: file.name,
+              }),
+              variant: "error",
+            }),
+          );
+          return;
+        }
+
+        void (async () => {
+          try {
+            const recordInformation = await getWorkspaceRecordInformationAjax({
+              recordId,
+            });
+            addFromGallery(recordInformation);
+          } catch (e) {
+            console.error(e);
             addAlert?.(
               mkAlert({
                 message: i18n.t("gallery:insertFileFailed", {
@@ -51,85 +64,44 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
                 variant: "error",
               }),
             );
-            return;
           }
+        })();
+      });
+      const remoteFiles = files.toArray().filter((file): file is RemoteFile => file instanceof RemoteFile);
+      remoteFiles.forEach((file) => {
+        const json = {
+          name: file.name,
+          linktype: file.isFolder ? "directory" : "file",
+          fileStoreId: file.path[0].id,
+          relFilePath: file.remotePath,
+          nfsId: file.nfsId,
+          nfsType: (file.path[0] as Filestore).filesystemType,
+        };
+        window.RS?.insertTemplateIntoTinyMCE?.("netFilestoreLink", json);
+      });
+      if (files.size > localFiles.length + remoteFiles.length) {
+        throw new Error("Some selected files were of an unsupported type");
+      }
+      props.onClose?.();
+    };
 
-          void (async () => {
-            try {
-              const recordInformation = await getWorkspaceRecordInformationAjax({
-                recordId,
-              });
-              addFromGallery(recordInformation);
-            } catch (e) {
-              console.error(e);
-              addAlert?.(
-                mkAlert({
-                  message: i18n.t("gallery:insertFileFailed", {
-                    fileName: file.name,
-                  }),
-                  variant: "error",
-                }),
-              );
-            }
-          })();
-        });
-        const remoteFiles = files.toArray().filter((file): file is RemoteFile => file instanceof RemoteFile);
-        remoteFiles.forEach((file) => {
-          const json = {
-            name: file.name,
-            linktype: file.isFolder ? "directory" : "file",
-            fileStoreId: file.path[0].id,
-            relFilePath: file.remotePath,
-            nfsId: file.nfsId,
-            nfsType: (file.path[0] as Filestore).filesystemType,
-          };
-          window.RS?.insertTemplateIntoTinyMCE?.("netFilestoreLink", json);
-        });
-        if (files.size > localFiles.length + remoteFiles.length) {
-          throw new Error("Some selected files were of an unsupported type");
-        }
-        newProps?.onClose?.();
-      };
-
-      const handleValidateSelection = (file: GalleryFile) => {
-        if (!(file instanceof LocalGalleryFile) && !(file instanceof RemoteFile))
-          return IsInvalid("Unsupported file type");
-        if (file.isSystemFolder) return IsInvalid("System Folders cannot be inserted");
-        return IsValid();
-      };
-
-      root.render(
-        <I18nRoot namespaces={["common"]}>
-          <GalleryPickerRoot
-            open={newProps.open}
-            onClose={newProps.onClose}
-            onSubmit={handleSubmit}
-            validateSelection={handleValidateSelection}
-            onAlertReady={(fn) => {
-              addAlert = fn;
-            }}
-          />
-        </I18nRoot>,
-      );
-    }
-  }
-
-  let domContainer = document.getElementById("tinymce-gallery");
-  if (!domContainer) {
-    domContainer = document.createElement("div");
-    domContainer.id = "tinymce-gallery";
-    document.body.appendChild(domContainer);
-  }
-  const galleryRenderer = renderGallery(domContainer);
-  galleryRenderer.next({ open: false });
+    root.render(
+      <I18nRoot namespaces={["common"]}>
+        <GalleryPickerRoot
+          open={props.open}
+          onClose={props.onClose}
+          onSubmit={handleSubmit}
+          validateSelection={handleValidateSelection}
+          onAlertReady={(fn) => {
+            addAlert = fn;
+          }}
+        />
+      </I18nRoot>,
+    );
+  };
 
   const openGalleryAction = () => {
-    galleryRenderer.next({
-      open: true,
-      onClose: () => {
-        galleryRenderer.next({ open: false });
-      },
-    });
+    renderDialog({ open: true, onClose: () => renderDialog({ open: false }) });
   };
 
   // Add a button to the toolbar

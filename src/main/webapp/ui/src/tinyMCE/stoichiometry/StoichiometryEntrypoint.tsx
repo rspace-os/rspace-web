@@ -1,7 +1,7 @@
 import type React from "react";
-import { createRoot } from "react-dom/client";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { getPluginDialogRoot } from "../pluginDialogRoot";
 import StoichiometryDialogRoot from "./StoichiometryDialogRoot";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
@@ -230,8 +230,8 @@ class StoichiometryPlugin {
       return nodeId;
     };
 
-    const createDialogRenderer = (domContainer: HTMLElement) => {
-      const root = createRoot(domContainer);
+    const createDialogRenderer = () => {
+      const root = getPluginDialogRoot("tinymce-stoichiometry");
       let props: React.ComponentProps<typeof StoichiometryDialogRoot> = {
         open: false,
         onClose: () => {},
@@ -259,20 +259,10 @@ class StoichiometryPlugin {
       };
     };
 
-    if (!document.getElementById("tinymce-stoichiometry")) {
-      const div = document.createElement("div");
-      div.id = "tinymce-stoichiometry";
-      document.body.appendChild(div);
-    }
-    const container = document.getElementById("tinymce-stoichiometry");
-    if (!container) {
-      throw new Error("tinymce-stoichiometry container not found");
-    }
-
     syncExistingStoichiometryTableOnlyPlaceholders();
 
     const recordId = editor.getParam("recordId") as number;
-    const renderDialog = createDialogRenderer(container);
+    const renderDialog = createDialogRenderer();
     renderDialog();
 
     const resetDialog = () => {

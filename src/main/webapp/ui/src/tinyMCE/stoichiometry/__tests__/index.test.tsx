@@ -303,6 +303,19 @@ describe("TinyMCE stoichiometry plugin", () => {
     window.insertActions = new Map<string, InsertAction>();
   });
 
+  // TinyMCE constructs the plugin for every editor, and React allows one root per container.
+  it("renders every editor's dialog into one shared root", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+
+    new StoichiometryPlugin(createEditorHarness({ initialSelectionNode: document.createElement("p") }).editor);
+    new StoichiometryPlugin(createEditorHarness({ initialSelectionNode: document.createElement("p") }).editor);
+
+    expect(mockCreateRoot).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll("#tinymce-stoichiometry")).toHaveLength(1);
+  });
+
   it("registers toolbar/menu/slash actions and opens a new table with a tableOnly div", async () => {
     const registeredPlugins = registerTinymcePlugins();
     const editorDocument = document.implementation.createHTMLDocument("editor");
