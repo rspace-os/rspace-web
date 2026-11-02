@@ -54,6 +54,7 @@ export function useLoadedBookableItemPageActions({
   const queryClient = useQueryClient();
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
+  const [rulesSaveBlocked, setRulesSaveBlocked] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
   const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
@@ -241,5 +242,7 @@ export function useLoadedBookableItemPageActions({
     leaveMutation,
     cancelEdit,
     handleLifecycleAction,
+    rulesSaveBlocked,
+    setRulesSaveBlocked,
   };
 }

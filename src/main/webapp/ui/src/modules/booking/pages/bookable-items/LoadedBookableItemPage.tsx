@@ -102,6 +102,8 @@ export function LoadedBookableItemPage({
     leaveMutation,
     cancelEdit,
     handleLifecycleAction,
+    rulesSaveBlocked,
+    setRulesSaveBlocked,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab, token });
   const [cutoff] = useState(() => new Date().toISOString());
   const formId = `bookable-item-details-${useId()}`;
@@ -234,7 +236,7 @@ export function LoadedBookableItemPage({
                               type="submit"
                               size="sm"
                               form={formId}
-                              disabled={updateMutation.isPending}
+                              disabled={updateMutation.isPending || rulesSaveBlocked}
                               aria-busy={updateMutation.isPending}
                             >
                               {t("bookableItems.actions.save")}
@@ -275,6 +277,7 @@ export function LoadedBookableItemPage({
                         staleEdit={staleEdit}
                         failed={updateMutation.isError}
                         onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                        onSaveBlockedChange={setRulesSaveBlocked}
                       />
                     ) : (
                       <BookableItemRulesReadOut configuration={configuration} />

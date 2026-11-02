@@ -7,12 +7,8 @@ import { server } from "@/__tests__/mswServer";
 import { bookableItemsHandlers, bookableItemsOpenApi } from "../../bookable-items/mocks/bookableItemsMocks";
 import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
-import {
-  renderCalendar,
-  restoreCalendarScrollTo,
-  setupCalendarBookableItems,
-  setupCalendarScrollTo,
-} from "./calendarPageTestUtils";
+import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
+import { renderCalendar } from "./calendarTestHarness";
 
 beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());

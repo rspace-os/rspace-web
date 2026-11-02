@@ -3,6 +3,7 @@ import { bookableItemHeading } from "./bookableItemLocators";
 
 export class BookableItemPage {
   readonly heading: Locator = bookableItemHeading("Confocal microscope", 1);
+  readonly globalId: Locator = page.getByText("IN123", { exact: true });
   readonly bookingsTab: Locator = page.getByRole("tab", { name: "Bookings" });
   readonly detailsTab: Locator = page.getByRole("tab", { name: "Details" });
   readonly auditTab: Locator = page.getByRole("tab", { name: "Audit log" });
@@ -70,6 +71,22 @@ export class BookableItemPage {
 
   get maximumDuration(): Locator {
     return page.getByRole("spinbutton").first();
+  }
+
+  get openingHours(): Locator {
+    return page.getByRole("list", { name: "Opening hours" });
+  }
+
+  dayRow(day: string): Locator {
+    return this.openingHours.getByRole("listitem").filter({ hasText: day });
+  }
+
+  openingStart(day: string): Locator {
+    return this.dayRow(day).getByLabelText("Opening start");
+  }
+
+  openingEnd(day: string): Locator {
+    return this.dayRow(day).getByLabelText("Opening end");
   }
 
   async openEditor(): Promise<void> {
