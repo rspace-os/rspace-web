@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class BookingNotificationData extends NotificationData {
   private String emailDisplayTimezone;
+  private com.researchspace.model.booking.BookingTimeFormat emailTimeFormat;
 
   private String bookingId;
   private String instrumentName;

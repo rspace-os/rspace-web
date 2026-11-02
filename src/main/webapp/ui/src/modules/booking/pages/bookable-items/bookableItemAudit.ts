@@ -1,7 +1,11 @@
 import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { formatIsoWeekday, formatOpeningRange, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingDateTimeLocale,
+  formatBookingDateTime,
+} from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -180,7 +184,7 @@ function parsedArray(value: unknown): unknown {
 }
 
 /** Opening hours as weekday names and scheduling-zone ranges; otherwise undefined. */
-function openingValue(key: string, value: unknown, locale: string): string | undefined {
+function openingValue(key: string, value: unknown, locale: string, timeLocale: string): string | undefined {
   if (key === "openingHours") {
     const exceptions = v.safeParse(OpeningHoursSchema, parsedArray(value));
     if (exceptions.success) {
@@ -190,7 +194,7 @@ function openingValue(key: string, value: unknown, locale: string): string | und
           .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
           .map(
             (exception) =>
-              `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception, locale)}`,
+              `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception, timeLocale)}`,
           ),
         locale,
         { type: "unit" },
@@ -232,19 +236,16 @@ export function recordedValues(
   payload: AuditEvent["payload"],
   locale: string,
   words?: RecordedValueWords,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<[string, string]> {
-  const dateFormat = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "long",
-    hourCycle: bookingHourCycle(),
-    timeZone: "UTC",
-  });
   return Object.entries(payload).map(([key, value]) => {
     if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
       const date = new Date(value);
-      if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
+      if (Number.isFinite(date.getTime())) {
+        return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+      }
     }
-    const opening = openingValue(key, value, locale);
+    const opening = openingValue(key, value, locale, bookingDateTimeLocale(timeFormat));
     if (opening !== undefined) return [key, opening];
     const word = words && wordValue(key, value, words);
     if (word !== undefined) return [key, word];

@@ -4,8 +4,9 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { Booking } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -29,18 +30,9 @@ export function BookingEventList(props: BookingEventListProps) {
 
 function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventListProps) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const formatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.language, {
-        dateStyle: "medium",
-        timeStyle: "short",
-        hourCycle: bookingHourCycle(),
-        timeZone: timezone,
-      }),
-    [i18n.language, timezone],
-  );
   const config = useMemo(
     () =>
       resolveCollectionConfig({
@@ -76,7 +68,9 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
                   displayTimeZone={timezone}
                   instrumentTimeZone={row.timezone}
                 >
-                  <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+                  <time dateTime={row.start}>
+                    {formatBookingPeriod(row.start, row.end, timezone, i18n.language, timeFormat)}
+                  </time>
                 </BookingInstrumentTimeTooltip>
               ),
             },
@@ -91,7 +85,6 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             name: "kind",
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
-            label: t("bookableItemDetails.events.kind"),
             list: {
               width: 180,
               renderCell: ({ row }) =>
@@ -135,7 +128,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
           },
         ],
       } satisfies CollectionConfig<Booking>),
-    [formatter, period, t],
+    [i18n.language, period, t, timeFormat, timezone],
   );
   const queryPrefix = bookingKeys.itemEvents(globalId, period, cutoff);
   const totals = useQuery({
