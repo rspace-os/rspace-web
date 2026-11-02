@@ -8,7 +8,7 @@ import org.hibernate.Session;
 
 /**
  * Prefixes every bare BCrypt verification password with {@code {bcrypt}} so the shared password
- * encoder can read it (RSDEV-894, ADR 0011). The value then stays as it is until the user sets a
+ * encoder can read it (RSDEV-894, ADR 0014). The value then stays as it is until the user sets a
  * new verification password, which is Argon2id. Values already carrying a registered encoder id are
  * skipped, so running it again changes nothing. Any other value could never verify; it is cleared
  * and logged at ERROR, so the user can set a new verification password.

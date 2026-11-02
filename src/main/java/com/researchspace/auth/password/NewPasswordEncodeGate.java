@@ -6,7 +6,7 @@ import org.apache.commons.lang3.Validate;
 /**
  * Shared pool of permits held while sign-up, Google sign-up, LDAP first-login auto-signup and the
  * login and verification password-reset replies hash and save a new password, so anonymous Argon2
- * allocation is bounded by the permit count (ADR 0011). A caller that finds no free permit is
+ * allocation is bounded by the permit count (ADR 0014). A caller that finds no free permit is
  * refused at once; nothing waits.
  */
 public class NewPasswordEncodeGate {
