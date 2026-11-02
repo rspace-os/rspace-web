@@ -9,7 +9,7 @@ import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from 
 import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import { togglePreset, withoutPresets } from "@/modules/common/table-list/presets";
 import type { FilterExpression } from "@/modules/common/table-list/types";
-import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import type { BookingConfiguration } from "../../bookable-items/bookingConfiguration";
 
 export type AvailabilityQuickFilter = CatalogueAvailability;
 export type AllBookableItem = BookingConfiguration & {

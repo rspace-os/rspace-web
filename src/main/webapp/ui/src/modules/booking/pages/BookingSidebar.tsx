@@ -53,7 +53,7 @@ const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean
     {
       key: "allItems",
       icon: LibraryBigIcon,
-      link: <Link {...linkOptions({ to: "/booking/all-items", search: () => ({ date: today }) })} />,
+      link: <Link {...linkOptions({ to: "/booking/all-items" })} />,
     },
     {
       key: "addBooking",

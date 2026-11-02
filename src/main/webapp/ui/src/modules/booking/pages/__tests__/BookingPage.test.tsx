@@ -220,7 +220,7 @@ describe("booking layout", () => {
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
       "href",
-      expect.stringMatching(/^\/booking\/all-items\?date=\d{4}-\d{2}-\d{2}$/),
+      "/booking/all-items",
     );
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.addBooking" })).toHaveAttribute(

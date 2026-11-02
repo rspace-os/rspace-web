@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { todayAvailabilityWindow } from "../../pages/all-bookable-items/availabilityQuickFilters";
+import { todayAvailabilityWindow } from "../../pages/calendar/availability/availabilityQuickFilters";
 import { type CalendarAvailabilityRow, rowAvailabilityIntervals } from "../../pages/calendar/calendarAvailability";
 import {
   type AvailabilityInterval,
