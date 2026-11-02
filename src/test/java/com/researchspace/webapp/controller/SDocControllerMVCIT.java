@@ -69,7 +69,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -83,9 +82,6 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private @Autowired BaseRecordManager baseRecordMgr;
   private @Autowired FieldParser fieldParser;
   @Autowired DocumentCopyManager docCopyMgr;
-
-  @Value("${publishing.anonymousGuest.password}")
-  private String anonymousPassword;
 
   @BeforeEach
   public void setup() throws Exception {
@@ -1042,7 +1038,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     publishAndRegisterForCleanup(owner, doc.getId());
 
     logoutCurrentUser();
-    PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+    PublicDocumentsUtilities.loginAnonymousUser();
 
     mockMvc
         .perform(

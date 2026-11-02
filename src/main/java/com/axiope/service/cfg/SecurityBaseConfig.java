@@ -2,6 +2,7 @@ package com.axiope.service.cfg;
 
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.AccountReviewRequiredAuthorizer;
+import com.researchspace.auth.AnonymousGuestRealm;
 import com.researchspace.auth.ApiRealm;
 import com.researchspace.auth.ExternalAuthPassThruRealm;
 import com.researchspace.auth.GlobalInitSysadminRealm;
@@ -141,6 +142,13 @@ public abstract class SecurityBaseConfig {
   @Bean()
   public Realm globalInitSysadminRealm() {
     GlobalInitSysadminRealm realm = new GlobalInitSysadminRealm();
+    realm.setPermissionResolver(permissionResolver());
+    return realm;
+  }
+
+  @Bean
+  public Realm anonymousGuestRealm() {
+    AnonymousGuestRealm realm = new AnonymousGuestRealm();
     realm.setPermissionResolver(permissionResolver());
     return realm;
   }
