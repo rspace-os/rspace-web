@@ -12,11 +12,16 @@ Item writes compare the credential fingerprint while holding the configuration
 lock; user writes compare the version while holding the user lock. Token storage
 and explicit revocation behavior are unchanged.
 
-Item creation and rotation run in a fresh `READ_COMMITTED` transaction. The
-transaction loads the current subscriber, locks the configuration, checks the
-persisted Booking access list, and then reads and compares the subscription.
-This prevents a caller's older repeatable-read snapshot from replacing a token
-after another request has already rotated it.
+Item create and rotate read current inherited Inventory permissions in
+`BookingCalendarCreationTransaction` at `READ_COMMITTED`. For the permission gate,
+writer registration and mixed source-transaction requirements, see
+[Booking permissions](BookingPermissions.md).
+
+MariaDB supports these operations with `innodb_snapshot_isolation` either off or
+on. With it on, an old repeatable-read snapshot can reject a current locking
+read with error 1020 and roll back the source transaction. Tests specifically
+covering that database error enable it for their transaction and restore the
+connection's previous session setting after completion.
 
 Calendar feed responses use `Cache-Control: private, no-store`,
 `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff`, including
@@ -24,6 +29,16 @@ empty error responses.
 
 ## Access and feed contents
 
-A bookable-item feed is available only while its owner has effective permission to view the
-configuration. Losing that final permission ends the subscription; restoring access does not revive
-it. A personal feed contains the user's requested bookings and the blockouts they created.
+Item subscriptions use the target Inventory item's current permissions. Sharing,
+ownership, user status, group and community changes revalidate subscriptions
+inside the changing transaction. Revoked item links are deleted, so restoring
+access requires a new subscription. Group/community changes revalidate existing
+item subscriptions in batches per subscriber because they can also change
+access through an item's owner. This work grows with the number of item
+subscriptions; keep it outside ordinary feed reads.
+
+A user's own bookings remain readable after losing item access. Personal feeds
+use "Unknown item" for these events and omit item details and links. Item feeds
+and one-time downloads still require current item read permission.
+
+A personal feed contains the user's requested bookings and the blockouts they created.

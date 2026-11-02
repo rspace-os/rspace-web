@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
@@ -23,6 +24,7 @@ public class CommunityServiceManagerImplTest {
 
   @Mock UserDao userDao;
   @Mock CommunityDao communityDao;
+  @Mock BookingCalendarRevocationCoordinator bookingCalendarRevocationCoordinator;
   @InjectMocks CommunityServiceManagerImpl impl;
 
   User communityAdmin1, communityAdmin2;

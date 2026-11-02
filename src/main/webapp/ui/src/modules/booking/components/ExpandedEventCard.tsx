@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
+import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingDetailRows } from "./BookingDetailRows";
 import {
@@ -111,28 +112,32 @@ export function ExpandedEventCard({
         <div className="px-4 py-2">
           <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
           <dd>
-            <InventoryItem
-              name={
-                event.item.canViewConfiguration ? (
-                  <BookableItemName name={event.item.name} globalId={event.item.globalId} />
-                ) : (
-                  event.item.name
-                )
-              }
-              globalId={event.item.globalId}
-              href={event.item.canViewConfiguration ? `/globalId/${event.item.globalId}` : undefined}
-              idLinkLabel={
-                event.item.canViewConfiguration
-                  ? t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })
-                  : undefined
-              }
-              idPlacement="title"
-              className="p-0"
-            >
-              {event.item.location ? (
-                <InventoryLocationLink name={event.item.location.name} globalId={event.item.location.globalId} />
-              ) : null}
-            </InventoryItem>
+            {event.item.globalId ? (
+              <InventoryItem
+                name={
+                  event.item.canViewConfiguration ? (
+                    <BookableItemName name={event.item.name} globalId={event.item.globalId} />
+                  ) : (
+                    event.item.name
+                  )
+                }
+                globalId={event.item.globalId}
+                href={event.item.canViewConfiguration ? `/globalId/${event.item.globalId}` : undefined}
+                idLinkLabel={
+                  event.item.canViewConfiguration
+                    ? t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })
+                    : undefined
+                }
+                idPlacement="title"
+                className="p-0"
+              >
+                {event.item.location ? (
+                  <InventoryLocationLink name={event.item.location.name} globalId={event.item.location.globalId} />
+                ) : null}
+              </InventoryItem>
+            ) : (
+              <UnknownItem size="xs" />
+            )}
           </dd>
         </div>
         <BookingDetailRows

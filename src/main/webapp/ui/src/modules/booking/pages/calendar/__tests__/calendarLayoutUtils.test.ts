@@ -1,7 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { monthDayCount, shiftDate, startOfWeek } from "../calendarLayoutUtils";
+import { ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { monthDayCount, shiftDate, startOfWeek, toTimelineEvent } from "../calendarLayoutUtils";
 
 describe("calendar date layout", () => {
+  it("keeps a retained booking while omitting its redacted target", () => {
+    const event = toTimelineEvent(
+      { ...ownBooking, target: null, timezone: null, canEdit: false, canViewConfiguration: false },
+      "2026-08-17",
+      "UTC",
+    );
+
+    expect(event).toMatchObject({
+      kind: "booking",
+      privacy: "full",
+      title: "common:values.unknownItem",
+      item: { name: "common:values.unknownItem", globalId: null },
+      canEdit: false,
+    });
+  });
+
   it("starts weeks on Monday using the ISO calendar date", () => {
     expect(startOfWeek("2026-03-29")).toBe("2026-03-23");
     expect(startOfWeek("2026-03-30")).toBe("2026-03-30");

@@ -19,7 +19,6 @@ import com.researchspace.service.UserManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.Calendar;
-import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,10 +102,6 @@ public abstract class BaseLoginHelperImpl implements LoginHelper {
   }
 
   private void updateUserLoginHistory(User subject) {
-    Date loginAttempt = new Date();
-    subject.setLastLogin(loginAttempt);
-    subject.setLoginFailure(null);
-    subject.setNumConsecutiveLoginFailures((byte) 0);
-    userMgr.save(subject);
+    userMgr.recordLoginSuccess(subject);
   }
 }

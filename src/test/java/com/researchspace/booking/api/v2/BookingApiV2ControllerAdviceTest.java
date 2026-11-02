@@ -41,13 +41,6 @@ class BookingApiV2ControllerAdviceTest {
   }
 
   @Test
-  void sharing() {
-    String key = "errors.api.v2.bookingConfiguration.defaultSharing.invalid";
-    register(key);
-    check(advice.handleInvalidBookingDefaultSharing(), HttpStatus.BAD_REQUEST, key);
-  }
-
-  @Test
   void policy() {
     for (var reason : BookingPolicyException.Reason.values()) {
       register(reason.errorCode());

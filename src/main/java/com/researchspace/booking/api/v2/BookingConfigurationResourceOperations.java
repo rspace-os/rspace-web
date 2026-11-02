@@ -208,6 +208,16 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public Optional<BookingConfiguration> findByIdForAudit(Long id, User actor) {
+    return enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty();
+  }
+
+  @Override
+  public java.time.Instant relatedAuditFallbackFrom(BookingConfiguration configuration) {
+    return configuration.getCreatedAt() == null ? null : configuration.getCreatedAt().toInstant();
+  }
+
+  @Override
   public Set<String> relatedAuditFields() {
     return Set.of(
         "bookingConfigurationId",
