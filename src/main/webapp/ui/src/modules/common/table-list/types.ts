@@ -154,6 +154,8 @@ export type TableListFilterButtons = {
     description?: string;
     icon?: ReactNode;
     pressed: boolean;
+    /** This preset is already represented in this table's counted expression. */
+    inExpression?: boolean;
     disabled?: boolean;
     count?: number;
     onClick: () => void;
