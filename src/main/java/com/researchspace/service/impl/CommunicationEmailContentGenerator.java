@@ -4,6 +4,7 @@ import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
+import com.researchspace.model.comms.data.OwnerBookingNotificationData;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.NotificationTypeMessages;
 import java.util.Date;
@@ -24,6 +25,23 @@ class CommunicationEmailContentGenerator {
   }
 
   EmailContent generate(Communication communication) {
+    if (communication instanceof Notification notification
+        && notification.getNotificationDataObject() instanceof OwnerBookingNotificationData data) {
+      var model = velocityModelFor(communication);
+      var zone = java.time.ZoneId.of(data.getDisplayTimezone());
+      var timestamp =
+          java.time.format.DateTimeFormatter.ofLocalizedDateTime(
+                  java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT)
+              .withLocale(contentGenerator.getLocale())
+              .withZone(zone)
+              .format(java.time.Instant.now());
+      model.put("bookingTimestamp", timestamp + " (" + zone.getId() + ")");
+      return contentGenerator.render(
+          NotificationTypeMessages.keyFor(notification.getNotificationType()) + "Subject",
+          new Object[] {data.getInstrumentName()},
+          "notification.vm",
+          model);
+    }
     if (communication.isNotification()) {
       return contentGenerator.render(
           "email.notification.subject", "notification.vm", velocityModelFor(communication));
