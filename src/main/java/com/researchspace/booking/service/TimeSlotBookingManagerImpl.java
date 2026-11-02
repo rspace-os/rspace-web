@@ -492,25 +492,31 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     if (overlap.isPresent()) {
       throw new BookingOverlapException(ConflictingEvent.of(overlap.get()));
     }
-    long gap = configuration.getBufferMinutes();
-    if (gap == 0) return;
-    boolean maintenance = requestedKind == BookingEventKind.MAINTENANCE;
-    Date searchStart =
-        maintenance
-            ? Date.from(start.toInstant().minus(gap, ChronoUnit.MINUTES))
-            : buffered.start();
-    Date searchEnd =
-        maintenance ? Date.from(end.toInstant().plus(gap, ChronoUnit.MINUTES)) : buffered.end();
-    Set<BookingEventKind> bufferedKinds =
-        maintenance ? Set.of(BookingEventKind.BOOKING) : includedKinds;
-    Optional<TimeSlotBooking> bufferConflict =
-        BookingCurrentReads.read(
-            () ->
-                bookingDao.findFirstOverlap(
-                    configuration.getId(), searchStart, searchEnd, excludedId, bufferedKinds));
-    if (bufferConflict.isPresent()) {
-      throw new BookingBufferConflictException(
-          ConflictingEvent.of(bufferConflict.get()), configuration.getBufferMinutes());
+    long before = configuration.getBufferBeforeMinutes();
+    long after = configuration.getBufferAfterMinutes();
+    if (before + after == 0) return;
+    for (BookingEventKind existingKind : includedKinds) {
+      boolean maintenance = requestedKind == BookingEventKind.MAINTENANCE;
+      if (maintenance && existingKind == BookingEventKind.MAINTENANCE) continue;
+      long startGap =
+          maintenance ? after : existingKind == BookingEventKind.BOOKING ? before + after : before;
+      long endGap =
+          maintenance ? before : existingKind == BookingEventKind.BOOKING ? before + after : after;
+      Date searchStart = Date.from(start.toInstant().minus(startGap, ChronoUnit.MINUTES));
+      Date searchEnd = Date.from(end.toInstant().plus(endGap, ChronoUnit.MINUTES));
+      Optional<TimeSlotBooking> bufferConflict =
+          BookingCurrentReads.read(
+              () ->
+                  bookingDao.findFirstOverlap(
+                      configuration.getId(),
+                      searchStart,
+                      searchEnd,
+                      excludedId,
+                      Set.of(existingKind)));
+      if (bufferConflict.isPresent()) {
+        throw new BookingBufferConflictException(
+            ConflictingEvent.of(bufferConflict.get()), before, after);
+      }
     }
   }
 

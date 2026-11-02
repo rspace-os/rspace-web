@@ -236,7 +236,11 @@
           "availabilityWindowStart" : {
             "type" : "string"
           },
-          "bufferMinutes" : {
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -700,8 +704,19 @@
               "description" : "A logged-in session is required."
             }
           },
-          "bufferMinutes" : {
-            "description" : "Idle minutes required before and after a booking.",
+          "bufferAfterMinutes" : {
+            "description" : "Unavailable minutes after a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "bufferBeforeMinutes" : {
+            "description" : "Unavailable minutes before a booking.",
             "example" : 15,
             "format" : "int64",
             "type" : "integer",
@@ -986,8 +1001,19 @@
               "description" : "A logged-in session is required."
             }
           },
-          "bufferMinutes" : {
-            "description" : "Idle minutes required before and after a booking.",
+          "bufferAfterMinutes" : {
+            "description" : "Unavailable minutes after a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "bufferBeforeMinutes" : {
+            "description" : "Unavailable minutes before a booking.",
             "example" : 15,
             "format" : "int64",
             "type" : "integer",
@@ -1783,8 +1809,19 @@
               "description" : "A logged-in session is required."
             }
           },
-          "bufferMinutes" : {
-            "description" : "Idle minutes required before and after a booking.",
+          "bufferAfterMinutes" : {
+            "description" : "Unavailable minutes after a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "bufferBeforeMinutes" : {
+            "description" : "Unavailable minutes before a booking.",
             "example" : 15,
             "format" : "int64",
             "type" : "integer",
@@ -2123,8 +2160,13 @@
           "$ref" : "#/components/schemas/ApiV2Problem"
         }, {
           "properties" : {
-            "bufferMinutes" : {
-              "description" : "Minutes that must stay free before and after a booking. Present on errors.api.v2.booking.buffer.",
+            "bufferAfterMinutes" : {
+              "description" : "Minutes that must stay free after another event. Present on errors.api.v2.booking.buffer.",
+              "format" : "int64",
+              "type" : [ "integer", "null" ]
+            },
+            "bufferBeforeMinutes" : {
+              "description" : "Minutes that must stay free before another event. Present on errors.api.v2.booking.buffer.",
               "format" : "int64",
               "type" : [ "integer", "null" ]
             },
@@ -2854,7 +2896,11 @@
           "allowDoubleBooking" : {
             "type" : "boolean"
           },
-          "bufferMinutes" : {
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -3742,7 +3788,11 @@
           "availabilityWindowStart" : {
             "type" : "string"
           },
-          "bufferMinutes" : {
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -3794,7 +3844,13 @@
             "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
             "type" : "string"
           },
-          "bufferMinutes" : {
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "maximum" : 10080,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
             "format" : "int64",
             "maximum" : 10080,
             "minimum" : 0,
@@ -4664,7 +4720,15 @@
                 },
                 "wildcards" : false
               },
-              "bufferMinutes" : {
+              "bufferAfterMinutes" : {
+                "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
+              "bufferBeforeMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
                   "format" : "int64",
@@ -5141,7 +5205,15 @@
                 },
                 "wildcards" : false
               },
-              "bufferMinutes" : {
+              "bufferAfterMinutes" : {
+                "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
+              "bufferBeforeMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
                   "format" : "int64",
@@ -5506,7 +5578,7 @@
           },
           "x-rspace-sort" : {
             "default" : [ "id" ],
-            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "bufferMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
+            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
             "maximumFields" : 5
           }
         }, {
@@ -5586,7 +5658,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -5619,7 +5691,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -5780,7 +5852,15 @@
                 },
                 "wildcards" : false
               },
-              "bufferMinutes" : {
+              "bufferAfterMinutes" : {
+                "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
+              "bufferBeforeMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
                   "format" : "int64",
@@ -6310,7 +6390,8 @@
             "application/json" : {
               "example" : {
                 "allowDoubleBooking" : false,
-                "bufferMinutes" : 15,
+                "bufferAfterMinutes" : 15,
+                "bufferBeforeMinutes" : 15,
                 "enabled" : true,
                 "incrementUnit" : "MINUTES",
                 "maxBookingDurationMinutes" : 120,
@@ -6684,7 +6765,15 @@
                 },
                 "wildcards" : false
               },
-              "bufferMinutes" : {
+              "bufferAfterMinutes" : {
+                "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
+              "bufferBeforeMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
                   "format" : "int64",
@@ -7736,7 +7825,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -7769,7 +7858,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -9582,12 +9671,12 @@
               "application/problem+json" : {
                 "examples" : {
                   "errors.api.v2.booking.buffer" : {
-                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it.",
+                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
                     "value" : {
                       "code" : "errors.api.v2.booking.buffer",
-                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it.",
+                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
                       "status" : 409,
-                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it."
+                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
                     }
                   },
                   "errors.api.v2.booking.concurrentModification" : {
@@ -9623,7 +9712,7 @@
                 }
               }
             },
-            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it. The schedule changed while the booking was being created."
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The schedule changed while the booking was being created."
           },
           "415" : {
             "$ref" : "#/components/responses/UnsupportedMediaType"
@@ -10402,12 +10491,12 @@
               "application/problem+json" : {
                 "examples" : {
                   "errors.api.v2.booking.buffer" : {
-                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it.",
+                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
                     "value" : {
                       "code" : "errors.api.v2.booking.buffer",
-                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it.",
+                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
                       "status" : 409,
-                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it."
+                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
                     }
                   },
                   "errors.api.v2.booking.overlap" : {
@@ -10443,7 +10532,7 @@
                 }
               }
             },
-            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict and bufferMinutes members describe it. The requested state transition is invalid."
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The requested state transition is invalid."
           },
           "412" : {
             "content" : {

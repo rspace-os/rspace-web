@@ -79,7 +79,8 @@ const optionDocument = {
   slotGranularityMinutes: 5,
   incrementUnit: "MINUTES" as const,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferMinutes: 0,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };
@@ -114,7 +115,8 @@ const catalogueOption = {
   slotGranularityMinutes: optionDocument.slotGranularityMinutes,
   incrementUnit: "MINUTES" as const,
   openingHours: optionDocument.openingHours,
-  bufferMinutes: optionDocument.bufferMinutes,
+  bufferBeforeMinutes: optionDocument.bufferBeforeMinutes,
+  bufferAfterMinutes: optionDocument.bufferAfterMinutes,
   maxBookingDurationMinutes: optionDocument.maxBookingDurationMinutes,
   allowDoubleBooking: optionDocument.allowDoubleBooking,
   effectiveRole: bookerBookingAccess.effectiveRole,
@@ -205,7 +207,11 @@ describe("AddBookingPage", () => {
     expect(within(itemInformation).getByText("Confocal microscope")).toBeVisible();
     expect(within(itemInformation).getByText("booking:bookings.itemInformation.open")).toBeVisible();
     expect(within(itemInformation).getByText("booking:bookings.itemInformation.doubleBookingAllowed")).toBeVisible();
-    expect(within(itemInformation).queryByText("booking:bookings.itemInformation.buffer")).not.toBeInTheDocument();
+    for (const side of ["bufferBefore", "bufferAfter"]) {
+      const label = within(itemInformation).getByText(`booking:bookableItemDetails.fields.${side}`);
+      expect(label).toBeVisible();
+      expect(label.nextElementSibling).toHaveTextContent("0 minutes");
+    }
     expect(
       within(itemInformation).queryByRole("button", {
         name: "booking:bookings.itemInformation.timeWithInstrumentTime",
@@ -282,18 +288,31 @@ describe("AddBookingPage", () => {
     });
   });
 
-  it("shows the single gap before and after bookings", async () => {
+  it.each([
+    [5, 0],
+    [0, 10],
+  ])("shows separate gap facts including the zero side (%s before, %s after)", async (before, after) => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
-        HttpResponse.json(bookingCatalogueResponse([{ ...catalogueOption, bufferMinutes: 15 }])),
+        HttpResponse.json(
+          bookingCatalogueResponse([{ ...catalogueOption, bufferBeforeMinutes: before, bufferAfterMinutes: after }]),
+        ),
       ),
     );
     renderPage();
+
     const itemInformation = await screen.findByRole("complementary", {
       name: "booking:bookings.itemInformation.title",
     });
-    expect(within(itemInformation).getByText("booking:bookings.itemInformation.bufferBoth")).toBeVisible();
+    for (const [side, minutes] of [
+      ["bufferBefore", before],
+      ["bufferAfter", after],
+    ] as const) {
+      const label = within(itemInformation).getByText(`booking:bookableItemDetails.fields.${side}`);
+      expect(label).toBeVisible();
+      expect(label.nextElementSibling).toHaveTextContent(`${minutes} minutes`);
+    }
   });
 
   it("offers the item's own opening hours in the instrument-time tooltip when its timezone differs", async () => {
@@ -414,7 +433,8 @@ describe("AddBookingPage", () => {
     vi.mocked(createBooking).mockRejectedValueOnce(
       problem(409, "errors.api.v2.booking.buffer", {
         conflict: { id: 60, kind: "MAINTENANCE", start: "2026-08-17T08:00:00Z", end: "2026-08-17T09:00:00Z" },
-        bufferMinutes: 15,
+        bufferBeforeMinutes: 15,
+        bufferAfterMinutes: 15,
       }),
     );
     server.use(

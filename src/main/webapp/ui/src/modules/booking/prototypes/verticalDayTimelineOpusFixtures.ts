@@ -30,7 +30,8 @@ function instrument(overrides: Partial<BookableItemOption>): BookableItemOption 
     slotGranularityMinutes: 15,
     incrementUnit: "MINUTES",
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "07:00", end: "19:00" })),
-    bufferMinutes: 0,
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
     maxBookingDurationMinutes: 240,
     allowDoubleBooking: false,
     ...overrides,
@@ -75,7 +76,7 @@ export const SCENARIOS = {
     label: "Ordinary day (Berlin, 15 min slots, 15 min buffer after)",
     date: "2026-11-16",
     displayTimezone: "Europe/Berlin",
-    item: instrument({ bufferMinutes: 15 }),
+    item: instrument({ bufferAfterMinutes: 15 }),
     events: [
       full(101, "2026-11-16T07:00:00Z", "2026-11-16T08:15:00Z", "Ada Lovelace", "Cell imaging"),
       maintenance(102, "2026-11-16T10:00:00Z", "2026-11-16T11:00:00Z", "Lens alignment"),

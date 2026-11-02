@@ -178,10 +178,10 @@ class TimeSlotBookingResourceOperationsTest {
       assertEquals(BookingProblem.bookingConflict(expected), overlap.extensions());
 
       ApiV2ResourceException buffer =
-          translate(spec, operation, new BookingBufferConflictException(blocking, 30));
+          translate(spec, operation, new BookingBufferConflictException(blocking, 15, 30));
       assertEquals(HttpStatus.CONFLICT, buffer.status());
       assertEquals("errors.api.v2.booking.buffer", buffer.errorCode());
-      assertEquals(BookingProblem.bookingBuffer(expected, 30), buffer.extensions());
+      assertEquals(BookingProblem.bookingBuffer(expected, 15, 30), buffer.extensions());
     }
   }
 

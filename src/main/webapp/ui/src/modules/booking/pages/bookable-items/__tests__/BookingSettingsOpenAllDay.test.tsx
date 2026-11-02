@@ -10,7 +10,8 @@ import {
 
 const settings = createBookingSettingsFixture({
   slotGranularityMinutes: 15,
-  bufferMinutes: 0,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
 });
 
 function serve(initial: Partial<typeof settings> = {}, saveSucceeds: () => boolean = () => true) {

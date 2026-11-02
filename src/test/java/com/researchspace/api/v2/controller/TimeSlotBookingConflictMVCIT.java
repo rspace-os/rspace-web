@@ -77,9 +77,14 @@ class TimeSlotBookingConflictMVCIT {
         .andExpect(jsonPath("$.conflict.end").value(end.toString()))
         .andExpect(jsonPath("$.conflict.purpose").doesNotExist())
         .andExpect(jsonPath("$.conflict.requester").doesNotExist())
-        .andExpect(jsonPath("$.bufferMinutes").doesNotExist());
+        .andExpect(jsonPath("$.bufferBeforeMinutes").doesNotExist());
 
-    updateConfiguration(configurationId, configuration -> configuration.setBufferMinutes(30));
+    updateConfiguration(
+        configurationId,
+        configuration -> {
+          configuration.setBufferBeforeMinutes(15);
+          configuration.setBufferAfterMinutes(30);
+        });
 
     create(instrumentId, end.plus(15, ChronoUnit.MINUTES), end.plus(1, ChronoUnit.HOURS))
         .andExpect(status().isConflict())
@@ -90,7 +95,8 @@ class TimeSlotBookingConflictMVCIT {
         .andExpect(jsonPath("$.conflict.id").value(blocking))
         .andExpect(jsonPath("$.conflict.start").value(start.toString()))
         .andExpect(jsonPath("$.conflict.end").value(end.toString()))
-        .andExpect(jsonPath("$.bufferMinutes").value(30));
+        .andExpect(jsonPath("$.bufferBeforeMinutes").value(15))
+        .andExpect(jsonPath("$.bufferAfterMinutes").value(30));
   }
 
   @Test

@@ -28,7 +28,8 @@ describe("the availability oracle", () => {
     timezone: "UTC",
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
 
-    bufferMinutes: 0,
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
     allowDoubleBooking: false,
     ...overrides,
   });
@@ -59,6 +60,49 @@ describe("the availability oracle", () => {
       new Date(now),
     );
   };
+
+  const gapCases = (["BOOKING", "MAINTENANCE"] as const).flatMap((requested) =>
+    (["BOOKING", "MAINTENANCE"] as const).flatMap((existing) =>
+      [false, true].flatMap((doubleBooking) =>
+        [false, true].flatMap((earlier) =>
+          [false, true].map((inside) => ({ requested, existing, doubleBooking, earlier, inside })),
+        ),
+      ),
+    ),
+  );
+  it.each(gapCases)(
+    "matches directional-gap boundaries for $requested / $existing double=$doubleBooking earlier=$earlier inside=$inside",
+    ({ requested, existing, doubleBooking, earlier, inside }) => {
+      const stored = booking("2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z", existing);
+      const separation =
+        (earlier
+          ? (requested === "BOOKING" ? 13 : 0) + (existing === "BOOKING" ? 7 : 0)
+          : (existing === "BOOKING" ? 13 : 0) + (requested === "BOOKING" ? 7 : 0)) - (inside ? 1 : 0);
+      const from = earlier
+        ? Date.parse(stored.start) - (separation + 60) * 60000
+        : Date.parse(stored.end) + separation * 60000;
+      const intervals = rowAvailabilityIntervals(
+        row({
+          eventKind: requested,
+          bufferBeforeMinutes: 7,
+          bufferAfterMinutes: 13,
+          allowDoubleBooking: doubleBooking,
+        }),
+        {
+          start: start.toISOString(),
+          end: end.toISOString(),
+          elapsedMinutes: 1440,
+          date: "2026-08-17",
+          timeZone: "UTC",
+        },
+        [stored],
+      );
+      const blocked = intervals.some(
+        (interval) => interval.startsAt.getTime() < from + 3600000 && interval.endsAt.getTime() > from,
+      );
+      expect(blocked).toBe(inside && !(doubleBooking && requested === "BOOKING" && existing === "BOOKING"));
+    },
+  );
 
   it("classifies each item in its own scheduling time zone", () => {
     const busy = [booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
@@ -114,7 +158,7 @@ describe("the availability oracle", () => {
 
   it("keeps maintenance buffers occupied until their half-open boundary", () => {
     const events = [booking("2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z", "MAINTENANCE")];
-    const buffered = row({ bufferMinutes: 15, allowDoubleBooking: true });
+    const buffered = row({ bufferBeforeMinutes: 15, bufferAfterMinutes: 15, allowDoubleBooking: true });
     expect(classify(buffered, "2026-08-17T08:59:00Z", events)).toBe("free-later-today");
     expect(classify(buffered, "2026-08-17T09:00:00Z", events)).toBe("available-now");
   });
@@ -130,7 +174,7 @@ describe("the availability oracle", () => {
       ]),
     ).toBe("free-later-today");
     expect(
-      classify(row({ bufferMinutes: 30 }), "2026-08-17T09:00:00Z", [
+      classify(row({ bufferBeforeMinutes: 30 }), "2026-08-17T09:00:00Z", [
         booking("2026-08-17T09:30:00Z", "2026-08-17T10:00:00Z"),
       ]),
     ).toBe("free-later-today");

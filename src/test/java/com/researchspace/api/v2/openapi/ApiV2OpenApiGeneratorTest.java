@@ -675,7 +675,9 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> properties =
         objectMap(objectMap(((List<?>) problem.get("allOf")).get(1)).get("properties"));
 
-    for (String member : List.of("conflict", "bufferMinutes", "maximumDurationMinutes")) {
+    for (String member :
+        List.of(
+            "conflict", "bufferBeforeMinutes", "bufferAfterMinutes", "maximumDurationMinutes")) {
       assertTrue(properties.containsKey(member), member);
       assertFalse(((List<?>) problem.getOrDefault("required", List.of())).contains(member), member);
     }
@@ -688,7 +690,7 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(
         conflictProperty.get("description").toString().contains("errors.api.v2.booking.overlap"));
     assertEquals(
-        List.of("integer", "null"), objectMap(properties.get("bufferMinutes")).get("type"));
+        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
     Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
     assertEquals(
         List.of("end", "id", "kind", "start"),

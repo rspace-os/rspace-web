@@ -20,7 +20,8 @@ const BookingProblemDetailsSchema = v.object({
     v.optional(v.object({ id: v.number(), kind: BookingEventKindSchema, start: v.string(), end: v.string() })),
     undefined,
   ),
-  bufferMinutes: ProblemMinutesSchema,
+  bufferBeforeMinutes: ProblemMinutesSchema,
+  bufferAfterMinutes: ProblemMinutesSchema,
   maximumDurationMinutes: ProblemMinutesSchema,
 });
 
@@ -109,11 +110,13 @@ export function bookingProblemMessage(
   maxBookingDurationMinutes?: number,
 ): string {
   if (error instanceof ApiV2ProblemError && error.code === BUFFER_CODE) {
-    const { bufferMinutes = 0 } = bookingProblemDetails(error);
-    if (bufferMinutes > 0) {
-      return t("bookings.errors.buffer", { duration: formatDurationMinutes(bufferMinutes) });
+    const { bufferBeforeMinutes, bufferAfterMinutes } = bookingProblemDetails(error);
+    if (bufferBeforeMinutes === undefined || bufferAfterMinutes === undefined) {
+      return t("bookings.errors.bufferUnknown");
     }
-    return t("bookings.errors.bufferUnknown");
+    const before = formatDurationMinutes(bufferBeforeMinutes);
+    const after = formatDurationMinutes(bufferAfterMinutes);
+    return t("bookings.errors.buffer", { before, after });
   }
   if (error instanceof ApiV2ProblemError && error.code === MAXIMUM_DURATION_CODE) {
     const limit = bookingProblemDetails(error).maximumDurationMinutes ?? maxBookingDurationMinutes;

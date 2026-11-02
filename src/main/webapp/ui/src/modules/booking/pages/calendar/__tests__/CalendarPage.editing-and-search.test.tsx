@@ -330,7 +330,8 @@ describe("CalendarPage", () => {
             code: "errors.api.v2.booking.buffer",
             detail: "private server detail",
             conflict: { id: 59, kind: "BOOKING", start: "2026-08-17T11:00:00Z", end: "2026-08-17T12:00:00Z" },
-            bufferMinutes: 0,
+            bufferBeforeMinutes: 0,
+            bufferAfterMinutes: 30,
           },
           { status: 409 },
         ),
@@ -347,7 +348,11 @@ describe("CalendarPage", () => {
     await user.click(save);
 
     const alert = await screen.findByRole("alert", {}, { timeout: 3_000 });
-    await waitFor(() => expect(alert).toMatchTextContent("Too close to another booking"));
+    await waitFor(() =>
+      expect(alert).toMatchTextContent(
+        "Too close to another event. This item needs 0 minutes before and 30 minutes after each booking. Gaps between bookings add up.",
+      ),
+    );
     expect(alert).not.toMatchTextContent("private server detail");
     expect(within(alert).getByRole("listitem")).toMatchTextContent("Booking #59");
     expect(save).toBeDisabled();
@@ -533,7 +538,8 @@ describe("CalendarPage", () => {
         slotGranularityMinutes: fixture.slotGranularityMinutes,
         incrementUnit: "MINUTES" as const,
         openingHours: fixture.openingHours,
-        bufferMinutes: fixture.bufferMinutes,
+        bufferBeforeMinutes: fixture.bufferBeforeMinutes,
+        bufferAfterMinutes: fixture.bufferAfterMinutes,
         maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
         allowDoubleBooking: fixture.allowDoubleBooking,
         effectiveRole: fixture.effectiveRole,

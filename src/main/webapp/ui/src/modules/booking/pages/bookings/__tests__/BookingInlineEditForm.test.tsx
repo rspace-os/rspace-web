@@ -435,7 +435,8 @@ describe("BookingInlineEditForm", () => {
           status: 409,
           code: "errors.api.v2.booking.buffer",
           conflict: { id: 59, kind: "BOOKING", start: "2026-10-19T10:00:00Z", end: "2026-10-19T11:00:00Z" },
-          bufferMinutes: 0,
+          bufferBeforeMinutes: 0,
+          bufferAfterMinutes: 30,
         },
       }),
     );

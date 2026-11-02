@@ -37,7 +37,8 @@ export const confocalTarget: BookableItemOption = {
       end: "24:00",
     }),
   ),
-  bufferMinutes: 0,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };

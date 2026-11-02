@@ -18,9 +18,15 @@ public record BookingProblem(
     @Schema(
             nullable = true,
             description =
-                "Minutes that must stay free before and after a booking. Present on"
+                "Minutes that must stay free before another event. Present on"
                     + " errors.api.v2.booking.buffer.")
-        Long bufferMinutes,
+        Long bufferBeforeMinutes,
+    @Schema(
+            nullable = true,
+            description =
+                "Minutes that must stay free after another event. Present on"
+                    + " errors.api.v2.booking.buffer.")
+        Long bufferAfterMinutes,
     @Schema(
             nullable = true,
             description =
@@ -59,21 +65,23 @@ public record BookingProblem(
   public Map<String, Object> extensions() {
     Map<String, Object> values = new LinkedHashMap<>();
     if (conflict != null) values.put("conflict", conflict);
-    if (bufferMinutes != null) values.put("bufferMinutes", bufferMinutes);
+    if (bufferBeforeMinutes != null) values.put("bufferBeforeMinutes", bufferBeforeMinutes);
+    if (bufferAfterMinutes != null) values.put("bufferAfterMinutes", bufferAfterMinutes);
     if (maximumDurationMinutes != null)
       values.put("maximumDurationMinutes", maximumDurationMinutes);
     return Map.copyOf(values);
   }
 
   public static Map<String, Object> bookingConflict(BookingConflict conflict) {
-    return new BookingProblem(Objects.requireNonNull(conflict), null, null).extensions();
+    return new BookingProblem(Objects.requireNonNull(conflict), null, null, null).extensions();
   }
 
-  public static Map<String, Object> bookingBuffer(BookingConflict conflict, long minutes) {
-    return new BookingProblem(Objects.requireNonNull(conflict), minutes, null).extensions();
+  public static Map<String, Object> bookingBuffer(
+      BookingConflict conflict, long before, long after) {
+    return new BookingProblem(Objects.requireNonNull(conflict), before, after, null).extensions();
   }
 
   public static Map<String, Object> maximumDuration(long minutes) {
-    return new BookingProblem(null, null, minutes).extensions();
+    return new BookingProblem(null, null, null, minutes).extensions();
   }
 }

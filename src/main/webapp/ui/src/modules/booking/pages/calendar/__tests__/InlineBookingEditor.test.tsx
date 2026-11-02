@@ -53,7 +53,9 @@ describe("InlineBookingEditor", () => {
     const event = editableEvent("MAINTENANCE");
     server.use(
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(collectionPage([{ ...bookableItemFixtures[0], bufferMinutes: 30 }], 2)),
+        HttpResponse.json(
+          collectionPage([{ ...bookableItemFixtures[0], bufferBeforeMinutes: 30, bufferAfterMinutes: 30 }], 2),
+        ),
       ),
       http.get("/api/v2/bookings", () =>
         HttpResponse.json(

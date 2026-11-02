@@ -89,8 +89,8 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from BookingConfigurationDefaults_AUD");
     jdbcTemplate.update(
         "update BookingConfigurationDefaults set slotGranularityMinutes = 15, incrementUnit ="
-            + " 'MINUTES', openingHours = ?, bufferMinutes = 0,"
-            + " maxBookingDurationMinutes = 0, allowDoubleBooking = 0,"
+            + " 'MINUTES', openingHours = ?, bufferBeforeMinutes = 0,"
+            + " bufferAfterMinutes = 0, maxBookingDurationMinutes = 0, allowDoubleBooking = 0,"
             + " configurationVersion = 0",
         BookingOpeningHoursCodec.openingHoursJson(BookingSchedulingSettings.DEFAULT_OPENING_HOURS));
 

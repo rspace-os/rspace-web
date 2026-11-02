@@ -932,7 +932,8 @@ export default interface Resources {
           "allowDoubleBooking": "Allow concurrent bookings",
           "availabilityWindowEnd": "Availability window end",
           "availabilityWindowStart": "Availability window start",
-          "buffer": "Gap before and after bookings",
+          "bufferAfter": "Gap after (minutes)",
+          "bufferBefore": "Gap before (minutes)",
           "cancellationReason": "Cancellation reason",
           "configuration": "Booking configuration",
           "configurationVersion": "Configuration version",
@@ -1019,7 +1020,8 @@ export default interface Resources {
         "requester": "Requester"
       },
       "fields": {
-        "buffer": "Gap before and after bookings",
+        "bufferAfter": "Gap after",
+        "bufferBefore": "Gap before",
         "createdAt": "Created at",
         "createdBy": "Created by",
         "doubleBooking": "Allow double booking",
@@ -1282,7 +1284,7 @@ export default interface Resources {
       },
       "editTitle": "Edit Booking",
       "errors": {
-        "buffer": "Too close to another booking. This item needs {duration} before and after each booking.",
+        "buffer": "Too close to another event. This item needs {before} before and {after} after each booking. Gaps between bookings add up.",
         "bufferSummary": "This period is within the buffer time of:",
         "bufferUnknown": "Too close to another booking.",
         "cancellationReasonLength": "The cancellation reason must be 500 characters or fewer.",
@@ -1393,8 +1395,6 @@ export default interface Resources {
       },
       "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
       "itemInformation": {
-        "buffer": "Buffer",
-        "bufferBoth": "{duration} before and after",
         "closedDay": "{day}: closed",
         "day": "{day}: {hours}",
         "doubleBookingAllowed": "Double booking allowed",
@@ -1712,6 +1712,9 @@ export default interface Resources {
       "title": "My Bookings"
     },
     "notificationSubscriptions": {
+      "bulk": {
+
+      },
       "item": {
         "bothEventsDisabled": "Both booking events are off in My Profile.",
         "cancellations": "Booking cancellations",
@@ -1874,7 +1877,8 @@ export default interface Resources {
       },
       "fields": {
         "allowDoubleBooking": "Allow double booking",
-        "buffer": "Gap before and after bookings (minutes)",
+        "bufferAfter": "Gap after (minutes)",
+        "bufferBefore": "Gap before (minutes)",
         "granularity": "Time increment",
         "incrementDays": "Days",
         "incrementDaysUnavailable": "Select Open all day on every day to use Days.",

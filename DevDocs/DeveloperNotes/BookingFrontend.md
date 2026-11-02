@@ -457,7 +457,7 @@ Calendar and catalogue tables retain their component-driven reads because their
 keys depend on restored table state and selected resources. Dashboard and My bookings
 reads also depend on component clocks or state, so their queries remain in components.
 
-Scheduling forms share one `bufferMinutes` field for the idle gap before and after each booking. Calendar availability shows lighter gap bands around bookings and labels events with their own interval. Maintenance uses a separate pattern and does not acquire a gap of its own.
+Scheduling forms expose independent `bufferBeforeMinutes` and `bufferAfterMinutes` fields. The gaps add up between bookings. Calendar availability shows lighter gap bands around bookings and labels events with their own interval. Maintenance uses a separate pattern and does not acquire a gap of its own.
 
 ## Audit DELETE labels
 
@@ -468,3 +468,5 @@ allowlist must retain `deletedAt` in the v2 audit response because descriptions
 are withheld. The Archived or deleted filter sends DELETE and includes both kinds.
 
 Maximum-duration inputs share `DurationUnitInput` with time increments. The maximum stores elapsed minutes; Days mean 1,440 elapsed minutes. Its unit is inferred as the largest exact unit on load, with zero using the increment unit, and stays selected during editing. Changing unit preserves the displayed quantity. Increment Days still require all weekdays open all day.
+
+Availability uses the sum of Gap before and Gap after between bookings. For a booking draft, maintenance blocks its start minus Gap after through its end plus Gap before. For a maintenance draft, bookings block their reserved start minus Gap before through end plus Gap after, even when double booking is allowed. Fetch envelopes expand by the sum on both sides.

@@ -163,31 +163,34 @@ export function SchedulingSettingsFields({
 }) {
   const { t } = useTranslation("booking");
   const id = useId();
-  const buffer = useField(form, { path: ["bufferMinutes"] });
   const allowDoubleBooking = useField(form, { path: ["allowDoubleBooking"] });
-  const bufferId = `${id}-buffer`;
-  const errorId = `${bufferId}-error`;
-  const bufferControl = (
-    <div className="space-y-2">
-      <Input
-        id={bufferId}
-        type="number"
-        min={0}
-        max={MAX_BUFFER_MINUTES}
-        step={1}
-        required
-        disabled={disabled}
-        value={numberInput(buffer.input) ?? ""}
-        ref={buffer.props.ref}
-        onFocus={buffer.props.onFocus}
-        onBlur={buffer.props.onBlur}
-        aria-invalid={Boolean(buffer.errors?.length) || undefined}
-        aria-describedby={buffer.errors?.length ? errorId : undefined}
-        onChange={(event) => buffer.onChange(event.currentTarget.valueAsNumber)}
-      />
-      {buffer.errors?.length ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
-    </div>
-  );
+  const before = useField(form, { path: ["bufferBeforeMinutes"] });
+  const after = useField(form, { path: ["bufferAfterMinutes"] });
+  const bufferControl = (buffer: typeof before | typeof after, direction: "Before" | "After") => {
+    const bufferId = `${id}-buffer-${direction}`;
+    const errorId = `${bufferId}-error`;
+    return (
+      <div className="space-y-2">
+        <Input
+          id={bufferId}
+          type="number"
+          min={0}
+          max={MAX_BUFFER_MINUTES}
+          step={1}
+          required
+          disabled={disabled}
+          value={numberInput(buffer.input) ?? ""}
+          ref={buffer.props.ref}
+          onFocus={buffer.props.onFocus}
+          onBlur={buffer.props.onBlur}
+          aria-invalid={Boolean(buffer.errors?.length) || undefined}
+          aria-describedby={buffer.errors?.length ? errorId : undefined}
+          onChange={(event) => buffer.onChange(event.currentTarget.valueAsNumber)}
+        />
+        {buffer.errors?.length ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
+      </div>
+    );
+  };
   const doubleBooking = (
     <Checkbox
       id={`${id}-double-booking`}
@@ -211,8 +214,12 @@ export function SchedulingSettingsFields({
           <TimeIncrementField form={form} id={`${id}-granularity`} disabled={disabled} />
         </div>
         <div className={rowClass}>
-          <FieldLabel htmlFor={bufferId}>{t("settings.fields.buffer")}</FieldLabel>
-          {bufferControl}
+          <FieldLabel htmlFor={`${id}-buffer-Before`}>{t("settings.fields.bufferBefore")}</FieldLabel>
+          {bufferControl(before, "Before")}
+        </div>
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-buffer-After`}>{t("settings.fields.bufferAfter")}</FieldLabel>
+          {bufferControl(after, "After")}
         </div>
         <div className={rowClass}>
           <FieldLabel htmlFor={`${id}-maximum-duration`}>{t("settings.fields.maximumDuration")}</FieldLabel>

@@ -80,23 +80,25 @@ class BookingSchedulingPolicyImplTest {
   }
 
   @Test
-  void usesOneSharedGapWithoutAddingItTwice() {
+  void padsTheReservedIntervalWithTheDirectionalGaps() {
     BookingConfiguration configuration = configuration("UTC", hours("09:00", "17:00", 3));
-    configuration.setBufferMinutes(20);
+    configuration.setBufferBeforeMinutes(10);
+    configuration.setBufferAfterMinutes(20);
     Date start = date("2026-10-14T10:00:00Z");
     Date end = date("2026-10-14T11:00:00Z");
 
     assertEquals(
         new BookingSchedulingPolicy.ConflictInterval(
-            date("2026-10-14T09:40:00Z"), date("2026-10-14T11:20:00Z")),
+            date("2026-10-14T09:50:00Z"), date("2026-10-14T11:20:00Z")),
         policy.validate(configuration, start, end));
   }
 
   @Test
-  void maintenanceBlocksOnlyItsOwnIntervalAndKeepsItsSchedulingExemptions() {
+  void maintenanceHasNoIntrinsicGapAndKeepsSchedulingExemptions() {
     BookingConfiguration configuration = configuration("UTC", hours("09:00", "17:00", 1));
     configuration.setMaxBookingDurationMinutes(60);
-    configuration.setBufferMinutes(10);
+    configuration.setBufferBeforeMinutes(10);
+    configuration.setBufferAfterMinutes(20);
     Date start = date("2026-10-14T08:00:00Z");
     Date end = date("2026-10-14T18:00:00Z");
     assertEquals(

@@ -7,12 +7,14 @@ import { bookableItemFixtures } from "../mocks/bookableItemsMocks";
 
 it("names the gap without repeating the value's unit", async () => {
   await renderWithRealI18n(
-    <BookableItemRulesReadOut configuration={{ ...bookableItemFixtures[0], roleSources: [], bufferMinutes: 15 }} />,
+    <BookableItemRulesReadOut
+      configuration={{ ...bookableItemFixtures[0], roleSources: [], bufferBeforeMinutes: 15, bufferAfterMinutes: 15 }}
+    />,
     { resources: { booking: bookingEnglish }, defaultNS: "booking" },
   );
-  expect(screen.getByText("Gap before and after bookings")).toBeVisible();
-  const gap = screen.getByText("Gap before and after bookings").parentElement;
+  expect(screen.getByText("Gap before")).toBeVisible();
+  const gap = screen.getByText("Gap before").parentElement;
   if (!gap) throw new Error("Expected a gap fact");
   expect(within(gap).getByText("15 minutes")).toBeVisible();
-  expect(screen.queryByText("Gap before and after bookings (minutes)")).not.toBeInTheDocument();
+  expect(screen.queryByText("Gap before (minutes)")).not.toBeInTheDocument();
 });

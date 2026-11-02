@@ -464,8 +464,8 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
       User owner,
       Long instrumentId,
       boolean allowDoubleBooking,
-      long bufferMinutes,
-      long otherGap) {
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes) {
     return TimeSlotBookingManagerIT.persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -474,8 +474,8 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
         owner,
         instrumentId,
         allowDoubleBooking,
-        bufferMinutes,
-        otherGap);
+        bufferBeforeMinutes,
+        bufferAfterMinutes);
   }
 
   private Setup persistConfiguration(
@@ -483,8 +483,8 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
       Long instrumentId,
       boolean allowDoubleBooking,
       Long slotGranularityMinutes,
-      long bufferMinutes,
-      long otherGap) {
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes) {
     return TimeSlotBookingManagerIT.persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -494,8 +494,8 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
         instrumentId,
         allowDoubleBooking,
         slotGranularityMinutes,
-        bufferMinutes,
-        otherGap);
+        bufferBeforeMinutes,
+        bufferAfterMinutes);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -577,12 +577,12 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
             "closing Monday rejects a concurrent create",
             false,
             new BookingSchedulingSettings.Patch(
-                null, hours("00:00", "24:00", 2, 3, 4, 5, 6, 7), null, null, null)),
+                null, hours("00:00", "24:00", 2, 3, 4, 5, 6, 7), null, null, null, null)),
         Arguments.of(
             "Tuesday exception rejects a concurrent time edit",
             true,
             new BookingSchedulingSettings.Patch(
-                null, hoursWithTuesdayException(), null, null, null)));
+                null, hoursWithTuesdayException(), null, null, null, null)));
   }
 
   private static List<BookingOpeningHoursEntry> hoursWithTuesdayException() {

@@ -76,7 +76,8 @@ class BookingSettingsControllerMVCIT {
             originalSettings.slotGranularityMinutes(),
             originalSettings.incrementUnit(),
             originalSettings.openingHours(),
-            originalSettings.bufferMinutes(),
+            originalSettings.bufferBeforeMinutes(),
+            originalSettings.bufferAfterMinutes(),
             originalSettings.maxBookingDurationMinutes(),
             originalSettings.allowDoubleBooking()),
         new BookingDisplaySettings.Patch(

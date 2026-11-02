@@ -9,12 +9,15 @@ import java.util.Objects;
 public final class BookingBufferConflictException extends RuntimeException {
 
   private final transient ConflictingEvent conflict;
-  private final long bufferMinutes;
+  private final long bufferBeforeMinutes;
+  private final long bufferAfterMinutes;
 
-  public BookingBufferConflictException(ConflictingEvent conflict, long bufferMinutes) {
+  public BookingBufferConflictException(
+      ConflictingEvent conflict, long bufferBeforeMinutes, long bufferAfterMinutes) {
     super("errors.api.v2.booking.buffer");
     this.conflict = Objects.requireNonNull(conflict, "Conflicting event");
-    this.bufferMinutes = bufferMinutes;
+    this.bufferBeforeMinutes = bufferBeforeMinutes;
+    this.bufferAfterMinutes = bufferAfterMinutes;
   }
 
   /** The first existing event whose buffer the requested interval enters. */
@@ -22,8 +25,13 @@ public final class BookingBufferConflictException extends RuntimeException {
     return conflict;
   }
 
-  /** Minutes that must stay free before and after a booking. */
-  public long bufferMinutes() {
-    return bufferMinutes;
+  /** Minutes that must stay free before another event. */
+  public long bufferBeforeMinutes() {
+    return bufferBeforeMinutes;
+  }
+
+  /** Minutes that must stay free after another event. */
+  public long bufferAfterMinutes() {
+    return bufferAfterMinutes;
   }
 }

@@ -92,9 +92,10 @@ export const calendarAvailabilityQuery = (
           row.globalId,
           row.timezone,
           JSON.stringify(row.openingHours),
-          row.bufferMinutes,
-          row.eventKind,
+          row.bufferBeforeMinutes,
+          row.bufferAfterMinutes,
           row.allowDoubleBooking,
+          row.eventKind,
         ])
         .toSorted(),
       interval.start,

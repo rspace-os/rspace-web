@@ -129,7 +129,7 @@ class BookingOpeningWeekdaysMVCIT {
             "select configurationVersion from BookingConfiguration where id = ?", Long.class, id));
     assertEquals(Integer.valueOf(2), auditCount(id));
 
-    patchConfiguration(path, "\"1\"", "{\"bufferMinutes\":5}")
+    patchConfiguration(path, "\"1\"", "{\"bufferAfterMinutes\":5}")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.openingHours.length()").value(2));
     assertEquals(replacement, storedHours(id));

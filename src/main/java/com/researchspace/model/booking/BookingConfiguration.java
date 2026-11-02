@@ -134,9 +134,14 @@ public class BookingConfiguration implements Serializable {
   private List<BookingOpeningHoursEntry> openingHours =
       BookingSchedulingSettings.DEFAULT_OPENING_HOURS;
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferMinutes")})
+  @Getter(
+      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferBeforeMinutes")})
   @Setter
-  private long bufferMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+  private long bufferBeforeMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+
+  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferAfterMinutes")})
+  @Setter
+  private long bufferAfterMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
 
   @Getter(
       onMethod_ = {
@@ -279,7 +284,8 @@ public class BookingConfiguration implements Serializable {
 
   @Transient
   public boolean areBuffersValid() {
-    return BookingSchedulingSettings.isBufferValid(bufferMinutes);
+    return BookingSchedulingSettings.isBufferValid(bufferBeforeMinutes)
+        && BookingSchedulingSettings.isBufferValid(bufferAfterMinutes);
   }
 
   @Transient

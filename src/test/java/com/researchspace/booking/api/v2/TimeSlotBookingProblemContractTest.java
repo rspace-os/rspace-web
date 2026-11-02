@@ -115,8 +115,8 @@ class TimeSlotBookingProblemContractTest {
                "start":"2026-09-28T08:00:00Z","end":"2026-09-28T10:00:00Z"}}
             """),
         Arguments.of(
-            "buffer conflict includes the single gap",
-            new BookingBufferConflictException(BLOCKING, 30),
+            "buffer conflict includes both buffers",
+            new BookingBufferConflictException(BLOCKING, 15, 30),
             false,
             """
             {"title":"The selected time is too close to another booking (buffer).","status":409,
@@ -124,7 +124,7 @@ class TimeSlotBookingProblemContractTest {
              "detail":"The selected time is too close to another booking (buffer).",
              "conflict":{"id":59,"kind":"BOOKING",
                "start":"2026-09-28T08:00:00Z","end":"2026-09-28T10:00:00Z"},
-             "bufferMinutes":30}
+             "bufferBeforeMinutes":15,"bufferAfterMinutes":30}
             """),
         Arguments.of(
             "maximum duration is stated in the detail and member",

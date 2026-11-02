@@ -29,7 +29,8 @@ final class BookingSettingsValidation {
         settings.slotGranularityMinutes(), settings.incrementUnit())) {
       throw new InvalidBookingSchedulingSettingsException(Reason.GRANULARITY);
     }
-    if (!BookingSchedulingSettings.isBufferValid(settings.bufferMinutes())) {
+    if (!BookingSchedulingSettings.isBufferValid(settings.bufferBeforeMinutes())
+        || !BookingSchedulingSettings.isBufferValid(settings.bufferAfterMinutes())) {
       throw new InvalidBookingSchedulingSettingsException(Reason.BUFFER);
     }
     if (!BookingSchedulingSettings.isMaximumDurationValid(

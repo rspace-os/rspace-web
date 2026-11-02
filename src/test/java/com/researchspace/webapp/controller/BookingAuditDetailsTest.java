@@ -20,10 +20,10 @@ class BookingAuditDetailsTest {
   private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Test
-  void labelsTheSingleBookingBuffer() {
+  void labelsTheDirectionalBookingGap() {
     assertEquals(
-        "Gap before and after bookings: 15",
-        BookingAuditDetails.format(Map.of("bufferMinutes", 15), messages, Locale.US));
+        "Gap before (minutes): 15",
+        BookingAuditDetails.format(Map.of("bufferBeforeMinutes", 15), messages, Locale.US));
   }
 
   @Test

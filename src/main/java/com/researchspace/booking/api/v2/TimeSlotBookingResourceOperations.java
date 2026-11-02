@@ -155,12 +155,14 @@ public final class TimeSlotBookingResourceOperations
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.buffer",
                 "The interval is free but falls inside the buffer around another booking or"
-                    + " maintenance event. The problem's conflict and bufferMinutes members"
-                    + " describe it.",
+                    + " maintenance event. The problem's conflict, bufferBeforeMinutes, and"
+                    + " bufferAfterMinutes members describe it.",
                 ignored -> new Object[0],
                 exception ->
                     BookingProblem.bookingBuffer(
-                        conflict(exception.conflict()), exception.bufferMinutes())));
+                        conflict(exception.conflict()),
+                        exception.bufferBeforeMinutes(),
+                        exception.bufferAfterMinutes())));
     List<ApiV2ErrorMapping> updateErrors =
         java.util.stream.Stream.concat(
                 commonErrors.stream(),

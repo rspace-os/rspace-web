@@ -9,7 +9,6 @@ import { todayInTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/
 import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   bookingDateTimeLocale,
-  bookingLocale,
   formatDurationMinutes,
   isPlainDate,
   sameTimeZone,
@@ -206,18 +205,8 @@ export function BookingItemInformationContent({
       item.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),
     ],
   ];
-  const buffer = item.bufferMinutes;
-  if (buffer > 0)
-    facts.push([
-      t("bookings.itemInformation.buffer"),
-      t("bookings.itemInformation.bufferBoth", {
-        duration: new Intl.NumberFormat(bookingLocale(), {
-          style: "unit",
-          unit: "minute",
-          unitDisplay: "short",
-        }).format(buffer),
-      }),
-    ]);
+  facts.push([t("bookableItemDetails.fields.bufferBefore"), formatDurationMinutes(item.bufferBeforeMinutes)]);
+  facts.push([t("bookableItemDetails.fields.bufferAfter"), formatDurationMinutes(item.bufferAfterMinutes)]);
 
   return (
     <>
@@ -233,7 +222,7 @@ export function BookingItemInformationContent({
       </CardContent>
       <Separator className="h-px" />
       <CardContent className="py-4">
-        <dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-sm">
+        <dl className="grid grid-cols-[minmax(0,1fr)_max-content] items-baseline gap-x-4 gap-y-2 text-sm">
           {facts.map(([label, value]) => (
             <div className="contents" key={label}>
               <dt className="text-muted-foreground">{label}</dt>

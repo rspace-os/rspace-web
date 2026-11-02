@@ -303,7 +303,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                 new BookingSchedulingSettings.Patch(
                     slotGranularityMinutes,
                     null,
-                    Math.max(bufferMinutes, otherGap),
+                    bufferMinutes,
+                    otherGap,
                     null,
                     allowDoubleBooking)),
             owner,

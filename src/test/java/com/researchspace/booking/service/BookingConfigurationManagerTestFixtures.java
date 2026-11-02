@@ -156,7 +156,8 @@ final class BookingConfigurationManagerTestFixtures {
     defaults.setId(BookingConfigurationDefaults.SINGLETON_ID);
     defaults.setSlotGranularityMinutes(granularity);
     defaults.setOpeningHours(hours(start, end));
-    defaults.setBufferMinutes(before);
+    defaults.setBufferBeforeMinutes(before);
+    defaults.setBufferAfterMinutes(after);
     defaults.setMaxBookingDurationMinutes(maximumDuration);
     defaults.setAllowDoubleBooking(doubleBooking);
     return defaults;

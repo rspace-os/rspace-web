@@ -263,7 +263,9 @@ export function recordedValues(
       const opening = openingValue(key, value, locale, bookingDateTimeLocale(timeFormat));
       if (opening !== undefined) return [key, opening];
       if (
-        ["bufferMinutes", "maxBookingDurationMinutes", "slotGranularityMinutes"].includes(key) &&
+        ["bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "slotGranularityMinutes"].includes(
+          key,
+        ) &&
         (typeof value === "number" ||
           (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))))
       )

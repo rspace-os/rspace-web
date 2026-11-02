@@ -36,7 +36,8 @@ const settings = {
     { dayOfWeek: 1, start: "08:00", end: "17:00" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
   ],
-  bufferMinutes: 0,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
   availabilityWindowStart: "08:00",
@@ -351,7 +352,8 @@ describe("AddBookableItemPage", () => {
         slotGranularityMinutes: 5,
         incrementUnit: "MINUTES",
         openingHours: settings.openingHours,
-        bufferMinutes: 0,
+        bufferBeforeMinutes: 0,
+        bufferAfterMinutes: 0,
         maxBookingDurationMinutes: 0,
         allowDoubleBooking: false,
       });
@@ -380,10 +382,11 @@ describe("AddBookableItemPage", () => {
     await completeForm(user);
 
     const increment = screen.getByRole("spinbutton", { name: "booking:settings.fields.granularity" });
-    const minuteUnit = screen.getByRole("button", { name: "booking:settings.fields.incrementMinutes" });
+    const units = within(screen.getByRole("group", { name: "booking:settings.fields.incrementUnit" }));
+    const minuteUnit = units.getByRole("button", { name: "booking:settings.fields.incrementMinutes" });
     expect(increment).toHaveValue(15);
     expect(minuteUnit).toHaveAttribute("aria-pressed", "true");
-    await user.click(screen.getByRole("button", { name: `booking:settings.fields.increment${unit}` }));
+    await user.click(units.getByRole("button", { name: `booking:settings.fields.increment${unit}` }));
     await user.clear(increment);
     await user.type(increment, value);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));

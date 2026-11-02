@@ -40,7 +40,8 @@ const booking = (id: number, target: string, start: string, end: string) => ({
 
 const schedule = {
   ...ALWAYS_OPEN,
-  bufferMinutes: 0,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
   allowDoubleBooking: false,
 };
 
@@ -116,7 +117,17 @@ describe("calendar availability", () => {
       ),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferMinutes: 10, allowDoubleBooking: true, eventKind }],
+      [
+        {
+          globalId: "IN1",
+          timezone: "UTC",
+          ...schedule,
+          bufferBeforeMinutes: 10,
+          bufferAfterMinutes: 10,
+          allowDoubleBooking: true,
+          eventKind,
+        },
+      ],
       "2026-08-17",
       "token",
       new AbortController().signal,
@@ -335,7 +346,8 @@ describe("calendar availability", () => {
           timezone: "America/Los_Angeles",
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
 
-          bufferMinutes: 0,
+          bufferBeforeMinutes: 0,
+          bufferAfterMinutes: 0,
           allowDoubleBooking: false,
         },
       ],
@@ -463,7 +475,8 @@ describe("calendar availability", () => {
       timezone: "UTC",
       openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
 
-      bufferMinutes: 20,
+      bufferBeforeMinutes: 20,
+      bufferAfterMinutes: 0,
       allowDoubleBooking: false,
     };
 
@@ -505,7 +518,7 @@ describe("calendar availability", () => {
     expect(available.get("IN1")?.filter(({ kind }) => kind === "booking")).toEqual([]);
   });
 
-  it("uses the shared maximum gap in query bounds and allows its exact boundary", async () => {
+  it("uses the additive gap in query bounds and allows its exact boundary", async () => {
     const requests: URL[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
@@ -521,7 +534,7 @@ describe("calendar availability", () => {
       }),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferMinutes: 20 }],
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 20, bufferAfterMinutes: 0 }],
       displayInterval("2026-08-17", "UTC", "10:00", "11:00"),
       "token",
       new AbortController().signal,

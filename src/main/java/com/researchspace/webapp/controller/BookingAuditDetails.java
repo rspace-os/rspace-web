@@ -54,7 +54,8 @@ final class BookingAuditDetails {
           "slotGranularityMinutes",
           "incrementUnit",
           "maxBookingDurationMinutes",
-          "bufferMinutes",
+          "bufferBeforeMinutes",
+          "bufferAfterMinutes",
           "allowDoubleBooking",
           "availabilityWindowStart",
           "availabilityWindowEnd",
@@ -71,7 +72,8 @@ final class BookingAuditDetails {
           "bookingConfigurationId", "configuration",
           "slotGranularityMinutes", "increment",
           "maxBookingDurationMinutes", "maximumDuration",
-          "bufferMinutes", "buffer");
+          "bufferBeforeMinutes", "bufferBefore",
+          "bufferAfterMinutes", "bufferAfter");
 
   private static final Set<String> LABEL_KEYS = Set.copyOf(LABEL_ORDER);
 

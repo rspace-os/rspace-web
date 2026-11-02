@@ -53,7 +53,8 @@ public final class BookingSettingsController {
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
       List<BookingOpeningHoursEntry> openingHours,
-      long bufferMinutes,
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes,
       long maxBookingDurationMinutes,
       boolean allowDoubleBooking,
       String availabilityWindowStart,
@@ -68,7 +69,8 @@ public final class BookingSettingsController {
           defaults.getSlotGranularityMinutes(),
           defaults.getIncrementUnit(),
           defaults.getOpeningHours(),
-          defaults.getBufferMinutes(),
+          defaults.getBufferBeforeMinutes(),
+          defaults.getBufferAfterMinutes(),
           defaults.getMaxBookingDurationMinutes(),
           defaults.isAllowDoubleBooking(),
           defaults.getAvailabilityWindowStart(),
@@ -84,7 +86,8 @@ public final class BookingSettingsController {
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
       List<BookingOpeningHoursEntry> openingHours,
-      long bufferMinutes,
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes,
       long maxBookingDurationMinutes,
       boolean allowDoubleBooking,
       String availabilityWindowStart,
@@ -101,7 +104,8 @@ public final class BookingSettingsController {
           defaults.getSlotGranularityMinutes(),
           defaults.getIncrementUnit(),
           defaults.getOpeningHours(),
-          defaults.getBufferMinutes(),
+          defaults.getBufferBeforeMinutes(),
+          defaults.getBufferAfterMinutes(),
           defaults.getMaxBookingDurationMinutes(),
           defaults.isAllowDoubleBooking(),
           defaults.getAvailabilityWindowStart(),
@@ -136,7 +140,10 @@ public final class BookingSettingsController {
           JsonNode openingHours,
       @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
           @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
-          Long bufferMinutes,
+          Long bufferBeforeMinutes,
+      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
+          @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
+          Long bufferAfterMinutes,
       @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalid}")
           @Max(
               value = 527_040,
@@ -184,7 +191,8 @@ public final class BookingSettingsController {
               openingHours,
               BookingOpeningHoursCodec::openingHours,
               InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS),
-          bufferMinutes,
+          bufferBeforeMinutes,
+          bufferAfterMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
     }

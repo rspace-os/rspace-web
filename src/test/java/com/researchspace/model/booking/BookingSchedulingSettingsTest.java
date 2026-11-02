@@ -36,6 +36,7 @@ class BookingSchedulingSettingsTest {
                 new BookingOpeningHoursEntry(1, "08:00", "18:00")),
             null,
             null,
+            null,
             null);
     BookingSchedulingSettings merged = patch.merge(current);
     assertFalse(patch.isEmpty());
@@ -116,6 +117,6 @@ class BookingSchedulingSettingsTest {
 
   private static BookingSchedulingSettings increment(long minutes, BookingIncrementUnit unit) {
     return new BookingSchedulingSettings(
-        minutes, unit, BookingSchedulingSettings.DEFAULT_OPENING_HOURS, 0, 0, false);
+        minutes, unit, BookingSchedulingSettings.DEFAULT_OPENING_HOURS, 0, 0, 0, false);
   }
 }

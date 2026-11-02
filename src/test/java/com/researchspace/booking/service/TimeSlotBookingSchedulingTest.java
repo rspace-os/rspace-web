@@ -279,14 +279,90 @@ class TimeSlotBookingSchedulingTest {
                 manager.updateBooking(
                     41L,
                     new TimeSlotBookingManager.Patch(
-                        null, instant("2026-10-25T09:05:00Z"), false, null, null),
+                        null, instant("2026-10-25T09:15:00Z"), false, null, null),
                     actor,
                     actor));
     assertEquals(BookingPolicyException.Reason.MAXIMUM_DURATION, failure.reason());
   }
 
+  static Stream<Arguments> gapCases() {
+    var cases = new java.util.ArrayList<Arguments>();
+    for (BookingEventKind requested : BookingEventKind.values()) {
+      for (BookingEventKind existing : BookingEventKind.values()) {
+        for (boolean doubleBooking : List.of(false, true)) {
+          for (boolean earlier : List.of(false, true)) {
+            for (boolean inside : List.of(false, true)) {
+              cases.add(Arguments.of(requested, existing, doubleBooking, earlier, inside));
+            }
+          }
+        }
+      }
+    }
+    return cases.stream();
+  }
+
+  @ParameterizedTest
+  @MethodSource("gapCases")
+  void additiveGapsHaveHalfOpenBoundariesInEitherInsertionOrder(
+      BookingEventKind requested,
+      BookingEventKind existingKind,
+      boolean doubleBooking,
+      boolean earlier,
+      boolean inside) {
+    ResolvedBookableTarget target = target(12L);
+    BookingConfiguration configuration = bufferedConfiguration();
+    configuration.setSlotGranularityMinutes(1);
+    configuration.setBufferBeforeMinutes(7);
+    configuration.setBufferAfterMinutes(13);
+    configuration.setAllowDoubleBooking(doubleBooking);
+    when(configurationDao.lockActiveByTarget(target.reference()))
+        .thenReturn(Optional.of(configuration));
+    TimeSlotBooking stored =
+        event(99L, existingKind, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z");
+    when(bookingDao.findFirstOverlap(eq(4L), any(), any(), any(), any()))
+        .thenAnswer(
+            invocation -> {
+              Date from = invocation.getArgument(1);
+              Date to = invocation.getArgument(2);
+              Set<BookingEventKind> kinds = invocation.getArgument(4);
+              return kinds.contains(existingKind)
+                      && from.before(stored.getEndTime())
+                      && to.after(stored.getStartTime())
+                  ? Optional.of(stored)
+                  : Optional.empty();
+            });
+    int separation =
+        earlier
+            ? (requested == BookingEventKind.BOOKING ? 13 : 0)
+                + (existingKind == BookingEventKind.BOOKING ? 7 : 0)
+            : (existingKind == BookingEventKind.BOOKING ? 13 : 0)
+                + (requested == BookingEventKind.BOOKING ? 7 : 0);
+    separation -= inside ? 1 : 0;
+    Instant from =
+        earlier
+            ? stored.getStartTime().toInstant().minusSeconds((separation + 60) * 60L)
+            : stored.getEndTime().toInstant().plusSeconds(separation * 60L);
+    var create =
+        new TimeSlotBookingManager.Create(
+            target, Date.from(from), Date.from(from.plusSeconds(3600)), null, requested);
+    boolean exempt =
+        doubleBooking
+            && requested == BookingEventKind.BOOKING
+            && existingKind == BookingEventKind.BOOKING;
+    if (!inside || exempt) {
+      manager.createBooking(create, actor, actor);
+    } else if (requested == BookingEventKind.MAINTENANCE
+        && existingKind == BookingEventKind.MAINTENANCE) {
+      assertThrows(
+          BookingOverlapException.class, () -> manager.createBooking(create, actor, actor));
+    } else {
+      assertThrows(
+          BookingBufferConflictException.class, () -> manager.createBooking(create, actor, actor));
+    }
+  }
+
   @Test
-  void checksRawOverlapThenTheSharedBufferAndLimitsDoubleBookingToMaintenance() {
+  void checksRawOverlapBeforeKindSpecificGapsAndLimitsDoubleBookingToMaintenance() {
     ResolvedBookableTarget target = target(12L);
     BookingConfiguration buffered = bufferedConfiguration();
     when(configurationDao.lockActiveByTarget(target.reference())).thenReturn(Optional.of(buffered));
@@ -310,10 +386,10 @@ class TimeSlotBookingSchedulingTest {
         .verify(bookingDao)
         .findFirstOverlap(
             4L,
-            instant("2026-08-17T09:40:00Z"),
-            instant("2026-08-17T11:20:00Z"),
+            instant("2026-08-17T09:30:00Z"),
+            instant("2026-08-17T11:30:00Z"),
             null,
-            CONFLICTING_EVENT_KINDS);
+            Set.of(BookingEventKind.BOOKING));
 
     BookingConfiguration doubleBookable = configuration(5L, 12L, true);
     doubleBookable.setTimeZone("UTC");
@@ -340,7 +416,8 @@ class TimeSlotBookingSchedulingTest {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     BookingConfiguration configuration = existing.getBookingConfiguration();
     configuration.setTimeZone("UTC");
-    configuration.setBufferMinutes(20);
+    configuration.setBufferBeforeMinutes(10);
+    configuration.setBufferAfterMinutes(20);
     stubReadableBookingAndConfigurationLock(existing);
     Date movedStart = instant("2026-10-25T10:00:00Z");
     Date movedEnd = instant("2026-10-25T11:30:00Z");
@@ -359,10 +436,10 @@ class TimeSlotBookingSchedulingTest {
         .verify(bookingDao)
         .findFirstOverlap(
             4L,
-            instant("2026-10-25T09:40:00Z"),
-            instant("2026-10-25T11:50:00Z"),
+            instant("2026-10-25T09:30:00Z"),
+            instant("2026-10-25T12:00:00Z"),
             41L,
-            CONFLICTING_EVENT_KINDS);
+            Set.of(BookingEventKind.BOOKING));
   }
 
   @Test
@@ -410,13 +487,13 @@ class TimeSlotBookingSchedulingTest {
     BookingConfiguration buffered = bufferedConfiguration();
     when(configurationDao.lockActiveByTarget(target.reference())).thenReturn(Optional.of(buffered));
     TimeSlotBooking maintenance =
-        event(60L, BookingEventKind.MAINTENANCE, "2026-08-17T09:00:00Z", "2026-08-17T09:45:00Z");
+        event(60L, BookingEventKind.MAINTENANCE, "2026-08-17T09:00:00Z", "2026-08-17T09:55:00Z");
     when(bookingDao.findFirstOverlap(
             4L,
-            instant("2026-08-17T09:40:00Z"),
+            instant("2026-08-17T09:50:00Z"),
             instant("2026-08-17T11:20:00Z"),
             null,
-            CONFLICTING_EVENT_KINDS))
+            Set.of(BookingEventKind.MAINTENANCE)))
         .thenReturn(Optional.of(maintenance));
 
     BookingBufferConflictException failure =
@@ -437,9 +514,10 @@ class TimeSlotBookingSchedulingTest {
             60L,
             BookingEventKind.MAINTENANCE,
             Instant.parse("2026-08-17T09:00:00Z"),
-            Instant.parse("2026-08-17T09:45:00Z")),
+            Instant.parse("2026-08-17T09:55:00Z")),
         failure.conflict());
-    assertEquals(20, failure.bufferMinutes());
+    assertEquals(10, failure.bufferBeforeMinutes());
+    assertEquals(20, failure.bufferAfterMinutes());
     verify(bookingDao, never()).saveAndFlush(any());
     verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
@@ -449,17 +527,18 @@ class TimeSlotBookingSchedulingTest {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     BookingConfiguration buffered = existing.getBookingConfiguration();
     buffered.setTimeZone("UTC");
-    buffered.setBufferMinutes(20);
+    buffered.setBufferBeforeMinutes(10);
+    buffered.setBufferAfterMinutes(20);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
     when(configurationDao.lockActiveById(4L)).thenReturn(Optional.of(buffered));
     TimeSlotBooking following =
         event(61L, BookingEventKind.BOOKING, "2026-10-25T08:50:00Z", "2026-10-25T10:00:00Z");
     when(bookingDao.findFirstOverlap(
             4L,
-            instant("2026-10-25T07:10:00Z"),
-            instant("2026-10-25T09:05:00Z"),
+            instant("2026-10-25T07:00:00Z"),
+            instant("2026-10-25T09:15:00Z"),
             41L,
-            CONFLICTING_EVENT_KINDS))
+            Set.of(BookingEventKind.BOOKING)))
         .thenReturn(Optional.of(following));
 
     BookingBufferConflictException failure =
@@ -487,10 +566,10 @@ class TimeSlotBookingSchedulingTest {
         .verify(bookingDao)
         .findFirstOverlap(
             4L,
-            instant("2026-10-25T07:10:00Z"),
-            instant("2026-10-25T09:05:00Z"),
+            instant("2026-10-25T07:00:00Z"),
+            instant("2026-10-25T09:15:00Z"),
             41L,
-            CONFLICTING_EVENT_KINDS);
+            Set.of(BookingEventKind.BOOKING));
     assertEquals(end(), existing.getEndTime());
     verify(bookingDao, never()).saveAndFlush(any());
   }
@@ -668,7 +747,8 @@ class TimeSlotBookingSchedulingTest {
   private static BookingConfiguration bufferedConfiguration() {
     BookingConfiguration buffered = configuration(4L, 12L, true);
     buffered.setTimeZone("UTC");
-    buffered.setBufferMinutes(20);
+    buffered.setBufferBeforeMinutes(10);
+    buffered.setBufferAfterMinutes(20);
     return buffered;
   }
 

@@ -96,7 +96,8 @@ final class BookingCurrentAvailability {
   /** Counted events widened by the item's buffers and clipped to {@code [start, end)}. */
   private static List<Interval> busy(
       BookingConfiguration configuration, List<EventInterval> events, Instant start, Instant end) {
-    long sharedGapMinutes = configuration.getBufferMinutes();
+    long sharedGapMinutes =
+        configuration.getBufferBeforeMinutes() + configuration.getBufferAfterMinutes();
     return events.stream()
         .filter(
             event ->
@@ -106,10 +107,25 @@ final class BookingCurrentAvailability {
             event ->
                 new Interval(
                     later(
-                        event.start().toInstant().minus(sharedGapMinutes, ChronoUnit.MINUTES),
+                        event
+                            .start()
+                            .toInstant()
+                            .minus(
+                                event.kind() == BookingEventKind.MAINTENANCE
+                                    ? configuration.getBufferAfterMinutes()
+                                    : sharedGapMinutes,
+                                ChronoUnit.MINUTES),
                         start),
                     earlier(
-                        event.end().toInstant().plus(sharedGapMinutes, ChronoUnit.MINUTES), end)))
+                        event
+                            .end()
+                            .toInstant()
+                            .plus(
+                                event.kind() == BookingEventKind.MAINTENANCE
+                                    ? configuration.getBufferBeforeMinutes()
+                                    : sharedGapMinutes,
+                                ChronoUnit.MINUTES),
+                        end)))
         .filter(interval -> interval.start().isBefore(interval.end()))
         .sorted(Comparator.comparing(Interval::start))
         .toList();

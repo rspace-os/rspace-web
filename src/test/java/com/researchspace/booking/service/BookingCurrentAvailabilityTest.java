@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * The All bookable items quick-filter classification. The cases mirror the client tests ({@code
@@ -80,27 +82,48 @@ class BookingCurrentAvailabilityTest {
     assertEquals(LATER, classify(shared, maintenanceUntilTen, UTC_DAY_AT_NINE));
   }
 
-  @Test
-  void widensEventsByTheSingleBufferGap() {
+  @ParameterizedTest
+  @CsvSource({"10, 20", "20, 10"})
+  void widensBookingsByTheSumOfTheDirectionalGaps(int before, int after) {
     BookingConfiguration buffered = configuration("UTC");
-    buffered.setBufferMinutes(20);
+    buffered.setBufferBeforeMinutes(before);
+    buffered.setBufferAfterMinutes(after);
     List<EventInterval> startsAtQuarterPastNine =
         List.of(event(BookingEventKind.BOOKING, "2026-08-17T09:15:00Z", "2026-08-17T10:00:00Z"));
     List<EventInterval> endedAtQuarterToNine =
         List.of(event(BookingEventKind.BOOKING, "2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z"));
     // The buffer ends at 09:00 exactly, and intervals are half-open.
     List<EventInterval> endedAtTwentyToNine =
-        List.of(event(BookingEventKind.BOOKING, "2026-08-17T08:00:00Z", "2026-08-17T08:40:00Z"));
+        List.of(event(BookingEventKind.BOOKING, "2026-08-17T08:00:00Z", "2026-08-17T08:30:00Z"));
 
     assertEquals(LATER, classify(buffered, startsAtQuarterPastNine, UTC_DAY_AT_NINE));
     assertEquals(LATER, classify(buffered, endedAtQuarterToNine, UTC_DAY_AT_NINE));
     assertEquals(NOW, classify(buffered, endedAtTwentyToNine, UTC_DAY_AT_NINE));
   }
 
+  @ParameterizedTest
+  @CsvSource({"false", "true"})
+  void maintenanceUsesTheBookingGapFacingItWithUnequalGaps(boolean doubleBooking) {
+    BookingConfiguration item = configuration("UTC");
+    item.setBufferBeforeMinutes(7);
+    item.setBufferAfterMinutes(13);
+    item.setAllowDoubleBooking(doubleBooking);
+    var preceding =
+        List.of(
+            event(BookingEventKind.MAINTENANCE, "2026-08-17T08:00:00Z", "2026-08-17T08:53:00Z"));
+    assertEquals(LATER, classify(item, preceding, atUtc("2026-08-17T08:59:00Z")));
+    assertEquals(NOW, classify(item, preceding, UTC_DAY_AT_NINE));
+    var following =
+        List.of(
+            event(BookingEventKind.MAINTENANCE, "2026-08-17T09:13:00Z", "2026-08-17T10:00:00Z"));
+    assertEquals(LATER, classify(item, following, UTC_DAY_AT_NINE));
+  }
+
   @Test
   void keepsMaintenanceBuffersOccupiedUntilTheirHalfOpenBoundary() {
     BookingConfiguration buffered = configuration("UTC");
-    buffered.setBufferMinutes(15);
+    buffered.setBufferBeforeMinutes(15);
+    buffered.setBufferAfterMinutes(15);
     buffered.setAllowDoubleBooking(true);
     List<EventInterval> events =
         List.of(
@@ -151,7 +174,8 @@ class BookingCurrentAvailabilityTest {
     configuration.setId(1L);
     configuration.setTimeZone(zone);
     configuration.setOpeningHours(hours("00:00", "24:00"));
-    configuration.setBufferMinutes(0);
+    configuration.setBufferBeforeMinutes(0);
+    configuration.setBufferAfterMinutes(0);
     configuration.setAllowDoubleBooking(false);
     return configuration;
   }

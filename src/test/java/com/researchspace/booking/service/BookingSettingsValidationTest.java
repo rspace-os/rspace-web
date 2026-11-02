@@ -23,6 +23,7 @@ class BookingSettingsValidationTest {
               new BookingOpeningHoursEntry(6, "10:00", "16:00")),
           0,
           0,
+          0,
           false);
 
   @Test
@@ -73,7 +74,7 @@ class BookingSettingsValidationTest {
   }
 
   private static BookingSchedulingSettings.Patch patch(List<BookingOpeningHoursEntry> hours) {
-    return new BookingSchedulingSettings.Patch(null, hours, null, null, null);
+    return new BookingSchedulingSettings.Patch(null, hours, null, null, null, null);
   }
 
   @Test
@@ -85,6 +86,7 @@ class BookingSettingsValidationTest {
             List.of(
                 new BookingOpeningHoursEntry(7, "00:00", "24:00"),
                 new BookingOpeningHoursEntry(1, "00:00", "24:00")),
+            0,
             0,
             0,
             false);
@@ -101,6 +103,7 @@ class BookingSettingsValidationTest {
             527040,
             BookingIncrementUnit.MINUTES,
             BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
+            0,
             0,
             0,
             false);
@@ -121,7 +124,12 @@ class BookingSettingsValidationTest {
             patch(List.of(new BookingOpeningHoursEntry(2, "23:59", "24:00"))).merge(current)));
     BookingSchedulingSettings oneMinute =
         new BookingSchedulingSettings.Patch(
-                1L, List.of(new BookingOpeningHoursEntry(2, "23:59", "24:00")), null, null, null)
+                1L,
+                List.of(new BookingOpeningHoursEntry(2, "23:59", "24:00")),
+                null,
+                null,
+                null,
+                null)
             .merge(current);
     assertDoesNotThrow(() -> BookingSettingsValidation.requireValid(oneMinute));
   }

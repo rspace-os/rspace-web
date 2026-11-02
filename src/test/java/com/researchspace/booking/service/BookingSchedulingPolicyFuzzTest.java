@@ -259,7 +259,8 @@ class BookingSchedulingPolicyFuzzTest {
   private static BookingConfiguration configuration(
       FuzzedDataProvider data, String zone, int granularity) {
     BookingConfiguration configuration = configuration(zone, granularity);
-    configuration.setBufferMinutes(data.consumeInt(0, 10_080));
+    configuration.setBufferBeforeMinutes(data.consumeInt(0, 10_080));
+    configuration.setBufferAfterMinutes(data.consumeInt(0, 10_080));
     return configuration;
   }
 
@@ -285,9 +286,11 @@ class BookingSchedulingPolicyFuzzTest {
       Instant start,
       Instant end,
       BookingSchedulingPolicy.ConflictInterval actual) {
-    long gap = configuration.getBufferMinutes();
-    assertEquals(date(start.minus(gap, ChronoUnit.MINUTES)), actual.start());
-    assertEquals(date(end.plus(gap, ChronoUnit.MINUTES)), actual.end());
+    assertEquals(
+        date(start.minus(configuration.getBufferBeforeMinutes(), ChronoUnit.MINUTES)),
+        actual.start());
+    assertEquals(
+        date(end.plus(configuration.getBufferAfterMinutes(), ChronoUnit.MINUTES)), actual.end());
   }
 
   private static BookingPolicyException assertRejection(

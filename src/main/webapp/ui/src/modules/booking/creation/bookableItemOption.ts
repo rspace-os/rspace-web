@@ -10,7 +10,8 @@ export type BookableItemOption = {
   slotGranularityMinutes: number;
   incrementUnit: IncrementUnit;
   openingHours: OpeningHoursEntry[];
-  bufferMinutes: number;
+  bufferBeforeMinutes: number;
+  bufferAfterMinutes: number;
   maxBookingDurationMinutes: number;
   allowDoubleBooking: boolean;
   capabilities?: {
@@ -45,7 +46,8 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     source.slotGranularityMinutes === undefined ||
     source.incrementUnit === undefined ||
     source.openingHours === undefined ||
-    source.bufferMinutes === undefined ||
+    source.bufferBeforeMinutes === undefined ||
+    source.bufferAfterMinutes === undefined ||
     source.maxBookingDurationMinutes === undefined ||
     source.allowDoubleBooking === undefined
   ) {
@@ -60,7 +62,8 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     slotGranularityMinutes: source.slotGranularityMinutes,
     incrementUnit: source.incrementUnit,
     openingHours: source.openingHours,
-    bufferMinutes: source.bufferMinutes,
+    bufferBeforeMinutes: source.bufferBeforeMinutes,
+    bufferAfterMinutes: source.bufferAfterMinutes,
     maxBookingDurationMinutes: source.maxBookingDurationMinutes,
     allowDoubleBooking: source.allowDoubleBooking,
     capabilities: source.capabilities,

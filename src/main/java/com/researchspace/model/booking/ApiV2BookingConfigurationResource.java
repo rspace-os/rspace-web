@@ -98,9 +98,15 @@ public record ApiV2BookingConfigurationResource(
     @ApiV2ResourceField(
             createAccess = INHERITED,
             updateAccess = INHERITED,
-            description = "Idle minutes required before and after a booking.",
+            description = "Unavailable minutes before a booking.",
             example = "15")
-        long bufferMinutes,
+        long bufferBeforeMinutes,
+    @ApiV2ResourceField(
+            createAccess = INHERITED,
+            updateAccess = INHERITED,
+            description = "Unavailable minutes after a booking.",
+            example = "15")
+        long bufferAfterMinutes,
     @ApiV2ResourceField(
             createAccess = INHERITED,
             updateAccess = INHERITED,
