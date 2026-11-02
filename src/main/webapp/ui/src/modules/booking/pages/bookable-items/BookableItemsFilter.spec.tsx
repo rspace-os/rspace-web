@@ -42,6 +42,7 @@ describe("the bookable items table", () => {
     await expect.element(pageObj.fieldSelect).toBeVisible();
     await userEvent.click(pageObj.fieldSelect);
     await expect.element(page.getByRole("option", { name: "Custom field…" })).toBeVisible();
+    // Target fields and their custom-field option are grouped under the relationship's label.
     await expect.element(page.getByRole("group", { name: "Bookable item" })).toBeVisible();
     await expect.element(page.getByRole("option", { name: "Bookable item → Name" })).toBeVisible();
     await expect.element(page.getByRole("option", { name: "Hazard class", exact: false })).not.toBeInTheDocument();
