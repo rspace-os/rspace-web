@@ -512,7 +512,7 @@ function AllBookableItemsContent({
             id: "availability",
             label: t("calendar.availability"),
             minWidth: 320,
-            width: 520,
+            width: 320,
             card: { fullWidth: true },
             renderCell: (row) => {
               const target = row.target;
@@ -527,6 +527,7 @@ function AllBookableItemsContent({
                 if (!quickEntry) return t("calendar.availabilityUnavailable");
                 return (
                   <AvailabilityBar
+                    className="min-w-0 px-1"
                     intervals={quickEntry.intervals}
                     periodStart={new Date(quickEntry.bounds.start)}
                     periodEnd={new Date(quickEntry.bounds.end)}
@@ -552,6 +553,7 @@ function AllBookableItemsContent({
               }
               return (
                 <AvailabilityBar
+                  className="min-w-0 px-1"
                   intervals={availability.data.get(target.globalId) ?? []}
                   periodStart={new Date(bounds.start)}
                   periodEnd={new Date(bounds.end)}

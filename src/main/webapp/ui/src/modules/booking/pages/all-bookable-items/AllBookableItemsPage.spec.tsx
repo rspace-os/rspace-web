@@ -32,6 +32,37 @@ afterEach(() => {
 });
 
 describe("the All Bookable Items page", () => {
+  test.each([
+    [1280, false],
+    [1376, false],
+    [1280, true],
+    [1376, true],
+  ] as const)("fits usable availability inside its cell at %s px (quick=%s)", async (width, quick) => {
+    await withViewport(width, async () => {
+      window.history.replaceState(
+        {},
+        "",
+        `/booking/all-items?date=2026-08-17${quick ? "&availability=available-now" : ""}`,
+      );
+      render(<AllBookableItemsStory containerWidth={width - 346} />);
+      await expect.element(pageObj.confocalAvailability).toBeVisible();
+      if (quick) await expect.element(pageObj.availableNow).toHaveAttribute("aria-pressed", "true");
+      const bar = pageObj.confocalAvailability.element();
+      const cell = bar.closest("td");
+      if (!cell) throw new Error("Availability must be in a table cell");
+      expect(bar.getBoundingClientRect().right).toBeLessThanOrEqual(cell.getBoundingClientRect().right - 1);
+      expect(cell.scrollWidth).toBeLessThanOrEqual(cell.clientWidth);
+      const actions = cell.parentElement?.lastElementChild;
+      if (!actions) throw new Error("Expected row actions");
+      expect(bar.getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
+      const trigger = page.getByRole("button", { name: /^Confocal microscope,.*events?$/ }).first();
+      await expect.element(trigger).toBeVisible();
+      trigger.element().focus();
+      await expect.element(trigger).toHaveFocus();
+      await expect.element(pageObj.availabilityDetails).toBeVisible();
+    });
+  });
+
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
     const response = Promise.withResolvers<void>();
     worker.use(
