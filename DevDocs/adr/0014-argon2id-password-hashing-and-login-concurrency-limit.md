@@ -313,5 +313,9 @@ That table must change in the same commit as any limit, default, message or rout
   - RSDEV-1640: each cookieless public view still sleeps one second on its request thread after
     the guest sign-in.
   - RSDEV-1559: `User.salt` is write-only after the wrap and is dropped in a later release.
+  - RSDEV-1561 (PR #1204): the legacy password dialogs detect success by the English word
+    "successfully", which blocks translating their messages.
+  - RSDEV-1562 (PR #1204): the password limits 8 and 128 are typed by hand in catalog hints and
+    JSP form patterns instead of coming from `User.MIN_PWD_LENGTH` and `User.MAX_PWD_LENGTH`.
   - RSDEV-1560: `RequestUtil.remoteAddr` trusts `X-Forwarded-For`, so address-based throttling of
     busy refusals (and of the API token route, see RSDEV-1557) waits on a trusted-proxy list.
