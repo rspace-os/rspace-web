@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.Constants;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
@@ -17,6 +19,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
@@ -295,5 +298,35 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
     Mockito.verifyNoMoreInteractions(mockPublisher);
+  }
+
+  @Test
+  public void bulkDuplicateRefusesLimitedReadSample() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
+    initialiseContentWithEmptyContent(pi, otherUser);
+    Group groupA = createGroup("groupA", pi);
+    addUsersToGroup(pi, groupA, testUser);
+    Group groupB = createGroup("groupB", pi);
+    addUsersToGroup(pi, groupB, otherUser);
+
+    // otherUser can read the container, so gets limited read of the sample stored in it
+    ApiContainer sharedContainer = createBasicContainerForUser(testUser, "c1", List.of(groupB));
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    moveSubSampleIntoListContainer(
+        sample.getSubSamples().get(0).getId(), sharedContainer.getId(), testUser);
+    int otherUserWorkbenchCount =
+        getWorkbenchForUser(otherUser).getContentSummary().getTotalCount();
+
+    InventoryBulkOperationConfig bulkOpConfig =
+        new InventoryBulkOperationConfig(
+            BulkApiOperationType.DUPLICATE, List.of(sample), false, otherUser);
+    ApiInventoryBulkOperationResult result = inventoryBulkOpApiMgr.runBulkOperation(bulkOpConfig);
+
+    assertEquals(0, result.getSuccessCount());
+    assertEquals(1, result.getErrorCount());
+    assertEquals(
+        otherUserWorkbenchCount,
+        getWorkbenchForUser(otherUser).getContentSummary().getTotalCount());
   }
 }

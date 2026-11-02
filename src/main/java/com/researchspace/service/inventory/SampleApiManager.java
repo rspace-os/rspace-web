@@ -223,7 +223,7 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
 
   /**
    * Makes and saves a full copy of sample, images, storage temperature and Fields and extra fields
-   * but <em>not</em> subsamples
+   * but <em>not</em> subsamples. Requires full read access to the sample.
    *
    * @param sampleId
    * @param user
@@ -232,7 +232,7 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
   ApiSampleWithFullSubSamples duplicate(Long sampleId, User user);
 
   /**
-   * Makes and saves a full copy of a sample template.
+   * Makes and saves a full copy of a sample template. Requires full read access to the template.
    *
    * @return duplicated template
    */

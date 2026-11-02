@@ -189,6 +189,7 @@ public interface ContainerApiManager extends InventoryApiManager<Container> {
    */
   ApiContainer restoreDeletedContainer(Long containerId, User user);
 
+  /** Creates a copy of the container. Requires full read access to the container. */
   ApiContainer duplicate(Long containerId, User user);
 
   /**

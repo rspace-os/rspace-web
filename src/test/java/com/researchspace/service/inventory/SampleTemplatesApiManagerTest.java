@@ -37,6 +37,7 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -219,6 +220,11 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), otherUser);
     assertFalse(templateRetrievedByOtherUser.isClearedForPublicView());
     assertTrue(templateRetrievedByOtherUser.isClearedForLimitedView());
+
+    // limited read is not enough to duplicate, as the copy would have full details
+    Long templateId = createdTemplate.getId();
+    assertThrows(
+        NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(templateId, otherUser));
   }
 
   @Test
