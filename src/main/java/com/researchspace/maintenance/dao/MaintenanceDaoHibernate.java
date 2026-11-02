@@ -1,15 +1,44 @@
 package com.researchspace.maintenance.dao;
 
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository("maintenanceDao")
 public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMaintenance, Long>
     implements MaintenanceDao {
+
+  @Override
+  public Optional<ScheduledMaintenance> lockCurrent(Long id) {
+    getSafeNull(id).ifPresent(value -> getSession().evict(value));
+    return getSession()
+        .createQuery("from ScheduledMaintenance where id = :id", ScheduledMaintenance.class)
+        .setParameter("id", id)
+        .setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public void flushChanges() {
+    getSession().flush();
+  }
+
+  private static final String ALIAS = "maintenance";
+  private static final CollectionQueryExecutor<ScheduledMaintenance> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(
+          ScheduledMaintenance.class, ApiV2MaintenanceResource.DESCRIPTION, ALIAS);
+
+  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
 
   public MaintenanceDaoHibernate() {
     super(ScheduledMaintenance.class);
@@ -21,16 +50,38 @@ public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMainte
 
   @Override
   public Optional<ScheduledMaintenance> getNextScheduledMaintenance() {
-    List<ScheduledMaintenance> allFutureMaintenances = getAllFutureMaintenanceOrderedByDateAsc();
-    if (allFutureMaintenances.size() > 0) {
-      return Optional.of(allFutureMaintenances.get(0));
-    }
-    return Optional.ofNullable(null);
+    return getSession()
+        .createQuery(
+            "from ScheduledMaintenance where endDate > :now order by startDate asc",
+            ScheduledMaintenance.class)
+        .setParameter("now", new Date())
+        .setMaxResults(1)
+        .uniqueResultOptional();
   }
 
   @Override
   public List<ScheduledMaintenance> getAllFutureMaintenances() {
     return getAllFutureMaintenanceOrderedByDateAsc();
+  }
+
+  @Override
+  public ResourcePage<ScheduledMaintenance> getResources(
+      ResourceRequest request, RelationshipReadAccess relationshipAccess) {
+    return COLLECTION_QUERY.page(
+        criteriaBuilderFactory, getSession(), request, null, relationshipAccess);
+  }
+
+  @Override
+  public long countResources(ResourceRequest request, RelationshipReadAccess relationshipAccess) {
+    return COLLECTION_QUERY.count(
+        criteriaBuilderFactory, getSession(), request, null, relationshipAccess);
+  }
+
+  @Override
+  public List<ScheduledMaintenance> getResources(
+      ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
+    return COLLECTION_QUERY.listById(
+        criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
   }
 
   private List<ScheduledMaintenance> getAllFutureMaintenanceOrderedByDateAsc() {

@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.json;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonMappingException.Reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.CoercionAction;
@@ -89,9 +90,11 @@ public final class ApiV2JsonMappers {
   }
 
   /** Maps a strict Jackson binding failure to the API v2 validation response model. */
-  public static DocumentValidationException validationException(
-      MismatchedInputException exception) {
-    Reason reason = reason(exception);
+  public static DocumentValidationException validationException(JsonMappingException exception) {
+    Reason reason =
+        exception instanceof MismatchedInputException mismatch
+            ? reason(mismatch)
+            : Reason.INVALID_VALUE;
     String field = path(exception);
     if (exception instanceof UnrecognizedPropertyException unknown) {
       field = appendField(field, unknown.getPropertyName());
@@ -118,7 +121,7 @@ public final class ApiV2JsonMappers {
     return Reason.WRONG_TYPE;
   }
 
-  private static String path(MismatchedInputException exception) {
+  private static String path(JsonMappingException exception) {
     StringBuilder path = new StringBuilder();
     for (Reference reference : exception.getPath()) {
       if (reference.getFieldName() != null) {
