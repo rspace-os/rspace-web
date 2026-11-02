@@ -123,11 +123,46 @@ describe("calendar availability", () => {
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("where")).toContain("target=in=(IN1,IN2)");
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
+    expect(requests[0].searchParams.get("totals")).toBe("true");
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-03-28T23:00:00Z", "2026-03-29T01:00:00Z", "2026-03-28T22:00:00Z"),
     ]);
     expect(result.get("IN2")).toHaveLength(1);
     expect([...result.values()].flat().every((interval) => interval.kind === "booking")).toBe(true);
+  });
+
+  it("splits 1,000 target IDs into request-safe batches", async () => {
+    const token = "t".repeat(2500);
+    const requests: { url: URL; authorization: string | null; requestedWith: string | null }[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        requests.push({
+          url: new URL(request.url),
+          authorization: request.headers.get("authorization"),
+          requestedWith: request.headers.get("x-requested-with"),
+        });
+        return HttpResponse.json(collectionResponse([]));
+      }),
+    );
+
+    const rows = Array.from({ length: 1000 }, (_, index) => ({
+      globalId: `IN${String(index).padStart(4, "0")}${"x".repeat(48)}`,
+      timezone: "UTC",
+      ...schedule,
+    }));
+    const result = await loadCalendarAvailability(rows, "2026-08-17", token, new AbortController().signal);
+
+    expect(result.size).toBe(1000);
+    expect(requests.length).toBeGreaterThan(2);
+    for (const { url, authorization, requestedWith } of requests) {
+      const targetList = url.searchParams.get("where")?.split("target=in=(")[1]?.split(")")[0] ?? "";
+      const targetIds = targetList ? targetList.split(",") : [];
+      expect(targetIds.length).toBeGreaterThan(0);
+      expect(targetIds.length).toBeLessThanOrEqual(500);
+      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n`;
+      const headers = `authorization: ${authorization}\r\nx-requested-with: ${requestedWith}\r\n\r\n`;
+      expect(new TextEncoder().encode(`${requestLine}${headers}`).length).toBeLessThanOrEqual(6000);
+    }
   });
 
   it("fetches every page and fails explicitly above the cap", async () => {
@@ -138,23 +173,31 @@ describe("calendar availability", () => {
         pages.push(page);
         return HttpResponse.json(
           page === "1"
-            ? collectionResponse([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")], {
-                page: 1,
-                totalPages: 2,
-                totalDocs: 2,
-              })
-            : collectionResponse([booking(2, "IN1", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z")], {
-                page: 2,
-                totalPages: 2,
-                totalDocs: 2,
-              }),
+            ? collectionResponse(
+                [
+                  booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+                  booking(2, "IN2", "2026-08-17T11:00:00Z", "2026-08-17T12:00:00Z"),
+                ],
+                { page: 1, totalPages: 2, totalDocs: 4 },
+              )
+            : collectionResponse(
+                [
+                  booking(3, "IN2", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z"),
+                  booking(4, "IN1", "2026-08-17T13:00:00Z", "2026-08-17T14:00:00Z"),
+                ],
+                { page: 2, totalPages: 2, totalDocs: 4 },
+              ),
         );
       }),
     );
-    const rows = [{ globalId: "IN1", timezone: "UTC", ...schedule }];
+    const rows = [
+      { globalId: "IN1", timezone: "UTC", ...schedule },
+      { globalId: "IN2", timezone: "UTC", ...schedule },
+    ];
     const result = await loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal);
     expect(pages).toEqual(["1", "2"]);
-    expect(result.get("IN1")).toHaveLength(2);
+    expect(result.get("IN1")?.map(({ source }) => source.id)).toEqual(["booking:1", "booking:4"]);
+    expect(result.get("IN2")?.map(({ source }) => source.id)).toEqual(["booking:2", "booking:3"]);
 
     server.use(
       http.get("/api/v2/bookings", () =>
@@ -164,6 +207,96 @@ describe("calendar availability", () => {
     await expect(loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal)).rejects.toThrow(
       "exceeds 1,000",
     );
+  });
+
+  it("accepts exactly 1,000 booking documents in one availability batch", async () => {
+    const requestedPages: string[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        const page = Number(new URL(request.url).searchParams.get("page"));
+        requestedPages.push(String(page));
+        const start = (page - 1) * 100;
+        const docs = Array.from({ length: Math.min(100, 1000 - start) }, (_, index) =>
+          booking(start + index + 1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+        );
+        return HttpResponse.json(collectionResponse(docs, { page: page, totalPages: 10, totalDocs: 1000 }));
+      }),
+    );
+
+    const result = await loadCalendarAvailability(
+      [{ globalId: "IN1", timezone: "UTC", ...schedule }],
+      "2026-08-17",
+      "token",
+      new AbortController().signal,
+    );
+
+    expect(requestedPages).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+    expect(result.get("IN1")).toHaveLength(1000);
+  });
+
+  it("applies the 1,000-booking limit independently to each target batch", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const page = Number(url.searchParams.get("page"));
+        const where = url.searchParams.get("where") ?? "";
+        const targetId = where.split("target=in=(")[1]?.split(",")[0] ?? "";
+        const start = (page - 1) * 100;
+        const docs = Array.from({ length: 100 }, (_, index) =>
+          booking(start + index + 1, targetId, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+        );
+        return HttpResponse.json(collectionResponse(docs, { page: page, totalPages: 10, totalDocs: 1000 }));
+      }),
+    );
+    const rows = Array.from({ length: 1000 }, (_, index) => ({
+      globalId: `IN${String(index).padStart(4, "0")}`,
+      timezone: "UTC",
+      ...schedule,
+    }));
+
+    const result = await loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal);
+
+    expect(requests).toHaveLength(20);
+    expect(result.get("IN0000")).toHaveLength(1000);
+    expect(result.get("IN0500")).toHaveLength(1000);
+  });
+
+  it("uses one display interval across rows with different local dates", async () => {
+    let requestUrl: URL | undefined;
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        requestUrl = new URL(request.url);
+        return HttpResponse.json(
+          collectionResponse([
+            booking(1, "IN1", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
+            booking(2, "IN2", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
+          ]),
+        );
+      }),
+    );
+
+    const interval = displayInterval("2026-08-18", "Asia/Tokyo", "00:00", "24:00");
+    const result = await loadCalendarAvailability(
+      [
+        { globalId: "IN1", timezone: "Asia/Tokyo", ...schedule },
+        { globalId: "IN2", timezone: "America/Los_Angeles", ...schedule },
+      ],
+      interval,
+      "token",
+      new AbortController().signal,
+    );
+
+    const where = requestUrl?.searchParams.get("where") ?? "";
+    expect(where).toContain("start<2026-08-18T15:00:00Z");
+    expect(where).toContain("end>2026-08-17T15:00:00Z");
+    expect(result.get("IN1")).toEqual([
+      sourced("booking:1", "booking", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
+    ]);
+    expect(result.get("IN2")).toEqual([
+      sourced("booking:2", "booking", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
+    ]);
   });
 
   it("generates and clips closures for every scheduling date overlapped by the display interval", async () => {
@@ -268,6 +401,73 @@ describe("calendar availability", () => {
         controller.signal,
       ),
     ).rejects.toThrow();
+  });
+
+  it("rejects the complete availability result when a later target batch fails", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.get("where")?.includes("IN0500")) {
+          return HttpResponse.json({ message: "later batch failed" }, { status: 500 });
+        }
+        return HttpResponse.json(collectionResponse([]));
+      }),
+    );
+    const rows = Array.from({ length: 501 }, (_, index) => ({
+      globalId: `IN${String(index).padStart(4, "0")}`,
+      timezone: "UTC",
+      ...schedule,
+    }));
+
+    await expect(loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal)).rejects.toThrow(
+      "500",
+    );
+    expect(requests).toHaveLength(2);
+  });
+
+  it.each([414, 431])("splits a calendar target batch after HTTP %s", async (status) => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const targetList = (url.searchParams.get("where") ?? "").split("target=in=(")[1]?.split(")")[0] ?? "";
+        if (targetList.split(",").length > 1) return new HttpResponse(null, { status });
+        return HttpResponse.json(collectionResponse([]));
+      }),
+    );
+    const rows = ["IN1", "IN2"].map((globalId) => ({ globalId, timezone: "UTC", ...schedule }));
+
+    const result = await loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal);
+
+    expect(requests).toHaveLength(3);
+    expect(requests.map((url) => (url.searchParams.get("where") ?? "").split("target=in=(")[1]?.split(")")[0])).toEqual(
+      ["IN1,IN2", "IN1", "IN2"],
+    );
+    expect(result.size).toBe(2);
+  });
+
+  it("rejects the complete availability result when a later target batch is aborted", async () => {
+    const controller = new AbortController();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        if (requests.length === 2) controller.abort();
+        return HttpResponse.json(collectionResponse([]));
+      }),
+    );
+    const rows = Array.from({ length: 501 }, (_, index) => ({
+      globalId: `IN${String(index).padStart(4, "0")}`,
+      timezone: "UTC",
+      ...schedule,
+    }));
+
+    await expect(loadCalendarAvailability(rows, "2026-08-17", "token", controller.signal)).rejects.toThrow();
+    expect(requests).toHaveLength(2);
   });
 
   it.each([
