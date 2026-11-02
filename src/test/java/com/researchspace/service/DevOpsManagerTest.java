@@ -50,6 +50,12 @@ public class DevOpsManagerTest extends SpringTransactionalTest {
             + user.getUsername()
             + "' (type: FOLDER:ROOT).<br/>\nIt seems fine.<br/>\n",
         devOpsMgr.fixRecord(userWorkspace.getOid(), user, false));
+
+    // the report is served as HTML to a sysadmin, so a folder name must not become markup
+    Folder marked = createFolder("<img src=x onerror=alert(1)>", userWorkspace, user);
+    String report = devOpsMgr.fixRecord(marked.getOid(), user, false);
+    assertTrue(report.contains("'&lt;img src=x onerror=alert(1)&gt;'"));
+    assertFalse(report.contains("<img"));
   }
 
   @Test

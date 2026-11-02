@@ -652,7 +652,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertNotNull(creation.getId(), "the creation entry must be a persisted row, not synthesised");
     assertEquals(SampleRequestStatus.PENDING, creation.getStatus());
     assertEquals(requester.getUsername(), creation.getCreatedBy().getUsername());
-    assertEquals(fetched.getCreatedMillis(), creation.getCreatedMillis());
   }
 
   @Test

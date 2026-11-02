@@ -12,13 +12,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.DMPManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -53,6 +56,8 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
   @Autowired private DMPOnlineController dmpOnlineController;
 
   @Autowired private UserConnectionManager userConnectionManager;
+
+  @Autowired private DMPManager dmpManager;
 
   @Value("${dmponline.client.id}")
   private String clientId;
@@ -239,6 +244,28 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
 
     isConnectionAlive = dmpOnlineController.isConnectionAlive(principal);
     assertFalse(isConnectionAlive);
+  }
+
+  @Test
+  public void importRejectsIdentifierThatIsNotAPlanUrl() throws Exception {
+    createExistingUserConnection();
+    AccessToken connectionInfo = new AccessToken();
+    connectionInfo.setExpiresIn(299L);
+    when(restTemplate.exchange(
+            eq("https://dmponline.dmptest.dcc.ac.uk/oauth/token/info"),
+            eq(HttpMethod.GET),
+            any(),
+            ArgumentMatchers.<Class<String>>any()))
+        .thenReturn(new ResponseEntity(connectionInfo, HttpStatus.OK));
+
+    AjaxReturnObject<JsonNode> result =
+        dmpOnlineController.importDmp(
+            "https://doi.org/10.48321/D1ABCD", "plan", new BindingAwareModelMap(), principal);
+
+    assertNull(result.getData());
+    assertThat(result.getError().getErrorMessages())
+        .containsExactly("The plan identifier is not a DMPonline plan URL.");
+    assertThat(dmpManager.findDMPsForUser(testUser)).isEmpty();
   }
 
   @Test

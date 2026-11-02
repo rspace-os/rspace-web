@@ -12,21 +12,23 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
-import LoaderCircular from "@/components/LoadingCircular";
 import i18n from "@/modules/common/i18n";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import Step1 from "./CreateGroupStep1";
 import Step2 from "./CreateGroupStep2";
 import Step3 from "./CreateGroupStep3";
 import Step4 from "./CreateGroupStep4";
 
+type CreateGroupProps = {
+  currentUser: string | null;
+  selfService: boolean;
+  projectGroup: boolean;
+};
+
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-class CreateGroup extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  constructor(props: any) {
+class CreateGroup extends React.Component<CreateGroupProps, any> {
+  constructor(props: CreateGroupProps) {
     super(props);
     this.state = {
       open: false,
@@ -36,20 +38,20 @@ class CreateGroup extends React.Component<any, any> {
       labGroup: null,
       loading: false,
       createGroup: {
-        currentUser: domContainer?.getAttribute("data-currentUser"),
+        currentUser: props.currentUser,
         selectPI: {
-          value: selfService ? domContainer?.getAttribute("data-currentUser") : "",
-          selectedUser: selfService ? domContainer?.getAttribute("data-currentUser") : "",
+          value: props.selfService ? props.currentUser : "",
+          selectedUser: props.selfService ? props.currentUser : "",
           displayNominate: false,
         },
-        groupType: projectGroup ? "Project Group" : "labGroup",
+        groupType: props.projectGroup ? "Project Group" : "labGroup",
         groupName: "",
         existingUsers: [],
         newUsers: [],
       },
     };
   }
-  maxSteps = selfService ? 3 : 4;
+  maxSteps = this.props.selfService ? 3 : 4;
   handleClickOpen = () => {
     this.setState({
       ...this.initialState,
@@ -122,9 +124,9 @@ class CreateGroup extends React.Component<any, any> {
   createGroup = () => {
     this.displayLoading(true);
 
-    const url = projectGroup
+    const url = this.props.projectGroup
       ? "/projectGroup/createProjectGroup"
-      : selfService
+      : this.props.selfService
         ? "/selfServiceLabGroup/createSelfServiceLabGroup"
         : "/cloud/createCloudGroup2";
     const data = {
@@ -138,7 +140,7 @@ class CreateGroup extends React.Component<any, any> {
       .post(url, data)
       .then((response) => {
         if (response.data.success === true) {
-          if (selfService) {
+          if (this.props.selfService) {
             this.setState({
               open: false,
               toast: true,
@@ -194,7 +196,7 @@ class CreateGroup extends React.Component<any, any> {
 
   //Depending on what modal number the user is on depends on what is displayed via switch
   getStepContent = (step: number) => {
-    if (selfService && step > 0) {
+    if (this.props.selfService && step > 0) {
       step++;
     }
     switch (step) {
@@ -233,7 +235,7 @@ class CreateGroup extends React.Component<any, any> {
     this.setState({
       toast: false,
     });
-    if (selfService) {
+    if (this.props.selfService) {
       window.location.replace(`/groups/view/${this.state.newGroup}`);
     }
   };
@@ -335,10 +337,10 @@ class CreateGroup extends React.Component<any, any> {
                 horizontal: "right",
               }}
               open={this.state.toast}
-              autoHideDuration={selfService ? 1000 : 6000}
+              autoHideDuration={this.props.selfService ? 1000 : 6000}
               onClose={this.closeToast}
               sx={
-                selfService
+                this.props.selfService
                   ? {
                       position: "absolute",
                       marginBottom: "10px",
@@ -365,12 +367,4 @@ class CreateGroup extends React.Component<any, any> {
   }
 }
 
-const domContainer = document.getElementById("createGroup");
-const selfService = $("#selfServiceLabGroup").length !== 0;
-const projectGroup = $("#projectGroup").length !== 0;
-const root = createRoot(domContainer as HTMLElement);
-root.render(
-  <I18nRoot namespaces={["groups"]} fallback={<LoaderCircular />}>
-    <CreateGroup />
-  </I18nRoot>,
-);
+export default CreateGroup;
