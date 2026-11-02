@@ -62,7 +62,7 @@ export const bookableItemFixtures = [
     ...DEFAULT_SCHEDULING_SETTINGS,
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "17:00" })),
     createdAt: "2026-08-01T09:00:00Z",
-    createdByName: "Grace Hopper (grace)",
+    createdByName: "Grace Hopper",
     updatedAt: "2026-08-10T10:00:00Z",
     "target.customFields": { SF152: "BSL-2", SF160: "yes" },
   },
@@ -173,7 +173,7 @@ export const sampleBookingEvents = [
     state: "CONFIRMED",
     privacy: "full",
     purpose: "Calibrate the objective",
-    bookedBy: "Ada Lovelace (ada)",
+    bookedBy: "Ada Lovelace",
   },
   {
     id: 42,

@@ -34,7 +34,7 @@ describe("BookableItemPage", () => {
     expect(screen.getByText("IN123")).toBeVisible();
     const facts = screen.getByRole("complementary", { name: "booking:bookableItemDetails.about" });
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
-    expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
+    expect(within(facts).getByText("Grace Hopper")).toBeVisible();
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
     expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);

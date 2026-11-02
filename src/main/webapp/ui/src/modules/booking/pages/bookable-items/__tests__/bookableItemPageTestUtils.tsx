@@ -30,7 +30,7 @@ export const configuration = {
   bufferBeforeMinutes: 5,
   bufferAfterMinutes: 15,
   createdAt: "2026-08-17T00:00:00Z",
-  createdByName: "Grace Hopper (grace)",
+  createdByName: "Grace Hopper",
   updatedAt: null,
 };
 export const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
