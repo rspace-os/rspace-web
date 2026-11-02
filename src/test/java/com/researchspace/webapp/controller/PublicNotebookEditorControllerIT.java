@@ -19,6 +19,7 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import org.apache.shiro.SecurityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +162,7 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
         () ->
             controller.openNotebook(
                 "randomstuffnotalink", null, modelTss, mockRequest, mockResponse));
+    assertFalse(SecurityUtils.getSubject().isAuthenticated());
   }
 
   @Test

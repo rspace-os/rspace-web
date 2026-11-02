@@ -115,6 +115,24 @@ the same user without losing page state. Only GET requests retry automatically;
 pending writes fail without replay. API keys and external OAuth clients retain
 their stateless authentication behavior.
 
+### Public links and the anonymous guest
+
+A visitor who opens a published document or notebook without a session is signed in as the shared
+`rspace anonymous guest` account (`RecordGroupSharing.ANONYMOUS_USER`), so the permission checks
+and the image, attachment and comment endpoints the page calls work unchanged.
+`AnonymousUserFilter` keeps that session on the public URLs and sends it to the login page from
+`/workspace` and the other root pages.
+
+- `PublicDocumentsUtilities.loginAnonymousUser` signs in with
+  `AnonymousGuestAuthenticationToken`, which has no credentials and is only built by the server.
+  `AnonymousGuestRealm`, registered in every security manager, accepts only that token and always
+  signs in the fixed guest username, so public traffic never reaches the password check or its
+  limits (ADR 0014). A password login as the guest goes to the password realm like any other.
+- Disabling the guest account turns public pages off: the realm refuses the sign-in.
+- A new public page must look up its link and answer not found before signing the guest in, as
+  `PublicStructuredDocumentController` and `PublicNotebookEditorController` do, so made-up links
+  create no guest session.
+
 ## Authorization
 
 Authorization is configured at several levels:

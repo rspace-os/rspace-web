@@ -23,7 +23,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,9 +45,6 @@ public class PublicStructuredDocumentController extends BaseController {
 
   private @Autowired RecordSigningManager signingManager;
   @Autowired private RecordSharingManager recordSharingManager;
-
-  @Value("${publishing.anonymousGuest.password}")
-  private String anonymousPassword;
 
   /**
    * Opens document for viewing by anonymous user
@@ -75,7 +71,7 @@ public class PublicStructuredDocumentController extends BaseController {
     }
     if (user == null) {
       user = getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
-      PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+      PublicDocumentsUtilities.loginAnonymousUser();
     }
     Long recordId = rgs.getShared().getId();
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);

@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,9 +25,6 @@ public class PublicNotebookEditorController extends BaseController {
 
   @Autowired private RecordSharingManager recordSharingManager;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
-
-  @Value("${publishing.anonymousGuest.password}")
-  private String anonymousPassword;
 
   /**
    * Shows the notebook page and passes the notebook id for the journal plugin to use.
@@ -45,10 +41,6 @@ public class PublicNotebookEditorController extends BaseController {
       HttpServletResponse response)
       throws AuthorizationException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
-    if (user == null) {
-      user = getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
-      PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
-    }
     RecordGroupSharing rgs = recordSharingManager.getByPublicLink(publicLink);
     if (rgs == null) {
       throw new PublicLinkNotFoundException(publicLink);
@@ -56,6 +48,10 @@ public class PublicNotebookEditorController extends BaseController {
     User sharedBy = rgs.getSharedBy();
     if (!systemPropertyPermissionManager.isPropertyAllowed(sharedBy, "public_sharing")) {
       response.sendRedirect("/public/publishIsDisabled");
+    }
+    if (user == null) {
+      user = getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
+      PublicDocumentsUtilities.loginAnonymousUser();
     }
     Long notebookId = rgs.getShared().getId();
     Notebook notebook = folderManager.getNotebook(notebookId);
