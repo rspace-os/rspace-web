@@ -16,6 +16,7 @@ import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingIdempotencyConflictException;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.BookingPolicyException;
+import com.researchspace.booking.service.BookingStartInPastException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
 import com.researchspace.booking.service.BookingWindowException;
@@ -85,6 +86,11 @@ public final class TimeSlotBookingResourceOperations
                 "errors.api.v2.booking.granularity",
                 "The interval violates the scheduling policy.",
                 exception -> exception.reason().errorCode()),
+            ApiV2ErrorMapping.of(
+                BookingStartInPastException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.booking.startInPast",
+                "The booking start must be in the future."),
             ApiV2ErrorMapping.of(
                 BookingWindowException.class,
                 HttpStatus.BAD_REQUEST,
