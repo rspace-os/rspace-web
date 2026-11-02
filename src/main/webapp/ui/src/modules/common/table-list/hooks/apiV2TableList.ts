@@ -6,6 +6,7 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/config";
+import { apiV2ListKey, apiV2Root } from "@/modules/common/queries/apiV2QueryKeys";
 import { type ApiV2CollectionAdapter, type ApiV2DocumentSchema, createApiV2CollectionAdapter } from "../api-v2/adapter";
 import { type ApiV2CollectionFetchOptions, createApiV2CollectionFetcher, projectedState } from "../api-v2/fetcher";
 import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
@@ -125,10 +126,7 @@ export function useApiV2TableList<
     visibleFields: restoredColumns ?? rowConfig.defaultColumns,
     sorting: restoredSorting ?? rowConfig.defaultSort ?? [],
   };
-  const fetchCollection = useMemo(
-    () => createApiV2CollectionFetcher(adapter, { ...request, totals: false }),
-    [adapter, request],
-  );
+  const fetchCollection = createApiV2CollectionFetcher(adapter, { ...request, totals: false });
   // Acknowledge each restored signature so later edits may diverge and fetch.
   // A new signature must match its saved state before it is acknowledged.
   const [restoredSignature, setRestoredSignature] = useState<string | null>(null);
@@ -150,34 +148,34 @@ export function useApiV2TableList<
     dataSource: {
       type: "remote",
       dataScope,
-      queryKey: (state) => [
-        "api-v2",
-        resourceName,
-        endpoint,
-        authScope,
-        ready(state)
-          ? {
-              state: projectedState(adapter, state, request?.projection ?? "visible"),
-              depth: request?.depth,
-              projection: request?.projection,
-              baseFilter: request?.baseFilter,
-              metadata,
-              runtimeFields,
-              config: {
-                idField: config.idField,
-                useAsTitle: config.useAsTitle,
-                listSearchableFields: config.listSearchableFields,
-                fields: config.fields.map((field) => ({
-                  name: field.name,
-                  type: field.type,
-                  dependencies: field.list === false ? undefined : field.list?.dependencies,
-                  relationTo: field.type === "relationship" ? field.relationTo : undefined,
-                })),
-              },
-              schemaFields: Object.keys(documentSchema.entries),
-            }
-          : ["pending-saved-view", saved.signature],
-      ],
+      queryKey: (state) =>
+        apiV2ListKey(
+          resourceName,
+          endpoint,
+          authScope,
+          ready(state)
+            ? {
+                state: projectedState(adapter, state, request?.projection ?? "visible"),
+                depth: request?.depth,
+                projection: request?.projection,
+                baseFilter: request?.baseFilter,
+                metadata,
+                runtimeFields,
+                config: {
+                  idField: config.idField,
+                  useAsTitle: config.useAsTitle,
+                  listSearchableFields: config.listSearchableFields,
+                  fields: config.fields.map((field) => ({
+                    name: field.name,
+                    type: field.type,
+                    dependencies: field.list === false ? undefined : field.list?.dependencies,
+                    relationTo: field.type === "relationship" ? field.relationTo : undefined,
+                  })),
+                },
+                schemaFields: Object.keys(documentSchema.entries),
+              }
+            : ["pending-saved-view", saved.signature],
+        ),
       fetch: fetchCollection as unknown as CollectionFetcher<Row>,
       ...query,
       enabled: ready,
@@ -187,8 +185,7 @@ export function useApiV2TableList<
   // refreshes this active query along with the current page.
   const totals = useQuery({
     queryKey: [
-      "api-v2",
-      resourceName,
+      ...apiV2Root(resourceName),
       endpoint,
       authScope,
       "totals",

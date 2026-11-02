@@ -41,7 +41,7 @@ export function monthGridStart(date: string): string {
   return startOfWeek(firstOfMonth(date));
 }
 
-export function monthDayCount(date: string): number {
+function monthDayCount(date: string): number {
   return Temporal.PlainDate.from(firstOfMonth(date)).daysInMonth;
 }
 
