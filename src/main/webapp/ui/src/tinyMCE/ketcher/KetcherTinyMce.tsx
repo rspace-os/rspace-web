@@ -1,19 +1,13 @@
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
-import { ThemeProvider } from "@mui/material/styles";
 import type { Ketcher } from "ketcher-core";
 import React, { useEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { IsInvalid, IsValid, type ValidationResult } from "@/components/ValidatingSubmitButton";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { blobToBase64 } from "@/util/files";
-import Alerts from "../../components/Alerts/Alerts";
-import Analytics from "../../components/Analytics";
 import useChemicalImport, { type RspaceCompoundId } from "../../hooks/api/useChemicalImport";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import theme from "../../theme";
 
 type TinyMceEditor = {
   id: string;
@@ -35,13 +29,7 @@ type MustacheRenderer = {
 };
 
 const CHEM_CLASS_NAME = "chem";
-const KETCHER_DIALOG_CONTAINER_ID = "tinymce-ketcher";
-const OPEN_KETCHER_DIALOG_EVENT = "OPEN_KETCHER_DIALOG";
 const EMPTY_MOLECULE_MESSAGE = "Please draw, paste, or open a molecule to insert into the document";
-
-const ketcherDialogRoots = new WeakMap<HTMLElement, Root>();
-
-let ketcherDialogListenerRegistered = false;
 
 function getTinyMceDialogUtils(): TinyMceDialogUtils | undefined {
   return (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils }).tinymceDialogUtils;
@@ -100,50 +88,6 @@ function showErrorAlert(message: string): void {
 
 function renderTemplate<T extends object>(template: string, data: T): string {
   return getMustacheRenderer()?.render(template, data) ?? "";
-}
-
-function getKetcherMountContainer(): HTMLElement | null {
-  const rootDocument = window.top?.document ?? document;
-  const container = rootDocument.getElementById(KETCHER_DIALOG_CONTAINER_ID);
-
-  return container instanceof HTMLElement ? container : null;
-}
-
-function renderKetcherDialog(): void {
-  const wrapperDiv = getKetcherMountContainer();
-
-  if (!wrapperDiv) {
-    return;
-  }
-
-  const root = ketcherDialogRoots.get(wrapperDiv) ?? createRoot(wrapperDiv);
-  ketcherDialogRoots.set(wrapperDiv, root);
-
-  const unmount = () => {
-    root.unmount();
-    ketcherDialogRoots.delete(wrapperDiv);
-  };
-
-  root.render(
-    <ThemeProvider theme={theme}>
-      <Analytics>
-        <Alerts>
-          <I18nRoot namespaces={["common"]}>
-            <KetcherTinyMce onUnmount={unmount} />
-          </I18nRoot>
-        </Alerts>
-      </Analytics>
-    </ThemeProvider>,
-  );
-}
-
-function registerKetcherDialogListener(): void {
-  if (ketcherDialogListenerRegistered) {
-    return;
-  }
-
-  window.addEventListener(OPEN_KETCHER_DIALOG_EVENT, renderKetcherDialog);
-  ketcherDialogListenerRegistered = true;
 }
 
 export const KetcherTinyMce = ({ onUnmount }: { onUnmount: () => void }): React.ReactNode => {
@@ -355,13 +299,5 @@ export const KetcherTinyMce = ({ onUnmount }: { onUnmount: () => void }): React.
     </React.Suspense>
   );
 };
-
-document.addEventListener("DOMContentLoaded", () => {
-  registerKetcherDialogListener();
-});
-
-if (document.readyState !== "loading") {
-  registerKetcherDialogListener();
-}
 
 export default KetcherTinyMce;

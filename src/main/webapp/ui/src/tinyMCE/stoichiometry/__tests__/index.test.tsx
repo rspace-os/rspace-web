@@ -21,7 +21,7 @@ vi.mock("react-dom/client", () => ({
   createRoot: mockCreateRoot,
 }));
 
-vi.mock("@/tinyMCE/stoichiometry/StoichiometryDialogEntrypoint", () => ({
+vi.mock("@/tinyMCE/stoichiometry/StoichiometryDialogRoot", () => ({
   default: mockDialogEntrypoint,
 }));
 
@@ -266,7 +266,7 @@ async function instantiateStoichiometryPlugin() {
   // always see real translations instead of racing the namespace load.
   const i18n = (await import("@/modules/common/i18n")).default;
   await i18n.loadNamespaces("common");
-  await import("@/tinyMCE/stoichiometry/index");
+  await import("@/tinyMCE/stoichiometry/StoichiometryEntrypoint");
 }
 
 function getRegisteredStoichiometryPlugin(registeredPlugins: Map<string, StoichiometryPluginConstructor>) {
