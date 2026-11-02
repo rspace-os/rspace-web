@@ -74,6 +74,26 @@ class BookingCalendarControllerMVCIT {
   }
 
   @Test
+  void calendarEventsAcceptCurrentViewerPresets() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), fixture.marker());
+    fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    long event =
+        fixture.booking(
+            instrument,
+            Instant.parse("2099-01-01T10:00:00Z"),
+            Instant.parse("2099-01-01T11:00:00Z"));
+    mockMvc
+        .perform(
+            get("/api/v2/booking-calendar/events")
+                .header("apiKey", fixture.userKey())
+                .queryParam("start", "2099-01-01T00:00:00Z")
+                .queryParam("end", "2099-01-02T00:00:00Z")
+                .queryParam("where", "id==" + event + ";requester.value==me;targetOwner==me"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalDocs").value(1));
+  }
+
+  @Test
   void calendarEndpointsHideBeforeParsingDisabledFeatureQueries() throws Exception {
     setBookingEnabled(false);
 

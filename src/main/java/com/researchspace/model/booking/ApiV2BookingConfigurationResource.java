@@ -219,10 +219,12 @@ public record ApiV2BookingConfigurationResource(
             AccessFunction.authenticated(),
             AccessFunction.authenticated());
     return CollectionDescription.fromApiV2Resource(
-        ApiV2BookingConfigurationResource.class,
-        BookingConfiguration.class,
-        List.of(new Sort("id", true)),
-        access);
+            ApiV2BookingConfigurationResource.class,
+            BookingConfiguration.class,
+            List.of(new Sort("id", true)),
+            access)
+        .withFilter(
+            new com.researchspace.model.collection.FilterSelector.Alias<>("targetOwner", "target"));
   }
 
   private static Relationship<BookingConfiguration> locationRelationship() {

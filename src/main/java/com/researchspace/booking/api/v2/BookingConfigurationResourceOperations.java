@@ -125,6 +125,14 @@ public final class BookingConfigurationResourceOperations
         "errors.api.v2.bookingConfiguration.patch",
         EnumSet.allOf(ResourceOperation.class),
         Map.of(
+            ResourceOperation.LIST,
+            OpenApiOperationDocumentation.builder()
+                .description(
+                    "Lists readable configurations on undeleted targets. The where member"
+                        + " targetOwner accepts only ==me outside OR groups, resolves to the"
+                        + " effective subject on each request, and includes the Inventory read"
+                        + " constraint.")
+                .build(),
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
                 .description(
