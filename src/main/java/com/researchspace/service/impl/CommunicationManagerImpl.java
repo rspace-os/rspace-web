@@ -32,6 +32,7 @@ import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
+import com.researchspace.service.NotificationPostCommitExecutor;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -47,6 +48,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service("communicationManager")
 @Profile(value = {"dev,run,prod"})
@@ -59,6 +62,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   private @Autowired UserDao userDao;
   private @Autowired IMessageAndNotificationTracker notificnTracker;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired NotificationPostCommitExecutor notificationPostCommitExecutor;
 
   private List<Broadcaster> broadcasters = new ArrayList<>();
 
@@ -406,11 +410,28 @@ public class CommunicationManagerImpl implements CommunicationManager {
     Set<CommunicationTarget> targets = createCommunicationTargetsForUsers(toNotify, notificn);
     notificn.setRecipients(targets);
     commDao.save(notificn);
-    if (config.isBroadcast()) {
-      broadcast(notificn, targets);
-    }
-    for (CommunicationTarget ct : targets) {
-      notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
+
+    boolean shouldBroadcast = config.isBroadcast();
+    Set<CommunicationTarget> notificationTargets = Set.copyOf(targets);
+    Runnable notifyRecipients =
+        () -> {
+          if (shouldBroadcast) {
+            broadcast(notificn, notificationTargets);
+          }
+          for (CommunicationTarget ct : notificationTargets) {
+            notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
+          }
+        };
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+              notificationPostCommitExecutor.execute(notifyRecipients);
+            }
+          });
+    } else {
+      notifyRecipients.run();
     }
     return notificn;
   }

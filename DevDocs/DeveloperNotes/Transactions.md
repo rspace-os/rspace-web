@@ -112,6 +112,15 @@ unit test in `TransactionScopedVersionBumpGuardTest`.
 Never call `increaseVersion()` on an inventory record directly; route bumps
 through the helper.
 
+## Notification delivery
+
+`CommunicationManager.notify` saves notifications in the caller's transaction.
+With transaction synchronization active, broadcasts and unread-count updates run
+only after commit, through `NotificationPostCommitExecutor` in a `REQUIRES_NEW`
+transaction. Rollback suppresses both effects. Without synchronization, delivery
+remains immediate. `NotificationAfterCommitIT` exercises commit, rollback, and
+persistence of a failure notification when a broadcaster throws.
+
 ## Transactions in tests
 
 This is covered in the 'Testing' section of
