@@ -37,6 +37,7 @@ export default class AuthStore {
   isSynchronizing: boolean = true;
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
+  private refreshFailures = 0;
   systemSettings: SystemSettings | undefined;
   pidinstEnabled: boolean = false;
 
@@ -61,8 +62,10 @@ export default class AuthStore {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
     }
+    this.timeoutId = null;
+    if (this.isSigningOut) return Promise.resolve();
     /*
-     * isAuthenticated only changes when a token arrives: Router renders the
+     * Keep valid authentication while refreshing: Router renders the
      * Inventory routes only while it is true, so clearing it would unmount the
      * page for every refresh, and on failure would empty the page behind the
      * "leave page?" prompt that the redirect to /login can raise.
@@ -79,22 +82,51 @@ export default class AuthStore {
             window.location.href = "/login";
             return Promise.resolve();
           }
+          if (this.isSigningOut) return;
           JwtService.saveToken(token);
           InvApiService.setAuthorizationHeader();
           ElnApiService.setAuthorizationHeader();
+          this.refreshFailures = 0;
           this.isAuthenticated = true;
           this.isSynchronizing = false;
-          this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
+          this.scheduleRefresh(tokenRefreshDelayMs(token));
         }),
       )
       .then(() => {})
-      .catch(() => {
-        // @ts-expect-error I can update the location by assigning a string to it
-        window.location = "/login";
-      });
+      .catch(
+        action((error: unknown) => {
+          this.isSynchronizing = false;
+          if (this.isSigningOut) return;
+          const token = JwtService.getToken();
+          const validityMs = token ? JwtService.secondsToExpiry(token) * 1000 : 0;
+          const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+          if (status === 401 || !(validityMs > 0)) {
+            this.isAuthenticated = false;
+            JwtService.destroyToken();
+            window.location.href = "/login";
+            throw error;
+          }
+          // Network failures and non-Axios errors have no status; retry while the token is usable.
+          if (status === undefined || status === 429 || status >= 500) {
+            const backoffMs = 1000 * 2 ** Math.min(this.refreshFailures++, 5);
+            this.scheduleRefresh(Math.min(backoffMs, validityMs));
+            this.isAuthenticated = true;
+            InvApiService.setAuthorizationHeader();
+            ElnApiService.setAuthorizationHeader();
+            return;
+          }
+          window.location.href = "/login";
+        }),
+      );
+  }
+
+  private scheduleRefresh(delay: number) {
+    this.timeoutId = setTimeout(() => void this.authenticate().catch(() => undefined), delay);
   }
 
   signOut() {
+    if (this.timeoutId) clearTimeout(this.timeoutId);
+    this.timeoutId = null;
     this.isSigningOut = true;
     this.isAuthenticated = false;
     JwtService.destroyToken();
@@ -116,7 +148,7 @@ export default class AuthStore {
       InvApiService.setAuthorizationHeader();
       ElnApiService.setAuthorizationHeader();
       this.isSynchronizing = false;
-      this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
+      this.scheduleRefresh(tokenRefreshDelayMs(token));
       return Promise.resolve();
     }
 

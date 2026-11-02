@@ -91,6 +91,7 @@ describe("AuthStore token refresh", () => {
     ["the login page", () => HttpResponse.html("<html>login</html>")],
   ])("stays authenticated when the refresh gets %s", async (_, response) => {
     onTestFinished(silenceConsole(["error"], ["Not implemented: navigation"]));
+    sessionStorage.setItem("id_token", fakeJwt(3600));
     server.use(http.get(TOKEN_URL, response));
     const store = getRootStore().authStore;
     runInAction(() => {
