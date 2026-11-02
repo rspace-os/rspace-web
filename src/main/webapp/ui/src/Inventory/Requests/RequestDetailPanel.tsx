@@ -364,7 +364,8 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // unavailable, skipChooseMethodDialog means every route through this button already ends in a
   // direct transfer of the whole sample (all of its subsamples), so no particular one needs to be
   // selected first.
-  const prepareSampleEnabled = isActionableState && (skipChooseMethodDialog || selectedSubsample !== null);
+  const prepareSampleEnabled =
+    isActionableState && (skipChooseMethodDialog || selectedSubsample !== null) && !isProcessingAction;
   const statusHelpTranslationKey = status ? statusHelpKey(status) : null;
   const statusHelpText = statusHelpTranslationKey ? t(statusHelpTranslationKey) : null;
   const infoBoxText =
