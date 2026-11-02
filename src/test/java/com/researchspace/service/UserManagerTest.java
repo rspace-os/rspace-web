@@ -74,7 +74,7 @@ public class UserManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testSave2UsersWithSamePasswordIsDifferentDueToSalt() throws UserExistsException {
+  public void testSave2UsersWithSamePasswordHaveDifferentArgon2Hashes() throws UserExistsException {
     User u1 = TestFactory.createAnyUser("XXXXXX");
     u1.setPassword("password1");
     userMgr.saveNewUser(u1);
@@ -85,9 +85,8 @@ public class UserManagerTest extends SpringTransactionalTest {
 
     u1 = userMgr.get(u1.getId());
     u2 = userMgr.get(u2.getId());
-    assertNotNull(u1.getSalt());
-    assertNotNull(u2.getSalt());
-    assertFalse(u1.getSalt().equals(u2.getSalt()));
+    assertNull(u1.getSalt());
+    assertTrue(u1.getPassword().startsWith("{argon2@rspace_v1}"));
     assertFalse(u1.getPassword().equals(u2.getPassword()));
   }
 

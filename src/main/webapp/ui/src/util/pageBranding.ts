@@ -4,7 +4,15 @@ import { ACCENT_COLOR as WORKSPACE_COLOR } from "../assets/branding/rspace/works
 
 type PageBrandingKey = "workspace" | "other" | "system" | "myRSpace" | "gallery" | "unknown";
 
+// Workspace URLs that belong to My RSpace; mirrors myRSpaceURLs in common/header.jsp.
+const MY_RSPACE_WORKSPACE_PATHS = [
+  "/workspace/editor/form",
+  "/workspace/editor/structuredDocument/audit",
+  "/workspace/trash/list",
+];
+
 export function currentPageKey(): PageBrandingKey {
+  if (MY_RSPACE_WORKSPACE_PATHS.some((p) => window.location.pathname.startsWith(p))) return "myRSpace";
   const pages: Record<string, PageBrandingKey> = {
     workspace: "workspace",
     notebookEditor: "workspace",

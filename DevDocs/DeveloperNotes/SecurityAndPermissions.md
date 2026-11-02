@@ -29,8 +29,103 @@ expiry/termination).
 The configuration of this caching behaviour is in `ehcache.xml` and
 annotations on the User entity class.
 
-New users are persisted in `UserManager#saveUser` and salted password
-hashes generated. Plain text passwords are not stored.
+New users are persisted in `UserManager#saveUser` and password hashes
+generated. Plain text passwords are not stored.
+
+### Password storage
+
+The design and its trade-offs are in
+[ADR 0014](../adr/0014-argon2id-password-hashing-and-login-concurrency-limit.md).
+
+- **Encoder.** `RSpacePasswordEncoder` (bean in `SecurityBaseConfig`) wraps
+  Spring Security's `DelegatingPasswordEncoder`. Every stored login and
+  SSO/Community verification password carries an `{id}` prefix. Only
+  three ids are registered:
+  - `argon2@rspace_v1`, the default for new passwords: Argon2id,
+    m=19456 KiB, t=2, p=1, 16-byte salt, 32-byte hash. The salt is
+    inside the encoded value and the `salt` column is null.
+  - `argon2-legacy-sha256@rspace_v1`, pre-Argon2 hashes wrapped at rest
+    by the Liquibase change `WrapLegacyPasswordHashes_RSDEV894`. Stored
+    as `<base64 salt>$<argon2 of Base64(SHA-256(salt || utf8 password))>`,
+    with an empty salt for unsalted rows. The SHA-256 is fed to Argon2 as
+    the Base64 of its decoded bytes, so the case of the old hex never
+    matters. These values are permanent: a check never rewrites them,
+    and they change only when the user sets a new password.
+  - `bcrypt`, verification passwords set before RSDEV-894, prefixed at
+    rest by the Liquibase change
+    `PrefixBcryptVerificationPasswords_RSDEV894`. It runs after the
+    login wrap, skips values already carrying a registered id, and
+    clears (sets to null) and logs at ERROR by username any other
+    non-blank value, since that could never verify. This id only
+    reads: it never encodes, and `UsernamePasswordCredentialsMatcher`
+    refuses it for login passwords. Prefixed values are permanent too;
+    new verification passwords are Argon2id.
+
+  An unknown or missing prefix throws `IllegalArgumentException` and the
+  check fails closed.
+- **Verification.** Shiro login (`ShiroRealm`) and default-realm
+  reauthentication (`ReauthenticatorImpl`) both go through
+  `UsernamePasswordCredentialsMatcher`, which calls
+  `BoundedPasswordVerifier`. Verification password checks
+  (`VerificationPasswordValidatorImpl#authenticateVerificationPassword`)
+  call the same verifier and share its permits. Only LDAP
+  reauthentication, which checks against the directory, skips it. That verifier holds a fair semaphore
+  (`login.passwordVerification.maxConcurrent`, default 8) and a
+  per-username lock, so one account holds at most one permit. An input
+  longer than `User.MAX_PWD_LENGTH` is refused as a wrong password before
+  the lock or a permit is taken. A single
+  deadline (`login.passwordVerification.waitSeconds`, default 5) covers
+  both waits. On timeout it throws `LoginVerificationBusyException`,
+  which the login filter and `ReauthenticatorImpl` deliberately do not
+  count toward lockout. Callers are told the check was busy, never that
+  the password was wrong: `IReauthenticator` returns
+  `ReauthenticationResult.BUSY` and the prompts show
+  `errors.reauthentication.busy`; the login page and the SSO admin login
+  show `errors.login.busy`; `ApiControllerAdvice` answers the OAuth
+  password grant with 503 and `Retry-After: waitSeconds` (at least 1), and the grant
+  gives back the counted guess (`PasswordGrantGuessLimiter.uncount`).
+  `SentinelPasswordCheck.pad` does not swallow the exception, so padded
+  unknown names, locked accounts and LDAP-source users get the same busy
+  answer as a real account; otherwise a flood would show which names
+  exist. Encoding new passwords and the migration are not
+  bounded at the encoder. The anonymous routes into `encode()` are
+  capped in front of it instead: `SignupController`,
+  `ExternalAuthController` (Google sign-up on Community),
+  `UserLdapRepoImpl` (LDAP first-login auto-signup) and
+  `PasswordResetByEmailHandlerBase` hold a permit from the shared
+  `NewPasswordEncodeGate` (`password.anonymousEncode.maxConcurrent`,
+  default 4) through the hash and save, and refuse at once when none is
+  free, leaving a reset token usable. The reset reply also accepts only a
+  token that is unused and unexpired, and `UserManagerImpl` marks it used
+  with a conditional update in the same transaction as the password
+  change, so two simultaneous submits give one change. Authenticated
+  encodes (password change, user creation, imports) are unbounded by
+  choice (ADR 0014). The initial verification-password set is serialised
+  per user in memory, and a duplicate submission returns success without
+  hashing.
+- **Busy post-signup login.** Standalone signup logs the new user in
+  through the same verifier. A `LoginVerificationBusyException` there does
+  not abort signup: `DefaultPostUserCreate` finishes the PI promotion and
+  the audit event before rethrowing, and `SignupController` redirects to
+  the login page with a message saying the account was created.
+- **No writes, no reauthentication lockout.** A password check never
+  writes to the `User` row: an earlier version re-encoded legacy hashes on
+  login and counted reauthentication failures on the row, and both broke
+  callers that held the same row in their own transaction (ADR 0014,
+  considered options). Failed reauthentication is not counted toward the
+  login-form lockout and has no other per-account rate limit; the
+  per-username lock is the only bound, for verification password checks
+  too. The one exception is the anonymous OAuth password grant, where
+  RSDEV-1546 validates the client before the password and refuses a
+  username after `oauth.passwordGrant.maxFailures` wrong guesses within
+  `oauth.passwordGrant.failureWindowSeconds` (`PasswordGrantGuessLimiter`);
+  its padding for unknown or refused names uses the same
+  `SentinelPasswordCheck` as the login page. Signing and witnessing go
+  through `IReauthenticator#reauthenticate`. Changing a verification
+  password checks the current one through
+  `IReauthenticator#reauthenticateWithVerificationPassword`, which applies
+  the same busy handling and security logging but never substitutes an
+  operating-as sysadmin.
 
 ### Browser API tokens
 
@@ -43,6 +138,24 @@ anonymous access. An expired token with an active session can be refreshed for
 the same user without losing page state. Only GET requests retry automatically;
 pending writes fail without replay. API keys and external OAuth clients retain
 their stateless authentication behavior.
+
+### Public links and the anonymous guest
+
+A visitor who opens a published document or notebook without a session is signed in as the shared
+`rspace anonymous guest` account (`RecordGroupSharing.ANONYMOUS_USER`), so the permission checks
+and the image, attachment and comment endpoints the page calls work unchanged.
+`AnonymousUserFilter` keeps that session on the public URLs and sends it to the login page from
+`/workspace` and the other root pages.
+
+- `PublicDocumentsUtilities.loginAnonymousUser` signs in with
+  `AnonymousGuestAuthenticationToken`, which has no credentials and is only built by the server.
+  `AnonymousGuestRealm`, registered in every security manager, accepts only that token and always
+  signs in the fixed guest username, so public traffic never reaches the password check or its
+  limits (ADR 0014). A password login as the guest goes to the password realm like any other.
+- Disabling the guest account turns public pages off: the realm refuses the sign-in.
+- A new public page must look up its link and answer not found before signing the guest in, as
+  `PublicStructuredDocumentController` and `PublicNotebookEditorController` do, so made-up links
+  create no guest session.
 
 ## Authorization
 

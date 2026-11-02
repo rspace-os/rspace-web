@@ -5380,7 +5380,8 @@ export default interface Resources {
     "verificationPassword": {
       "set": {
         "errors": {
-          "alreadySet": "Verification password has already been set."
+          "alreadySet": "Verification password has already been set.",
+          "busy": "The server is busy and could not set your verification password. Please try again in a moment."
         },
         "success": "Verification password set successfully"
       }
@@ -5678,6 +5679,7 @@ export default interface Resources {
         "invalidCredentials": "Invalid user credentials.",
         "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
         "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+        "serverBusy": "The server is busy; retry after the Retry-After interval.",
         "tokenCreationFailed": "OAuth token could not be created.",
         "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
         "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",
@@ -5820,6 +5822,7 @@ export default interface Resources {
         "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''",
         "missing": "No id to retrieve"
       },
+      "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -5864,6 +5867,7 @@ export default interface Resources {
         "adminLogin": {
           "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
         },
+        "busy": "The server is busy and could not check your password. Please try again in a moment.",
         "credentials": {
           "wrong": "Invalid username or password, please try again."
         },
@@ -5912,8 +5916,12 @@ export default interface Resources {
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a password other than your username."
       },
+      "passwordReset": {
+        "rateLimited": "Too many password resets are being processed right now. Please try again in a moment."
+      },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
+        "busy": "The server is busy and could not check your password. Please try again in a moment. Nothing has been changed.",
         "failed": "Reauthentication failed, please try again."
       },
       "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",
@@ -5928,6 +5936,9 @@ export default interface Resources {
       "signing": {
         "failed": "Signing failed",
         "structuredDocumentRequired": "only structured documents can be signed"
+      },
+      "signup": {
+        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
       },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."
@@ -7451,6 +7462,26 @@ export default interface Resources {
           "tooManySubSamples": "A sample can be created with at most {max} subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
+        "sampleRequest": {
+          "illegalTransition": "A sample request cannot move from {0} to {1}.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
+          "notRequestable": "Sample {0} is not available to request.",
+          "ownSample": "You cannot request material from a sample that you own.",
+          "ownedByRequester": "The requester already owns sample {0}.",
+          "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
+          "reasonRequired": "A reason is required when rejecting a request.",
+          "requestableNotPermitted": "Only the sample's owner, or a PI or Lab Admin of their group, can change whether it is requestable.",
+          "requesterDeleted": "The requester's account no longer exists, so a sample cannot be transferred to them.",
+          "role": {
+            "invalid": "Requested role must be one of: REQUESTER or OWNER"
+          },
+          "status": {
+            "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
+          },
+          "statusNotSettable": "A sample request cannot be set to {0}.",
+          "transferredSampleNotAllowed": "A transferred sample can only be given when fulfilling a request, not when setting it to {0}.",
+          "wrongActor": "You are not permitted to make this change to the request."
+        },
         "search": {
           "deletedItems": {
             "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
@@ -7539,6 +7570,9 @@ export default interface Resources {
           "edited": "Edited List of Materials {0}.",
           "itemsAdded": "Added inventory items: {0}.",
           "itemsRemoved": "Removed inventory items: {0}."
+        },
+        "sampleRequest": {
+          "sent": "To user: {0}"
         }
       },
       "identifier": {
@@ -7546,6 +7580,10 @@ export default interface Resources {
       },
       "listOfMaterials": {
         "label": "List of materials"
+      },
+      "sampleRequest": {
+        "autoFulfilledReason": "This request was fulfilled by transferring the sample to the requester.",
+        "autoRejectedReason": "This request was rejected because the sample was transferred to another user. If you still need it, make a new request to the new owner."
       }
     }
   },
@@ -8764,8 +8802,8 @@ export default interface Resources {
       "confirmPasswordLabel": "Confirm {0}",
       "enterNewPasswordPrompt": "Please enter your new {0}:",
       "newPasswordLabel": "New {0}",
-      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
       "submitButton": "Reset",
       "title": "Reset {0}"
     },
@@ -8787,6 +8825,7 @@ export default interface Resources {
       "title": "Password verification"
     },
     "signup": {
+      "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please sign in now using the same method you just used to sign up.",
       "browserWarning": {
         "chrome": "Chrome",
         "firefox": "Firefox",
@@ -8824,7 +8863,7 @@ export default interface Resources {
         "confirmPasswordLabel": "Confirm Password",
         "confirmPasswordPlaceholder": "Confirm Password",
         "confirmPasswordTitle": "Confirm Password",
-        "createPasswordLabel": "Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.",
+        "createPasswordLabel": "Create a Password (8 - 128 characters). Numbers, letters, spaces and special characters are allowed.",
         "createUsernameLabel": "Create Username",
         "emailLabel": "Email address",
         "fillDetailsPrompt": "Please fill in your details",
@@ -8832,8 +8871,8 @@ export default interface Resources {
         "firstNamePlaceholder": "Your First Name",
         "lastNameLabel": "Last Name",
         "lastNamePlaceholder": "Your Last Name",
-        "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-        "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+        "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+        "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
         "passwordPlaceholder": "Create a Password",
         "piStatusNotice": "Based on your status at {0}, you cannot become a PI unless a system administrator manually enables this for you.",
         "signupCodeLabel": "Signup code",
@@ -9133,8 +9172,8 @@ export default interface Resources {
           "label": "Please copy or manually note this password, as it must be delivered to the new user outside RSpace."
         },
         "password": {
-          "helpText": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-          "title": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
+          "helpText": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+          "title": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
         },
         "passwordConfirmation": {
           "placeholder": "Password Confirmation",
@@ -9387,6 +9426,7 @@ export default interface Resources {
           "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
           "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
           "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
+          "sampleRequestsAvailable": "Lets owners make samples requestable, and lets users request material from them.",
           "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
           "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
           "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",
@@ -10459,8 +10499,8 @@ export default interface Resources {
       "lastLoginLabel": "Last Login:",
       "otherProfileHeading": "User Profile",
       "ownProfileHeading": "My Profile",
-      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "passwordCharsHint": "8 - 128 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 128 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
       "pictureLabel": "Picture:",
       "profileHeading": "Profile",
       "signupSource": {

@@ -8,6 +8,7 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.apiutils.BindError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.model.field.LocalizedIOException;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
@@ -25,12 +26,17 @@ import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import jakarta.ws.rs.NotFoundException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.NestedExceptionUtils;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +55,9 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
   protected @Autowired MessageSourceUtils messages;
 
+  @Value("${login.passwordVerification.waitSeconds:5}")
+  int passwordWaitSeconds;
+
   // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
@@ -60,6 +69,23 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     final ApiError apiError =
         new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 503: the password was not checked, so clients should retry rather than discard credentials
+  @ExceptionHandler(LoginVerificationBusyException.class)
+  public ResponseEntity<Object> handlePasswordCheckBusy(
+      final LoginVerificationBusyException ex, final WebRequest request) {
+    log.warn("Password check refused: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            ApiErrorCodes.TOOMANY_REQUESTS.getCode(),
+            messages.getMessage("oauth.errors.serverBusy"),
+            List.of());
+    HttpHeaders headers = new HttpHeaders();
+    // 0 would ask clients to retry at once, in a hot loop
+    headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, passwordWaitSeconds)));
+    return new ResponseEntity<Object>(apiError, headers, apiError.getStatus());
   }
 
   @ExceptionHandler({NotFoundException.class, UnsupportedOperationException.class})
@@ -124,6 +150,25 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         messages.getMessage(
             "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}));
   }
+
+  /**
+   * A concurrent edit, not a server fault: MariaDB 11.6+ (innodb_snapshot_isolation) refuses to
+   * lock a row changed since the transaction's first read (error 1020), and a deadlock (1213) rolls
+   * one side back. Either way nothing was saved, and the client can retry.
+   */
+  @ExceptionHandler(DataAccessException.class)
+  public ResponseEntity<Object> handleDataAccess(
+      final DataAccessException ex, final WebRequest request) {
+    if (NestedExceptionUtils.getMostSpecificCause(ex) instanceof SQLException sql
+        && CONCURRENT_CHANGE_ERRORS.contains(sql.getErrorCode())) {
+      log.warn("concurrent change refused by the database: {}", sql.getMessage());
+      return conflict(messages.getMessage("errors.concurrentChange"));
+    }
+    return handleAll(ex, request);
+  }
+
+  /** MariaDB's "record has changed since last read" and "deadlock found". */
+  private static final Set<Integer> CONCURRENT_CHANGE_ERRORS = Set.of(1020, 1213);
 
   // 403
   @ExceptionHandler({APIUnavailableException.class})

@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -11,10 +12,7 @@ import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
-import org.apache.shiro.crypto.hash.Sha256Hash;
-import org.apache.shiro.lang.codec.Base64;
-import org.apache.shiro.lang.util.ByteSource;
+import org.apache.shiro.authc.credential.CredentialsMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +26,19 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private @Autowired IPropertyHolder properties;
+  private @Autowired UsernamePasswordCredentialsMatcher credentialsMatcher;
+  private @Autowired SentinelPasswordCheck sentinelCheck;
 
   private boolean ignoreSession;
 
   public ShiroRealm() {
     setName(DEFAULT_USER_PASSWD_REALM); // This name must match the name in the User class's
     // getPrincipals() method
-    setCredentialsMatcher(new HashedCredentialsMatcher(Sha256Hash.ALGORITHM_NAME));
+  }
+
+  @Override
+  public CredentialsMatcher getCredentialsMatcher() {
+    return credentialsMatcher;
   }
 
   public void setIgnoreSession(boolean ignoreSession) {
@@ -71,10 +75,14 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
     }
     if (user == null) {
       log.debug("User is null, returning");
+      padUnknownUser(token);
       return null; // not found in db or couldn't retrieve
     }
     if (SignupSource.LDAP.equals(user.getSignupSource())) {
       log.debug("Signup source is LDAP, returning null. LDAP user must use LdapRealm");
+      if (!properties.isLdapAuthenticationEnabled()) {
+        padUnknownUser(token);
+      }
       return null; // LDAP users must authenticate through LdapRealm
     }
 
@@ -94,10 +102,13 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
 
     SimpleAuthenticationInfo sif =
         new SimpleAuthenticationInfo(user.getUsername(), user.getPassword(), getName());
-    if (user.getSalt() != null) {
-      sif.setCredentialsSalt(ByteSource.Util.bytes(Base64.decode(user.getSalt())));
-    }
     log.trace("Returning SimpleAuthenticationInfo: {}", sif);
     return sif;
+  }
+
+  private void padUnknownUser(UsernamePasswordToken token) {
+    if (token.getPassword() != null) {
+      sentinelCheck.pad(userMgr.loginLockKey(token.getUsername()), new String(token.getPassword()));
+    }
   }
 }

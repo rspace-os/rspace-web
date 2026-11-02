@@ -48,6 +48,7 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
     // one GlobalInitManagerImpl builds). The token is only constructible in-process, so this
     // realm adds no remotely reachable authentication path.
     realms.add(globalInitSysadminRealm());
+    realms.add(anonymousGuestRealm());
 
     if (deploymentPropertyConfig.isCloud()) {
       realms.add(externalOAuthRealm());

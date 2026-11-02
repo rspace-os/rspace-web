@@ -121,7 +121,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     assertEquals("updatedName", secondLom.getName());
     assertThat(secondLom.getMaterials()).hasSize(1);
     assertEquals("mySample", secondLom.getMaterials().get(0).getRecord().getName());
-    assertThat(secondLom.getMaterials().get(0).getRecord().getPermittedActions()).hasSize(3);
+    assertThat(secondLom.getMaterials().get(0).getRecord().getPermittedActions()).hasSize(4);
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsEditingEvent.class));
 
     // delete
