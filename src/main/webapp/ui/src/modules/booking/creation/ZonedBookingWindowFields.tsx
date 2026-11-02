@@ -411,8 +411,8 @@ export function ZonedBookingWindowFields({
       timezone: zones.start,
     });
     return (
-      <div className="flex items-center gap-2">
-        <Input {...inputProps} className="min-w-0 flex-1" />
+      <div className="flex flex-col items-start gap-2">
+        <Input {...inputProps} className="min-w-32 w-full" />
         <Tooltip>
           <TooltipTrigger
             render={
