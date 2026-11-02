@@ -167,6 +167,13 @@ final class RsqlExpressionCompiler {
     if (selector == null) {
       return relationships.compileRelationshipField(comparison, state);
     }
+    if (selector instanceof FilterSelector.Alias<?> shorthand) {
+      return state.merge(
+          com.researchspace.booking.dao.BookingItemQuery.ownedBy(
+              (com.researchspace.model.User) comparison.values().get(0),
+              alias + "." + shorthand.destination(),
+              state.targets));
+    }
     Operator operator = comparison.operator();
     if (!selector.operators().contains(operator)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);

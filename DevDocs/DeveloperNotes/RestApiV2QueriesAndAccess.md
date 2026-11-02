@@ -704,3 +704,10 @@ asserting what happens without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
+Booking filters also accept `requesterId==me` on user-id selectors explicitly opted
+into current-subject aliases. The alias resolves on every request using the effective
+subject, including operate-as. Booking configurations, the catalogue and calendar
+events accept the filter-only `targetOwner==me` member. It includes the Inventory
+read constraint and accepts only equality with `me`; it is invalid within an OR group.
+Shared links and saved views should retain `me`, rather than substituting a user id.

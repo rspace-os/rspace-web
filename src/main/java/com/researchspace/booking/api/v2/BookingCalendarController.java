@@ -87,8 +87,18 @@ public class BookingCalendarController {
   public BookingCatalogueManager.Page items(
       @Parameter(description = "Inclusive interval start.") @RequestParam Instant start,
       @Parameter(description = "Exclusive interval end.") @RequestParam Instant end,
-      @RequestParam(required = false) String where,
-      @RequestParam(required = false) String eventWhere,
+      @io.swagger.v3.oas.annotations.Parameter(
+              description =
+                  "RSQL item filters, including targetOwner==me (equality only, outside OR groups)."
+                      + " The effective subject is resolved on every request.")
+          @RequestParam(required = false)
+          String where,
+      @io.swagger.v3.oas.annotations.Parameter(
+              description =
+                  "RSQL event filters, including requesterId==me and targetOwner==me. Owner"
+                      + " comparisons must be outside OR groups.")
+          @RequestParam(required = false)
+          String eventWhere,
       @RequestParam(required = false) @Size(max = 255) String q,
       @RequestParam(defaultValue = "false") boolean mine,
       @RequestParam(defaultValue = "1") @Min(1) int page,
@@ -124,7 +134,12 @@ public class BookingCalendarController {
   public ApiV2ListResult<Map<String, Object>> events(
       @Parameter(description = "Inclusive interval start.") @RequestParam Instant start,
       @Parameter(description = "Exclusive interval end.") @RequestParam Instant end,
-      @RequestParam(required = false) String where,
+      @io.swagger.v3.oas.annotations.Parameter(
+              description =
+                  "RSQL item filters, including targetOwner==me (equality only, outside OR groups)."
+                      + " The effective subject is resolved on every request.")
+          @RequestParam(required = false)
+          String where,
       @RequestParam(required = false) @Size(max = 255) String q,
       @RequestParam(defaultValue = "false") boolean mine,
       @RequestParam(defaultValue = "1") @Min(1) int page,

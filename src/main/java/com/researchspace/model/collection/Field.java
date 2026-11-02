@@ -33,6 +33,7 @@ public final class Field<T, V> implements ResourceMember<T> {
   private final AccessFunction updateAccess;
   private final OpenApiSchemaDocumentation openApi;
   private final boolean embedded;
+  private final boolean currentSubjectAlias;
 
   private Field(
       String name,
@@ -50,7 +51,8 @@ public final class Field<T, V> implements ResourceMember<T> {
       AccessFunction createAccess,
       AccessFunction updateAccess,
       OpenApiSchemaDocumentation openApi,
-      boolean embedded) {
+      boolean embedded,
+      boolean currentSubjectAlias) {
     this.name = requireName(name, "Field name");
     this.property = requireName(property, "Field property");
     this.type = Objects.requireNonNull(type, "Field type");
@@ -67,6 +69,7 @@ public final class Field<T, V> implements ResourceMember<T> {
     this.updateAccess = AccessFunction.requireDocumentedOrInherited(updateAccess);
     this.openApi = Objects.requireNonNull(openApi, "OpenAPI field documentation");
     this.embedded = embedded;
+    this.currentSubjectAlias = currentSubjectAlias;
     validateConfiguration();
   }
 
@@ -88,6 +91,7 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
+        false,
         false);
   }
 
@@ -113,6 +117,7 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
+        false,
         false);
   }
 
@@ -138,7 +143,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
-        true);
+        true,
+        false);
   }
 
   /** Whether this definition belongs to an embedded row rather than a collection entity. */
@@ -237,6 +243,28 @@ public final class Field<T, V> implements ResourceMember<T> {
     return copy(writeOperations, requiredOnCreate, nullable, filterable, sortable);
   }
 
+  /** Allows the existing me alias on a scalar user identifier. */
+  public Field<T, V> withCurrentSubjectAlias() {
+    return new Field<>(
+        name,
+        property,
+        type,
+        filterable,
+        sortable,
+        reader,
+        writer,
+        writeOperations,
+        requiredOnCreate,
+        nullable,
+        defaultValue,
+        readAccess,
+        createAccess,
+        updateAccess,
+        openApi,
+        embedded,
+        true);
+  }
+
   public String name() {
     return name;
   }
@@ -298,7 +326,7 @@ public final class Field<T, V> implements ResourceMember<T> {
   }
 
   public FilterSelector<T> filterSelector() {
-    return new FilterSelector.Property<>(name, property, type);
+    return new FilterSelector.Property<>(name, property, type, currentSubjectAlias);
   }
 
   public boolean writableOn(WriteOperation operation) {
@@ -421,7 +449,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         createAccess,
         updateAccess,
         openApi,
-        embedded);
+        embedded,
+        currentSubjectAlias);
   }
 
   private Field<T, V> copyAccess(
@@ -445,7 +474,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         creates,
         updates,
         documentation,
-        embedded);
+        embedded,
+        currentSubjectAlias);
   }
 
   void validateConfiguration() {
