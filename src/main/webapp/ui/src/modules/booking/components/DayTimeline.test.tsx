@@ -117,7 +117,7 @@ describe("DayTimeline table row", () => {
         { wrapper },
       );
 
-      expect(screen.getByText("17-08-2026")).toBeVisible();
+      expect(screen.queryByText("17-08-2026")).not.toBeInTheDocument();
       expect(screen.getByText("08:00 - 09:00")).toBeVisible();
       const details = screen.getByRole("button", {
         name: "Show details for Confocal microscope · Ada, 08:00–09:00",
@@ -149,6 +149,30 @@ describe("DayTimeline table row", () => {
       expect(within(popup).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC123");
     },
   );
+
+  it("elides the next-day date when a compact booking ends at midnight", async () => {
+    const wrapper = await timelineWrapper();
+    render(
+      <DayTimelineEventCard
+        date="2026-08-17"
+        timezone="UTC"
+        event={{
+          id: "midnight-card",
+          kind: "booking",
+          privacy: "full",
+          title: "Evening acquisition",
+          bookedBy: "Ada",
+          item: { name: "Microscope", globalId: "IN123" },
+          canEdit: false,
+          startMinute: 23 * 60,
+          endMinute: 24 * 60,
+        }}
+      />,
+      { wrapper },
+    );
+    expect(screen.queryByText("17-08-2026 - 18-08-2026")).not.toBeInTheDocument();
+    expect(screen.getByText("23:00 - 00:00 (+1)")).toBeVisible();
+  });
 
   it("shows both dates and day offsets for an event crossing the displayed day", async () => {
     const user = userEvent.setup();

@@ -64,7 +64,8 @@ export function DayTimelineEventCard({
   const timeline = variant === "timeline";
   const expandsInPlace = isBusy && isExpanded;
   const startDate = dateForMinute(date, timezone, event.startMinute);
-  const endDate = dateForMinute(date, timezone, event.endMinute);
+  const endsAtMidnight = formatMinute(date, timezone, event.endMinute) === "00:00";
+  const endDate = dateForMinute(date, timezone, event.endMinute - (endsAtMidnight ? 1 : 0));
   const compactDate =
     startDate === endDate ? formatDayDate(startDate) : `${formatDayDate(startDate)} - ${formatDayDate(endDate)}`;
   const compactPeriod = period(event, date, timezone, " - ");
@@ -127,9 +128,11 @@ export function DayTimelineEventCard({
       >
         {compactCards ? (
           <>
-            <span className="block truncate text-[10px]" data-event-date>
-              {compactDate}
-            </span>
+            {startDate !== date || endDate !== date ? (
+              <span className="block truncate text-[10px]" data-event-date>
+                {compactDate}
+              </span>
+            ) : null}
             <span className="block truncate text-[11px]" data-event-time-range>
               {compactPeriod}
             </span>
