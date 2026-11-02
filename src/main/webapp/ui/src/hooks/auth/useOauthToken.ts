@@ -74,9 +74,20 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
   async function refreshToken(): Promise<void> {
     const newToken = await fetchOauthToken(fetchToken);
     tokenRef.current = newToken;
+    scheduleRefresh(newToken);
+  }
+
+  /*
+   * If a refresh fails, usually because the session has ended, the token is
+   * forgotten so that the next call to `getToken` starts again from session
+   * storage or the endpoint and sets up a new timer.
+   */
+  function scheduleRefresh(token: string): void {
     setTimeout(() => {
-      void refreshToken();
-    }, tokenRefreshDelayMs(newToken));
+      refreshToken().catch(() => {
+        tokenRef.current = null;
+      });
+    }, tokenRefreshDelayMs(token));
   }
 
   const getToken = React.useCallback(async () => {
@@ -104,9 +115,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * in session storage, and the current page and all subsequent ones in
      * the next temporal window will continue to work.
      */
-    setTimeout(() => {
-      void refreshToken();
-    }, tokenRefreshDelayMs(savedToken));
+    scheduleRefresh(savedToken);
     return savedToken;
   }, []);
 

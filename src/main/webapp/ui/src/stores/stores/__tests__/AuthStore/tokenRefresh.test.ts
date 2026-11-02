@@ -98,9 +98,13 @@ describe("AuthStore token refresh", () => {
     await vi.waitFor(() => expect(requests.count).toBe(2));
   });
 
-  test("stops being authenticated when the refresh fails", async () => {
+  // The page stays mounted behind the redirect to /login, so staying at a "leave page?" prompt keeps unsaved work.
+  test.each([
+    ["an error status", () => new HttpResponse(null, { status: 403 })],
+    ["the login page", () => HttpResponse.html("<html>login</html>")],
+  ])("stays authenticated when the refresh gets %s", async (_, response) => {
     const restoreConsole = silenceConsole(["error"], ["Not implemented: navigation"]);
-    server.use(http.get(TOKEN_URL, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(TOKEN_URL, response));
     const store = getRootStore().authStore;
     runInAction(() => {
       store.isAuthenticated = true;
@@ -108,7 +112,7 @@ describe("AuthStore token refresh", () => {
 
     await store.authenticate();
 
-    expect(store.isAuthenticated).toBe(false);
+    expect(store.isAuthenticated).toBe(true);
     restoreConsole();
   });
 });

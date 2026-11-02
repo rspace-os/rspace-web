@@ -62,9 +62,10 @@ export default class AuthStore {
       clearTimeout(this.timeoutId);
     }
     /*
-     * isAuthenticated stays as it is until the request settles: Router only
-     * renders the Inventory routes while it is true, so clearing it here would
-     * unmount the whole page for every token refresh.
+     * isAuthenticated only changes when a token arrives: Router renders the
+     * Inventory routes only while it is true, so clearing it would unmount the
+     * page for every refresh, and on failure would empty the page behind the
+     * "leave page?" prompt that the redirect to /login can raise.
      */
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
     return axios
@@ -75,7 +76,6 @@ export default class AuthStore {
 
           if (typeof token === "undefined") {
             // Usually this means that backend returned login.html in response.data
-            this.isAuthenticated = false;
             window.location.href = "/login";
             return Promise.resolve();
           }
@@ -88,13 +88,10 @@ export default class AuthStore {
         }),
       )
       .then(() => {})
-      .catch(
-        action(() => {
-          this.isAuthenticated = false;
-          // @ts-expect-error I can update the location by assigning a string to it
-          window.location = "/login";
-        }),
-      );
+      .catch(() => {
+        // @ts-expect-error I can update the location by assigning a string to it
+        window.location = "/login";
+      });
   }
 
   signOut() {

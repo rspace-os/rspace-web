@@ -57,4 +57,20 @@ describe("useOauthToken", () => {
     await vi.advanceTimersByTimeAsync(1000);
     await vi.waitFor(() => expect(requests.count).toBe(2));
   });
+
+  test("starts refreshing again after a failed refresh", async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ["setTimeout", "clearTimeout", "Date"] });
+    const requests = countTokenRequests(3600);
+    const { result } = renderHook(() => useOauthToken());
+    await result.current.getToken();
+
+    server.use(http.get("/userform/ajax/inventoryOauthToken", () => new HttpResponse(null, { status: 403 })));
+    await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
+
+    const recovered = countTokenRequests(3600);
+    await result.current.getToken();
+    await vi.advanceTimersByTimeAsync(60 * 1000);
+    await vi.waitFor(() => expect(recovered.count).toBe(1));
+    expect(requests.count).toBe(1);
+  });
 });
