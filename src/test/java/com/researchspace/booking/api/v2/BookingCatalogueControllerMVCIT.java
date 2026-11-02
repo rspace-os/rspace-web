@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import org.junit.jupiter.api.AfterEach;
@@ -21,17 +22,21 @@ import org.springframework.web.context.WebApplicationContext;
 
 @ApiV2WebIntegrationTest
 class BookingCatalogueControllerMVCIT {
-
   private final WebApplicationContext context;
   private final FeatureFlagManager featureFlags;
   private final UserManager userManager;
+  private final InstrumentEntityApiManager instrumentManager;
 
   @Autowired
   BookingCatalogueControllerMVCIT(
-      WebApplicationContext context, FeatureFlagManager featureFlags, UserManager userManager) {
+      WebApplicationContext context,
+      FeatureFlagManager featureFlags,
+      UserManager userManager,
+      InstrumentEntityApiManager instrumentManager) {
     this.context = context;
     this.featureFlags = featureFlags;
     this.userManager = userManager;
+    this.instrumentManager = instrumentManager;
   }
 
   private ApiV2Fixture fixture;

@@ -117,7 +117,10 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
   ]);
 }
 
-const BookingIdentitySchema = bookingIdentity(BookingTargetSchema);
+const BookingReadIdentitySchema = {
+  ...bookingIdentity(v.nullable(BookingTargetSchema)),
+  timezone: v.nullable(v.string()),
+};
 
 export const BookingSummarySchema = withEndAfterStart(v.object(BookingAvailabilityIdentitySchema), ["end"]);
 
@@ -125,7 +128,7 @@ export const BookingSchema = withEndAfterStart(bookingSchema(BookingTargetSchema
 
 export const BookingDetailsSchema = withEndAfterStart(
   v.object({
-    ...BookingIdentitySchema,
+    ...BookingReadIdentitySchema,
     canViewConfiguration: v.boolean(),
     privacy: v.literal("full"),
     ...BookingFullPrivacyEntries,
@@ -144,7 +147,7 @@ const BookingRequesterSchema = v.nullable(
 );
 
 const BookingListDocumentObjectSchema = v.object({
-  ...BookingIdentitySchema,
+  ...BookingReadIdentitySchema,
   canViewConfiguration: v.boolean(),
   /** Null when the caller cannot read the user reference. */
   requester: BookingRequesterSchema,

@@ -1,0 +1,158 @@
+package com.researchspace.booking.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.researchspace.booking.dao.BookingCalendarCurrentAccessDao;
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
+import com.researchspace.dao.BookingInstrumentQueryDao;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class BookingItemPermissionsTest {
+
+  private static final long TARGET_ID = 17L;
+
+  @Mock private InventoryPermissionUtils inventoryPermissions;
+  @Mock private InstrumentDao instruments;
+  @Mock private BookingInstrumentQueryDao bookingInstruments;
+  @Mock private BookingCalendarSubscriptionDao subscriptions;
+  @Mock private BookingCalendarCurrentAccessDao currentAccess;
+  @Mock private BookingCalendarPermissionGateDao permissionGate;
+  @Mock private User subject;
+  @Mock private User itemOwner;
+  @Mock private Instrument instrument;
+
+  private BookingItemPermissions permissions;
+  private BookingConfiguration configuration;
+
+  @BeforeEach
+  void setUp() {
+    permissions =
+        new BookingItemPermissions(
+            inventoryPermissions,
+            instruments,
+            bookingInstruments,
+            new BookingResourceRoleScheme(),
+            subscriptions,
+            currentAccess,
+            permissionGate);
+    configuration = new BookingConfiguration();
+    configuration.setId(23L);
+    configuration.replaceTarget(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, TARGET_ID));
+
+    lenient().when(subject.isEnabled()).thenReturn(true);
+    lenient().when(instruments.getSafeNull(TARGET_ID)).thenReturn(Optional.of(instrument));
+    lenient().when(instrument.getOwner()).thenReturn(itemOwner);
+    lenient()
+        .when(inventoryPermissions.canUserReadInventoryRecord(instrument, subject))
+        .thenReturn(true);
+  }
+
+  @Test
+  void mapsTheItemOwnerToBookingOwnerWithoutAclManagement() {
+    when(subject.getUsername()).thenReturn("owner");
+    when(itemOwner.getUsername()).thenReturn("owner");
+
+    ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
+
+    assertEquals(Optional.of(BookingResourceRoleScheme.OWNER), resolved.effectiveRole());
+    assertTrue(resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION));
+    assertTrue(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS));
+    assertFalse(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS));
+    assertFalse(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_OWNERS));
+  }
+
+  @Test
+  void mapsAnInventoryEditorToBooker() {
+    when(subject.getUsername()).thenReturn("booker");
+    when(itemOwner.getUsername()).thenReturn("owner");
+    when(inventoryPermissions.canUserEditInventoryRecord(instrument, subject)).thenReturn(true);
+
+    ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
+
+    assertEquals(Optional.of(BookingResourceRoleScheme.BOOKER), resolved.effectiveRole());
+    assertTrue(resolved.hasCapability(BookingResourceRoleScheme.CREATE_BOOKING));
+    assertFalse(resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION));
+    assertFalse(resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS));
+  }
+
+  @Test
+  void mapsAnInventoryReaderToViewer() {
+    when(subject.getUsername()).thenReturn("viewer");
+    when(itemOwner.getUsername()).thenReturn("owner");
+
+    ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
+
+    assertEquals(Optional.of(BookingResourceRoleScheme.VIEWER), resolved.effectiveRole());
+    assertTrue(resolved.hasCapability(BookingResourceRoleScheme.READ_RESOURCE));
+    assertFalse(resolved.hasCapability(BookingResourceRoleScheme.CREATE_BOOKING));
+  }
+
+  @Test
+  void deniesAccessWhenTheTargetIsUnreadable() {
+    when(inventoryPermissions.canUserReadInventoryRecord(instrument, subject)).thenReturn(false);
+
+    ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
+
+    assertEquals(ResolvedResourceAccess.none(), resolved);
+  }
+
+  @Test
+  void resolvesBulkConfigurationsFromCurrentTargets() {
+    BookingConfiguration second = new BookingConfiguration();
+    second.setId(24L);
+    second.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 18L));
+    when(bookingInstruments.getBookingItemAccess(eq(Set.of(TARGET_ID, 18L)), eq(subject)))
+        .thenReturn(
+            Map.of(TARGET_ID, new BookingInstrumentQueryDao.BookingItemAccess("owner", false)));
+
+    assertEquals(
+        Map.of(
+            23L,
+            new ResolvedResourceAccess(
+                Optional.of(BookingResourceRoleScheme.VIEWER),
+                new BookingResourceRoleScheme().capabilities(BookingResourceRoleScheme.VIEWER),
+                List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.VIEWER))),
+            24L,
+            ResolvedResourceAccess.none()),
+        permissions.resolveAll(List.of(configuration, second), subject));
+  }
+
+  @Test
+  void mutationUsesCurrentScalarAccessUnderTheSharedGate() {
+    when(subject.getId()).thenReturn(5L);
+    when(currentAccess.resolve(5L, TARGET_ID))
+        .thenReturn(BookingCalendarCurrentAccessDao.Access.VIEWER);
+
+    ResolvedResourceAccess resolved = permissions.resolveForMutation(configuration, subject);
+
+    assertEquals(Optional.of(BookingResourceRoleScheme.VIEWER), resolved.effectiveRole());
+    verify(permissionGate).requireHeld(BookingCalendarPermissionGateDao.Mode.SHARED);
+    verify(subscriptions).lockPermissionFence();
+  }
+}

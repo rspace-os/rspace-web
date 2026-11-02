@@ -77,6 +77,11 @@ public interface ResourceOperations<T, ID> {
     return Map.of();
   }
 
+  /** Earliest timestamp for related rows missing the required identity fields. */
+  default java.time.Instant relatedAuditFallbackFrom(T entity) {
+    return null;
+  }
+
   /** Whether every audit description for this resource is safe for its readers. */
   default boolean auditDescriptionsSafe() {
     return false;

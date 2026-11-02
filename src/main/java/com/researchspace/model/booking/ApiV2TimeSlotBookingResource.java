@@ -4,19 +4,29 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.InternalFilter;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.WriteOperation;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /** Stable REST API v2 shape for one-off time-slot bookings. */
 public final class ApiV2TimeSlotBookingResource {
+
+  private static final CollectionFieldType<String> CALENDAR_OPTION =
+      CollectionFieldTypes.text(
+          Set.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.IN, Operator.NOT_IN, Operator.EXISTS),
+          false);
+  private static final CollectionFieldType<String> CALENDAR_PERSON =
+      CollectionFieldTypes.text(Set.of(Operator.CONTAINS, Operator.LIKE, Operator.EXISTS), true);
 
   private static final Relationship<TimeSlotBooking> TARGET =
       ApiV2BookingConfigurationResource.instrumentTarget(
@@ -26,6 +36,56 @@ public final class ApiV2TimeSlotBookingResource {
 
   public static final CollectionDescription<TimeSlotBooking> DESCRIPTION =
       description(AccessFunction.authenticated());
+
+  /** Calendar-only query shape for privacy-safe derived event facets. */
+  public static CollectionDescription<TimeSlotBooking> calendarFilterDescription(
+      AccessFunction readAccess) {
+    return new CollectionDescription<>(
+        "bookings",
+        TimeSlotBooking.class,
+        List.of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
+            Field.readOnly(
+                    "timezone",
+                    "bookingConfiguration.timeZone",
+                    CollectionFieldTypes.text(255),
+                    TimeSlotBooking::getVisibleTimeZone)
+                .withQueryCapabilities(true, false),
+            Field.readOnly(
+                "purpose",
+                "purpose",
+                CollectionFieldTypes.text(1000),
+                TimeSlotBooking::getVisiblePurpose),
+            requesterRelationship(),
+            Field.readOnly(
+                "bookedBy",
+                "requester.username",
+                CALENDAR_PERSON,
+                TimeSlotBooking::getVisibleBookedBy),
+            Field.<TimeSlotBooking, String>readOnly(
+                    "privacy",
+                    "id",
+                    CALENDAR_OPTION,
+                    booking -> booking.getPrivacy().name().toLowerCase(Locale.ROOT))
+                .withQueryCapabilities(true, false),
+            Field.readOnly(
+                "kind",
+                "kind",
+                CollectionFieldTypes.enumeration(BookingEventKind.class),
+                TimeSlotBooking::getKind),
+            Field.readOnly(
+                "start",
+                "startTime",
+                CollectionFieldTypes.instant(),
+                TimeSlotBooking::getStartTime),
+            Field.readOnly(
+                "end", "endTime", CollectionFieldTypes.instant(), TimeSlotBooking::getEndTime),
+            TARGET),
+        "id",
+        List.of(new Sort("id", true)),
+        AccessPolicy.readOnly(readAccess),
+        requesterInternalFilters());
+  }
 
   /** Builds the booking collection with its server-owned event visibility predicate. */
   public static CollectionDescription<TimeSlotBooking> description(AccessFunction readAccess) {
@@ -44,7 +104,8 @@ public final class ApiV2TimeSlotBookingResource {
                     "timezone",
                     "timeZone",
                     CollectionFieldTypes.text(255),
-                    TimeSlotBooking::getTimeZone)
+                    TimeSlotBooking::getVisibleTimeZone)
+                .allowNull()
                 .withQueryCapabilities(false, false),
             requesterRelationship(),
             Field.writable(
@@ -82,7 +143,7 @@ public final class ApiV2TimeSlotBookingResource {
                     TimeSlotBooking::getVisiblePurpose,
                     TimeSlotBooking::setPurpose)
                 .allowNull()
-                .withQueryCapabilities(false, false),
+                .withQueryCapabilities(true, false),
             Field.readOnly(
                     "bookedBy",
                     "visibleBookedBy",
@@ -137,9 +198,11 @@ public final class ApiV2TimeSlotBookingResource {
             AccessFunction.authenticated(),
             AccessFunction.authenticated(),
             AccessFunction.authenticated()),
-        List.of(
-            new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool()),
-            new InternalFilter("requesterId", "requester.id", CollectionFieldTypes.longNumber())));
+        java.util.stream.Stream.concat(
+                java.util.stream.Stream.of(
+                    new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())),
+                requesterInternalFilters().stream())
+            .toList());
   }
 
   /** A read-only user reference that is absent whenever the event is shown as busy. */
@@ -160,15 +223,29 @@ public final class ApiV2TimeSlotBookingResource {
                 null));
   }
 
+  /**
+   * Booking identity and name predicates use stored requester paths after parsing the public
+   * relationship selectors. This preserves booking visibility semantics without allowing the users
+   * collection's own-row policy to suppress filters on a requester visible through a shared
+   * Inventory item.
+   */
+  private static List<InternalFilter> requesterInternalFilters() {
+    return List.of(
+        new InternalFilter("requesterId", "requester.id", CollectionFieldTypes.longNumber()),
+        new InternalFilter("requesterUsername", "requester.username", CollectionFieldTypes.text()),
+        new InternalFilter(
+            "requesterFirstName", "requester.firstName", CollectionFieldTypes.text()),
+        new InternalFilter("requesterLastName", "requester.lastName", CollectionFieldTypes.text()));
+  }
+
   private ApiV2TimeSlotBookingResource() {}
 
   private static ResourceReference<BookableTargetType, Long> targetReference(
       TimeSlotBooking booking) {
-    if (booking.getBookingConfiguration() == null
-        || booking.getBookingConfiguration().getTarget() == null) {
+    BookableTargetReference target = booking.getVisibleTarget();
+    if (target == null) {
       return null;
     }
-    BookableTargetReference target = booking.getBookingConfiguration().getTarget();
     return new ResourceReference<>(target.type(), target.id());
   }
 }

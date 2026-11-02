@@ -44,7 +44,7 @@ class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
   }
 
   @Test
-  void pageFetchesActorsAndAccessAlongsideConfigurations() {
+  void pageFetchesActorsAlongsideConfigurations() {
     User requester = createInitAndLoginAnyUser();
     TimeSlotBooking created = bookingFor(requester, "Fetched scope", false);
     var session = sessionFactory.getCurrentSession();
@@ -60,8 +60,8 @@ class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
     assertTrue(org.hibernate.Hibernate.isInitialized(loaded.getRequester()), "requester");
     assertTrue(org.hibernate.Hibernate.isInitialized(loaded.getCreatedBy()), "creator");
     assertTrue(
-        org.hibernate.Hibernate.isInitialized(loaded.getBookingConfiguration().getResourceAccess()),
-        "configuration access");
+        org.hibernate.Hibernate.isInitialized(loaded.getBookingConfiguration().getCreatedBy()),
+        "configuration creator");
   }
 
   @Test

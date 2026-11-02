@@ -1,5 +1,11 @@
-import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import {
+  bookingCatalogueKeys,
+  bookingConfigurationKeys,
+  bookingKeys,
+  bookingSubscriptionKeys,
+} from "@/modules/booking/domain/bookingKeys";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,9 +31,17 @@ export function ArchiveBookableItemDialog({
   onArchived: (configurationId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
-  const archiveMutation = useMutation({
-    mutationFn: async () => {
-      await onArchive(configuration.id, requiredVersion(configuration));
+  const archiveMutation = useApiV2Mutation({
+    meta: {
+      invalidates: [
+        bookingConfigurationKeys.all,
+        bookingKeys.all,
+        bookingCatalogueKeys.all,
+        bookingSubscriptionKeys.calendar(configuration.id),
+      ],
+    },
+    mutationFn: () => onArchive(configuration.id, requiredVersion(configuration)),
+    onSuccess: async () => {
       close();
       await onArchived(configuration.id);
     },

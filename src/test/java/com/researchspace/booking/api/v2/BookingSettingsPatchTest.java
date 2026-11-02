@@ -32,7 +32,6 @@ import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.webapp.config.WebConfig.YamlJackson2HttpMessageConverter;
 import java.time.Clock;
 import java.time.Instant;
@@ -63,8 +62,6 @@ class BookingSettingsPatchTest {
   private final BookingConfigurationDefaultsManager manager =
       mock(BookingConfigurationDefaultsManager.class);
   private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
-  private final ResourceAccessDirectoryManager directoryManager =
-      mock(ResourceAccessDirectoryManager.class);
   private final User user = mock(User.class);
   private final StaticMessageSource messageSource = new StaticMessageSource();
   private final LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
@@ -84,8 +81,7 @@ class BookingSettingsPatchTest {
     ApiV2JsonMappers.register(converter, BookingSettingsController.SettingsPatch.class);
     mockMvc =
         MockMvcBuilders.standaloneSetup(
-                new BookingSettingsController(
-                    manager, featureFlags, directoryManager, Clock.systemUTC()))
+                new BookingSettingsController(manager, featureFlags, Clock.systemUTC()))
             .setMessageConverters(converter, new YamlJackson2HttpMessageConverter())
             .setControllerAdvice(
                 new BookingApiV2ControllerAdvice(new MessageSourceUtils(messageSource)))
@@ -93,23 +89,20 @@ class BookingSettingsPatchTest {
             .build();
 
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, user)).thenReturn(true);
-    when(manager.updateDefaults(any(), any(), any(), any(), anyLong(), any(), any()))
+    when(manager.updateDefaults(any(), any(), anyLong(), any(), any()))
         .thenReturn(new BookingConfigurationDefaults());
   }
 
   @Test
-  void wrapsTheSettingsGranteeDirectoryInDocs() throws Exception {
-    when(directoryManager.searchForSettings("ab", 20, user)).thenReturn(List.of());
-    var result =
-        mockMvc
-            .perform(
-                MockMvcRequestBuilders.get("/api/v2/booking-settings/access-grantees")
-                    .param("q", "ab")
-                    .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.docs").isEmpty())
-            .andReturn();
-    assertEquals(1, mapper.readTree(result.getResponse().getContentAsString()).size());
+  void removedSharingFieldsAreUnknownToTheSettingsApi() throws Exception {
+    for (String field : List.of("defaultSharedWith", "selectedGranteeKeys")) {
+      mockMvc
+          .perform(patchRequest("{\"" + field + "\":null}"))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.invalidParams[0].name").value(field))
+          .andExpect(jsonPath("$.invalidParams[0].reason").value("unknownField"));
+    }
+    verifyNoInteractions(manager);
   }
 
   @Test
@@ -277,7 +270,7 @@ class BookingSettingsPatchTest {
                  "bufferBeforeMinutes":null,"bufferAfterMinutes":null,
                  "maxBookingDurationMinutes":null,"allowDoubleBooking":null,
                  "availabilityWindowStart":null,"availabilityWindowEnd":null,"timezoneMode":null,
-                 "customTimezone":null,"defaultSharedWith":null,"selectedGranteeKeys":null}
+                 "customTimezone":null}
                 """))
         .andExpect(status().isOk());
 
@@ -286,8 +279,7 @@ class BookingSettingsPatchTest {
     ArgumentCaptor<BookingDisplaySettings.Patch> display =
         ArgumentCaptor.forClass(BookingDisplaySettings.Patch.class);
     verify(manager, Mockito.times(2))
-        .updateDefaults(
-            scheduling.capture(), display.capture(), any(), any(), eq(0L), eq(user), eq(user));
+        .updateDefaults(scheduling.capture(), display.capture(), eq(0L), eq(user), eq(user));
 
     assertEquals(15L, scheduling.getAllValues().get(0).slotGranularityMinutes());
     assertEquals(Boolean.FALSE, scheduling.getAllValues().get(0).allowDoubleBooking());

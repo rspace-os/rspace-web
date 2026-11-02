@@ -2,7 +2,6 @@ package com.researchspace.service.resourceaccess;
 
 import com.researchspace.model.User;
 import java.util.List;
-import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,15 +39,6 @@ public class ResourceAccessDirectoryManagerImpl implements ResourceAccessDirecto
     }
     if (!access.hasCapability(resource.manageAssignmentsCapability())) {
       throw new ResourceAccessException(ResourceAccessException.Reason.FORBIDDEN);
-    }
-    return directory.search(query, limit, subject);
-  }
-
-  @Override
-  public List<ResourceGranteeDirectoryEntry> searchForSettings(
-      String query, int limit, User subject) {
-    if (subject == null || !subject.isEnabled() || !subject.hasSysadminRole()) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
     }
     return directory.search(query, limit, subject);
   }

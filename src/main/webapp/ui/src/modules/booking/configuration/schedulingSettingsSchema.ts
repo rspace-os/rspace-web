@@ -58,17 +58,6 @@ export const BookingAdminSettingsSchema = v.pipe(
   v.object({
     ...schedulingSettingsEntries,
     ...bookingDisplayPreferencesEntries,
-    defaultSharedWith: v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
-    selectedAccessGrantees: v.array(
-      v.object({
-        kind: v.picklist(["USER", "GROUP"]),
-        id: v.number(),
-        key: v.string(),
-        name: v.string(),
-        detail: v.optional(v.nullable(v.string())),
-        available: v.boolean(),
-      }),
-    ),
     configurationVersion: v.number(),
   }),
   v.forward(
@@ -82,11 +71,7 @@ export const BookingAdminSettingsSchema = v.pipe(
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
 export type BookingSettings = v.InferOutput<typeof BookingSettingsSchema>;
 export type BookingAdminSettings = v.InferOutput<typeof BookingAdminSettingsSchema>;
-export type BookingSettingsInput = SchedulingSettings &
-  BookingDisplayPreferencesInput & {
-    defaultSharedWith: "ALL_USERS" | "SELECTED" | "ONLY_ME";
-    selectedGranteeKeys: readonly string[];
-  };
+export type BookingSettingsInput = SchedulingSettings & BookingDisplayPreferencesInput;
 
 export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   slotGranularityMinutes: 5,

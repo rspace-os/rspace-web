@@ -35,52 +35,19 @@ VALUES
    'Fresh dev booking seed', 1, 0, -1, 'Instrument', b'1', 0, UNIX_TIMESTAMP() * 1000,
    UNIX_TIMESTAMP() * 1000);
 
-INSERT INTO ResourceAccess
-  (id, schemeKey, version, createdAt, updatedAt, createdBy_id, updatedBy_id)
-VALUES
-  (910100001, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100002, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100003, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100004, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100005, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100006, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100007, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100008, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12);
-
 INSERT INTO BookingConfiguration
   (id, enabled, timeZone, targetType, targetId, configurationVersion, createdAt, updatedAt,
-   createdBy_id, updatedBy_id, resourceAccess_id, slotGranularityMinutes, incrementUnit, openingHours, bufferBeforeMinutes, bufferAfterMinutes, allowDoubleBooking,
+   createdBy_id, updatedBy_id, slotGranularityMinutes, incrementUnit, openingHours, bufferBeforeMinutes, bufferAfterMinutes, allowDoubleBooking,
    maxBookingDurationMinutes, state)
 VALUES
-  (910100001, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100001, 0, NOW(6), NOW(6), -12, -12, 910100001, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'1', 0, 'ACTIVE'),
-  (910100002, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100002, 0, NOW(6), NOW(6), -12, -12, 910100002, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100003, b'1', 'UTC',            'INSTRUMENT', 910100003, 0, NOW(6), NOW(6), -12, -12, 910100003, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100004, b'1', 'UTC',            'INSTRUMENT', 910100004, 0, NOW(6), NOW(6), -12, -12, 910100004, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100005, b'1', 'America/New_York','INSTRUMENT', 910100005, 0, NOW(6), NOW(6), -12, -12, 910100005, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100006, b'1', 'America/New_York','INSTRUMENT', 910100006, 0, NOW(6), NOW(6), -12, -12, 910100006, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100007, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100007, 0, NOW(6), NOW(6), -12, -12, 910100007, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100008, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100008, 0, NOW(6), NOW(6), -12, -12, 910100008, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE');
-
-INSERT INTO ResourceRoleAssignment
-  (resourceAccess_id, roleKey, granteeKey, granteeKind, user_id, group_id, audienceKey,
-   nameSnapshot, detailSnapshot)
-VALUES
-  (910100001, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100002, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100003, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100004, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100005, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100006, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100007, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100008, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100001, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100002, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100003, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100004, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100005, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100006, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100007, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100008, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL);
+  (910100001, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100001, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'1', 0, 'ACTIVE'),
+  (910100002, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100002, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100003, b'1', 'UTC',            'INSTRUMENT', 910100003, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100004, b'1', 'UTC',            'INSTRUMENT', 910100004, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100005, b'1', 'America/New_York','INSTRUMENT', 910100005, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100006, b'1', 'America/New_York','INSTRUMENT', 910100006, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100007, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100007, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100008, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100008, 0, NOW(6), NOW(6), -12, -12, 15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE');
 
 INSERT INTO InstrumentEntity
   (id, createdBy, creationDate, modificationDate, modifiedBy, deleted, name, description,
@@ -95,31 +62,16 @@ VALUES
    1, 0, -1, 'Instrument', b'1', 0, UNIX_TIMESTAMP() * 1000, UNIX_TIMESTAMP() * 1000);
 
 
-INSERT INTO ResourceAccess
-  (id, schemeKey, version, createdAt, updatedAt, createdBy_id, updatedBy_id)
-VALUES
-  (910100010, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100011, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12);
-
 INSERT INTO BookingConfiguration
   (id, enabled, timeZone, targetType, targetId, configurationVersion, createdAt, updatedAt,
-   createdBy_id, updatedBy_id, resourceAccess_id, slotGranularityMinutes, incrementUnit,
+   createdBy_id, updatedBy_id, slotGranularityMinutes, incrementUnit,
    openingHours, bufferBeforeMinutes, bufferAfterMinutes,
    allowDoubleBooking, maxBookingDurationMinutes, state)
 VALUES
-  (910100010, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100010, 0, NOW(6), NOW(6), -12, -12, 910100010,
+  (910100010, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100010, 0, NOW(6), NOW(6), -12, -12,
    1440, 'DAYS', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100011, b'1', 'UTC', 'INSTRUMENT', 910100011, 0, NOW(6), NOW(6), -12, -12, 910100011,
+  (910100011, b'1', 'UTC', 'INSTRUMENT', 910100011, 0, NOW(6), NOW(6), -12, -12,
    15, 'MINUTES', '[{"dayOfWeek":1,"start":"00:00","end":"24:00"},{"dayOfWeek":2,"start":"00:00","end":"24:00"},{"dayOfWeek":3,"start":"00:00","end":"24:00"},{"dayOfWeek":4,"start":"00:00","end":"24:00"},{"dayOfWeek":5,"start":"00:00","end":"24:00"},{"dayOfWeek":6,"start":"00:00","end":"24:00"},{"dayOfWeek":7,"start":"00:00","end":"24:00"}]', 0, 0, b'0', 0, 'ACTIVE');
-
-INSERT INTO ResourceRoleAssignment
-  (resourceAccess_id, roleKey, granteeKey, granteeKind, user_id, group_id, audienceKey,
-   nameSnapshot, detailSnapshot)
-VALUES
-  (910100010, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100011, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
-  (910100010, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100011, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL);
 
 
 -- 8 configured instruments x 3 dates x 2 events = 48 events. The requesters cycle through
