@@ -16,7 +16,9 @@ export type ApiV2CollectionFetchOptions<TDocument> = {
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   fetch?: typeof globalThis.fetch;
   projection?: ApiV2CollectionProjection<TDocument>;
-  baseFilter?: FilterExpression<TDocument>;
+  baseFilter?:
+    | FilterExpression<TDocument>
+    | ((expression: FilterExpression<TDocument> | null) => FilterExpression<TDocument> | undefined);
   validateRows?: (rows: readonly TDocument[]) => void;
 };
 
@@ -78,7 +80,7 @@ export function createApiV2CollectionFetcher<TDocument>(
       requestState,
       options.depth,
       "visible",
-      options.baseFilter,
+      typeof options.baseFilter === "function" ? options.baseFilter(state.filters.expression) : options.baseFilter,
     );
     if (options.totals) parameters.set("totals", "true");
     const response = await request(`${endpoint}?${parameters}`, {

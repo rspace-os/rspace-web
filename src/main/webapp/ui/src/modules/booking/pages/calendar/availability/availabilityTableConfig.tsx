@@ -47,7 +47,7 @@ export function createAvailabilityTableConfig(
       {
         name: "id",
         type: "number",
-        labelKey: "booking:bookableItems.fields.id" satisfies CollectionTranslationKey,
+        labelKey: "booking:allBookableItems.fields.id" satisfies CollectionTranslationKey,
         list: false,
         form: false,
       },
@@ -56,7 +56,7 @@ export function createAvailabilityTableConfig(
         type: "relationship",
         relationTo: "instruments",
         hasMany: false,
-        labelKey: "booking:bookableItems.fields.target" satisfies CollectionTranslationKey,
+        labelKey: "booking:allBookableItems.fields.target" satisfies CollectionTranslationKey,
         capabilities: { sortable: false, filterOperators: ["equals"], supportsWildcards: false },
         list: {
           width: 280,

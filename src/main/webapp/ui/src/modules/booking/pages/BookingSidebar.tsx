@@ -2,7 +2,6 @@ import { Link, linkOptions } from "@tanstack/react-router";
 import {
   CalendarIcon,
   CalendarPlusIcon,
-  ChevronRightIcon,
   LayoutDashboardIcon,
   LibraryBigIcon,
   ListIcon,
@@ -11,9 +10,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { useCanOpenBookableItemsAdministration } from "@/modules/booking/pages/bookable-items/bookableItemsAdministrationAccess";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -21,22 +18,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-// Bookable items appears once the user can read a configuration or set up an instrument; with neither,
-// its table would be empty and offer no Add. Settings edits institution-wide defaults and stays sysadmin-only.
-const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean) => {
-  const administration = [
-    ...(isSysAdmin
-      ? [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> } as const]
-      : []),
-    ...(canOpenBookableItems
-      ? [{ key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> } as const]
-      : []),
-  ];
+const items = (today: string, isSysAdmin: boolean) => {
   return [
     {
       key: "dashboard",
@@ -70,8 +54,8 @@ const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean
       icon: SlidersHorizontalIcon,
       link: <Link {...linkOptions({ to: "/booking/preferences" })} />,
     },
-    ...(administration.length > 0
-      ? [{ key: "administration", icon: SettingsIcon, children: administration } as const]
+    ...(isSysAdmin
+      ? [{ key: "settings", icon: SettingsIcon, link: <Link to="/booking/config/settings" /> } as const]
       : []),
   ] as const;
 };
@@ -86,51 +70,25 @@ export function BookingSidebar() {
     addBooking: t("sidebar.addBooking"),
     myBookings: t("sidebar.myBookings"),
     preferences: t("sidebar.preferences"),
-    administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
-    bookableItems: t("sidebar.bookableItems"),
   };
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const canOpenBookableItems = useCanOpenBookableItemsAdministration();
-  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole, canOpenBookableItems);
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole);
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{t("sidebar.label")}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {sidebarItems.map((item) =>
-            "children" in item ? (
-              // shadcn's Base UI sidebar-menu-collapsible example, with the Collapsible rendered as the
-              // <li> so the menu stays a valid ul > li list, and Base UI's data-open in place of data-state.
-              <Collapsible key={item.key} className="group/collapsible" defaultOpen render={<SidebarMenuItem />}>
-                <CollapsibleTrigger render={<SidebarMenuButton tooltip={labels[item.key]} />}>
-                  <item.icon />
-                  <span>{labels[item.key]}</span>
-                  <ChevronRightIcon className="ml-auto transition-transform group-data-open/collapsible:rotate-90" />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    {item.children.map((child) => (
-                      <SidebarMenuSubItem key={child.key}>
-                        <SidebarMenuSubButton render={child.link}>
-                          <span>{labels[child.key]}</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            ) : (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton tooltip={labels[item.key]} render={item.link}>
-                  <item.icon />
-                  <span>{labels[item.key]}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ),
-          )}
+          {sidebarItems.map((item) => (
+            <SidebarMenuItem key={item.key}>
+              <SidebarMenuButton tooltip={labels[item.key]} render={item.link}>
+                <item.icon />
+                <span>{labels[item.key]}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

@@ -12,9 +12,39 @@
       "viewAvailability": "View availability",
       "viewDetails": "View details"
     },
-    "date": "Date",
+    "bulk": {
+      "actions": {
+        "archive": "Archive selected",
+        "delete": "Delete selected",
+        "disable": "Disable",
+        "enable": "Enable"
+      },
+      "archiveDialog": {
+        "description": "They will no longer accept new bookings, and every future booking on them is cancelled automatically and cannot be restored.",
+        "title": "Archive {count, plural, one {# booking configuration} other {# booking configurations}}?"
+      },
+      "deleteDialog": {
+        "description": "This action cannot be undone.",
+        "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
+      },
+      "errors": {
+        "archive": "The selected configurations could not be archived.",
+        "delete": "Could not delete the selected rows. No rows changed. Try again.",
+        "disable": "Could not disable the selected rows. No rows changed. Try again.",
+        "enable": "Could not enable the selected rows. No rows changed. Try again."
+      }
+    },
     "fields": {
-      "actions": "Actions"
+      "actions": "Actions",
+      "enabled": "Enabled",
+      "id": "ID",
+      "state": "State",
+      "status": "Status",
+      "target": "Bookable item",
+      "targetName": "Bookable item name",
+      "timezone": "Time zone",
+      "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
+      "updatedAt": "Last updated"
     },
     "filters": {
       "location": "Location",
@@ -26,11 +56,21 @@
       "description": "Where this instrument is stored in Inventory.",
       "workbenchDescription": "Where this instrument is stored in Inventory. WB = workbench."
     },
+    "notifications": {
+      "subscribe": "Subscribe to notifications",
+      "unsubscribe": "Unsubscribe from notifications"
+    },
     "ownerPreset": "Owned Items",
-    "plural": "All Bookable Items",
+    "plural": "All items",
+    "primer": {
+      "description": "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing."
+    },
     "singular": "Bookable item",
-    "title": "All Bookable Items",
-    "toolbar": "All Bookable Items controls"
+    "states": {
+      "active": "Active"
+    },
+    "title": "All items",
+    "toolbar": "All items controls"
   },
   "availabilityBar": {
     "current": {
@@ -356,28 +396,6 @@
       "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item.",
       "viewExisting": "View existing"
     },
-    "bulk": {
-      "actions": {
-        "archive": "Archive selected",
-        "delete": "Delete selected",
-        "disable": "Disable",
-        "enable": "Enable"
-      },
-      "archiveDialog": {
-        "description": "They will no longer accept new bookings, and every future booking on them is cancelled automatically and cannot be restored.",
-        "title": "Archive {count, plural, one {# booking configuration} other {# booking configurations}}?"
-      },
-      "deleteDialog": {
-        "description": "This action cannot be undone.",
-        "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
-      },
-      "errors": {
-        "archive": "The selected configurations could not be archived.",
-        "delete": "Could not delete the selected rows. No rows changed. Try again.",
-        "disable": "Could not disable the selected rows. No rows changed. Try again.",
-        "enable": "Could not enable the selected rows. No rows changed. Try again."
-      }
-    },
     "deleteDialog": {
       "description": "Delete {item}? This action cannot be undone.",
       "error": "Could not delete {item}. Try again.",
@@ -399,18 +417,6 @@
       "viewCalendar": "View calendar",
       "viewDetails": "View item details"
     },
-    "fields": {
-      "actions": "Actions",
-      "enabled": "Enabled",
-      "id": "ID",
-      "state": "State",
-      "status": "Status",
-      "target": "Bookable item",
-      "targetName": "Bookable item name",
-      "timezone": "Time zone",
-      "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
-      "updatedAt": "Last updated"
-    },
     "lifecycleErrors": {
       "restore": "The booking configuration could not be restored. Refresh and try again.",
       "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
@@ -429,15 +435,7 @@
       "error": "The configuration could not be permanently deleted. Refresh and try again.",
       "title": "Permanently delete booking setup?"
     },
-    "plural": "Bookable Items",
-    "primer": {
-      "description": "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing."
-    },
-    "singular": "Bookable item",
     "staleEdit": "Someone else changed this configuration while you were editing. Your changes are kept: save again to replace the latest version with them, or discard them to load the latest version.",
-    "states": {
-      "active": "Active"
-    },
     "targetSearch": {
       "error": "Eligible instruments could not be searched.",
       "label": "Instrument",
@@ -1162,9 +1160,7 @@
   },
   "sidebar": {
     "addBooking": "Add Booking",
-    "administration": "Administration",
     "allItems": "All items",
-    "bookableItems": "Bookable Items",
     "calendar": "Calendar",
     "dashboard": "Dashboard",
     "label": "Booking",

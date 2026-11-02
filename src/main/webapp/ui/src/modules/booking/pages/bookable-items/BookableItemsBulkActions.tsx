@@ -33,9 +33,9 @@ export function BookableItemsBulkActions({
   const { t } = useTranslation(["booking", "common"]);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const errorKeys = {
-    enable: "bookableItems.bulk.errors.enable",
-    disable: "bookableItems.bulk.errors.disable",
-    archive: "bookableItems.bulk.errors.archive",
+    enable: "allBookableItems.bulk.errors.enable",
+    disable: "allBookableItems.bulk.errors.disable",
+    archive: "allBookableItems.bulk.errors.archive",
   } as const;
   const error = failedAction === null ? null : t(errorKeys[failedAction]);
 
@@ -59,7 +59,7 @@ export function BookableItemsBulkActions({
           aria-busy={activeAction === "enable"}
           onClick={() => void runAction("enable")}
         >
-          {t("bookableItems.bulk.actions.enable")}
+          {t("allBookableItems.bulk.actions.enable")}
         </Button>
       ) : null}
       <Button
@@ -70,7 +70,7 @@ export function BookableItemsBulkActions({
         aria-busy={activeAction === "disable"}
         onClick={() => void runAction("disable")}
       >
-        {t("bookableItems.bulk.actions.disable")}
+        {t("allBookableItems.bulk.actions.disable")}
       </Button>
       <Button
         type="button"
@@ -80,7 +80,7 @@ export function BookableItemsBulkActions({
         aria-busy={activeAction === "archive"}
         onClick={() => setArchiveOpen(true)}
       >
-        {t("bookableItems.bulk.actions.archive")}
+        {t("allBookableItems.bulk.actions.archive")}
       </Button>
       {error && (!archiveOpen || failedAction !== "archive") ? (
         <p role="alert" className="basis-full text-sm text-destructive">
@@ -91,9 +91,9 @@ export function BookableItemsBulkActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("bookableItems.bulk.archiveDialog.title", { count: selection.selectedRowIds.size })}
+              {t("allBookableItems.bulk.archiveDialog.title", { count: selection.selectedRowIds.size })}
             </AlertDialogTitle>
-            <AlertDialogDescription>{t("bookableItems.bulk.archiveDialog.description")}</AlertDialogDescription>
+            <AlertDialogDescription>{t("allBookableItems.bulk.archiveDialog.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           {error && failedAction === "archive" ? (
             <p role="alert" className="text-sm text-destructive">

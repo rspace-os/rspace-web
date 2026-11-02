@@ -162,7 +162,10 @@ export function useApiV2TableList<
                 state: projectedState(adapter, state, request?.projection ?? "visible"),
                 depth: request?.depth,
                 projection: request?.projection,
-                baseFilter: request?.baseFilter,
+                baseFilter:
+                  typeof request?.baseFilter === "function"
+                    ? request.baseFilter(state.filters.expression as FilterExpression<TDocument> | null)
+                    : request?.baseFilter,
                 metadata,
                 runtimeFields,
                 config: {
@@ -196,7 +199,10 @@ export function useApiV2TableList<
       {
         filters: result.state.filters,
         sorting: result.state.sorting,
-        baseFilter: request?.baseFilter,
+        baseFilter:
+          typeof request?.baseFilter === "function"
+            ? request.baseFilter(result.state.filters.expression as FilterExpression<TDocument> | null)
+            : request?.baseFilter,
       },
     ],
     enabled: ready(result.state),

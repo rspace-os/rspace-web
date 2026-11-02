@@ -12,7 +12,6 @@ import { Suspense, useEffect } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
@@ -50,7 +49,6 @@ export function AllBookableItemsStory({
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
-          validateSearch: allBookableItemsSearch,
           component: () => <AllBookableItemsPage />,
         }),
         createRoute({

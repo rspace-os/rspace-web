@@ -477,3 +477,22 @@ The Calendar's Availability layout uses the item expression in `calendar-resourc
 Leaving Availability removes its top-level preset rules in the same URL write as the layout change. A saved availability rule opened in another layout is dropped through the stale-field policy with a non-blocking notice. Availability disables the Resources catalogue, display events and blocking events queries. Its bars still load the bookings needed for availability shading.
 
 The inline buttons retain the former All items presentation. Availability's outer TableList edits the item expression and its nested row table hides its header and filter panel. Other layouts retain the existing event panel and owner projection. The requester rule stays stored while Availability hides its control. All items links to this layout with its search and item expression.
+
+### All items configuration list
+
+All items uses `booking-configurations` through `useApiV2TableList`, with slug
+`all-bookable-items`. Its URL search, filter, sorting and column state use the
+standard table persistence. The default scope is active, enabled configurations
+on undeleted Inventory targets. The server excludes deleted targets.
+
+A parsed top-level AND rule for `state` or `enabled` replaces the entire default
+status scope. OR-nested status rules do not replace it. This behavior applies to
+every reader, with no manager detection or status quick filters. Reset restores
+the default scope. Status is visible initially; Updated is available in Columns.
+
+All items owns lifecycle and personal notification selection, capped at 100.
+Lifecycle bulk actions require a direct sysadmin; notification actions use only
+selected rows with the subscription capability and preserve subscription
+versions. Add and permanent deletion return to All items. The former
+Administration list route is retired; Settings is a top-level sysadmin entry.
+Calendar Availability retains its catalogue data source and item query helpers.

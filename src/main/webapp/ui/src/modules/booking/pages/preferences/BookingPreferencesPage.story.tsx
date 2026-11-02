@@ -13,7 +13,6 @@ import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
-import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
 import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
@@ -62,7 +61,6 @@ export function BookingPreferencesPageStory({
         createRoute({
           getParentRoute: () => booking,
           path: "/all-items/",
-          validateSearch: allBookableItemsSearch,
           component: () => <AllBookableItemsPage />,
         }),
       ]),

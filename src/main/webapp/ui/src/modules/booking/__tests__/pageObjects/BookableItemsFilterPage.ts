@@ -2,7 +2,7 @@ import type { Locator } from "@playwright/test";
 import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 
 export class BookableItemsFilterPage extends BasePage {
-  readonly path = "/booking/config/bookable-items";
+  readonly path = "/booking/all-items";
 
   get heading(): Locator {
     return this.page.getByRole("heading", { level: 1, name: "Bookable Items" });
