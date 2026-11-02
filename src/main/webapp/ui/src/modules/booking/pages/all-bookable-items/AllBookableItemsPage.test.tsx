@@ -612,7 +612,11 @@ describe("AllBookableItemsPage", () => {
     await user.click(
       await screen.findByRole("checkbox", { name: bookingEnglish.bookableItemDetails.fields.doubleBooking }),
     );
-    await user.click(screen.getByRole("button", { name: bookingEnglish.bookableItems.actions.save }));
+    await user.click(
+      within(screen.getByRole("tabpanel", { name: "Details" })).getByRole("button", {
+        name: bookingEnglish.bookableItems.actions.save,
+      }),
+    );
     await waitFor(() => expect(patches).toHaveLength(1));
     expect(patches[0]).toMatchObject({ allowDoubleBooking: true });
     await waitFor(() => expect(router.state.location.search.edit).toBeUndefined());
