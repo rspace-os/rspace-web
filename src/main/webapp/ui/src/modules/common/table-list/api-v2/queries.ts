@@ -1,8 +1,10 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
+import { apiV2RuntimeFieldOptions } from "@/modules/common/queries/apiV2QueryKeys";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import { type ApiV2CollectionFetchOptions, requestHeaders } from "./fetcher";
-import { type ApiV2CollectionMetadata, fetchApiV2CollectionMetadata } from "./metadata";
+import { type ApiV2CollectionMetadata, apiV2MetadataOptions } from "./metadata";
 import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
 type Selection = { namespace: string; definition: RuntimeFieldDefinition };
@@ -24,19 +26,12 @@ export function useApiV2RuntimeFields<TDocument>({
   request?: ApiV2CollectionFetchOptions<TDocument>;
   metadata?: ApiV2CollectionMetadata<TDocument>;
 }) {
-  const metadataQuery = useSuspenseQuery({
-    queryKey: ["api-v2", "openapi", resourceName],
-    queryFn: ({ signal }) =>
-      suppliedMetadata ??
-      fetchApiV2CollectionMetadata<TDocument>(resourceName, {
-        fetch: request?.fetch,
-        signal,
-      }),
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
+  const metadataQuery = useSuspenseQuery(
+    apiV2MetadataOptions(resourceName, { fetch: request?.fetch, metadata: suppliedMetadata }),
+  );
   const metadata = suppliedMetadata ?? metadataQuery.data;
-  const scope = request?.authScope ?? (typeof request?.token === "string" ? request.token : undefined);
+  const identityScope = useQueryIdentityScope(request?.authScope);
+  const scope = JSON.stringify([identityScope, request?.authScope ?? null]);
   const namespaces = metadata.runtimeFields ?? [];
   const selectionScope = JSON.stringify([
     scope,
@@ -58,33 +53,26 @@ export function useApiV2RuntimeFields<TDocument>({
     (name) => !selected.some((entry) => name === `${entry.namespace}.${entry.definition.id}`),
   );
   const hydrated = useQuery({
-    queryKey: [
-      "api-v2",
-      "runtime-fields",
+    ...apiV2RuntimeFieldOptions(
       "ids",
-      resourceName,
-      scope,
-      namespaces.map((namespace) => [namespace.namespace, namespace.catalog]),
-      unresolved,
-    ],
+      [resourceName, scope, namespaces.map((namespace) => [namespace.namespace, namespace.catalog]), unresolved],
+      async ({ signal }) => {
+        const headers = await requestHeaders(request);
+        return Promise.all(
+          namespaces.map(async (namespace) => ({
+            namespace: namespace.namespace,
+            definitions: await fetchRuntimeFieldDefinitions(
+              namespace,
+              unresolved
+                .filter((name) => isRuntimeFieldInNamespace(name, namespace.namespace))
+                .map((name) => name.slice(namespace.namespace.length + 1)),
+              { fetch: request?.fetch, headers, signal },
+            ),
+          })),
+        );
+      },
+    ),
     enabled: unresolved.length > 0,
-    queryFn: async ({ signal }) => {
-      const headers = await requestHeaders(request);
-      return Promise.all(
-        namespaces.map(async (namespace) => ({
-          namespace: namespace.namespace,
-          definitions: await fetchRuntimeFieldDefinitions(
-            namespace,
-            unresolved
-              .filter((name) => isRuntimeFieldInNamespace(name, namespace.namespace))
-              .map((name) => name.slice(namespace.namespace.length + 1)),
-            { fetch: request?.fetch, headers, signal },
-          ),
-        })),
-      );
-    },
-    staleTime: 60_000,
-    retry: false,
   });
   const runtimeFields = useMemo(() => {
     const grouped = new Map<string, Map<string, RuntimeFieldDefinition>>();

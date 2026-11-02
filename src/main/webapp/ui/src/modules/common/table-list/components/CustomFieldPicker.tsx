@@ -4,8 +4,11 @@ import { useTranslation } from "react-i18next";
 import useDebounce from "@/hooks/ui/useDebounce";
 import type { RuntimeNamespaceSummary } from "@/modules/common/collection/config";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { apiV2RuntimeFieldOptions } from "@/modules/common/queries/apiV2QueryKeys";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import {
   fetchRuntimeFieldCatalog,
+  type RuntimeFieldCatalogForNamespace,
   type RuntimeFieldDefinition,
 } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import {
@@ -64,7 +67,7 @@ export function CustomFieldPicker({
   ariaLabel: string;
   chosenLabel?: string;
   chosenSelector?: string;
-  known: readonly { namespace: string; definitions: readonly RuntimeFieldDefinition[] }[];
+  known: readonly RuntimeFieldCatalogForNamespace[];
   onSelect: (namespace: string, definition: RuntimeFieldDefinition) => void;
   isDefinitionAvailable?: (definition: RuntimeFieldDefinition) => boolean;
 }) {
@@ -75,33 +78,33 @@ export function CustomFieldPicker({
   const setSearchTerm = useDebounce(setTerm, 250);
   const narrowed = term.trim().length >= MINIMUM_TERM;
 
+  const identityScope = useQueryIdentityScope(authScope);
   const query = useQuery({
-    queryKey: [
-      "api-v2",
-      "runtime-fields",
+    ...apiV2RuntimeFieldOptions(
       "search",
-      authScope ?? token,
-      sources.map((source) => [source.namespace, source.catalog]),
-      term.trim(),
-    ],
+      [
+        JSON.stringify([identityScope, authScope ?? null]),
+        sources.map((source) => [source.namespace, source.catalog]),
+        term.trim(),
+      ],
+      async ({ signal }) => {
+        const headers = new Headers();
+        if (token) headers.set("Authorization", `Bearer ${token}`);
+        const pages = await Promise.all(
+          sources.map(async (source) => ({
+            source,
+            page: await fetchRuntimeFieldCatalog(
+              { catalog: source.catalog },
+              { search: term.trim(), limit: SEARCH_LIMIT, headers, signal },
+            ),
+          })),
+        );
+        return pages.flatMap(({ source, page }) =>
+          page.fields.map((definition) => ({ namespace: source.namespace, definition })),
+        );
+      },
+    ),
     enabled: open && narrowed,
-    staleTime: 60_000,
-    queryFn: async ({ signal }) => {
-      const headers = new Headers();
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      const pages = await Promise.all(
-        sources.map(async (source) => ({
-          source,
-          page: await fetchRuntimeFieldCatalog(
-            { catalog: source.catalog },
-            { search: term.trim(), limit: SEARCH_LIMIT, headers, signal },
-          ),
-        })),
-      );
-      return pages.flatMap(({ source, page }) =>
-        page.fields.map((definition) => ({ namespace: source.namespace, definition })),
-      );
-    },
   });
 
   const sourceNames = new Set(sources.map((source) => source.namespace));
