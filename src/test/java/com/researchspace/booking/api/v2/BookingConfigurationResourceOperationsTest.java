@@ -2,6 +2,7 @@ package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -70,6 +71,11 @@ class BookingConfigurationResourceOperationsTest {
     assertEquals(
         Map.of("target.type", "INSTRUMENT", "target.id", "552"),
         operations.requiredAuditFields(configuration));
+  }
+
+  @Test
+  void retainsPermanentDeletionTimestampInAuditPayload() {
+    assertTrue(operations.relatedAuditFields().contains("deletedAt"));
   }
 
   @Test

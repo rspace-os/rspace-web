@@ -209,7 +209,15 @@ public final class BookingConfigurationResourceOperations
 
   @Override
   public Set<String> relatedAuditFields() {
-    return Set.of("bookingConfigurationId", "start", "end", "kind", "state", "purpose", "deleted");
+    return Set.of(
+        "bookingConfigurationId",
+        "start",
+        "end",
+        "kind",
+        "state",
+        "purpose",
+        "deleted",
+        "deletedAt");
   }
 
   @Override
