@@ -11,7 +11,6 @@ export {
   type BookingSettingsInput,
   BookingSettingsSchema,
   DEFAULT_SCHEDULING_SETTINGS,
-  MAX_BOOKING_DURATION_MINUTES,
   MAX_BUFFER_MINUTES,
   type SchedulingSettings,
   SchedulingSettingsSchema,
