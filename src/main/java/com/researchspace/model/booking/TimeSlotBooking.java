@@ -223,7 +223,7 @@ public class TimeSlotBooking implements Serializable {
     if (preparedPrivacy != BookingPrivacy.FULL || requester == null) {
       return null;
     }
-    return formatUserLabel(requester);
+    return requester.getFullName();
   }
 
   /** Returns the actual creator's non-sensitive display label. */
@@ -232,14 +232,10 @@ public class TimeSlotBooking implements Serializable {
     if (createdBy == null) {
       return null;
     }
-    return formatUserLabel(createdBy);
+    return createdBy.getFullName();
   }
 
   static Date copy(Date value) {
     return value == null ? null : new Date(value.getTime());
-  }
-
-  static String formatUserLabel(User user) {
-    return user.getFullName() + " (" + user.getUsername() + ")";
   }
 }

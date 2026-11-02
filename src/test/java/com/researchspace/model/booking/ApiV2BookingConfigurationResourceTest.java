@@ -292,7 +292,6 @@ class ApiV2BookingConfigurationResourceTest {
     User updater = mock(User.class);
     when(creator.getId()).thenReturn(21L);
     when(creator.getFullName()).thenReturn("Grace Hopper");
-    when(creator.getUsername()).thenReturn("grace");
     when(updater.getId()).thenReturn(22L);
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setCreatedBy(creator);
@@ -307,7 +306,7 @@ class ApiV2BookingConfigurationResourceTest {
                 IncludeTree.empty());
 
     assertEquals(Map.of("relationTo", "users", "value", 21L), rendered.get("createdBy"));
-    assertEquals("Grace Hopper (grace)", rendered.get("createdByName"));
+    assertEquals("Grace Hopper", rendered.get("createdByName"));
     assertEquals(Map.of("relationTo", "users", "value", 22L), rendered.get("updatedBy"));
     assertFalse(
         ApiV2BookingConfigurationResource.DESCRIPTION

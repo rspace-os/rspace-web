@@ -233,7 +233,7 @@ public class BookingConfiguration implements Serializable {
   /** Returns the creator's non-sensitive display label. */
   @Transient
   public String getCreatedByName() {
-    return createdBy == null ? null : TimeSlotBooking.formatUserLabel(createdBy);
+    return createdBy == null ? null : createdBy.getFullName();
   }
 
   @Column(nullable = true)

@@ -89,7 +89,7 @@ class TimeSlotBookingManagerLifecycleTest {
     assertEquals(BookingEventKind.MAINTENANCE, event.kind());
     assertEquals(BookingPrivacy.BUSY, event.privacy());
     assertNull(event.bookedBy());
-    assertEquals("Ada Lovelace (ada)", event.createdBy());
+    assertEquals("Ada Lovelace", event.createdBy());
     assertNull(event.purpose());
     assertFalse(event.canEdit());
     assertEquals("Microscope", event.itemName());

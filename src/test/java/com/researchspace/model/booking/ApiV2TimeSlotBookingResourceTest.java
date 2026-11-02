@@ -144,8 +144,8 @@ class ApiV2TimeSlotBookingResourceTest {
     Map<String, Object> full = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
     assertEquals("full", full.get("privacy"));
     assertEquals("Secret", full.get("purpose"));
-    assertEquals("Ada Lovelace (ada)", full.get("bookedBy"));
-    assertEquals("Ada Lovelace (ada)", full.get("createdBy"));
+    assertEquals("Ada Lovelace", full.get("bookedBy"));
+    assertEquals("Ada Lovelace", full.get("createdBy"));
     assertEquals("BOOKING", full.get("kind"));
     assertEquals(true, full.get("canEdit"));
     assertEquals(true, full.get("canViewConfiguration"));
