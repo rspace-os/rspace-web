@@ -33,6 +33,7 @@ export type AvailabilitySource = {
     id: number;
     kind: BookingEventKind;
     privacy: "full" | "busy";
+    canViewConfiguration?: boolean;
     purpose: string | null;
     bookedBy: string | null;
     createdBy?: string | null;
@@ -205,12 +206,15 @@ export function calendarAvailabilityRow(row: {
   };
 }
 
+function sharedBufferGapMinutes(row: Pick<CalendarAvailabilityRow, "bufferBeforeMinutes" | "bufferAfterMinutes">) {
+  return Math.max(row.bufferBeforeMinutes, row.bufferAfterMinutes);
+}
+
 function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval: AbsoluteDisplayInterval) {
-  const before = Math.max(...rows.map((row) => row.bufferBeforeMinutes));
-  const after = Math.max(...rows.map((row) => row.bufferAfterMinutes));
+  const sharedGapMinutes = Math.max(...rows.map(sharedBufferGapMinutes));
   return {
-    start: Temporal.Instant.from(interval.start).subtract({ minutes: after }).toString(),
-    end: Temporal.Instant.from(interval.end).add({ minutes: before }).toString(),
+    start: Temporal.Instant.from(interval.start).subtract({ minutes: sharedGapMinutes }).toString(),
+    end: Temporal.Instant.from(interval.end).add({ minutes: sharedGapMinutes }).toString(),
   };
 }
 
@@ -243,6 +247,7 @@ function sourcedInterval(
               id: booking.id,
               kind: booking.kind,
               privacy: booking.privacy,
+              canViewConfiguration: booking.canViewConfiguration,
               purpose: booking.purpose,
               bookedBy: booking.bookedBy,
               createdBy: booking.createdBy,
@@ -297,11 +302,12 @@ function bookingInterval(
     booking.end,
     booking,
   );
+  const sharedGapMinutes = sharedBufferGapMinutes(row);
   return clipInterval(
     {
       ...candidate,
-      startsAt: new Date(candidate.startsAt.getTime() - row.bufferBeforeMinutes * 60_000),
-      endsAt: new Date(candidate.endsAt.getTime() + row.bufferAfterMinutes * 60_000),
+      startsAt: new Date(candidate.startsAt.getTime() - sharedGapMinutes * 60_000),
+      endsAt: new Date(candidate.endsAt.getTime() + sharedGapMinutes * 60_000),
     },
     interval,
   );

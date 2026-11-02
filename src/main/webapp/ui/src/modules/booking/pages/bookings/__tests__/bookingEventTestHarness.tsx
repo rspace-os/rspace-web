@@ -1,5 +1,6 @@
 import { type AnyRoute, createRoute } from "@tanstack/react-router";
-import { BookingDetailsView, BookingEventPage } from "@/modules/booking/pages/bookings/BookingEventPage";
+import { BookingDetailsView } from "@/modules/booking/pages/bookings/BookingDetailsView";
+import { BookingEventPage } from "@/modules/booking/pages/bookings/BookingEventPage";
 import BookingInlineEditForm from "@/modules/booking/pages/bookings/BookingInlineEditForm";
 
 export function createBookingEventTestRouteTree<TParent extends AnyRoute>(booking: TParent) {
