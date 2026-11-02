@@ -8,13 +8,10 @@ import { amber, green } from "@mui/material/colors";
 import IconButton from "@mui/material/IconButton";
 import Snackbar, { type SnackbarCloseReason } from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
-import { ThemeProvider, useTheme } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { useTheme } from "@mui/material/styles";
 import React, { forwardRef, useCallback, useEffect, useRef } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
-import I18nRoot from "../modules/common/i18n/I18nRoot";
-import materialTheme from "../theme";
+import { bufferPreMountToast, preMountToasts } from "./toastMessageBuffer";
 
 type ToastVariant = "success" | "warning" | "error" | "notice";
 
@@ -41,18 +38,6 @@ type ToastMessageProps = Pick<ToastConfig, "callback" | "id" | "open" | "variant
 };
 
 type CloseHandler = (event?: React.SyntheticEvent<unknown> | Event, reason?: SnackbarCloseReason) => void;
-
-/*
- * Snackbars only starts listening in a useEffect, after React commits, so toasts
- * dispatched earlier (e.g. from jQuery document-ready handlers) would be lost.
- * Module scripts run before DOMContentLoaded, so this buffer catches them;
- * Snackbars drains it on mount.
- */
-const preMountToasts: Array<Event> = [];
-const bufferPreMountToast = (event: Event) => {
-  preMountToasts.push(event);
-};
-document.addEventListener("show-toast-message", bufferPreMountToast);
 
 let nextToastId = 0;
 
@@ -131,31 +116,6 @@ export default function Snackbars() {
         <ToastMessage key={toastParams.id} closeToast={removeToast} {...toastParams} />
       ))}
     </Box>
-  );
-}
-
-/*
- * This is necessary because as of MUI v5 useStyles cannot be used in the same
- * component as the root MuiThemeProvider
- */
-function WrappedSnackbars() {
-  return (
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <Snackbars />
-      </ThemeProvider>
-    </StyledEngineProvider>
-  );
-}
-
-// render the snackbar wrapper component
-const domContainer = document.getElementById("toast-message");
-if (domContainer) {
-  const root = createRoot(domContainer);
-  root.render(
-    <I18nRoot namespaces={["common"]}>
-      <WrappedSnackbars />
-    </I18nRoot>,
   );
 }
 

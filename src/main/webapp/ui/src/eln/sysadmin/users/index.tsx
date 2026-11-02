@@ -39,7 +39,6 @@ import Popover from "@mui/material/Popover";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
-import { ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
@@ -48,7 +47,6 @@ import { tablePaginationClasses } from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import {
   ColumnsPanelTrigger,
   DataGrid,
@@ -60,15 +58,11 @@ import {
   GridToolbarExportContainer,
   useGridApiContext,
 } from "@mui/x-data-grid";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { delay } from "es-toolkit";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import createAccentedTheme from "../../../accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import Alerts from "../../../components/Alerts/Alerts";
 import Analytics from "../../../components/Analytics";
 import CustomTooltip from "../../../components/CustomTooltip";
@@ -76,14 +70,12 @@ import ErrorBoundary from "../../../components/ErrorBoundary";
 import ExportMenuItem from "../../../components/ExportMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SecretField from "../../../components/Inputs/SecretField";
-import LoaderCircular from "../../../components/LoadingCircular";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ExportDialog from "../../../Export/ExportDialog";
 import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerificationPasswordNeeded";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
-import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/useUiPreference";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
 import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
-import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
@@ -1224,8 +1216,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
    * table to a valid state.
    */
   const exportAllRows = async () => {
-    // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-    let priorSearchParameters;
+    let priorSearchParameters: ReturnType<UserListing["getSearchParameters"]> | undefined;
     const newListing: UserListing = await FetchingData.match(userListing, {
       loading: () => Promise.reject(new Error("loading")),
       error: () => Promise.reject(new Error("error")),
@@ -1971,21 +1962,3 @@ export const UsersPage = (): React.ReactNode => {
     </Analytics>
   );
 };
-const queryClient = new QueryClient();
-const wrapperDiv = document.getElementById("sysadminUsers");
-if (wrapperDiv) {
-  const root = createRoot(wrapperDiv);
-  root.render(
-    <I18nRoot namespaces={["system", "common"]} fallback={<LoaderCircular />}>
-      <QueryClientProvider client={queryClient}>
-        <StyledEngineProvider injectFirst enableCssLayer>
-          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-            <UiPreferences>
-              <UsersPage />
-            </UiPreferences>
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </QueryClientProvider>
-    </I18nRoot>,
-  );
-}

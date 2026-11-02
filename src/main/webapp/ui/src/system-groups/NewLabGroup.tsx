@@ -8,11 +8,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import LoaderCircular from "@/components/LoadingCircular";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import UserSelect from "./UserBox";
 
@@ -258,11 +255,3 @@ export default function NewLabGroup() {
     </StyledEngineProvider>
   );
 }
-
-const domContainer = document.getElementById("newLabGroup");
-const root = createRoot(domContainer as HTMLElement);
-root.render(
-  <I18nRoot namespaces={["groups"]} fallback={<LoaderCircular />}>
-    <NewLabGroup />
-  </I18nRoot>,
-);

@@ -182,6 +182,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${importArchiveFromServer.enabled}")
   private String importArchiveFromServerEnabled;
 
+  @Value("${importArchiveFromServer.folder:}")
+  private String importArchiveFromServerFolder;
+
   @Value("${rs.filestore}")
   private String fileStoreType;
 
@@ -773,6 +776,21 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public boolean isImportArchiveFromServerEnabled() {
     return Boolean.parseBoolean(importArchiveFromServerEnabled);
+  }
+
+  @Override
+  public void setImportArchiveFromServerEnabled(String enabled) {
+    this.importArchiveFromServerEnabled = enabled;
+  }
+
+  @Override
+  public String getImportArchiveFromServerFolder() {
+    return importArchiveFromServerFolder;
+  }
+
+  @Override
+  public void setImportArchiveFromServerFolder(String folder) {
+    this.importArchiveFromServerFolder = folder;
   }
 
   @Override

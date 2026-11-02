@@ -70,9 +70,12 @@ export class DmpSummary {
 
   async importIntoGallery(): Promise<void> {
     try {
-      await axios.post<void>(
-        `apps/dmponline/importPlan?id=${encodeURIComponent(this.#dmp_id.identifier)}&filename=${this.#title}`,
+      const {
+        data: { error },
+      } = await axios.post<{ error: null | { errorMessages: Array<string> } }>(
+        `apps/dmponline/importPlan?id=${encodeURIComponent(this.#dmp_id.identifier)}&filename=${encodeURIComponent(this.#title)}`,
       );
+      if (error !== null) throw new Error(error.errorMessages[0]);
       this.#addAlert(
         mkAlert({
           message: i18n.t("apps:dmpIntegrations.endpoint.importSuccess", { count: 1 }),
