@@ -102,15 +102,34 @@ function requestMatchesQuery(request: ApiSampleRequestListItem, lowerCaseQuery: 
   return searchableText.some((text) => text.toLowerCase().includes(lowerCaseQuery));
 }
 
-function renderAdjustableCell(request: ApiSampleRequestListItem, column: AdjustableColumnKey): React.ReactNode {
+function AdjustableRequestCell({
+  request,
+  column,
+}: {
+  request: ApiSampleRequestListItem;
+  column: AdjustableColumnKey;
+}): React.ReactNode {
   switch (column) {
     case "status":
-      return <RequestsStatusChip status={request.status} />;
+      return (
+        <TableCell>
+          <RequestsStatusChip status={request.status} />
+        </TableCell>
+      );
     case "id":
-      return request.id;
+      return <TableCell>{request.id}</TableCell>;
     case "submitted":
-      return isoToLocale(request.created);
+      return <TableCell>{isoToLocale(request.created)}</TableCell>;
   }
+}
+
+function RequesterCell({ requester }: { requester: ApiSampleRequestListItem["requester"] }): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
+  return requester.firstName === null && requester.lastName === null ? (
+    userDisplayName(requester, t)
+  ) : (
+    <UserDetails userId={requester.id} fullName={userDisplayName(requester, t)} position={["bottom", "right"]} />
+  );
 }
 
 export default function RequestsList({
@@ -272,17 +291,9 @@ export default function RequestsList({
                         <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
                       </TableCell>
                       <TableCell>
-                        {request.requester.firstName === null && request.requester.lastName === null ? (
-                          userDisplayName(request.requester, t)
-                        ) : (
-                          <UserDetails
-                            userId={request.requester.id}
-                            fullName={userDisplayName(request.requester, t)}
-                            position={["bottom", "right"]}
-                          />
-                        )}
+                        <RequesterCell requester={request.requester} />
                       </TableCell>
-                      <TableCell>{renderAdjustableCell(request, adjustableColumn)}</TableCell>
+                      <AdjustableRequestCell request={request} column={adjustableColumn} />
                     </TableRow>
                   ))}
                 </TableBody>
