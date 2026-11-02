@@ -540,7 +540,7 @@ describe("Calendar page", () => {
     });
   });
 
-  test("renders compact booking initials without leaking busy identities or login suffixes", async () => {
+  test("renders compact booking initials with the supplied display name without leaking busy identities", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.chooseView("Time grid");
     await calendar.chooseView("Week");
@@ -549,7 +549,7 @@ describe("Calendar page", () => {
     const initials = event.getByTitle("Ada Lovelace", { exact: true }).filter({ hasText: /^AL$/ });
     await expect.element(initials).toBeVisible();
     await expect.element(initials).toHaveTextContent("AL");
-    await expect.element(event.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
+    await expect.element(initials).toHaveAttribute("title", ownBooking.bookedBy);
     await expect.element(calendar.event("Busy").getByTitle("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
 
     await calendar.chooseView("Month");

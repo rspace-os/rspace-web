@@ -48,7 +48,6 @@ function RecordedValues({ row }: { row: AuditRow }) {
     state: t("bookableItemDetails.audit.values.state"),
     target: t("bookableItemDetails.audit.values.target"),
     bookingConfigurationId: t("bookableItemDetails.audit.values.configuration"),
-    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
     enabled: t("bookableItemDetails.audit.values.enabled"),
     timezone: t("bookableItemDetails.audit.values.timezone"),
     openingHours: t("bookableItemDetails.audit.values.openingHours"),
@@ -57,6 +56,7 @@ function RecordedValues({ row }: { row: AuditRow }) {
     maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
     bufferMinutes: t("bookableItemDetails.audit.values.buffer"),
     allowDoubleBooking: t("bookableItemDetails.audit.values.allowDoubleBooking"),
+    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
   };
   const words = {
     yes: t("bookableItemDetails.yes"),

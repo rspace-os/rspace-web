@@ -532,7 +532,7 @@ describe("DayTimeline table row", () => {
     },
   );
 
-  it("shows the booker's full name without their login in calendar chips", async () => {
+  it("preserves parenthesized suffixes in the booker display name", async () => {
     const wrapper = await timelineWrapper();
     render(
       <DayTimelineEventCard
@@ -543,7 +543,7 @@ describe("DayTimeline table row", () => {
           kind: "booking",
           privacy: "full",
           title: "Scope",
-          bookedBy: "Ada Lovelace (ada)",
+          bookedBy: "Ada Lovelace (Visiting)",
           item: { name: "Scope", globalId: "IN123" },
           canEdit: false,
           startMinute: 480,
@@ -552,8 +552,11 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.queryByText("Ada Lovelace (ada)")).not.toBeInTheDocument();
-    expect(screen.getByText("Ada Lovelace").parentElement).toHaveAttribute("title", "Ada Lovelace");
+    expect(screen.getByText("Ada Lovelace (Visiting)").parentElement).toHaveAttribute(
+      "title",
+      "Ada Lovelace (Visiting)",
+    );
+    expect(screen.getByRole("button", { name: /Scope.*Ada Lovelace \(Visiting\)/ })).toBeVisible();
   });
 
   it("shades closed periods behind events and fully shades a closed day", async () => {

@@ -386,15 +386,6 @@ The Booking API scheduling-timezone write contract is in
 
 Bookable-item event tables cache totals separately from page requests under the bookings query prefix. Page navigation uses `hasNextPage`, and pagination shows "of many" until the total is available. The upcoming-bookings badge uses `/api/v2/bookings/count?max=100` and displays `99+` when the server marks the total as a lower bound.
 
-
-## Audit DELETE labels
-
-The item audit log labels ordinary DELETE events as Archived and events with a
-string `payload.deletedAt` as Permanently deleted. The permanent-delete snapshot
-records that timestamp; archive snapshots do not. Booking's `relatedAuditFields`
-allowlist must retain `deletedAt` in the v2 audit response because descriptions
-are withheld. The Archived or deleted filter sends DELETE and includes both kinds.
-
 ## Notices across routes and on detail pages
 
 Booking pages use `BookingNoticesProvider` for results that must cross a route change. The
@@ -467,3 +458,11 @@ keys depend on restored table state and selected resources. Dashboard and My boo
 reads also depend on component clocks or state, so their queries remain in components.
 
 Scheduling forms share one `bufferMinutes` field for the idle gap before and after each booking. Calendar availability shows lighter gap bands around bookings and labels events with their own interval. Maintenance uses a separate pattern and does not acquire a gap of its own.
+
+## Audit DELETE labels
+
+The item audit log labels ordinary DELETE events as Archived and events with a
+string `payload.deletedAt` as Permanently deleted. The permanent-delete snapshot
+records that timestamp; archive snapshots do not. Booking's `relatedAuditFields`
+allowlist must retain `deletedAt` in the v2 audit response because descriptions
+are withheld. The Archived or deleted filter sends DELETE and includes both kinds.

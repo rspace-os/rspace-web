@@ -75,8 +75,7 @@ export function DayTimelineEventCard({
   const twoLineTitle =
     !truncateTitle && !compactCards && (fitHeight === undefined || fitHeight >= TWO_LINE_TITLE_MIN_HEIGHT);
   const showBadge = fitHeight === undefined || fitHeight >= BADGE_MIN_HEIGHT;
-  const bookerName =
-    event.kind === "booking" && event.privacy === "full" ? event.bookedBy.replace(/\s+\([^()]+\)$/, "") : "";
+  const bookerName = event.kind === "booking" && event.privacy === "full" ? event.bookedBy : "";
   const labelledTitle =
     event.kind === "booking" && event.privacy === "full"
       ? t("dayTimeline.event.titleWithBooker", { title, booker: bookerName })
