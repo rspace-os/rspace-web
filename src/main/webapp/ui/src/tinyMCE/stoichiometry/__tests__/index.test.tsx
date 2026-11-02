@@ -316,6 +316,25 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(document.querySelectorAll("#tinymce-stoichiometry")).toHaveLength(1);
   });
 
+  it("keeps one editor's open dialog open when another editor is constructed", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const initialSelectionNode = editorDocument.createElement("p");
+    editorDocument.body.appendChild(initialSelectionNode);
+    const { buttons, editor } = createEditorHarness({ editorDocument, initialSelectionNode });
+    new StoichiometryPlugin(editor);
+    buttons.get("stoichiometryInsertButton")?.onAction();
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+    });
+
+    new StoichiometryPlugin(createEditorHarness({ initialSelectionNode: document.createElement("p") }).editor);
+
+    expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+  });
+
   it("registers toolbar/menu/slash actions and opens a new table with a tableOnly div", async () => {
     const registeredPlugins = registerTinymcePlugins();
     const editorDocument = document.implementation.createHTMLDocument("editor");

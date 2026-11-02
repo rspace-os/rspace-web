@@ -191,7 +191,9 @@ const openDialog = () => {
 ```
 
 Finally we return to the `onAction`s, and pass `openDialog` to each of them.
-Nothing needs rendering until the dialog is first opened.
+Render only when the user opens the dialog: every editor shares the root, so
+rendering while a later editor is constructed would close a dialog that another
+editor has open.
 [PyratEntrypoint.tsx](/src/main/webapp/ui/src/tinyMCE/pyrat/PyratEntrypoint.tsx)
 is a short, complete example of this pattern.
 
