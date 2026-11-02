@@ -61,6 +61,24 @@ function tinymceAssetsPlugin(): Plugin {
   };
 }
 
+function pdfWorkerAssetPlugin(): Plugin {
+  const workerPath = createRequire(import.meta.url).resolve("pdfjs-dist/build/pdf.worker.min.mjs");
+  const workerUrl = path.posix.join("/@fs", workerPath.replaceAll("\\", "/"));
+  const source = fs.readFileSync(workerPath);
+  return {
+    name: "rspace:browser-test-pdf-worker",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (decodeURIComponent((req.url ?? "").split("?")[0]) !== workerUrl) return next();
+        // Vite's injected imports stall Firefox worker startup while MSW
+        // awaits clients.get(), so serve the installed worker untransformed.
+        res.setHeader("Content-Type", "text/javascript");
+        res.end(source);
+      });
+    },
+  };
+}
+
 /*
  * Browser-mode test config for the component tests (`*.spec.tsx`). Future
  * Playwright e2e tests use the `*.e2e.*` suffix so the two runners never
@@ -86,7 +104,7 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
 export default defineConfig({
   // worker-only serves /mockServiceWorker.js from the installed msw.
   // browserMocks.ts calls setupWorker itself.
-  plugins: [react(), tinymceAssetsPlugin(), msw({ mode: "worker-only" })],
+  plugins: [react(), tinymceAssetsPlugin(), pdfWorkerAssetPlugin(), msw({ mode: "worker-only" })],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the

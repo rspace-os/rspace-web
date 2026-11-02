@@ -18,6 +18,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import { enableMapSet, produce } from "immer";
 import React from "react";
@@ -283,20 +284,6 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
     </Box>
   );
 }
-
-/**
- * Taken from https://www.a11yproject.com/posts/how-to-hide-content/, as in VisuallyHiddenHeading.
- * 1px rather than 0px because VoiceOver will not announce an element with no dimensions.
- */
-const visuallyHidden = {
-  position: "absolute",
-  height: "1px",
-  width: "1px",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  clip: "rect(1px, 1px, 1px, 1px)",
-  clipPath: "inset(50%)",
-} as const;
 
 type PidinstImportDialogArgs = {
   open: boolean;
