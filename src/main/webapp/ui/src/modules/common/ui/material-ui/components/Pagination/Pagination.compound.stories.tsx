@@ -6,6 +6,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Navigation/Pagination/Composition",
+  tags: ["autodocs"],
   component: Pagination,
   parameters: { a11y: { test: "error" } },
   argTypes: {

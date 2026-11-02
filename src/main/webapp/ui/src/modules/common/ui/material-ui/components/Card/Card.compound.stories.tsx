@@ -11,6 +11,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Surfaces/Card/Composition",
+  tags: ["autodocs"],
   component: Card,
   parameters: { a11y: { test: "error" } },
   argTypes: { variant: { control: "select", options: ["outlined", "elevation"] } },
