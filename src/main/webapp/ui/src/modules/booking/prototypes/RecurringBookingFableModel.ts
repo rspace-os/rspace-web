@@ -350,7 +350,7 @@ export const seriesBookings: readonly Booking[] = expandRule(STORED_RULE, INITIA
     id: SERIES_ID_BASE + window.position,
     start: window.start,
     end: window.end,
-    bookedBy: "Ada Lovelace (ada)",
+    bookedBy: "Ada Lovelace",
     purpose: "Weekly imaging session",
     own: true,
   }),
