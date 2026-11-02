@@ -53,6 +53,7 @@ const LAYOUT_ICONS: Record<CalendarLayout, LucideIcon> = {
   "time-grid": CalendarRangeIcon,
   resources: Rows3Icon,
   agenda: ListIcon,
+  availability: CalendarRangeIcon,
 };
 const MONTH_REASON = "Month isn't available in Resources. Use Time grid or Agenda for a month overview.";
 

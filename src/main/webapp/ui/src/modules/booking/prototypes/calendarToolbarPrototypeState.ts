@@ -8,6 +8,7 @@ export const LAYOUT_LABELS: Record<CalendarLayout, string> = {
   "time-grid": "Time grid",
   resources: "Resources",
   agenda: "Agenda",
+  availability: "Availability",
 };
 export const PERIOD_LABELS: Record<CalendarView, string> = { day: "Day", week: "Week", month: "Month" };
 export const MINE_LABEL = "My Bookings";

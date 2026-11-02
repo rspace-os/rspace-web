@@ -142,7 +142,8 @@ export function useCalendarContentData() {
   const [requestedView, setView] = useQueryState("view", calendarViewParser);
   const [layout, setLayout] = useQueryState("layout", calendarLayoutParser);
   // Month is not offered in Resources, so a link asking for it opens the week, as switching layouts does.
-  const view: CalendarView = layout === "resources" && requestedView === "month" ? "week" : requestedView;
+  const view: CalendarView =
+    layout === "availability" ? "day" : layout === "resources" && requestedView === "month" ? "week" : requestedView;
   const [resettingControls, setResettingControls] = React.useState(false);
   const calendarFocus = useCalendarEventFocus({ location, navigate });
   const { focusUnavailableRequest, setFocusUnavailableRequest, focusFallback } = calendarFocus;

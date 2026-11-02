@@ -732,6 +732,7 @@
     "jumpToDate": "Jump to date",
     "layout": {
       "agenda": "Agenda",
+      "availability": "Availability",
       "legend": "Layout",
       "resources": "By Item",
       "time-grid": "Time grid"
@@ -741,6 +742,8 @@
     "nextPeriod": "{period, select, day {Next day} week {Next week} month {Next month} other {Next period}}",
     "period": {
       "day": "Day",
+      "dayOnlyAvailability": "Availability is available for Day only.",
+      "dayOnlyShort": "Day only",
       "legend": "Period",
       "month": "Month",
       "monthUnavailableInResources": "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",

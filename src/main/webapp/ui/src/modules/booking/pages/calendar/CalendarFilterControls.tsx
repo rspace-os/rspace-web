@@ -6,6 +6,7 @@ import { BookingDateControls } from "@/modules/booking/components/BookingToolbar
 import { Button } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuSeparator, MenuTrigger } from "@/modules/common/ui/menu";
 import {
+  allowedViews,
   type CalendarLayout,
   type CalendarView,
   calendarLayouts,
@@ -17,6 +18,7 @@ const layoutIcons: Record<CalendarLayout, LucideIcon> = {
   "time-grid": CalendarRangeIcon,
   resources: Rows3Icon,
   agenda: ListIcon,
+  availability: CalendarRangeIcon,
 };
 
 // Matches MenuItem in common/ui/menu.tsx, which wraps plain items only.
@@ -70,11 +72,12 @@ function CalendarViewMenu({
   const { t } = useTranslation("booking");
   const monthReasonId = React.useId();
   const LayoutIcon = layoutIcons[layout];
-  const monthUnavailable = layout === "resources";
+  const monthUnavailable = layout === "resources" || layout === "availability";
   const layoutLabels = {
     "time-grid": t("calendar.layout.time-grid"),
     resources: t("calendar.layout.resources"),
     agenda: t("calendar.layout.agenda"),
+    availability: t("calendar.layout.availability"),
   };
   const periodLabels = {
     day: t("calendar.period.day"),
@@ -100,7 +103,6 @@ function CalendarViewMenu({
           value={layout}
           onValueChange={(value) => {
             if (!isLayout(value)) return;
-            if (value === "resources" && view === "month") onViewChange("week");
             onLayoutChange(value);
           }}
         >
@@ -123,7 +125,7 @@ function CalendarViewMenu({
             {t("calendar.period.legend")}
           </MenuPrimitive.GroupLabel>
           {calendarViews.map((option) => {
-            const disabled = monthUnavailable && option === "month";
+            const disabled = !allowedViews[layout].includes(option);
             return (
               <RadioMenuItem
                 key={option}
@@ -135,7 +137,9 @@ function CalendarViewMenu({
                   <span className="block">{periodLabels[option]}</span>
                   {disabled ? (
                     <span aria-hidden="true" className="block text-xs text-muted-foreground">
-                      {t("calendar.period.monthUnavailableShort")}
+                      {layout === "availability"
+                        ? t("calendar.period.dayOnlyShort")
+                        : t("calendar.period.monthUnavailableShort")}
                     </span>
                   ) : null}
                 </span>
@@ -145,7 +149,9 @@ function CalendarViewMenu({
         </MenuPrimitive.RadioGroup>
         {monthUnavailable ? (
           <span id={monthReasonId} className="sr-only">
-            {t("calendar.period.monthUnavailableInResources")}
+            {layout === "availability"
+              ? t("calendar.period.dayOnlyAvailability")
+              : t("calendar.period.monthUnavailableInResources")}
           </span>
         ) : null}
       </MenuContent>
