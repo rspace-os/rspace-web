@@ -123,7 +123,7 @@ steps to take care of.
     ```json
       "tinymceNewPlugin": "src/tinyMCE/newPlugin/NewPluginEntrypoint.tsx",
     ```
-     Keep the entry file mount-only (plugin registration and `createRoot` calls)
+     Keep the entry file mount-only (plugin registration and rendering)
      and put the plugin's React components in separate modules; see
      [the frontend README](/src/main/webapp/ui/README.md).
   2. In [/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js](/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js),
@@ -165,69 +165,46 @@ interoperating with other systems. This is implemented using an accented theme
 that is applied to all of the UI elements, most notably the header where we
 consistently provide a link to the documentation for the integration.
 
-In the constructor of our new plugin, we want to define a generator function
-that with each call re-renders the react component, allowing us to change the
-`open` state.
+In the constructor of our new plugin, we want a function that re-renders the
+react component with new props, allowing us to change the `open` state.
+TinyMCE constructs the plugin for every field that enters edit mode, but React
+allows only one root per DOM container, so `getPluginDialogRoot` from
+[/src/main/webapp/ui/src/tinyMCE/pluginDialogRoot.ts](/src/main/webapp/ui/src/tinyMCE/pluginDialogRoot.ts)
+creates the container and its root on first use and returns the same root to
+every later instance. Calling `render` on a root again updates what it shows.
 ```tsx
-function* renderNewPlugin(
-  domContainer: HTMLElement,
-): Generator<void, void, Partial<React.ComponentProps<typeof NewPluginDialog>>> {
-  const root = createRoot(domContainer);
-  while (true) {
-    const newProps = yield;
-    root.render(
-      <I18nRoot namespaces={["common"]}>
-        <StyledEngineProvider injectFirst enableCssLayer>
-          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-            <NewPluginDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </I18nRoot>,
-    );
-  }
-}
+const root = getPluginDialogRoot("tinymce-new-plugin");
+const renderDialog = (props: Pick<React.ComponentProps<typeof NewPluginDialog>, "open" | "onClose">) => {
+  root.render(
+    <I18nRoot namespaces={["common"]}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+          <NewPluginDialog editor={editor} {...props} />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </I18nRoot>,
+  );
+};
+const openDialog = () => {
+  renderDialog({ open: true, onClose: () => renderDialog({ open: false, onClose: () => {} }) });
+};
 ```
 
-We then want to add this dialog to the DOM, but initially hidden. The
-conditional logic is to make sure the dialog isn't added repeatedly every time
-the plugin is instantiated.
-The first `next()` only starts the generator: it runs up to the first `yield`
-and its argument is discarded, so the initial props go in the second call.
-```tsx
-if (!document.getElementById("tinymce-new-plugin")) {
-  const div = document.createElement("div");
-  div.id = "tinymce-new-plugin";
-  document.body.appendChild(div);
-}
-const container = document.getElementById("tinymce-new-plugin");
-if (!container) {
-  throw new Error("tinymce-new-plugin container not found");
-}
-const newPluginRenderer = renderNewPlugin(container);
-newPluginRenderer.next();
-newPluginRenderer.next({ open: false });
-```
-
-Finally we return to the `onAction`s, where we can call
-```
-newPluginRenderer.next({
-  open: true,
-  onClose: () => {
-    newPluginRenderer.next({ open: false });
-  },
-});
-```
+Finally we return to the `onAction`s, and pass `openDialog` to each of them.
+Nothing needs rendering until the dialog is first opened.
+[PyratEntrypoint.tsx](/src/main/webapp/ui/src/tinyMCE/pyrat/PyratEntrypoint.tsx)
+is a short, complete example of this pattern.
 
 Note that the imports required at this point are
 ```tsx
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";
-import { createRoot } from "react-dom/client";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/newPlugin";
+import { getPluginDialogRoot } from "../pluginDialogRoot";
 import type { TinyMcePluginEditor } from "../types";
 import NewPluginDialog from "./NewPluginDialog";
 ```
