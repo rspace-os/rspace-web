@@ -148,6 +148,13 @@ it receive the collection framework's normal `400 Bad Request` response. Public 
 JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
 commands retain their timezone fields for fixtures and other trusted scheduling workflows.
 
+## Booking windows and reconciliation
+
+Booking creation requires a start strictly in the future and an end after the start.
+Interval-changing edits use the same validation; edits to an already-started booking are
+rejected as state transitions. Client draft and uncertain-write handling are documented in
+[Booking frontend](BookingFrontend.md#booking-window-reconciliation).
+
 ### Retrying booking creation
 
 `POST /api/v2/bookings` accepts an optional `Idempotency-Key` containing 1–64 ASCII

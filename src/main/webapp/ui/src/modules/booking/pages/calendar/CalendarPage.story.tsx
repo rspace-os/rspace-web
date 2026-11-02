@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserHistory, RouterProvider } from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
+import { createMemoryHistory, type RouterHistory, RouterProvider } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
@@ -15,9 +14,11 @@ import { inheritedBrowserBookingPreferences } from "../preferences/bookingPrefer
 import { createCalendarRouter } from "./calendarRouter";
 
 export function CalendarPageStory({
+  history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] }),
   user = currentUser,
   preferences = inheritedBrowserBookingPreferences,
 }: {
+  history?: RouterHistory;
   user?: CurrentUser;
   preferences?: BookingDisplayPreferencesDocument;
 } = {}) {
@@ -25,7 +26,7 @@ export function CalendarPageStory({
   queryClient.setQueryData(authQueryKeys.oauthToken(true), OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   queryClient.setQueryData(currentUserQueryKeys.me(), user);
-  const router = createCalendarRouter(createBrowserHistory());
+  const router = createCalendarRouter(history);
   useEffect(
     () => () => {
       router.history.destroy();
@@ -36,11 +37,9 @@ export function CalendarPageStory({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>
   );
 }
