@@ -4231,6 +4231,7 @@ export default interface Resources {
           "alreadyOnBench": "All items are already on your bench.",
           "confirmOnBench": {
             "itemsLabel": "The items are:",
+            "message": "The items are: <itemList/> Do you want to move them to your bench?",
             "prompt": "Do you want to move them to your bench?",
             "title": "Some items are in containers that are already on your bench."
           },
@@ -4574,7 +4575,8 @@ export default interface Resources {
     "peopleField": {
       "errors": {
         "couldNotGetGroupMembers": "Could not get group members."
-      }
+      },
+      "loading": "Loading people"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -6811,7 +6813,7 @@ export default interface Resources {
         "invalidData": "{0}",
         "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
         "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
-        "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+        "invalidForLatestTemplate": "Field ''{0}'' has the value ''{1}'', which the latest template no longer allows. Change the value before updating to the latest template.",
         "invalidIgsn": "Invalid IGSN format: [{0}]",
         "invalidNumber": "Invalid number: {0}",
         "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
@@ -11858,7 +11860,7 @@ export default interface Resources {
         "tableLabel": "booking search results"
       },
       "galaxy": {
-        "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+        "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:<br/><strong>{format}</strong>",
         "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
         "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
         "chooseDataTitle": "Choose Data",
