@@ -73,7 +73,7 @@ export function formatBookingAgendaTimeRange(
   const endDate = new Date(end);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
-    hour: "numeric",
+    hour: timeFormat === "H24" ? "2-digit" : "numeric",
     minute: "2-digit",
     hourCycle: bookingHourCycle(timeFormat),
     ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
@@ -115,7 +115,7 @@ export function formatBookingAgendaDateTime(
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "numeric",
+    hour: timeFormat === "H24" ? "2-digit" : "numeric",
     minute: "2-digit",
     hourCycle: bookingHourCycle(timeFormat),
     timeZoneName: "shortOffset",

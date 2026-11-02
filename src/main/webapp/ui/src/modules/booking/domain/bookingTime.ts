@@ -356,12 +356,28 @@ export function formatBookingPeriod(
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const formatter = dateTimeFormatter(timezone, locale, timeFormat);
-  const startOffset = clockChangeOffsetLabel(zonedDateTime(start, timezone));
-  const endOffset = clockChangeOffsetLabel(zonedDateTime(end, timezone));
+  const startZoned = zonedDateTime(start, timezone);
+  const endZoned = zonedDateTime(end, timezone);
+  const startOffset = clockChangeOffsetLabel(startZoned);
+  const endOffset = clockChangeOffsetLabel(endZoned);
   if (!startOffset && !endOffset) return formatter.formatRange(new Date(start), new Date(end));
+  let endLabel: string;
+  if (startZoned.toPlainDate().equals(endZoned.toPlainDate())) {
+    const formatted = new Intl.DateTimeFormat(locale, {
+      timeZone: timezone,
+      timeStyle: "short",
+      hourCycle: bookingHourCycle(timeFormat),
+    }).format(new Date(end));
+    const offset = endOffset.trim();
+    endLabel = offset
+      ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
+      : formatted;
+  } else {
+    endLabel = formatBookingDateTime(end, timezone, locale, timeFormat);
+  }
   return i18n.t("booking:time.dateTimeRange", {
     start: formatBookingDateTime(start, timezone, locale, timeFormat),
-    end: formatBookingDateTime(end, timezone, locale, timeFormat),
+    end: endLabel,
     lng: bookingLocale(),
   });
 }

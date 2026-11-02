@@ -170,6 +170,21 @@ describe("bookingTime", () => {
     );
   });
 
+  test.each([
+    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "UTC"],
+    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "Europe/Berlin"],
+    ["2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z", "Europe/Berlin"],
+  ])("uses display-zone dates in native ordinary-day ranges: %s to %s in %s", (start, end, timeZone) => {
+    expect(formatBookingPeriod(start, end, timeZone, "en-GB", "H24")).toBe(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone,
+        dateStyle: "medium",
+        timeStyle: "short",
+        hourCycle: "h23",
+      }).formatRange(new Date(start), new Date(end)),
+    );
+  });
+
   describe("dated times on a clock-change day", () => {
     // Europe/Berlin repeats 02:00-03:00 on 2026-10-25 and skips it on 2026-03-29.
     const dateTime = (instant: string) =>
@@ -188,16 +203,16 @@ describe("bookingTime", () => {
       expect(later).toBe(`${dateTime("2026-10-25T01:30:00Z")} +01:00`);
       expect(dateTime("2026-10-25T00:30:00Z")).toBe(dateTime("2026-10-25T01:30:00Z"));
       expect(formatBookingPeriod("2026-10-25T00:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${earlier} – ${dateTime("2026-10-25T02:30:00Z")} +01:00`,
+        `${earlier} – 3:30 AM +01:00`,
       );
       expect(formatBookingPeriod("2026-10-25T01:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${later} – ${dateTime("2026-10-25T02:30:00Z")} +01:00`,
+        `${later} – 3:30 AM +01:00`,
       );
     });
 
     test("names the offsets either side of a skipped hour", () => {
       expect(formatBookingPeriod("2026-03-29T00:30:00Z", "2026-03-29T01:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${dateTime("2026-03-29T00:30:00Z")} +01:00 – ${dateTime("2026-03-29T01:30:00Z")} +02:00`,
+        `${dateTime("2026-03-29T00:30:00Z")} +01:00 – 3:30 AM +02:00`,
       );
     });
 
