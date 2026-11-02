@@ -257,7 +257,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
     openTransaction();
     grp = grpMgr.saveGroup(grp, grpPi);
     permissionUtils.refreshCache();
-    grpMgr.addMembersToGroup(grp.getId(), Arrays.asList(toAdd), grpPi.getUsername(), null, grpPi);
+    grp = grpMgr.addUserToGroup(toAdd.getUsername(), grp.getId(), role);
     commitTransaction();
     return grp;
   }

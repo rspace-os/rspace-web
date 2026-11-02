@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.SearchUtils;
 import com.researchspace.Constants;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
@@ -46,7 +47,10 @@ import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -57,6 +61,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -70,6 +75,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   private ApplicationEventPublisher mockPublisher;
 
   private User testUser;
+  private @Autowired SystemPropertyManager systemPropertyMgr;
+  // the manager caches the value, and the cache survives this test's rollback
+  private String originalSampleRequestsAvailable;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -79,6 +87,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
+    originalSampleRequestsAvailable =
+        systemPropertyMgr.findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE).getValue();
+    setSampleRequestsAvailable(HierarchicalPermission.ALLOWED);
 
     mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
     sampleApiMgr.setPublisher(mockPublisher);
@@ -140,7 +151,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   public void saveUpdateNewBasicSample() throws InterruptedException {
     ApiSampleWithFullSubSamples newSample = createBasicSampleForUser(testUser);
     assertNotNull(newSample);
-    assertThat(newSample.getPermittedActions()).hasSize(3);
+    assertThat(newSample.getPermittedActions()).hasSize(4);
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryCreationEvent.class));
 
@@ -148,7 +159,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(newSample.getName(), retrievedSample.getName());
     assertNotNull(retrievedSample.getSubSamples());
     assertEquals(1, retrievedSample.getVersion());
-    assertThat(retrievedSample.getPermittedActions()).hasSize(3);
+    assertThat(retrievedSample.getPermittedActions()).hasSize(4);
     assertThat(retrievedSample.getFields()).isEmpty();
     assertThat(retrievedSample.getExtraFields()).isEmpty();
     assertThat(retrievedSample.getSubSamples()).hasSize(1);
@@ -186,7 +197,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("updated name", userSample.getName());
     assertEquals("updated description", userSample.getDescription());
     assertEquals("updated tags", userSample.getTags().get(0).toString());
-    assertThat(retrievedSample.getPermittedActions()).hasSize(3);
+    assertThat(retrievedSample.getPermittedActions()).hasSize(4);
     assertEquals(2, userSample.getVersion());
     assertEquals(sampleUpdates.getStorageTempMin(), userSample.getStorageTempMin());
     assertEquals(sampleUpdates.getStorageTempMax(), userSample.getStorageTempMax());
@@ -771,8 +782,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample fullTestUserSample =
         sampleApiMgr.getApiSampleById(retrievedTestUserSample.getId(), pi);
     assertEquals(testUserSample.getName(), fullTestUserSample.getName());
-    // pi have update and transfer permission to user's sample
-    assertThat(fullTestUserSample.getPermittedActions()).hasSize(3);
+    // pi has update, transfer and change-requestable permission to user's sample
+    assertThat(fullTestUserSample.getPermittedActions()).hasSize(4);
     // pi only see public details of other user's sample
     ApiSample sampleRetrievedByPi = sampleApiMgr.getApiSampleById(otherUserSample.getId(), pi);
     assertTrue(sampleRetrievedByPi.isClearedForPublicView());
@@ -904,7 +915,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, visibleSamples.getTotalHits());
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
     assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
-        .hasSize(3); // read/edit/transfer
+        .hasSize(4); // read/edit/transfer/change requestable
 
     // user2 is in groupA, shouldn't see any samples
     visibleSamples =
@@ -919,7 +930,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, visibleSamples.getTotalHits());
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
     assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
-        .hasSize(3); // read/edit/transfer
+        .hasSize(4); // read/edit/transfer/change requestable
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
     assertThat(visibleSamples.getSamples().get(1).getPermittedActions()).hasSize(2); // read/update
 
@@ -931,7 +942,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(3, visibleSamples.getTotalHits());
     assertEquals(user4Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
     assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
-        .hasSize(3); // read/edit/transfer
+        .hasSize(4); // read/edit/transfer/change requestable
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
     assertThat(visibleSamples.getSamples().get(1).getPermittedActions()).hasSize(2); // read/update
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(2).getGlobalId());
@@ -957,7 +968,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         .hasSize(2); // read/transfer
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
     assertThat(visibleSamples.getSamples().get(1).getPermittedActions())
-        .hasSize(3); // read/edit/transfer
+        .hasSize(4); // read/edit/transfer/change requestable
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(2).getGlobalId());
     assertThat(visibleSamples.getSamples().get(2).getPermittedActions()).hasSize(2); // read/edit
 
@@ -1233,9 +1244,302 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // compare with sample as seen by the owner
     ApiSample sampleAsSeenByTestUser =
         sampleApiMgr.getApiSampleById(createdSample.getId(), testUser);
-    assertThat(sampleAsSeenByTestUser.getPermittedActions()).hasSize(3);
+    assertThat(sampleAsSeenByTestUser.getPermittedActions()).hasSize(4);
     assertNotNull(sampleAsSeenByTestUser.getFields());
     assertNotNull(sampleAsSeenByTestUser.getExtraFields());
     assertNotNull(sampleAsSeenByTestUser.getSubSamples());
+  }
+
+  @Test
+  public void updateOmittingRequestableMustNotClearIt() {
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("reqOwner"));
+    initialiseContentWithEmptyContent(owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+
+    ApiSample makeRequestable = new ApiSample();
+    makeRequestable.setId(sample.getId());
+    makeRequestable.setRequestable(true);
+    sampleApiMgr.updateApiSample(makeRequestable, owner);
+    assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // a partial update that says nothing about requestable, as the UI sends when the
+    // requestable field is not among the currently editable fields
+    ApiSample renameOnly = new ApiSample();
+    renameOnly.setId(sample.getId());
+    renameOnly.setName("renamed, nothing to do with requesting");
+    sampleApiMgr.updateApiSample(renameOnly, owner);
+
+    assertTrue(
+        sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable(),
+        "an update that omits 'requestable' must not turn it off");
+  }
+
+  @Test
+  public void createSample_ignoresRequestable() {
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples();
+    newSample.setName("requestable on create");
+    newSample.setRequestable(true);
+
+    // only an update may make a sample requestable, where the permission check runs
+    assertFalse(sampleApiMgr.createNewApiSample(newSample, testUser).getRequestable());
+  }
+
+  @Test
+  public void requestableSearch_showsTheOwnerWithPublicDetailsOnly() {
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(outsider);
+    String name = getRandomAlphabeticString("publicOwner");
+    markSampleRequestable(createBasicSampleForUser(testUser, name), testUser);
+
+    ApiSampleInfo found =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, name, outsider).getSamples().get(0);
+
+    assertTrue(found.isClearedForPublicView());
+    ApiUser owner = found.getOwner();
+    assertEquals(testUser.getUsername(), owner.getUsername());
+    assertEquals(testUser.getLastName(), owner.getLastName());
+    assertNull(owner.getEmail());
+    assertNull(owner.getHomeFolderId());
+    assertNull(owner.getWorkbenchId());
+    assertNull(owner.getHasPiRole());
+    assertNull(owner.getHasSysAdminRole());
+  }
+
+  @Test
+  public void requestableSearch_stillHonoursOwnedBy() {
+    User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
+    User bob = createAndSaveUserIfNotExists(getRandomAlphabeticString("bob"));
+    initialiseContentWithEmptyContent(alice, bob);
+    ApiSampleWithFullSubSamples alicesSample = createBasicSampleForUser(alice, "alice's sample");
+    ApiSampleWithFullSubSamples bobsSample = createBasicSampleForUser(bob, "bob's sample");
+    createBasicSampleForUser(alice, "alice's sample nobody may request");
+    markSampleRequestable(alicesSample, alice);
+    markSampleRequestable(bobsSample, bob);
+
+    List<Long> found =
+        sampleApiMgr
+            .getSamplesForUser(null, alice.getUsername(), null, true, null, testUser)
+            .getSamples()
+            .stream()
+            .map(ApiSampleInfo::getId)
+            .collect(Collectors.toList());
+
+    assertEquals(List.of(alicesSample.getId()), found);
+  }
+
+  @Test
+  public void requestable_needsEditAndTransfer() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    initialiseContentWithEmptyContent(pi, owner, member);
+    Group group = createGroup("group", pi);
+    addUsersToGroup(pi, group, owner, member);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "group-shared sample");
+    // the premise: the member may edit the owner's group-shared sample, but not transfer it
+    assertEquals(
+        List.of(ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.UPDATE),
+        sampleApiMgr.getApiSampleById(sample.getId(), member).getPermittedActions());
+
+    ApiSample memberChange = new ApiSample();
+    memberChange.setId(sample.getId());
+    memberChange.setRequestable(true);
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(memberChange, member));
+    assertEquals("errors.inventory.sampleRequest.requestableNotPermitted", refused.getMessage());
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // the pi may edit and transfer it, so may change it
+    ApiSample piChange = new ApiSample();
+    piChange.setId(sample.getId());
+    piChange.setRequestable(true);
+    sampleApiMgr.updateApiSample(piChange, pi);
+    assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // other edits that resend the current value are not a change
+    ApiSample memberRename = new ApiSample();
+    memberRename.setId(sample.getId());
+    memberRename.setName("renamed by member");
+    memberRename.setRequestable(true);
+    assertEquals("renamed by member", sampleApiMgr.updateApiSample(memberRename, member).getName());
+  }
+
+  @Test
+  public void changeRequestablePermittedAction_isGivenToWhoeverMayChangeTheFlag() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(pi, owner, member, outsider);
+    Group group = createGroup("group", pi);
+    addUsersToGroup(pi, group, owner, member);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "group-shared sample");
+    ApiInventoryRecordPermittedAction change = ApiInventoryRecordPermittedAction.CHANGE_REQUESTABLE;
+
+    assertThat(permittedActionsOf(sample, owner)).contains(change);
+    assertThat(permittedActionsOf(sample, pi)).contains(change);
+    // member may only edit, outsider may do neither, sysadmin may only read
+    assertThat(permittedActionsOf(sample, member)).doesNotContain(change);
+    assertThat(permittedActionsOf(sample, outsider)).doesNotContain(change);
+    assertThat(permittedActionsOf(sample, getSysAdminUser())).doesNotContain(change);
+
+    // a private sample: the PI may still transfer it, but not edit it
+    ApiSample makePrivate = new ApiSample();
+    makePrivate.setId(sample.getId());
+    makePrivate.setSharingMode(ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_ONLY);
+    sampleApiMgr.updateApiSample(makePrivate, owner);
+    assertThat(permittedActionsOf(sample, owner)).contains(change);
+    assertThat(permittedActionsOf(sample, pi)).doesNotContain(change);
+
+    // only samples are requestable
+    assertThat(createBasicContainerForUser(owner).getPermittedActions()).doesNotContain(change);
+    assertThat(createBasicSampleTemplate(owner).getPermittedActions()).doesNotContain(change);
+  }
+
+  private List<ApiInventoryRecordPermittedAction> permittedActionsOf(
+      ApiSampleWithFullSubSamples sample, User user) {
+    return sampleApiMgr.getApiSampleById(sample.getId(), user).getPermittedActions();
+  }
+
+  @Test
+  public void requestable_onAnOwnerOnlySample_staysWithItsOwner() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    initialiseContentWithEmptyContent(pi, owner);
+    Group group = createGroup("group", pi);
+    addUsersToGroup(pi, group, owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "private sample");
+    ApiSample makePrivate = new ApiSample();
+    makePrivate.setId(sample.getId());
+    makePrivate.setSharingMode(ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_ONLY);
+    sampleApiMgr.updateApiSample(makePrivate, owner);
+    // the premise: the PI may still transfer the sample, but not edit it
+    assertEquals(
+        List.of(
+            ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.CHANGE_OWNER),
+        sampleApiMgr.getApiSampleById(sample.getId(), pi).getPermittedActions());
+
+    ApiSample piChange = new ApiSample();
+    piChange.setId(sample.getId());
+    piChange.setRequestable(true);
+    assertThrows(IllegalArgumentException.class, () -> sampleApiMgr.updateApiSample(piChange, pi));
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+  }
+
+  @Test
+  public void nameQuery_isIgnoredOutsideARequestableSearch() {
+    User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
+    initialiseContentWithEmptyContent(alice);
+    createBasicSampleForUser(alice, "buffer A");
+    createBasicSampleForUser(alice, "buffer B");
+
+    // the plain samples listing has never filtered by query; that stays with the Lucene search
+    assertEquals(
+        2, sampleApiMgr.getSamplesForUser(null, null, null, null, "A", alice).getTotalHits());
+    // nor does a listing of samples that are not requestable
+    assertEquals(
+        2, sampleApiMgr.getSamplesForUser(null, null, null, false, "A", alice).getTotalHits());
+  }
+
+  @Test
+  public void requestableNameQuery_matchesPercentAndUnderscoreLiterally() {
+    User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
+    initialiseContentWithEmptyContent(alice);
+    ApiSampleWithFullSubSamples percent = createBasicSampleForUser(alice, "50% glycerol");
+    ApiSampleWithFullSubSamples plain = createBasicSampleForUser(alice, "500 ml water");
+    ApiSampleWithFullSubSamples underscore = createBasicSampleForUser(alice, "lot_7");
+    ApiSampleWithFullSubSamples letter = createBasicSampleForUser(alice, "lotX7");
+    for (ApiSampleWithFullSubSamples sample : List.of(percent, plain, underscore, letter)) {
+      markSampleRequestable(sample, alice);
+    }
+
+    assertEquals(List.of(percent.getId()), requestableIdsMatching("50%", alice));
+    assertEquals(List.of(underscore.getId()), requestableIdsMatching("lot_", alice));
+  }
+
+  private List<Long> requestableIdsMatching(String query, User owner) {
+    return sampleApiMgr
+        .getSamplesForUser(null, owner.getUsername(), null, true, query, testUser)
+        .getSamples()
+        .stream()
+        .map(ApiSampleInfo::getId)
+        .collect(Collectors.toList());
+  }
+
+  @Test
+  public void requestableSearch_neverListsTrashedSamples() {
+    User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
+    initialiseContentWithEmptyContent(alice);
+    ApiSampleWithFullSubSamples trashed = createBasicSampleForUser(alice, "alice's old sample");
+    markSampleRequestable(trashed, alice);
+    sampleApiMgr.markSampleAsDeleted(trashed.getId(), false, alice);
+
+    // testUser has no access to alice's samples, so asking for deleted items must not reveal them
+    for (InventorySearchDeletedOption option : InventorySearchDeletedOption.values()) {
+      List<Long> found =
+          sampleApiMgr
+              .getSamplesForUser(null, alice.getUsername(), option, true, null, testUser)
+              .getSamples()
+              .stream()
+              .map(ApiSampleInfo::getId)
+              .collect(Collectors.toList());
+      assertEquals(List.of(), found, "deletedItems=" + option);
+    }
+  }
+
+  @Test
+  public void markingRequestable_isRefusedWhenSampleRequestsDisabled() {
+    setSampleRequestsAvailable(HierarchicalPermission.DENIED);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+
+    ApiRuntimeException refused =
+        assertThrows(ApiRuntimeException.class, () -> markSampleRequestable(sample, testUser));
+    assertEquals("errors.inventory.sampleRequest.notEnabled", refused.getMessage());
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), testUser).getRequestable());
+  }
+
+  @Test
+  public void alreadyRequestableSample_staysEditableWhenSampleRequestsDisabled() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    markSampleRequestable(sample, testUser);
+    setSampleRequestsAvailable(HierarchicalPermission.DENIED);
+
+    // a client resending the current flag with other edits is not turning it on
+    ApiSample rename = new ApiSample();
+    rename.setId(sample.getId());
+    rename.setName("renamed");
+    rename.setRequestable(true);
+    assertEquals("renamed", sampleApiMgr.updateApiSample(rename, testUser).getName());
+
+    ApiSample switchOff = new ApiSample();
+    switchOff.setId(sample.getId());
+    switchOff.setRequestable(false);
+    assertFalse(sampleApiMgr.updateApiSample(switchOff, testUser).getRequestable());
+  }
+
+  @Test
+  public void requestableSearch_findsNothingWhenSampleRequestsDisabled() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    markSampleRequestable(sample, testUser);
+    setSampleRequestsAvailable(HierarchicalPermission.DENIED);
+
+    ApiSampleSearchResult found =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, null, testUser);
+    assertEquals(0, found.getTotalHits().intValue());
+    assertTrue(found.getSamples().isEmpty());
+  }
+
+  @AfterEach
+  public void restoreSampleRequestsAvailable() {
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        originalSampleRequestsAvailable,
+        getSysAdminUser());
+  }
+
+  private void setSampleRequestsAvailable(HierarchicalPermission permission) {
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE, permission, getSysAdminUser());
   }
 }
