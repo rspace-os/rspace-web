@@ -3,18 +3,14 @@ import { useStore } from "zustand";
 import { devtools } from "zustand/middleware";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 
 export type BookingCreationContext = Readonly<{
   ownerId: string;
   triggerId: string;
   eventKind: "BOOKING" | "MAINTENANCE";
   target?: Readonly<BookableItemOption>;
-  window?: Readonly<{
-    startDate: string;
-    startTime: string;
-    endDate: string;
-    endTime: string;
-  }>;
+  window?: Readonly<BookingWindowDraft>;
   initialDate?: string;
   lockTarget?: boolean;
   timelineAdjustable?: boolean;

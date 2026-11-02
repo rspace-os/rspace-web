@@ -19,9 +19,13 @@ export const noParentBooking: BookingListDocument = {
   end: "2026-08-20T09:00:00Z",
 };
 
-export async function renderBookingTestPage<TRouter extends AnyRouter>(router: TRouter) {
+export async function renderBookingTestPage<TRouter extends AnyRouter>(
+  router: TRouter,
+  prepareQueryClient?: (client: QueryClient) => void,
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+  prepareQueryClient?.(queryClient);
   const wrapper = await createRealI18nWrapper({
     resources: { booking: bookingEnglish, common: commonEnglish },
     defaultNS: "common",

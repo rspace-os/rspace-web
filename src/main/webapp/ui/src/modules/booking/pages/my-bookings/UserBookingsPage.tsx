@@ -13,6 +13,7 @@ import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import type { CollectionRow } from "@/modules/common/collection/config";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
@@ -22,6 +23,7 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
+import { cn } from "@/modules/common/utils/cn";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { upcomingBookingWhere } from "./bookingCountFilter";
@@ -84,6 +86,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
   const asOf = useAlignedMinute();
@@ -125,13 +128,14 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const request = useMemo(
     () => ({
       token,
+      authScope: currentUser.id,
       depth: 1,
       fetch: fetchBookingList,
       projection,
       baseFilter,
       validateRows: BookingListDocumentTableValidation.validateRows,
     }),
-    [baseFilter, token],
+    [baseFilter, currentUser.id, token],
   );
   const table = useApiV2TableList({
     resourceName: "bookings",
@@ -169,7 +173,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   render={
                     <Link
                       aria-label={itemCalendarLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/bookable-items/$globalId/{-$tab}"
                       params={{ globalId: row.target.globalId, tab: undefined }}
@@ -187,7 +191,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   render={
                     <Link
                       aria-label={viewDetailsLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/calendar/bookings/$id"
                       params={{ id: String(row.id) }}
@@ -205,7 +209,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   render={
                     <Link
                       aria-label={editLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/calendar/bookings/$id/edit"
                       params={{ id: String(row.id) }}
@@ -234,6 +238,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                 period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
                 token={token}
                 iconOnly
+                triggerVariant="outline"
                 onDeleted={async () => {
                   await table.refetch();
                 }}

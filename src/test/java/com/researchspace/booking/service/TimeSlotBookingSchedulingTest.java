@@ -103,7 +103,7 @@ class TimeSlotBookingSchedulingTest {
         .thenReturn(Optional.of(configuration(4L, 12L, true)));
     for (String value : List.of("2025-11-30T23:55:00Z", "2025-12-01T00:00:00Z")) {
       assertThrows(
-          BookingWindowException.class,
+          BookingStartInPastException.class,
           () ->
               manager.createBooking(
                   new TimeSlotBookingManager.Create(
@@ -120,7 +120,7 @@ class TimeSlotBookingSchedulingTest {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     stubReadableBookingAndConfigurationLock(existing);
     assertThrows(
-        BookingWindowException.class,
+        BookingStartInPastException.class,
         () ->
             manager.updateBooking(
                 41L,
