@@ -41,4 +41,28 @@ class BookingOwnerFilterTest {
     assertTrue(predicate.parameters().containsValue(false));
     assertFalse(predicate.expression().contains("configuration.targetOwner"));
   }
+
+  @Test
+  void ownerPredicateCannotBypassDeniedInventoryReadAccess() {
+    User viewer = new User("viewer");
+    viewer.setId(12L);
+    viewer.setEnabled(true);
+    var configurations = ApiV2BookingConfigurationResource.DESCRIPTION;
+    var registry =
+        new ResourceRegistry(
+            List.of(
+                configurations,
+                ApiV2InstrumentResource.description(
+                    com.researchspace.model.collection.AccessFunction.never()),
+                com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
+                com.researchspace.model.collection.ApiV2UserResource.DESCRIPTION));
+    var filter =
+        new RsqlFilterParser(configurations, registry, new RuntimeFieldContext(List.of(), viewer))
+            .parse("targetOwner==me");
+    var predicate =
+        new RsqlCollectionQuery(configurations, "configuration")
+            .translate(filter, RelationshipReadAccess.forActor(registry, viewer));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        RsqlCollectionQuery.FALSE_EXPRESSION, predicate.expression());
+  }
 }

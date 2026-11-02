@@ -90,7 +90,7 @@ class BookingCalendarControllerMVCIT {
                 .queryParam("end", "2099-01-02T00:00:00Z")
                 .queryParam("where", "id==" + event + ";requesterId==me;targetOwner==me"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.total").value(1));
+        .andExpect(jsonPath("$.totalDocs").value(1));
   }
 
   @Test

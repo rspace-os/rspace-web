@@ -88,6 +88,39 @@ class ApiV2BrowserSessionAuthenticatorTest {
 
     assertSame(target, caller.subject());
     assertSame(actor, caller.actor());
+    when(target.getId()).thenReturn(42L);
+    var scalarUsers =
+        new com.researchspace.model.collection.CollectionDescription<User>(
+            "scalar-users",
+            User.class,
+            java.util.List.of(
+                com.researchspace.model.collection.Field.readOnly(
+                    "id",
+                    "id",
+                    com.researchspace.model.collection.CollectionFieldTypes.longNumber(),
+                    User::getId),
+                com.researchspace.model.collection.Field.readOnly(
+                        "subjectId",
+                        "id",
+                        com.researchspace.model.collection.CollectionFieldTypes.longNumber(),
+                        User::getId)
+                    .withCurrentSubjectAlias()),
+            "id",
+            java.util.List.of(new com.researchspace.model.collection.Sort("id", true)));
+    var parsed =
+        new com.researchspace.model.collection.RsqlFilterParser(
+                scalarUsers,
+                null,
+                new com.researchspace.model.collection.RuntimeFieldContext(
+                    java.util.List.of(), caller.subject()))
+            .parse("subjectId==me");
+    org.junit.jupiter.api.Assertions.assertEquals(
+        new com.researchspace.model.collection.FilterExpression.Comparison(
+            "subjectId",
+            com.researchspace.model.collection.Operator.EQUAL,
+            java.util.List.of(42L),
+            false),
+        parsed);
   }
 
   @ParameterizedTest

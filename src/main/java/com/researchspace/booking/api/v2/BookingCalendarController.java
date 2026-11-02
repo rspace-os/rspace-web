@@ -136,8 +136,9 @@ public class BookingCalendarController {
       @Parameter(description = "Exclusive interval end.") @RequestParam Instant end,
       @io.swagger.v3.oas.annotations.Parameter(
               description =
-                  "RSQL item filters, including targetOwner==me (equality only, outside OR groups)."
-                      + " The effective subject is resolved on every request.")
+                  "RSQL event filters, including requesterId==me and targetOwner==me. Owner"
+                      + " equality is allowed only outside OR groups. The effective subject is"
+                      + " resolved on every request.")
           @RequestParam(required = false)
           String where,
       @RequestParam(required = false) @Size(max = 255) String q,

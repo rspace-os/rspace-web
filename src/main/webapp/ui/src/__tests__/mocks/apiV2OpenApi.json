@@ -4133,7 +4133,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+          "description" : "RSQL event filters, including requesterId==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.",
           "in" : "query",
           "name" : "where",
           "schema" : {

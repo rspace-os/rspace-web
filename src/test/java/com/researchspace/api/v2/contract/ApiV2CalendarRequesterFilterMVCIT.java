@@ -135,12 +135,15 @@ class ApiV2CalendarRequesterFilterMVCIT {
     JsonNode shared = bookingDocument(sharedBooking);
     assertEquals("full", shared.path("privacy").asText(), shared.toString());
     assertEquals(requester.getId(), shared.path("requesterId").asLong(), shared.toString());
+    assertBookings(scoped, "requesterId==me", Set.of(ownBooking));
     assertBookings(scoped, "requesterId==" + owner.getId(), Set.of(ownBooking));
     assertBookings(scoped, "requesterId==" + requester.getId(), Set.of(sharedBooking));
     assertBookings(scoped, "requesterId==" + stranger.getId(), Set.of());
     assertBookings(scoped, "requesterId!=" + stranger.getId(), Set.of(ownBooking, sharedBooking));
 
     // The Calendar event filters, its booked-by facet and its Search follow the same rule.
+    assertCalendarEvents(start, end, "requesterId==me", null, Set.of(ownBooking));
+    assertCalendarEvents(start, end, "targetOwner==me", null, Set.of(ownBooking));
     assertCalendarEvents(start, end, "requesterId==" + owner.getId(), null, Set.of(ownBooking));
     assertCalendarEvents(start, end, "requesterId==" + stranger.getId(), null, Set.of());
     assertCalendarEvents(
