@@ -9,12 +9,13 @@ beforeBookingCatalog(async () => {
   );
 });
 
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import i18n from "@/modules/common/i18n";
 import { resolveBookingWindow } from "../../creation/ZonedBookingWindowFields";
 import {
   addCalendarDays,
   bookingAddedNoticeValues,
+  bookingDateTimeFormatter,
   bookingDateTimeLocale,
   bookingHourCycle,
   bookingLocale,
@@ -40,6 +41,50 @@ import {
 } from "../bookingTime";
 
 describe("bookingTime", () => {
+  test("keeps recently used formatters and evicts the least recently used at capacity", () => {
+    const options = { timeZone: "UTC", year: "numeric" } as const;
+    const oldest = bookingDateTimeFormatter("en-US-x-oldest", options);
+    const recent = bookingDateTimeFormatter("en-US-x-recent", options);
+    for (let i = 0; i < 126; i++) bookingDateTimeFormatter(`en-US-x-${i}`, options);
+    expect(bookingDateTimeFormatter("en-US-x-recent", options)).toBe(recent);
+    bookingDateTimeFormatter("en-US-x-overflow", options);
+    expect(bookingDateTimeFormatter("en-US-x-oldest", options)).not.toBe(oldest);
+    expect(bookingDateTimeFormatter("en-US-x-recent", options)).toBe(recent);
+    expect(bookingDateTimeFormatter("en-US", { timeZone: "UTC" })).not.toBe(
+      bookingDateTimeFormatter("en-US", { timeZone: "Europe/Berlin" }),
+    );
+  });
+
+  test("isolates cached day bounds by zone and protects them from caller mutation", () => {
+    const berlin = zonedDayBounds("2026-03-29", "Europe/Berlin");
+    berlin.start = "changed";
+    expect(zonedDayBounds("2026-03-29", "Europe/Berlin").elapsedMinutes).toBe(1380);
+    expect(zonedDayBounds("2026-03-29", "Europe/Berlin").start).toBe("2026-03-28T23:00:00Z");
+    expect(zonedDayBounds("2026-03-29", "UTC").elapsedMinutes).toBe(1440);
+  });
+
+  test.each(["en-US", "en-GB", "de-DE"])("caches equivalent options and distinguishes %s hour cycles", (locale) => {
+    for (const timeZone of ["UTC", "Europe/Berlin", "America/New_York"]) {
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone,
+        dateStyle: "medium",
+        timeStyle: "long",
+        hourCycle: "h23",
+      };
+      const formatter = bookingDateTimeFormatter(locale, options);
+      expect(
+        bookingDateTimeFormatter(locale, { hourCycle: "h23", timeStyle: "long", dateStyle: "medium", timeZone }),
+      ).toBe(formatter);
+      const twelveHour = bookingDateTimeFormatter(locale, { ...options, hourCycle: "h12" });
+      expect(twelveHour).not.toBe(formatter);
+      const instant = new Date("2026-11-01T18:30:00Z");
+      expect(twelveHour.format(instant)).not.toBe(formatter.format(instant));
+    }
+    expect(bookingDateTimeFormatter("en-US", { timeZone: "UTC" })).not.toBe(
+      bookingDateTimeFormatter("de-DE", { timeZone: "UTC" }),
+    );
+  });
+
   test("validates and adds calendar dates", () => {
     expect(isPlainDate("2026-02-28")).toBe(true);
     expect(isPlainDate("2026-02-30")).toBe(false);
@@ -271,6 +316,37 @@ describe("bookingTime", () => {
     expect(formatAgendaPeriod("2026-08-18T13:00:00Z", "2026-08-18T14:00:00Z", "UTC", "en-GB")).toMatch(
       /^13:00\s?–\s?14:00/,
     );
+  });
+
+  test("refreshes the regional locale and automatic hour cycle when the browser region changes", () => {
+    const OriginalDateTimeFormat = Intl.DateTimeFormat;
+    const formatter = bookingDateTimeFormatter();
+    // Cached-instance spies assume the 128-entry LRU does not evict them mid-test.
+    const staleRegion = vi.spyOn(formatter, "resolvedOptions").mockReturnValue({
+      ...formatter.resolvedOptions(),
+      locale: "en-US",
+    });
+    let browserLocale = "en-US";
+    // biome-ignore lint/complexity/useArrowFunction: Intl.DateTimeFormat is called with new.
+    const formatterConstructor = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locale, options) {
+      return new OriginalDateTimeFormat(locale ?? browserLocale, options);
+    });
+    try {
+      for (const [locale, hourCycle] of [
+        ["en-GB", "h23"],
+        ["en-US", "h12"],
+        ["en-GB", "h23"],
+      ] as const) {
+        browserLocale = locale;
+        expect(bookingDateTimeFormatter()).toBe(formatter);
+        expect(formatter.resolvedOptions().locale).toBe("en-US");
+        expect(bookingDateTimeLocale()).toBe(locale);
+        expect(bookingHourCycle()).toBe(hourCycle);
+      }
+    } finally {
+      formatterConstructor.mockRestore();
+      staleRegion.mockRestore();
+    }
   });
 
   test("an explicit Time format replaces the browser region's clock but not its date order", () => {

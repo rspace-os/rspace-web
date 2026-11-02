@@ -55,12 +55,10 @@ describe("BookingForm", () => {
   ] as const)(
     "uses %s over the %s browser clock for compact opening hours (uniform: %s)",
     async (timeFormat, browserLocale, uniform, expected) => {
-      const resolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
-      vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockImplementation(function (
-        this: Intl.DateTimeFormat,
-      ) {
-        const options = resolvedOptions.call(this);
-        return new Intl.Locale(options.locale).hourCycle ? options : { ...options, locale: browserLocale };
+      const OriginalDateTimeFormat = Intl.DateTimeFormat;
+      // biome-ignore lint/complexity/useArrowFunction: Intl.DateTimeFormat is called with new.
+      vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locale, options) {
+        return new OriginalDateTimeFormat(locale ?? browserLocale, options);
       });
       expect(formatWallClockTime("14:00")).toBe(browserLocale === "en-US" ? "02:00 PM" : "14:00");
       const initialTarget = {

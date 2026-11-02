@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
+import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import { addCalendarDays } from "@/modules/booking/domain/bookingTime";
 import {
   TableList,
@@ -34,6 +35,8 @@ import {
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
 import { type AllBookableItem, withAvailability } from "./availabilityQuickFilters";
 import type { useAllBookableItemsData } from "./useAllBookableItemsData";
+
+const emptyIntervals: readonly SourcedAvailabilityInterval[] = [];
 
 type AllBookableItemsTableProps = Omit<
   ReturnType<typeof useAllBookableItemsData>,
@@ -297,7 +300,7 @@ export function AllBookableItemsTable({
               return (
                 <AvailabilityBar
                   className="min-w-0 px-1 in-[td]:min-w-72"
-                  intervals={availability.data.get(target.globalId) ?? []}
+                  intervals={availability.data.get(target.globalId) ?? emptyIntervals}
                   periodStart={new Date(rowsBounds.start)}
                   periodEnd={new Date(rowsBounds.end)}
                   now={rowsDate === userToday ? new Date(minute) : undefined}
