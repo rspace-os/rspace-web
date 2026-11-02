@@ -18,7 +18,7 @@ boundary, so a hot update re-executes it and mounts React twice. Entries that
 only expose functions to legacy scripts, such as `legacyI18n.ts` and
 `GalleryUtilsEntrypoint.ts`, render nothing and stay plain `.ts`.
 
-The root [package.json](../../../package.json) defines the dependencies and
+The root [package.json](../../../../package.json) defines the dependencies and
 scripts for development, testing, and building the application.
 
 ## Architecture
