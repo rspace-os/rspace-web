@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ public interface BookingDisplayPreferencesManager {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       String customTimezone,
+      BookingTimeFormat timeFormat,
       String institutionTimezone,
       boolean overridden) {}
 

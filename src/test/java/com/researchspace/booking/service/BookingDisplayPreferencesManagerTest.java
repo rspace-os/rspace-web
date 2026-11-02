@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -16,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class BookingDisplayPreferencesManagerTest {
 
@@ -58,23 +59,63 @@ class BookingDisplayPreferencesManagerTest {
     assertEquals("08:00", resolved.availabilityWindowStart());
     assertEquals("18:00", resolved.availabilityWindowEnd());
     assertEquals(BookingTimezoneMode.BROWSER, resolved.timezoneMode());
+    assertEquals(BookingTimeFormat.AUTOMATIC, resolved.timeFormat());
     assertEquals("Europe/Berlin", resolved.institutionTimezone());
     assertFalse(resolved.overridden());
+  }
+
+  @Test
+  void inheritsTheGlobalTimeFormat() {
+    BookingConfigurationDefaults defaults = defaults();
+    defaults.setTimeFormat(BookingTimeFormat.H12);
+    when(defaultsManager.getDefaults(subject)).thenReturn(defaults);
+    preference("");
+
+    assertEquals(BookingTimeFormat.H12, manager.get(subject, actor).timeFormat());
+  }
+
+  @Test
+  void aStoredDocumentFromBeforeTheTimeFormatReadsAsAutomatic() {
+    preference(
+        """
+        {"version":1,"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
+        "timezoneMode":"INSTITUTION","customTimezone":null}
+        """);
+
+    var resolved = manager.get(subject, actor);
+
+    assertTrue(resolved.overridden());
+    assertEquals("09:00", resolved.availabilityWindowStart());
+    assertEquals(BookingTimeFormat.AUTOMATIC, resolved.timeFormat());
   }
 
   @Test
   void replaceStoresOneVersionedDocumentAndReturnsAnOverride() {
     BookingDisplaySettings custom =
         new BookingDisplaySettings(
-            "09:00", "17:00", BookingTimezoneMode.CUSTOM, "America/New_York");
+            "09:00",
+            "17:00",
+            BookingTimezoneMode.CUSTOM,
+            "America/New_York",
+            BookingTimeFormat.H24);
 
     var resolved = manager.replace(custom, subject, actor);
 
+    ArgumentCaptor<String> stored = ArgumentCaptor.forClass(String.class);
     verify(userManager)
-        .setPreference(
-            eq(Preference.BOOKING_DISPLAY_PREFERENCES), contains("\"version\":1"), eq("subject"));
+        .setPreference(eq(Preference.BOOKING_DISPLAY_PREFERENCES), stored.capture(), eq("subject"));
+    assertTrue(stored.getValue().contains("\"version\":1"), stored.getValue());
+    assertTrue(stored.getValue().contains("\"timeFormat\":\"H24\""), stored.getValue());
+    assertTrue(stored.getValue().contains("\"timezoneMode\":\"CUSTOM\""), stored.getValue());
+    assertTrue(
+        stored.getValue().contains("\"customTimezone\":\"America/New_York\""), stored.getValue());
     assertEquals("America/New_York", resolved.customTimezone());
+    assertEquals(BookingTimeFormat.H24, resolved.timeFormat());
     assertTrue(resolved.overridden());
+    preference(stored.getValue());
+    var restored = manager.get(subject, actor);
+    assertEquals(BookingTimeFormat.H24, restored.timeFormat());
+    assertTrue(restored.overridden());
   }
 
   @Test
