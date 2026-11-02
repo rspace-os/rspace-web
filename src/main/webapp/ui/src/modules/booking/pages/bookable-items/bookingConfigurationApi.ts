@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -5,6 +6,14 @@ import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { type BookingConfiguration, BookingConfigurationSchema } from "./bookingConfigurationSchema";
+
+/** Refreshes both catalogue query families after a configuration changes. */
+export async function invalidateBookingCatalogueQueries(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+    queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "booking-catalogue"] }),
+  ]);
+}
 
 export async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
   const response = await fetchWithUiToken(`/api/v2/booking-configurations/${id}`, {
@@ -41,6 +50,7 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
+/** The booking configuration API answered with an error status. */
 export class BookingConfigurationRequestError extends Error {
   constructor(readonly status: number) {
     super(`Booking configuration request failed with status ${status}`);

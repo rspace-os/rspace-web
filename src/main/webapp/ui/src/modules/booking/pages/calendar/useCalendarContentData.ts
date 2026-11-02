@@ -157,7 +157,14 @@ export function useCalendarContentData() {
     return resolveCollectionConfig({
       ...enriched,
       fields: enriched.fields
-        .filter((field) => field.name === "id" || field.name === "target" || String(field.name).startsWith("target."))
+        .filter(
+          (field) =>
+            field.name === "id" ||
+            field.name === "target" ||
+            // A filter-only relationship: in the collection metadata, not the configuration type.
+            String(field.name) === "location" ||
+            String(field.name).startsWith("target."),
+        )
         .map((field) =>
           field.name === "id" ? { ...field, capabilities: { ...field.capabilities, filterOperators: [] } } : field,
         ),
@@ -286,6 +293,7 @@ export function useCalendarContentData() {
         const result = await fetchBookingCatalogue(
           {
             q: calendarSearch,
+            totals: true,
             where: itemWhereParameter,
             start,
             end,
