@@ -41,6 +41,20 @@ public interface SampleRequestApiManager {
   ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user);
 
   /**
+   * Fulfil a request and transfer a sample to its requester, as one change: the given sample, or
+   * the requested one when none is given. Only the requested sample's current owner may do this.
+   *
+   * @throws jakarta.ws.rs.NotFoundException if absent, the user is neither party, or the sample is
+   *     missing, in the trash or not fully readable by the user
+   * @throws com.researchspace.api.v1.auth.ApiRuntimeException if the user is not the permitted
+   *     actor, the request is no longer open, the global id does not name a sample, the requester's
+   *     account was deleted, or the requester already owns the sample
+   * @throws IllegalArgumentException if the user may not transfer the sample
+   * @throws InventoryEditLockHeldException if another user is editing the sample
+   */
+  ApiSampleRequest fulfilByTransfer(Long id, String sampleToTransferGlobalId, User user);
+
+  /**
    * Page of requests involving the user, on the given side of the request.
    *
    * @param role REQUESTER for requests the user raised, OWNER for requests they received as the

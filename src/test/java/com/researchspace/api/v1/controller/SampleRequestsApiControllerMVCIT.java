@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
@@ -105,6 +106,57 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
                 requester,
                 Map.of("status", "CANCELLED")))
         .andExpect(status().isNotFound());
+
+    this.mockMvc
+        .perform(fulfilByTransferWithoutBody(requesterApiKey, requester, created.getId()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void fulfilByTransferOverHttp() throws Exception {
+    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User requester = createAndSaveUser(getRandomName(10));
+    initUsers(owner, requester);
+    createGroupForUsersWithDefaultPi(owner, requester);
+    String requesterApiKey = createNewApiKeyForUser(requester);
+    String ownerApiKey = createNewApiKeyForUser(owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markSampleRequestable(sample, owner);
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(owner);
+    Long firstRequestId = raiseRequest(requesterApiKey, requester, sample, "2ml for the assay");
+
+    MvcResult withBody =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPutWithJSONBody(
+                    ownerApiKey,
+                    "/sampleRequests/" + firstRequestId + "/actions/fulfilByTransfer",
+                    owner,
+                    Map.of("sampleToTransferGlobalId", aliquot.getGlobalId())))
+            .andReturn();
+
+    assertNull(withBody.getResolvedException());
+    ApiSampleRequest fulfilled = mvcUtils.getFromJsonResponseBody(withBody, ApiSampleRequest.class);
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilled.getStatus());
+    assertEquals(
+        aliquot.getGlobalId(),
+        fulfilled.getStatusChanges().get(1).getTransferredSample().getGlobalId());
+
+    // the requested sample stayed with the owner, so it can be asked for again
+    Long secondRequestId = raiseRequest(requesterApiKey, requester, sample, "2ml more");
+    MvcResult withoutBody =
+        this.mockMvc
+            .perform(fulfilByTransferWithoutBody(ownerApiKey, owner, secondRequestId))
+            .andReturn();
+
+    assertNull(withoutBody.getResolvedException());
+    assertEquals(
+        requester.getUsername(),
+        mvcUtils
+            .getFromJsonResponseBody(withoutBody, ApiSampleRequest.class)
+            .getSample()
+            .getOwner()
+            .getUsername());
   }
 
   @Test
@@ -256,6 +308,14 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(
         List.of(wanted.getGlobalId()),
         found.getSamples().stream().map(ApiSampleInfo::getGlobalId).toList());
+  }
+
+  private MockHttpServletRequestBuilder fulfilByTransferWithoutBody(
+      String apiKey, User user, Long requestId) {
+    return put(createInventoryUrl(
+            API_VERSION.ONE, "/sampleRequests/" + requestId + "/actions/fulfilByTransfer"))
+        .principal(createPrincipal(user))
+        .header("apiKey", apiKey);
   }
 
   private ApiSampleRequestSearchResult listRequests(
