@@ -13,6 +13,7 @@ import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentitySco
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
+import { dropInvalidMeRules } from "@/modules/common/table-list/presets";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { mutateBookableItems } from "../bookable-items/BookableItemsContent";
@@ -20,6 +21,7 @@ import { bookableItemBulkNotice, useBookableItemNoticeIds } from "../bookable-it
 import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
+import { ownerPresetField } from "../ownerPreset";
 import { createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
 import {
   type AllBookableItem,
@@ -36,7 +38,6 @@ type AllBookableItemsDataOptions = {
   date?: string;
   routeAvailability?: AvailabilityQuickFilter;
   target?: string;
-  mine: boolean;
   subjectId: number;
   where?: string;
   q?: string;
@@ -50,7 +51,6 @@ export function useAllBookableItemsData({
   date,
   routeAvailability,
   target,
-  mine,
   subjectId,
   where,
   q,
@@ -103,7 +103,7 @@ export function useAllBookableItemsData({
         config: sourceConfig,
         metadata: runtimeFieldState.metadata,
         runtimeFields: runtimeFieldState.runtimeFields,
-        localFields: ["availability"],
+        localFields: ["availability", ownerPresetField.name],
         i18n,
         language: i18n.resolvedLanguage ?? i18n.language,
       }),
@@ -119,20 +119,22 @@ export function useAllBookableItemsData({
   const preferences = useBookingDisplayPreferences();
   const userToday = todayInTimeZone(preferences.timeZone, clock());
   const selectedDate = date ?? userToday;
-  const filters = useMemo<FilterState<AllBookableItem>>(
-    () => ({
-      search: q ?? "",
-      expression: where ? parseRsqlExpression(where, config) : filterExpression(target, routeAvailability),
-    }),
-    [config, q, routeAvailability, target, where],
+  const recovered = useMemo(
+    () =>
+      dropInvalidMeRules(where ? parseRsqlExpression(where, config) : filterExpression(target, routeAvailability), [
+        "targetOwner",
+      ]),
+    [config, where, target, routeAvailability],
   );
+  const filters: FilterState<AllBookableItem> = { search: q ?? "", expression: recovered.expression };
+  const droppedFilterFields = recovered.dropped;
   // The server applies availability as one top-level rule; an availability rule nested in an OR
   // group, which only a hand-written saved view can hold, is reported like an unknown field.
   const serverFilter = serverAvailabilityFilter(filters.expression);
   const invalidFilter =
     !runtimeFieldState.pending &&
     runtimeFieldState.error === null &&
-    (Boolean(where && !filters.expression) || !serverFilter.supported);
+    (Boolean(where && !filters.expression && droppedFilterFields.length === 0) || !serverFilter.supported);
   const runtimeFilterBlocked =
     runtimeFieldState.pending ||
     runtimeFieldState.error !== null ||
@@ -170,7 +172,7 @@ export function useAllBookableItemsData({
   const counts = useAvailabilityCounts(
     token,
     subjectId,
-    { q, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
+    { q, types, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
     today,
     !runtimeFilterBlocked,
   );
@@ -182,7 +184,6 @@ export function useAllBookableItemsData({
       q,
       totals: true,
       types,
-      mine,
       where: serverWhere,
       page,
       pageSize,
@@ -205,10 +206,9 @@ export function useAllBookableItemsData({
     catalogue.isSuccess &&
     catalogue.data.total === 0 &&
     !q &&
-    !where &&
+    filters.expression === null &&
     !target &&
     !routeAvailability &&
-    !mine &&
     !types?.length;
   // A disabled, archived or deleted item leaves this list, so it also leaves the selection.
   const onLifecycleChanged = useCallback(async (configurationIds: readonly number[]) => {
@@ -247,6 +247,7 @@ export function useAllBookableItemsData({
   const availability = useCalendarAvailability(availabilityRows, rowsBounds, token, subjectId);
 
   return {
+    droppedFilterFields,
     config,
     runtimeFieldState,
     preferences,
