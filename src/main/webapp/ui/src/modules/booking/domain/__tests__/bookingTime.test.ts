@@ -184,6 +184,19 @@ describe("bookingTime", () => {
     );
   });
 
+  test("prints both dates when a booking crosses midnight in the display zone", () => {
+    expect(formatBookingPeriod("2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "UTC", "en-GB", "H24")).toBe(
+      "6 Nov 2026, 23:00–7 Nov 2026, 01:00",
+    );
+  });
+
+  test.each([
+    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "7 Nov 2026, 00:00–02:00"],
+    ["2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z", "6 Nov 2026, 23:00–7 Nov 2026, 00:00"],
+  ])("uses display-zone dates to elide the end date: %s to %s", (start, end, expected) => {
+    expect(formatBookingPeriod(start, end, "Europe/Berlin", "en-GB", "H24")).toBe(expected);
+  });
+
   describe("dated times on a clock-change day", () => {
     // Europe/Berlin repeats 02:00-03:00 on 2026-10-25 and skips it on 2026-03-29.
     const dateTime = (instant: string) =>
@@ -202,16 +215,16 @@ describe("bookingTime", () => {
       expect(later).toBe(`${dateTime("2026-10-25T01:30:00Z")} +01:00`);
       expect(dateTime("2026-10-25T00:30:00Z")).toBe(dateTime("2026-10-25T01:30:00Z"));
       expect(formatBookingPeriod("2026-10-25T00:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${earlier}–${dateTime("2026-10-25T02:30:00Z")} +01:00`,
+        `${earlier}–3:30 AM +01:00`,
       );
       expect(formatBookingPeriod("2026-10-25T01:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${later}–${dateTime("2026-10-25T02:30:00Z")} +01:00`,
+        `${later}–3:30 AM +01:00`,
       );
     });
 
     test("names the offsets either side of a skipped hour", () => {
       expect(formatBookingPeriod("2026-03-29T00:30:00Z", "2026-03-29T01:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${dateTime("2026-03-29T00:30:00Z")} +01:00–${dateTime("2026-03-29T01:30:00Z")} +02:00`,
+        `${dateTime("2026-03-29T00:30:00Z")} +01:00–3:30 AM +02:00`,
       );
     });
 
@@ -220,7 +233,7 @@ describe("bookingTime", () => {
         dateTime("2026-10-08T04:00:00Z"),
       );
       expect(formatBookingPeriod("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${dateTime("2026-10-08T04:00:00Z")}–${dateTime("2026-10-08T05:00:00Z")}`,
+        `${dateTime("2026-10-08T04:00:00Z")}–7:00 AM`,
       );
     });
   });

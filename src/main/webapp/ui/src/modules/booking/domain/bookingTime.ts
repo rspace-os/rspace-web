@@ -335,8 +335,7 @@ export function formatBookingDateTime(
 
 /**
  * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
- * as the cancel confirmation. Words follow the app language; the clock follows the browser region. When either end
- * falls on a clock-change day, both ends are written as `formatBookingDateTime` writes them.
+ * as the cancel confirmation. Words follow the app language; the clock follows the browser region. The date appears once for same-day ranges; clock-change offsets remain on both endpoints.
  */
 export function formatBookingPeriod(
   start: string,
@@ -345,13 +344,25 @@ export function formatBookingPeriod(
   locale = bookingDateTimeLocale(),
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
-  const formatter = dateTimeFormatter(timezone, locale, timeFormat);
-  const startOffset = clockChangeOffsetLabel(zonedDateTime(start, timezone));
-  const endOffset = clockChangeOffsetLabel(zonedDateTime(end, timezone));
-  if (!startOffset && !endOffset) return formatInstantRange(formatter, new Date(start), new Date(end));
+  const startZoned = zonedDateTime(start, timezone);
+  const endZoned = zonedDateTime(end, timezone);
+  let endLabel: string;
+  if (startZoned.toPlainDate().equals(endZoned.toPlainDate())) {
+    const formatted = new Intl.DateTimeFormat(locale, {
+      timeZone: timezone,
+      timeStyle: "short",
+      hourCycle: bookingHourCycle(timeFormat),
+    }).format(new Date(end));
+    const offset = clockChangeOffsetLabel(endZoned).trim();
+    endLabel = offset
+      ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
+      : formatted;
+  } else {
+    endLabel = formatBookingDateTime(end, timezone, locale, timeFormat);
+  }
   return i18n.t("booking:time.dateTimeRange", {
     start: formatBookingDateTime(start, timezone, locale, timeFormat),
-    end: formatBookingDateTime(end, timezone, locale, timeFormat),
+    end: endLabel,
     lng: bookingLocale(),
   });
 }

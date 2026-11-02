@@ -14,6 +14,7 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.JsonMessageSource;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,54 @@ class BookingNotificationMessageFormatterTest {
   private final BookingNotificationMessageFormatter formatter =
       new BookingNotificationMessageFormatter(
           new JsonMessageSource(), "https://rspace.example.org//");
+
+  @Test
+  void sameDayRangesNameTheDateOnceInNoticesAndEmail() {
+    BookingNotificationData data = data("2026-11-06T15:00:00Z", "2026-11-06T16:00:00Z");
+    for (String message :
+        List.of(
+            formatter.format(
+                NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US),
+            formatter.formatForEmail(
+                NotificationType.NOTIFICATION_BOOKING_CREATED,
+                data,
+                ZoneId.of("UTC"),
+                Locale.US))) {
+      assertEquals(1, message.split("Nov 6, 2026", -1).length - 1, message);
+      assertTrue(message.contains("4:00 PM"), message);
+    }
+    data.setEndTime("2026-11-07T16:00:00Z");
+    String overnight =
+        formatter.formatForEmail(
+            NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US);
+    assertTrue(overnight.contains("Nov 6, 2026"), overnight);
+    assertTrue(overnight.contains("Nov 7, 2026"), overnight);
+  }
+
+  @Test
+  void dateElisionUsesTheDisplayZoneRatherThanUtc() {
+    ZoneId berlin = ZoneId.of("Europe/Berlin");
+    for (boolean email : new boolean[] {false, true}) {
+      BookingNotificationData sameDay = data("2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z");
+      BookingNotificationData overnight = data("2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z");
+      String sameDayMessage =
+          email
+              ? formatter.formatForEmail(
+                  NotificationType.NOTIFICATION_BOOKING_CREATED, sameDay, berlin, Locale.US)
+              : formatter.format(
+                  NotificationType.NOTIFICATION_BOOKING_CREATED, sameDay, berlin, Locale.US);
+      String overnightMessage =
+          email
+              ? formatter.formatForEmail(
+                  NotificationType.NOTIFICATION_BOOKING_CREATED, overnight, berlin, Locale.US)
+              : formatter.format(
+                  NotificationType.NOTIFICATION_BOOKING_CREATED, overnight, berlin, Locale.US);
+      assertEquals(1, sameDayMessage.split("Nov 7, 2026", -1).length - 1, sameDayMessage);
+      assertFalse(sameDayMessage.contains("Nov 6, 2026"), sameDayMessage);
+      assertTrue(overnightMessage.contains("Nov 6, 2026"), overnightMessage);
+      assertTrue(overnightMessage.contains("Nov 7, 2026"), overnightMessage);
+    }
+  }
 
   @Test
   void changedMessagesIncludeBothIntervalsInTheRecipientsClockAndZone() {
@@ -126,7 +175,7 @@ class BookingNotificationMessageFormatterTest {
             Locale.US);
 
     assertTrue(message.contains("Nov 1, 2026, 1:30 AM EDT (America/New_York)"));
-    assertTrue(message.contains("Nov 1, 2026, 1:30 AM EST (America/New_York)"));
+    assertTrue(message.contains("1:30 AM EST (America/New_York)"));
   }
 
   @Test
@@ -211,7 +260,7 @@ class BookingNotificationMessageFormatterTest {
             NotificationType.NOTIFICATION_BOOKING_CREATED, data, berlin, Locale.US, Locale.US);
 
     assertTrue(british.contains("Oct 8, 2026, 06:00 CEST (Europe/Berlin)"), british);
-    assertTrue(british.contains("Oct 8, 2026, 07:00 CEST (Europe/Berlin)"), british);
+    assertTrue(british.contains("07:00 CEST (Europe/Berlin)"), british);
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
         normalised(american).contains("Oct 8, 2026, 6:00 AM CEST (Europe/Berlin)"), american);

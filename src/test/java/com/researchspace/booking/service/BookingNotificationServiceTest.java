@@ -128,14 +128,14 @@ class BookingNotificationServiceTest {
                 + " was created for instrument "
                 + itemLink
                 + " from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
-                + "Jan 2, 2026, 5:04 AM CET (Europe/Berlin)."
+                + "5:04 AM CET (Europe/Berlin)."
             : "Booking "
                 + bookingLink
                 + " for instrument "
                 + itemLink
                 + " was cancelled. It was "
                 + "scheduled from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
-                + "Jan 2, 2026, 5:04 AM CET (Europe/Berlin).";
+                + "5:04 AM CET (Europe/Berlin).";
     if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
       expectedMessage =
           "Booking "
@@ -143,7 +143,7 @@ class BookingNotificationServiceTest {
               + " for instrument "
               + itemLink
               + " was changed. It is scheduled from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
-              + "Jan 2, 2026, 5:04 AM CET (Europe/Berlin).";
+              + "5:04 AM CET (Europe/Berlin).";
     }
     assertEquals(expectedMessage, message.getValue());
   }

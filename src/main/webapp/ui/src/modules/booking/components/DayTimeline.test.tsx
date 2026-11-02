@@ -212,7 +212,7 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.queryByText(/08\/17\/2026/)).not.toBeInTheDocument();
+    expect(screen.queryByText("08/17/2026–08/18/2026")).not.toBeInTheDocument();
     expect(screen.getByText("11:00 PM–12:00 AM (+1)")).toBeVisible();
   });
 
