@@ -92,6 +92,7 @@ export type BookingCatalogueSearch = {
   where?: string;
   target?: string;
   capability?: "CREATE_BOOKING" | "CREATE_BLOCKOUT";
+  mine?: boolean;
   types?: readonly string[];
   locations?: readonly string[];
   page?: number;
@@ -115,6 +116,7 @@ function buildBookingCatalogueRequest(search: BookingCatalogueSearch, token: str
   if (search.where) parameters.set("where", search.where);
   if (search.target) parameters.set("target", search.target);
   if (search.capability) parameters.set("capability", search.capability);
+  if (search.mine) parameters.set("mine", "true");
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
   if (search.start) parameters.set("start", search.start);

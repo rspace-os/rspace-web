@@ -8,7 +8,6 @@ import { bookableItemOption } from "@/modules/booking/creation/bookableItemOptio
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import {
   AlertDialog,
@@ -33,8 +32,8 @@ import { BookingConfigurationActionsMenu } from "./BookingConfigurationActionsMe
 import { BookingEventList } from "./BookingEventList";
 import { lifecycleErrorKey } from "./bookableItemLifecycleHelpers";
 import type { BookingConfiguration } from "./bookingConfiguration";
-import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
+import { InventoryAccessReadOnly } from "./InventoryAccessReadOnly";
 import { type BookableItemTab, useLoadedBookableItemPageActions } from "./useLoadedBookableItemPageActions";
 
 export type { BookableItemTab } from "./useLoadedBookableItemPageActions";
@@ -77,7 +76,6 @@ export function LoadedBookableItemPage({
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const {
-    navigate,
     saveAnnouncement,
     staleEdit,
     archiveOpen,
@@ -193,11 +191,9 @@ export function LoadedBookableItemPage({
                 {t("bookableItemDetails.tabs.audit")}
               </PageTab>
             ) : null}
-            {configuration.capabilities.canViewAccess ? (
-              <PageTab value="access" disabled={updateMutation.isPending}>
-                {t("bookableItemDetails.tabs.access")}
-              </PageTab>
-            ) : null}
+            <PageTab value="access" disabled={updateMutation.isPending}>
+              {t("bookableItemDetails.tabs.access")}
+            </PageTab>
           </Tabs.List>
 
           <div className={detailColumnsClassName}>
@@ -292,27 +288,13 @@ export function LoadedBookableItemPage({
                 </Tabs.Panel>
               ) : null}
 
-              {configuration.capabilities.canViewAccess ? (
-                <Tabs.Panel value="access" className="outline-none">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <ResourceAccessEditor
-                        key={configuration.id}
-                        resource="booking-configurations"
-                        resourceId={configuration.id}
-                        token={token}
-                        adapter={bookingResourceAccessAdapter(t)}
-                        inheritedResource={{
-                          href: `/globalId/${globalId}`,
-                          label: t("bookableItemDetails.viewInventory", { name: target.value.name }),
-                        }}
-                        readOnly={!active}
-                        onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
-                      />
-                    </CardContent>
-                  </Card>
-                </Tabs.Panel>
-              ) : null}
+              <Tabs.Panel value="access" className="outline-none">
+                <Card>
+                  <CardContent className="pt-0">
+                    <InventoryAccessReadOnly instrumentId={target.value.id} />
+                  </CardContent>
+                </Card>
+              </Tabs.Panel>
             </div>
             <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
           </div>
