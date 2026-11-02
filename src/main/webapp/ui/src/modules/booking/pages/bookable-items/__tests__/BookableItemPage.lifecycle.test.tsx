@@ -59,6 +59,7 @@ describe("BookableItemPage", () => {
     expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
     expect(posts).toBe(0);
+    expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
   });
 
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
