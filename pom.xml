@@ -1944,31 +1944,27 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>${frontend.maven.plugin.version}</version>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec.maven.plugin.version}</version>
             <configuration>
-              <nodeVersion>${frontend.node.version}</nodeVersion>
-              <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
-              <workingDirectory>.</workingDirectory>
+              <executable>pnpm</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
             </configuration>
             <executions>
               <execution>
-                <id>Install node and pnpm locally to the project</id>
-                <goals><goal>install-node-and-pnpm</goal></goals>
-              </execution>
-              <execution>
                 <id>Collect frontend dependencies</id>
-                <goals><goal>pnpm</goal></goals>
+                <phase>generate-resources</phase>
+                <goals><goal>exec</goal></goals>
                 <configuration>
-                  <arguments>${frontend.dependencies.install.arg}</arguments>
+                  <commandlineArgs>${frontend.dependencies.install.arg}</commandlineArgs>
                 </configuration>
               </execution>
               <execution>
                 <id>Build Storybook</id>
                 <phase>prepare-package</phase>
-                <goals><goal>pnpm</goal></goals>
-                <configuration><arguments>run storybook:build</arguments></configuration>
+                <goals><goal>exec</goal></goals>
+                <configuration><commandlineArgs>run storybook:build</commandlineArgs></configuration>
               </execution>
             </executions>
           </plugin>
@@ -2007,37 +2003,32 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>${frontend.maven.plugin.version}</version>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec.maven.plugin.version}</version>
             <configuration>
-              <nodeVersion>${frontend.node.version}</nodeVersion>
-              <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
-              <workingDirectory>.</workingDirectory>
+              <executable>pnpm</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
             </configuration>
             <executions>
               <execution>
-                <id>Install node and pnpm locally to the project</id>
-                <goals>
-                  <goal>install-node-and-pnpm</goal>
-                </goals>
-              </execution>
-              <execution>
                 <id>Collect frontend dependencies</id>
+                <phase>generate-resources</phase>
                 <goals>
-                  <goal>pnpm</goal>
+                  <goal>exec</goal>
                 </goals>
                 <configuration>
-                  <arguments>${frontend.dependencies.install.arg}</arguments>
+                  <commandlineArgs>${frontend.dependencies.install.arg}</commandlineArgs>
                 </configuration>
               </execution>
               <execution>
                 <id>Build react dist files</id>
+                <phase>generate-resources</phase>
                 <goals>
-                  <goal>pnpm</goal>
+                  <goal>exec</goal>
                 </goals>
                 <configuration>
-                  <arguments>run build</arguments>
+                  <commandlineArgs>run build</commandlineArgs>
                 </configuration>
               </execution>
             </executions>
@@ -2610,9 +2601,7 @@
   </profiles>
 
   <properties>
-    <frontend.maven.plugin.version>2.0.0</frontend.maven.plugin.version>
-    <frontend.node.version>v24.15.0</frontend.node.version>
-    <frontend.pnpm.version>11.18.0</frontend.pnpm.version>
+    <exec.maven.plugin.version>3.6.4</exec.maven.plugin.version>
     <includedTestGroups></includedTestGroups>
     <excludedTestGroups>chemistry</excludedTestGroups>
     <!-- jetty -->

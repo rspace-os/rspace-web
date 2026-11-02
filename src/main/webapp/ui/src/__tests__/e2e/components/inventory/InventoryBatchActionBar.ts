@@ -5,8 +5,10 @@ import { openDialog } from "./DialogHelpers";
 import { MoreActionsMenu } from "./MoreActionsMenu";
 import { MoveDialogComponent } from "./MoveDialogComponent";
 import { PrintOptionsDialogComponent } from "./PrintOptionsDialogComponent";
+import { ProcessWizardComponent } from "./ProcessWizardComponent";
 
 export type InventoryBatchAction =
+  | "Process"
   | "Duplicate"
   | "Move"
   | "Transfer"
@@ -28,6 +30,12 @@ export class InventoryBatchActionBar {
     this.moreActions = new MoreActionsMenu(page, this.root.getByRole("button", { name: "More actions" }));
   }
 
+  /** Opens the More actions menu and returns one of its items, which may be absent. */
+  async moreActionItem(name: InventoryBatchAction): Promise<Locator> {
+    await this.moreActions.open();
+    return this.moreActions.item(name);
+  }
+
   async clickMoreAction(name: InventoryBatchAction): Promise<void> {
     await this.moreActions.click(name);
   }
@@ -37,6 +45,18 @@ export class InventoryBatchActionBar {
       () =>
         this.moreActions.clickDirectOrFallback(this.root.getByRole("button", { name: "Move", exact: true }), "Move"),
       new MoveDialogComponent(this.page),
+    );
+  }
+
+  /**
+   * Shown only while inventory.operations.available is ALLOWED: a button of its own on a phone, under
+   * More actions otherwise.
+   */
+  async openProcessWizard(): Promise<ProcessWizardComponent> {
+    const direct = this.root.getByRole("button", { name: "Process", exact: true });
+    return openDialog(
+      async () => ((await direct.isVisible()) ? direct.click() : this.moreActions.click("Process")),
+      new ProcessWizardComponent(this.page),
     );
   }
 

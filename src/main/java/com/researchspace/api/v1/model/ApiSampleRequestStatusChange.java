@@ -32,7 +32,10 @@ public class ApiSampleRequestStatusChange {
   @JsonProperty("createdBy")
   private ApiUser createdBy;
 
-  /** Populated for a rejection and for a fulfilment made by a transfer, absent otherwise. */
+  /**
+   * The owner's reason for a rejection, or why a change of owner closed the request automatically;
+   * absent otherwise.
+   */
   @JsonProperty("reason")
   private String reason;
 

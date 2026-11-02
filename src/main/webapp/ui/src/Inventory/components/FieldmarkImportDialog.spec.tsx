@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import { FieldmarkImportDialogPage } from "./pageObjects/FieldmarkImportDialogPage";
@@ -157,7 +157,7 @@ describe("FieldmarkImportDialog", () => {
       // The success alert should appear
       const successAlert = dialog.successAlert();
       await expect.element(successAlert).toBeVisible();
-      await expect.element(successAlert).toHaveTextContent("Successfully imported notebook");
+      await expect.element(successAlert).toMatchTextContent("Successfully imported notebook");
 
       // Expand sub-messages
       await clickWhenInViewport(dialog.subMessageToggle(1));
@@ -243,7 +243,7 @@ describe("FieldmarkImportDialog", () => {
       // The error alert should appear
       const errorAlert = dialog.errorAlert();
       await expect.element(errorAlert).toBeVisible();
-      await expect.element(errorAlert).toHaveTextContent("Could not import notebook.");
+      await expect.element(errorAlert).toMatchTextContent("Could not import notebook.");
 
       // Expand the 2 sub-messages
       await clickWhenInViewport(dialog.subMessageToggle(2));

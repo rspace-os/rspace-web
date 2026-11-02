@@ -578,7 +578,7 @@ describe("OperationDetailsStep (amount modes)", () => {
         />
       </InEnglish>,
     );
-    expect(await screen.findByRole("alert")).toHaveTextContent("Vial Empty");
+    expect(await screen.findByRole("alert")).toMatchTextContent("Vial Empty");
   });
 
   it("flags any positive per-origin amount for an origin whose quantity was never set", () => {

@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";

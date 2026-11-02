@@ -6,6 +6,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.events.SampleRequestStatusEvent;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import com.researchspace.service.MessageSourceUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -14,9 +15,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class SampleRequestAuditTrail {
 
   private final AuditTrailService auditer;
+  private final MessageSourceUtils messages;
 
-  public SampleRequestAuditTrail(AuditTrailService auditer) {
+  public SampleRequestAuditTrail(AuditTrailService auditer, MessageSourceUtils messages) {
     this.auditer = auditer;
+    this.messages = messages;
   }
 
   @TransactionalEventListener
@@ -25,7 +28,8 @@ public class SampleRequestAuditTrail {
     // the User column shows who raised it, so a new request's description names who was asked
     String description =
         SampleRequestStatus.PENDING.equals(request.getStatus())
-            ? "to user: " + request.getOriginalOwner()
+            ? messages.getMessage(
+                "inventory.audit.sampleRequest.sent", new Object[] {request.getOriginalOwner()})
             : null;
     auditer.notify(
         new GenericEvent(event.getActor(), request, actionFor(request.getStatus()), description));

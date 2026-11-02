@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 export const MOCK_REPO_FULL_NAME = "mock-org/mock-repo";
 export const MOCK_REPO_DESCRIPTION = "A mock repository for e2e testing.";

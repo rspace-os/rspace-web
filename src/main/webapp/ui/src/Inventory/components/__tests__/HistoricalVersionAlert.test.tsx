@@ -40,7 +40,7 @@ describe("HistoricalVersionAlert", () => {
     render(<HistoricalVersionAlert record={subsample} />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).not.toHaveTextContent(/may not be the latest version/i);
+    expect(alert).not.toMatchTextContent(/may not be the latest version/i);
   });
 
   test("renders nothing for a live record", () => {

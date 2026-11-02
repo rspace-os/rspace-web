@@ -1,4 +1,5 @@
-import { HttpResponse, http, type RequestHandler } from "msw";
+import type { RequestHandler } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 /*
  * A static, far-future-expiry JWT for the browser-test OAuth token endpoint.

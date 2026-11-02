@@ -19,7 +19,7 @@ export class RequestsPage extends BasePage {
    * inventory.operations.available is DENIED, making RequestDetailPanel's `skipChooseMethodDialog`
    * true - the Operations Wizard this branch would otherwise offer isn't present here at all, so
    * every spec that reaches this button pairs `flowSampleRequestsAvailable` with
-   * `flowOperationsDenied` to guarantee that, rather than relying on whatever this property
+   * `flowOperationsNotAvailable` to guarantee that, rather than relying on whatever this property
    * happens to be left as on a given instance.
    */
   readonly transferSampleButton: Locator;

@@ -360,6 +360,11 @@ export default defineConfig(async ({ mode }) => {
           entryFileNames: "[name]-[hash].js",
           chunkFileNames: "chunks/[name]-[hash].js",
           assetFileNames: "assets/[name]-[hash][extname]",
+          // Dependencies resolve into pnpm's global store; keep build-machine store paths out of shipped sourcemaps.
+          sourcemapPathTransform: (relativeSourcePath) => {
+            const nodeModulesIndex = relativeSourcePath.lastIndexOf("/node_modules/");
+            return nodeModulesIndex === -1 ? relativeSourcePath : relativeSourcePath.slice(nodeModulesIndex + 1);
+          },
         },
       },
       target: esbuildTargets as NonNullable<UserConfig["build"]>["target"],

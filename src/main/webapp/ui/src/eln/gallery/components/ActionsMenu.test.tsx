@@ -317,7 +317,7 @@ describe("ActionsMenu", () => {
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("gallery:actionsMenu.validation.missingGlobalId");
+      expect(share).toMatchTextContent("gallery:actionsMenu.validation.missingGlobalId");
     });
 
     test("Share should be enabled when the current user owns a snippet in a shared folder", async () => {
@@ -336,7 +336,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
+      expect(share).toMatchTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
     });
 
     test("Share should not be enabled for a snippet in a system shared folder", async () => {
@@ -346,7 +346,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
+      expect(share).toMatchTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
     });
 
     test("Share should be disabled while the current user details are still loading", async () => {
@@ -364,7 +364,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       expectMenuItemDisabled(share);
-      expect(share).toHaveTextContent("gallery:actionsMenu.validation.loadingUser");
+      expect(share).toMatchTextContent("gallery:actionsMenu.validation.loadingUser");
     });
 
     test("Saving a gallery share should show success alert and close dialog", async () => {
@@ -394,7 +394,7 @@ describe("ActionsMenu", () => {
       await user.click(saveButton);
 
       // Success alert appears...
-      expect(await screen.findByRole("alert", undefined, { timeout: 5000 })).toHaveTextContent(
+      expect(await screen.findByRole("alert", undefined, { timeout: 5000 })).toMatchTextContent(
         "common:shareDialog.updatedSuccessfully",
       );
 
@@ -501,8 +501,8 @@ describe("ActionsMenu", () => {
       for (const name of [/common:actions\.edit/i, /gallery:actionsMenu\.view/i]) {
         const item = screen.getByRole("menuitem", { name });
         expectMenuItemDisabled(item);
-        expect(item).toHaveTextContent(/gallery:actionsMenu\.validation\.nothingSelected/);
-        expect(item).not.toHaveTextContent(/gallery:actionsMenu\.validation\.tooManyItems/);
+        expect(item).toMatchTextContent(/gallery:actionsMenu\.validation\.nothingSelected/);
+        expect(item).not.toMatchTextContent(/gallery:actionsMenu\.validation\.tooManyItems/);
       }
     });
 

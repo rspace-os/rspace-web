@@ -53,7 +53,7 @@ describe("Renders with table of  data", () => {
     expect(await screen.findByText("apps:externalWorkflows.dialogTitle")).toBeInTheDocument();
     const gridCells = screen.getAllByRole("gridcell");
     expect(gridCells[0]).toHaveTextContent("Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg");
-    expect(gridCells[1]).toHaveTextContent("RSPACE_Untitled document_SD375v3_Data_FD229379");
+    expect(gridCells[1]).toMatchTextContent("RSPACE_Untitled document_SD375v3_Data_FD229379");
     expect(gridCells[2]).toHaveTextContent("Invocation Name");
     expect(gridCells[3]).toHaveTextContent("FAILED");
     expect(gridCells[4]).toHaveTextContent(new Date(GalaxyDataSummary.createdOn).toLocaleString());

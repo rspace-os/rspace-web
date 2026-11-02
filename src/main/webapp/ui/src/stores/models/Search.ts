@@ -131,6 +131,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   hideContentsOfChip: false,
   selectionLimit: Infinity,
   onlyAllowSelectingEmptyLocations: false,
+  dragAndDropDisabled: false,
+  hideNavigateToContents: false,
 };
 
 /**

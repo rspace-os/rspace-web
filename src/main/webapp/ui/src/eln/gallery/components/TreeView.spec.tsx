@@ -1,6 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { suppressFireAndForget404 } from "@/__tests__/browserSetup";
+import { suppressFireAndForget404 } from "@/__tests__/browserMocks";
 import { TreeViewPage } from "./pageObjects/TreeViewPage";
 import { TreeViewWithFiles } from "./TreeView.story";
 

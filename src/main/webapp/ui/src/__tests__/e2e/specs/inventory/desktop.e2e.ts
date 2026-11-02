@@ -42,13 +42,7 @@ test.describe(`Inventory Desktop layout`, { tag: tags.INVENTORY }, () => {
     }
   });
 
-  test(`As a user, I can view multiple adjustable List columns`, async ({
-    pageInventory,
-    clientInventory,
-    page,
-    browserName,
-  }) => {
-    test.skip(browserName === "webkit", "Known WebKit timeout while toggling the inventory right panel");
+  test(`As a user, I can view multiple adjustable List columns`, async ({ pageInventory, clientInventory, page }) => {
     const sampleName = uniqueName("e2e-desktop-list-sample");
 
     const sample = await clientInventory.createSample({ name: sampleName, newSampleSubSamplesCount: 30 });
@@ -66,15 +60,15 @@ test.describe(`Inventory Desktop layout`, { tag: tags.INVENTORY }, () => {
     pageInventory,
     clientInventory,
     page,
-    browserName,
   }) => {
-    test.skip(browserName === "webkit", "Known WebKit timeout while opening a result after hiding the right panel");
     const sampleName = uniqueName("e2e-desktop-preview-sample");
 
     const sample = await clientInventory.createSample({ name: sampleName, newSampleSubSamplesCount: 30 });
     await page.goto(`/inventory/search?parentGlobalId=${sample.globalId}`);
     await pageInventory.isLoaded();
 
+    // Loading placeholders also render as rows, so wait for the search itself to finish.
+    await expect(pageInventory.searchPanel.statusText).toContainText("30 subsamples found.");
     await expect.poll(() => pageInventory.searchPanel.rowCount()).toBe(10);
     await expect(pageInventory.detailsPanel.heading).toContainText(sampleName);
 

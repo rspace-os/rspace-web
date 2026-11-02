@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import useFolders from "../useFolders";

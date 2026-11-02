@@ -3,6 +3,9 @@ package com.researchspace.webapp.integrations.dmponline;
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,20 +19,34 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @WebAppConfiguration
 public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
   private @Autowired UserConnectionManager userConnectionManager;
+  private @Autowired DMPOnlineController dmpOnlineController;
+
+  @Value("${dmponline.base.url}")
+  private String baseUrl;
+
   private User user;
+  private MockRestServiceServer mockServer;
 
   @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();
+
+    RestTemplate restTemplate = new RestTemplate();
+    dmpOnlineController.setRestTemplate(restTemplate);
+    mockServer = MockRestServiceServer.createServer(restTemplate);
   }
 
   @Test
@@ -53,6 +70,7 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void testCallback() throws Exception {
     MvcResult connectResult = startOAuthFlow();
+    expectTokenRequestRejected();
     MvcResult result =
         mockMvc
             .perform(
@@ -68,16 +86,15 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
     // the shared page serves both outcomes, so pin the error branch via its model attribute
     assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
         .contains("Error during token creation");
+    mockServer.verify();
   }
 
   @Test
   public void testRefreshToken() throws Exception {
     // A connection must exist, otherwise refresh_token throws NOT_FOUND before reaching the
-    // shared connection-result page. With a connection present the upstream token refresh fails
-    // (no reachable DMPonline server in the test environment), exercising the error variant of
-    // that page. Like testCallback / testIsConnectionAlive above, this calls the real endpoint and
-    // asserts the error-page forward rather than mocking the HTTP call.
+    // shared connection-result page.
     seedUserConnection();
+    expectTokenRequestRejected();
 
     MvcResult result =
         mockMvc
@@ -90,6 +107,14 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
     // the shared page serves both outcomes, so pin the error branch via its model attribute
     assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
         .contains("Error during token refresh");
+    mockServer.verify();
+  }
+
+  private void expectTokenRequestRejected() {
+    mockServer
+        .expect(requestTo(baseUrl + "/oauth/token"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withBadRequest());
   }
 
   private void seedUserConnection() {

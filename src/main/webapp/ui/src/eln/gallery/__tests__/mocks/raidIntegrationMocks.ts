@@ -1,4 +1,5 @@
-import { HttpResponse, http, type RequestHandler } from "msw";
+import type { RequestHandler } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 /*
  * The RAiD integration is disabled-but-available by default; components that

@@ -10,10 +10,9 @@
 import { expect } from "vitest";
 
 declare module "vitest" {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  interface Assertion<T = any> {
-    urlSearchParamContaining(expected: Record<string, string>): T;
-    urlSearchParamHasKey(expectedKey: string): T;
+  interface Matchers<R extends void | Promise<void> = void | Promise<void>, T = unknown> {
+    urlSearchParamContaining(expected: Record<string, string>): R;
+    urlSearchParamHasKey(expectedKey: string): R;
   }
   interface AsymmetricMatchersContaining {
     urlSearchParamContaining(expected: Record<string, string>): unknown;

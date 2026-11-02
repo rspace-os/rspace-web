@@ -2,9 +2,9 @@
 
 import { createServer } from "node:http";
 import { getRequestListener } from "@hono/node-server";
-import { createMiddleware } from "@mswjs/http-middleware";
+import { createMiddleware } from "@msw/serve/hono";
 import { Hono } from "hono";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { argosHandlers } from "../../modules/argos/__tests__/mock.ts";
 import { caliraHandlers } from "../../modules/calira/__tests__/mock.ts";
 import { dataverseHandlers } from "../../modules/dataverse/__tests__/mock.ts";
@@ -73,25 +73,10 @@ const handlers = [
   ...b2instHandlers,
   ...rorHandlers,
 ];
-const mswMiddleware = createMiddleware(...handlers);
-
 const app = new Hono();
+app.use(createMiddleware(...handlers));
 app.notFound((c) => c.text("not found", 404));
-const honoListener = getRequestListener(app.fetch);
 
-createServer((req, res) => {
-  const header = (name: string) => req.headers[name.toLowerCase()];
-  const mockRequest = Object.assign(req, { protocol: "http", get: header, header }) as unknown as Parameters<
-    typeof mswMiddleware
-  >[0];
-  mswMiddleware(mockRequest, res, (err: unknown) => {
-    if (err) {
-      res.statusCode = 500;
-      res.end(String(err));
-      return;
-    }
-    honoListener(req, res);
-  });
-}).listen(PORT, HOST, () => {
+createServer(getRequestListener(app.fetch)).listen(PORT, HOST, () => {
   console.log(`[e2e-mocks] listening on http://${HOST}:${PORT}`);
 });

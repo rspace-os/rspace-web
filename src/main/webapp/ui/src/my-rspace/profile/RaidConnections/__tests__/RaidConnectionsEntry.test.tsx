@@ -431,8 +431,8 @@ describe("RaidConnectionsEntry", () => {
       renderWithProviders(defaultProps);
 
       const disassociateButton = screen.getByTestId("disassociate-button");
-      expect(disassociateButton).toHaveTextContent("Disassociate Test RAiD Project");
-      expect(disassociateButton).toHaveTextContent("https://raid.org/12345");
+      expect(disassociateButton).toMatchTextContent("Disassociate Test RAiD Project");
+      expect(disassociateButton).toMatchTextContent("https://raid.org/12345");
     });
 
     it("Should maintain state when switching between modes", async () => {

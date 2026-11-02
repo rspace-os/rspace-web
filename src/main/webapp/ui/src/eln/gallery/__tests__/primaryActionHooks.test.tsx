@@ -1,14 +1,13 @@
 import { renderHook } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
 import type React from "react";
-import { beforeEach, describe, expect, test } from "vitest";
-import { server } from "@/__tests__/mswServer";
+import { describe, expect, test } from "vitest";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { galleryFile } from "../components/VersionHistoryDialog.story";
 import { HistoricalGalleryFile } from "../historicalGalleryFile";
 import usePrimaryAction from "../primaryActionHooks";
 import { CollaboraContext } from "../useCollabora";
 import type { GalleryFile } from "../useGalleryListing";
+import { OfficeOnlineContext } from "../useOfficeOnline";
 
 /*
  * The primary action is the second way to reach an editor, alongside the Actions menu. It is
@@ -29,7 +28,9 @@ function wrapper({ children }: { children: React.ReactNode }) {
         ])
       }
     >
-      <CollaboraContext.Provider value={{ supportedExts: new Set(["docx"]) }}>{children}</CollaboraContext.Provider>
+      <CollaboraContext.Provider value={{ supportedExts: new Set(["docx"]) }}>
+        <OfficeOnlineContext.Provider value={{ supportedExts: new Set() }}>{children}</OfficeOnlineContext.Provider>
+      </CollaboraContext.Provider>
     </DeploymentPropertyContext.Provider>
   );
 }
@@ -53,11 +54,6 @@ const pinnedVersionOf = (file: GalleryFile) =>
   });
 
 describe("usePrimaryAction", () => {
-  beforeEach(() => {
-    /* useOfficeOnline has no context to inject through, so its fetch is stubbed instead */
-    server.use(http.get("/officeOnline/supportedExts", () => HttpResponse.json({})));
-  });
-
   test("offers Collabora editing for a live document", () => {
     // the control: without this the pinned assertion below could pass for the wrong reason
     const action = primaryActionFor(docx());

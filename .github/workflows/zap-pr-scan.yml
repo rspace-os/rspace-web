@@ -1,0 +1,276 @@
+name: ZAP PR scan
+
+# Scans the WAR that "ZAP PR build" built for a PR. workflow_run always runs
+# this file from the default branch, so PR code cannot change it. The WAR is
+# untrusted, so it runs only in a container with no mounts, no Docker socket, no
+# capabilities, and no route to the runner or the internet. The private
+# pentest checkout, reports, and Slack posting stay on the runner.
+
+on:
+  workflow_run:
+    workflows: [ZAP PR build]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: zap-pr-scan-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+env:
+  PENTEST_REF: "20878c4895e5e7c138cdf314174bbf3233828d73"
+  PLAN: quick-release
+  REPORT_DIR: reports
+  # Internal Docker network shared by RSpace, MariaDB, and ZAP only.
+  ZAP_NETWORK: zap-pr-scan
+  TARGET_URL: http://rspace:8080
+  PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+  PR_TITLE: ${{ github.event.workflow_run.display_title }}
+
+jobs:
+  scan:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Holds PENTEST_DEPLOY_KEY and SLACK_WEBHOOK_URL, limited to the default branch.
+    environment: zap-pr-scan
+
+    env:
+      HAS_SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+
+      ZAP_USERNAME: sysadmin1
+      ZAP_PASSWORD: sysWisc23!
+      # sysadmin1's seeded API key.
+      ZAP_APIKEY: abcdefghijklmnop12
+      # ROLE_USER account for the non-admin active-scan pass
+      ZAP_USER2_USERNAME: user2b
+      ZAP_USER2_PASSWORD: user1234
+
+    steps:
+      - name: Download PR WAR (untrusted)
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: zap-pr-war
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/app-image
+
+      - name: Check WAR artifact
+        working-directory: ${{ runner.temp }}/app-image
+        run: |
+          set -euo pipefail
+          if [ "$(find . -mindepth 1 | wc -l)" != 1 ] || [ ! -f rspace.war ] || [ -L rspace.war ]; then
+            echo "::error::Unexpected WAR artifact contents"; exit 1
+          fi
+          if [ "$(head -c 4 rspace.war | od -An -tx1 | tr -d ' \n')" != "504b0304" ]; then
+            echo "::error::WAR artifact is not a zip file"; exit 1
+          fi
+
+      # Take the baseline from the default branch because it is loaded as the database root user.
+      - name: Checkout baseline schema (default branch)
+        uses: actions/checkout@v7.0.0
+        with:
+          path: rspace-web
+          sparse-checkout: src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Checkout rspace-pentest (pinned SHA)
+        uses: actions/checkout@v7.0.0
+        with:
+          repository: ResearchSpace-ELN/rspace-pentest
+          ref: ${{ env.PENTEST_REF }}
+          ssh-key: ${{ secrets.PENTEST_DEPLOY_KEY }}
+          path: pentest
+          persist-credentials: false
+
+      # Scanner output stays in runner-local files; the public log gets fixed
+      # status lines and validated counts only.
+      - name: Build ZAP image
+        working-directory: pentest
+        run: |
+          python3 scripts/pr_scan.py build > "$RUNNER_TEMP/zap-build.log" 2>&1 \
+            || { echo "::error::ZAP image build failed"; exit 1; }
+
+      - name: Build RSpace image
+        working-directory: ${{ runner.temp }}/app-image
+        run: |
+          cat > Dockerfile <<'EOF'
+          FROM tomcat:10.1-jre17-temurin
+          RUN useradd --system --uid 10001 rspace \
+           && rm -rf webapps/* \
+           && mkdir -p /rspace-files \
+           && chown -R rspace: logs temp work webapps /rspace-files
+          COPY --chown=rspace rspace.war webapps/ROOT.war
+          USER rspace
+          WORKDIR /rspace-files
+          EOF
+          docker build -q -t rspace-pr-app . > /dev/null
+
+      - name: Start RSpace on an isolated network
+        env:
+          BASELINE_SQL: rspace-web/src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql
+        run: |
+          set -euo pipefail
+          # Without a host address on the bridge, containers reach each other but not the runner.
+          docker network create --internal -o com.docker.network.bridge.inhibit_ipv4=true "$ZAP_NETWORK" > /dev/null
+          bridge="br-$(docker network inspect -f '{{.Id}}' "$ZAP_NETWORK" | cut -c1-12)"
+          if ip -4 addr show "$bridge" | grep -q inet; then
+            echo "::error::The scan network has a host address"; exit 1
+          fi
+
+          docker run -d --name rspace-db --network "$ZAP_NETWORK" --network-alias rspace-db \
+            --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g \
+            -e MARIADB_ROOT_PASSWORD=rspacedbpwd -e MARIADB_DATABASE=rspace \
+            -e MARIADB_USER=rspacedbuser -e MARIADB_PASSWORD=rspacedbpwd \
+            mariadb:12.3 \
+            --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci \
+            --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION \
+            > /dev/null
+          for i in $(seq 1 60); do
+            docker exec rspace-db healthcheck.sh --connect --innodb_initialized > /dev/null 2>&1 && break
+            [ "$i" = 60 ] && { echo "::error::MariaDB did not become ready"; exit 1; }
+            sleep 2
+          done
+          { echo "GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%'; FLUSH PRIVILEGES; USE rspace;"; cat "$BASELINE_SQL"; } \
+            | docker exec -i rspace-db mariadb -uroot -prspacedbpwd > /dev/null
+
+          # Production CSRF and CORS settings over the dev template; the URL prefix
+          # makes ZAP's own Origin header pass the CSRF check.
+          docker run -d --name rspace-app --network "$ZAP_NETWORK" --network-alias rspace \
+            --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 --memory 8g \
+            -e CATALINA_OPTS="-Xmx4g \
+              -Dspring.profiles.active=run \
+              -DreactDevMode=false \
+              -Demail.enabled=false \
+              -Dcsrf.filters.enabled=true \
+              -Dapi.permissiveCors.enabled=false \
+              -Dserver.urls.prefix=${TARGET_URL} \
+              -Djdbc.url=jdbc:mysql://rspace-db:3306/rspace \
+              -DRS_FILE_BASE=/rspace-files \
+              -DRS.devlogLevel=INFO" \
+            rspace-pr-app > /dev/null
+
+      - name: Wait for RSpace readiness
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 120); do
+            code="$(docker run --rm --network "$ZAP_NETWORK" "$ZAP_IMAGE" \
+              curl -s -o /dev/null -w '%{http_code}' "${TARGET_URL}/login" || true)"
+            if [ "$code" = 200 ]; then echo "Ready after ~$((i*5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::RSpace did not become ready in time"
+          # The app's output is untrusted, so stop workflow commands while printing it.
+          token="$(openssl rand -hex 16)"
+          echo "::stop-commands::${token}"
+          docker logs --tail 100 rspace-app 2>&1 || true
+          echo "::${token}::"
+          exit 1
+
+      - name: Prepare reports and merge plan
+        id: prepare
+        working-directory: pentest
+        run: |
+          python3 scripts/pr_scan.py prepare > "$RUNNER_TEMP/zap-prepare.log" 2>&1 \
+            || { echo "::error::Scan preparation failed"; exit 1; }
+
+      - name: Run ZAP automation plan (quick-release)
+        id: zap
+        continue-on-error: true
+        working-directory: pentest
+        run: |
+          rc=0
+          python3 scripts/pr_scan.py scan > "$RUNNER_TEMP/zap-scan.log" 2>&1 || rc=$?
+          echo "ZAP scan exit code: ${rc}"
+          exit "$rc"
+
+      # Stop the untrusted app before processing reports.
+      - name: Stop RSpace
+        if: always()
+        run: docker rm -f rspace-app rspace-db > /dev/null 2>&1 || true
+
+      # Process reports on this runner; do not publish downloadable artifacts.
+      - name: Security gate (informational)
+        id: gate
+        if: always() && steps.prepare.outcome == 'success'
+        continue-on-error: true
+        working-directory: pentest
+        run: |
+          rc=0
+          python3 scripts/pr_scan.py gate > "$RUNNER_TEMP/zap-gate.log" 2>&1 || rc=$?
+          echo "Security gate exit code: ${rc}"
+          exit "$rc"
+
+      - name: Job summary (counts only)
+        if: always()
+        env:
+          ZAP_OUTCOME: ${{ steps.zap.outcome || 'skipped' }}
+          GATE_OUTCOME: ${{ steps.gate.outcome || 'skipped' }}
+        run: |
+          # Publish the counts line only when it is exactly four numeric counts.
+          counts_line="$(grep -m1 -xE "\[Post\] Alert counts: \{'High': [0-9]+, 'Medium': [0-9]+, 'Low': [0-9]+, 'Informational': [0-9]+\}" pentest/security_gate.out 2>/dev/null || true)"
+          if [ -n "$counts_line" ]; then
+            zap_counts="$(printf '%s' "${counts_line#\[Post\] }" | tr -d "{}'")"
+          else
+            zap_counts="Alert counts: unavailable (scan may not have completed)"
+          fi
+          {
+            echo "### ZAP PR security scan (informational)"
+            echo ""
+            echo "- PR: #${PR_NUMBER}"
+            echo "- Scan execution: ${ZAP_OUTCOME}"
+            echo "- Gate: ${GATE_OUTCOME} (informational)"
+            echo "- ZAP ${zap_counts}"
+            echo ""
+            echo "_Counts only. Finding details go to the security team's Slack, and this summary has no alert names or URLs._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare Slack payload (findings only)
+        id: slack_payload
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && steps.prepare.outcome == 'success' }}
+        working-directory: pentest
+        env:
+          SCAN_STATUS: ${{ (steps.zap.outcome == 'failure' || steps.gate.outcome == 'failure' || job.status == 'failure') && 'failure' || 'success' }}
+          SCAN_TITLE: "rspace-web PR #${{ env.PR_NUMBER }}: ${{ env.PR_TITLE }}"
+          SCAN_LINK: ${{ github.server_url }}/${{ github.repository }}/pull/${{ env.PR_NUMBER }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          rc=0
+          python3 scripts/slack_summary.py --only-on-findings --output "$RUNNER_TEMP/zap-slack.json" \
+            > "$RUNNER_TEMP/zap-slack.log" 2>&1 || rc=$?
+          # Replay only the mask commands so the Slack action cannot log the payload.
+          grep -E '^::add-mask::' "$RUNNER_TEMP/zap-slack.log" || true
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::Slack payload could not be prepared"
+            exit "$rc"
+          fi
+          if [ -s "$RUNNER_TEMP/zap-slack.json" ]; then
+            echo "notify=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify Slack (findings only)
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && steps.slack_payload.outputs.notify == 'true' }}
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: ${{ runner.temp }}/zap-slack.json
+          errors: true
+
+      - name: Notify Slack (setup or reporting failure)
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && (steps.prepare.outcome != 'success' || steps.slack_payload.outcome == 'failure') }}
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          errors: true
+          payload: |
+            attachments:
+              - color: danger
+                text: ${{ toJSON(format('rspace-web PR #{0}: {1} (failure). Scan setup or reporting did not complete; no complete security result is available. {2}/{3}/actions/runs/{4}', env.PR_NUMBER, env.PR_TITLE, github.server_url, github.repository, github.run_id)) }}

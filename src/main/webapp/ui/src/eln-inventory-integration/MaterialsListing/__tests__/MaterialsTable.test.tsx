@@ -55,7 +55,7 @@ describe("MaterialsTable", () => {
         </ThemeProvider>,
       );
       // second cell because the MaterialTable row has only 2 cells in a row, despite what would be visually intuitive
-      expect(screen.getAllByRole("cell")[1]).toHaveTextContent("inventory:search.controls.status.inTrash");
+      expect(screen.getAllByRole("cell")[1]).toMatchTextContent("inventory:search.controls.status.inTrash");
     });
   });
 });

@@ -13,21 +13,10 @@ const STATUS_LABEL_KEY = {
   CANCELLED: "requestsManagement.status.cancelled",
 } as const;
 
-/**
- * The translated display text for a SampleRequest's status (e.g. "Pending").
- * Falls back to the raw status itself for any value outside the five known
- * statuses, rather than throwing - this is just a display label, not validation.
- */
 export function requestStatusLabel(status: string, t: TFunction<"inventory">): string {
   return status in STATUS_LABEL_KEY ? t(STATUS_LABEL_KEY[status as keyof typeof STATUS_LABEL_KEY]) : status;
 }
 
-// Text colour only - independent of theme.palette.sampleRequestStatus below, and not matched to
-// it: APPROVED's background is blue-gray but this gives it green ("success") text, and
-// FULFILLED's background is green but this gives it blue ("info") text. That's the actual,
-// current rendering, not a typo to "fix" by swapping these two - changing it would change the
-// chips' appearance, which is out of scope here. Flagging it so it doesn't look like unexplained
-// drift next time someone reads this against the doc comment on RequestsStatusChip below.
 const STATUS_PALETTE_KEY: Record<string, "warning" | "success" | "error" | "info"> = {
   PENDING: "warning",
   APPROVED: "success",
@@ -49,9 +38,7 @@ const STATUS_DOT_COLOR: Record<string, string> = {
   APPROVED: "#3E5866",
 };
 
-// Darkened from rgb(183, 121, 31): that text on theme.palette.sampleRequestStatus.pending was
-// 3.24:1, below WCAG AA's 4.5:1 minimum for small text. This is ~4.57:1 against that same
-// background, same hue, just a bit darker.
+// Pending text colour explicitly specified to meet WCAG guidelines.
 export const PENDING_TEXT_COLOR = "rgb(150, 99, 25)";
 
 function ChipLabel({ status }: { status: string }): React.ReactNode {
@@ -67,16 +54,9 @@ function ChipLabel({ status }: { status: string }): React.ReactNode {
 }
 
 /**
- * A chip for a SampleRequest's status: "Pending" has an orange background
- * and text, "Approved" has a blue-gray background with green text,
- * "Fulfilled" has a green background with blue text, "Rejected" has a red
- * background and text, and "Cancelled" has a gray background and text. The
- * Approved/Fulfilled text colours not matching their own backgrounds is the
- * current, deliberate state of STATUS_PALETTE_KEY below, not a documentation
- * slip to "correct" back into matching - see the comment there. "Pending"
- * and "Approved" also show a coloured dot. Display-only unless an `onClick`
- * is provided, in which case it becomes clickable. Pass `bordered` to add a
- * thin outline, e.g. for use against a similarly-coloured background.
+ * A chip for a SampleRequest's status. Display-only unless an `onClick`
+ * is provided. Pass `bordered` to add a thin outline, e.g. for use
+ * against a similarly-coloured background.
  */
 export default function RequestsStatusChip({
   status,

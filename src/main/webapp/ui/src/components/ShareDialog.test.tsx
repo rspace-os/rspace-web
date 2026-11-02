@@ -343,7 +343,7 @@ describe("ShareDialog", () => {
       });
       expect(dialog).toBeVisible();
       await waitFor(() => {
-        expect(dialog).toHaveTextContent("common:shareDialog.noDirectShares");
+        expect(dialog).toMatchTextContent("common:shareDialog.noDirectShares");
       });
 
       await expectAccessible(baseElement);
@@ -390,7 +390,7 @@ describe("ShareDialog", () => {
       expect(within(row).getByRole("combobox")).toHaveTextContent("common:shareDialog.permissions.edit");
       // Folder name is resolved asynchronously after groups + folder fetches.
       await waitFor(() => {
-        expect(within(row).getAllByRole("cell")[3]).toHaveTextContent("aliceAndBobGroup_SHARED");
+        expect(within(row).getAllByRole("cell")[3]).toMatchTextContent("aliceAndBobGroup_SHARED");
       });
 
       await expectAccessible(baseElement);
@@ -441,7 +441,7 @@ describe("ShareDialog", () => {
         }),
       ).toBeVisible();
       expect(within(directShareRow).getByRole("combobox")).toHaveTextContent("common:shareDialog.permissions.read");
-      expect(within(directShareRow).getAllByRole("cell")[3]).toHaveTextContent("A notebook");
+      expect(within(directShareRow).getAllByRole("cell")[3]).toMatchTextContent("A notebook");
 
       const notebookShareRow = within(notebookShareTable).getAllByRole("row")[1];
       expect(notebookShareRow).toBeVisible();
@@ -820,7 +820,7 @@ describe("ShareDialog", () => {
         { timeout: 5000 },
       );
       await waitFor(() => {
-        expect(screen.getByRole("alert")).toHaveTextContent("common:shareDialog.updatedSuccessfully");
+        expect(screen.getByRole("alert")).toMatchTextContent("common:shareDialog.updatedSuccessfully");
       });
     });
 

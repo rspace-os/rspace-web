@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
@@ -19,6 +21,9 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiTagInfo;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.InventoryRecord;
+import jakarta.ws.rs.NotFoundException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -243,6 +248,86 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
         .andExpect(
             org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()
                 .is4xxClientError())
+        .andReturn();
+  }
+
+  @Test
+  public void importInstrumentsRefusesDescriptionOverTheCap() throws Exception {
+    String settingsJson =
+        "{ \"instrumentSettings\": { \"fieldMappings\": { \"Name\": \"name\", \"Description\":"
+            + " \"description\" }, \"templateInfo\": { \"name\": \"desc-cap-tmpl\" } } }";
+
+    MvcResult atCap =
+        importInstruments(
+            settingsJson,
+            "Name,Description\nMicroscope 2000,"
+                + "x".repeat(InventoryRecord.DESCRIPTION_LENGTH)
+                + "\n");
+    assertNull(atCap.getResolvedException());
+    ApiInventoryImportInstrumentImportResult atCapResult =
+        getFromJsonResponseBody(atCap, ApiInventoryImportResult.class).getInstrumentResult();
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, atCapResult.getStatus());
+    assertEquals(
+        InventoryRecord.DESCRIPTION_LENGTH,
+        atCapResult.getResults().get(0).getRecord().getDescription().length());
+
+    MvcResult overCap =
+        importInstruments(
+            settingsJson,
+            "Name,Description\nMicroscope 2001,"
+                + "x".repeat(InventoryRecord.DESCRIPTION_LENGTH + 1)
+                + "\n");
+    assertNull(overCap.getResolvedException());
+    ApiInventoryImportResult overCapImport =
+        getFromJsonResponseBody(overCap, ApiInventoryImportResult.class);
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, overCapImport.getStatus());
+    ApiInventoryImportInstrumentImportResult overCapResult = overCapImport.getInstrumentResult();
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, overCapResult.getStatus());
+    assertEquals(0, overCapResult.getSuccessCount());
+    assertEquals(1, overCapResult.getErrorCount());
+    assertEquals(
+        List.of("description: description cannot be greater than 2000 characters."),
+        overCapResult.getResults().get(0).getError().getErrors());
+    // the template created for this import was rolled back with it
+    Long templateId = overCapResult.getTemplate().getRecord().getId();
+    assertThrows(
+        NotFoundException.class,
+        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(templateId, anyUser));
+  }
+
+  @Test
+  public void importInstrumentsRefusesBlankNameAndUnavailableNumber() throws Exception {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("number-tmpl");
+    templatePost.getFields().add(createBasicApiSampleField("reading", ApiFieldType.NUMBER, "1"));
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, anyUser);
+    String settingsJson =
+        "{ \"instrumentSettings\": { \"fieldMappings\": { \"Name\": \"name\" }, \"templateId\": "
+            + template.getId()
+            + " } }";
+
+    MvcResult result = importInstruments(settingsJson, "Name,reading\n,2\nMicroscope-NA,#N/A\n");
+
+    assertNull(result.getResolvedException());
+    ApiInventoryImportInstrumentImportResult instrumentResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class).getInstrumentResult();
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, instrumentResult.getStatus());
+    assertEquals(2, instrumentResult.getErrorCount());
+    assertThat(instrumentResult.getResults().get(0).getError().getErrors())
+        .anyMatch(e -> e.contains("name is a required field"));
+    assertThat(instrumentResult.getResults().get(1).getError().getErrors())
+        .anyMatch(e -> e.contains("Invalid number: #N/A"));
+  }
+
+  private MvcResult importInstruments(String settingsJson, String csv) throws Exception {
+    return mockMvc
+        .perform(
+            multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                .file(csvFile("instrumentsFile", "instruments.csv", csv))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .param("importSettings", settingsJson)
+                .header("apiKey", apiKey))
         .andReturn();
   }
 }

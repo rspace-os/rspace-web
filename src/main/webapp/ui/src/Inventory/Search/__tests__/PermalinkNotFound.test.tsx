@@ -31,8 +31,8 @@ describe("PermalinkNotFound", () => {
     await renderWithNavigation(<PermalinkNotFound permalink={{ type: "subsample", id: 9, version: 2 }} />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("Version 2 of this subsample could not be found.");
-    expect(alert).toHaveTextContent("The version may never have existed. View the latest version.");
+    expect(alert).toMatchTextContent("Version 2 of this subsample could not be found.");
+    expect(alert).toMatchTextContent("The version may never have existed. View the latest version.");
     const link = screen.getByRole("link", { name: "View the latest version" });
     expect(link).toHaveAttribute("href", "/inventory/subsample/9");
   });

@@ -61,7 +61,7 @@ describe("StorageTemperature", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("unspecified");
+        expect(container).toMatchTextContent("unspecified");
       });
       test("`storageTempMax` is null.", () => {
         const { container } = render(
@@ -82,7 +82,7 @@ describe("StorageTemperature", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("unspecified");
+        expect(container).toMatchTextContent("unspecified");
       });
       test("Both values are null.", () => {
         const { container } = render(
@@ -103,7 +103,7 @@ describe("StorageTemperature", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("unspecified");
+        expect(container).toMatchTextContent("unspecified");
       });
     });
     describe("Display a string when both values are valid temperatures,", () => {
@@ -127,7 +127,7 @@ describe("StorageTemperature", () => {
           </ThemeProvider>,
           { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
         );
-        expect(container).toHaveTextContent("Between 1°C and 2°C.");
+        expect(container).toMatchTextContent("Between 1°C and 2°C.");
       });
       describe("That renders the units correctly.", () => {
         test("Celsius", () => {
@@ -149,7 +149,7 @@ describe("StorageTemperature", () => {
               />
             </ThemeProvider>,
           );
-          expect(container).toHaveTextContent("0°C");
+          expect(container).toMatchTextContent("0°C");
         });
         test("Kelvin", () => {
           const { container } = render(
@@ -170,7 +170,7 @@ describe("StorageTemperature", () => {
               />
             </ThemeProvider>,
           );
-          expect(container).toHaveTextContent("0K");
+          expect(container).toMatchTextContent("0K");
         });
         test("Fahrenheit", () => {
           const { container } = render(
@@ -191,7 +191,7 @@ describe("StorageTemperature", () => {
               />
             </ThemeProvider>,
           );
-          expect(container).toHaveTextContent("0°F");
+          expect(container).toMatchTextContent("0°F");
         });
       });
     });

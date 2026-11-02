@@ -7,7 +7,8 @@ import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import materialTheme from "@/theme";
-import RequestsList, { type ApiSampleRequestListItem } from "../RequestsList";
+import RequestsList from "../RequestsList";
+import type { ApiSampleRequestListItem } from "../sampleRequest";
 
 function renderWithProviders(
   ui: React.ReactElement,
@@ -428,7 +429,7 @@ describe("RequestsList error handling", () => {
 
     // The bug this guards against: data silently falling back to [], showing "No requests found"
     // (or the owner's own empty "nothing pending" state) with no indication anything went wrong.
-    expect(await screen.findByRole("alert")).toHaveTextContent("inventory:requestsManagement.loadError");
+    expect(await screen.findByRole("alert")).toMatchTextContent("inventory:requestsManagement.loadError");
     expect(screen.queryByText("inventory:requestsManagement.noResults")).not.toBeInTheDocument();
 
     succeed = true;

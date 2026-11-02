@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { uploadNewGalleryVersion } from "@/modules/workspace/galleryUpload";
@@ -12,16 +12,14 @@ function makeFile(): File {
 }
 
 describe("uploadNewGalleryVersion", () => {
-  // request.formData() can't be used here: undici's multipart parser fails
-  // to decode a jsdom-constructed File part in this test environment, so the
-  // request body is asserted as raw multipart bytes instead.
+  // These tests check the FormData passed to fetch. Node's fetch fails with a
+  // content-length mismatch when it serialises a jsdom File, so the handler must
+  // not read the request body here.
   it("posts multipart form data with the file and selectedMediaId to the upload endpoint", async () => {
-    const setSpy = vi.spyOn(FormData.prototype, "set");
-    let multipartBody = "";
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
     let contentType: string | null = null;
     server.use(
-      http.post("/gallery/ajax/uploadFile", async ({ request }) => {
-        multipartBody = await request.text();
+      http.post("/gallery/ajax/uploadFile", ({ request }) => {
         contentType = request.headers.get("Content-Type");
         return HttpResponse.json({
           data: { id: 55, oid: { idString: "GL55" }, name: "replacement.png", type: "Image" },
@@ -34,10 +32,10 @@ describe("uploadNewGalleryVersion", () => {
     await uploadNewGalleryVersion({ mediaId: 55, file: makeFile() });
 
     expect(String(contentType).startsWith("multipart/form-data; boundary=")).toBe(true);
-    expect(multipartBody).toContain('name="xfile"; filename=');
-    expect(multipartBody).toContain('name="selectedMediaId"\r\n\r\n55');
-    expect(setSpy).toHaveBeenCalledWith("selectedMediaId", "55");
-    const file = setSpy.mock.calls.find(([name]) => name === "xfile")?.[1];
+    const body = fetchSpy.mock.calls[0]?.[1]?.body;
+    expect(body).toBeInstanceOf(FormData);
+    expect((body as FormData).get("selectedMediaId")).toBe("55");
+    const file = (body as FormData).get("xfile");
     expect(file).toBeInstanceOf(File);
     expect((file as File).name).toBe("replacement.png");
   });

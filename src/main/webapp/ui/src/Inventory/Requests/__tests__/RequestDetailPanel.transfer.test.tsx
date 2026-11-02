@@ -1,199 +1,30 @@
-import { ThemeProvider } from "@mui/material/styles";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import type React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
-import materialTheme from "@/theme";
-import RequestDetailPanel from "../RequestDetailPanel";
-import type { ApiSampleRequestListItem } from "../RequestsList";
-
-function renderWithProviders(ui: React.ReactElement) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
-}
-
-const OWNER = { id: 1, username: "owner", firstName: "Olive", lastName: "Owner" };
-const REQUESTER = { id: 2, username: "requester", firstName: "Rita", lastName: "Requester" };
-
-// A mutable box so individual tests can swap the signed-in user without re-declaring the mock.
-const currentUser: { value: typeof OWNER } = { value: OWNER };
-vi.mock("@/hooks/api/useWhoAmI", () => ({
-  __esModule: true,
-  default: () => ({
-    tag: "success",
-    value: {
-      ...currentUser.value,
-      hasPiRole: false,
-      hasSysAdminRole: false,
-      email: `${currentUser.value.username}@example.com`,
-      bench: null,
-      workbenchId: null,
-      getBench: () => Promise.reject(new Error("Not implemented by this Person implementation")),
-      isCurrentUser: true,
-      fullName: `${currentUser.value.firstName} ${currentUser.value.lastName}`,
-      label: `${currentUser.value.firstName} ${currentUser.value.lastName} (${currentUser.value.username})`,
-    },
-  }),
-}));
-
-// Both deployment properties default to whatever leaves the pre-existing Choose Sample to
-// Prepare dialog in place (inventory.sampleRequests.available alone isn't enough to skip it).
-const deploymentProperties: Record<string, string> = {
-  "inventory.sampleRequests.available": "DENIED",
-  "inventory.operations.available": "ALLOWED",
-};
-vi.mock("@/hooks/api/useDeploymentProperty", () => ({
-  useDeploymentProperty: (name: string) => ({ tag: "success", value: deploymentProperties[name] }),
-}));
-
-const getUser = vi.fn();
-const addAlert = vi.fn();
-vi.mock("@/stores/use-stores", () => ({
-  __esModule: true,
-  default: () => ({
-    peopleStore: { getUser: (...args: Array<unknown>) => getUser(...args) },
-    uiStore: { addAlert: (...args: Array<unknown>) => addAlert(...args) },
-  }),
-}));
-
-// ApiServiceBase gates every call behind `when(() => !getRootStore().authStore.isSynchronizing)`
-// (see ApiServiceBase.ts) - without this, the real ApiService code backing MSW's handlers below
-// would never even issue its requests.
-vi.mock("@/stores/stores/getRootStore", () => ({
-  __esModule: true,
-  default: () => ({ authStore: { isSynchronizing: false } }),
-}));
-
-// RequestSampleLocations does its own fetching and rendering of the location table; all this
-// test suite needs from it is a way to deterministically select a subsample.
-vi.mock("../RequestSampleLocations", () => ({
-  __esModule: true,
-  default: ({ onSelectSubsample }: { onSelectSubsample: (s: { id: number; name: string }) => void }) => (
-    <button
-      type="button"
-      aria-label="mock-select-subsample"
-      onClick={() => onSelectSubsample({ id: 42, name: "Sample Fifty Five.01" })}
-    />
-  ),
-}));
-
-// PeopleField is a full autocomplete with its own group-member/search fetching; this suite only
-// needs to see which recipient it was given and to simulate the owner manually picking one.
-vi.mock("../../components/Inputs/PeopleField", () => ({
-  __esModule: true,
-  default: ({
-    recipient,
-    restrictToUser,
-    onSelection,
-  }: {
-    recipient: { username: string } | null;
-    restrictToUser?: { username: string };
-    onSelection: (p: unknown) => void;
-  }) => (
-    <div>
-      <span data-testid="recipient-value">{recipient ? recipient.username : "none"}</span>
-      <span data-testid="restrict-to-user-value">{restrictToUser ? restrictToUser.username : "none"}</span>
-      <button type="button" aria-label="mock-pick-recipient" onClick={() => onSelection({ username: "manual-pick" })} />
-      <button type="button" aria-label="mock-clear-recipient" onClick={() => onSelection(null)} />
-    </div>
-  ),
-}));
-
-function baseRequest(overrides: Partial<ApiSampleRequestListItem> = {}): ApiSampleRequestListItem {
-  return {
-    id: 101,
-    status: "PENDING",
-    created: "2026-01-01T10:00:00Z",
-    note: "Please can I have this",
-    requester: REQUESTER,
-    sample: { id: 55, globalId: "SA55", name: "Sample Fifty Five", owner: { id: OWNER.id } },
-    ...overrides,
-  };
-}
-
-function renderPanel(request: ApiSampleRequestListItem | null) {
-  return renderWithProviders(
-    <ThemeProvider theme={materialTheme}>
-      <RequestDetailPanel request={request} />
-    </ThemeProvider>,
-  );
-}
-
-const apiGet = vi.fn();
-const apiQuery = vi.fn();
-const apiUpdate = vi.fn();
-
-const SAMPLE_REQUEST_DETAIL_URL = "/api/inventory/v1/sampleRequests/:id";
-const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
-const SAMPLE_REQUEST_STATUS_URL = "/api/inventory/v1/sampleRequests/:id/status";
-const SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL = "/api/inventory/v1/sampleRequests/:id/actions/fulfilByTransfer";
-const SAMPLE_URL = "/api/inventory/v1/samples/:id";
-
-/**
- * The happy-path handler set re-registered before every test, matching what apiGet/apiQuery/
- * apiUpdate used to default to back when they were the mocked module itself. They're now pure
- * call recorders - asserted on exactly as before - while the response comes from whichever
- * handler (this default set, or a test's own server.use override below) MSW actually matches.
- */
-function defaultHandlers() {
-  return [
-    http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
-      apiGet("sampleRequests", Number(params.id));
-      return HttpResponse.json({
-        statusChanges: [],
-        sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
-      });
-    }),
-    http.get(SAMPLE_URL, ({ params }) => {
-      apiGet("samples", Number(params.id));
-      return HttpResponse.json({ subSamples: [{ id: 1 }] });
-    }),
-    http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
-      apiQuery("sampleRequests", new URL(request.url).searchParams);
-      return HttpResponse.json({ requests: [] });
-    }),
-    http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
-      const body = (await request.json()) as { status: string; reason?: string };
-      apiUpdate("sampleRequests", `${params.id}/status`, body);
-      return HttpResponse.json({ status: body.status });
-    }),
-    http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
-      const body = await request.json();
-      apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
-      return HttpResponse.json({ status: "FULFILLED" });
-    }),
-  ];
-}
-
-/** Makes every fulfilByTransfer PUT for the rest of this test fail with the given status/message. */
-function failFulfilByTransfer(status = 500, message = "Backend unavailable") {
-  server.use(
-    http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
-      const body = await request.json();
-      apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
-      return HttpResponse.json({ message }, { status });
-    }),
-  );
-}
-
-/** Waits for the initial mount fetches (status changes, subsample count, other requests) to settle. */
-async function waitForInitialFetches() {
-  await waitFor(() => expect(apiGet).toHaveBeenCalledWith("sampleRequests", expect.any(Number)));
-  await waitFor(() => expect(apiGet).toHaveBeenCalledWith("samples", expect.any(Number)));
-  await waitFor(() => expect(apiQuery).toHaveBeenCalled());
-}
+import {
+  addAlert,
+  apiGet,
+  apiQuery,
+  apiUpdate,
+  baseRequest,
+  deploymentProperties,
+  failFulfilByTransfer,
+  OWNER,
+  REQUESTER,
+  renderPanel,
+  resetRequestDetailPanelFixtures,
+  SAMPLE_REQUEST_DETAIL_URL,
+  SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL,
+  SAMPLE_REQUESTS_URL,
+  SAMPLE_URL,
+  waitForInitialFetches,
+} from "./RequestDetailPanel.fixtures";
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  currentUser.value = OWNER;
-  deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
-  deploymentProperties["inventory.operations.available"] = "ALLOWED";
-  getUser.mockResolvedValue({ username: REQUESTER.username });
-  server.use(...defaultHandlers());
+  resetRequestDetailPanelFixtures();
 });
 
 describe("RequestDetailPanel transfer", () => {
@@ -229,10 +60,7 @@ describe("RequestDetailPanel transfer", () => {
     const transferDialog = await screen.findByRole("dialog", {
       name: "inventory:requestsManagement.detail.transferDialog.heading",
     });
-    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
-    await waitFor(() =>
-      expect(within(transferDialog).getByTestId("recipient-value")).toHaveTextContent(REQUESTER.username),
-    );
+    expect(within(transferDialog).getByText(`${REQUESTER.firstName} ${REQUESTER.lastName}`)).toBeInTheDocument();
 
     await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
 
@@ -301,7 +129,6 @@ describe("RequestDetailPanel transfer", () => {
     const transferDialog = await screen.findByRole("dialog", {
       name: "inventory:requestsManagement.detail.transferDialog.heading",
     });
-    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
     await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
 
     await waitFor(() =>
@@ -369,7 +196,6 @@ describe("RequestDetailPanel transfer", () => {
     const transferDialog = await screen.findByRole("dialog", {
       name: "inventory:requestsManagement.detail.transferDialog.heading",
     });
-    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
     await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
 
     await waitFor(() =>
@@ -426,44 +252,14 @@ describe("RequestDetailPanel transfer", () => {
       ).toBeNull();
     });
 
-    it("keeps the Recipient field restricted to the requester even after it is cleared", async () => {
+    it("shows the requester as the fixed recipient", async () => {
       const user = userEvent.setup();
       const dialog = await openTransferDialog(user);
 
-      await waitFor(() =>
-        expect(within(dialog).getByTestId("restrict-to-user-value")).toHaveTextContent(REQUESTER.username),
-      );
-
-      await user.click(within(dialog).getByRole("button", { name: "mock-clear-recipient" }));
-
-      expect(within(dialog).getByTestId("recipient-value")).toHaveTextContent("none");
-      // The bug this guards against: clearing the field also lifted restrictToUser, showing
-      // every user in the instance again instead of just the requester.
-      expect(within(dialog).getByTestId("restrict-to-user-value")).toHaveTextContent(REQUESTER.username);
-    });
-
-    it("keeps Transfer disabled until the async requester lookup resolves, even if a recipient is picked manually", async () => {
-      const user = userEvent.setup();
-      let resolveGetUser: ((person: { username: string } | null) => void) | undefined;
-      // Overrides the file-level default (which resolves immediately) so this test controls
-      // exactly when the lookup settles - simulating the window the review comment flagged,
-      // where PeopleField's restrictToUser is still unset and so searches every user.
-      getUser.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            resolveGetUser = resolve;
-          }),
-      );
-      const dialog = await openTransferDialog(user);
-
-      await user.click(within(dialog).getByRole("button", { name: "mock-pick-recipient" }));
-      const transferButton = within(dialog).getByRole("button", { name: "common:actions.transfer" });
-      // The bug this guards against: a recipient being chosen was the only thing gating this
-      // button, so it was clickable here even though the field had no restriction applied yet.
-      expect(transferButton).toBeDisabled();
-
-      resolveGetUser?.({ username: REQUESTER.username });
-      await waitFor(() => expect(transferButton).toBeEnabled());
+      // There is only ever one legal recipient (the backend always transfers to the request's
+      // own requester - see useTransferSampleOwnershipMutation's doc comment in ./mutations.ts),
+      // so this is read-only confirmation of who that is, not a field the owner can change.
+      expect(within(dialog).getByText(`${REQUESTER.firstName} ${REQUESTER.lastName}`)).toBeInTheDocument();
     });
 
     it("disables the Transfer button while the transfer is in flight, preventing a duplicate submission", async () => {
@@ -480,10 +276,9 @@ describe("RequestDetailPanel transfer", () => {
         }),
       );
       const dialog = await openTransferDialog(user);
-      await user.click(within(dialog).getByRole("button", { name: "mock-pick-recipient" }));
 
       const transferButton = within(dialog).getByRole("button", { name: "common:actions.transfer" });
-      await waitFor(() => expect(transferButton).toBeEnabled());
+      expect(transferButton).toBeEnabled();
       await user.click(transferButton);
       await waitFor(() => expect(transferButton).toBeDisabled());
       // A disabled button is a no-op click as far as a real user is concerned; userEvent enforces
@@ -498,6 +293,11 @@ describe("RequestDetailPanel transfer", () => {
       expect(apiUpdate).toHaveBeenCalledTimes(1);
     });
 
+    // The "Both subsamples" (=2) vs "All N subsamples" (other) ICU plural wording is one key as of
+    // RSDEV-1309 (see inventory.json's subsamplesTransferred) - in cimode this suite otherwise runs
+    // in, both render the identical key name regardless of count, so the two render as the same
+    // text here; TransferOwnershipDialog.realI18n.test.tsx verifies the actual plural wording
+    // against a real English catalog instead.
     it("adds the multiple-subsamples bullet when the sample has more than one subsample", async () => {
       const user = userEvent.setup();
       server.use(
@@ -513,26 +313,6 @@ describe("RequestDetailPanel transfer", () => {
           "inventory:requestsManagement.detail.transferDialog.bullets.subsamplesTransferred",
         ),
       ).toBeInTheDocument();
-    });
-
-    it("uses the 'Both subsamples' wording specifically when the sample has exactly two subsamples", async () => {
-      const user = userEvent.setup();
-      server.use(
-        http.get(SAMPLE_URL, ({ params }) => {
-          apiGet("samples", Number(params.id));
-          return HttpResponse.json({ subSamples: [{ id: 1 }, { id: 2 }] });
-        }),
-      );
-      const dialog = await openTransferDialog(user);
-
-      expect(
-        await within(dialog).findByText(
-          "inventory:requestsManagement.detail.transferDialog.bullets.subsamplesTransferredBoth",
-        ),
-      ).toBeInTheDocument();
-      expect(
-        within(dialog).queryByText("inventory:requestsManagement.detail.transferDialog.bullets.subsamplesTransferred"),
-      ).toBeNull();
     });
 
     it("adds the other-requests-rejected bullet when other active requests exist on the same sample", async () => {

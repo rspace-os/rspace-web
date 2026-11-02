@@ -45,7 +45,7 @@ describe("Tags", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("inventory:fields.tags.validation.maxLength");
+        expect(container).toMatchTextContent("inventory:fields.tags.validation.maxLength");
       }),
       { numRuns: 10 },
     );

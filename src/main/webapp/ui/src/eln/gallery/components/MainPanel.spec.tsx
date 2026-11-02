@@ -1,8 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { BunchOfImages, NestedFoldersWithImageFile } from "./MainPanel.story";
 import { MainPanelPage } from "./pageObjects/MainPanelPage";
@@ -61,7 +61,7 @@ function uninstallClipboardStub(): void {
  *
  * Registered via `worker.use(...)`, which always takes priority over the
  * default `/gallery/getUploadedFiles` wildcard catch-all from
- * `galleryAppShellHandlers()` in browserSetup.ts, regardless of registration
+ * `galleryAppShellHandlers()` in browserMocks.ts, regardless of registration
  * order.
  */
 function outerFolderListingHandler() {
@@ -173,7 +173,7 @@ describe("MainPanel", () => {
       await expect.element(panel.gridCell("Outer folder")).toBeVisible();
 
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(1);
+      await expect.poll(() => items.elements().length).toBe(1);
       await expect.element(items.nth(0)).toHaveTextContent("Images");
     });
 
@@ -183,7 +183,7 @@ describe("MainPanel", () => {
       await expect.element(panel.gridCell("Inner folder")).toBeVisible();
 
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(2);
+      await expect.poll(() => items.elements().length).toBe(2);
       await expect.element(items.nth(0)).toHaveTextContent("Images");
       await expect.element(items.nth(1)).toHaveTextContent("Outer folder");
     });
@@ -204,7 +204,7 @@ describe("MainPanel", () => {
 
       // Breadcrumbs should show Images > Outer folder
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(2);
+      await expect.poll(() => items.elements().length).toBe(2);
       await expect.element(items.nth(0)).toHaveTextContent("Images");
       await expect.element(items.nth(1)).toHaveTextContent("Outer folder");
     });
@@ -218,7 +218,7 @@ describe("MainPanel", () => {
 
       // Root gallery section is returned to
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(1);
+      await expect.poll(() => items.elements().length).toBe(1);
       await expect.element(panel.breadcrumbButton("Images")).toHaveTextContent("Images");
       await expect.element(panel.gridCell("Outer folder")).toBeVisible();
     });
@@ -242,7 +242,7 @@ describe("MainPanel", () => {
 
       // Should be back to outer folder showing two breadcrumb items
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(2);
+      await expect.poll(() => items.elements().length).toBe(2);
       await expect.element(panel.breadcrumbButton("Images")).toHaveTextContent("Images");
       await expect.element(panel.breadcrumbButton("Outer folder")).toHaveTextContent("Outer folder");
     });

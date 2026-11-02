@@ -2,7 +2,6 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { when } from "vitest-when";
 import { Optional } from "../../../../util/optional";
 import Zenodo from "../Zenodo";
 import "@/__tests__/__mocks__/matchMedia";
@@ -67,10 +66,7 @@ describe("Zenodo", () => {
       mode: "ENABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present("") },
     };
-    when(update)
-      .calledWith(expectedState)
-
-      .thenReturn(expectedState);
+    vi.when(update).calledWith(expectedState).thenReturn(expectedState);
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
@@ -100,10 +96,7 @@ describe("Zenodo", () => {
       mode: "DISABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present("test-token") },
     };
-    when(update)
-      .calledWith(expectedState)
-
-      .thenReturn(expectedState);
+    vi.when(update).calledWith(expectedState).thenReturn(expectedState);
     render(<ZenodoWrapper state={initialState} />);
     await waitFor(() => {
       screen.getByText("apps:integrations.zenodo.name");
@@ -130,10 +123,7 @@ describe("Zenodo", () => {
       mode: "DISABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present(apiKey) },
     };
-    when(update)
-      .calledWith(expectedState)
-
-      .thenReturn(expectedState);
+    vi.when(update).calledWith(expectedState).thenReturn(expectedState);
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
@@ -167,14 +157,7 @@ describe("Zenodo", () => {
       mode: "ENABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present(apiKey) },
     };
-    when(update)
-      .calledWith(apiKeyState)
-
-      .thenReturn(apiKeyState);
-    when(update)
-      .calledWith(enabledState)
-
-      .thenReturn(enabledState);
+    vi.when(update).calledWith(apiKeyState).thenReturn(apiKeyState).calledWith(enabledState).thenReturn(enabledState);
 
     render(<ZenodoWrapper />);
     await waitFor(() => {

@@ -56,7 +56,7 @@ describe("Description", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
         });
-        expect(container).not.toHaveTextContent("fields.description.maxLength");
+        expect(container).not.toMatchTextContent("fields.description.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
       }),
     );
@@ -71,7 +71,7 @@ describe("Description", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
         });
-        expect(container).toHaveTextContent("fields.description.maxLength");
+        expect(container).toMatchTextContent("fields.description.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
       }),
     );
@@ -86,7 +86,7 @@ describe("Description", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
         });
-        expect(container).toHaveTextContent(`${generatedDescription.length} / 2000`);
+        expect(container).toMatchTextContent(`${generatedDescription.length} / 2000`);
       }),
     );
   });

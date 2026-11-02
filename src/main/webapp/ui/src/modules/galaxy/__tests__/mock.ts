@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import historyFixture from "./fixtures/history.json" with { type: "json" };
 import historyDatasetAssociationFixture from "./fixtures/historyDatasetAssociation.json" with { type: "json" };
 import historyDatasetCollectionAssociationFixture from "./fixtures/historyDatasetCollectionAssociation.json" with {

@@ -107,16 +107,16 @@ describe("TemplatePicker", () => {
         </ThemeProvider>,
       );
       await waitFor(() => {
-        expect(screen.getByRole("table")).toHaveTextContent("foo");
+        expect(screen.getByRole("table")).toMatchTextContent("foo");
       });
 
-      expect(screen.getByRole("table")).toHaveTextContent("bar");
+      expect(screen.getByRole("table")).toMatchTextContent("bar");
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
       await user.click(screen.getByRole("menuitem", { name: /^Dummy saved search/ }));
       await waitFor(() => {
-        expect(screen.getByRole("table")).toHaveTextContent("foo");
+        expect(screen.getByRole("table")).toMatchTextContent("foo");
       });
-      expect(screen.getByRole("table")).not.toHaveTextContent("bar");
+      expect(screen.getByRole("table")).not.toMatchTextContent("bar");
     });
   });
 });

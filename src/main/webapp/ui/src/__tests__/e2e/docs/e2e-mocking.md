@@ -21,9 +21,9 @@ on host loopback, so `localhost:<mock-port>` reaches the same listener from both
 the Java container and Playwright on the host; no LAN address or
 `host.docker.internal` mapping is needed.
 
-The server is built with Node's `http.createServer`, MSW handlers running as
-Express-style middleware via `@mswjs/http-middleware`, and **Hono**
-(`@hono/node-server`) as the fallback listener for unmatched requests.
+The server is a **Hono** app (`@hono/node-server`) behind Node's
+`http.createServer`, with MSW handlers mounted as Hono middleware via
+`@msw/serve`.
 
 ## Why MSW handlers
 
@@ -60,7 +60,7 @@ waits for `GET /e2e-health → 200` before proceeding.
 Each integration exports a `handlers` array of MSW `RequestHandler`s:
 
 ```js
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 export const myHandlers = [
   http.get("/some/path", () => HttpResponse.json(myFixture)),
@@ -78,8 +78,10 @@ while matching, so a handler such as `"/invocations"` also matches
 expressed with an MSW path mask.
 
 `mockServer.ts` passes all integration handlers (plus a health probe) to
-`createMiddleware` from `@mswjs/http-middleware`. MSW handles matched requests
-first; unmatched ones fall through to Hono's `notFound` handler (404).
+`createMiddleware` from `@msw/serve/hono`. MSW handles matched requests first;
+unmatched ones fall through to Hono's `notFound` handler (404). `@msw/serve`
+resolves relative handler paths against the request's origin, so handlers keep
+using paths such as `"/deposit/depositions"`.
 
 ## Fixtures
 

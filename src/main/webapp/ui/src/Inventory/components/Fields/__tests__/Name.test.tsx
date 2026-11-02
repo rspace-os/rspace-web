@@ -37,9 +37,9 @@ function renderNameField(initialValue: string, onErrorStateChange: (value: boole
 describe("Name", () => {
   test("Should initially not be in an error state even though the value is the empty string.", () => {
     const { container } = renderNameField("", () => {});
-    expect(container).not.toHaveTextContent("fields.name.minLength");
-    expect(container).not.toHaveTextContent("fields.name.nonWhitespace");
-    expect(container).toHaveTextContent("0 / 255");
+    expect(container).not.toMatchTextContent("fields.name.minLength");
+    expect(container).not.toMatchTextContent("fields.name.nonWhitespace");
+    expect(container).toMatchTextContent("0 / 255");
   });
   test("Should enter an error state when value is only a single character.", () => {
     fc.assert(
@@ -53,7 +53,7 @@ describe("Name", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: name },
           });
-          expect(container).toHaveTextContent("fields.name.minLength");
+          expect(container).toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
@@ -69,8 +69,8 @@ describe("Name", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedName },
         });
-        expect(container).not.toHaveTextContent("fields.name.minLength");
-        expect(container).not.toHaveTextContent("fields.name.maxLength");
+        expect(container).not.toMatchTextContent("fields.name.minLength");
+        expect(container).not.toMatchTextContent("fields.name.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
       }),
     );
@@ -85,7 +85,7 @@ describe("Name", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: name },
         });
-        expect(container).toHaveTextContent("fields.name.maxLength");
+        expect(container).toMatchTextContent("fields.name.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
       }),
     );
@@ -102,7 +102,7 @@ describe("Name", () => {
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: name },
           });
-          expect(container).toHaveTextContent("fields.name.nonWhitespace");
+          expect(container).toMatchTextContent("fields.name.nonWhitespace");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
@@ -124,13 +124,13 @@ describe("Name", () => {
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: firstValidValue },
           });
-          expect(container).not.toHaveTextContent("fields.name.minLength");
+          expect(container).not.toMatchTextContent("fields.name.minLength");
 
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: secondInvalidValue },
           });
-          expect(container).toHaveTextContent("fields.name.minLength");
+          expect(container).toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
@@ -146,7 +146,7 @@ describe("Name", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedName },
         });
-        expect(container).toHaveTextContent(`${generatedName.length} / 255`);
+        expect(container).toMatchTextContent(`${generatedName.length} / 255`);
       }),
     );
   });

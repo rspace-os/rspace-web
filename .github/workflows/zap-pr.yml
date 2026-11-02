@@ -1,0 +1,61 @@
+name: ZAP PR build
+
+# Builds the PR's WAR with no secrets. zap-pr-scan.yml then scans it using the
+# default branch's copy of that workflow, which PR code cannot change.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout rspace-web (PR head)
+        uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Set up Node + pnpm
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+      - run: corepack enable
+
+      - name: Seed dev deployment.properties
+        run: |
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
+      - name: Package WAR
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=17 -Djava-vendor=temurin -Dtimestamp=${{ github.run_id }}
+
+      - name: Stage WAR
+        run: |
+          mkdir zap-pr-war
+          cp target/*.war zap-pr-war/rspace.war
+
+      - name: Upload WAR
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: zap-pr-war
+          path: zap-pr-war/rspace.war
+          if-no-files-found: error
+          retention-days: 1

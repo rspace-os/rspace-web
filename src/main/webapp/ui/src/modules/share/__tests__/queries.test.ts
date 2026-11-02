@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { describe, expect, test } from "vitest";
 import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { server } from "@/__tests__/mswServer";

@@ -22,18 +22,18 @@ describe("AccessPermissions", () => {
     const sample = makeMockSample({ permittedActions: ["READ", "UPDATE"] });
     sample.setEditable(new Set(["sharingMode", "sharedWith"]), true);
     renderFor(sample);
-    expect(screen.getByRole("alert")).toHaveTextContent("fields.accessPermissions.ownershipControlRequired");
+    expect(screen.getByRole("alert")).toMatchTextContent("fields.accessPermissions.ownershipControlRequired");
     expect(screen.getByRole("radio", { name: /ownerGroups\.title/ })).toBeDisabled();
   });
 
   test("asks for edit mode when the user has ownership control but is not editing", () => {
     renderFor(makeMockSample());
-    expect(screen.getByRole("alert")).toHaveTextContent("fields.accessPermissions.editFirst");
+    expect(screen.getByRole("alert")).toMatchTextContent("fields.accessPermissions.editFirst");
   });
 
   test("explains that edit access is also required when the user can transfer but not edit", () => {
     renderFor(makeMockSample({ permittedActions: ["READ", "CHANGE_OWNER"] }));
-    expect(screen.getByRole("alert")).toHaveTextContent("fields.accessPermissions.ownershipControlRequired");
+    expect(screen.getByRole("alert")).toMatchTextContent("fields.accessPermissions.ownershipControlRequired");
   });
 
   test("in batch edit, cannot be chosen for editing when one item is outside ownership control", () => {
@@ -42,7 +42,7 @@ describe("AccessPermissions", () => {
         new RsSet([makeMockSample({ id: 1 }), makeMockSample({ id: 2, permittedActions: ["READ", "UPDATE"] })]),
       ),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("fields.accessPermissions.ownershipControlRequired");
+    expect(screen.getByRole("alert")).toMatchTextContent("fields.accessPermissions.ownershipControlRequired");
     expect(screen.queryByRole("checkbox", { name: "common:inputs.chooseToEdit.label" })).not.toBeInTheDocument();
   });
 

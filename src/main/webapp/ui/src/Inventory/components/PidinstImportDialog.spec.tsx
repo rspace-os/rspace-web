@@ -1,8 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, onTestFinished, test } from "vitest";
 import { page } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { PidinstImportDialogStory } from "./PidinstImportDialog.story";
 import { PidinstImportDialogPage } from "./pageObjects/PidinstImportDialogPage";
@@ -149,7 +149,7 @@ describe("PidinstImportDialog", () => {
     bringToastsIntoView();
     const errorAlert = dialog.errorAlert();
     await expect.element(errorAlert).toBeVisible();
-    await expect.element(errorAlert).toHaveTextContent("This PID is already linked to instrument IN52.");
+    await expect.element(errorAlert).toMatchTextContent("This PID is already linked to instrument IN52.");
   });
 
   test("refuses to import an already-linked record and names the instrument that links it", async () => {

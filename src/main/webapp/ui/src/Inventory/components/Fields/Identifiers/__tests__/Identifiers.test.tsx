@@ -39,8 +39,8 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={sample1} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
-      expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+      expect(container).toMatchTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).toMatchTextContent("fields.identifiers.wrapper.recommended.title");
     });
     test("an IGSN keeps the IGSN article", () => {
       render(
@@ -61,7 +61,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={container1} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("Material Sample");
+      expect(container).toMatchTextContent("Material Sample");
     });
   });
   describe("When an instrument has a PIDINST_B2INST identifier", () => {
@@ -73,8 +73,8 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument1} />
         </ThemeProvider>,
       );
-      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
-      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+      expect(container).not.toMatchTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).not.toMatchTextContent("fields.identifiers.wrapper.recommended.title");
     });
 
     /*
@@ -90,7 +90,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument1} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("fields.identifiers.wrapper.inventoryFields.title");
+      expect(container).toMatchTextContent("fields.identifiers.wrapper.inventoryFields.title");
     });
   });
   describe("When an instrument has a PIDINST_DATACITE identifier", () => {
@@ -102,8 +102,8 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument1} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
-      expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+      expect(container).toMatchTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).toMatchTextContent("fields.identifiers.wrapper.recommended.title");
     });
     test("a registered PIDINST identifier keeps the registration article", () => {
       const instrument1: InventoryRecord = makeMockInstrument();
@@ -168,7 +168,9 @@ describe("Identifiers section", () => {
         </ThemeProvider>,
       );
 
-      expect(screen.getByTestId("identifier-state")).toHaveTextContent("fields.identifiers.list.stateLabels.submitted");
+      expect(screen.getByTestId("identifier-state")).toMatchTextContent(
+        "fields.identifiers.list.stateLabels.submitted",
+      );
     });
 
     /*
@@ -434,7 +436,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.pidinstCreated");
+      expect(container).toMatchTextContent("fields.identifiers.list.stateInfo.pidinstCreated");
     });
   });
 
@@ -507,9 +509,9 @@ describe("Identifiers section", () => {
        * as one or offer to preview it. Both used to happen, because an imported PID carries the
        * provider's own findable/accepted state.
        */
-      expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.linkedPidinst");
-      expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.findablePidinst");
-      expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.pidinstAccepted");
+      expect(container).toMatchTextContent("fields.identifiers.list.stateInfo.linkedPidinst");
+      expect(container).not.toMatchTextContent("fields.identifiers.list.stateInfo.findablePidinst");
+      expect(container).not.toMatchTextContent("fields.identifiers.list.stateInfo.pidinstAccepted");
       expect(screen.queryByRole("button", { name: PREVIEW })).not.toBeInTheDocument();
     });
 
@@ -521,8 +523,8 @@ describe("Identifiers section", () => {
       );
       // the section itself must be gone, not merely the warning: RSpace cannot push an edit to a
       // record it does not own, so an editable Publisher field would be a lie
-      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
-      expect(container).not.toHaveTextContent("fields.identifiers.missingDetails");
+      expect(container).not.toMatchTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).not.toMatchTextContent("fields.identifiers.missingDetails");
     });
 
     /*
@@ -539,7 +541,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={linkedInstrument()} />
         </ThemeProvider>,
       );
-      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.inventoryFields.title");
+      expect(container).not.toMatchTextContent("fields.identifiers.wrapper.inventoryFields.title");
       expect(
         screen.queryByRole("checkbox", {
           name: "inventory:fields.identifiers.wrapper.inventoryFields.includeOnPage",

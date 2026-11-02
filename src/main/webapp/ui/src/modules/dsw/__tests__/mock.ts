@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import currentUserFixture from "./fixtures/currentUser.json" with { type: "json" };
 import projectsFixture from "./fixtures/projects.json" with { type: "json" };
 import questionnaireFixture from "./fixtures/questionnaire.json" with { type: "json" };

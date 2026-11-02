@@ -1,6 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { suppressFireAndForget404, worker } from "@/__tests__/browserSetup";
+import { suppressFireAndForget404, worker } from "@/__tests__/browserMocks";
 import { type AnimalsRequest, pyratHandlers } from "./mocks/pyratMocks";
 import { PyratDialogStory } from "./PyratDialog.story";
 import { PyratDialogPage } from "./pageObjects/PyratDialogPage";
@@ -143,8 +143,8 @@ describe("PyratDialog insertion", () => {
 
     await expect
       .element(provenanceCell)
-      .toHaveTextContent(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
-    await expect.element(serverLink).toHaveTextContent(/^fakepyrat \(https:\/\/demo\.pyrat\.example\)$/);
+      .toMatchTextContent(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
+    await expect.element(serverLink).toMatchTextContent(/^fakepyrat \(https:\/\/demo\.pyrat\.example\)$/);
     await expect.element(serverLink).toHaveAttribute("href", "https://demo.pyrat.example");
     await expect.element(serverLink).toHaveAttribute("rel", "noreferrer");
   });

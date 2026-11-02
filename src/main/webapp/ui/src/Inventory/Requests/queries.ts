@@ -2,7 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
 import type { ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
-import { type ApiSampleRequestListItem, type RequestsFilter, type StatusFilter, userDisplayName } from "./RequestsList";
+import {
+  type ApiSampleRequestListItem,
+  type RequestsFilter,
+  type StatusFilter,
+  userDisplayName,
+} from "./sampleRequest";
 
 const ACTIVE_STATUSES = "PENDING,APPROVED";
 const PAST_STATUSES = "REJECTED,FULFILLED,CANCELLED";
@@ -98,6 +103,9 @@ export type OtherActiveSampleRequest = { id: number; status: string; requesterNa
  * requests against the same sample would otherwise share one cache entry keyed on sampleId alone,
  * so opening one just after another could briefly show the previous request's own result,
  * including that request incorrectly appearing in its own "will be rejected" list.
+ *
+ * Returns each other request's raw requester name parts rather than a formatted display string -
+ * that's cosmetic formatting for whichever caller renders it to decide, not this query.
  */
 export function useOtherActiveSampleRequestsQuery(sampleId: number | null, excludeRequestId: number) {
   const { t } = useTranslation(["inventory", "common"]);

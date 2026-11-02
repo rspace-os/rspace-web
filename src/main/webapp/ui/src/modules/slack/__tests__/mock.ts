@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 const RSPACE_BASE_URL = process.env.RSPACE_BASE_URL ?? "http://localhost:8080";
 

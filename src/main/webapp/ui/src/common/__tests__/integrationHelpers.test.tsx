@@ -36,7 +36,7 @@ describe("integrationHelpers", () => {
 
           const { container } = render(<Wrapper />);
           await waitFor(() => {
-            expect(container).not.toHaveTextContent("loading");
+            expect(container).not.toMatchTextContent("loading");
           });
           expect(container).toHaveTextContent("false");
         }),
@@ -62,7 +62,7 @@ describe("integrationHelpers", () => {
 
           const { container } = render(<Wrapper />);
           await waitFor(() => {
-            expect(container).not.toHaveTextContent("loading");
+            expect(container).not.toMatchTextContent("loading");
           });
           expect(container).toHaveTextContent("false");
         }),
@@ -86,7 +86,7 @@ describe("integrationHelpers", () => {
 
       const { container } = render(<Wrapper />);
       await waitFor(() => {
-        expect(container).not.toHaveTextContent("loading");
+        expect(container).not.toMatchTextContent("loading");
       });
       expect(container).toHaveTextContent("true");
     });
@@ -96,7 +96,7 @@ describe("integrationHelpers", () => {
 
       const { container } = render(<Wrapper />);
       await waitFor(() => {
-        expect(container).not.toHaveTextContent("loading");
+        expect(container).not.toMatchTextContent("loading");
       });
       expect(container).toHaveTextContent("error");
     });

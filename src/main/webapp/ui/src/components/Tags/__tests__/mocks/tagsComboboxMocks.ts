@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { FINAL_DATA_SIGNAL } from "../../ParseEncodedTagStrings";
 
 const ONTOLOGY_ENDPOINT = "/workspace/editor/structuredDocument/userTagsAndOntologies";

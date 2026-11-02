@@ -375,6 +375,7 @@ export default class SearchStore {
       parentLocation: null,
       lastNonWorkbenchParent: null,
       lastMoveDate: null,
+      sharingMode: "OWNER_GROUPS",
       _links: [],
     };
     const instrument = new InstrumentModel(new MemoisedFactory(), instrumentAttrs);

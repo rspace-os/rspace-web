@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import AlertContext from "../../../../stores/contexts/Alert";

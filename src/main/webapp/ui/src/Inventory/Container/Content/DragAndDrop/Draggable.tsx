@@ -1,6 +1,8 @@
 import { useDraggable } from "@dnd-kit/core";
 import Badge from "@mui/material/Badge";
+import { observer } from "mobx-react-lite";
 import React, { type ReactNode } from "react";
+import SearchContext from "@/stores/contexts/Search";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { Container, Location } from "../../../../stores/definitions/Container";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -43,6 +45,23 @@ function calculateRelativeCoords(
 function areAnyOfTheSelectedLocationsEmpty(container: Container): boolean {
   if (!container.selectedLocations) return true;
   return !container.selectedLocations.every((l) => Boolean(l.content));
+}
+
+/**
+ * Whether the content of `location` can be dragged, by pointer or with Space.
+ */
+export function canStartDrag(
+  container: Container,
+  location: Location,
+  search: { uiConfig: { dragAndDropDisabled: boolean } },
+  moveStore: { isMoving: boolean },
+): boolean {
+  return (
+    location.content !== null &&
+    !areAnyOfTheSelectedLocationsEmpty(container) &&
+    !moveStore.isMoving &&
+    !search.uiConfig.dragAndDropDisabled
+  );
 }
 
 type DraggableProps = {
@@ -101,7 +120,14 @@ type DraggableProps = {
  * a drag-and-drop operation. It is used to wrap the rendering of a location's
  * content so that the user may move that content to a different location.
  */
-export function Draggable({ container, location, content, tabIndex, hasFocus, children }: DraggableProps): ReactNode {
+export const Draggable = observer(function Draggable({
+  container,
+  location,
+  content,
+  tabIndex,
+  hasFocus,
+  children,
+}: DraggableProps): ReactNode {
   const { moveStore } = useStores();
   const { thisLocationIsTheOrigin, dragAndDropInProgress, numberOfItemsBeingDragged } = useHelpers();
 
@@ -117,7 +143,8 @@ export function Draggable({ container, location, content, tabIndex, hasFocus, ch
    * than having to cancel the current move operation, move it to where it
    * should be, and then re-attempt the A to B move.
    */
-  const disabled = areAnyOfTheSelectedLocationsEmpty(container) || moveStore.isMoving;
+  const { search } = React.useContext(SearchContext);
+  const disabled = !canStartDrag(container, location, search, moveStore);
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     disabled,
@@ -180,4 +207,4 @@ export function Draggable({ container, location, content, tabIndex, hasFocus, ch
       </Badge>
     </div>
   );
-}
+});

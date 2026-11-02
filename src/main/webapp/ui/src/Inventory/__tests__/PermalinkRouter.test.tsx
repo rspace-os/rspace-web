@@ -54,38 +54,38 @@ describe("PermalinkRouter", () => {
     renderAt("/inventory/subsample/SS4v1", "subsample");
 
     expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/subsample/4");
-    expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
+    expect(screen.getByTestId("location-search")).toMatchTextContent("version=1");
     // and the redirected route resolves to the versioned permalink search
-    expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
+    expect(screen.getByTestId("search-router")).toMatchTextContent('"version":1');
   });
 
   test("a versioned instrument Global Id redirects with the version as a search param", () => {
     renderAt("/inventory/instrument/IN4v1", "instrument");
 
     expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/instrument/4");
-    expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
-    expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
+    expect(screen.getByTestId("location-search")).toMatchTextContent("version=1");
+    expect(screen.getByTestId("search-router")).toMatchTextContent('"version":1');
   });
 
   test("a versioned instrument template Global Id redirects with the version as a search param", () => {
     renderAt("/inventory/instrumenttemplate/NT4v1", "instrumenttemplate");
 
     expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/instrumenttemplate/4");
-    expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
-    expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
+    expect(screen.getByTestId("location-search")).toMatchTextContent("version=1");
+    expect(screen.getByTestId("search-router")).toMatchTextContent('"version":1');
   });
 
   test("an unversioned Global Id redirects without inventing a version", () => {
     renderAt("/inventory/sample/SA42", "sample");
 
     expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/sample/42");
-    expect(screen.getByTestId("location-search")).not.toHaveTextContent("version");
+    expect(screen.getByTestId("location-search")).not.toMatchTextContent("version");
   });
 
   test("a plain numeric id with a version param is passed straight through", () => {
     renderAt("/inventory/subsample/4?version=1", "subsample");
 
-    expect(screen.getByTestId("search-router")).toHaveTextContent(
+    expect(screen.getByTestId("search-router")).toMatchTextContent(
       '"permalink":{"type":"subsample","id":4,"version":1}',
     );
   });
@@ -93,7 +93,7 @@ describe("PermalinkRouter", () => {
   test("a numeric id without a version resolves a null version", () => {
     renderAt("/inventory/subsample/4", "subsample");
 
-    expect(screen.getByTestId("search-router")).toHaveTextContent(
+    expect(screen.getByTestId("search-router")).toMatchTextContent(
       '"permalink":{"type":"subsample","id":4,"version":null}',
     );
   });

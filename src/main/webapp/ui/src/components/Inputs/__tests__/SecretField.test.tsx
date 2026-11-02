@@ -66,7 +66,7 @@ describe("SecretField", () => {
     const input = screen.getByLabelText("Secret");
 
     await user.type(input, "new");
-    expect(screen.getByRole("status")).toHaveTextContent("new");
+    expect(screen.getByRole("status")).toMatchTextContent("new");
 
     await user.clear(input);
     expect(screen.getByRole("status")).toHaveTextContent("null");

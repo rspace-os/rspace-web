@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import notebookFixture from "./fixtures/notebookID.json" with { type: "json" };
 import notebooksFixture from "./fixtures/notebooks.json" with { type: "json" };
 import recordsFixture from "./fixtures/records.json" with { type: "json" };

@@ -1,7 +1,7 @@
-import DOMPurify from "dompurify";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
+import { sanitizeInventoryRichText } from "./inventoryRichText";
 import Editor from "./StyledTinyMceEditor";
 
 export type TextFieldArgs = {
@@ -35,7 +35,7 @@ export default function TextField({ onChange, ...props }: TextFieldArgs): React.
       return (
         <span
           dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(props.value, { ADD_ATTR: ["target"] }),
+            __html: sanitizeInventoryRichText(props.value),
           }}
         ></span>
       );

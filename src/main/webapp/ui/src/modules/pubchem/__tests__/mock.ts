@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import reactionMoleculeFixtures from "./fixtures/reactionMolecules.json" with { type: "json" };
 import riboflavinSearchFixture from "./fixtures/riboflavinSearch.json" with { type: "json" };
 import riboflavinSynonymsFixture from "./fixtures/riboflavinSynonyms.json" with { type: "json" };

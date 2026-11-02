@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 /**
  * Shared `GET .../oauth/authorize` mock: redirects to the caller-supplied

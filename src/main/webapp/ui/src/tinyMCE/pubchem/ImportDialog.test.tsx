@@ -145,7 +145,7 @@ describe("ImportDialog", () => {
       name: "workspace:tinymce.pubchem.dialog.searchResults",
     });
     await waitFor(() => {
-      expect(searchResults).toHaveTextContent(/Aspirin/);
+      expect(searchResults).toMatchTextContent(/Aspirin/);
     });
   });
 
@@ -247,7 +247,7 @@ describe("ImportDialog", () => {
     await performSearch(user, "error");
     const alert = await screen.findByRole("alert");
     expect(alert).toBeVisible();
-    expect(alert).toHaveTextContent("There was an error");
+    expect(alert).toMatchTextContent("There was an error");
   });
 
   test("Should reset state when dialog is closed and reopened", async () => {
