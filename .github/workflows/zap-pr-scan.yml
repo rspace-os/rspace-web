@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PENTEST_REF: "20878c4895e5e7c138cdf314174bbf3233828d73"
+  PENTEST_REF: "f5a3fbf2918c5c3dc6c8a45afe021eff604db8c6"
   PLAN: quick-release
   REPORT_DIR: reports
   # Internal Docker network shared by RSpace, MariaDB, and ZAP only.

@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
 
 const theme = createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR));
 
-const StoichiometryDialogEntrypoint = (props: StandaloneDialogInnerProps) => {
+const StoichiometryDialogRoot = (props: StandaloneDialogInnerProps) => {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
@@ -41,4 +41,4 @@ const StoichiometryDialogEntrypoint = (props: StandaloneDialogInnerProps) => {
   );
 };
 
-export default StoichiometryDialogEntrypoint;
+export default StoichiometryDialogRoot;

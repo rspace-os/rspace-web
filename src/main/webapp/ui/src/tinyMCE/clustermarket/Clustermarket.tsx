@@ -30,7 +30,7 @@ import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
 
 type ClustermarketArgs = {
-  defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
+  defaultBookingType?: BOOKING_TYPE[keyof BOOKING_TYPE];
   clustermarket_web_url: string;
 };
 type HeaderCell = {
