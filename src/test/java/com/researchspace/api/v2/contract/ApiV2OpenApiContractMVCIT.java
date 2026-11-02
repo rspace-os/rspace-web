@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.contract;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -7,6 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import java.util.Set;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -72,6 +79,41 @@ class ApiV2OpenApiContractMVCIT {
         .perform(get(OPENAPI))
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, Matchers.containsString("no-store")))
         .andExpect(header().doesNotExist(HttpHeaders.ETAG));
+  }
+
+  @Test
+  @DisplayName("the served document passes the standard OpenAPI parser")
+  void theServedDocumentPassesTheStandardOpenApiParser() throws Exception {
+    String json =
+        mockMvc
+            .perform(get(OPENAPI))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    SwaggerParseResult parsed = new OpenAPIV3Parser().readContents(json, null, new ParseOptions());
+
+    assertTrue(parsed.getMessages().isEmpty(), String.join("; ", parsed.getMessages()));
+    // The parser checks operation IDs, references and path parameters, but not these two.
+    OpenAPI document = parsed.getOpenAPI();
+    Set<String> schemes = document.getComponents().getSecuritySchemes().keySet();
+    for (Operation operation :
+        document.getPaths().values().stream()
+            .flatMap(item -> item.readOperations().stream())
+            .toList()) {
+      assertTrue(
+          operation.getResponses().keySet().stream()
+              .allMatch(code -> code.equals("default") || code.matches("[1-5](\\d\\d|XX)")),
+          operation.getOperationId());
+      if (operation.getSecurity() != null) {
+        operation
+            .getSecurity()
+            .forEach(
+                requirement ->
+                    assertTrue(
+                        schemes.containsAll(requirement.keySet()), operation.getOperationId()));
+      }
+    }
   }
 
   @Nested
@@ -150,6 +192,9 @@ class ApiV2OpenApiContractMVCIT {
       "post, /api/v2/oauth/tokens",
       "get,  /api/v2/users/me",
       "get,  /api/v2/users/me/profile-image",
+      "get,  /api/v2/users/me/booking-preferences",
+      "put,  /api/v2/users/me/booking-preferences",
+      "delete, /api/v2/users/me/booking-preferences",
       "get,  /api/v2/booking-settings/access-grantees",
       "get,  /api/v2/booking-configuration-targets",
     })
