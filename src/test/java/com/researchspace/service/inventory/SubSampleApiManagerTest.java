@@ -1248,6 +1248,10 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertNotNull(subSampleInfoAsSeenByOtherUser.getBarcodes());
     assertNotNull(subSampleInfoAsSeenByOtherUser.getParentContainers());
     assertNull(subSampleInfoAsSeenByOtherUser.getModifiedBy()); // unavailable in limited view
+    assertTrue(
+        ((ApiSubSampleInfoWithSampleInfo) subSampleInfoAsSeenByOtherUser)
+            .getSampleInfo()
+            .isClearedForLimitedView());
 
     // as otherUser try retrieving the subSample
     ApiSubSample subSampleAsSeenByOtherUser =
@@ -1269,6 +1273,9 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertNull(sampleAsSeenByOtherUser.getFields());
     assertNull(sampleAsSeenByOtherUser.getAttachments());
     assertNull(sampleAsSeenByOtherUser.getQuantity());
+    assertNull(sampleAsSeenByOtherUser.getSharingMode());
+    assertNull(sampleAsSeenByOtherUser.getSharedWith());
+    assertTrue(sampleAsSeenByOtherUser.isClearedForLimitedView());
     // the subsample page links to the parent sample using these
     assertNotNull(sampleAsSeenByOtherUser.getSubSampleAlias());
     assertNotNull(sampleAsSeenByOtherUser.getSubSamplesCount());
