@@ -5,7 +5,6 @@ import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/b
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
@@ -27,6 +26,7 @@ type AllBookableItemsDataOptions = {
   routeAvailability?: AvailabilityQuickFilter;
   target?: string;
   mine: boolean;
+  subjectId: number;
   where?: string;
   q?: string;
   types?: readonly string[];
@@ -40,6 +40,7 @@ export function useAllBookableItemsData({
   routeAvailability,
   target,
   mine,
+  subjectId,
   where,
   q,
   types,
@@ -58,12 +59,11 @@ export function useAllBookableItemsData({
     [commonT, t],
   );
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const { data: currentUser } = useCurrentUserQuery();
   const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
   const runtimeFieldState = useApiV2RuntimeFields<AllBookableItem>({
     resourceName: "booking-configurations",
     selectors: runtimeSelectors,
-    request: { token, authScope: currentUser.id },
+    request: { token, authScope: subjectId },
   });
   const config = useMemo(
     () =>
@@ -119,7 +119,7 @@ export function useAllBookableItemsData({
     clock,
     candidateWhere,
     !runtimeFilterBlocked,
-    currentUser.id,
+    subjectId,
     { q, types, mine },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
@@ -181,12 +181,11 @@ export function useAllBookableItemsData({
     quickMode || useQuickAvailability ? [] : availabilityRows,
     bounds,
     token,
-    currentUser.id,
+    subjectId,
   );
 
   return {
     config,
-    currentUser,
     runtimeFieldState,
     preferences,
     userToday,

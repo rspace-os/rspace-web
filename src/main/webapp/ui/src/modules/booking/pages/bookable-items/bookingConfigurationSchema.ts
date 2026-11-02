@@ -18,6 +18,7 @@ const NO_BOOKING_CAPABILITIES = {
   canCreateBlockout: false,
   canSubscribeCalendar: false,
   canLeaveConfiguration: false,
+  canManageNotificationSubscription: false,
 };
 
 export const BookingConfigurationSchema = v.pipe(
@@ -73,6 +74,7 @@ export const BookingConfigurationSchema = v.pipe(
         canCreateBlockout: v.boolean(),
         canSubscribeCalendar: v.boolean(),
         canLeaveConfiguration: v.boolean(),
+        canManageNotificationSubscription: v.optional(v.boolean(), false),
       }),
       NO_BOOKING_CAPABILITIES,
     ),

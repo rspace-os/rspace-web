@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -67,6 +68,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InOrder;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -84,6 +86,8 @@ class BookingConfigurationManagerTest {
   private final BookingItemPermissions itemPermissions = fixture.itemPermissions;
   private final LocalValidatorFactoryBean validator = fixture.validator;
   private final BookingConfigurationManager manager = fixture.manager;
+  private final BookingNotificationSubscriptionManager notificationSubscriptions =
+      fixture.notificationSubscriptions;
 
   @BeforeEach
   void setUp() {
@@ -158,7 +162,9 @@ class BookingConfigurationManagerTest {
     assertEquals(created.getCreatedAt(), created.getUpdatedAt());
     assertEquals(5, created.getSlotGranularityMinutes());
     assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, created.getOpeningHours());
-    verify(dao).saveAndFlush(created);
+    InOrder createOrder = inOrder(dao, notificationSubscriptions);
+    createOrder.verify(dao).saveAndFlush(created);
+    createOrder.verify(notificationSubscriptions).initializeForInstrument(any(Instrument.class));
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
