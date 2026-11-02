@@ -906,3 +906,22 @@ it("subscribes only eligible selected rows and preserves the version", async () 
   await user.click(screen.getByRole("button", { name: "Subscribe to notifications" }));
   await waitFor(() => expect(updates).toEqual([{ id: bookingConfiguration.id, body: { enabled: true, version: 3 } }]));
 });
+
+it("recovers an unparseable status value to the base scope", async () => {
+  const requests: string[] = [];
+  server.use(
+    http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+    http.get("/api/v2/booking-configurations", ({ request }) => {
+      requests.push(new URL(request.url).searchParams.get("where") ?? "");
+      return HttpResponse.json(collectionPage([bookingConfiguration]));
+    }),
+  );
+  renderBookableItemsPage("/booking/all-items?all-bookable-items.where=enabled==oops");
+  await screen.findByRole("link", { name: "Confocal microscope" });
+  expect(screen.getByRole("status")).toHaveTextContent("booking:filters.dropped");
+  for (const where of requests) {
+    expect(where).toContain("state==ACTIVE");
+    expect(where).toContain("enabled==true");
+    expect(where).not.toContain("oops");
+  }
+});

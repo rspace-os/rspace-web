@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { bookingCatalogueKeys, bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import {
@@ -12,6 +12,7 @@ import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
+import { rsqlSelectors } from "@/modules/common/table-list/rsql";
 import { Button } from "@/modules/common/ui/button";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
 import { calendarSubscriptionQueryKey } from "../bookable-items/bookableItemCalendarSubscription";
@@ -32,11 +33,17 @@ import {
   restoreBookingConfiguration,
 } from "../bookable-items/bookingConfiguration";
 import { mutateBookableItems } from "../bookable-items/mutateBookableItems";
+import { DroppedFilterNotice } from "../DroppedFilterNotice";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
 import { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 type BookableItemsBulkMutation = { action: BookableItemsBulkAction; selectedRowIds: readonly string[] };
 export function AllBookableItemsContent() {
+  const { data: currentUser } = useCurrentUserQuery();
+  return <AllBookableItemsContentForUser key={currentUser.id} />;
+}
+
+function AllBookableItemsContentForUser() {
   const { t } = useTranslation(["booking", "common"]);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
@@ -56,6 +63,23 @@ export function AllBookableItemsContent() {
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
   const table = useAllBookableItemsData({ subjectId: currentUser.id });
+  const [droppedStatusFields, setDroppedStatusFields] = useState<readonly string[]>([]);
+  const restoredIssue = table.tableProps.restoredViewIssue;
+  const recoveredStatusView = useRef<string | null>(null);
+  useEffect(() => {
+    if (restoredIssue?.kind !== "invalid") {
+      recoveredStatusView.current = null;
+      return;
+    }
+    if (table.state.filters.expression !== null || recoveredStatusView.current === restoredIssue.encoded) return;
+    const statusFields = rsqlSelectors(restoredIssue.encoded).filter(
+      (field) => field === "state" || field === "enabled",
+    );
+    if (statusFields.length === 0) return;
+    recoveredStatusView.current = restoredIssue.encoded;
+    setDroppedStatusFields(statusFields);
+    restoredIssue.remove();
+  }, [restoredIssue, table.state.filters.expression]);
   const notificationEligible = useRef(new Set<string>());
   for (const row of table.tableProps.rows) {
     if (row.capabilities?.canManageNotificationSubscription) notificationEligible.current.add(String(row.id));
@@ -131,6 +155,7 @@ export function AllBookableItemsContent() {
 
   return (
     <div>
+      <DroppedFilterNotice fields={droppedStatusFields} />
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {t(
@@ -202,7 +227,7 @@ export function AllBookableItemsContent() {
                 {directSysadmin ? (
                   <BookableItemsBulkActions
                     selection={selection}
-                    disabled={bulkMutation.isPending}
+                    disabled={bulkMutation.isPending || notificationMutation.isPending}
                     activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
                     failedAction={failedBulkAction}
                     onAction={onBulkAction}
