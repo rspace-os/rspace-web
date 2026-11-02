@@ -1,5 +1,5 @@
 import { type FormStore, getInput, useField } from "@formisch/react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OpeningHoursEditor } from "@/modules/booking/configuration/OpeningHoursEditor";
 import { MAX_BUFFER_MINUTES, type SchedulingSettings } from "@/modules/booking/configuration/schedulingSettingsSchema";
@@ -19,11 +19,10 @@ import {
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
-import { Button } from "@/modules/common/ui/button";
-import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
+import { DurationUnitInput, durationUnit } from "./DurationUnitInput";
 
 function numberInput(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -55,15 +54,6 @@ const INCREMENT_PROBLEM_KEYS = {
   opening: "settings.errors.incrementOpening",
 } as const satisfies Record<IncrementProblem, string>;
 
-const INCREMENT_UNIT_LABEL_KEYS = {
-  MINUTES: "settings.fields.incrementMinutes",
-  HOURS: "settings.fields.incrementHours",
-  DAYS: "settings.fields.incrementDays",
-} as const satisfies Record<IncrementUnit, string>;
-
-// Unit conversion can leave float noise (0.35 days = 503.99999999999994); fractional minutes stay invalid.
-const wholeMinutes = (value: number) => Number(value.toFixed(6));
-
 /** The increment number and unit remain distinct, including 24 Hours and 1 Day. */
 function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: string; disabled: boolean }) {
   const { t } = useTranslation("booking");
@@ -87,66 +77,24 @@ function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: strin
         });
   return (
     <Field>
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          id={id}
-          type="number"
-          min={unit === "DAYS" ? 1 : 1 / factor}
-          max={MAX_BOOKING_DURATION_MINUTES / factor}
-          step={unit === "DAYS" ? 1 : "any"}
-          required
-          disabled={disabled}
-          className="w-28"
-          value={minutes === undefined ? "" : wholeMinutes(minutes / factor)}
-          ref={field.props.ref}
-          onFocus={field.props.onFocus}
-          onBlur={field.props.onBlur}
-          aria-invalid={problem ? true : undefined}
-          aria-describedby={problem ? `${id}-error` : undefined}
-          onChange={(event) =>
-            field.onChange(
-              event.currentTarget.value === "" ? undefined : wholeMinutes(event.currentTarget.valueAsNumber * factor),
-            )
-          }
-        />
-        <ButtonGroup aria-label={t("settings.fields.incrementUnit")}>
-          {INCREMENT_UNITS.map((candidate) => {
-            const unavailable = candidate === "DAYS" && !daysAvailable;
-            return (
-              <Button
-                key={candidate}
-                type="button"
-                variant={unit === candidate ? "default" : "outline"}
-                aria-pressed={unit === candidate}
-                // Stays focusable while unavailable, so its reason can be read.
-                disabled={disabled || unavailable}
-                focusableWhenDisabled={unavailable && !disabled}
-                aria-describedby={unavailable ? `${id}-days-unavailable` : undefined}
-                title={unavailable ? t("settings.fields.incrementDaysUnavailable") : undefined}
-                className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-                onClick={() => {
-                  if (unavailable || candidate === unit) return;
-                  // The typed number stays; only its unit changes.
-                  field.onChange(
-                    minutes === undefined
-                      ? undefined
-                      : wholeMinutes((minutes / factor) * INCREMENT_UNIT_MINUTES[candidate]),
-                  );
-                  unitField.onChange(candidate);
-                }}
-              >
-                {t(INCREMENT_UNIT_LABEL_KEYS[candidate])}
-              </Button>
-            );
-          })}
-        </ButtonGroup>
-        {/* Inside the row: Field widens its direct sr-only children, which would overflow narrow pages. */}
-        {daysAvailable ? null : (
-          <span id={`${id}-days-unavailable`} className="sr-only">
-            {t("settings.fields.incrementDaysUnavailable")}
-          </span>
-        )}
-      </div>
+      <DurationUnitInput
+        id={id}
+        minutes={minutes}
+        unit={unit}
+        onMinutesChange={field.onChange}
+        onUnitChange={unitField.onChange}
+        unitLabel={t("settings.fields.incrementUnit")}
+        daysAvailable={daysAvailable}
+        min={unit === "DAYS" ? 1 : 1 / factor}
+        step={unit === "DAYS" ? 1 : "any"}
+        required
+        disabled={disabled}
+        ref={field.props.ref}
+        onFocus={field.props.onFocus}
+        onBlur={field.props.onBlur}
+        aria-invalid={problem ? true : undefined}
+        aria-describedby={problem ? `${id}-error` : undefined}
+      />
       {problem ? <FieldError id={`${id}-error`}>{t(INCREMENT_PROBLEM_KEYS[problem])}</FieldError> : null}
     </Field>
   );
@@ -159,6 +107,7 @@ function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: str
   const values = formData<SchedulingSettings>(form);
   const increment = numberInput(values.slotGranularityMinutes);
   const unit = incrementUnitInput(values.incrementUnit);
+  const [maximumUnit, setMaximumUnit] = useState(() => durationUnit(values.maxBookingDurationMinutes ?? 0, unit));
   const invalid =
     values.maxBookingDurationMinutes !== undefined &&
     increment !== undefined &&
@@ -168,21 +117,22 @@ function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: str
     });
   return (
     <Field>
-      <Input
+      <DurationUnitInput
         id={id}
-        type="number"
+        minutes={numberInput(maximumDuration.input)}
+        unit={maximumUnit}
+        onMinutesChange={maximumDuration.onChange}
+        onUnitChange={setMaximumUnit}
+        unitLabel={t("settings.fields.maximumDurationUnit")}
         min={0}
-        max={MAX_BOOKING_DURATION_MINUTES}
-        step={unit !== "DAYS" && increment !== undefined && Number.isInteger(increment) ? increment : 1}
+        step="any"
         required
         disabled={disabled}
-        value={numberInput(maximumDuration.input) ?? ""}
         ref={maximumDuration.props.ref}
         onFocus={maximumDuration.props.onFocus}
         onBlur={maximumDuration.props.onBlur}
         aria-invalid={invalid || undefined}
         aria-describedby={[`${id}-description`, invalid ? `${id}-error` : null].filter(Boolean).join(" ")}
-        onChange={(event) => maximumDuration.onChange(event.currentTarget.valueAsNumber)}
       />
       <FieldDescription id={`${id}-description`}>{t("settings.fields.maximumDurationDescription")}</FieldDescription>
       {invalid ? (
@@ -192,7 +142,9 @@ function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: str
                 minutes: increment,
                 days: increment / INCREMENT_UNIT_MINUTES.DAYS,
               })
-            : t("settings.errors.maximumDuration")}
+            : t("settings.errors.maximumDuration", {
+                increment: `${increment === undefined ? "" : increment / INCREMENT_UNIT_MINUTES[unit]} ${t(unit === "HOURS" ? "settings.fields.incrementHours" : "settings.fields.incrementMinutes")}`,
+              })}
         </FieldError>
       ) : null}
     </Field>

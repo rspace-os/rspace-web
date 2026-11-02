@@ -176,7 +176,12 @@ describe("BookableItemPage", () => {
     const reloaded = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.maximumDuration",
     });
-    expect(reloaded).toHaveValue(120);
+    expect(reloaded).toHaveValue(2);
+    expect(
+      within(screen.getByRole("group", { name: "booking:settings.fields.maximumDurationUnit" })).getByRole("button", {
+        name: "booking:settings.fields.incrementHours",
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.save" })).toBeDisabled();
     await user.clear(reloaded);

@@ -93,7 +93,11 @@ describe("Booking settings time increment", () => {
     const submitted = serve();
     renderBookingSettingsPage();
 
-    await user.click(await screen.findByRole("button", { name: "booking:settings.fields.incrementDays" }));
+    await user.click(
+      within(await screen.findByRole("group", { name: "booking:settings.fields.incrementUnit" })).getByRole("button", {
+        name: "booking:settings.fields.incrementDays",
+      }),
+    );
     await setNumber(user, increment(), "1");
     expect(screen.queryByText("booking:settings.errors.incrementDaysNeedFullWeek")).not.toBeInTheDocument();
 
@@ -128,7 +132,11 @@ describe("Booking settings time increment", () => {
     const submitted = serve();
     renderBookingSettingsPage();
 
-    await user.click(await screen.findByRole("button", { name: "booking:settings.fields.incrementDays" }));
+    await user.click(
+      within(await screen.findByRole("group", { name: "booking:settings.fields.incrementUnit" })).getByRole("button", {
+        name: "booking:settings.fields.incrementDays",
+      }),
+    );
     await setNumber(user, increment(), "1");
     await setNumber(user, maximum(), "1380");
     expect(maximum()).toHaveAccessibleDescription(
@@ -188,12 +196,56 @@ describe("Booking settings time increment", () => {
     const submitted = serve({ slotGranularityMinutes: 1440, incrementUnit: "HOURS" });
     renderBookingSettingsPage();
 
-    await user.click(await screen.findByRole("button", { name: "booking:settings.fields.incrementDays" }));
+    await user.click(
+      within(await screen.findByRole("group", { name: "booking:settings.fields.incrementUnit" })).getByRole("button", {
+        name: "booking:settings.fields.incrementDays",
+      }),
+    );
     await setNumber(user, increment(), "1");
     await user.click(save());
     await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
     expect(submitted[0]).toMatchObject({ slotGranularityMinutes: 1440, incrementUnit: "DAYS" });
     await waitFor(() => expect(unit("Days")).toHaveAttribute("aria-pressed", "true"));
     expect(increment()).toHaveValue(1);
+  });
+});
+
+describe("Maximum duration units", () => {
+  const maximumUnit = (name: "Minutes" | "Hours" | "Days") =>
+    within(screen.getByRole("group", { name: "booking:settings.fields.maximumDurationUnit" })).getByRole("button", {
+      name: `booking:settings.fields.increment${name}`,
+    });
+  it.each([
+    ["Hours", "2", 120],
+    ["Hours", "1.5", 90],
+    ["Days", "3", 4320],
+    ["Days", "0", 0],
+  ] as const)("submits %s %s as %i elapsed minutes", async (unitName, quantity, expected) => {
+    const user = userEvent.setup();
+    const submitted = serve({ maxBookingDurationMinutes: 15 });
+    renderBookingSettingsPage();
+    await screen.findByRole("spinbutton", { name: "booking:settings.fields.maximumDuration" });
+    await user.click(maximumUnit(unitName));
+    await setNumber(user, maximum(), quantity);
+    await user.click(save());
+    await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+    expect(submitted[0]).toMatchObject({ maxBookingDurationMinutes: expected });
+  });
+  it("keeps the quantity when switching units and blocks an invalid multiple", async () => {
+    const user = userEvent.setup();
+    const submitted = serve({ maxBookingDurationMinutes: 60 });
+    renderBookingSettingsPage();
+    await screen.findByRole("spinbutton", { name: "booking:settings.fields.maximumDuration" });
+    expect(maximum()).toHaveValue(1);
+    expect(maximumUnit("Hours")).toHaveAttribute("aria-pressed", "true");
+    await user.click(maximumUnit("Minutes"));
+    expect(maximum()).toHaveValue(1);
+    await user.click(save());
+    expect(submitted).toHaveLength(0);
+    await user.click(maximumUnit("Days"));
+    expect(maximum()).toHaveValue(1);
+    await user.click(save());
+    await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
+    expect(submitted[0]).toMatchObject({ maxBookingDurationMinutes: 1440 });
   });
 });

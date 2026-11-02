@@ -680,9 +680,7 @@ describe("BookableItemPage", () => {
 
     await pageObj.auditTab.click();
     await expect.element(pageObj.detailsPanel).not.toBeVisible();
-    await expect
-      .element(page.getByRole("spinbutton", { name: "Maximum booking duration (elapsed minutes)" }))
-      .not.toBeInTheDocument();
+    await expect.element(page.getByRole("spinbutton", { name: "Maximum booking duration" })).not.toBeInTheDocument();
     expect(maximumDurationInput.closest("[hidden]")).not.toBeNull();
     expect(new URLSearchParams(history.location.search).get("edit")).toBe("true");
 
@@ -785,7 +783,7 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.maximumDuration).toHaveAttribute("aria-invalid", "true");
     await expect.element(pageObj.maximumDuration).toHaveFocus();
     await expect
-      .element(page.getByText("Use 0, or a multiple of the time increment up to 527,040 minutes."))
+      .element(page.getByText("Use 0, or a multiple of the time increment (15 Minutes). The system limit is 366 days."))
       .toBeVisible();
     expect(pageObj.maximumDuration.element().getAttribute("aria-describedby")).toContain("maximum-duration-error");
   });

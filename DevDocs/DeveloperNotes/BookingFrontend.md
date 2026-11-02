@@ -466,3 +466,5 @@ string `payload.deletedAt` as Permanently deleted. The permanent-delete snapshot
 records that timestamp; archive snapshots do not. Booking's `relatedAuditFields`
 allowlist must retain `deletedAt` in the v2 audit response because descriptions
 are withheld. The Archived or deleted filter sends DELETE and includes both kinds.
+
+Maximum-duration inputs share `DurationUnitInput` with time increments. The maximum stores elapsed minutes; Days mean 1,440 elapsed minutes. Its unit is inferred as the largest exact unit on load, with zero using the increment unit, and stays selected during editing. Changing unit preserves the displayed quantity. Increment Days still require all weekdays open all day.
