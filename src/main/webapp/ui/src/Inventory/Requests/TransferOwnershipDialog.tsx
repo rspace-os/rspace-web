@@ -41,8 +41,7 @@ export default function TransferOwnershipDialog({
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
-  // The only option this read-only field will ever show, matching PeopleField's own
-  // "restrictToUser" pattern of narrowing its options down to exactly one.
+  // The only option this read-only field will ever show.
   const requesterOption = { label: requesterFullName };
 
   return (
