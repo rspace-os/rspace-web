@@ -135,8 +135,16 @@ public class ApiSubSampleTest extends SpringTransactionalTest {
     // ApiSubSampleInfo-level properties
     subSampleWithJustLimitedViewProperties.setParentContainers(apiSubSample.getParentContainers());
     subSampleWithJustLimitedViewProperties.setParentLocation(apiSubSample.getParentLocation());
-    // ApiSubSampleInfoWithSampleInfo-level properties
-    subSampleWithJustLimitedViewProperties.setSampleInfo(apiSubSample.getSampleInfo());
+    // ApiSubSampleInfoWithSampleInfo-level properties: limited view of parent sample
+    SampleEntity parentSample =
+        sampleApiMgr.getSampleById(apiSubSample.getSampleInfo().getId(), user);
+    ApiSampleWithoutSubSamples apiParentSampleLimitedView =
+        new ApiSampleWithoutSubSamples(parentSample);
+    apiParentSampleLimitedView.clearPropertiesForLimitedView();
+    apiParentSampleLimitedView.setSubSampleAlias(apiSubSample.getSampleInfo().getSubSampleAlias());
+    apiParentSampleLimitedView.setSubSamplesCount(
+        apiSubSample.getSampleInfo().getSubSamplesCount());
+    subSampleWithJustLimitedViewProperties.setSampleInfo(apiParentSampleLimitedView);
     // ApiSubSample level properties
     subSampleWithJustLimitedViewProperties.setExtraFields(null);
     subSampleWithJustLimitedViewProperties.setNotes(null);
