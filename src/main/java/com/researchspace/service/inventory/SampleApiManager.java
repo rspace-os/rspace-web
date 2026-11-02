@@ -34,6 +34,21 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
       User user);
 
   /**
+   * As {@link #getSamplesForUser(PaginationCriteria, String, InventorySearchDeletedOption, User)},
+   * but optionally limited to samples with a given {@code requestable} value. When {@code
+   * requestable} is {@code true}, this is an instance-wide search across all requestable samples
+   * not in the trash, regardless of the user's own permissions, ownership, or group membership.
+   * {@code query} narrows a requestable search to names containing it, and is ignored otherwise.
+   */
+  ApiSampleSearchResult getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      Boolean requestable,
+      String query,
+      User user);
+
+  /**
    * Return samples created from a given template, visible to the given user. Optionally limit to
    * containers belonging to a particular owner.
    */

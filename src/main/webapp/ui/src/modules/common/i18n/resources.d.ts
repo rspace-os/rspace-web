@@ -5452,7 +5452,8 @@ export default interface Resources {
       },
       "dmpOnline": {
         "errors": {
-          "connect": "Error connecting to DMPonline."
+          "connect": "Error connecting to DMPonline.",
+          "invalidPlanUrl": "The plan identifier is not a DMPonline plan URL."
         }
       },
       "dmpTool": {
@@ -5481,7 +5482,8 @@ export default interface Resources {
         "errors": {
           "authenticationFailed": "Couldn't authenticate with provided credentials.",
           "credentialsRequired": "Egnyte username and password must be provided.",
-          "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials."
+          "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials.",
+          "invalidDomainUrl": "Egnyte Domain URL must be an http:// or https:// address."
         }
       },
       "errors": {
@@ -5820,6 +5822,7 @@ export default interface Resources {
         "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''",
         "missing": "No id to retrieve"
       },
+      "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -6791,7 +6794,8 @@ export default interface Resources {
             "sourcePathRequired": "sourcePath is mandatory"
           }
         },
-        "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files"
+        "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files",
+        "unsupportedConversionFormat": "Conversion to the requested format is not supported."
       }
     },
     "gallery": {
@@ -7458,6 +7462,26 @@ export default interface Resources {
           "tooManySubSamples": "A sample can be created with at most {max} subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
+        "sampleRequest": {
+          "illegalTransition": "A sample request cannot move from {0} to {1}.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
+          "notRequestable": "Sample {0} is not available to request.",
+          "ownSample": "You cannot request material from a sample that you own.",
+          "ownedByRequester": "The requester already owns sample {0}.",
+          "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
+          "reasonRequired": "A reason is required when rejecting a request.",
+          "requestableNotPermitted": "Only the sample's owner, or a PI or Lab Admin of their group, can change whether it is requestable.",
+          "requesterDeleted": "The requester's account no longer exists, so a sample cannot be transferred to them.",
+          "role": {
+            "invalid": "Requested role must be one of: REQUESTER or OWNER"
+          },
+          "status": {
+            "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
+          },
+          "statusNotSettable": "A sample request cannot be set to {0}.",
+          "transferredSampleNotAllowed": "A transferred sample can only be given when fulfilling a request, not when setting it to {0}.",
+          "wrongActor": "You are not permitted to make this change to the request."
+        },
         "search": {
           "deletedItems": {
             "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
@@ -7546,6 +7570,9 @@ export default interface Resources {
           "edited": "Edited List of Materials {0}.",
           "itemsAdded": "Added inventory items: {0}.",
           "itemsRemoved": "Removed inventory items: {0}."
+        },
+        "sampleRequest": {
+          "sent": "To user: {0}"
         }
       },
       "identifier": {
@@ -7553,6 +7580,10 @@ export default interface Resources {
       },
       "listOfMaterials": {
         "label": "List of materials"
+      },
+      "sampleRequest": {
+        "autoFulfilledReason": "This request was fulfilled by transferring the sample to the requester.",
+        "autoRejectedReason": "This request was rejected because the sample was transferred to another user. If you still need it, make a new request to the new owner."
       }
     }
   },
@@ -9395,6 +9426,7 @@ export default interface Resources {
           "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
           "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
           "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
+          "sampleRequestsAvailable": "Lets owners make samples requestable, and lets users request material from them.",
           "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
           "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
           "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",
@@ -10191,7 +10223,10 @@ export default interface Resources {
           "csvRequired": "Please upload a CSV file",
           "details": "There was an error importing the archive: {0}",
           "invalidServerPath": "File {0} is not a valid archive path on the server - must be a readable .zip file{1}",
-          "serverFileUnreadable": "File {0} either does not exist, or cannot be read."
+          "serverFileOutsideImportFolder": "File {0} is not inside the folder configured for server imports.",
+          "serverFileUnreadable": "File {0} either does not exist, or cannot be read.",
+          "serverImportDisabled": "Importing archives from the server is not enabled.",
+          "serverImportNotConfigured": "Importing archives from the server is not configured correctly. Please contact your System Admin."
         },
         "findFile": "Find your file",
         "report": {

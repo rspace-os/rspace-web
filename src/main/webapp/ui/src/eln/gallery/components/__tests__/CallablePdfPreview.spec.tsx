@@ -1,7 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
@@ -14,17 +13,6 @@ import {
 import multiPageSamplePdf from "./fixtures/multi-page-sample.pdf?url";
 import singlePageSamplePdf from "./fixtures/single-page-sample.pdf?url";
 import { CallablePdfPreviewPage } from "./pageObjects/CallablePdfPreviewPage";
-
-/*
- * TODO(firefox): pdf.js uses a Web Worker that does not communicate back in
- * Playwright's headless Firefox environment. The worker spawns but never
- * resolves, so neither `.react-pdf__Page` canvases nor the
- * `.react-pdf__message--error` element ever appear — the Document stays
- * permanently in its "loading" state. All tests that require pdf.js to have
- * finished loading (page render or error render) are skipped on Firefox.
- * Chromium and WebKit retain full coverage.
- */
-const isFirefox = server.browser === "firefox";
 
 /*
  * PDF MOCKING: react-pdf (pdf.js) loads the PDF URL via a real fetch. We serve
@@ -124,7 +112,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.dialog).toBeVisible();
     });
 
-    test.skipIf(isFirefox)("Should load and display PDF document", async () => {
+    test("Should load and display PDF document", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -168,7 +156,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.resetZoomButton).toBeDisabled();
     });
 
-    test.skipIf(isFirefox)("Should zoom in when zoom in button is clicked", async () => {
+    test("Should zoom in when zoom in button is clicked", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -182,7 +170,7 @@ describe("CallablePdfPreview", () => {
       await expect.poll(() => preview.firstPage.element().getBoundingClientRect().width).toBeGreaterThan(initialWidth);
     });
 
-    test.skipIf(isFirefox)("Should enable reset zoom button after zooming", async () => {
+    test("Should enable reset zoom button after zooming", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -191,7 +179,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.resetZoomButton).toBeEnabled();
     });
 
-    test.skipIf(isFirefox)("Should zoom out when zoom out button is clicked", async () => {
+    test("Should zoom out when zoom out button is clicked", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -209,7 +197,7 @@ describe("CallablePdfPreview", () => {
       await expect.poll(() => preview.firstPage.element().getBoundingClientRect().width).toBeLessThan(zoomedInWidth);
     });
 
-    test.skipIf(isFirefox)("Should reset zoom level when reset button is clicked", async () => {
+    test("Should reset zoom level when reset button is clicked", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -225,15 +213,6 @@ describe("CallablePdfPreview", () => {
 
       // After reset the button should be disabled again
       await expect.element(preview.resetZoomButton).toBeDisabled();
-    });
-
-    test.skipIf(isFirefox)("Should be able to click reset zoom button when enabled", async () => {
-      render(<CallablePdfPreviewStory />);
-      await preview.clickOpenPdf();
-      await expect.element(preview.dialog).toBeVisible();
-      await preview.waitForFirstPage();
-      await preview.clickZoomIn();
-      await expect.element(preview.resetZoomButton).toBeEnabled();
     });
   });
 
@@ -252,7 +231,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.pdfDocument).toBeVisible();
     });
 
-    test.skipIf(isFirefox)("Should render multiple pages for multi-page PDF", async () => {
+    test("Should render multiple pages for multi-page PDF", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenMultiPagePdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -275,7 +254,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.pdfDocument).toBeVisible();
     });
 
-    test.skipIf(isFirefox)("Should display single page PDF", async () => {
+    test("Should display single page PDF", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenSinglePagePdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -286,7 +265,7 @@ describe("CallablePdfPreview", () => {
   });
 
   describe("Large PDF handling", () => {
-    test.skipIf(isFirefox)("Should handle large PDF files", async () => {
+    test("Should handle large PDF files", async () => {
       render(<CallablePdfPreviewWithLargePdf />);
       await preview.clickOpenLargePdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -303,7 +282,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.dialog).toBeVisible();
     });
 
-    test.skipIf(isFirefox)("Should display error message for invalid PDF URLs", async () => {
+    test("Should display error message for invalid PDF URLs", async () => {
       render(<CallablePdfPreviewWithError />);
       await preview.clickOpenInvalidPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -316,7 +295,7 @@ describe("CallablePdfPreview", () => {
       await expect.element(preview.dialog).toBeVisible();
     });
 
-    test.skipIf(isFirefox)("Should display error message for corrupted PDF files", async () => {
+    test("Should display error message for corrupted PDF files", async () => {
       render(<CallablePdfPreviewWithCorruptedFile />);
       await preview.clickOpenCorruptedPdf();
       await expect.element(preview.dialog).toBeVisible();
@@ -335,6 +314,7 @@ describe("CallablePdfPreview", () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenPdf();
       await expect.element(preview.dialog).toBeVisible();
+      await preview.waitForFirstPage();
       // Axe must measure the final colors, not the dialog's fade-in opacity.
       await Promise.allSettled(document.getAnimations().map((animation) => animation.finished));
       await expectNoAxeViolations();

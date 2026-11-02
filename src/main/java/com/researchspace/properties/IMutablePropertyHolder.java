@@ -18,6 +18,10 @@ public interface IMutablePropertyHolder extends IPropertyHolder {
    */
   void setStandalone(String standalone);
 
+  void setImportArchiveFromServerEnabled(String enabled);
+
+  void setImportArchiveFromServerFolder(String folder);
+
   /**
    * @param cloud the cloud property to set. <br>
    *     For testing purposes only - should be injected from the environment.

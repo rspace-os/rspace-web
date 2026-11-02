@@ -12,7 +12,6 @@ declare global {
   }
 
   interface Window {
-    ___UserDetailsEntrypointInitialised?: boolean;
     RS?: RSGlobal;
   }
 }
@@ -172,12 +171,8 @@ function initialise(): void {
   });
 }
 
-if (!window.___UserDetailsEntrypointInitialised) {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initialise, { once: true });
-  } else {
-    initialise();
-  }
-
-  window.___UserDetailsEntrypointInitialised = true;
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initialise, { once: true });
+} else {
+  initialise();
 }

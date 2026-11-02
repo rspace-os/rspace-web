@@ -7,6 +7,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import java.util.List;
 
 /** For DAO operations specific to Inventory {@link Sample} (not templates). */
@@ -35,6 +36,25 @@ public interface SampleDao extends SampleEntityDao<Sample> {
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       User user);
+
+  /**
+   * As {@link #getSamplesForUser(PaginationCriteria, Long, String, InventorySearchDeletedOption,
+   * User)}, optionally limited to samples with the given {@code requestable} value.
+   */
+  ISearchResults<Sample> getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      Long parentTemplateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      Boolean requestable,
+      User user);
+
+  /**
+   * Every requestable sample not in the trash, whatever the caller's permissions, optionally
+   * limited to an owner and to names containing {@code query} (case-insensitive).
+   */
+  ISearchResults<Sample> getRequestableSamples(
+      PaginationCriteria<Sample> pgCrit, String ownedBy, String query);
 
   /**
    * Get a global id of a Sample that has a field with given id, or null if there is no such sample.
@@ -73,4 +93,13 @@ public interface SampleDao extends SampleEntityDao<Sample> {
    * @return {@code true} if at least one sample or template with that name is owned by the user
    */
   boolean entityNameExistsForUser(String name, User owner);
+
+  /**
+   * Loads a sample with a shared row lock held until the transaction ends, so a concurrent
+   * ownership change waits for this transaction instead of interleaving with it. Null if absent.
+   */
+  Sample getWithSharedLock(Long id);
+
+  /** Re-reads a loaded sample or template, row-locked until the transaction ends. */
+  void refreshForUpdate(SampleEntity sample);
 }
