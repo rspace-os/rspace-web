@@ -199,11 +199,12 @@ describe("AddBookableItemPage", () => {
       }),
     );
     renderPage("/booking/bookable-items/add?target=IN123");
-    await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" });
+    expect(await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
 
     await user.click(await screen.findByRole("button", { name: "common:relationshipPicker.clear" }));
 
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toHaveValue("");
     await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
     await user.click(
       await screen.findByRole("option", { name: "Spare microscope common:relationshipPicker.openRecord" }),

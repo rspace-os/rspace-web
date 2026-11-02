@@ -1,7 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { BookingDashboard } from "@/modules/booking/pages/BookingPage";
 
 export const Route = createFileRoute("/booking/")({
-  beforeLoad: () => {
-    throw redirect({ to: "/booking/calendar", replace: true });
-  },
+  component: BookingDashboard,
 });

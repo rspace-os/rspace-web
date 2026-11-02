@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type AnyRouter, createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -29,11 +28,9 @@ export async function renderBookingTestPage<TRouter extends AnyRouter>(router: T
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>,
     { wrapper },
   );
