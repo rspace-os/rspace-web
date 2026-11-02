@@ -1,0 +1,88 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!--
+      INTEGRATION BRANCH ONLY: sample-requests-and-booking. Never merge this file or its
+      liquibaseBridge beans into a feature branch or main.
+
+      Runs before liquibase-master.xml, through its own SpringLiquibase bean: Liquibase validates
+      checksums and reads DATABASECHANGELOG once per run, so these changes must land in an earlier run.
+
+      Bridges a sample-requests-and-booking 2.27.1-RC database (224b1df792) to 2.27.2-RC. The booking
+      stack rewrote its changesets and the sample-request status-change changeset was edited in place.
+      Booking and sample-request data is discarded so liquibase-master.xml recreates those tables;
+      the rewritten non-booking changesets are recorded under their new identity. Other data is kept.
+      Any other database marks this as ran without changes.
+    -->
+    <changeSet id="bridge-2.27.1-RC-to-2.27.2-RC" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN">
+            <changeSetExecuted id="rsdev-1187-booking-configuration" author="researchspace"
+                changeLogFile="sqlUpdates/changeLog-rsdev-1187-booking-configuration.xml"/>
+            <changeSetExecuted id="rsdev-booking-cancellation-reason" author="researchspace"
+                changeLogFile="sqlUpdates/changeLog-rsdev-booking-cancellation-reason.xml"/>
+        </preConditions>
+        <sql>
+            SET FOREIGN_KEY_CHECKS = 0;
+            DROP TABLE IF EXISTS
+              BookableItemCalendarSubscription, BookableItemNotificationSubscription,
+              BookingCalendarPermissionGate, BookingConfiguration, BookingConfiguration_AUD,
+              BookingConfigurationDefaults, BookingConfigurationDefaults_AUD,
+              BookingDefaultAccessGrantee, BookingDefaultAccessGrantee_AUD,
+              ResourceAccess, ResourceAccess_AUD, ResourceRoleAssignment, ResourceRoleAssignment_AUD,
+              TimeSlotBooking, TimeSlotBooking_AUD, UserBookingCalendarSubscription,
+              SampleRequestStatusChange, SampleRequest;
+            SET FOREIGN_KEY_CHECKS = 1;
+        </sql>
+        <!-- Forget the dropped tables' changesets, so liquibase-master.xml recreates them. -->
+        <sql>
+            DELETE FROM DATABASECHANGELOG
+            WHERE (AUTHOR = 'researchspace' AND FILENAME IN (
+                    'sqlUpdates/changeLog-booking-independent-hours.xml',
+                    'sqlUpdates/changeLog-booking-opening-weekdays.xml',
+                    'sqlUpdates/changeLog-booking-time-format.xml',
+                    'sqlUpdates/changeLog-rsdev-1173-booking-calendar-permission-gate.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-calendar-subscriptions.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-configuration-soft-delete.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-configuration-state.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-configuration.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-display-preferences.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-increment-fields.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-notification-subscriptions.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-booking-settings.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-resource-access.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-time-slot-booking-kind.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-time-slot-booking.xml',
+                    'sqlUpdates/changeLog-rsdev-1187-user-booking-calendar-subscriptions.xml',
+                    'sqlUpdates/changeLog-rsdev-booking-dev-seed.xml',
+                    'sqlUpdates/changeLog-rsdev-booking-dev-seed-edge-cases.xml'))
+               OR (FILENAME = 'sqlUpdates/changeLog-booking-inherited-access.xml'
+                   AND ID = 'booking-inherited-access-nullable-acl' AND AUTHOR = 'rspace')
+               OR (FILENAME = 'sqlUpdates/liquibase-master.xml'
+                   AND ID = 'rsdev-1187-booking-settings-fresh-origin' AND AUTHOR = 'researchspace')
+               OR (FILENAME = 'sqlUpdates/changeLog-rsdev-1309-sample-requests.xml' AND AUTHOR = 'matthias'
+                   AND ID IN ('2026-09-29-sample-request-table', '2026-09-29-sample-request-status-change-table'));
+        </sql>
+        <!-- Rewritten without a schema change. Liquibase recomputes a NULL MD5SUM. -->
+        <sql>
+            UPDATE DATABASECHANGELOG SET AUTHOR = 'tchoi-rs', MD5SUM = NULL
+            WHERE (FILENAME = 'sqlUpdates/changeLog-rsdev-1225.xml'
+                   AND ID IN ('2026-06-30a', '2026-06-30b') AND AUTHOR = 'tchoi')
+               OR (FILENAME = 'sqlUpdates/changeLog-scheduledmaintenance-nullable-stopuserlogindate.xml'
+                   AND ID = '2026-07-28-scheduledmaintenance-nullable-stopuserlogindate' AND AUTHOR = 'claude')
+               OR (FILENAME = 'sqlUpdates/changeLog-custom-field-index.xml'
+                   AND ID = 'custom-field-definition-index' AND AUTHOR = 'rspace')
+               OR (FILENAME = 'sqlUpdates/changeLog-extra-field-index.xml'
+                   AND ID IN ('extra-field-name-index', 'extra-field-parent-name-index') AND AUTHOR = 'rspace');
+        </sql>
+        <!-- Its booking columns went with the dropped tables; only the Notification change remains. -->
+        <sql>
+            UPDATE DATABASECHANGELOG
+            SET ID = 'rsdev-booking-notification-message', AUTHOR = 'tchoi-rs', MD5SUM = NULL
+            WHERE FILENAME = 'sqlUpdates/changeLog-rsdev-booking-cancellation-reason.xml'
+              AND ID = 'rsdev-booking-cancellation-reason' AND AUTHOR = 'researchspace';
+        </sql>
+    </changeSet>
+</databaseChangeLog>
