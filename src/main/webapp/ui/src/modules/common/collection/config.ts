@@ -1,5 +1,6 @@
+import type { FormStore } from "@formisch/react";
 import type { ParseKeys } from "i18next";
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { ComponentType, CSSProperties, ReactElement, ReactNode } from "react";
 import type Resources from "@/modules/common/i18n/resources";
 import type { RelationshipSource } from "@/modules/common/relationship-picker/sources";
 import type { FilterOperator, RelationshipFilterPicker, runtimeFieldValueTypes } from "./schema";
@@ -87,7 +88,7 @@ export type SelectOption =
       value: string;
     };
 
-export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card"> & {
+export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card" | "radio"> & {
   isOptionDisabled?: (option: SelectOption, data: Partial<TDocument>) => boolean;
 };
 
@@ -115,6 +116,8 @@ type BaseFieldConfig<
   required?: boolean;
   nullable?: boolean;
   readOnly?: boolean;
+  defaultValue?: unknown;
+  writeConstraints?: Readonly<Record<string, unknown>>;
   capabilities?: FieldCapabilities;
   origin?: FieldOrigin;
   filterPicker?: RelationshipFilterPicker;
@@ -144,7 +147,27 @@ export type FieldConfig<TDocument> =
       type: "relationship";
       relationTo: string;
       hasMany: boolean;
+    })
+  | (BaseFieldConfig<TDocument, StructuredFieldFormConfig<TDocument>> & {
+      type: "array" | "object";
+      fields: readonly FieldConfig<Record<string, unknown>>[];
+      minRows?: number;
+      maxRows?: number;
     });
+
+/** A declared object or array uses an application-owned editor, which receives its child metadata. */
+export type StructuredFieldProps<TDocument> = {
+  form: FormStore;
+  disabled: boolean;
+  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "array" | "object" }>;
+  id: string;
+  describedBy: string | undefined;
+  invalid: boolean;
+};
+
+export type StructuredFieldFormConfig<TDocument> = FieldFormConfig<TDocument, never> & {
+  component: ComponentType<StructuredFieldProps<TDocument>>;
+};
 
 type ResolveField<TField> = TField extends { capabilities?: FieldCapabilities }
   ? Omit<TField, "capabilities"> & {

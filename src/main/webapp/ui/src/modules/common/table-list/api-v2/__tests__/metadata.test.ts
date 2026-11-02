@@ -296,6 +296,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
     expect(apiV2CollectionMetadataFromOpenApi<TestRecord>(openApi, "records")).toEqual({
       resourceName: "records",
       fields: ["id", "title", "modifiedAt"],
+      structuredFields: {},
       sorting: {
         fields: ["title", "modifiedAt"],
         default: [{ field: "modifiedAt", direction: "desc" }],
