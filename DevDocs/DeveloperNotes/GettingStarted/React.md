@@ -16,7 +16,7 @@ replacing the previous ESLint + Prettier setup.
 ## Notes
 - Native `fetch` calls to APIs authenticated with a browser UI token should use
   `fetchWithUiToken` from `modules/common/utils/fetchWithUiToken`. A rejected
-  token triggers a session-token refresh and validation. For the same user,
+  token mints a new session-bound API v2 token and validates it. For the same user,
   GET requests retry once and later requests use the stored replacement even
   if their hook or query still holds the expired token. A changed identity
   reloads the tab to discard the previous Operate As user's caches and UI state.

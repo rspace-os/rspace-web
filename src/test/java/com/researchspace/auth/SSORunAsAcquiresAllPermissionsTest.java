@@ -2,6 +2,7 @@ package com.researchspace.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -40,7 +41,9 @@ public class SSORunAsAcquiresAllPermissionsTest extends SpringTransactionalTest 
     User admin = createAndSaveAdminUser();
     User target = createAndSaveRandomUser();
     RSpaceTestUtils.loginSSO(admin.getUsername());
+    String previousContext = BrowserSessionAuthContext.currentOrCreate(session);
     permissionUtils.doRunAs(session, admin, target);
+    assertNotEquals(previousContext, BrowserSessionAuthContext.current(session).orElseThrow());
     // assert runAs has worked
     assertEquals(target.getUsername(), getSubject().getPrincipal().toString());
     // and is using correct realm
