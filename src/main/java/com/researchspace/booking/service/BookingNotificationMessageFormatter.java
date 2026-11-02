@@ -6,6 +6,7 @@ import com.researchspace.model.comms.data.BookingNotificationData;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
@@ -62,7 +63,7 @@ public class BookingNotificationMessageFormatter {
           StringEscapeUtils.escapeHtml4(data.getInstrumentName()),
           StringEscapeUtils.escapeHtml4(data.getInstrumentGlobalIdentifier()),
           formatInstant(data.getStartTime(), zone, locale),
-          formatInstant(data.getEndTime(), zone, locale)
+          formatRangeEnd(data.getStartTime(), data.getEndTime(), zone, locale)
         },
         locale);
   }
@@ -115,15 +116,30 @@ public class BookingNotificationMessageFormatter {
         locale);
   }
 
+  private static String formatRangeEnd(String start, String end, ZoneId zone, Locale locale) {
+    ZonedDateTime endTime = Instant.parse(end).atZone(zone);
+    boolean sameDay = Instant.parse(start).atZone(zone).toLocalDate().equals(endTime.toLocalDate());
+    return formatInstant(endTime, locale, !sameDay);
+  }
+
   private static String formatInstant(String value, ZoneId zone, Locale locale) {
-    Instant instant = Instant.parse(value);
+    return formatInstant(Instant.parse(value).atZone(zone), locale, true);
+  }
+
+  private static String formatInstant(ZonedDateTime value, Locale locale, boolean includeDate) {
     String localDateTime =
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+        (includeDate
+                ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+                : DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
             .withLocale(locale)
-            .withZone(zone)
-            .format(instant);
-    String offset = zone.getRules().getOffset(instant).getId();
-    return localDateTime + " (" + zone.getId() + ", UTC" + ("Z".equals(offset) ? "" : offset) + ")";
+            .format(value);
+    String offset = value.getOffset().getId();
+    return localDateTime
+        + " ("
+        + value.getZone().getId()
+        + ", UTC"
+        + ("Z".equals(offset) ? "" : offset)
+        + ")";
   }
 
   private static boolean isCanonicalInstant(String value) {

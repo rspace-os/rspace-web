@@ -1636,13 +1636,6 @@ export default interface Resources {
       "title": "My Bookings"
     },
     "notificationSubscriptions": {
-      "bulk": {
-        "error": "Notification subscriptions could not be updated. Try again.",
-        "subscribe": "Subscribe",
-        "subscribedCount": "Subscribed to {count, plural, one {# instrument} other {# instruments}}.",
-        "unsubscribe": "Unsubscribe",
-        "unsubscribedCount": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}."
-      },
       "item": {
         "bothEventsDisabled": "Both booking events are off in My Profile.",
         "cancellations": "Booking cancellations",

@@ -16,7 +16,6 @@ public class BookingApiV2JsonConfiguration {
             BookingDisplayPreferencesController.Replacement.class,
             BookingNotificationSubscriptionController.PreferenceReplacement.class,
             BookingNotificationSubscriptionController.SubscriptionReplacement.class,
-            BookingNotificationSubscriptionController.Lookup.class,
-            BookingNotificationSubscriptionController.BulkReplacement.class));
+            BookingNotificationSubscriptionController.Lookup.class));
   }
 }

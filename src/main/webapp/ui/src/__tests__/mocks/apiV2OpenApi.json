@@ -2385,25 +2385,6 @@
         "required" : [ "bannerImageUrl" ],
         "type" : "object"
       },
-      "BulkReplacement" : {
-        "properties" : {
-          "configurationIds" : {
-            "items" : {
-              "exclusiveMinimum" : 0,
-              "format" : "int64",
-              "type" : "integer"
-            },
-            "maxItems" : 100,
-            "minItems" : 1,
-            "type" : "array"
-          },
-          "enabled" : {
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "configurationIds", "enabled" ],
-        "type" : "object"
-      },
       "Capabilities" : {
         "properties" : {
           "canPublish" : {
@@ -14340,40 +14321,6 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Unsubscribe from all instruments without changing the automatic subscription default",
-        "tags" : [ "BookingNotificationSubscriptionController" ],
-        "x-rspace-operation" : "CUSTOM"
-      },
-      "put" : {
-        "description" : "Applies the explicit choice atomically to up to 100 instruments. All must be readable by the caller. Existing defaults and global event preferences are preserved.",
-        "operationId" : "replaceMyBookingNotificationSubscriptions",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BulkReplacement"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StatusList"
-                }
-              }
-            },
-            "description" : "Saved personal subscriptions."
-          }
-        },
-        "security" : [ {
-          "apiKey" : [ ]
-        }, {
-          "bearerAuth" : [ ]
-        } ],
-        "summary" : "Subscribe or unsubscribe from selected readable instruments",
         "tags" : [ "BookingNotificationSubscriptionController" ],
         "x-rspace-operation" : "CUSTOM"
       }

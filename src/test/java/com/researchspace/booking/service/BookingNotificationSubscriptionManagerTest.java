@@ -208,18 +208,6 @@ class BookingNotificationSubscriptionManagerTest {
   }
 
   @Test
-  void bulkValidatesAllAccessBeforeWritingAnySubscription() {
-    BookingConfiguration hidden = new BookingConfiguration();
-    hidden.setId(71L);
-    hidden.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 81L));
-    when(configurations.getSafeNull(71L)).thenReturn(Optional.of(hidden));
-    assertThrows(
-        NotFoundException.class,
-        () -> manager.replaceMany(List.of(CONFIGURATION_ID, 71L), true, owner, actor));
-    verify(subscriptions, never()).saveAndFlush(any());
-  }
-
-  @Test
   void unsubscribeAllLocksDormantInstrumentRowsInStableOrder() {
     when(subscriptions.findInstrumentIdsByUser(owner.getId())).thenReturn(List.of(20L, 10L));
     when(instruments.lockById(10L)).thenReturn(Optional.empty());

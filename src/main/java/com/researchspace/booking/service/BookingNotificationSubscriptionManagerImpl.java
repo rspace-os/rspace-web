@@ -134,31 +134,6 @@ public class BookingNotificationSubscriptionManagerImpl
   }
 
   @Override
-  public List<Status> replaceMany(
-      List<Long> configurationIds, boolean enabled, User subject, User actor) {
-    requireAccess(subject, actor);
-    List<ResolvedItem> items = resolveItems(configurationIds, subject, true);
-    List<Long> instrumentIds =
-        items.stream().map(item -> item.instrument().getId()).distinct().toList();
-    Map<Long, BookableItemNotificationSubscription> savedByInstrument =
-        subscriptions.findByUserAndInstrumentsForUpdate(subject.getId(), instrumentIds).stream()
-            .collect(
-                Collectors.toMap(
-                    subscription -> subscription.getInstrument().getId(), value -> value));
-    Date now = new Date();
-    for (ResolvedItem item : items) {
-      BookableItemNotificationSubscription subscription =
-          savedByInstrument.get(item.instrument().getId());
-      subscription = upsert(subscription, subject, item.instrument(), enabled, now);
-      subscriptions.saveAndFlush(subscription);
-      savedByInstrument.put(item.instrument().getId(), subscription);
-    }
-    return items.stream()
-        .map(item -> status(item, savedByInstrument.get(item.instrument().getId()), subject))
-        .toList();
-  }
-
-  @Override
   public int unsubscribeAll(User subject, User actor) {
     requireAccess(subject, actor);
     // The instrument lock serializes this update with preference changes and ownership transfers.

@@ -12,7 +12,6 @@ import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.webapp.controller.MVCTestBase;
-import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,7 +88,7 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
         .andExpect(
             jsonPath(
                     "$.paths['/api/v2/users/me/booking-notification-subscriptions'].put.operationId")
-                .value("replaceMyBookingNotificationSubscriptions"))
+                .doesNotExist())
         .andExpect(
             jsonPath(
                     "$.paths['/api/v2/users/me/booking-notification-subscriptions'].delete.operationId")
@@ -205,12 +204,10 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
         .andExpect(status().isConflict());
     mockMvc
         .perform(
-            put(SUBSCRIPTIONS)
+            put(itemPath(first))
                 .header("apiKey", key)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    JacksonUtil.toJson(
-                        Map.of("configurationIds", List.of(first, second), "enabled", true))))
+                .content(JacksonUtil.toJson(Map.of("enabled", true, "version", version + 1))))
         .andExpect(status().isOk());
     mockMvc.perform(delete(SUBSCRIPTIONS).header("apiKey", key)).andExpect(status().isOk());
     mockMvc

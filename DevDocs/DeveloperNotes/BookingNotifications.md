@@ -46,16 +46,13 @@ the setting; request bodies never accept a user ID.
 | GET | `/booking-configurations/{id}/notification-subscription` | Saved subscription, version and effective event delivery |
 | PUT | Same | `{enabled: boolean, version: number}`; stale version returns 409 |
 | POST | `/users/me/booking-notification-subscriptions/lookup` | `{configurationIds: number[]}`; `{docs: [...]}` current-user subscription documents |
-| PUT | `/users/me/booking-notification-subscriptions` | `{configurationIds: number[], enabled: boolean}`; explicit bulk choice |
-| DELETE | Same | Unsubscribe from all instruments; returns `{updatedCount: number}` |
+| DELETE | `/users/me/booking-notification-subscriptions` | Unsubscribe from all instruments; returns `{updatedCount: number}` |
 
 Item responses contain `configurationId`, `enabled`, `version`, `createdEnabled`,
 `cancelledEnabled` and `emailEnabled`. An absent saved row is off and has version `-1`;
 reads do not initialize subscriptions from a changing default. Single-item writes use
-optimistic concurrency. Batch requests accept at most 100 configuration IDs and are atomic:
-a request containing an unauthorized item is rejected. The UI submits the selected
-instruments together; it does not silently skip items. Bulk choices intentionally
-apply the requested state to the selected instruments without per-row version preconditions.
+optimistic concurrency. Batch lookups accept at most 100 configuration IDs.
+An unauthorized item rejects the whole lookup request.
 
 Unsubscribe-all retains saved off choices and leaves the automatic-subscribe, global event
 and email preferences unchanged. It can therefore be followed by automatic subscription to
@@ -72,8 +69,8 @@ that global booking event preferences also gate delivery, while its email prefer
 controls email only. No delivery-status summary is displayed.
 Both radio controls use the shared `RenderFields` select
 field with `form.widget: "radio"`. The existing `select` and `card` widgets remain available.
-All bookable items uses the production table's row selection for bulk subscribe/unsubscribe;
-it does not contain a notification switch on each row.
+All bookable items has no row selection or bulk subscription actions.
+Personal subscriptions are managed on the item page.
 
 All readable instruments offer the same personal controls. There is no access-level or
 notification column, per-row toggle, or access-lost panel.

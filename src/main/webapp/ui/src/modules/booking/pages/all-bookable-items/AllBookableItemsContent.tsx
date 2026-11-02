@@ -1,12 +1,10 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
 import { type AllBookableItem, hasAvailabilityFilter, withAvailability } from "./availabilityQuickFilters";
-import { BookingNotificationBulkActions } from "./BookingNotificationBulkActions";
 import { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 const currentDate = () => new Date();
@@ -24,7 +22,6 @@ function AllBookableItemsContentForUser({
   clock = currentDate,
   subjectId,
 }: AllBookableItemsContentProps & { subjectId: number }) {
-  const { t: commonT } = useTranslation("common");
   const {
     date,
     availability: routeAvailability,
@@ -37,16 +34,7 @@ function AllBookableItemsContentForUser({
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items/" });
   const navigate = useNavigate({ from: "/booking/all-items/" });
-  const {
-    config,
-    invalidFilter,
-    catalogue,
-    runtimeFieldState,
-    selectedNotificationIds,
-    setSelectedNotificationIds,
-    notificationSubscriptionMutation,
-    ...data
-  } = useAllBookableItemsData({
+  const { config, invalidFilter, catalogue, runtimeFieldState, ...data } = useAllBookableItemsData({
     clock,
     date,
     routeAvailability,
@@ -62,7 +50,6 @@ function AllBookableItemsContentForUser({
   const { filters, userToday, rows, quickFilterError, quickFilterPending } = data;
 
   const setDate = (nextDate: string) => {
-    setSelectedNotificationIds(new Set());
     const remaining = withAvailability(filters.expression, undefined);
     void navigate({
       search: (current) => ({
@@ -77,7 +64,6 @@ function AllBookableItemsContentForUser({
     });
   };
   const resetView = () => {
-    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -99,7 +85,6 @@ function AllBookableItemsContentForUser({
     if (nextSearch === q && nextWhere === where && !target && !routeAvailability && page === 1) {
       return;
     }
-    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({
         ...current,
@@ -114,7 +99,6 @@ function AllBookableItemsContentForUser({
     });
   };
   const removeRestoredViewIssue = () => {
-    setSelectedNotificationIds(new Set());
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
@@ -166,7 +150,6 @@ function AllBookableItemsContentForUser({
         onChange: (nextPage) => {
           const nextPageNumber = nextPage.pageSize === pageSize ? nextPage.pageIndex + 1 : 1;
           if (nextPageNumber === page && nextPage.pageSize === pageSize) return;
-          setSelectedNotificationIds(new Set());
           void navigate({
             search: (current) => ({
               ...current,
@@ -178,26 +161,6 @@ function AllBookableItemsContentForUser({
         },
       },
     },
-    selection: {
-      value: selectedNotificationIds,
-      onChange: setSelectedNotificationIds,
-      disabled: notificationSubscriptionMutation.isPending,
-      maximumCount: 100,
-      getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
-      renderActions: (selection) => {
-        const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
-        return (
-          <BookingNotificationBulkActions
-            selection={selection}
-            selectedConfigurationIds={selectedConfigurationIds}
-            pending={notificationSubscriptionMutation.isPending}
-            onAction={(configurationIds, enabled) =>
-              notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
-            }
-          />
-        );
-      },
-    },
   };
 
   return (
@@ -205,7 +168,6 @@ function AllBookableItemsContentForUser({
       {...data}
       types={types}
       mine={mine}
-      setSelectedNotificationIds={setSelectedNotificationIds}
       tableProps={tableProps}
       setDate={setDate}
       resetView={resetView}

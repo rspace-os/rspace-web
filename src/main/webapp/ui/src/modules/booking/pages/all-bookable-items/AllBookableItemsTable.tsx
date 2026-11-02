@@ -29,12 +29,7 @@ import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 type AllBookableItemsTableProps = Omit<
   ReturnType<typeof useAllBookableItemsData>,
-  | "config"
-  | "invalidFilter"
-  | "catalogue"
-  | "runtimeFieldState"
-  | "selectedNotificationIds"
-  | "notificationSubscriptionMutation"
+  "config" | "invalidFilter" | "catalogue" | "runtimeFieldState"
 > & {
   types?: readonly string[];
   mine: boolean;
@@ -57,8 +52,6 @@ export function AllBookableItemsTable({
   quickFilterPending,
   quickFilterError,
   rows,
-  setSelectedNotificationIds,
-  notificationFeedback,
   useQuickAvailability,
   availability,
   types,
@@ -150,7 +143,6 @@ export function AllBookableItemsTable({
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: mine,
         onClick: () => {
-          setSelectedNotificationIds(new Set());
           void navigate({
             search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
             replace: true,
@@ -211,16 +203,6 @@ export function AllBookableItemsTable({
             </Button>
           )}
         </div>
-      ) : null}
-      {notificationFeedback ? (
-        <p role="status" className="text-sm text-primary">
-          {t(
-            notificationFeedback.enabled
-              ? "notificationSubscriptions.bulk.subscribedCount"
-              : "notificationSubscriptions.bulk.unsubscribedCount",
-            { count: notificationFeedback.count },
-          )}
-        </p>
       ) : null}
       <TableList
         {...tableProps}

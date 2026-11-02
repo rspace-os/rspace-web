@@ -25,7 +25,6 @@ import {
   bookableItemFixtures,
   bookableItemsHandlers,
   bookableItemsOpenApi,
-  bookerBookingAccess,
   bookingCataloguePage,
   collectionPage,
   sampleBookingEvents,
@@ -202,50 +201,18 @@ describe("AllBookableItemsPage", () => {
     expect(await screen.findByRole("link", { name: "Add" })).toHaveAttribute("href", "/booking/bookable-items/add");
   });
 
-  it("subscribes selected owned and readable non-owned items in bulk", async () => {
-    const user = userEvent.setup();
-    let updateBody: unknown;
+  it("does not offer notification selection or bulk subscription actions", async () => {
     server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
-        const page = candidatePage([
-          bookableItemFixtures[0],
-          {
-            ...bookableItemFixtures[1],
-            ...bookerBookingAccess,
-            capabilities: { ...bookerBookingAccess.capabilities, canManageNotificationSubscription: true },
-          },
-        ]);
-        return HttpResponse.json({ ...page, pageSize: Number(new URL(request.url).searchParams.get("limit")) });
-      }),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-      http.put("/api/v2/users/me/booking-notification-subscriptions", async ({ request }) => {
-        const body = (await request.json()) as { configurationIds: number[]; enabled: boolean };
-        updateBody = body;
-        return HttpResponse.json({
-          docs: body.configurationIds.map((configurationId) => ({
-            configurationId,
-            enabled: body.enabled,
-            version: 1,
-            createdEnabled: true,
-            cancelledEnabled: true,
-            emailEnabled: false,
-          })),
-        });
-      }),
       ...bookableItemsHandlers(() => undefined),
     );
-    renderPage();
-
-    const confocalSelection = await screen.findAllByRole("checkbox", { name: "Select Confocal microscope" });
-    const electronSelection = await screen.findAllByRole("checkbox", { name: "Select Electron microscope" });
-    await user.click(confocalSelection[0]);
-    await user.click(electronSelection[0]);
-    await user.click(screen.getByRole("button", { name: "Subscribe" }));
-
-    await waitFor(() => expect(updateBody).toEqual({ configurationIds: [7, 8], enabled: true }));
-    expect(await screen.findByText("Subscribed to 2 instruments.")).toBeVisible();
-    expect(screen.queryByRole("columnheader", { name: "My notifications" })).not.toBeInTheDocument();
+    await renderPage();
+    await screen.findAllByRole("link", { name: "Confocal microscope" });
+    expect(screen.queryByRole("checkbox", { name: "Select Confocal microscope" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Subscribe" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Unsubscribe" })).not.toBeInTheDocument();
   });
 
   it("combines Owned Items with catalogue and availability requests", async () => {

@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,6 +19,43 @@ class BookingNotificationMessageFormatterTest {
 
   private final BookingNotificationMessageFormatter formatter =
       new BookingNotificationMessageFormatter(new JsonMessageSource());
+
+  @Test
+  void sameDayRangesNameTheDateOnceAndOvernightRangesKeepBothDates() {
+    BookingNotificationData data = data("2026-11-06T15:00:00Z", "2026-11-06T16:00:00Z");
+    String sameDay =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US);
+    assertEquals(1, sameDay.split("Nov 6, 2026", -1).length - 1, sameDay);
+    assertTrue(sameDay.contains("to 4:00 PM (UTC, UTC)"), sameDay);
+    data.setEndTime("2026-11-07T16:00:00Z");
+    String overnight =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US);
+    assertTrue(overnight.contains("Nov 6, 2026"), overnight);
+    assertTrue(overnight.contains("Nov 7, 2026"), overnight);
+  }
+
+  @Test
+  void dateElisionUsesTheDisplayZoneRatherThanUtc() {
+    ZoneId berlin = ZoneId.of("Europe/Berlin");
+    String sameDay =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            data("2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z"),
+            berlin,
+            Locale.US);
+    assertEquals(1, sameDay.split("Nov 7, 2026", -1).length - 1, sameDay);
+    assertFalse(sameDay.contains("Nov 6, 2026"), sameDay);
+    String overnight =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            data("2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z"),
+            berlin,
+            Locale.US);
+    assertTrue(overnight.contains("Nov 6, 2026"), overnight);
+    assertTrue(overnight.contains("Nov 7, 2026"), overnight);
+  }
 
   @Test
   void resolvesBrowserInstitutionAndCustomDisplayZones() {
@@ -58,7 +96,7 @@ class BookingNotificationMessageFormatterTest {
             Locale.US);
 
     assertTrue(message.contains("Nov 1, 2026, 1:30 AM (America/New_York, UTC-04:00)"));
-    assertTrue(message.contains("Nov 1, 2026, 1:30 AM (America/New_York, UTC-05:00)"));
+    assertTrue(message.contains("to 1:30 AM (America/New_York, UTC-05:00)"));
   }
 
   @Test

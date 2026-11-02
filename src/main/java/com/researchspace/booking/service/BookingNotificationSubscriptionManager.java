@@ -43,9 +43,6 @@ public interface BookingNotificationSubscriptionManager {
   /** Reads personal subscriptions for a bounded set of visible configurations. */
   List<Status> getMany(List<Long> configurationIds, User subject, User actor);
 
-  /** Atomically applies one explicit choice to a bounded set of readable configurations. */
-  List<Status> replaceMany(List<Long> configurationIds, boolean enabled, User subject, User actor);
-
   /** Disables all of the caller's enabled subscriptions, including dormant former-owner rows. */
   int unsubscribeAll(User subject, User actor);
 

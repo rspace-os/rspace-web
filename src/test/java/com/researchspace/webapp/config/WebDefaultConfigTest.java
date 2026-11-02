@@ -158,8 +158,7 @@ class WebDefaultConfigTest {
             BookingDisplayPreferencesController.Replacement.class,
             BookingNotificationSubscriptionController.PreferenceReplacement.class,
             BookingNotificationSubscriptionController.SubscriptionReplacement.class,
-            BookingNotificationSubscriptionController.Lookup.class,
-            BookingNotificationSubscriptionController.BulkReplacement.class)) {
+            BookingNotificationSubscriptionController.Lookup.class)) {
       assertTrue(ApiV2JsonMappers.isStrictBody(converter, type), type.getName());
     }
     ObjectMapper lookupMapper =

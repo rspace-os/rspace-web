@@ -114,14 +114,14 @@ class BookingNotificationServiceTest {
         notificationType == NotificationType.NOTIFICATION_BOOKING_CREATED
             ? "Booking 42 was created for instrument &lt;Mic &amp; scope&gt; (IN12) from "
                 + "Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-                + "Jan 2, 2026, 5:04 AM (Europe/Berlin, UTC+01:00)."
+                + "5:04 AM (Europe/Berlin, UTC+01:00)."
             : "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was cancelled. It was "
                 + "scheduled from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-                + "Jan 2, 2026, 5:04 AM (Europe/Berlin, UTC+01:00).";
+                + "5:04 AM (Europe/Berlin, UTC+01:00).";
     if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
       expectedMessage =
           "Booking 42 for instrument &lt;Mic &amp; scope&gt; (IN12) was changed to Jan 2, 2026,"
-              + " 4:04 AM (Europe/Berlin, UTC+01:00) to Jan 2, 2026, 5:04 AM (Europe/Berlin,"
+              + " 4:04 AM (Europe/Berlin, UTC+01:00) to 5:04 AM (Europe/Berlin,"
               + " UTC+01:00).";
     }
     assertEquals(expectedMessage, message.getValue());
