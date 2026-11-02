@@ -96,8 +96,9 @@ export function useCalendarAvailabilityLayout({
     getRowId: (row) => String(row.id),
     clientSide: false,
     queryString: false,
-    status:
-      !split.supported || catalogue.isError
+    status: !split.supported
+      ? "idle"
+      : catalogue.isError
         ? "error"
         : catalogue.isPending
           ? "loading"
@@ -144,6 +145,7 @@ export function useCalendarAvailabilityLayout({
     preferences,
     availability,
     supported: split.supported,
-    refetch: catalogue.refetch,
+    queryReady: enabled && split.supported,
+    refetch: () => (enabled && split.supported ? catalogue.refetch() : Promise.resolve(catalogue)),
   };
 }

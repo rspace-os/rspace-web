@@ -11,6 +11,7 @@ import { bookingTarget, busyBooking, otherBooking, ownBooking } from "../mocks/b
 import { bookingPagesHandlers } from "../mocks/bookingPagesMocks";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
 import { CalendarAvailabilityStory } from "./CalendarPage.story";
+import { allowedViews } from "./calendarLayoutUtils";
 
 const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
@@ -95,7 +96,10 @@ function InteractiveCalendar() {
         setMineOnly(false);
       }}
       onViewChange={setView}
-      onLayoutChange={setLayout}
+      onLayoutChange={(next) => {
+        if (!allowedViews[next].includes(view)) setView(next === "resources" ? "week" : "day");
+        setLayout(next);
+      }}
     />
   );
 }

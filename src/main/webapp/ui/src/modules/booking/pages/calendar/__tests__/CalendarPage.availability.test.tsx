@@ -178,6 +178,8 @@ describe("Calendar Availability", () => {
     );
     expect(await screen.findByText(/invalid or unavailable field/)).toBeVisible();
     expect(hits).toBe(0);
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Finding bookable items…")).not.toBeInTheDocument();
   });
   it("opens an event focus link in Resources and removes its availability preset", async () => {
     server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))));

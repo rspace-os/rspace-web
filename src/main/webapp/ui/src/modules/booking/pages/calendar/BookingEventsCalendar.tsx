@@ -257,7 +257,7 @@ export function BookingEventsCalendar({
             </Button>
           </div>
         ) : null}
-        {availabilityLayout.counts.isError ? (
+        {availabilityLayout.queryReady && availabilityLayout.counts.isError ? (
           <div role="alert" className="flex items-center gap-3">
             <span>{t("availabilityLayout.quickFilters.error")}</span>
             <Button variant="outline" onClick={() => void availabilityLayout.counts.refetch()}>

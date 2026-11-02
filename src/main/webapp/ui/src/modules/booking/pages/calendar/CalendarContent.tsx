@@ -127,7 +127,7 @@ export function CalendarContent() {
         }
         isError={
           layout === "availability"
-            ? availabilityLayout.tableProps.status === "error"
+            ? availabilityLayout.queryReady && availabilityLayout.tableProps.status === "error"
             : events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")
         }
         onRetry={() => {
