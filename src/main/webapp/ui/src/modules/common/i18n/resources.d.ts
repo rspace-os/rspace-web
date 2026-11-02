@@ -7677,6 +7677,11 @@ export default interface Resources {
         }
       }
     },
+    "duration": {
+      "days": "{0, plural, one {# day} other {# days}}",
+      "hours": "{0, plural, one {# hour} other {# hours}}",
+      "minutes": "{0, plural, one {# minute} other {# minutes}}"
+    },
     "errors": {
       "ajax": {
         "unauthenticated": {
