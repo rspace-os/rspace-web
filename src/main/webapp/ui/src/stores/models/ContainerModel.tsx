@@ -731,7 +731,12 @@ export default class ContainerModel
       const canSelectThisLocation = location.isSelectable(search);
 
       if (search.uiConfig.onlyAllowSelectingEmptyLocations) {
-        if (canSelectOneMore && canSelectThisLocation) {
+        if (!canSelectThisLocation) return;
+        if (canSelectOneMore) {
+          location.toggleSelected(true);
+        } else if (search.uiConfig.selectionLimit === 1) {
+          // With room for one location, a new pick replaces the old one rather than being refused.
+          for (const selected of selectedLocations) selected.toggleSelected(false);
           location.toggleSelected(true);
         }
       } else {

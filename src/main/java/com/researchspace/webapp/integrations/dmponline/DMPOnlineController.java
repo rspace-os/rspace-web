@@ -107,7 +107,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
   private RestTemplate restTemplate;
 
   public DMPOnlineController() {
-    this.restTemplate = new RestTemplate();
+    this.restTemplate = DMPOnlineProviderImpl.timeoutBoundedRestTemplate();
   }
 
   @PostConstruct

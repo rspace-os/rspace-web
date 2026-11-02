@@ -36,11 +36,21 @@ resolved during design. This file is a glossary only — no implementation detai
   Owner, Manufacturer, etc.).
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
   individual record after creation, outside any template definition.
-- **Description (inventory record)** — the free, formatted text a user writes about
-  a Sample, Subsample, Container, Instrument or template to say what it is. It holds
-  up to 2000 characters counting the formatting markup, the same cap as a subsample
-  note. The description of an ELN record and the content of an Extra text field are
-  different things and keep their own, shorter cap for now.
+- **Description (inventory record)** — the free, formatted text (Inventory rich
+  text) a user writes about a Sample, Subsample, Container, Instrument or template
+  to say what it is. It holds up to 2000 characters counting the formatting markup,
+  the same cap as a subsample note. The description of an ELN record and the content
+  of an Extra text field are different things and keep their own, shorter cap for now.
+- **Inventory rich text** — the formatted text of a Description, subsample note,
+  Extra text field or template text field, written in the Inventory text editor.
+  When it is displayed, only the formatting that editor offers or keeps from pasted
+  text survives: paragraphs, headings, preformatted text, bold, italic, underline,
+  strikethrough, superscript, subscript, text and highlight colour, alignment,
+  indentation, links (including links that open in a new tab) and bulleted and
+  numbered lists. Any other markup or styling is dropped and only its text is kept,
+  however the text arrived (typed, API, CSV import, registry import) and whenever it
+  was saved: no forms, text or password boxes, buttons, or images, whether as
+  elements or as backgrounds. What is stored is not changed.
 
 ## Inventory access permissions
 
@@ -553,6 +563,15 @@ resolved during design. This file is a glossary only — no implementation detai
   (a link field keeps the template's default link, if it has one), unless the field is
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
+
+- **Prevalidation** — the check a CSV import runs on every row of every file before it saves
+  anything: the parents a row names must exist and be editable, and the item's own values
+  must pass the rules of creating it through the API (a name, the length caps on name and
+  description, tag format, quantity, template fields). A row that fails is reported with its
+  row number and reason, the whole import is refused, and nothing is created, not even a new
+  template. A Subsample row that joins a Sample from the same import is not prevalidated: it
+  is checked when that Sample is created, and a failure there rolls the whole import back.
+  _Avoid_: validation error (that is one row's outcome, not the step), dry run
 
 ## Lab Groups and Project Groups
 
