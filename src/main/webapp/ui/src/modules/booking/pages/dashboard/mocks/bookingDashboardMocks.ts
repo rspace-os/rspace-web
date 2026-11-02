@@ -48,7 +48,7 @@ export function dashboardBookingFixture(
     kind: "BOOKING",
     privacy: "full",
     purpose: `Purpose ${id}`,
-    bookedBy: "Ada Lovelace (ada)",
+    bookedBy: "Ada Lovelace",
     canEdit: false,
     canCancel: false,
     ...overrides,
