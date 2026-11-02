@@ -16,7 +16,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import type { UrlUpdateEvent } from "nuqs/adapters/testing";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
@@ -97,7 +97,11 @@ async function renderPage({
   return { searchParams: () => new URLSearchParams(search) };
 }
 
+afterEach(() => vi.useRealTimers());
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   window.localStorage.clear();
 });
 
