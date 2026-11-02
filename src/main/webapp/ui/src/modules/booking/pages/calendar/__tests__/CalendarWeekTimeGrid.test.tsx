@@ -164,7 +164,7 @@ describe("CalendarTimeGrid week", () => {
     const expanded = within(list).getByText("Instrument 2").closest("details");
     if (!expanded) throw new Error("Each listed booking must be an expandable summary");
     expect(expanded).toHaveAttribute("open");
-    expect(within(expanded).getAllByText("Ada Lovelace (ada)")[0]).toBeVisible();
+    expect(within(expanded).getAllByText("Ada Lovelace")[0]).toBeVisible();
     expect(within(expanded).getByRole("link", { name: "Details" })).toHaveAttribute(
       "href",
       "/booking/calendar/bookings/2",
