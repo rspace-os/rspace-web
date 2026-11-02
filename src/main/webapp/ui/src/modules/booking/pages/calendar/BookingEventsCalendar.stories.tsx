@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
+import { createMemoryHistory } from "@tanstack/react-router";
+import { setupWorker } from "msw/browser";
 import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -6,7 +8,9 @@ import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferen
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { bookingTarget, busyBooking, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
+import { bookingPagesHandlers } from "../mocks/bookingPagesMocks";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
+import { CalendarAvailabilityStory } from "./CalendarPage.story";
 
 const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
@@ -67,6 +71,7 @@ function InteractiveCalendar() {
         value?.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
       ),
   );
+  if (layout === "availability") return <CalendarAvailabilityStory />;
   return (
     <BookingEventsCalendar
       date={date}
@@ -101,6 +106,11 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     a11y: { config: { rules: [{ id: "landmark-unique", enabled: false }] } },
+  },
+  beforeEach: async () => {
+    const worker = setupWorker(...bookingPagesHandlers());
+    await worker.start();
+    return () => worker.stop();
   },
   decorators: [
     (Story) => (
@@ -154,4 +164,12 @@ export const Interactive: Story = {
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
     expect(canvas.getByRole("button", { name: "Remove My Bookings filter" })).toBeVisible();
   },
+};
+
+export const Availability: Story = {
+  render: () => (
+    <CalendarAvailabilityStory
+      history={createMemoryHistory({ initialEntries: ["/booking/calendar?layout=availability&date=2026-08-17"] })}
+    />
+  ),
 };

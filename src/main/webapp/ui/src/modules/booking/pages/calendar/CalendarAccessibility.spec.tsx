@@ -75,3 +75,23 @@ test("saves a booking time change from the mobile calendar details sheet", async
   await expect.element(calendar.inlineSave).not.toBeInTheDocument();
   await expect.element(calendar.event("Confocal microscope")).toMatchTextContent("08:15 AM–09:45 AM");
 });
+
+test("supports the Availability view menu with keyboard and accessible period reasons", async () => {
+  await page.viewport(390, 844);
+  render(
+    <CalendarPageStory
+      history={createMemoryHistory({ initialEntries: ["/booking/calendar?layout=availability&date=2026-08-17"] })}
+    />,
+  );
+  await expect.element(page.getByRole("img", { name: "Confocal microscope availability" })).toBeVisible();
+  await calendar.viewMenu.click();
+  await expect
+    .element(page.getByRole("menuitemradio", { name: "Week", exact: true }))
+    .toHaveAttribute("aria-disabled", "true");
+  await expect
+    .element(page.getByRole("menuitemradio", { name: "Month", exact: true }))
+    .toHaveAccessibleDescription("Availability is available for Day only.");
+  await expectNoAxeViolations();
+  await calendar.closeWithEscape();
+  await expect.element(calendar.viewMenu).toHaveFocus();
+});

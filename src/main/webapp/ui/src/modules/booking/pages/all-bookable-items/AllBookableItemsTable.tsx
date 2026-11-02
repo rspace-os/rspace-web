@@ -50,6 +50,7 @@ export function AllBookableItemsTable({
   filters,
   hasNoBookableItems,
   clearSelection,
+  types,
   directSysadmin,
   tableProps,
   resetView,
@@ -145,6 +146,7 @@ export function AllBookableItemsTable({
 
   const quickFilters: TableListFilterButtons = {
     legend: t("allBookableItems.legend"),
+    hasChanges: Boolean(types?.length),
     align: "end",
     buttons: [
       {

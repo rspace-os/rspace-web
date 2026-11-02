@@ -16,6 +16,7 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
   return (
     <TableList
       {...tableProps}
+      stickyActions="when-fitted"
       hideHeader
       hideFilterPanel
       variant="transparent"

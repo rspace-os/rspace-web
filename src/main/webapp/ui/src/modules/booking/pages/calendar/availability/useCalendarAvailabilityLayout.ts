@@ -18,7 +18,7 @@ import {
   useAvailabilityCounts,
   withAvailability,
 } from "./availabilityQuickFilters";
-import { createAllBookableItemsConfig } from "./availabilityTableConfig";
+import { createAvailabilityTableConfig } from "./availabilityTableConfig";
 
 const clock = () => new Date();
 
@@ -41,7 +41,7 @@ export function useCalendarAvailabilityLayout({
   const { t: commonT } = useTranslation("common");
   const rowConfig = useMemo(
     () =>
-      createAllBookableItemsConfig(
+      createAvailabilityTableConfig(
         t("availabilityLayout.quickFilters.availableNow"),
         t("availabilityLayout.quickFilters.freeLaterToday"),
         (globalId) => commonT("tableList.filters.openRecord", { globalId }),

@@ -470,3 +470,10 @@ are withheld. The Archived or deleted filter sends DELETE and includes both kind
 Maximum-duration inputs share `DurationUnitInput` with time increments. The maximum stores elapsed minutes; Days mean 1,440 elapsed minutes. Its unit is inferred as the largest exact unit on load, with zero using the increment unit, and stays selected during editing. Changing unit preserves the displayed quantity. Increment Days still require all weekdays open all day.
 
 Availability uses the sum of Gap before and Gap after between bookings. For a booking draft, maintenance blocks its start minus Gap after through its end plus Gap before. For a maintenance draft, bookings block their reserved start minus Gap before through end plus Gap after, even when double booking is allowed. Fetch envelopes expand by the sum on both sides.
+### Calendar Availability
+
+The Calendar's Availability layout uses the item expression in `calendar-resources.where` and supports Day only. Its local `availability` field is split into the catalogue's availability parameter before requests. Counts retain the other item rules and search, and remove only the availability presets. Presets describe today; selecting a date clears them.
+
+Leaving Availability removes its top-level preset rules in the same URL write as the layout change. A saved availability rule opened in another layout is dropped through the stale-field policy with a non-blocking notice. Availability disables the Resources catalogue, display events and blocking events queries. Its bars still load the bookings needed for availability shading.
+
+The inline buttons retain the former All items presentation. Availability's outer TableList edits the item expression and its nested row table hides its header and filter panel. Other layouts retain the existing event panel and owner projection. The requester rule stays stored while Availability hides its control. All items links to this layout with its search and item expression.

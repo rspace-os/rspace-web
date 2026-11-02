@@ -2,7 +2,7 @@ import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 import { bookableItemHeading } from "../../bookable-items/pageObjects/bookableItemLocators";
 
-type CalendarViewOption = "Time grid" | "By Item" | "Agenda" | "Day" | "Week" | "Month";
+type CalendarViewOption = "Time grid" | "By Item" | "Agenda" | "Availability" | "Day" | "Week" | "Month";
 
 export class CalendarPage {
   get inlineSave(): Locator {

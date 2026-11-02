@@ -10,16 +10,9 @@ import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
-import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
-import { useCreateBooking } from "@/modules/booking/creation/useCreateBooking";
 import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
-import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
-import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
@@ -29,9 +22,7 @@ import {
   bookableItemsOpenApi,
   bookerBookingAccess,
   collectionPage,
-  sampleBookingEvents,
 } from "../bookable-items/mocks/bookableItemsMocks";
-import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { renderBookingTestPage } from "../calendar/__tests__/calendarTestHarness";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 
@@ -47,32 +38,6 @@ vi.mock("./useAllBookableItemsData", async (importOriginal) => {
     },
   };
 });
-
-const fixedClock = () => new Date("2026-08-17T08:30:00Z");
-
-function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
-  const target = configuration.target;
-  if (!target) throw new Error("Expected a bookable item fixture with a target");
-  return {
-    configurationId: configuration.id,
-    configurationVersion: configuration.configurationVersion,
-    targetType: "INSTRUMENT",
-    targetId: target.value.id,
-    globalId: target.globalId,
-    name: target.value.name,
-    timezone: configuration.timezone,
-    slotGranularityMinutes: configuration.slotGranularityMinutes,
-    incrementUnit: configuration.incrementUnit,
-    openingHours: configuration.openingHours,
-    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
-    bufferAfterMinutes: configuration.bufferAfterMinutes,
-    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
-    allowDoubleBooking: configuration.allowDoubleBooking,
-    effectiveRole: configuration.effectiveRole,
-    capabilities: configuration.capabilities,
-    location: target.value.parentContainer?.value ?? null,
-  };
-}
 
 function candidatePage(docs: readonly Omit<BookingConfiguration, "roleSources">[]) {
   return {
@@ -94,16 +59,6 @@ function candidatePage(docs: readonly Omit<BookingConfiguration, "roleSources">[
 
 function catalogueHandler(resolver: Parameters<typeof http.get>[1]) {
   return http.get("/api/v2/booking-catalogue", resolver);
-}
-
-function countsHandler(
-  onRequest: (url: URL) => void = () => undefined,
-  counts = { availableNow: 0, freeLaterToday: 0 },
-) {
-  return http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
-    onRequest(new URL(request.url));
-    return HttpResponse.json(counts);
-  });
 }
 
 const pageRequest = (request: URL) => `${request.searchParams.get("page")}/${request.searchParams.get("limit")}`;
@@ -137,39 +92,6 @@ const readableLocations = [
   { globalId: "IC12", name: "Cold room" },
   { globalId: "BE7", name: "WB ada" },
 ];
-
-function BookingMutationTrigger() {
-  const mutation = useCreateBooking("new-token");
-  return (
-    <button
-      type="button"
-      onClick={() =>
-        void mutation.mutateAsync({
-          target: {
-            configurationId: 7,
-            targetId: 123,
-            globalId: "IN123",
-            name: "Confocal microscope",
-            timezone: "Europe/Berlin",
-            slotGranularityMinutes: 5,
-            incrementUnit: "MINUTES",
-            openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-            bufferBeforeMinutes: 0,
-            bufferAfterMinutes: 0,
-            maxBookingDurationMinutes: 0,
-            allowDoubleBooking: false,
-          },
-          window: { start: "2026-08-17T09:00:00Z", end: "2026-08-17T10:00:00Z" },
-          purpose: null,
-          eventKind: "BOOKING",
-          returnDate: "2026-08-17",
-        })
-      }
-    >
-      {bookingEnglish.bookings.form.submit}
-    </button>
-  );
-}
 
 const sysadmin = { id: 1, hasSysAdminRole: true, session: { operatedAs: false } };
 
@@ -205,91 +127,7 @@ async function renderPage(
   });
 }
 
-async function renderMutationPages(initialEntry: string) {
-  const rootRoute = createRootRoute({
-    component: () => (
-      <BookingCreationStoreProvider>
-        <NuqsAdapter>
-          <Outlet />
-        </NuqsAdapter>
-      </BookingCreationStoreProvider>
-    ),
-  });
-  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      bookingRoute.addChildren([
-        createRoute({
-          getParentRoute: () => bookingRoute,
-          path: "/all-items/",
-          validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage />,
-        }),
-        createRoute({
-          getParentRoute: () => bookingRoute,
-          path: "/bookable-items/$globalId/{-$tab}/",
-          validateSearch: bookableItemSearch,
-          component: BookableItemPage,
-        }),
-      ]),
-    ]),
-    history: createMemoryHistory({ initialEntries: [initialEntry] }),
-  });
-  return renderBookingTestPage(router, {
-    prepareQueryClient: (queryClient) => {
-      queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
-      queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
-    },
-  });
-}
-
 describe("AllBookableItemsPage", () => {
-  it.each([{ name: "Catalogue lab", globalId: "IC999" }, null])(
-    "uses the catalogue location in the table without repeating it in booking availability details: %s",
-    async (location) => {
-      const user = userEvent.setup();
-      const item = { ...catalogueItem(bookableItemFixtures[0]), location };
-      server.use(...bookableItemsHandlers(() => undefined));
-      server.use(
-        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-        http.get("/api/v2/booking-catalogue", () =>
-          HttpResponse.json({ items: [item], page: 1, pageSize: 20, total: 1, facets: { types: ["INSTRUMENT"] } }),
-        ),
-        http.get("/api/v2/bookings", () =>
-          HttpResponse.json({
-            ...collectionPage(
-              sampleBookingEvents.slice(0, 1).map((booking) => ({
-                ...booking,
-                kind: "BOOKING",
-                start: "2026-08-17T10:00:00Z",
-                end: "2026-08-17T11:00:00Z",
-                canEdit: false,
-                canCancel: false,
-                createdAt: "2026-08-01T09:00:00Z",
-                updatedAt: "2026-08-01T09:00:00Z",
-              })),
-            ),
-            hasNextPage: false,
-          }),
-        ),
-      );
-      await renderPage();
-      await screen.findAllByRole("img", { name: "Confocal microscope availability" });
-      if (location) {
-        expect(screen.getAllByRole("link", { name: location.name })[0]).toHaveAttribute("href", "/globalId/IC999");
-      } else {
-        expect(screen.queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
-      }
-      await user.click(screen.getAllByRole("button", { name: /^Confocal microscope, Booked,/ })[0]);
-      const dialog = await screen.findByRole("dialog");
-      await user.click(within(dialog).getByLabelText(/^Show details for Confocal microscope,/));
-      expect(within(dialog).queryByRole("link", { name: location?.name ?? "Imaging lab" })).not.toBeInTheDocument();
-      expect(within(dialog).getByRole("link", { name: "Details" })).toHaveAttribute(
-        "href",
-        "/booking/calendar/bookings/41",
-      );
-    },
-  );
   it("offers item creation outside administration", async () => {
     server.use(
       catalogueHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
@@ -382,7 +220,6 @@ describe("AllBookableItemsPage", () => {
     const [location] = await screen.findAllByRole("link", { name: "WB user1a" });
     expect(location).toHaveAttribute("href", "/globalId/BE1");
     expect(location.parentElement?.textContent).toBe("WB user1a");
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent(/\d/));
     await expectAccessible(container);
   });
 
@@ -477,7 +314,6 @@ describe("AllBookableItemsPage", () => {
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Subscribe" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Unsubscribe" })).not.toBeInTheDocument();
-    await screen.findAllByRole("img", { name: "Confocal microscope availability" });
     await screen.findByRole("link", { name: "Add" });
     expect(screen.queryByRole("button", { name: "Actions for Electron microscope" })).not.toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "Actions for Confocal microscope" })[0]);
@@ -497,15 +333,10 @@ describe("AllBookableItemsPage", () => {
     { selected: false, action: "Owned Items", mine: false },
     { selected: true, action: "Owned Items", mine: false },
     { selected: true, action: "Owned Items", mine: true },
-    { selected: false, action: "Available now", mine: false },
-    { selected: true, action: "Available now", mine: false },
-    { selected: false, action: "Next day", mine: false },
-    { selected: true, action: "Next day", mine: false },
     { selected: false, action: "Reset filters, sorting, and columns to defaults", mine: false },
     { selected: true, action: "Reset filters, sorting, and columns to defaults", mine: false },
   ])("clears selection only when needed: %j", async ({ selected, action, mine }) => {
     const requests: URL[] = [];
-    const countRequests: URL[] = [];
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
@@ -516,13 +347,12 @@ describe("AllBookableItemsPage", () => {
           pageSize: Number(url.searchParams.get("limit")),
         });
       }),
-      countsHandler((url) => countRequests.push(url)),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
       ...bookableItemsHandlers(() => undefined),
     );
     const user = userEvent.setup();
     await renderPage(
-      `/booking/all-items?date=${action.startsWith("Reset") ? "2026-08-18" : "2026-08-17"}&page=2${mine ? "&where=targetOwner%3D%3Dme" : ""}`,
+      `/booking/all-items?q=${action.startsWith("Reset") ? "scope" : ""}&page=2${mine ? "&where=targetOwner%3D%3Dme" : ""}`,
       undefined,
       sysadmin,
     );
@@ -540,33 +370,6 @@ describe("AllBookableItemsPage", () => {
     if (action === "Owned Items") {
       expect(screen.getByRole("button", { name: action })).toHaveAttribute("aria-pressed", String(!mine));
     }
-  });
-
-  it("requests the table's own page and both counts without paging the catalogue", async () => {
-    const requests: URL[] = [];
-    const countRequests: URL[] = [];
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
-        const url = new URL(request.url);
-        requests.push(url);
-        return HttpResponse.json({ ...candidatePage(bookableItemFixtures), pageSize: 20 });
-      }),
-      countsHandler((url) => countRequests.push(url), { availableNow: 2, freeLaterToday: 1 }),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-      ...bookableItemsHandlers(() => undefined),
-    );
-
-    await renderPage();
-
-    expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent("2"));
-    expect(screen.getByRole("button", { name: "Free later" })).toMatchTextContent("1");
-    expect(requests.map(pageRequest)).toEqual(["1/20"]);
-    expect(requests[0].searchParams.has("availability")).toBe(false);
-    expect(requests[0].searchParams.get("totals")).toBe("true");
-    expect(countRequests).toHaveLength(1);
-    expect(countRequests[0].searchParams.has("page")).toBe(false);
   });
 
   it("searches and filters the catalogue by Inventory instrument name", async () => {
@@ -688,45 +491,6 @@ describe("AllBookableItemsPage", () => {
     expect(restores[0].searchParams.getAll("globalId")).toEqual(["IC12", "IC7"]);
   });
 
-  it("loads the visible rows' bars with one booking request while the server counts", async () => {
-    const bookings = vi.fn(() => HttpResponse.json({ ...collectionPage([]), hasNextPage: false }));
-    server.use(
-      catalogueHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/bookings", bookings),
-      ...bookableItemsHandlers(() => undefined),
-    );
-    await renderPage();
-    await screen.findAllByRole("link", { name: "Book" });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent(/\d/));
-    await waitFor(() => expect(bookings).toHaveBeenCalledTimes(1));
-  });
-
-  it("retains every advanced rule through apply, quick-filter changes, and date navigation", async () => {
-    const user = userEvent.setup();
-    const original = "id=ge=7;id=le=7;target==IN123;target==IN123";
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    const { router } = await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}`);
-    expect((await screen.findAllByRole("link", { name: "Confocal microscope" }))[0]).toHaveAttribute(
-      "href",
-      "/booking/bookable-items/IN123",
-    );
-    expect(screen.queryByText("Electron microscope")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^Filters/ }));
-    expect(await screen.findByRole("combobox", { name: "Value for filter 3" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Remove filter 4" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Apply filters" }));
-    expect(router.state.location.search.where).toBe(original);
-    await user.click(screen.getByRole("button", { name: "Available now" }));
-    await waitFor(() => expect(router.state.location.search.where).toBe(`${original};availability==available-now`));
-    await user.click(screen.getByRole("button", { name: "Next day" }));
-    await waitFor(() => expect(router.state.location.search.where).toBe(original));
-  });
-
   it("hydrates runtime property filters before parsing and querying the catalogue", async () => {
     const user = userEvent.setup();
     const original = "target.customFields.SF152==BSL-2";
@@ -802,29 +566,28 @@ describe("AllBookableItemsPage", () => {
     expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument();
   });
 
-  it.each([
-    "availability=available-now&pageSize=50",
-    "types=NOTATYPE&pageSize=50",
-    "date=2026-08-18&target=IN123&q=microscope&page=2&pageSize=50&types=INSTRUMENT",
-  ])("resets the full controlled view with one navigation: %s", async (search) => {
-    const user = userEvent.setup();
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      catalogueHandler(() => HttpResponse.json(candidatePage([]))),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    const { router } = await renderPage(`/booking/all-items?${search}`);
-    const reset = await screen.findByRole("button", { name: "Reset filters, sorting, and columns to defaults" });
-    const navigate = vi.spyOn(router, "navigate");
-    try {
-      await user.click(reset);
-      await waitFor(() => expect(router.state.location.search).toEqual({ pageSize: 50 }));
-      expect(navigate).toHaveBeenCalledOnce();
-    } finally {
-      navigate.mockRestore();
-    }
-  });
+  it.each(["types=NOTATYPE&pageSize=50", "target=IN123&q=microscope&page=2&pageSize=50&types=INSTRUMENT"])(
+    "resets the full controlled view with one navigation: %s",
+    async (search) => {
+      const user = userEvent.setup();
+      server.use(
+        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+        catalogueHandler(() => HttpResponse.json(candidatePage([]))),
+        ...bookableItemsHandlers(() => undefined),
+        http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      );
+      const { router } = await renderPage(`/booking/all-items?${search}`);
+      const reset = await screen.findByRole("button", { name: "Reset filters, sorting, and columns to defaults" });
+      const navigate = vi.spyOn(router, "navigate");
+      try {
+        await user.click(reset);
+        await waitFor(() => expect(router.state.location.search).toEqual({ pageSize: 50 }));
+        expect(navigate).toHaveBeenCalledOnce();
+      } finally {
+        navigate.mockRestore();
+      }
+    },
+  );
 
   it("keeps type filters and the selected page size in the URL and catalogue request", async () => {
     const user = userEvent.setup();
@@ -832,7 +595,6 @@ describe("AllBookableItemsPage", () => {
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
-      countsHandler(),
       http.get("/api/v2/booking-configuration-targets", () => HttpResponse.json([])),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
@@ -867,332 +629,27 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(requests.map(pageRequest)).toContain("1/10"));
     expect(requests.map(pageRequest)).not.toContain("1/100");
   });
-
-  it("shows today's server counts before selecting a filter and after clearing it", async () => {
-    const countRequests: URL[] = [];
+  it("carries item scope through View availability without fetching availability on All items", async () => {
+    const hidden: string[] = [];
+    server.use(...bookableItemsHandlers(() => undefined));
     server.use(
-      catalogueHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures.slice(0, 2)))),
-      countsHandler((url) => countRequests.push(url), { availableNow: 1, freeLaterToday: 1 }),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    await renderPage("/booking/all-items?date=2026-08-20");
-    const available = await screen.findByRole("button", { name: "Available now" });
-    const later = screen.getByRole("button", { name: "Free later" });
-    // The categories are mutually exclusive, so each chip carries what it counts.
-    expect(available).toHaveAccessibleName("Available now");
-    expect(available).toHaveAccessibleDescription("Free at this moment");
-    expect(later).toHaveAccessibleName("Free later");
-    expect(later).toHaveAccessibleDescription("Busy now, free again later today");
-    await waitFor(() => expect(available).toHaveTextContent("Available now1"));
-    expect(later).toHaveTextContent("Free later1");
-    // The counts describe today at the page clock's minute, not the displayed 20 August.
-    expect(countRequests[0].searchParams.get("start")?.startsWith("2026-08-17T")).toBe(true);
-    expect(countRequests[0].searchParams.get("now")).toBe("2026-08-17T08:30:00.000Z");
-    for (const link of screen.getAllByRole("link", { name: "Book" })) {
-      expect(link.getAttribute("href")).toContain("date=2026-08-20");
-    }
-    await userEvent.click(available);
-    await userEvent.click(available);
-    await waitFor(() => expect(available).toHaveAttribute("aria-pressed", "false"));
-    expect(available).toHaveTextContent("Available now1");
-    expect(later).toHaveTextContent("Free later1");
-  });
-
-  it.each(["create", "cancel"])(
-    "refreshes filtered rows and counts after %s without advancing the page clock",
-    async (action) => {
-      const user = userEvent.setup();
-      let bookingChanged = false;
-      const availableCount = () => (bookingChanged === (action === "create") ? 1 : 2);
-      const catalogueRequests: URL[] = [];
-      const countRequests: URL[] = [];
-      server.use(
-        (action === "create" ? http.post : http.patch)(
-          action === "create" ? "/api/v2/bookings" : "/api/v2/bookings/41",
-          () => {
-            bookingChanged = true;
-            return HttpResponse.json(
-              {
-                id: 41,
-                version: 0,
-                target: { relationTo: "instruments", value: 123, globalId: "IN123" },
-                timezone: "Europe/Berlin",
-                start: "2026-08-17T09:00:00Z",
-                end: "2026-08-17T10:00:00Z",
-                state: action === "create" ? "CONFIRMED" : "CANCELLED",
-                kind: "BOOKING",
-                privacy: "full",
-                purpose: null,
-                cancellationReason: null,
-                bookedBy: "Ada Lovelace",
-                canEdit: true,
-                canCancel: true,
-                createdAt: "2026-08-17T08:30:00Z",
-                updatedAt: "2026-08-17T08:30:00Z",
-              },
-              { status: 201 },
-            );
-          },
-        ),
-        catalogueHandler(({ request }) => {
-          catalogueRequests.push(new URL(request.url));
-          return HttpResponse.json(candidatePage(bookableItemFixtures.slice(0, availableCount())));
-        }),
-        http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
-          countRequests.push(new URL(request.url));
-          return HttpResponse.json({ availableNow: availableCount(), freeLaterToday: 2 - availableCount() });
-        }),
-        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-        ...bookableItemsHandlers(() => undefined),
-        http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-      );
-
-      await renderPage(
-        "/booking/all-items?date=2026-08-17&where=availability%3D%3Davailable-now",
-        action === "create" ? (
-          <BookingMutationTrigger />
-        ) : (
-          <DeleteBookingDialog bookingId={41} bookingVersion={0} token="new-token" onDeleted={() => undefined} />
-        ),
-      );
-
-      const available = await screen.findByRole("button", { name: "Available now" });
-      await waitFor(() => expect(available).toHaveTextContent(`Available now${action === "create" ? 2 : 1}`));
-      if (action === "create") {
-        await waitFor(() => expect(screen.getAllByText("Electron microscope")[0]).toBeVisible());
-      } else {
-        expect(screen.queryByText("Electron microscope")).not.toBeInTheDocument();
-      }
-      const initialNow = countRequests.at(-1)?.searchParams.get("now");
-      expect(initialNow).toBe(fixedClock().toISOString());
-
-      if (action === "create") {
-        await user.click(screen.getByRole("button", { name: bookingEnglish.bookings.form.submit }));
-      } else {
-        await user.click(screen.getByRole("button", { name: "Cancel booking" }));
-        await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel booking" }));
-      }
-
-      if (action === "create") {
-        await waitFor(() => expect(screen.queryByText("Electron microscope")).not.toBeInTheDocument());
-      } else {
-        await waitFor(() => expect(screen.getAllByText("Electron microscope")[0]).toBeVisible());
-      }
-      await waitFor(() => expect(available).toHaveTextContent(`Available now${action === "create" ? 1 : 2}`));
-      expect(catalogueRequests.length).toBeGreaterThan(1);
-      expect(countRequests.length).toBeGreaterThan(1);
-      expect(countRequests.at(-1)?.searchParams.get("now")).toBe(initialNow);
-    },
-  );
-
-  it.each([false, true])("never blocks rows while the counts load (active: %s)", async (active) => {
-    let release: (() => void) | undefined;
-    const pending = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const requests: URL[] = [];
-    server.use(
-      catalogueHandler(({ request }) => {
-        requests.push(new URL(request.url));
-        return HttpResponse.json(candidatePage(bookableItemFixtures));
-      }),
-      http.get("/api/v2/booking-catalogue/availability-counts", async () => {
-        await pending;
+      http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
+        hidden.push(request.url);
         return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
       }),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    const { container, unmount } = await renderPage(
-      `/booking/all-items?date=2026-08-17${active ? "&availability=available-now" : ""}`,
-    );
-
-    expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
-    expect(requests.map((request) => request.searchParams.get("availability"))).toEqual([
-      active ? "available-now" : null,
-    ]);
-    expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
-    await screen.findByRole("link", { name: "Add" });
-    await screen.findAllByRole("img", { name: "Mass spectrometer availability" });
-    await expectAccessible(container);
-    unmount();
-    await act(async () => release?.());
-  });
-
-  it("announces loading while the quick-filtered page loads", async () => {
-    let release: (() => void) | undefined;
-    const pending = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    server.use(
-      catalogueHandler(async () => {
-        await pending;
-        return HttpResponse.json(candidatePage(bookableItemFixtures));
-      }),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    const { container, unmount } = await renderPage("/booking/all-items?availability=available-now");
-
-    expect(await screen.findByText("Finding bookable items…")).toHaveAttribute("role", "status");
-    expect(screen.getByText("Finding bookable items…")).toHaveClass("sr-only");
-    expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
-    await screen.findByRole("link", { name: "Add" });
-    await expectAccessible(container);
-    unmount();
-    await act(async () => release?.());
-  });
-
-  it("retries failed counts and keeps the quick filter's server-filtered rows", async () => {
-    let countRequests = 0;
-    server.use(
-      catalogueHandler(({ request }) =>
-        HttpResponse.json(
-          candidatePage(new URL(request.url).searchParams.get("availability") ? [] : bookableItemFixtures),
-        ),
-      ),
-      http.get("/api/v2/booking-catalogue/availability-counts", () => {
-        countRequests += 1;
-        return countRequests === 1
-          ? new HttpResponse(null, { status: 500 })
-          : HttpResponse.json({ availableNow: 2, freeLaterToday: 0 });
-      }),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    const { router } = await renderPage("/booking/all-items?date=2026-08-17&availability=free-later-today");
-
-    expect(await screen.findByRole("alert", {}, { timeout: 10_000 })).toMatchTextContent(
-      "Could not find available items.",
-    );
-    expect(screen.queryByText("Finding bookable items…")).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    await waitFor(() => expect(countRequests).toBe(2));
-    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent("2");
-    expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
-    expect(router.state.location.search.where).toBe("free-later-today");
-  });
-
-  it("refreshes server availability counts after a configuration save in the stale window", async () => {
-    const user = userEvent.setup();
-    let allowDoubleBooking = false;
-    let configurationVersion: number = bookableItemFixtures[0].configurationVersion;
-    let configuration = {
-      ...bookableItemFixtures[0],
-      roleSources: [...bookableItemFixtures[0].roleSources],
-      allowDoubleBooking,
-      configurationVersion,
-    };
-    const patches: unknown[] = [];
-    const catalogueRequests: URL[] = [];
-    const countRequests: URL[] = [];
-    const startedAt = Date.now();
-    server.use(
-      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
-        patches.push(await request.json());
-        allowDoubleBooking = true;
-        configurationVersion = 1;
-        configuration = { ...configuration, allowDoubleBooking, configurationVersion };
-        return new HttpResponse(null, { status: 204 });
-      }),
-      http.get("/api/v2/booking-configurations", ({ request }) => {
-        const where = new URL(request.url).searchParams.get("where") ?? "";
-        return where.includes("IN123") ? HttpResponse.json(collectionPage([configuration], 2)) : undefined;
-      }),
-      http.get("/api/v2/booking-catalogue", ({ request }) => {
-        const url = new URL(request.url);
-        catalogueRequests.push(url);
-        const availability = url.searchParams.get("availability");
-        const items = !availability || allowDoubleBooking ? [configuration] : [];
-        return HttpResponse.json(candidatePage(items));
-      }),
-      http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
-        countRequests.push(new URL(request.url));
-        return HttpResponse.json({
-          availableNow: allowDoubleBooking ? 1 : 0,
-          freeLaterToday: 0,
-        });
-      }),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    server.use(
-      http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
-        HttpResponse.json({
-          configurationId: 7,
-          enabled: false,
-          version: -1,
-          createdEnabled: false,
-          cancelledEnabled: false,
-          emailEnabled: false,
-        }),
-      ),
-    );
-    const { router } = await renderMutationPages("/booking/all-items?date=2026-08-17&availability=available-now");
-
-    const available = await screen.findByRole("button", { name: "Available now" });
-    await waitFor(() => expect(countRequests).toHaveLength(1));
-    expect(available).toHaveTextContent("Available now0");
-
-    await act(async () => {
-      await router.navigate({
-        to: "/booking/bookable-items/$globalId/{-$tab}",
-        params: { globalId: "IN123", tab: "details" },
-        search: { edit: true },
-      });
-    });
-    await user.click(
-      await screen.findByRole("checkbox", { name: bookingEnglish.bookableItemDetails.fields.doubleBooking }),
-    );
-    await user.click(
-      within(screen.getByRole("tabpanel", { name: "Details" })).getByRole("button", {
-        name: bookingEnglish.bookableItems.actions.save,
+      http.get("/api/v2/bookings", ({ request }) => {
+        hidden.push(request.url);
+        return HttpResponse.json(collectionPage([]));
       }),
     );
-    await waitFor(() => expect(patches).toHaveLength(1));
-    expect(patches[0]).toMatchObject({ allowDoubleBooking: true });
-    await waitFor(() => expect(router.state.location.search.edit).toBeUndefined());
-
-    await act(async () => {
-      await router.navigate({
-        to: "/booking/all-items",
-        search: { where: "availability==available-now" },
-      });
-    });
-
-    await waitFor(() => expect(countRequests).toHaveLength(2));
-    await waitFor(() => expect(catalogueRequests.length).toBeGreaterThan(1));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent("Available now1"),
-    );
-    expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
-    expect(Date.now() - startedAt).toBeLessThan(30_000);
-  });
-
-  it("reports an availability rule inside an OR group as an unsupported filter", async () => {
-    const requests: URL[] = [];
-    server.use(
-      catalogueHandler(({ request }) => {
-        requests.push(new URL(request.url));
-        return HttpResponse.json(candidatePage(bookableItemFixtures));
-      }),
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-    );
-    const where = "availability==available-now,target==IN123";
-    await renderPage(`/booking/all-items?where=${encodeURIComponent(where)}`);
-
-    const issue = await screen.findByRole("alert");
-    expect(issue).toMatchTextContent("invalid or unavailable field");
-    expect(requests).toHaveLength(0);
+    await renderPage("/booking/all-items?q=scope&where=targetOwner%3D%3Dme");
+    const link = await screen.findByRole("link", { name: "View availability" });
+    const url = new URL(link.getAttribute("href") ?? "", window.location.origin);
+    expect(url.pathname).toBe("/booking/calendar");
+    expect(url.searchParams.get("layout")).toBe("availability");
+    expect(url.searchParams.get("calendar-resources.q")).toBe("scope");
+    expect(url.searchParams.get("calendar-resources.where")).toBe("targetOwner==me");
+    expect(screen.queryByRole("button", { name: "Available now" })).not.toBeInTheDocument();
+    expect(hidden).toEqual([]);
   });
 });

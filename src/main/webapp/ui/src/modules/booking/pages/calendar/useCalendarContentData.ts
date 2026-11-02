@@ -27,7 +27,11 @@ import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/m
 import type { CollectionQueryState, FilterExpression } from "@/modules/common/table-list/types";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { ownerPreset, ownerPresetField, requesterPreset } from "../ownerPreset";
-import { type AllBookableItem, availabilityPresets } from "./availability/availabilityQuickFilters";
+import {
+  type AllBookableItem,
+  availabilityPresets,
+  serverAvailabilityFilter,
+} from "./availability/availabilityQuickFilters";
 import { useCalendarAvailabilityLayout } from "./availability/useCalendarAvailabilityLayout";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { useCalendarEventFocus, useCalendarEventFocusResolution } from "./calendarEventFocus";
@@ -307,13 +311,21 @@ export function useCalendarContentData() {
       void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
     }
   };
-  const itemIssue = filterIssue({
-    kind: "items",
-    raw: parsedItems.dropped.length > 0 ? null : itemWhere,
-    expression: itemExpression,
-    runtimeFields: itemRuntimeFields,
-    onReset: () => void setItemWhere(null),
-  });
+  const itemIssue =
+    layout === "availability" && !serverAvailabilityFilter(itemExpression).supported
+      ? {
+          kind: "items" as const,
+          encoded: itemWhere ?? "",
+          network: false,
+          onReset: () => void setItemWhere(null),
+        }
+      : filterIssue({
+          kind: "items",
+          raw: parsedItems.dropped.length > 0 ? null : itemWhere,
+          expression: itemExpression,
+          runtimeFields: itemRuntimeFields,
+          onReset: () => void setItemWhere(null),
+        });
   const eventIssue = filterIssue({
     kind: "events",
     raw: parsedEvents.dropped.length > 0 ? null : eventWhere,
