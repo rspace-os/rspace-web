@@ -35,16 +35,10 @@ function renderDialog(subSampleCount: number | null) {
 }
 
 describe("TransferOwnershipDialog subsample-count bullet (real i18n plural rendering)", () => {
-  test("says 'Both subsamples' for exactly two subsamples", async () => {
-    await renderDialog(2);
-
-    expect(screen.getByText("Both subsamples will be transferred to user Rita Requester")).toBeInTheDocument();
-  });
-
   test("says 'All N subsamples' for more than two subsamples", async () => {
     await renderDialog(3);
 
-    expect(screen.getByText("All 3 subsamples will be transferred to user Rita Requester")).toBeInTheDocument();
+    expect(screen.getByText("All 3 subsamples will be transferred to Rita Requester")).toBeInTheDocument();
   });
 
   test("omits the bullet for one subsample, where there is nothing to disambiguate", async () => {

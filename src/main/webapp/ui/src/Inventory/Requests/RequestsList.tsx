@@ -154,7 +154,7 @@ export default function RequestsList({
       </Stack>
       <Grid container direction="row" spacing={1} sx={{ pt: 1 }}>
         <FilterDropdown
-          chipLabelKey="requestsManagement.chips.requests"
+          chipLabel={(value) => t("requestsManagement.chips.requests", { value })}
           value={requestsFilter}
           options={REQUESTS_FILTER_OPTIONS}
           onChange={(filter) => {
@@ -163,7 +163,7 @@ export default function RequestsList({
           }}
         />
         <FilterDropdown
-          chipLabelKey="requestsManagement.chips.status"
+          chipLabel={(value) => t("requestsManagement.chips.status", { value })}
           value={statusFilter}
           options={STATUS_FILTER_OPTIONS}
           onChange={(filter) => {
