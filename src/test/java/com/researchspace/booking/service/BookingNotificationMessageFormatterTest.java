@@ -184,7 +184,7 @@ class BookingNotificationMessageFormatterTest {
             NotificationType.NOTIFICATION_BOOKING_CREATED, data, berlin, Locale.US, Locale.US);
 
     assertTrue(british.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british);
-    assertTrue(british.contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)"), british);
+    assertTrue(british.contains("07:00 (Europe/Berlin, UTC+02:00)"), british);
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
         american.replace('\u202f', ' ').contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),

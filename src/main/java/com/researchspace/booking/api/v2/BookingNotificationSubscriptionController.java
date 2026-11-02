@@ -48,10 +48,6 @@ public class BookingNotificationSubscriptionController {
   public record Lookup(
       @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds) {}
 
-  public record BulkReplacement(
-      @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds,
-      @NotNull Boolean enabled) {}
-
   public record StatusList(List<Status> docs) {}
 
   public record UnsubscribeResult(int updatedCount) {}
@@ -138,24 +134,6 @@ public class BookingNotificationSubscriptionController {
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     return new StatusList(
         manager.getMany(body.configurationIds(), caller.subject(), caller.actor()));
-  }
-
-  @PutMapping(value = SUBSCRIPTIONS, consumes = MediaType.APPLICATION_JSON_VALUE)
-  @Operation(
-      operationId = "replaceMyBookingNotificationSubscriptions",
-      summary = "Subscribe or unsubscribe from selected readable instruments",
-      description =
-          "Applies the explicit choice atomically to up to 100 instruments. All must be readable by"
-              + " the caller. Existing defaults and global event preferences are preserved.",
-      responses = {
-        @ApiResponse(responseCode = "200", description = "Saved personal subscriptions.")
-      })
-  public StatusList replaceMany(
-      @Valid @RequestBody BulkReplacement body,
-      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return new StatusList(
-        manager.replaceMany(
-            body.configurationIds(), body.enabled(), caller.subject(), caller.actor()));
   }
 
   @DeleteMapping(SUBSCRIPTIONS)

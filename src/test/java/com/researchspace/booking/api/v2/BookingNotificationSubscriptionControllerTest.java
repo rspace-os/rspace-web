@@ -60,8 +60,7 @@ class BookingNotificationSubscriptionControllerTest {
         jsonConverter,
         BookingNotificationSubscriptionController.PreferenceReplacement.class,
         BookingNotificationSubscriptionController.SubscriptionReplacement.class,
-        BookingNotificationSubscriptionController.Lookup.class,
-        BookingNotificationSubscriptionController.BulkReplacement.class);
+        BookingNotificationSubscriptionController.Lookup.class);
     mvc =
         MockMvcBuilders.standaloneSetup(new BookingNotificationSubscriptionController(manager))
             .setControllerAdvice(
@@ -173,7 +172,18 @@ class BookingNotificationSubscriptionControllerTest {
   }
 
   @Test
-  void supportsBatchLookupExplicitBulkChoiceAndUnsubscribeAll() throws Exception {
+  void doesNotExposeBulkSubscriptionWrites() throws Exception {
+    mvc.perform(
+            put(SUBSCRIPTIONS)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"configurationIds\":[12],\"enabled\":true}"))
+        .andExpect(status().isMethodNotAllowed());
+    verifyNoInteractions(manager);
+  }
+
+  @Test
+  void supportsBatchLookupAndUnsubscribeAll() throws Exception {
     when(manager.getMany(List.of(12L, 13L), subject, actor)).thenReturn(List.of());
     mvc.perform(
             post(SUBSCRIPTIONS + "/lookup")
@@ -181,36 +191,10 @@ class BookingNotificationSubscriptionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"configurationIds\":[12,13]}"))
         .andExpect(status().isOk());
-    mvc.perform(
-            put(SUBSCRIPTIONS)
-                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"configurationIds\":[12,13],\"enabled\":false}"))
-        .andExpect(status().isOk());
-    verify(manager).replaceMany(List.of(12L, 13L), false, subject, actor);
     when(manager.unsubscribeAll(subject, actor)).thenReturn(2);
     mvc.perform(delete(SUBSCRIPTIONS).requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.updatedCount").value(2));
-  }
-
-  @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "{\"configurationIds\":[],\"enabled\":true}",
-        "{\"configurationIds\":[null],\"enabled\":true}",
-        "{\"configurationIds\":[0],\"enabled\":true}",
-        "{\"configurationIds\":[1],\"enabled\":null}",
-        "{\"configurationIds\":[1],\"enabled\":\"true\"}"
-      })
-  void rejectsInvalidBatch(String json) throws Exception {
-    mvc.perform(
-            put(SUBSCRIPTIONS)
-                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-        .andExpect(status().isBadRequest());
-    verifyNoInteractions(manager);
   }
 
   @Test
@@ -228,10 +212,6 @@ class BookingNotificationSubscriptionControllerTest {
             Map.entry(
                 post(SUBSCRIPTIONS + "/lookup")
                     .content("{\"configurationIds\":[12],\"ownerId\":99}"),
-                "ownerId"),
-            Map.entry(
-                put(SUBSCRIPTIONS)
-                    .content("{\"configurationIds\":[12],\"enabled\":true,\"ownerId\":99}"),
                 "ownerId"));
     for (var request : requests) {
       mvc.perform(
@@ -301,8 +281,7 @@ class BookingNotificationSubscriptionControllerTest {
                         + "notifyOnCreated: true\n"
                         + "notifyOnCancelled: true"),
             put(ITEM).content("enabled: true\nversion: 0"),
-            post(SUBSCRIPTIONS + "/lookup").content("configurationIds: [12]"),
-            put(SUBSCRIPTIONS).content("configurationIds: [12]\nenabled: true"))) {
+            post(SUBSCRIPTIONS + "/lookup").content("configurationIds: [12]"))) {
       mvc.perform(
               request
                   .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)

@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Date;
@@ -170,7 +171,7 @@ public class BookingNotificationMessageFormatter {
           StringEscapeUtils.escapeHtml4(data.getInstrumentName()),
           StringEscapeUtils.escapeHtml4(data.getInstrumentGlobalIdentifier()),
           formatInstant(data.getStartTime(), zone, locale, regionalLocale),
-          formatInstant(data.getEndTime(), zone, locale, regionalLocale),
+          formatRangeEnd(data.getStartTime(), data.getEndTime(), zone, locale, regionalLocale),
           href(linkBase, BOOKING_PATH, data.getBookingId()),
           href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier())
         },
@@ -245,18 +246,35 @@ public class BookingNotificationMessageFormatter {
         null);
   }
 
+  private static String formatRangeEnd(
+      String start, String end, ZoneId zone, Locale locale, Locale regionalLocale) {
+    ZonedDateTime endTime = Instant.parse(end).atZone(zone);
+    boolean sameDay = Instant.parse(start).atZone(zone).toLocalDate().equals(endTime.toLocalDate());
+    return formatInstant(endTime, locale, regionalLocale, !sameDay);
+  }
+
   private static String formatInstant(
       String value, ZoneId zone, Locale locale, Locale regionalLocale) {
-    Instant instant = Instant.parse(value);
+    return formatInstant(Instant.parse(value).atZone(zone), locale, regionalLocale, true);
+  }
+
+  private static String formatInstant(
+      ZonedDateTime value, Locale locale, Locale regionalLocale, boolean includeDate) {
     String localDateTime =
         regionalLocale == null
-            ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+            ? (includeDate
+                    ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+                    : DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
                 .withLocale(locale)
-                .withZone(zone)
-                .format(instant)
-            : formatWithHourCycleOf(LocalDateTime.ofInstant(instant, zone), locale, regionalLocale);
-    String offset = zone.getRules().getOffset(instant).getId();
-    return localDateTime + " (" + zone.getId() + ", UTC" + ("Z".equals(offset) ? "" : offset) + ")";
+                .format(value)
+            : formatWithHourCycleOf(value.toLocalDateTime(), locale, regionalLocale, includeDate);
+    String offset = value.getOffset().getId();
+    return localDateTime
+        + " ("
+        + value.getZone().getId()
+        + ", UTC"
+        + ("Z".equals(offset) ? "" : offset)
+        + ")";
   }
 
   /**
@@ -266,7 +284,7 @@ public class BookingNotificationMessageFormatter {
    * the browser's {@code Intl} API.
    */
   private static String formatWithHourCycleOf(
-      LocalDateTime wallClock, Locale locale, Locale regionalLocale) {
+      LocalDateTime wallClock, Locale locale, Locale regionalLocale, boolean includeDate) {
     ULocale withHourCycle =
         new ULocale.Builder()
             .setLocale(ULocale.forLocale(locale))
@@ -275,7 +293,9 @@ public class BookingNotificationMessageFormatter {
     // ICU formatters are not thread-safe, so each call builds its own. The wall clock is already
     // in the display zone, so ICU formats it in GMT and never maps the zone to its own tz data.
     DateFormat formatter =
-        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, withHourCycle);
+        includeDate
+            ? DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, withHourCycle)
+            : DateFormat.getTimeInstance(DateFormat.SHORT, withHourCycle);
     formatter.setTimeZone(TimeZone.GMT_ZONE);
     return formatter.format(Date.from(wallClock.toInstant(ZoneOffset.UTC)));
   }
