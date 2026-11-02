@@ -18,23 +18,23 @@ export function availabilityFilterButtons(
   const { counts, quickMode } = data;
   const quickFilterText = {
     "available-now": {
-      label: t("allBookableItems.quickFilters.availableNow"),
-      description: t("allBookableItems.quickFilters.availableNowDescription"),
+      label: t("availabilityLayout.quickFilters.availableNow"),
+      description: t("availabilityLayout.quickFilters.availableNowDescription"),
     },
     "free-later-today": {
-      label: t("allBookableItems.quickFilters.freeLaterToday"),
-      description: t("allBookableItems.quickFilters.freeLaterTodayDescription"),
+      label: t("availabilityLayout.quickFilters.freeLaterToday"),
+      description: t("availabilityLayout.quickFilters.freeLaterTodayDescription"),
     },
   };
   return {
     onReset,
-    legend: t("allBookableItems.quickFilters.legend"),
+    legend: t("availabilityLayout.quickFilters.legend"),
     align: "end",
     controlsOnSeparateRow: true,
     buttons: [
       {
         id: "mine",
-        label: t("allBookableItems.quickFilters.myItems"),
+        label: t("availabilityLayout.quickFilters.myItems"),
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: hasPreset(filters.expression, ownerPreset),
         inExpression: true,

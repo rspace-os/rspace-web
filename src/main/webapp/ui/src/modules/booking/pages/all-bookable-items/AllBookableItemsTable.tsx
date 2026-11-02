@@ -144,12 +144,12 @@ export function AllBookableItemsTable({
   );
 
   const quickFilters: TableListFilterButtons = {
-    legend: t("allBookableItems.quickFilters.legend"),
+    legend: t("allBookableItems.legend"),
     align: "end",
     buttons: [
       {
         id: "mine",
-        label: t("allBookableItems.quickFilters.myItems"),
+        label: t("allBookableItems.ownerPreset"),
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: hasPreset(filters.expression, ownerPreset),
         inExpression: true,
@@ -166,7 +166,7 @@ export function AllBookableItemsTable({
     <main className="space-y-5 p-4 sm:p-8">
       {tableProps.status === "loading" ? (
         <p role="status" className="sr-only">
-          {t("allBookableItems.quickFilters.loading")}
+          {t("allBookableItems.loading")}
         </p>
       ) : null}
       <TableList

@@ -42,8 +42,8 @@ export function useCalendarAvailabilityLayout({
   const rowConfig = useMemo(
     () =>
       createAllBookableItemsConfig(
-        t("allBookableItems.quickFilters.availableNow"),
-        t("allBookableItems.quickFilters.freeLaterToday"),
+        t("availabilityLayout.quickFilters.availableNow"),
+        t("availabilityLayout.quickFilters.freeLaterToday"),
         (globalId) => commonT("tableList.filters.openRecord", { globalId }),
       ),
     [t, commonT],

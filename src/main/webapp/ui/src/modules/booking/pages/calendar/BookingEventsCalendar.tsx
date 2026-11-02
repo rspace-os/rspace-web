@@ -246,7 +246,7 @@ export function BookingEventsCalendar({
       <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">
         {isLoading ? (
           <p role="status" className="sr-only">
-            {t("allBookableItems.quickFilters.loading")}
+            {t("availabilityLayout.quickFilters.loading")}
           </p>
         ) : null}
         {isError ? (
@@ -259,9 +259,9 @@ export function BookingEventsCalendar({
         ) : null}
         {availabilityLayout.counts.isError ? (
           <div role="alert" className="flex items-center gap-3">
-            <span>{t("allBookableItems.quickFilters.error")}</span>
+            <span>{t("availabilityLayout.quickFilters.error")}</span>
             <Button variant="outline" onClick={() => void availabilityLayout.counts.refetch()}>
-              {t("allBookableItems.quickFilters.retry")}
+              {t("availabilityLayout.quickFilters.retry")}
             </Button>
           </div>
         ) : null}

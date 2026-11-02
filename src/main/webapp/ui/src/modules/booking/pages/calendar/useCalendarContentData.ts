@@ -176,8 +176,8 @@ export function useCalendarContentData() {
               list: false as const,
               form: false as const,
               options: [
-                { value: "available-now", label: t("allBookableItems.quickFilters.availableNow") },
-                { value: "free-later-today", label: t("allBookableItems.quickFilters.freeLaterToday") },
+                { value: "available-now", label: t("availabilityLayout.quickFilters.availableNow") },
+                { value: "free-later-today", label: t("availabilityLayout.quickFilters.freeLaterToday") },
               ],
               capabilities: { sortable: false, filterOperators: ["equals" as const] },
             },
