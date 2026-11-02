@@ -1,0 +1,100 @@
+name: Install Playwright browsers
+description: >-
+  Install Playwright browsers and their system packages, reusing the downloaded
+  .deb files from the Actions cache so a slow Ubuntu mirror cannot stall the job.
+  Run after `pnpm install`.
+
+# The apt cache is adapted from Lexical's setup-playwright action (MIT licence):
+# https://github.com/meta/lexical/blob/main/.github/actions/setup-playwright/action.yml
+
+inputs:
+  browsers:
+    description: Space-separated Playwright browser names, e.g. "chromium" or "chromium firefox webkit".
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # install-deps runs `apt-get install`, which keeps downloaded packages in
+    # Dir::Cache::Archives. Pointing that at a runner-owned directory lets
+    # actions/cache restore and save the .deb files.
+    - name: Point apt at a cacheable archive directory
+      id: apt-dir
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+      run: |
+        set -euo pipefail
+        sudo=""
+        [ "$(id -u)" -eq 0 ] || sudo="sudo"
+        archives=/var/cache/pw-apt
+        $sudo install -d -o "$(id -un)" -m 755 "$archives"
+        # apt downloads as the sandboxed _apt user, so it must own partial/.
+        if id _apt >/dev/null 2>&1; then
+          $sudo install -d -o _apt -m 700 "$archives/partial"
+        else
+          $sudo install -d -m 700 "$archives/partial"
+        fi
+        printf '%s\n' "Dir::Cache::Archives \"$archives/\";" 'APT::Keep-Downloaded-Packages "true";' |
+          $sudo tee /etc/apt/apt.conf.d/99pw-apt-cache >/dev/null
+
+        image="${ImageOS:-$(. /etc/os-release && echo "$ID$VERSION_ID")}"
+        playwright="$(node -p "require('playwright-core/package.json').version")"
+        # "+" joins browsers so that the chromium prefix can't match chromium+firefox+webkit.
+        browsers="$(echo "$BROWSERS" | tr -s ' ' '+')"
+        # A new runner image falls back to the newest cache for the same browsers.
+        echo "prefix=pw-apt-${image}-${browsers}-" >> "$GITHUB_OUTPUT"
+        echo "key=pw-apt-${image}-${browsers}-${playwright}-${ImageVersion:-local}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Playwright system packages
+      id: restore
+      uses: actions/cache/restore@v6.1.0
+      with:
+        path: /var/cache/pw-apt/*.deb
+        key: ${{ steps.apt-dir.outputs.key }}
+        restore-keys: ${{ steps.apt-dir.outputs.prefix }}
+
+    # A stalled mirror hangs apt rather than failing it, so time each attempt out.
+    - name: Install Playwright browsers
+      id: install
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+      run: |
+        sudo=""
+        [ "$(id -u)" -eq 0 ] || sudo="sudo"
+        installed=false
+        for attempt in 1 2 3; do
+          # shellcheck disable=SC2086 # BROWSERS is a space-separated list
+          if timeout --kill-after=30 300 pnpm exec playwright install --with-deps $BROWSERS; then
+            installed=true
+            break
+          fi
+          if [ "$attempt" -lt 3 ]; then
+            echo "Playwright install failed or stalled (attempt ${attempt}/3); retrying..."
+            # If sudo gives apt its own terminal session (use_pty), the timeout misses it.
+            # Stop any leftover apt-get so it releases the dpkg lock, then finish
+            # half-configured packages.
+            $sudo pkill -TERM -x apt-get || true
+            sleep $((attempt * 10))
+            $sudo dpkg --configure -a || true
+          fi
+        done
+        [ "$installed" = true ] || exit 1
+
+        # apt writes the .deb files as root, and actions/cache reads them as the runner user.
+        $sudo chmod -f a+r /var/cache/pw-apt/*.deb || true
+        shopt -s nullglob
+        debs=(/var/cache/pw-apt/*.deb)
+        echo "deb-count=${#debs[@]}" >> "$GITHUB_OUTPUT"
+
+    # Only main saves: pull requests can restore main's caches, but not each other's.
+    - name: Save Playwright system packages
+      if: >-
+        github.ref == 'refs/heads/main' &&
+        steps.restore.outputs.cache-hit != 'true' &&
+        steps.install.outputs.deb-count != '0'
+      uses: actions/cache/save@v6.1.0
+      with:
+        path: /var/cache/pw-apt/*.deb
+        key: ${{ steps.restore.outputs.cache-primary-key }}

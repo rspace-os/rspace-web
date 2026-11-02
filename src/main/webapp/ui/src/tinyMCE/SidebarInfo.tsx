@@ -1,13 +1,8 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { paperClasses } from "@mui/material/Paper";
-import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useCallback, useEffect } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { useTranslation } from "react-i18next";
-import I18nRoot from "../modules/common/i18n/I18nRoot";
-import materialTheme from "../theme";
 import ChemCard from "./ChemCard";
 
 interface SidebarItem extends Record<string, string | undefined> {
@@ -22,8 +17,6 @@ interface SidebarInfoProps {
 type TinyMCEEditor = {
   execCommand: (command: string, ui: boolean, value?: string) => void;
 };
-
-const sidebarRoots = new WeakMap<HTMLElement, Root>();
 
 function isElementNode(node: EventTarget | Node | null): node is Element {
   return typeof node === "object" && node !== null && "nodeType" in node && node.nodeType === Node.ELEMENT_NODE;
@@ -57,15 +50,6 @@ function getCustomEventDetail(event: Event): unknown {
 
 function getActiveEditor(): TinyMCEEditor | undefined {
   return (globalThis as { tinymce?: { activeEditor?: TinyMCEEditor } }).tinymce?.activeEditor;
-}
-
-function findSidebarContainer(iframe: HTMLIFrameElement): HTMLElement | null {
-  const editorContainer = iframe.closest(".tox-tinymce");
-  const container =
-    editorContainer?.querySelector<HTMLElement>(".tox-sidebar__pane-container") ??
-    document.querySelector<HTMLElement>(".tox-sidebar__pane-container");
-
-  return container instanceof HTMLElement ? container : null;
 }
 
 export default function SidebarInfo({ iframe }: SidebarInfoProps) {
@@ -193,32 +177,6 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
     </Box>
   );
 }
-
-document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
-  const iframeSelector = getCustomEventDetail(event);
-  if (typeof iframeSelector !== "string") {
-    return;
-  }
-
-  const iframe = document.querySelector(iframeSelector);
-  const container = iframe instanceof HTMLIFrameElement ? findSidebarContainer(iframe) : null;
-
-  if (!(iframe instanceof HTMLIFrameElement) || !(container instanceof HTMLElement)) {
-    return;
-  }
-
-  const root = sidebarRoots.get(container) ?? createRoot(container);
-  sidebarRoots.set(container, root);
-  root.render(
-    <I18nRoot namespaces={["workspace", "common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={materialTheme}>
-          <SidebarInfo iframe={iframe} />
-        </ThemeProvider>
-      </StyledEngineProvider>
-    </I18nRoot>,
-  );
-});
 
 function watchEditor(container: Document, callbackRemoved: (element: HTMLImageElement) => void): MutationObserver {
   const onMutationsObserved: MutationCallback = (mutations) => {

@@ -1,6 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
+import { tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -60,7 +61,12 @@ export default class AuthStore {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
     }
-    this.isAuthenticated = false;
+    /*
+     * isAuthenticated only changes when a token arrives: Router renders the
+     * Inventory routes only while it is true, so clearing it would unmount the
+     * page for every refresh, and on failure would empty the page behind the
+     * "leave page?" prompt that the redirect to /login can raise.
+     */
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
     return axios
       .get<{ data: string }>(oAuthUrl)
@@ -78,9 +84,7 @@ export default class AuthStore {
           ElnApiService.setAuthorizationHeader();
           this.isAuthenticated = true;
           this.isSynchronizing = false;
-
-          // Reauthenticate few minutes before token expiry
-          this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+          this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
         }),
       )
       .then(() => {})
@@ -112,9 +116,7 @@ export default class AuthStore {
       InvApiService.setAuthorizationHeader();
       ElnApiService.setAuthorizationHeader();
       this.isSynchronizing = false;
-
-      // Reauthenticate few minutes before token expiry
-      this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+      this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
       return Promise.resolve();
     }
 

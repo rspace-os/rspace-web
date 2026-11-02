@@ -7,11 +7,9 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import Alerts from "@/components/Alerts/Alerts";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 import materialTheme from "../../theme";
@@ -151,20 +149,5 @@ export default function GroupsTable(props: any) {
         </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>
-  );
-}
-
-const domContainer = document.getElementById("labgroups-table");
-
-if (domContainer) {
-  const root = createRoot(domContainer);
-  root.render(
-    <I18nRoot namespaces={["common"]}>
-      <GroupsTable
-        username={domContainer.dataset.username}
-        userId={domContainer.dataset.userid}
-        canEdit={domContainer.dataset.canedit === "true"}
-      />
-    </I18nRoot>,
   );
 }

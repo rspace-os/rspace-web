@@ -2,7 +2,7 @@ import type React from "react";
 import { createRoot } from "react-dom/client";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
+import StoichiometryDialogRoot from "./StoichiometryDialogRoot";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
@@ -232,7 +232,7 @@ class StoichiometryPlugin {
 
     const createDialogRenderer = (domContainer: HTMLElement) => {
       const root = createRoot(domContainer);
-      let props: React.ComponentProps<typeof StoichiometryDialogEntrypoint> = {
+      let props: React.ComponentProps<typeof StoichiometryDialogRoot> = {
         open: false,
         onClose: () => {},
         chemId: null,
@@ -245,7 +245,7 @@ class StoichiometryPlugin {
         onDelete: () => {},
       };
 
-      return (nextProps: Partial<React.ComponentProps<typeof StoichiometryDialogEntrypoint>> = {}) => {
+      return (nextProps: Partial<React.ComponentProps<typeof StoichiometryDialogRoot>> = {}) => {
         props = {
           ...props,
           ...nextProps,
@@ -253,7 +253,7 @@ class StoichiometryPlugin {
 
         root.render(
           <I18nRoot namespaces={["common"]}>
-            <StoichiometryDialogEntrypoint {...props} />
+            <StoichiometryDialogRoot {...props} />
           </I18nRoot>,
         );
       };

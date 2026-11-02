@@ -2,14 +2,17 @@ package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.documentconversion.spi.ConversionResult;
+import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatDocumentFile;
@@ -165,16 +168,33 @@ public class FileDownloadControllerTest {
     mockMediaFileLookup(mediaFile);
     when(converter.convert(
             Mockito.eq(new FileDownloadController.FileWrapper(fileStore, mediaFile)),
-            Mockito.eq("xxx"),
+            Mockito.eq("pdf"),
             Mockito.eq(ctrller.anyOutfile)))
         .thenReturn(error);
     setupmocks();
-    File fileToConvert = setupFileToConvert("xxx");
+    File fileToConvert = setupFileToConvert("pdf");
     mockFileInputStreamonFile(fileToConvert);
 
-    AjaxReturnObject<String> rcError = ctrller.convertFile(mediaFile.getId(), "xxx", null, resp);
+    AjaxReturnObject<String> rcError = ctrller.convertFile(mediaFile.getId(), "pdf", null, resp);
     assertNull(rcError.getData());
     assertEquals("error", rcError.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""));
+  }
+
+  @Test
+  public void testUnsupportedConversionRejectedBeforeTouchingFiles() throws Exception {
+    mockGetUserFromSession();
+    EcatMediaFile mediaFile = getAnyMediaFile();
+    mediaFile.setFileProperty(setUpFileProperty(setupFileToConvert("doc")));
+    mockMediaFileLookup(mediaFile);
+
+    AjaxReturnObject<String> rc = ctrller.convertFile(1L, "pdf -l /tmp/x", null, resp);
+    assertNull(rc.getData());
+    assertNotNull(rc.getErrorMsg());
+    verify(converter)
+        .supportsConversion(
+            Mockito.argThat(c -> "file.doc".equals(c.getName())), Mockito.eq("pdf -l /tmp/x"));
+    verify(converter, never()).convert(Mockito.any(), Mockito.anyString(), Mockito.any(File.class));
+    verifyNoInteractions(fileStore);
   }
 
   @Test
@@ -193,9 +213,12 @@ public class FileDownloadControllerTest {
     mockFileInputStreamonFile(fileToConvert);
     mockMediaFileLookup(mediaFile);
     mockEnableAsposeCaching();
+    mockSupportsConversionToPdf();
     when(fileStore.getCurrentFileStoreRoot()).thenReturn(root);
-    AjaxReturnObject<String> rcOk = ctrller.convertFile(mediaFile.getId(), "xxx", null, resp);
-    verify(converter, never()).convert(mediaFile, "xxx", ctrller.anyOutfile);
+    AjaxReturnObject<String> rcOk = ctrller.convertFile(mediaFile.getId(), "pdf", null, resp);
+    verify(converter, never()).convert(mediaFile, "pdf", ctrller.anyOutfile);
+    // a cached conversion is returned without fetching the source, which may be external
+    verify(fileStore, never()).findFile(Mockito.same(fp));
     assertNull(rcOk.getErrorMsg());
     assertTrue(rcOk.getData().equals(fileToConvert.getName()));
   }
@@ -220,6 +243,7 @@ public class FileDownloadControllerTest {
     FileProperty fp = new FileProperty();
     fp.setRoot(root);
     fp.setRelPath(file.getName());
+    fp.setFileName(file.getName());
     return fp;
   }
 
@@ -282,6 +306,13 @@ public class FileDownloadControllerTest {
     when(fileStore.exists(Mockito.any(FileProperty.class))).thenReturn(false);
     when(fileStore.getCurrentFileStoreRoot()).thenReturn(root);
     mockEnableAsposeCaching();
+    mockSupportsConversionToPdf();
+  }
+
+  private void mockSupportsConversionToPdf() {
+    // the real converters read the file name to check the source format
+    when(converter.supportsConversion(Mockito.any(), Mockito.eq("pdf")))
+        .thenAnswer(inv -> inv.<Convertible>getArgument(0).getName() != null);
   }
 
   @Test
