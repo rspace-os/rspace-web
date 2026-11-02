@@ -31,14 +31,19 @@ replacing the previous ESLint + Prettier setup.
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the
   check (`pnpm run lint:ci`).
 
-## Inventory fonts
+## React page fonts
 
-`InventoryEntrypoint.tsx` imports the pinned Fontsource Roboto stylesheets for
-300, 400, 500 and 700 normal and 400 italic. The `roboto-woff2-only` Vite plugin
-removes WOFF fallbacks before CSS asset resolution, retaining the `Roboto`
-family and every unicode-range slice. Keep this transform before Vite's CSS
-processing so unused WOFF files are not emitted. CSS asset URLs are relative to
-the emitted stylesheet so they also work under a servlet context prefix.
+`src/main/webapp/ui/src/fonts.ts` loads the pinned Fontsource Roboto stylesheets
+for 300, 400, 500 and 700 normal and 400 italic. Pages that SiteMesh leaves
+undecorated get no legacy Roboto stylesheet, so their entrypoints must import
+`@/fonts`. Today these are Inventory, Gallery, Apps, About and the public
+identifier page.
+
+The `roboto-woff2-only` Vite plugin removes WOFF fallbacks before CSS asset
+resolution, keeping the `Roboto` family and every unicode-range slice. Keep this
+transform before Vite's CSS processing so unused WOFF files are not emitted. CSS
+asset URLs are relative to the emitted stylesheet so they also work under a
+servlet context prefix.
 
 ## Editor set up
 

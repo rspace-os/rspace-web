@@ -1,9 +1,4 @@
-// Bundle sliced Roboto fonts for Inventory without an external font stylesheet.
-import "@fontsource/roboto/300.css";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
-import "@fontsource/roboto/400-italic.css";
+import "@/fonts";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import LoaderCircular from "./components/LoadingCircular";

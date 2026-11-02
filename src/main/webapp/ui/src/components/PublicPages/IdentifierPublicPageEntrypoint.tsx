@@ -5,6 +5,7 @@
  * directory.
  */
 
+import "@/fonts";
 import { createRoot } from "react-dom/client";
 import LoaderCircular from "@/components/LoadingCircular";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
