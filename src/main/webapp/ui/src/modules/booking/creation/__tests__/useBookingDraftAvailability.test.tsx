@@ -1,11 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { render, renderHook, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import type { PropsWithChildren } from "react";
-import { describe, expect, it } from "vitest";
+import { type PropsWithChildren, useState } from "react";
+import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import type { BookingFormState } from "../BookingForm";
 import type { BookableItemOption } from "../bookableItemOption";
 import { useBookingDraftAvailability } from "../useBookingDraftAvailability";
@@ -130,6 +132,45 @@ function renderAvailability({
 }
 
 describe("useBookingDraftAvailability", () => {
+  it("does not synchronously notify mounted consumers when an availability query mounts", async () => {
+    server.use(http.get("/api/v2/bookings", () => page([])));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const errors = vi.spyOn(console, "error");
+    function ExistingConsumer() {
+      useQueryIdentityScope();
+      return null;
+    }
+    function Draft() {
+      const [mounted, setMounted] = useState(false);
+      if (!mounted) {
+        // A new identity can arrive before the availability observer mounts.
+        client.setQueryData(currentUserQueryKeys.me(), { id: 84, session: { operatedAs: false } });
+        setMounted(true);
+      }
+      const availability = useBookingDraftAvailability({
+        formState: formState(),
+        displayTimezone: "UTC",
+        token: "test-token",
+        eventKind: "BOOKING",
+      });
+      return <p>{availability.checking ? "Checking" : "Checked"}</p>;
+    }
+    const view = render(
+      <QueryClientProvider client={client}>
+        <ExistingConsumer />
+      </QueryClientProvider>,
+    );
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <ExistingConsumer />
+        <Draft />
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Checked");
+    expect(errors.mock.calls.flat().join(" ")).not.toContain("Cannot update a component");
+    errors.mockRestore();
+  });
+
   it("allows ordinary overlap with a warning when double booking is enabled", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
