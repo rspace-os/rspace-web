@@ -44,6 +44,11 @@ Callers that explicitly reset the form must also remount `SchedulingSettingsFiel
 editing session. Availability-window, timezone, default sharing, granularity and buffer settings
 remain separate from the weekly schedule.
 
+Item creation copies the full institution schedule into its draft. Item edits submit the full
+`openingHours` value, including unchanged weekdays. Cancelling restores all entries from the
+configuration, while a failed or stale save keeps the current draft and its closed-day history.
+Item details show every weekday independently, including closed days, in the scheduling timezone.
+
 Authenticated Booking clients use `apiV2Headers` and `apiV2JsonHeaders` from
 `modules/common/api/apiV2Headers.ts`. They preserve supplied headers and set Bearer
 authorization and `X-Requested-With`; the JSON variant also sets `Content-Type`.
