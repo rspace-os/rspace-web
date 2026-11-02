@@ -35,7 +35,7 @@ generated. Plain text passwords are not stored.
 ### Password storage
 
 The design and its trade-offs are in
-[ADR 0011](../adr/0011-argon2id-password-hashing-and-login-concurrency-limit.md).
+[ADR 0014](../adr/0014-argon2id-password-hashing-and-login-concurrency-limit.md).
 
 - **Encoder.** `RSpacePasswordEncoder` (bean in `SecurityBaseConfig`) wraps
   Spring Security's `DelegatingPasswordEncoder`. Every stored login
@@ -84,7 +84,7 @@ The design and its trade-offs are in
   token that is unused and unexpired, and `UserManagerImpl` marks it used
   with a conditional update in the same transaction as the password
   change, so two simultaneous submits give one change. Authenticated encodes (password change,
-  user creation, imports) are unbounded by choice (ADR 0011).
+  user creation, imports) are unbounded by choice (ADR 0014).
 - **Busy post-signup login.** Standalone signup logs the new user in
   through the same verifier. A `LoginVerificationBusyException` there does
   not abort signup: `DefaultPostUserCreate` finishes the PI promotion and
@@ -93,7 +93,7 @@ The design and its trade-offs are in
 - **No writes, no reauthentication lockout.** A password check never
   writes to the `User` row: an earlier version re-encoded legacy hashes on
   login and counted reauthentication failures on the row, and both broke
-  callers that held the same row in their own transaction (ADR 0011,
+  callers that held the same row in their own transaction (ADR 0014,
   considered options). Failed reauthentication is not counted toward the
   login-form lockout and has no other per-account rate limit; the
   per-username lock is the only bound. The one exception is the anonymous
