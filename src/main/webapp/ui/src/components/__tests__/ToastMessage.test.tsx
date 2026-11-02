@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import Snackbars from "../ToastMessage";
+import { bufferPreMountToast } from "../toastMessageBuffer";
 
 const dispatchToast = (message: string) => {
   document.dispatchEvent(
@@ -20,7 +21,7 @@ describe("Snackbars", () => {
   });
 
   test("shows toasts dispatched before mount", async () => {
-    // legacy scripts can dispatch from document-ready, before the listener mounts
+    document.addEventListener("show-toast-message", bufferPreMountToast);
     dispatchToast("pre-mount toast 1");
     dispatchToast("pre-mount toast 2");
     render(<Snackbars />);

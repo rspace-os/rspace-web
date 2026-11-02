@@ -10,6 +10,7 @@ may require other properties to be set in order for the feature to work properly
 2. If `ldap.enabled` is 'true', then ldap.url and `ldap.baseSuffix` must be set
 3. If `authorised.signup` is 'true', then `user.signup` must be true, and `email.signup.authoriser.emails` must be set.
 4. If `deployment.standalone` is 'false' then `deployment.sso.logout.url` must be set.
+5. If `importArchiveFromServer.enabled` is 'true', then `importArchiveFromServer.folder` must be set to an existing folder.
 
 #### Integrations
 The availability of these integrations is now configurable within RSpace itself ( see Changelog-1.33-to-1.34.md)

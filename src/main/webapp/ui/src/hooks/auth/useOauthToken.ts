@@ -1,12 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import { fetchOauthToken, getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
-
-const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
-
-function refreshDelayMs(token: string): number {
-  return Math.min(secondsToExpiry(token) * 1000, MAX_SET_TIMEOUT_DELAY_MS);
-}
+import { fetchOauthToken, getStoredToken, saveStoredToken, tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 
 /**
  * This custom hook allows us to get a token for making calls to the API
@@ -35,12 +29,13 @@ function refreshDelayMs(token: string): number {
  * whilst an initial network request is in flight then multiple API calls will
  * be made but this isn't generally an issue.
  *
- * This hook also automatically refreshes the token when it expires, so be sure
+ * This hook also automatically refreshes the token shortly before it expires, so be sure
  * to not cache the value returned by `getToken` in the components or hooks
  * that use this hook as otherwise they will fail to work when the token
  * elapses.  If the page is loaded and there is a valid token in the session
- * storage then it is used and a timer is set up to refresh the token when it
- * expires just as if the token and been fetched directly.
+ * storage then it is used and a timer is set up to refresh the token before it
+ * expires just as if the token and been fetched directly. The timer is
+ * cancelled when the component using this hook unmounts.
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
   /*
@@ -56,6 +51,23 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * and duplicate network requests.
    */
   const tokenRef = React.useRef<string | null>(null);
+  const refreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const unmountedRef = React.useRef(false);
+
+  /*
+   * On unmount, cancel the pending refresh and forget the token. Forgetting it
+   * matters under StrictMode, which unmounts and remounts straight away: the
+   * next `getToken` then starts a new timer instead of returning a token that
+   * no longer has one. A refresh still in flight at unmount schedules nothing.
+   */
+  React.useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+      clearTimeout(refreshTimerRef.current);
+      tokenRef.current = null;
+    };
+  }, []);
 
   /*
    * As part of fetching a new token, we save it into session storage so that
@@ -79,10 +91,23 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    */
   async function refreshToken(): Promise<void> {
     const newToken = await fetchOauthToken(fetchToken);
+    if (unmountedRef.current) return;
     tokenRef.current = newToken;
-    setTimeout(() => {
-      void refreshToken();
-    }, refreshDelayMs(newToken));
+    scheduleRefresh(newToken);
+  }
+
+  /*
+   * If a refresh fails, usually because the session has ended, the token is
+   * forgotten so that the next call to `getToken` starts again from session
+   * storage or the endpoint and sets up a new timer.
+   */
+  function scheduleRefresh(token: string): void {
+    clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(() => {
+      refreshToken().catch(() => {
+        tokenRef.current = null;
+      });
+    }, tokenRefreshDelayMs(token));
   }
 
   const getToken = React.useCallback(async () => {
@@ -98,7 +123,12 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * If this hook has not been previously called then we preferably get the
      * token from session storage or else get it from the API endpoint.
      */
-    const savedToken = getStoredToken() ?? (await fetchOauthToken(fetchToken));
+    let savedToken = getStoredToken();
+    if (!savedToken) {
+      savedToken = await fetchOauthToken(fetchToken);
+      // The component may have unmounted while the token was being fetched.
+      if (unmountedRef.current) return savedToken;
+    }
     tokenRef.current = savedToken;
 
     /*
@@ -106,13 +136,11 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * storage, we set up a timer to trigger the continuous refreshing of the
      * token. As the user navigates around and refreshes the page throughout
      * the window in which the token is valid, we want to keep setting up the
-     * refresh logic so that when the token expires we get a new one, put it
+     * refresh logic so that before the token expires we get a new one, put it
      * in session storage, and the current page and all subsequent ones in
      * the next temporal window will continue to work.
      */
-    setTimeout(() => {
-      void refreshToken();
-    }, refreshDelayMs(savedToken));
+    scheduleRefresh(savedToken);
     return savedToken;
   }, []);
 

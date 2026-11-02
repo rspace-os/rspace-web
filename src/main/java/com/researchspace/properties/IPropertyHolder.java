@@ -227,6 +227,9 @@ public interface IPropertyHolder extends Versionable {
    */
   boolean isImportArchiveFromServerEnabled();
 
+  /** Folder that archives imported by server path must sit inside; blank means none is set. */
+  String getImportArchiveFromServerFolder();
+
   /**
    * Filestore implementation used by this RSpace instance.
    *
