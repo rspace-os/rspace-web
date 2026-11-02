@@ -925,7 +925,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   private SampleEntity copyDbSample(Long sampleId, User user) {
     SampleEntity dbSample = getIfExists(sampleId);
-    invPermissions.assertUserCanReadInventoryRecord(dbSample, user);
+    invPermissions.assertUserCanFullReadInventoryRecord(dbSample, user);
     SampleEntity copy;
     if (dbSample.isSample()) {
       Sample sampleCopy = ((Sample) dbSample).copy(user);

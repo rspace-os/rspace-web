@@ -290,15 +290,14 @@ public class InventoryPermissionUtils {
     }
   }
 
-  /** Requires full read access; limited read is not enough. */
-  public void assertUserCanReadInventoryRecord(InventoryRecord record, User user) {
+  public void assertUserCanFullReadInventoryRecord(InventoryRecord record, User user) {
     if (!canUserReadInventoryRecord(record, user)) {
       throwNotFoundException(record.getId());
     }
   }
 
   public void assertUserCanTransferInventoryRecord(InventoryRecord record, User user) {
-    assertUserCanReadInventoryRecord(record, user);
+    assertUserCanFullReadInventoryRecord(record, user);
     // can read, just can't transfer. we can show more useful message. A locked (default/system)
     // instrument template cannot be transferred by anyone (transfer does not consult
     // canUserEditInventoryRecord, so the lock is enforced explicitly here too).
