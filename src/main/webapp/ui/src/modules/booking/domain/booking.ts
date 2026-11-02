@@ -95,7 +95,7 @@ const BookingFullManagementEntries = {
 };
 
 function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
-  const identity = bookingIdentity(target);
+  const identity = { ...bookingIdentity(target), canViewConfiguration: v.optional(v.boolean()) };
   return v.variant("privacy", [
     v.object({
       ...identity,
