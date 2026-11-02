@@ -9,38 +9,15 @@ import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
+import type { TinyMcePluginEditor } from "../types";
 import ImportDialog from "./ImportDialog";
-
-// Define types for external interfaces
-type ButtonConfig = {
-  tooltip: string;
-  icon: string;
-  onAction: () => void;
-};
-
-type MenuItemConfig = {
-  text: string;
-  icon: string;
-  onAction: () => void;
-};
-
-export interface Editor {
-  ui: {
-    registry: {
-      addButton: (name: string, config: ButtonConfig) => void;
-      addMenuItem: (name: string, config: MenuItemConfig) => void;
-    };
-  };
-  execCommand: (command: string, ui: boolean, value?: string) => void;
-  id: string; // the id the current document field prefixed with "rtf_"
-}
 
 // Declare the global tinymce object
 declare const tinymce: {
   PluginManager: {
-    add: (name: string, plugin: new (editor: Editor) => unknown) => void;
+    add: (name: string, plugin: new (editor: TinyMcePluginEditor) => unknown) => void;
   };
-  activeEditor: Editor;
+  activeEditor: TinyMcePluginEditor;
 };
 
 declare global {
@@ -58,7 +35,7 @@ declare global {
 }
 
 class PubchemPlugin {
-  constructor(editor: Editor) {
+  constructor(editor: TinyMcePluginEditor) {
     function* renderPubchem(
       domContainer: HTMLElement,
     ): Generator<void, void, React.ComponentProps<typeof ImportDialog>> {

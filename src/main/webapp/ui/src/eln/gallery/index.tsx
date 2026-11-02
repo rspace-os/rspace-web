@@ -5,9 +5,8 @@ import { lighten, ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
+import { Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
@@ -18,7 +17,6 @@ import SidebarToggle from "../../components/AppBar/SidebarToggle";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import { LandmarksProvider } from "../../components/LandmarksContext";
-import LoaderCircular from "../../components/LoadingCircular";
 import SkipToContentMenu from "../../components/SkipToContentMenu";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../../hooks/api/useUiPreference";
@@ -26,7 +24,6 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
-import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import NavigateContext from "../../stores/contexts/Navigate";
 import * as FetchingData from "../../util/fetchingData";
@@ -626,21 +623,3 @@ export function Gallery() {
     </StyledEngineProvider>
   );
 }
-
-window.addEventListener("load", () => {
-  const domContainer = document.getElementById("app");
-  if (domContainer) {
-    window.scrollTo(0, 1);
-
-    const root = createRoot(domContainer);
-    root.render(
-      <React.StrictMode>
-        <I18nRoot namespaces={["gallery", "common", "about", "inventory"]} fallback={<LoaderCircular />}>
-          <BrowserRouter>
-            <Gallery />
-          </BrowserRouter>
-        </I18nRoot>
-      </React.StrictMode>,
-    );
-  }
-});

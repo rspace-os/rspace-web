@@ -3,6 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import axios from "@/common/axios";
 import RoRIntegration from "../../system-ror/RoRIntegration";
+import "../RoRIntegrationEntrypoint";
 import invalidRoR from "./json/invalidRor.json";
 import rorNotFound from "./json/rorNotFound.json";
 import rorUpdateSucess from "./json/rorUpdateSuccess.json";
