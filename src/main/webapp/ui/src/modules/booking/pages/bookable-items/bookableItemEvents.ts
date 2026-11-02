@@ -1,5 +1,7 @@
+import { queryOptions } from "@tanstack/react-query";
 import type * as v from "valibot";
 import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
@@ -55,3 +57,18 @@ export async function fetchBookableItemEvents(input: {
   }
   return result;
 }
+
+export const bookableItemEventsQuery = (input: Parameters<typeof fetchBookableItemEvents>[0]) => {
+  const queryFn = async ({ signal }: { signal: AbortSignal }) => {
+    const result = await fetchBookableItemEvents({ ...input, signal });
+    return { rows: result.docs, rowCount: result.totalDocs };
+  };
+  return {
+    ...queryOptions({
+      queryKey: bookingKeys.itemEvents(input.globalId, input.period, input.cutoff, input.page, input.limit),
+      queryFn,
+      retry: false,
+    }),
+    queryFn,
+  };
+};

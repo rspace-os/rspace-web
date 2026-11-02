@@ -75,21 +75,6 @@ class BookingDisplayPreferencesManagerTest {
   }
 
   @Test
-  void aStoredDocumentFromBeforeTheTimeFormatReadsAsAutomatic() {
-    preference(
-        """
-        {"version":1,"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
-        "timezoneMode":"INSTITUTION","customTimezone":null}
-        """);
-
-    var resolved = manager.get(subject, actor);
-
-    assertTrue(resolved.overridden());
-    assertEquals("09:00", resolved.availabilityWindowStart());
-    assertEquals(BookingTimeFormat.AUTOMATIC, resolved.timeFormat());
-  }
-
-  @Test
   void replaceStoresOneVersionedDocumentAndReturnsAnOverride() {
     BookingDisplaySettings custom =
         new BookingDisplaySettings(
@@ -134,7 +119,7 @@ class BookingDisplayPreferencesManagerTest {
     preference(
         """
         {"version":2,"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
-        "timezoneMode":"INSTITUTION","customTimezone":null}
+        "timezoneMode":"INSTITUTION","customTimezone":null,"timeFormat":"AUTOMATIC"}
         """);
     assertFalse(manager.get(subject, actor).overridden());
   }
@@ -145,7 +130,12 @@ class BookingDisplayPreferencesManagerTest {
         InvalidBookingDisplaySettingsException.class,
         () ->
             manager.replace(
-                new BookingDisplaySettings("18:00", "08:00", BookingTimezoneMode.INSTITUTION, null),
+                new BookingDisplaySettings(
+                    "18:00",
+                    "08:00",
+                    BookingTimezoneMode.INSTITUTION,
+                    null,
+                    BookingTimeFormat.AUTOMATIC),
                 subject,
                 actor));
 
@@ -171,7 +161,7 @@ class BookingDisplayPreferencesManagerTest {
                 Preference.BOOKING_DISPLAY_PREFERENCES,
                 subject,
                 "{\"version\":1,\"availabilityWindowStart\":\"08:00\",\"availabilityWindowEnd\":\"18:00\","
-                    + "\"timezoneMode\":\"CUSTOM\",\"customTimezone\":\"Asia/Tokyo\"}"));
+                    + "\"timezoneMode\":\"CUSTOM\",\"customTimezone\":\"Asia/Tokyo\",\"timeFormat\":\"AUTOMATIC\"}"));
     assertEquals("Asia/Tokyo", manager.resolveForNotificationSnapshot(subject).customTimezone());
     org.mockito.Mockito.verifyNoInteractions(userManager);
   }

@@ -148,7 +148,7 @@ class BookingDisplayPreferencesControllerMVCIT {
                 .content(
                     """
                     {"availabilityWindowStart":"18:00","availabilityWindowEnd":"08:00",
-                     "timezoneMode":"INSTITUTION","customTimezone":null}
+                     "timezoneMode":"INSTITUTION","customTimezone":null,"timeFormat":"AUTOMATIC"}
                     """))
         .andExpect(status().isBadRequest())
         .andExpect(
@@ -170,11 +170,11 @@ class BookingDisplayPreferencesControllerMVCIT {
         List.of(
             """
             {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
-             "timezoneMode":"INSTITUTION"}
+             "timezoneMode":"INSTITUTION","timeFormat":"AUTOMATIC"}
             """,
             """
             {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
-             "timezoneMode":"INSTITUTION","customTimezone":null}
+             "timezoneMode":"INSTITUTION","customTimezone":null,"timeFormat":"AUTOMATIC"}
             """)) {
       mockMvc
           .perform(
@@ -253,7 +253,8 @@ class BookingDisplayPreferencesControllerMVCIT {
                 "availabilityWindowStart", "09:00",
                 "availabilityWindowEnd", "17:00",
                 "timezoneMode", "CUSTOM",
-                "customTimezone", "America/New_York"));
+                "customTimezone", "America/New_York",
+                "timeFormat", "AUTOMATIC"));
     body.putAll(extra);
     return JacksonUtil.toJson(body);
   }
