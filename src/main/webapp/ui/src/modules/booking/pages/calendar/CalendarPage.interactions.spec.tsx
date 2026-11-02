@@ -248,7 +248,7 @@ describe("Calendar page", () => {
   });
 
   test("opens a full event, edits it on its canonical page, and refreshes the readout", async () => {
-    let details = { ...ownBooking, cancellationReason: null, createdBy: "Ada Lovelace (ada)" };
+    let details = { ...ownBooking, cancellationReason: null, createdBy: "Ada Lovelace" };
     worker.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(details)),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
