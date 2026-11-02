@@ -8,7 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /**
  * Login password encoder. Stored values carry an {@code {id}} prefix; new passwords are encoded
  * with Argon2id under {@link #ARGON2_ID}. Only the ids registered here are accepted, so an unknown
- * or missing prefix fails with {@link IllegalArgumentException} rather than matching. See ADR 0011.
+ * or missing prefix fails with {@link IllegalArgumentException} rather than matching. See ADR 0014.
  */
 public class RSpacePasswordEncoder implements PasswordEncoder {
 

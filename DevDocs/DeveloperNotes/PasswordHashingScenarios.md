@@ -1,7 +1,7 @@
 # What the Argon2 password change does to everyday scenarios (RSDEV-894)
 
 This page is the plain-English companion to
-[ADR 0011](../adr/0011-argon2id-password-hashing-and-login-concurrency-limit.md). The ADR says
+[ADR 0014](../adr/0014-argon2id-password-hashing-and-login-concurrency-limit.md). The ADR says
 why. This page says what a user, an administrator or a support engineer will actually see, and
 which messages are new.
 
