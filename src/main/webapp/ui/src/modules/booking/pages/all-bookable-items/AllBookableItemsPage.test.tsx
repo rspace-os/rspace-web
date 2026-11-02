@@ -194,7 +194,7 @@ async function renderPage(
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
           validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage clock={fixedClock} />,
+          component: () => <AllBookableItemsPage />,
         }),
       ]),
     ]),
@@ -223,7 +223,7 @@ async function renderMutationPages(initialEntry: string) {
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
           validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage clock={fixedClock} />,
+          component: () => <AllBookableItemsPage />,
         }),
         createRoute({
           getParentRoute: () => bookingRoute,
@@ -1077,7 +1077,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     expect(screen.getByRole("button", { name: "Available now" })).toMatchTextContent("2");
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
-    expect(router.state.location.search.availability).toBe("free-later-today");
+    expect(router.state.location.search.where).toBe("free-later-today");
   });
 
   it("refreshes server availability counts after a configuration save in the stale window", async () => {
@@ -1164,7 +1164,7 @@ describe("AllBookableItemsPage", () => {
     await act(async () => {
       await router.navigate({
         to: "/booking/all-items",
-        search: { date: "2026-08-17", availability: "available-now" },
+        search: { where: "availability==available-now" },
       });
     });
 

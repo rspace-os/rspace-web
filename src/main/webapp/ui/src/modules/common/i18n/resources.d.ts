@@ -770,6 +770,7 @@ export default interface Resources {
         "previousDay": "Previous day",
         "settings": "Settings",
         "today": "Today",
+        "viewAvailability": "View availability",
         "viewDetails": "View details"
       },
       "date": "Date",
