@@ -35,6 +35,12 @@ public interface FeatureFlagManager {
    */
   boolean isFeatureFlagEnabledInSnapshot(String flagName, User user);
 
+  /** Resolves committed baseline and override rows with shared locks in the caller transaction. */
+  boolean isFeatureFlagEnabledWithCurrentReads(String flagName, User user);
+
+  /** Resolves a flag for a set of users using one persisted snapshot. */
+  java.util.Set<Long> enabledUsersInSnapshot(String flagName, java.util.Set<Long> userIds);
+
   /** Returns whether the user may access internal devtools. */
   boolean canUseDevtools(User user);
 

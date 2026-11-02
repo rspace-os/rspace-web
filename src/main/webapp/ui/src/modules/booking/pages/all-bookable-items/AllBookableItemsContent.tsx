@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
@@ -13,6 +14,14 @@ export type AllBookableItemsContentProps = {
 };
 
 export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
+  const { data: currentUser } = useCurrentUserQuery();
+  return <AllBookableItemsContentForUser key={currentUser.id} subjectId={currentUser.id} clock={clock} />;
+}
+
+function AllBookableItemsContentForUser({
+  clock = currentDate,
+  subjectId,
+}: AllBookableItemsContentProps & { subjectId: number }) {
   const {
     date,
     availability: routeAvailability,
@@ -25,12 +34,13 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items/" });
   const navigate = useNavigate({ from: "/booking/all-items/" });
-  const { config, invalidFilter, catalogue, runtimeFieldState, currentUser, ...data } = useAllBookableItemsData({
+  const { config, invalidFilter, catalogue, runtimeFieldState, ...data } = useAllBookableItemsData({
     clock,
     date,
     routeAvailability,
     target,
     mine,
+    subjectId,
     where,
     q,
     types,
@@ -53,7 +63,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
-  const resetView = () =>
+  const resetView = () => {
     void navigate({
       search: (current) => ({
         ...current,
@@ -68,6 +78,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       }),
       replace: true,
     });
+  };
   const setFilters = (next: FilterState<AllBookableItem>) => {
     const nextWhere = next.expression ? serializeRsqlExpression(next.expression) : undefined;
     const nextSearch = next.search || undefined;
@@ -87,11 +98,12 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
       replace: true,
     });
   };
-  const removeRestoredViewIssue = () =>
+  const removeRestoredViewIssue = () => {
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
     });
+  };
   const restoredViewIssue = runtimeFieldState.error
     ? {
         kind: "network" as const,
@@ -123,7 +135,7 @@ export function AllBookableItemsContent({ clock = currentDate }: AllBookableItem
     restoredViewIssue,
     onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
     runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
-    runtimeFieldAuthScope: currentUser.id,
+    runtimeFieldAuthScope: subjectId,
     queryString: false,
     features: {
       filtering: {

@@ -341,6 +341,28 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void currentReadUsesPersistedRowsInsteadOfTheRuntimeBaseline() {
+    initialiseRuntime(Map.of(FLAG, true), false);
+    User user = TestFactory.createAnyUser("current-flag");
+    user.setId(7L);
+    when(featureFlagDao.getCurrentBaseline(FLAG)).thenReturn(java.util.Optional.of(false));
+    when(featureFlagDao.getCurrentOverride(FLAG, user.getId()))
+        .thenReturn(java.util.Optional.empty());
+    assertFalse(featureFlagManager.isFeatureFlagEnabledWithCurrentReads(FLAG, user));
+    when(featureFlagDao.getCurrentOverride(FLAG, user.getId()))
+        .thenReturn(java.util.Optional.of(true));
+    assertTrue(featureFlagManager.isFeatureFlagEnabledWithCurrentReads(FLAG, user));
+  }
+
+  @Test
+  void currentReadPreservesForcedValueWithoutReadingPersistedRows() {
+    initialiseRuntime(Map.of(FLAG, false), true);
+    clearInvocations(featureFlagDao);
+    assertTrue(featureFlagManager.isFeatureFlagEnabledWithCurrentReads(FLAG, null));
+    verifyNoInteractions(featureFlagDao);
+  }
+
+  @Test
   void snapshotReadUsesPersistedBaselineInsteadOfRuntimeCache() {
     initialiseRuntime(Map.of(FLAG, true), false);
     when(featureFlagDao.getBaselineValues()).thenReturn(Map.of(FLAG, false));

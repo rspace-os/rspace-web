@@ -178,6 +178,60 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     return snapshot.resolveResource(definition, getUserOverrides(user), false).isValue();
   }
 
+  @Override
+  public boolean isFeatureFlagEnabledWithCurrentReads(String flagName, User user) {
+    RuntimeFeatureFlags configured = requireRuntime();
+    FeatureFlagDefinition definition = configured.definitions().get(flagName);
+    if (definition == null) throw new FeatureFlagNotFoundException(flagName);
+    if (configured.isForced(flagName)) {
+      return configured.resolveResource(definition, Map.of(), false).isValue();
+    }
+    Map<String, Boolean> baseline =
+        featureFlagDao
+            .getCurrentBaseline(flagName)
+            .map(value -> Map.of(flagName, value))
+            .orElseGet(Map::of);
+    Map<String, Boolean> overrides =
+        user == null || user.getId() == null
+            ? Map.of()
+            : featureFlagDao
+                .getCurrentOverride(flagName, user.getId())
+                .map(value -> Map.of(flagName, value))
+                .orElseGet(Map::of);
+    return new RuntimeFeatureFlags(configured.definitions(), baseline, configured.forcedValues())
+        .resolveResource(definition, overrides, false)
+        .isValue();
+  }
+
+  @Override
+  public java.util.Set<Long> enabledUsersInSnapshot(String flagName, java.util.Set<Long> userIds) {
+    if (userIds.isEmpty()) return java.util.Set.of();
+    RuntimeFeatureFlags configured = requireRuntime();
+    FeatureFlagDefinition definition = configured.definitions().get(flagName);
+    if (definition == null) throw new FeatureFlagNotFoundException(flagName);
+    if (configured.isForced(flagName)) {
+      return configured.resolveResource(definition, Map.of(), false).isValue()
+          ? userIds
+          : java.util.Set.of();
+    }
+    RuntimeFeatureFlags snapshot =
+        new RuntimeFeatureFlags(
+            configured.definitions(),
+            featureFlagDao.getBaselineValues(),
+            configured.forcedValues());
+    Map<Long, Boolean> overrides = featureFlagDao.getOverridesForUsers(flagName, userIds);
+    return userIds.stream()
+        .filter(
+            id ->
+                snapshot
+                    .resolveResource(
+                        definition,
+                        overrides.containsKey(id) ? Map.of(flagName, overrides.get(id)) : Map.of(),
+                        false)
+                    .isValue())
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
   private BaselineUpdate setBaselineValue(
       RuntimeFeatureFlags snapshot, String flagName, boolean value) {
     FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
