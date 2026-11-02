@@ -68,6 +68,21 @@ export function isExpiringSoon(token: string, bufferSeconds = TOKEN_EXPIRY_BUFFE
   return secondsToExpiry(token) < bufferSeconds;
 }
 
+const MIN_REFRESH_DELAY_SECONDS = 60;
+const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
+
+/**
+ * How long to wait before refreshing the token: while it is still valid, at the margin isExpiringSoon uses.
+ * Expiry is measured against the client clock, so the floor stops a clock running ~an hour fast from
+ * refreshing in a tight loop.
+ */
+export function tokenRefreshDelayMs(token: string): number {
+  return Math.min(
+    Math.max(MIN_REFRESH_DELAY_SECONDS, secondsToExpiry(token) - TOKEN_EXPIRY_BUFFER_SECONDS) * 1000,
+    MAX_SET_TIMEOUT_DELAY_MS,
+  );
+}
+
 export const resolveToken = async ({ token, getToken }: TokenParams) => {
   if (token) {
     return token;
