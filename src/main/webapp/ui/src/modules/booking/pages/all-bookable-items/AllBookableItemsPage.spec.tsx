@@ -227,9 +227,12 @@ describe("the All Bookable Items page", () => {
     render(<AllBookableItemsStory history={history} />);
 
     await expect.element(pageObj.availabilitySlice("Confocal microscope", 11)).toBeVisible();
+    await pageObj.heading.hover();
+    await expect.element(pageObj.availabilityDetails).not.toBeInTheDocument();
     await userEvent.keyboard("{Tab}");
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
     await expect.element(pageObj.availabilityDetails).toBeVisible();
+    await expect.element(pageObj.availabilityDetails).toHaveFocus();
 
     await userEvent.keyboard("{Escape}");
 

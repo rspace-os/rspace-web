@@ -234,7 +234,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 01:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–12:00. Unavailable: Aug 12, 2026, 00:00–01:00.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 01:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–10:00, Aug 12, 2026, 10:00–11:00, and Aug 12, 2026, 10:30–12:00. Unavailable: Aug 11, 2026, 23:00–Aug 12, 2026, 01:00.",
     );
   });
 
@@ -248,7 +248,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 00:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–10:00. Unavailable: Aug 12, 2026, 11:00–12:00. Booked and unavailable: Aug 12, 2026, 10:00–11:00.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available: Aug 12, 2026, 00:00–09:00 and Aug 12, 2026, 12:00–Aug 13, 2026, 00:00. Booked: Aug 12, 2026, 09:00–11:00. Unavailable: Aug 12, 2026, 10:00–12:00. Booked and unavailable: Aug 12, 2026, 10:00–11:00.",
     );
   });
 
