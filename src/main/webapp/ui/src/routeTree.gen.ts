@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as BookingRouteRouteImport } from './routes/booking/route'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
 import { Route as BookingIndexRouteImport } from './routes/booking/index'
+import { Route as BookingCalendarIndexRouteImport } from './routes/booking/calendar/index'
 import { Route as BookingPreferencesIndexRouteImport } from './routes/booking/preferences/index'
 import { Route as PublicApiDocsIndexRouteImport } from './routes/public/apiDocs/index'
 import { Route as PublicMaintenanceInProgressIndexRouteImport } from './routes/public/maintenanceInProgress/index'
@@ -33,6 +34,11 @@ const AboutIndexRoute = AboutIndexRouteImport.update({
 const BookingIndexRoute = BookingIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => BookingRouteRoute,
+} as any)
+const BookingCalendarIndexRoute = BookingCalendarIndexRouteImport.update({
+  id: '/calendar/',
+  path: '/calendar/',
   getParentRoute: () => BookingRouteRoute,
 } as any)
 const BookingPreferencesIndexRoute = BookingPreferencesIndexRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/booking': typeof BookingRouteRouteWithChildren
   '/about/': typeof AboutIndexRoute
   '/booking/': typeof BookingIndexRoute
+  '/booking/calendar/': typeof BookingCalendarIndexRoute
   '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/about': typeof AboutIndexRoute
   '/booking': typeof BookingIndexRoute
+  '/booking/calendar': typeof BookingCalendarIndexRoute
   '/booking/preferences': typeof BookingPreferencesIndexRoute
   '/public/apiDocs': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress': typeof PublicMaintenanceInProgressIndexRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/booking': typeof BookingRouteRouteWithChildren
   '/about/': typeof AboutIndexRoute
   '/booking/': typeof BookingIndexRoute
+  '/booking/calendar/': typeof BookingCalendarIndexRoute
   '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/booking'
     | '/about/'
     | '/booking/'
+    | '/booking/calendar/'
     | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
   to:
     | '/about'
     | '/booking'
+    | '/booking/calendar'
     | '/booking/preferences'
     | '/public/apiDocs'
     | '/public/maintenanceInProgress'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/booking'
     | '/about/'
     | '/booking/'
+    | '/booking/calendar/'
     | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
@@ -178,6 +190,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/booking/'
       preLoaderRoute: typeof BookingIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
+    '/booking/calendar/': {
+      id: '/booking/calendar/'
+      path: '/calendar'
+      fullPath: '/booking/calendar/'
+      preLoaderRoute: typeof BookingCalendarIndexRouteImport
       parentRoute: typeof BookingRouteRoute
     }
     '/booking/preferences/': {
@@ -234,6 +253,7 @@ declare module '@tanstack/react-router' {
 
 interface BookingRouteRouteChildren {
   BookingIndexRoute: typeof BookingIndexRoute
+  BookingCalendarIndexRoute: typeof BookingCalendarIndexRoute
   BookingPreferencesIndexRoute: typeof BookingPreferencesIndexRoute
   BookingBookableItemsAddIndexRoute: typeof BookingBookableItemsAddIndexRoute
   BookingConfigBookableItemsIndexRoute: typeof BookingConfigBookableItemsIndexRoute
@@ -243,6 +263,7 @@ interface BookingRouteRouteChildren {
 
 const BookingRouteRouteChildren: BookingRouteRouteChildren = {
   BookingIndexRoute: BookingIndexRoute,
+  BookingCalendarIndexRoute: BookingCalendarIndexRoute,
   BookingPreferencesIndexRoute: BookingPreferencesIndexRoute,
   BookingBookableItemsAddIndexRoute: BookingBookableItemsAddIndexRoute,
   BookingConfigBookableItemsIndexRoute: BookingConfigBookableItemsIndexRoute,
