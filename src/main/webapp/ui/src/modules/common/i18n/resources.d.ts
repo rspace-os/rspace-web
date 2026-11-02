@@ -1660,6 +1660,11 @@ export default interface Resources {
         "out": "Zoom out"
       }
     },
+    "filters": {
+      "dropped": "Some saved filter rules are no longer supported and were removed: {fields}.",
+      "me": "Me",
+      "owner": "Owner"
+    },
     "myBookings": {
       "actions": {
         "downloadCalendarFile": "Download .ics file",

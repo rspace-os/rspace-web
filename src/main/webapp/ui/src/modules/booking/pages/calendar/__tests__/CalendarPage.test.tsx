@@ -454,7 +454,9 @@ describe("CalendarPage", () => {
 
     await toggleQuickFilter(user, "My Bookings");
     expect(screen.getByRole("button", { name: "Filters 1 applied" })).toBeVisible();
-    await waitFor(() => expect(new URLSearchParams(window.location.search).has("mineOnly")).toBe(true));
+    await waitFor(() =>
+      expect(new URLSearchParams(window.location.search).get("calendar-events.where")).toBe("requesterId==me"),
+    );
     const remove = screen.getByRole("button", { name: "Remove My Bookings filter" });
 
     await user.click(remove);

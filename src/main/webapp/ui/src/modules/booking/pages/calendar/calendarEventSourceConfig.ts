@@ -30,11 +30,19 @@ export const calendarEventSourceConfig = {
     },
     {
       name: "requesterId",
-      type: "number",
+      type: "select",
+      options: [
+        {
+          value: "me",
+          get label() {
+            return i18n.t("booking:filters.me");
+          },
+        },
+      ],
       labelKey: "booking:calendar.fields.requester" satisfies CollectionTranslationKey,
       list: false,
       form: false,
-      capabilities: { filterOperators: [] },
+      capabilities: { filterOperators: ["equals"] },
     },
     {
       name: "purpose",

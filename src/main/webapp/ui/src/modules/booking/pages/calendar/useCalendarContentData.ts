@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { parseAsBoolean, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
@@ -13,7 +13,7 @@ import {
   bookingRelationshipSources,
 } from "@/modules/booking/domain/bookingRelationshipSource";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import type { CollectionConfig, SearchSelector } from "@/modules/common/collection/config";
+import type { CollectionConfig, FieldName, SearchSelector } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -22,14 +22,19 @@ import { useSelectedRelationshipOptions } from "@/modules/common/relationship-pi
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
+import { dropInvalidMeRules, hasPreset, togglePreset, withoutPresets } from "@/modules/common/table-list/presets";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { CollectionQueryState, FilterExpression } from "@/modules/common/table-list/types";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
+import { ownerPreset, ownerPresetField, requesterPreset } from "../ownerPreset";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { useCalendarEventFocus, useCalendarEventFocusResolution } from "./calendarEventFocus";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
 import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./calendarLayoutUtils";
+
+const eventOwnerPreset = { ...ownerPreset, field: "targetOwner" as SearchSelector<BookingListDocument> };
+const eventOwnerField = { ...ownerPresetField, name: "targetOwner" as FieldName<BookingListDocument> };
 
 const calendarResourceSourceConfig = {
   ...bookingConfigurationConfig,
@@ -46,7 +51,6 @@ const calendarViewParser = parseAsStringLiteral(calendarViews).withDefault("day"
 const calendarLayoutParser = parseAsStringLiteral(calendarLayouts)
   .withDefault("resources")
   .withOptions(calendarSearchOptions);
-const calendarQuickFilterParser = parseAsBoolean.withDefault(false).withOptions(calendarSearchOptions);
 function andFilters<TDocument>(
   filters: readonly (FilterExpression<TDocument> | null | undefined)[],
 ): FilterExpression<TDocument> | null {
@@ -132,8 +136,6 @@ export function useCalendarContentData() {
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
-  const [mineOnly, setMineOnly] = useQueryState("mineOnly", calendarQuickFilterParser);
-  const [myItemsOnly, setMyItemsOnly] = useQueryState("myItemsOnly", calendarQuickFilterParser);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
   const creationTarget = useBookableItem(target, token);
@@ -163,7 +165,8 @@ export function useCalendarContentData() {
   });
   const itemConfig = React.useMemo(() => {
     const enriched = enrichApiV2FilterConfig({
-      config: calendarResourceSourceConfig,
+      config: { ...calendarResourceSourceConfig, fields: [...calendarResourceSourceConfig.fields, ownerPresetField] },
+      localFields: [ownerPresetField.name],
       metadata: itemRuntimeFields.metadata,
       runtimeFields: itemRuntimeFields.runtimeFields,
       i18n,
@@ -178,6 +181,7 @@ export function useCalendarContentData() {
             field.name === "target" ||
             // A filter-only relationship: in the collection metadata, not the configuration type.
             String(field.name) === "location" ||
+            String(field.name) === "targetOwner" ||
             String(field.name).startsWith("target."),
         )
         .map((field) =>
@@ -187,12 +191,13 @@ export function useCalendarContentData() {
   }, [itemRuntimeFields.metadata, itemRuntimeFields.runtimeFields, t, i18n, i18n.resolvedLanguage, i18n.language]);
   const eventConfig = React.useMemo(() => {
     const enriched = enrichApiV2FilterConfig({
-      config: calendarEventSourceConfig,
+      config: { ...calendarEventSourceConfig, fields: [...calendarEventSourceConfig.fields, eventOwnerField] },
       metadata: eventRuntimeFields.metadata,
       runtimeFields: eventRuntimeFields.runtimeFields,
-      localFields: calendarEventSourceConfig.fields
-        .filter((field) => field.name !== "target")
-        .map((field) => field.name),
+      localFields: [
+        ...calendarEventSourceConfig.fields.filter((field) => field.name !== "target").map((field) => field.name),
+        eventOwnerField.name,
+      ],
       i18n,
       language: i18n.resolvedLanguage ?? i18n.language,
     });
@@ -202,7 +207,6 @@ export function useCalendarContentData() {
         .filter((field) => {
           const name = String(field.name);
           if (name === "id") return true;
-          if (name === "requesterId") return false;
           return field.capabilities.filterOperators.length > 0;
         })
         .map((field) =>
@@ -212,39 +216,65 @@ export function useCalendarContentData() {
       listSearchableFields: ["purpose"],
     } as CollectionConfig<BookingListDocument>);
   }, [eventRuntimeFields.metadata, eventRuntimeFields.runtimeFields, t, i18n, i18n.resolvedLanguage, i18n.language]);
-  const itemExpression = React.useMemo(
-    () => (itemWhere && itemWhere.trim() !== "" ? parseRsqlExpression(itemWhere, itemConfig) : null),
-    [itemConfig, itemWhere],
-  );
-  const eventExpression = React.useMemo(
-    () => (eventWhere && eventWhere.trim() !== "" ? parseRsqlExpression(eventWhere, eventConfig) : null),
+  const parsedItems = React.useMemo(() => {
+    const staleFields: string[] = [];
+    const parsed = itemWhere
+      ? parseRsqlExpression(itemWhere, itemConfig, {
+          isStale: (field) => field === "availability",
+          onDropped: (field) => staleFields.push(field),
+        })
+      : null;
+    const recovered = dropInvalidMeRules(parsed, ["targetOwner"]);
+    return { expression: recovered.expression, dropped: [...staleFields, ...recovered.dropped] };
+  }, [itemConfig, itemWhere]);
+  const parsedEvents = React.useMemo(
+    () =>
+      dropInvalidMeRules(eventWhere ? parseRsqlExpression(eventWhere, eventConfig) : null, [
+        "requesterId",
+        "targetOwner",
+      ]),
     [eventConfig, eventWhere],
   );
+  const itemExpression = parsedItems.expression;
+  const eventExpression = parsedEvents.expression;
+  // This Calendar renders only the events panel. Project the owner preset there while keeping
+  // its storage and request scope in the item expression.
+  const eventPanelExpression = andFilters<BookingListDocument>([
+    eventExpression,
+    hasPreset(itemExpression, ownerPreset) ? eventOwnerPreset : null,
+  ]);
+  const droppedFilterFields = [...parsedItems.dropped, ...parsedEvents.dropped];
+  const mineOnly = hasPreset(eventExpression, requesterPreset);
+  const myItemsOnly = hasPreset(itemExpression, ownerPreset);
+  const setMineOnly = (next: boolean) => {
+    if (next !== mineOnly) {
+      const expression = togglePreset(eventExpression, requesterPreset);
+      void setEventWhere(expression ? serializeRsqlExpression(expression) : null);
+    }
+  };
+  const setMyItemsOnly = (next: boolean) => {
+    if (next !== myItemsOnly) {
+      const expression = togglePreset(itemExpression, ownerPreset);
+      void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
+    }
+  };
   const itemIssue = filterIssue({
     kind: "items",
-    raw: itemWhere,
+    raw: parsedItems.dropped.length > 0 ? null : itemWhere,
     expression: itemExpression,
     runtimeFields: itemRuntimeFields,
     onReset: () => void setItemWhere(null),
   });
   const eventIssue = filterIssue({
     kind: "events",
-    raw: eventWhere,
+    raw: parsedEvents.dropped.length > 0 ? null : eventWhere,
     expression: eventExpression,
     runtimeFields: eventRuntimeFields,
     onReset: () => void setEventWhere(null),
   });
   const filtersBlocked =
     itemIssue !== undefined || eventIssue !== undefined || itemRuntimeFields.pending || eventRuntimeFields.pending;
-  const requesterFilter = mineOnly
-    ? ({
-        kind: "comparison",
-        field: "requesterId",
-        operator: "equals",
-        value: currentUser.id,
-      } satisfies FilterExpression<BookingListDocument>)
-    : null;
-  const scopedEventExpression = andFilters([eventExpression, requesterFilter]);
+  const scopedEventExpression = eventExpression;
   const targetExpression = targetFilter(target);
   const calendarEventExpression = andFilters<BookingListDocument>([
     scopedEventExpression,
@@ -282,7 +312,6 @@ export function useCalendarContentData() {
         start,
         end,
         eventWhere: eventWhereParameter,
-        mine: myItemsOnly,
         page: state.page.pageIndex + 1,
         pageSize: state.page.pageSize,
       },
@@ -330,7 +359,7 @@ export function useCalendarContentData() {
     targetGlobalIds: layout === "resources" ? resourceTargetIds : undefined,
     enabled: calendarQueryReady && (layout !== "resources" || resourceTableReady),
     authScope: currentUser.id,
-    scope: { where: calendarEventWhereParameter, q: calendarSearch, mine: myItemsOnly },
+    scope: { where: calendarEventWhereParameter, q: calendarSearch },
   });
   // Display filters must not change the events used to propose a free booking window.
   // Without an event filter/Search this uses the display query's cache, avoiding a second request.
@@ -360,8 +389,6 @@ export function useCalendarContentData() {
     calendarSearch,
     itemWhere,
     eventWhere,
-    mineOnly,
-    myItemsOnly,
     setView,
     setLayout,
   });
@@ -387,13 +414,22 @@ export function useCalendarContentData() {
     : undefined;
   const targetName = targetOption?.restoreStatus === undefined ? targetOption?.label : loadedTargetName;
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
-    void setEventWhere(expression ? serializeRsqlExpression(expression) : null);
+    const events = withoutPresets(expression, [eventOwnerPreset]);
+    const otherItems = withoutPresets(itemExpression, [ownerPreset]);
+    const items = hasPreset(expression, eventOwnerPreset) ? togglePreset(otherItems, ownerPreset) : otherItems;
+    replaceSearch((search) => {
+      if (events) search.set("calendar-events.where", serializeRsqlExpression(events));
+      else search.delete("calendar-events.where");
+      if (items) search.set("calendar-resources.where", serializeRsqlExpression(items));
+      else search.delete("calendar-resources.where");
+    });
   };
   const onSearchChange = (search: string) => {
     void setCalendarSearch(search || null);
   };
 
   return {
+    droppedFilterFields,
     creationTarget: creationTarget.data,
     navigate,
     calendarSearch,
@@ -414,7 +450,7 @@ export function useCalendarContentData() {
     blockingEvents,
     displayReady,
     eventConfig,
-    eventExpression,
+    eventExpression: eventPanelExpression,
     eventIssue,
     eventRuntimeFields,
     filtersBlocked,

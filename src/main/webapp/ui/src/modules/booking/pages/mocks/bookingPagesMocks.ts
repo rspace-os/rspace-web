@@ -159,7 +159,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
             [event.purpose, event.bookedBy, event.target?.value.name, event.target?.globalId].some((value) =>
               value?.toLowerCase().includes(q),
             )) &&
-          (!where.includes("requesterId==1") || event.requesterId === 1),
+          (!(where.includes("requesterId==1") || where.includes("requesterId==me")) || event.requesterId === 1),
       );
       return HttpResponse.json(collectionResponse(docs));
     }),

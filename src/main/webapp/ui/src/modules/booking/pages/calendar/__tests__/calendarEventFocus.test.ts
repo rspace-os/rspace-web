@@ -9,7 +9,7 @@ describe("calendarEventFocusHref", () => {
       targetGlobalId: "IN123",
       timeZone: "Europe/Berlin",
       searchStr:
-        "?layout=agenda&view=week&calendar-resources.where=location%3D%3DIC1&calendar-resources.q=confocal&calendar-events.where=state%3D%3DCONFIRMED&mineOnly=true&myItemsOnly=true&keep=yes",
+        "?layout=agenda&view=week&calendar-resources.where=location%3D%3DIC1&calendar-resources.q=confocal&calendar-events.where=state%3D%3DCONFIRMED&keep=yes",
     });
     const url = new URL(href, "https://example.test");
 
@@ -21,13 +21,7 @@ describe("calendarEventFocusHref", () => {
     expect(url.searchParams.get("layout")).toBe("agenda");
     expect(url.searchParams.get("view")).toBe("week");
     expect(url.searchParams.get("keep")).toBe("yes");
-    for (const key of [
-      "calendar-resources.where",
-      "calendar-resources.q",
-      "calendar-events.where",
-      "mineOnly",
-      "myItemsOnly",
-    ]) {
+    for (const key of ["calendar-resources.where", "calendar-resources.q", "calendar-events.where"]) {
       expect(url.searchParams.has(key)).toBe(false);
     }
   });

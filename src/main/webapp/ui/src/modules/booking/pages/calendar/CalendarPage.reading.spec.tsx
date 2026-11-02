@@ -341,9 +341,9 @@ describe("Calendar page", () => {
     await calendar.toggleQuickFilter("My Bookings");
     await calendar.openFilterPanel();
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
-    await page.getByRole("combobox", { name: "Field for filter 1" }).fill("Purpose");
+    await page.getByRole("combobox", { name: "Field for filter 2" }).fill("Purpose");
     await page.getByRole("option", { name: "Purpose", exact: true }).click();
-    await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
+    await page.getByRole("textbox", { name: "Value for filter 2" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect.element(calendar.removeMine).toBeVisible();
     await expect.element(calendar.filters).toHaveAccessibleName("Filters 2 applied");

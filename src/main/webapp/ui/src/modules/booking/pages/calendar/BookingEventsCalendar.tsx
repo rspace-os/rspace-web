@@ -295,6 +295,7 @@ export function BookingEventsCalendar({
               description: t("calendar.quickFilters.mineDescription"),
               icon: <CalendarCheck2Icon aria-hidden="true" />,
               pressed: mineOnly,
+              inExpression: true,
               onClick: () => onMineChange?.(!mineOnly),
             },
             {
@@ -303,14 +304,11 @@ export function BookingEventsCalendar({
               description: t("calendar.quickFilters.myItemsDescription"),
               icon: <PackageCheckIcon aria-hidden="true" />,
               pressed: myItemsOnly,
+              inExpression: true,
               onClick: () => onMyItemsChange?.(!myItemsOnly),
             },
           ],
-          onReset: () => {
-            onMineChange?.(false);
-            onMyItemsChange?.(false);
-            onControlsReset();
-          },
+          onReset: onControlsReset,
         }}
         renderRowsWhenEmpty
         renderRows={(calendarEvents) => {
