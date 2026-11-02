@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
+import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import useOauthToken from "../useOauthToken";
@@ -65,6 +66,35 @@ describe("useOauthToken", () => {
     const tokenEndpoint = serveTokens(3600);
     await result.current.getToken();
     await vi.advanceTimersByTimeAsync(60 * 1000);
+    expect(tokenEndpoint).toHaveBeenCalledTimes(1);
+  });
+
+  test("stops refreshing once the component unmounts", async () => {
+    const tokenEndpoint = serveTokens(3600);
+    const { result, unmount } = renderHook(() => useOauthToken());
+    await result.current.getToken();
+
+    unmount();
+    await vi.advanceTimersByTimeAsync(3600 * 1000);
+
+    expect(tokenEndpoint).toHaveBeenCalledTimes(1);
+  });
+
+  test("keeps refreshing under StrictMode when the token is requested on mount", async () => {
+    sessionStorage.setItem("id_token", fakeJwt(3600));
+    const tokenEndpoint = serveTokens(3600);
+    renderHook(
+      () => {
+        const { getToken } = useOauthToken();
+        useEffect(() => {
+          void getToken();
+        }, [getToken]);
+      },
+      { reactStrictMode: true },
+    );
+
+    await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
+
     expect(tokenEndpoint).toHaveBeenCalledTimes(1);
   });
 });

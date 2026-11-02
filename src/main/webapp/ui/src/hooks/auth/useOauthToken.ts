@@ -34,7 +34,8 @@ import { fetchOauthToken, getStoredToken, saveStoredToken, tokenRefreshDelayMs }
  * that use this hook as otherwise they will fail to work when the token
  * elapses.  If the page is loaded and there is a valid token in the session
  * storage then it is used and a timer is set up to refresh the token before it
- * expires just as if the token and been fetched directly.
+ * expires just as if the token and been fetched directly. The timer is
+ * cancelled when the component using this hook unmounts.
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
   /*
@@ -50,6 +51,23 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * and duplicate network requests.
    */
   const tokenRef = React.useRef<string | null>(null);
+  const refreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const unmountedRef = React.useRef(false);
+
+  /*
+   * On unmount, cancel the pending refresh and forget the token. Forgetting it
+   * matters under StrictMode, which unmounts and remounts straight away: the
+   * next `getToken` then starts a new timer instead of returning a token that
+   * no longer has one. A refresh still in flight at unmount schedules nothing.
+   */
+  React.useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+      clearTimeout(refreshTimerRef.current);
+      tokenRef.current = null;
+    };
+  }, []);
 
   /*
    * As part of fetching a new token, we save it into session storage so that
@@ -73,6 +91,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    */
   async function refreshToken(): Promise<void> {
     const newToken = await fetchOauthToken(fetchToken);
+    if (unmountedRef.current) return;
     tokenRef.current = newToken;
     scheduleRefresh(newToken);
   }
@@ -83,7 +102,8 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * storage or the endpoint and sets up a new timer.
    */
   function scheduleRefresh(token: string): void {
-    setTimeout(() => {
+    clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(() => {
       refreshToken().catch(() => {
         tokenRef.current = null;
       });
@@ -103,7 +123,12 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * If this hook has not been previously called then we preferably get the
      * token from session storage or else get it from the API endpoint.
      */
-    const savedToken = getStoredToken() ?? (await fetchOauthToken(fetchToken));
+    let savedToken = getStoredToken();
+    if (!savedToken) {
+      savedToken = await fetchOauthToken(fetchToken);
+      // The component may have unmounted while the token was being fetched.
+      if (unmountedRef.current) return savedToken;
+    }
     tokenRef.current = savedToken;
 
     /*
