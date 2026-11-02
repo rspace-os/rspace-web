@@ -114,11 +114,6 @@ const openApi = {
                 selectors: {
                   ...filter.selectors,
                   id: { ...filter.selectors.id, operators: ["==", "=in="] },
-                  bufferMinutes: {
-                    schema: { type: "integer" },
-                    operators: ["==", "=gt=", "=lt="],
-                    wildcards: false,
-                  },
                 },
               },
             };
@@ -139,7 +134,8 @@ const openApi = {
                   "incrementUnit",
 
                   "openingHours",
-                  "bufferMinutes",
+                  "bufferBeforeMinutes",
+                  "bufferAfterMinutes",
                   "maxBookingDurationMinutes",
                   "allowDoubleBooking",
                   "updatedAt",
@@ -525,7 +521,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(searchRequests.at(-1)).toContain("target.name=contains=confocal"));
   });
 
-  it("offers one buffer field in the filter field list", async () => {
+  it("distinguishes before and after gaps in the filter field list", async () => {
     const user = userEvent.setup();
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
@@ -538,9 +534,8 @@ describe("AllBookableItemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Add filter" }));
     await user.click(screen.getByRole("combobox", { name: "Field for filter 1" }));
 
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toContain(
-      "Gap before and after bookings (minutes)",
-    );
+    expect(await screen.findByRole("option", { name: "Gap before (minutes)" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "Gap after (minutes)" })).toBeVisible();
   });
 
   it("hides a column locally when the table uses a fixed projection", async () => {
@@ -596,7 +591,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferMinutes,allowDoubleBooking,maxBookingDurationMinutes,enabled,id,target,configurationVersion,incrementUnit,effectiveRole,roleSources,capabilities",
+        "state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,enabled,id,target,configurationVersion,incrementUnit,effectiveRole,roleSources,capabilities",
       );
       expect(params.get("depth")).toBe("1");
     });
