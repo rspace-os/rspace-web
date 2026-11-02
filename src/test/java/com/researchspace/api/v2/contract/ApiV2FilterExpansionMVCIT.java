@@ -6,9 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -18,6 +20,7 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.field.ExtraField;
@@ -50,7 +53,7 @@ class ApiV2FilterExpansionMVCIT {
 
   private static final String CONFIGURATIONS = "/api/v2/booking-configurations";
   private static final String RUNTIME_FIELDS = "/api/v2/instruments/fields/extraFields";
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final WebApplicationContext context;
   private final BookingConfigurationDao bookingConfigurationDao;
@@ -61,6 +64,8 @@ class ApiV2FilterExpansionMVCIT {
   private final SessionFactory sessionFactory;
   private final ApiV2ResourceCatalog catalog;
 
+  private final ContainerDao containerDao;
+
   @Autowired
   ApiV2FilterExpansionMVCIT(
       WebApplicationContext context,
@@ -70,7 +75,8 @@ class ApiV2FilterExpansionMVCIT {
       IRecordFactory recordFactory,
       PlatformTransactionManager transactionManager,
       SessionFactory sessionFactory,
-      ApiV2ResourceCatalog catalog) {
+      ApiV2ResourceCatalog catalog,
+      ContainerDao containerDao) {
     this.context = context;
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.instrumentDao = instrumentDao;
@@ -79,6 +85,7 @@ class ApiV2FilterExpansionMVCIT {
     this.transactionManager = transactionManager;
     this.sessionFactory = sessionFactory;
     this.catalog = catalog;
+    this.containerDao = containerDao;
   }
 
   private ApiV2Fixture fixture;
@@ -154,6 +161,44 @@ class ApiV2FilterExpansionMVCIT {
     assertListAndCount(
         scoped, "target.relationTo==instruments", Set.of(matchingConfig, otherConfig));
     assertBadRequest("id=in=(" + join(scoped) + ");target==XX" + matchingTarget);
+
+    // Location: the immediate parent Container, matched only where the caller may read it. An
+    // unreadable Container behaves exactly like one that does not exist, for rows and totals.
+    ApiContainer room = fixture.container(owner, "cold room " + fixture.marker());
+    long locatedTarget = fixture.instrumentIn(owner, "located " + fixture.marker(), room);
+    ApiContainer privateRoom = fixture.container(inaccessibleOwner, "vault " + fixture.marker());
+    long hiddenTarget =
+        fixture.instrumentIn(inaccessibleOwner, "vaulted " + fixture.marker(), privateRoom);
+    makePrivate(hiddenTarget);
+    makeContainerPrivate(privateRoom.getId());
+    long locatedConfig = configuration(locatedTarget, owner);
+    long hiddenConfig = configuration(hiddenTarget, owner);
+    List<Long> located =
+        List.of(matchingConfig, otherConfig, inaccessibleConfig, locatedConfig, hiddenConfig);
+    String missing = "IC90000000000000";
+    long workbench = parentId(matchingTarget);
+
+    assertListAndCount(located, "location==IC" + room.getId(), Set.of(locatedConfig));
+    assertListAndCount(located, "location.value==" + room.getId(), Set.of(locatedConfig));
+    assertListAndCount(located, "location==IC" + privateRoom.getId(), Set.of());
+    assertListAndCount(located, "location==" + missing, Set.of());
+    Set<Long> readable = Set.of(matchingConfig, otherConfig, locatedConfig);
+    assertListAndCount(located, "location!=IC" + privateRoom.getId(), readable);
+    assertListAndCount(located, "location!=" + missing, readable);
+    assertListAndCount(
+        located,
+        "location=in=(IC" + room.getId() + ",IC" + privateRoom.getId() + ")",
+        Set.of(locatedConfig));
+    // A workbench shares the Container ID space, so IC plus its ID names it too.
+    assertListAndCount(located, "location==IC" + workbench, Set.of(matchingConfig, otherConfig));
+    assertListAndCount(located, "location=exists=true", readable);
+    assertListAndCount(located, "location=exists=false", Set.of());
+    assertBadRequest("id=in=(" + join(located) + ");location==BE" + workbench);
+    assertLocations("globalId=IC" + privateRoom.getId(), List.of());
+    assertLocations("q=vault " + fixture.marker(), List.of());
+    assertLocations("q=IC" + privateRoom.getId(), List.of());
+    assertLocations("globalId=IC" + room.getId(), List.of("IC" + room.getId()));
+    assertLocations("q=BE" + workbench, List.of("BE" + workbench));
   }
 
   @Test
@@ -237,6 +282,7 @@ class ApiV2FilterExpansionMVCIT {
                     .header("apiKey", ownerKey)
                     .param("where", where)
                     .param("limit", "100")
+                    .param("totals", "true")
                     .param("fields[booking-configurations]", "id"))
             .andReturn();
     assertEquals(
@@ -273,6 +319,7 @@ class ApiV2FilterExpansionMVCIT {
                     .param("where", where)
                     .param("limit", "1")
                     .param("page", Integer.toString(page))
+                    .param("totals", "true")
                     .param("fields[booking-configurations]", "id"))
             .andReturn();
     assertEquals(
@@ -386,7 +433,8 @@ class ApiV2FilterExpansionMVCIT {
         });
   }
 
-  private void makePrivate(long instrumentId) {
+  static void makePrivate(
+      TransactionTemplate transactions, InstrumentDao instrumentDao, long instrumentId) {
     transactions.executeWithoutResult(
         ignored -> {
           Instrument instrument = instrumentDao.get(instrumentId);
@@ -458,7 +506,7 @@ class ApiV2FilterExpansionMVCIT {
     instruments.clear();
   }
 
-  private static String join(List<Long> ids) {
+  static String join(List<Long> ids) {
     return ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
   }
 
@@ -468,12 +516,45 @@ class ApiV2FilterExpansionMVCIT {
     ApiV2FilterExpansionMVCIT.assertListAndCountForWhere(mockMvc, ownerKey, where, expected);
   }
 
+  private void assertLocations(String query, List<String> expectedGlobalIds) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/api/v2/booking-catalogue/locations?" + query.replace(" ", "%20"))
+                    .header("apiKey", ownerKey))
+            .andReturn();
+    assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
+    JsonNode body = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
+    List<String> actual = new ArrayList<>();
+    body.path("items").forEach(item -> actual.add(item.path("globalId").asText()));
+    assertEquals(expectedGlobalIds, actual, "locations for " + query);
+    assertEquals(expectedGlobalIds.size(), body.path("total").asLong(), "location total");
+  }
+
+  private long parentId(long instrumentId) {
+    return transactions.execute(
+        ignored -> instrumentDao.get(instrumentId).getParentLocation().getContainer().getId());
+  }
+
+  private void makeContainerPrivate(long containerId) {
+    transactions.executeWithoutResult(
+        ignored -> {
+          Container container = containerDao.get(containerId);
+          container.setSharingMode(InventorySharingMode.OWNER_ONLY);
+          containerDao.save(container);
+        });
+  }
+
   private void assertBadRequest(String where) throws Exception {
     ApiV2FilterExpansionMVCIT.assertBadRequest(mockMvc, ownerKey, where);
   }
 
   private String runtimeSelector(String fieldName, String apiKey) throws Exception {
     return ApiV2FilterExpansionMVCIT.runtimeSelector(mockMvc, fieldName, apiKey);
+  }
+
+  private void makePrivate(long instrumentId) {
+    ApiV2FilterExpansionMVCIT.makePrivate(transactions, instrumentDao, instrumentId);
   }
 
   private long instrument(User instrumentOwner, String name) {

@@ -8,6 +8,7 @@ import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { institutionBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { BookingDashboardPageStory } from "./BookingDashboardPage.story";
@@ -148,12 +149,12 @@ describe("Booking dashboard", () => {
       await expect.poll(() => queryClient.isFetching()).toBe(0);
       await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
 
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
+      await queryClient.invalidateQueries({ queryKey: bookingKeys.upcoming() });
       await expect.element(dashboard.upcomingError).toBeVisible();
       await dashboard.upcomingRetry.click();
       await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
 
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
+      await queryClient.invalidateQueries({ queryKey: bookingKeys.upcoming() });
       await expect.element(dashboard.upcomingInstrument("Instrument 101")).toBeVisible();
       await expect.element(dashboard.upcomingInstrument("Instrument 101")).toBeVisible();
       await expect.element(dashboard.upcomingInstrument("Instrument 100")).not.toBeInTheDocument();
@@ -161,7 +162,7 @@ describe("Booking dashboard", () => {
         .poll(() => dashboard.upcomingInstrument("Instrument 101").element().parentElement?.hasAttribute("open"))
         .toBe(false);
 
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
+      await queryClient.invalidateQueries({ queryKey: bookingKeys.upcoming() });
       await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
       await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
       await expect

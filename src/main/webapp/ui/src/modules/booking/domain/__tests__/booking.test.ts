@@ -28,11 +28,19 @@ describe("booking response intervals", () => {
       updatedAt: "2026-08-02T10:00:00Z",
     } as const;
 
-    expect(v.parse(BookingDetailsSchema, redacted)).toEqual(redacted);
-    expect(v.parse(BookingListDocumentSchema, { ...redacted, requester: { relationTo: "users", value: 84 } })).toEqual({
+    const details = { ...redacted, cancellationReason: null };
+    expect(v.parse(BookingDetailsSchema, details)).toEqual(details);
+    const numericRequester = { ...redacted, requester: { relationTo: "users", value: 84 } };
+    expect(v.parse(BookingListDocumentSchema, numericRequester)).toEqual(numericRequester);
+
+    const expandedRequester = {
       ...redacted,
-      requester: { relationTo: "users", value: 84 },
-    });
+      requester: { relationTo: "users", value: { id: 84, name: "Ada Lovelace" }, globalId: "US84" },
+    };
+    expect(v.parse(BookingListDocumentSchema, expandedRequester)).toEqual(expandedRequester);
+
+    const concealedRequester = { ...redacted, requester: null };
+    expect(v.parse(BookingListDocumentSchema, concealedRequester)).toEqual(concealedRequester);
   });
 
   it("retains a valid response and reports a non-increasing interval at end", () => {

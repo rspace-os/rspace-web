@@ -5,10 +5,7 @@ import java.time.ZoneId;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/**
- * One complete set of account-facing Booking display settings. A null {@code timeFormat} means
- * {@link BookingTimeFormat#AUTOMATIC}.
- */
+/** One complete set of account-facing Booking display settings. */
 public record BookingDisplaySettings(
     String availabilityWindowStart,
     String availabilityWindowEnd,
@@ -33,18 +30,7 @@ public record BookingDisplaySettings(
     if (timezoneMode != BookingTimezoneMode.CUSTOM) {
       customTimezone = null;
     }
-    if (timeFormat == null) {
-      timeFormat = DEFAULT_TIME_FORMAT;
-    }
-  }
-
-  /** Settings with the {@link BookingTimeFormat#AUTOMATIC} clock. */
-  public BookingDisplaySettings(
-      String availabilityWindowStart,
-      String availabilityWindowEnd,
-      BookingTimezoneMode timezoneMode,
-      String customTimezone) {
-    this(availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, null);
+    Objects.requireNonNull(timeFormat, "Booking time format");
   }
 
   /** Nullable patch used by the global Booking settings endpoint. */
@@ -54,15 +40,6 @@ public record BookingDisplaySettings(
       BookingTimezoneMode timezoneMode,
       String customTimezone,
       BookingTimeFormat timeFormat) {
-
-    /** A patch that leaves the time format unchanged. */
-    public Patch(
-        String availabilityWindowStart,
-        String availabilityWindowEnd,
-        BookingTimezoneMode timezoneMode,
-        String customTimezone) {
-      this(availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, null);
-    }
 
     public static Patch empty() {
       return new Patch(null, null, null, null, null);
