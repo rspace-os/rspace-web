@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+  <changeSet id="booking-single-buffer" author="tchoi-rs" context="run">
+    <comment>Keep the larger booking gap as one symmetric buffer, including Envers history.</comment>
+    <sql>UPDATE BookingConfiguration SET bufferBeforeMinutes = CASE WHEN bufferBeforeMinutes IS NULL AND bufferAfterMinutes IS NULL THEN NULL ELSE GREATEST(COALESCE(bufferBeforeMinutes, 0), COALESCE(bufferAfterMinutes, 0)) END</sql>
+    <renameColumn tableName="BookingConfiguration" oldColumnName="bufferBeforeMinutes" newColumnName="bufferMinutes" columnDataType="BIGINT"/>
+    <dropColumn tableName="BookingConfiguration" columnName="bufferAfterMinutes"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="bufferMinutes" columnDataType="BIGINT"/>
+    <addDefaultValue tableName="BookingConfiguration" columnName="bufferMinutes" columnDataType="BIGINT" defaultValueNumeric="0"/>
+    <sql>UPDATE BookingConfigurationDefaults SET bufferBeforeMinutes = CASE WHEN bufferBeforeMinutes IS NULL AND bufferAfterMinutes IS NULL THEN NULL ELSE GREATEST(COALESCE(bufferBeforeMinutes, 0), COALESCE(bufferAfterMinutes, 0)) END</sql>
+    <renameColumn tableName="BookingConfigurationDefaults" oldColumnName="bufferBeforeMinutes" newColumnName="bufferMinutes" columnDataType="BIGINT"/>
+    <dropColumn tableName="BookingConfigurationDefaults" columnName="bufferAfterMinutes"/>
+    <addNotNullConstraint tableName="BookingConfigurationDefaults" columnName="bufferMinutes" columnDataType="BIGINT"/>
+    <sql>UPDATE BookingConfiguration_AUD SET bufferBeforeMinutes = CASE WHEN bufferBeforeMinutes IS NULL AND bufferAfterMinutes IS NULL THEN NULL ELSE GREATEST(COALESCE(bufferBeforeMinutes, 0), COALESCE(bufferAfterMinutes, 0)) END</sql>
+    <renameColumn tableName="BookingConfiguration_AUD" oldColumnName="bufferBeforeMinutes" newColumnName="bufferMinutes" columnDataType="BIGINT"/>
+    <dropColumn tableName="BookingConfiguration_AUD" columnName="bufferAfterMinutes"/>
+    <sql>UPDATE BookingConfigurationDefaults_AUD SET bufferBeforeMinutes = CASE WHEN bufferBeforeMinutes IS NULL AND bufferAfterMinutes IS NULL THEN NULL ELSE GREATEST(COALESCE(bufferBeforeMinutes, 0), COALESCE(bufferAfterMinutes, 0)) END</sql>
+    <renameColumn tableName="BookingConfigurationDefaults_AUD" oldColumnName="bufferBeforeMinutes" newColumnName="bufferMinutes" columnDataType="BIGINT"/>
+    <dropColumn tableName="BookingConfigurationDefaults_AUD" columnName="bufferAfterMinutes"/>
+  </changeSet>
+</databaseChangeLog>

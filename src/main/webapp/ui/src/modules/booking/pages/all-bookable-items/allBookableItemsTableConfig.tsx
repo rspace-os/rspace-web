@@ -62,15 +62,18 @@ function createAllBookableItemsConfig(
           minWidth: 240,
           renderCell: ({ row }: { row: AllBookableItem }) =>
             row.target ? (
-              <InventoryItem
-                name={<BookableItemName name={row.target.value.name} globalId={row.target.globalId} />}
-                globalId={row.target.globalId}
-                href={`/globalId/${row.target.globalId}`}
-                idLinkLabel={openRecordLabel(row.target.globalId)}
-                size="xs"
-              >
-                <InstrumentLocation name={row.target.location?.name} globalId={row.target.location?.globalId} />
-              </InventoryItem>
+              <div className="w-60 max-w-full whitespace-normal wrap-break-word">
+                <InventoryItem
+                  nameClassName="whitespace-normal [&_a]:max-w-full"
+                  name={<BookableItemName name={row.target.value.name} globalId={row.target.globalId} />}
+                  globalId={row.target.globalId}
+                  href={`/globalId/${row.target.globalId}`}
+                  idLinkLabel={openRecordLabel(row.target.globalId)}
+                  size="xs"
+                >
+                  <InstrumentLocation name={row.target.location?.name} globalId={row.target.location?.globalId} />
+                </InventoryItem>
+              </div>
             ) : (
               <UnknownItem size="xs" />
             ),

@@ -13,6 +13,10 @@ export class BookableItemPage {
   readonly auditPanel: Locator = page.getByRole("tabpanel", { name: "Audit log", includeHidden: true });
   readonly accessPanel: Locator = page.getByRole("tabpanel", { name: "Access", includeHidden: true });
 
+  get eventTables(): Locator {
+    return this.bookingsPanel.getByRole("table");
+  }
+
   get calendarTrigger(): Locator {
     return page.getByRole("button", { name: "Add to calendar" });
   }
@@ -70,7 +74,7 @@ export class BookableItemPage {
   }
 
   get maximumDuration(): Locator {
-    return page.getByRole("spinbutton").first();
+    return page.getByRole("spinbutton", { name: "Maximum booking duration" });
   }
 
   get openingHours(): Locator {

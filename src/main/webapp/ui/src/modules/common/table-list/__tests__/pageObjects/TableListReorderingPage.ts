@@ -85,7 +85,7 @@ export class TableListReorderingPage {
   }
 
   get sortingButton(): Locator {
-    return page.getByRole("button", { name: "Sort, 3 rules active" });
+    return page.getByRole("button", { name: "Sort 3 rules active" });
   }
 
   get columnsButton(): Locator {
@@ -159,6 +159,9 @@ export class TableListReorderingPage {
   async openFilters(): Promise<void> {
     await userEvent.click(this.filterButton);
     await this.filterList.findElement();
+    // Synthetic drags read coordinates directly, so wait for the popup's entrance animation.
+    const popup = this.filterList.element().closest<HTMLElement>('[data-slot="popover-content"]');
+    await Promise.all(popup?.getAnimations({ subtree: true }).map((animation) => animation.finished) ?? []);
   }
 
   async openSorting(): Promise<void> {
@@ -213,6 +216,10 @@ export class TableListReorderingPage {
 
   filterScrollTop(): number {
     return this.filterList.element().scrollTop;
+  }
+
+  filterPreviewOffset(number: number): number {
+    return new DOMMatrixReadOnly(itemFor(this.filterHandle(number)).style.transform).m42;
   }
 
   filterDraftOrder(): string {

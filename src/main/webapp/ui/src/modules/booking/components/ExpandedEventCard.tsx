@@ -1,12 +1,12 @@
 import { Wrench, X } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
+import { BookableItemName } from "./BookableItemName";
 import { BookingDetailRows } from "./BookingDetailRows";
 import { BookingInstrumentTimeTooltip } from "./BookingInstrumentTimeTooltip";
 import {

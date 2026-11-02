@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
+import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import { addCalendarDays } from "@/modules/booking/domain/bookingTime";
 import {
   TableList,
@@ -26,6 +27,7 @@ import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookingConfigurationActionsMenu } from "../bookable-items/BookingConfigurationActionsMenu";
+import { bookableItemLifecycleNotice } from "../bookable-items/bookableItemFeedback";
 import {
   archiveBookingConfiguration,
   permanentlyDeleteBookingConfiguration,
@@ -33,6 +35,8 @@ import {
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
 import { type AllBookableItem, withAvailability } from "./availabilityQuickFilters";
 import type { useAllBookableItemsData } from "./useAllBookableItemsData";
+
+const emptyIntervals: readonly SourcedAvailabilityInterval[] = [];
 
 type AllBookableItemsTableProps = Omit<
   ReturnType<typeof useAllBookableItemsData>,
@@ -80,6 +84,8 @@ export function AllBookableItemsTable({
   rowsDate,
   token,
   quickFilterText,
+  alertsRef,
+  attachAlerts,
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
   const navigate = useNavigate({ from: "/booking/all-items/" });
@@ -145,14 +151,20 @@ export function AllBookableItemsTable({
             configuration={row}
             close={close}
             onArchive={(id, version) => archiveBookingConfiguration(id, version, token)}
-            onArchived={(id) => onLifecycleChanged([id])}
+            onArchived={async (id) => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("archived", row, t));
+              await onLifecycleChanged([id]);
+            }}
           />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
             close={close}
             onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version, token)}
-            onDeleted={() => onLifecycleChanged([row.id], true)}
+            onDeleted={async () => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
+              await onLifecycleChanged([row.id]);
+            }}
           />
         ) : null,
     }),
@@ -252,6 +264,8 @@ export function AllBookableItemsTable({
       ) : null}
       <TableList
         {...tableProps}
+        alertsRef={attachAlerts}
+        stickyActions="when-fitted"
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
         filterButtons={availabilityFilters}
@@ -261,7 +275,7 @@ export function AllBookableItemsTable({
             id: "availability",
             label: t("calendar.availability"),
             minWidth: 320,
-            width: 320,
+            widthMode: "fill",
             card: { fullWidth: true },
             renderCell: (row) => {
               const target = row.target;
@@ -285,8 +299,8 @@ export function AllBookableItemsTable({
               }
               return (
                 <AvailabilityBar
-                  className="min-w-0 px-1"
-                  intervals={availability.data.get(target.globalId) ?? []}
+                  className="min-w-0 px-1 in-[td]:min-w-72"
+                  intervals={availability.data.get(target.globalId) ?? emptyIntervals}
                   periodStart={new Date(rowsBounds.start)}
                   periodEnd={new Date(rowsBounds.end)}
                   now={rowsDate === userToday ? new Date(minute) : undefined}

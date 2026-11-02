@@ -4,10 +4,13 @@ import { HttpResponse, http } from "msw";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
+import {
+  type CalendarAvailabilityRow,
+  classifyCurrentDayAvailability,
+  rowAvailabilityIntervals,
+} from "@/modules/booking/domain/availability";
 import type { Booking } from "@/modules/booking/domain/booking";
 import type { FilterExpression } from "@/modules/common/table-list/types";
-import { type CalendarAvailabilityRow, rowAvailabilityIntervals } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
   keepAcrossMinutes,
@@ -163,6 +166,7 @@ describe("the availability oracle", () => {
     globalId: "IN1",
     timezone: "UTC",
     openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
     bufferBeforeMinutes: 0,
     bufferAfterMinutes: 0,
     allowDoubleBooking: false,
@@ -206,27 +210,35 @@ describe("the availability oracle", () => {
 
   it("distinguishes before opening, open now, and after closing", () => {
     const restricted = row({
-      openingHours: row().openingHours.map((entry) => ({ ...entry, start: "08:00", end: "18:00" })),
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
     });
     expect(classify(restricted, "2026-08-17T07:00:00Z")).toBe("free-later-today");
     expect(classify(restricted, "2026-08-17T09:00:00Z")).toBe("available-now");
     expect(classify(restricted, "2026-08-17T19:00:00Z")).toBe("unavailable-today");
   });
 
-  it("treats an omitted weekday as closed and follows each weekday's own hours", () => {
+  it("treats an item closed on the instrument's weekday as unavailable and follows its exception", () => {
     // 2026-08-17 is a Monday.
     expect(
       classify(
-        row({ openingHours: row().openingHours.filter((entry) => entry.dayOfWeek !== 1) }),
+        row({
+          openingHours: [1, 2, 3, 4, 5, 6, 7]
+            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+            .filter((entry) => [2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        }),
         "2026-08-17T09:00:00Z",
       ),
     ).toBe("unavailable-today");
     expect(
       classify(
         row({
-          openingHours: row().openingHours.map((entry) =>
-            entry.dayOfWeek === 1 ? { ...entry, start: "12:00", end: "18:00" } : entry,
-          ),
+          openingHours: [1, 2, 3, 4, 5, 6, 7]
+            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+            .map(
+              (entry) =>
+                [{ dayOfWeek: 1, start: "12:00", end: "18:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ??
+                entry,
+            ),
         }),
         "2026-08-17T09:00:00Z",
       ),

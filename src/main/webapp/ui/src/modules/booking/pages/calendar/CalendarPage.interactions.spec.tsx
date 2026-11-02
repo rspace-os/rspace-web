@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import { resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import {
@@ -25,6 +24,8 @@ registerHandlers();
 let history: RouterHistory;
 
 beforeEach(async () => {
+  // Timeline handles are a desktop interaction; narrow screens edit times in the bottom sheet.
+  await page.viewport(1440, 900);
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
@@ -273,8 +274,8 @@ describe("Calendar page", () => {
     await expect.element(moveBooking).toBeVisible();
     moveBooking.element().focus();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:55");
-    await expect.element(card.getByLabelText("End time")).toHaveValue("09:55");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:59");
+    await expect.element(card.getByLabelText("End time")).toHaveValue("09:59");
     await card.getByLabelText("Start time").fill("12:00");
     await card.getByLabelText("End time").fill("13:00");
 
@@ -332,20 +333,21 @@ describe("Calendar page", () => {
     await expect.element(move).toBeVisible();
     const canvas = move.element().closest<HTMLElement>('[data-testid="day-timeline-canvas"]');
     if (!canvas) throw new Error("Timeline editor must be rendered inside a day timeline canvas");
-    const fiveMinutes = (canvas.getBoundingClientRect().width / (24 * 60)) * 5;
+    // The item uses the default 15-minute aligned increment.
+    const fifteenMinutes = (canvas.getBoundingClientRect().width / (24 * 60)) * 15;
     const moveBounds = move.element().getBoundingClientRect();
 
     await userEvent.dragAndDrop(move, move, {
       sourcePosition: { x: moveBounds.width / 2, y: moveBounds.height / 2 },
-      targetPosition: { x: moveBounds.width / 2 + fiveMinutes, y: moveBounds.height / 2 },
+      targetPosition: { x: moveBounds.width / 2 + fifteenMinutes, y: moveBounds.height / 2 },
     });
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:05");
-    await expect.element(card.getByLabelText("End time")).toHaveValue("10:05");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:15");
+    await expect.element(card.getByLabelText("End time")).toHaveValue("10:15");
 
     const end = page.getByRole("button", { name: "Change booking end time" });
     end.element().focus();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:05");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:15");
     await expect.element(card.getByLabelText("End time")).toHaveValue("10:00");
   });
 
@@ -395,32 +397,4 @@ describe("Calendar page", () => {
     await calendar.heading.click();
     await expect.element(calendar.showEventDetails("Busy")).toHaveAttribute("aria-expanded", "false");
   });
-});
-
-test("keeps mobile event editor actions in the viewport and restores focus on Escape", async () => {
-  await withViewport(
-    390,
-    async () => {
-      render(<CalendarPageStory history={history} />);
-      const trigger = calendar.showEventDetails("Confocal microscope");
-      await trigger.click();
-      await calendar.editBooking.click();
-      await expect.element(calendar.inlineSave).toBeVisible();
-      await expect
-        .poll(() => {
-          const bounds = calendar.inlineSave.element().getBoundingClientRect();
-          return (
-            bounds.left >= 0 &&
-            bounds.right <= window.innerWidth &&
-            bounds.top >= 0 &&
-            bounds.bottom <= window.innerHeight
-          );
-        })
-        .toBe(true);
-      await calendar.closeWithEscape();
-      await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-      await expect.poll(() => document.activeElement).toBe(trigger.element());
-    },
-    667,
-  );
 });

@@ -95,6 +95,7 @@ export const calendarAvailabilityQuery = (
           row.bufferBeforeMinutes,
           row.bufferAfterMinutes,
           row.allowDoubleBooking,
+          row.eventKind,
         ])
         .toSorted(),
       interval.start,
