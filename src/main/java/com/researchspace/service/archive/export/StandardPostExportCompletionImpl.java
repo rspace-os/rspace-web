@@ -97,6 +97,7 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
 
     Map<String, Object> config = new HashMap<>();
     config.put("link", link);
+    config.put("archiveFileName", StringEscapeUtils.escapeHtml4(file.getName()));
     config.put("name", name);
     config.put("size", fileSize);
     config.put("exportedRecordsSummary", getExportedRecordsSummary(expCfg, result));

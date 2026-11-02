@@ -6506,7 +6506,6 @@ export default interface Resources {
           "archiveSummaryWithNfs": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}{1, plural, =0 {. No filestore links were included} one { and # linked filestore item} other { and # linked filestore items}}{2, plural, =0 {.} one {.<br/><br/># filestore link was not included.} other {.<br/><br/># filestore links were not included.}}",
           "clickOrCopy": "Please click on, or copy the link into a browser to access the export:",
           "completedWithSize": "Your export {0} is completed and generated an archive of size {1}.",
-          "downloadArchive": "Download archive",
           "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
           "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
           "removalPolicyNever": "This archive will never be removed.",
