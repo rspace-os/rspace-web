@@ -1,5 +1,5 @@
 import { type FormStore, useField } from "@formisch/react";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
@@ -67,25 +67,17 @@ function TimeRange({
   const timeFormat = useBookingTimeFormat();
   const id = useId();
   const allDay = isOpenAllDay(hours);
-  const allDayRef = useRef<HTMLElement>(null);
-  const focusAllDay = useRef(false);
-
-  // Typing the whole day disables the input being edited, so focus moves to the checkbox that now owns the mode.
-  // Only a typed change sets the flag, so loading or resetting the values never moves focus.
-  useEffect(() => {
-    if (focusAllDay.current && allDay) allDayRef.current?.focus();
-    focusAllDay.current = false;
-  }, [allDay]);
+  const [showTimes, setShowTimes] = useState(() => !allDay);
 
   const change = (next: OpeningInterval, typed: boolean) => {
     const custom = customOpeningHours(next) ?? customOpeningHours(hours);
     if (custom) onRemember(custom);
     const typedAllDay = typed && isOpenAllDay(next) && !allDay;
-    focusAllDay.current = typedAllDay;
+    setShowTimes(typed || !isOpenAllDay(next));
     onTypedAllDay(typedAllDay);
     onChange(next);
   };
-  const showMidnightHelp = !allDay && (hours.end === "24:00" || hours.end === "00:00");
+  const showMidnightHelp = showTimes && (hours.end === "24:00" || hours.end === "00:00");
   const midnightHelpId = `${id}-midnight`;
   const errorId = `${id}-error`;
   const input = (boundary: keyof OpeningInterval) => (
@@ -94,7 +86,7 @@ function TimeRange({
       type="time"
       step={60}
       required
-      disabled={disabled || allDay}
+      disabled={disabled}
       className="w-32"
       value={boundary === "end" && hours.end === "24:00" ? "00:00" : hours[boundary]}
       aria-invalid={invalid || undefined}
@@ -112,7 +104,7 @@ function TimeRange({
   return (
     <fieldset aria-labelledby={labelledBy} className="min-w-0 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        {!allDay && (
+        {showTimes && (
           <div className="flex min-w-0 max-w-full items-center gap-2">
             {input("start")}
             <span aria-hidden="true" className="shrink-0 text-muted-foreground">
@@ -124,7 +116,6 @@ function TimeRange({
         <label className="flex items-center gap-2 text-sm whitespace-nowrap" htmlFor={`${id}-all-day`}>
           <Checkbox
             id={`${id}-all-day`}
-            ref={allDayRef}
             checked={allDay}
             disabled={disabled}
             onCheckedChange={(checked) => change(checked ? OPEN_ALL_DAY : (remembered ?? FALLBACK_HOURS), false)}

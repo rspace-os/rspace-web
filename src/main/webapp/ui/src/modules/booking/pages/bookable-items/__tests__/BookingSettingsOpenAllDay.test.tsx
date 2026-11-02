@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -89,7 +89,7 @@ describe("Open all day", () => {
     expect(allDay).toBeChecked();
   });
 
-  it("selects the whole day when typed, moves focus to the checkbox and restores the typed hours", async () => {
+  it("keeps typed midnight controls focused and restores the remembered custom hours", async () => {
     const user = userEvent.setup();
     serve({ openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "01:00", end: "24:00" })) });
     renderBookingSettingsPage();
@@ -99,8 +99,9 @@ describe("Open all day", () => {
     await user.clear(start);
     await user.type(start, "00:00");
     expect(allDay).toBeChecked();
-    expect(start).not.toBeInTheDocument();
-    await waitFor(() => expect(allDay).toHaveFocus());
+    expect(start).toBeInTheDocument();
+    expect(start).toBeEnabled();
+    expect(start).toHaveFocus();
     expect(screen.getByText("booking:settings.openingHours.openAllDaySelected")).toBeInTheDocument();
 
     await user.click(allDay);
