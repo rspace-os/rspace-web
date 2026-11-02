@@ -27,6 +27,8 @@ import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/m
 import type { CollectionQueryState, FilterExpression } from "@/modules/common/table-list/types";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { ownerPreset, ownerPresetField, requesterPreset } from "../ownerPreset";
+import { type AllBookableItem, availabilityPresets } from "./availability/availabilityQuickFilters";
+import { useCalendarAvailabilityLayout } from "./availability/useCalendarAvailabilityLayout";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { useCalendarEventFocus, useCalendarEventFocusResolution } from "./calendarEventFocus";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
@@ -140,11 +142,10 @@ export function useCalendarContentData() {
   const { data: currentUser } = useCurrentUserQuery();
   const creationTarget = useBookableItem(target, token);
   const [requestedView, setView] = useQueryState("view", calendarViewParser);
-  const [layout, setLayout] = useQueryState("layout", calendarLayoutParser);
+  const [layout] = useQueryState("layout", calendarLayoutParser);
   // Month is not offered in Resources, so a link asking for it opens the week, as switching layouts does.
   const view: CalendarView =
     layout === "availability" ? "day" : layout === "resources" && requestedView === "month" ? "week" : requestedView;
-  const [resettingControls, setResettingControls] = React.useState(false);
   const calendarFocus = useCalendarEventFocus({ location, navigate });
   const { focusUnavailableRequest, setFocusUnavailableRequest, focusFallback } = calendarFocus;
   const preferences = useBookingDisplayPreferences();
@@ -165,9 +166,29 @@ export function useCalendarContentData() {
     request: { token, authScope: currentUser.id },
   });
   const itemConfig = React.useMemo(() => {
+    const availabilityFields =
+      layout === "availability"
+        ? [
+            {
+              name: "availability" as FieldName<BookingConfiguration>,
+              type: "select" as const,
+              labelKey: "booking:calendar.availability",
+              list: false as const,
+              form: false as const,
+              options: [
+                { value: "available-now", label: t("allBookableItems.quickFilters.availableNow") },
+                { value: "free-later-today", label: t("allBookableItems.quickFilters.freeLaterToday") },
+              ],
+              capabilities: { sortable: false, filterOperators: ["equals" as const] },
+            },
+          ]
+        : [];
     const enriched = enrichApiV2FilterConfig({
-      config: { ...calendarResourceSourceConfig, fields: [...calendarResourceSourceConfig.fields, ownerPresetField] },
-      localFields: [ownerPresetField.name],
+      config: {
+        ...calendarResourceSourceConfig,
+        fields: [...calendarResourceSourceConfig.fields, ownerPresetField, ...availabilityFields],
+      },
+      localFields: [ownerPresetField.name, "availability" as FieldName<BookingConfiguration>],
       metadata: itemRuntimeFields.metadata,
       runtimeFields: itemRuntimeFields.runtimeFields,
       i18n,
@@ -183,13 +204,23 @@ export function useCalendarContentData() {
             // A filter-only relationship: in the collection metadata, not the configuration type.
             String(field.name) === "location" ||
             String(field.name) === "targetOwner" ||
+            String(field.name) === "availability" ||
             String(field.name).startsWith("target."),
         )
         .map((field) =>
           field.name === "id" ? { ...field, capabilities: { ...field.capabilities, filterOperators: [] } } : field,
         ),
     } as CollectionConfig<BookingConfiguration>);
-  }, [itemRuntimeFields.metadata, itemRuntimeFields.runtimeFields, t, i18n, i18n.resolvedLanguage, i18n.language]);
+  }, [
+    layout,
+    commonT,
+    itemRuntimeFields.metadata,
+    itemRuntimeFields.runtimeFields,
+    t,
+    i18n,
+    i18n.resolvedLanguage,
+    i18n.language,
+  ]);
   const eventConfig = React.useMemo(() => {
     const enriched = enrichApiV2FilterConfig({
       config: { ...calendarEventSourceConfig, fields: [...calendarEventSourceConfig.fields, eventOwnerField] },
@@ -221,13 +252,13 @@ export function useCalendarContentData() {
     const staleFields: string[] = [];
     const parsed = itemWhere
       ? parseRsqlExpression(itemWhere, itemConfig, {
-          isStale: (field) => field === "availability",
+          isStale: (field) => field === "availability" && layout !== "availability",
           onDropped: (field) => staleFields.push(field),
         })
       : null;
     const recovered = dropInvalidMeRules(parsed, ["targetOwner"]);
     return { expression: recovered.expression, dropped: [...staleFields, ...recovered.dropped] };
-  }, [itemConfig, itemWhere]);
+  }, [itemConfig, itemWhere, layout]);
   const parsedEvents = React.useMemo(
     () =>
       dropInvalidMeRules(eventWhere ? parseRsqlExpression(eventWhere, eventConfig) : null, [
@@ -237,6 +268,23 @@ export function useCalendarContentData() {
     [eventConfig, eventWhere],
   );
   const itemExpression = parsedItems.expression;
+  const setLayout = async (next: typeof layout) => {
+    replaceSearch((search) => {
+      search.set("layout", next);
+      if (next === "availability") search.set("view", "day");
+      else if (next === "resources" && view === "month") search.set("view", "week");
+      if (layout === "availability" && next !== "availability") {
+        const remaining = withoutPresets(
+          itemExpression,
+          availabilityPresets
+            .map((rule) => retypeFilter<AllBookableItem, BookingConfiguration>(rule))
+            .filter((rule) => rule.kind === "comparison"),
+        );
+        if (remaining) search.set("calendar-resources.where", serializeRsqlExpression(remaining));
+        else search.delete("calendar-resources.where");
+      }
+    });
+  };
   const eventExpression = parsedEvents.expression;
   // This Calendar renders only the events panel. Project the owner preset there while keeping
   // its storage and request scope in the item expression.
@@ -274,7 +322,10 @@ export function useCalendarContentData() {
     onReset: () => void setEventWhere(null),
   });
   const filtersBlocked =
-    itemIssue !== undefined || eventIssue !== undefined || itemRuntimeFields.pending || eventRuntimeFields.pending;
+    itemIssue !== undefined ||
+    (layout !== "availability" && eventIssue !== undefined) ||
+    itemRuntimeFields.pending ||
+    (layout !== "availability" && eventRuntimeFields.pending);
   const scopedEventExpression = eventExpression;
   const targetExpression = targetFilter(target);
   const calendarEventExpression = andFilters<BookingListDocument>([
@@ -300,7 +351,7 @@ export function useCalendarContentData() {
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
-  const calendarQueryReady = !resettingControls && !filtersBlocked && resourceScopeReady;
+  const calendarQueryReady = !filtersBlocked && resourceScopeReady;
   const identityScope = useQueryIdentityScope(currentUser.id);
   const calendarCatalogueOptions = (state: CollectionQueryState<BookingConfiguration>) =>
     calendarBookingCatalogueQuery(
@@ -325,7 +376,7 @@ export function useCalendarContentData() {
       queryKey: (state) => calendarCatalogueOptions(state).queryKey,
       keepPreviousData: true,
       dataScope: currentUser.id,
-      enabled: calendarQueryReady && token.length > 0,
+      enabled: layout !== "availability" && calendarQueryReady && token.length > 0,
       fetch: (state, { signal }) => calendarCatalogueOptions(state).queryFn({ signal }),
     },
     initialState: { filters: { search: calendarSearch, expression: itemExpression }, visibleFields: ["target"] },
@@ -358,7 +409,7 @@ export function useCalendarContentData() {
     timezone: preferences.timeZone,
     token,
     targetGlobalIds: layout === "resources" ? resourceTargetIds : undefined,
-    enabled: calendarQueryReady && (layout !== "resources" || resourceTableReady),
+    enabled: layout !== "availability" && calendarQueryReady && (layout !== "resources" || resourceTableReady),
     authScope: currentUser.id,
     scope: { where: calendarEventWhereParameter, q: calendarSearch },
   });
@@ -373,6 +424,14 @@ export function useCalendarContentData() {
     enabled: layout === "resources" && view === "day" && calendarQueryReady && resourceTableReady,
     authScope: currentUser.id,
     scope: { where: itemWhereParameter, q: "" },
+  });
+  const availabilityLayout = useCalendarAvailabilityLayout({
+    expression: resourceItemExpression,
+    q: calendarSearch,
+    date: selectedDate,
+    token,
+    subjectId: currentUser.id,
+    enabled: layout === "availability" && calendarQueryReady,
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
@@ -430,6 +489,8 @@ export function useCalendarContentData() {
   };
 
   return {
+    availabilityLayout,
+    itemConfig,
     droppedFilterFields,
     creationTarget: creationTarget.data,
     navigate,
@@ -439,7 +500,6 @@ export function useCalendarContentData() {
     setView,
     layout,
     setLayout,
-    setResettingControls,
     preferences,
     beginCreation,
     creationActive,
