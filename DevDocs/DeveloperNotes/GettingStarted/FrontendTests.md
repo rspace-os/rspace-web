@@ -34,8 +34,7 @@ pnpm run test --color | less -R
 
 Run `pnpm test-browser` from the repository root for Chromium, Firefox and
 WebKit, or set `VITEST_BROWSERS=firefox` for one engine. CI runs each engine as
-a separate job. Every spec file runs in every engine; only the PDF-preview tests
-skip Firefox, because pdf.js never resolves its worker in headless Firefox.
+a separate job. Every spec file runs in every engine.
 
 Network is mocked with MSW. Add handlers per test with `worker.use(...)`;
 `resetHandlers()` restores the app-shell defaults after each test. Components

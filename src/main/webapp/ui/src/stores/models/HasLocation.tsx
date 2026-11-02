@@ -27,6 +27,18 @@ const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
  * records.
  */
 
+/** A grid location's label as the container's axes name it, e.g. "B3", or "2,11" for two numeric axes. */
+export function gridLocationLabel(
+  { rowsLabelType, rowsNumber, columnsLabelType, columnsNumber }: GridLayout,
+  location: Pick<Location, "coordX" | "coordY">,
+): string {
+  const rowLabel = layoutToLabel(rowsLabelType, rowsNumber !== "" ? rowsNumber : 1, location.coordY);
+  const columnLabel = layoutToLabel(columnsLabelType, columnsNumber !== "" ? columnsNumber : 1, location.coordX);
+  // Disambiguate the row and column numbers if needed (row 1, column 11 vs row 11, column 1)
+  const insertComma = NUMERICAL_AXES.includes(rowsLabelType) && NUMERICAL_AXES.includes(columnsLabelType);
+  return `${rowLabel}${insertComma ? "," : ""}${columnLabel}`;
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
   return class extends Base implements HasLocation {
@@ -193,18 +205,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
       const options: AdjustableTableRowOptions<string> = new Map([...super.adjustableTableOptions()]);
 
       const gridCoordinatesLabel = lift2<GridLayout, Location, string>(
-        ({ rowsLabelType, rowsNumber, columnsLabelType, columnsNumber }, parentLocation) => {
-          const rowLabel = layoutToLabel(rowsLabelType, rowsNumber !== "" ? rowsNumber : 1, parentLocation.coordY);
-          const columnLabel = layoutToLabel(
-            columnsLabelType,
-            columnsNumber !== "" ? columnsNumber : 1,
-            parentLocation.coordX,
-          );
-          // Disambiguate the row and column numbers if needed (row 1, column 11 vs row 11, column 1)
-          const insertComma = NUMERICAL_AXES.includes(rowsLabelType) && NUMERICAL_AXES.includes(columnsLabelType);
-
-          return `${rowLabel}${insertComma ? "," : ""}${columnLabel}`;
-        },
+        gridLocationLabel,
         Optional.fromNullable(this.immediateParentContainer?.gridLayout),
         Optional.fromNullable(this.parentLocation),
       ).orElse("");

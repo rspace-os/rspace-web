@@ -1,4 +1,4 @@
-# Frontend dev image: Node 24 + pnpm (via corepack).
+# Frontend dev image: Node 24 + standalone pnpm.
 #
 # Like the app image, this holds no source — the worktree is bind-mounted at
 # /rspace at runtime. The entrypoint installs dependencies into a named volume
@@ -6,14 +6,15 @@
 ARG NODE_IMAGE=node:24-bookworm-slim
 FROM ${NODE_IMAGE}
 
-# Enable corepack so the repo's pinned pnpm (packageManager in package.json) is
-# used. git is occasionally needed by package install scripts. Disabling the
-# corepack download prompt keeps the first non-interactive pnpm run from hanging.
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# The standalone install survives Node changes; pnpm follows packageManager at runtime.
+ENV PNPM_HOME=/opt/pnpm
+ENV PATH="/opt/pnpm/bin:${PATH}"
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git curl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && corepack enable
+    && curl -fsSL https://get.pnpm.io/install.sh -o /tmp/install-pnpm.sh \
+    && ENV=/tmp/pnpm-shell.sh SHELL=/bin/sh sh /tmp/install-pnpm.sh \
+    && rm /tmp/install-pnpm.sh /tmp/pnpm-shell.sh
 
 COPY entrypoint-frontend.sh /usr/local/bin/entrypoint-frontend.sh
 RUN chmod +x /usr/local/bin/entrypoint-frontend.sh
