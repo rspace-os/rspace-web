@@ -323,6 +323,12 @@ export default defineConfig(async ({ mode }) => {
 
   const config: UserConfig = {
     base: "/ui/dist/",
+    experimental: {
+      // CSS-relative asset URLs also work when the WAR has a servlet context prefix.
+      renderBuiltUrl(_filename, { hostType }) {
+        if (hostType === "css") return { relative: true };
+      },
+    },
     define: {
       global: "globalThis",
       process: processShim,
