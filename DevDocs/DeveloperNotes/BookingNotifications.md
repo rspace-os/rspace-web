@@ -78,7 +78,6 @@ field with `form.widget: "radio"`. The existing `select` and `card` widgets rema
 All bookable items has no row selection for bookers. Only direct sysadmins can select
 rows and use bulk **Disable** and **Archive**. Selection survives paging; a date, filter
 or reset change clears it. Each row offers the Administration lifecycle menu its role allows.
-Personal subscriptions are managed on the item page.
 
 All readable instruments offer the same personal controls. There is no access-level or
 notification column, per-row toggle, or access-lost panel.

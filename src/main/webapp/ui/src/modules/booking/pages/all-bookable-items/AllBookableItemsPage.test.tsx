@@ -484,7 +484,9 @@ describe("AllBookableItemsPage", () => {
     await user.click(screen.getByRole("menuitem", { name: "Archive" }));
     const dialog = await screen.findByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
-    expect(archiveRequest?.url.endsWith("/api/v2/booking-configurations/7")).toBe(true);
+    await screen.findByText(
+      "Confocal microscope is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.",
+    );
     expect(archiveRequest?.headers.get("If-Match")).toBe('"0"');
     await waitFor(() => expect(screen.queryByRole("link", { name: "Confocal microscope" })).not.toBeInTheDocument());
   });
@@ -1011,6 +1013,8 @@ describe("AllBookableItemsPage", () => {
       active ? "available-now" : null,
     ]);
     expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
+    await screen.findByRole("link", { name: "Add" });
+    await screen.findAllByRole("img", { name: "Mass spectrometer availability" });
     await expectAccessible(container);
     unmount();
     await act(async () => release?.());
@@ -1036,6 +1040,7 @@ describe("AllBookableItemsPage", () => {
     expect(screen.getByText("Finding bookable items…")).toHaveClass("sr-only");
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
+    await screen.findByRole("link", { name: "Add" });
     await expectAccessible(container);
     unmount();
     await act(async () => release?.());
@@ -1117,6 +1122,18 @@ describe("AllBookableItemsPage", () => {
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
+    server.use(
+      http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+        HttpResponse.json({
+          configurationId: 7,
+          enabled: false,
+          version: -1,
+          createdEnabled: false,
+          cancelledEnabled: false,
+          emailEnabled: false,
+        }),
+      ),
+    );
     const { router } = await renderMutationPages("/booking/all-items?date=2026-08-17&availability=available-now");
 
     const available = await screen.findByRole("button", { name: "Available now" });
@@ -1133,7 +1150,11 @@ describe("AllBookableItemsPage", () => {
     await user.click(
       await screen.findByRole("checkbox", { name: bookingEnglish.bookableItemDetails.fields.doubleBooking }),
     );
-    await user.click(screen.getByRole("button", { name: bookingEnglish.bookableItems.actions.save }));
+    await user.click(
+      within(screen.getByRole("tabpanel", { name: "Details" })).getByRole("button", {
+        name: bookingEnglish.bookableItems.actions.save,
+      }),
+    );
     await waitFor(() => expect(patches).toHaveLength(1));
     expect(patches[0]).toMatchObject({ allowDoubleBooking: true });
     await waitFor(() => expect(router.state.location.search.edit).toBeUndefined());
