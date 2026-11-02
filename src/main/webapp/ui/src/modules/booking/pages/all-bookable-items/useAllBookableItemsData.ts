@@ -20,9 +20,6 @@ import { mutateBookableItems } from "../bookable-items/BookableItemsContent";
 import { bookableItemBulkNotice, useBookableItemNoticeIds } from "../bookable-items/bookableItemFeedback";
 import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
-import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
-import { ownerPresetField } from "../ownerPreset";
-import { createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
 import {
   type AllBookableItem,
   type AvailabilityQuickFilter,
@@ -31,7 +28,10 @@ import {
   todayAvailabilityWindow,
   useAvailabilityCounts,
   withAvailability,
-} from "./availabilityQuickFilters";
+} from "../calendar/availability/availabilityQuickFilters";
+import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
+import { ownerPresetField } from "../ownerPreset";
+import { createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
 
 type AllBookableItemsDataOptions = {
   clock: () => Date;

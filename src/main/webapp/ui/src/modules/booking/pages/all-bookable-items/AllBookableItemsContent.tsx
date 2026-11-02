@@ -5,9 +5,13 @@ import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
+import {
+  type AllBookableItem,
+  hasAvailabilityFilter,
+  withAvailability,
+} from "../calendar/availability/availabilityQuickFilters";
 import { DroppedFilterNotice } from "../DroppedFilterNotice";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
-import { type AllBookableItem, hasAvailabilityFilter, withAvailability } from "./availabilityQuickFilters";
 import { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 const currentDate = () => new Date();

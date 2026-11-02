@@ -18,7 +18,7 @@ import {
   todayAvailabilityWindow,
   useAvailabilityCounts,
   withAvailability,
-} from "./availabilityQuickFilters";
+} from "../calendar/availability/availabilityQuickFilters";
 
 const itemA: FilterExpression<AllBookableItem> = {
   kind: "comparison",

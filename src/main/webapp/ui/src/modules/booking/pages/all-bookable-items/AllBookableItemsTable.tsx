@@ -34,8 +34,8 @@ import {
   permanentlyDeleteBookingConfiguration,
 } from "../bookable-items/bookingConfiguration";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
+import { type AllBookableItem, withAvailability } from "../calendar/availability/availabilityQuickFilters";
 import { ownerPreset } from "../ownerPreset";
-import { type AllBookableItem, withAvailability } from "./availabilityQuickFilters";
 import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 const emptyIntervals: readonly SourcedAvailabilityInterval[] = [];

@@ -7,8 +7,8 @@ import type { FilterExpression } from "@/modules/common/table-list/types";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
+import type { AllBookableItem, AvailabilityQuickFilter } from "../calendar/availability/availabilityQuickFilters";
 import { ownerPresetField } from "../ownerPreset";
-import type { AllBookableItem, AvailabilityQuickFilter } from "./availabilityQuickFilters";
 
 /** The instrument's Inventory location; the tooltip explains a bare container name such as "WB user1a". */
 function InstrumentLocation({ name, globalId }: { name?: string | null; globalId?: string | null }) {
