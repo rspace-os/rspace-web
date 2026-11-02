@@ -522,7 +522,7 @@ describe("AllBookableItemsPage", () => {
     );
     const user = userEvent.setup();
     await renderPage(
-      `/booking/all-items?date=${action.startsWith("Reset") ? "2026-08-18" : "2026-08-17"}&page=2${mine ? "&mine=true" : ""}`,
+      `/booking/all-items?date=${action.startsWith("Reset") ? "2026-08-18" : "2026-08-17"}&page=2${mine ? "&where=targetOwner%3D%3Dme" : ""}`,
       undefined,
       sysadmin,
     );

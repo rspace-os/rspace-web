@@ -99,13 +99,6 @@ export function resetBookingPageRequests(): void {
   bookingPageRequests.createdPayloads = [];
 }
 
-function bookingRequesterId(
-  requester: { value: number | { id: number } } | null | undefined,
-): number | undefined {
-  const value = requester?.value;
-  return typeof value === "number" ? value : value?.id;
-}
-
 export function bookingPagesHandlers(): RequestHandler[] {
   return [
     http.get("/api/v2/openapi.json", () =>
@@ -160,14 +153,17 @@ export function bookingPagesHandlers(): RequestHandler[] {
       const where = url.searchParams.get("where") ?? "";
       const problem = calendarEventFilterProblem(where || null);
       if (problem) return badRequest(problem);
-      const docs = [ownBooking, otherBooking, busyBooking].filter(
-        (event) =>
+      const docs = [ownBooking, otherBooking, busyBooking].filter((event) => {
+        const requesterValue = event.requester?.value;
+        const requesterId = typeof requesterValue === "number" ? requesterValue : requesterValue?.id;
+        return (
           (!q ||
             [event.purpose, event.bookedBy, event.target?.value.name, event.target?.globalId].some((value) =>
               value?.toLowerCase().includes(q),
             )) &&
-          (!where.includes("requester.value==1") || bookingRequesterId(event.requester) === 1),
-      );
+          (!(where.includes("requester.value==1") || where.includes("requester.value==me")) || requesterId === 1)
+        );
+      });
       return HttpResponse.json(collectionResponse(docs));
     }),
     http.get("/api/v2/bookings", ({ request }) => {

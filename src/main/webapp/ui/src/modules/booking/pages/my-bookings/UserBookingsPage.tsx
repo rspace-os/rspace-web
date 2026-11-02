@@ -8,7 +8,6 @@ import { type BookingListDocument, BookingListDocumentTableValidation } from "@/
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
-import type { FieldName } from "@/modules/common/collection/config";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
@@ -23,6 +22,7 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+import { requesterValueField } from "../ownerPreset";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
@@ -107,7 +107,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     () => ({
       kind: "and",
       children: [
-        { kind: "comparison", field: "requester.value" as FieldName<BookingListDocument>, operator: "equals", value: requesterId },
+        { kind: "comparison", field: requesterValueField, operator: "equals", value: requesterId },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
         // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
         ...(period === "cancelled"

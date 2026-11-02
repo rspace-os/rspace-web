@@ -1,6 +1,7 @@
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import type { CollectionConfig, CollectionTranslationKey, FieldName } from "@/modules/common/collection/config";
+import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
+import { requesterValueField } from "../ownerPreset";
 
 export const calendarEventSourceConfig = {
   slug: "booking-events-calendar",
@@ -39,12 +40,20 @@ export const calendarEventSourceConfig = {
       capabilities: { filterOperators: [] },
     },
     {
-      name: "requester.value" as FieldName<BookingListDocument>,
-      type: "number",
+      name: requesterValueField,
+      type: "select",
+      options: [
+        {
+          value: "me",
+          get label() {
+            return i18n.t("booking:filters.me");
+          },
+        },
+      ],
       labelKey: "booking:calendar.fields.requester" satisfies CollectionTranslationKey,
       list: false,
       form: false,
-      capabilities: { filterOperators: [] },
+      capabilities: { filterOperators: ["equals"] },
     },
     {
       name: "purpose",
