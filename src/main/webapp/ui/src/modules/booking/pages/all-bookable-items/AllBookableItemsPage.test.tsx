@@ -925,3 +925,22 @@ it("recovers an unparseable status value to the base scope", async () => {
     expect(where).not.toContain("oops");
   }
 });
+
+it("drops an invalid owner preset before any list or count request", async () => {
+  const requests: string[] = [];
+  server.use(
+    http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+    http.get("/api/v2/booking-configurations", ({ request }) => {
+      requests.push(new URL(request.url).searchParams.get("where") ?? "");
+      return HttpResponse.json(collectionPage([bookingConfiguration]));
+    }),
+  );
+  renderBookableItemsPage("/booking/all-items?all-bookable-items.where=targetOwner==42");
+  await screen.findByRole("link", { name: "Confocal microscope" });
+  expect(screen.getByRole("status")).toHaveTextContent("booking:filters.dropped");
+  expect(requests.length).toBeGreaterThan(0);
+  for (const where of requests) {
+    expect(where).not.toContain("targetOwner");
+    expect(where).toContain("enabled==true");
+  }
+});

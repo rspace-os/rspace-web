@@ -496,3 +496,8 @@ selected rows with the subscription capability and preserve subscription
 versions. Add and permanent deletion return to All items. The former
 Administration list route is retired; Settings is a top-level sysadmin entry.
 Calendar Availability retains its catalogue data source and item query helpers.
+
+The list drops invalid Owner preset values through a page-owned expression
+normalizer. The shared table hook applies it to restored and live URL state
+before constructing page and total requests or cache keys. This keeps `me`
+recovery from sending a rejected value during URL synchronization.

@@ -155,7 +155,7 @@ function AllBookableItemsContentForUser() {
 
   return (
     <div>
-      <DroppedFilterNotice fields={droppedStatusFields} />
+      <DroppedFilterNotice fields={[...droppedStatusFields, ...table.droppedFilterFields]} />
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {t(

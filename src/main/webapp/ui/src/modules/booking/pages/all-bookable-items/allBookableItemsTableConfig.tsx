@@ -3,7 +3,6 @@ import { BookableItemName } from "@/modules/booking/components/BookableItemName"
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import type { FilterExpression } from "@/modules/common/table-list/types";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
@@ -91,8 +90,4 @@ function createAllBookableItemsConfig(openRecordLabel: (globalId: string) => str
   } as const satisfies CollectionConfig<AllBookableItem>);
 }
 
-function filterExpression(target: string | undefined): FilterExpression<AllBookableItem> | null {
-  return target ? { kind: "comparison", field: "target", operator: "equals", value: target } : null;
-}
-
-export { createAllBookableItemsConfig, filterExpression };
+export { createAllBookableItemsConfig };
