@@ -23,7 +23,7 @@ const cancelledBooking = {
   state: "CANCELLED",
   privacy: "full",
   purpose: null,
-  bookedBy: "Ada Lovelace (ada)",
+  bookedBy: "Ada Lovelace",
   canEdit: true,
   canCancel: false,
   createdAt: "2026-08-17T00:00:00Z",

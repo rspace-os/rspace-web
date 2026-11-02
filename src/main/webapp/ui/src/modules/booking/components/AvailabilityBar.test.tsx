@@ -352,8 +352,8 @@ describe("AvailabilityBar", () => {
               kind,
               privacy: "full",
               purpose: "Cell imaging",
-              bookedBy: "Ada Lovelace (ada)",
-              createdBy: "Ada Lovelace (ada)",
+              bookedBy: "Ada Lovelace",
+              createdBy: "Ada Lovelace",
             },
           ),
         ],
@@ -361,7 +361,7 @@ describe("AvailabilityBar", () => {
 
       await user.hover(
         await screen.findByRole("button", {
-          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Blocked out"}, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event`,
+          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Blocked out"}, Aug 12, 2026, 09:00–10:00, 1 event`,
         }),
       );
       const dialog = await screen.findByRole("dialog");
@@ -372,7 +372,7 @@ describe("AvailabilityBar", () => {
 
       expect(within(dialog).getByRole("link", { name: "Open inventory record IN123" })).toBeVisible();
       expect(within(dialog).getByRole("link", { name: "Imaging suite" })).toBeVisible();
-      expect(within(dialog).getByText("Ada Lovelace (ada)")).toBeVisible();
+      expect(within(dialog).getByText("Ada Lovelace")).toBeVisible();
       expect(within(dialog).getByText("Cell imaging")).toBeVisible();
       const details = within(dialog).getByRole("link", { name: "Details" });
       expect(details).toHaveAttribute("href", "/booking/calendar/bookings/41");

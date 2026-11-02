@@ -44,7 +44,7 @@ const document = {
   kind: "BOOKING",
   privacy: "full",
   purpose: "Cell imaging",
-  bookedBy: "Ada Lovelace (ada)",
+  bookedBy: "Ada Lovelace",
   createdBy: "Grace Hopper (grace)",
   canEdit: true,
   canCancel: true,
@@ -165,7 +165,7 @@ describe("BookingEventPage", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "booking:bookings.details.title" })).toBeVisible();
     expect(screen.getByText("Cell imaging")).toBeVisible();
-    expect(screen.getByText("Ada Lovelace (ada)")).toBeVisible();
+    expect(screen.getByText("Ada Lovelace")).toBeVisible();
     const aside = screen.getByRole("complementary", { name: "booking:bookings.details.aboutBooking" });
     expect(within(aside).getByText("booking:bookings.details.timesShownIn")).toBeVisible();
     expect(within(aside).getByText("booking:bookings.details.lastUpdated")).toBeVisible();
