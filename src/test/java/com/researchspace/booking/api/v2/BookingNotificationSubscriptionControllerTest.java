@@ -1,5 +1,6 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -15,10 +16,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
+import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
-import com.researchspace.booking.api.v2.BookingApiV2ControllerAdvice;
-import com.researchspace.booking.api.v2.BookingNotificationSubscriptionController;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
+import com.researchspace.booking.service.BookingNotificationSubscriptionManager.PreferenceChanges;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Status;
 import com.researchspace.model.User;
@@ -35,6 +37,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
@@ -60,35 +63,53 @@ class BookingNotificationSubscriptionControllerTest {
         BookingNotificationSubscriptionController.Lookup.class);
     mvc =
         MockMvcBuilders.standaloneSetup(new BookingNotificationSubscriptionController(manager))
-            .setControllerAdvice(new BookingApiV2ControllerAdvice(messages()))
+            .setControllerAdvice(
+                new ApiV2ControllerAdvice(messages()), new BookingApiV2ControllerAdvice(messages()))
             .setMessageConverters(jsonConverter, new WebConfig.YamlJackson2HttpMessageConverter())
             .build();
   }
 
   @Test
-  void routesDefaultToEffectiveSubjectAndRetainsActor() throws Exception {
-    when(manager.replacePreferences(false, false, subject, actor))
-        .thenReturn(new Preferences(false, false));
+  void routesPreferencesToEffectiveSubjectAndRetainsActor() throws Exception {
+    PreferenceChanges changes = new PreferenceChanges(false, true, true, false);
+    when(manager.replacePreferences(changes, subject, actor))
+        .thenReturn(new Preferences(false, true, true, false, true));
     mvc.perform(
             put(DEFAULTS)
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":false}"))
+                .content(
+                    "{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":true,\"notifyOnCreated\":true,"
+                        + "\"notifyOnCancelled\":false}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false));
-    verify(manager).replacePreferences(false, false, subject, actor);
+        .andExpectAll(preferencesShape());
+    verify(manager).replacePreferences(changes, subject, actor);
+  }
+
+  @Test
+  void readsPreferencesInTheirPublicShape() throws Exception {
+    when(manager.getPreferences(subject, actor))
+        .thenReturn(new Preferences(false, true, true, false, true));
+    mvc.perform(get(DEFAULTS).requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller))
+        .andExpect(status().isOk())
+        .andExpectAll(preferencesShape());
   }
 
   @ParameterizedTest
   @ValueSource(
       strings = {
         "{}",
-        "{\"autoSubscribeOwnedItems\":true}",
-        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":null}",
-        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":\"false\"}",
-        "{\"autoSubscribeOwnedItems\":null}",
-        "{\"autoSubscribeOwnedItems\":\"false\"}",
-        "{\"autoSubscribeOwnedItems\":0}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":null,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":\"false\",\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":true,\"notifyOnCreated\":true}",
+        "{\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":null,\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":\"false\",\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":true,\"notifyOnCreated\":1,\"notifyOnCancelled\":true}",
+        "{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":\"no\"}",
+        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":true,\"notifyOnCreated\":true,\"notifyOnCancelled\":true,"
+            + "\"emailDelivery\":false}"
       })
   void rejectsInvalidOrForgedDefaults(String json) throws Exception {
     mvc.perform(
@@ -98,6 +119,18 @@ class BookingNotificationSubscriptionControllerTest {
                 .content(json))
         .andExpect(status().isBadRequest());
     verifyNoInteractions(manager);
+  }
+
+  /** Exactly the four documented members, for Preferences(false, true, false, true). */
+  private static ResultMatcher[] preferencesShape() {
+    return new ResultMatcher[] {
+      jsonPath("$.*", hasSize(5)),
+      jsonPath("$.autoSubscribeOwnedItems").value(false),
+      jsonPath("$.notifyOwnActions").value(true),
+      jsonPath("$.notifyOnCreated").value(true),
+      jsonPath("$.notifyOnCancelled").value(false),
+      jsonPath("$.emailDelivery").value(true)
+    };
   }
 
   @ParameterizedTest
@@ -139,22 +172,6 @@ class BookingNotificationSubscriptionControllerTest {
   }
 
   @Test
-  void supportsBatchLookupAndUnsubscribeAll() throws Exception {
-    when(manager.getMany(List.of(12L, 13L), subject, actor)).thenReturn(List.of());
-    mvc.perform(
-            post(SUBSCRIPTIONS + "/lookup")
-                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"configurationIds\":[12,13]}"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.docs").isArray());
-    when(manager.unsubscribeAll(subject, actor)).thenReturn(2);
-    mvc.perform(delete(SUBSCRIPTIONS).requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.updatedCount").value(2));
-  }
-
-  @Test
   void doesNotExposeBulkSubscriptionWrites() throws Exception {
     mvc.perform(
             put(SUBSCRIPTIONS)
@@ -166,11 +183,29 @@ class BookingNotificationSubscriptionControllerTest {
   }
 
   @Test
+  void supportsBatchLookupAndUnsubscribeAll() throws Exception {
+    when(manager.getMany(List.of(12L, 13L), subject, actor)).thenReturn(List.of());
+    mvc.perform(
+            post(SUBSCRIPTIONS + "/lookup")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"configurationIds\":[12,13]}"))
+        .andExpect(status().isOk());
+    when(manager.unsubscribeAll(subject, actor)).thenReturn(2);
+    mvc.perform(delete(SUBSCRIPTIONS).requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.updatedCount").value(2));
+  }
+
+  @Test
   void rejectsUnknownFieldsAsFieldViolations() throws Exception {
     List<Map.Entry<MockHttpServletRequestBuilder, String>> requests =
         List.of(
             Map.entry(
-                put(DEFAULTS).content("{\"autoSubscribeOwnedItems\":true,\"userId\":99}"),
+                put(DEFAULTS)
+                    .content(
+                        "{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":true,\"notifyOnCreated\":true,"
+                            + "\"notifyOnCancelled\":true,\"userId\":99}"),
                 "userId"),
             Map.entry(
                 put(ITEM).content("{\"enabled\":false,\"version\":0,\"ownerId\":99}"), "ownerId"),
@@ -240,7 +275,11 @@ class BookingNotificationSubscriptionControllerTest {
 
     for (var request :
         List.of(
-            put(DEFAULTS).content("autoSubscribeOwnedItems: true"),
+            put(DEFAULTS)
+                .content(
+                    "autoSubscribeOwnedItems: true\n"
+                        + "notifyOnCreated: true\n"
+                        + "notifyOnCancelled: true"),
             put(ITEM).content("enabled: true\nversion: 0"),
             post(SUBSCRIPTIONS + "/lookup").content("configurationIds: [12]"))) {
       mvc.perform(

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.axiope.webapp.jsp.EscapeXmlELResolver;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager;
 import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.model.User;
@@ -17,7 +18,10 @@ import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.el.ELProcessor;
 import jakarta.servlet.http.HttpSession;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -26,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +53,8 @@ class DashboardBookingNotificationMessagesTest {
     ReflectionTestUtils.setField(
         controller,
         "bookingMessageFormatter",
-        new BookingNotificationMessageFormatter(new JsonMessageSource()));
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
     ReflectionTestUtils.setField(
         controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
     when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
@@ -83,12 +89,81 @@ class DashboardBookingNotificationMessagesTest {
     other.setNotificationType(NotificationType.PROCESS_COMPLETED);
 
     Map<Long, String> messages =
-        controller.bookingNotificationMessages(List.of(structured, other), "recipient", session);
+        controller.bookingNotificationMessages(
+            List.of(structured, other), "recipient", session, null);
 
     assertEquals("Stored email text", structured.getNotificationMessage());
     assertTrue(messages.get(1L).contains("Jan 1, 2026, 7:04 PM (America/Los_Angeles, UTC-08:00)"));
+    assertTrue(
+        messages.get(1L).startsWith("Booking <a href=\"/booking/calendar/bookings/42\">42</a>"),
+        messages.get(1L));
     assertFalse(messages.containsKey(3L));
     verify(preferences).getForNotificationRecipient(recipient);
+  }
+
+  @Test
+  void writesTimesWithTheBrowserRegionsClockAndTheAppLanguagesWords() {
+    LocaleContextHolder.setLocale(Locale.US);
+    Notification structured =
+        bookingNotification(
+            5L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
+    Notification legacy =
+        bookingNotification(
+            6L, "Booking 6 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
+
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+
+    Map<Long, String> british =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy),
+            "recipient",
+            mock(HttpSession.class),
+            "en-GB,en-US;q=0.9,en;q=0.8");
+    Map<Long, String> american =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
+
+    assertTrue(
+        british.get(5L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british.get(5L));
+    assertTrue(british.get(5L).startsWith("Booking <a href="), british.get(5L));
+    assertTrue(
+        british.get(6L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
+        british.get(6L));
+    // ICU writes a narrow no-break space before the day period, as browsers do.
+    assertTrue(
+        american
+            .get(5L)
+            .replace('\u202f', ' ')
+            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+        american.get(5L));
+    assertFalse(american.get(5L).contains("06:00"), american.get(5L));
+  }
+
+  @Test
+  void jspRendersBookingLinksWithoutUnescapingUserMarkup() throws Exception {
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+    BookingNotificationData data = data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z");
+    data.setInstrumentName("<img src=x onerror=alert(1)>");
+    Notification notification = bookingNotification(1L, "Stored message", data);
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(List.of(notification), "recipient", session, null);
+    ELProcessor el = new ELProcessor();
+    el.getELManager().addELResolver(new EscapeXmlELResolver());
+    el.defineBean("bookingNotificationMessages", messages);
+    el.defineBean("notification", notification);
+    el.defineBean(
+        "bookingNotificationMessage", el.eval("bookingNotificationMessages[notification.id]"));
+    el.defineFunction(
+        "f", "unescapeXml", "org.apache.commons.text.StringEscapeUtils", "unescapeXml");
+    String jsp =
+        Files.readString(Path.of("src/main/webapp/WEB-INF/pages/dashboard/notifications_ajax.jsp"));
+    var output =
+        Pattern.compile("<c:out value=\"\\$\\{([^}]+)}\" escapeXml=\"false\"").matcher(jsp);
+    assertTrue(output.find());
+    String rendered = (String) el.eval(output.group(1));
+    assertTrue(rendered.contains("<a href=\"/booking/calendar/bookings/42\">42</a>"), rendered);
+    assertTrue(rendered.contains("&lt;img src=x onerror=alert(1)&gt;"), rendered);
+    assertFalse(rendered.contains("<img"), rendered);
   }
 
   private static Notification bookingNotification(

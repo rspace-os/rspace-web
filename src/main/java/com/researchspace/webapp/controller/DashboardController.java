@@ -48,10 +48,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -72,11 +74,15 @@ public class DashboardController extends BaseController {
   private @Autowired @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock;
 
   @GetMapping
-  public String dashboard(Model model, Principal principal, HttpSession session) {
+  public String dashboard(
+      Model model,
+      Principal principal,
+      HttpSession session,
+      @RequestHeader(name = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
     PaginationCriteria<CommunicationTarget> pgCrit =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
     doMessageListingAndPrepareView(model, principal, pgCrit);
-    doNotificationListingAndPrepareView(model, principal, pgCrit, session);
+    doNotificationListingAndPrepareView(model, principal, pgCrit, session, acceptLanguage);
     User user = getUserByUsername(principal.getName());
     setPublicationAllowed(model, user);
     return "dashboard/dashboard";
@@ -281,8 +287,9 @@ public class DashboardController extends BaseController {
       Model model,
       Principal principal,
       PaginationCriteria<CommunicationTarget> pgCrit,
-      HttpSession session) {
-    doNotificationListingAndPrepareView(model, principal, pgCrit, session);
+      HttpSession session,
+      @RequestHeader(name = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
+    doNotificationListingAndPrepareView(model, principal, pgCrit, session, acceptLanguage);
     return "dashboard/notifications_ajax";
   }
 
@@ -290,7 +297,8 @@ public class DashboardController extends BaseController {
       Model model,
       Principal principal,
       PaginationCriteria<CommunicationTarget> pgCrit,
-      HttpSession session) {
+      HttpSession session,
+      String acceptLanguage) {
     configurePagination(pgCrit);
     Date timeOfListing = new Date();
     ISearchResults<Notification> notificns =
@@ -306,15 +314,24 @@ public class DashboardController extends BaseController {
     model.addAttribute("notificationList", notificns.getResults());
     model.addAttribute(
         "bookingNotificationMessages",
-        bookingNotificationMessages(notificns.getResults(), principal.getName(), session));
+        bookingNotificationMessages(
+            notificns.getResults(), principal.getName(), session, acceptLanguage));
     // this is a timestamp on the search; any subsequent request from the
     // client to delete all notifications will only delete those earlier
     // than this date,
     model.addAttribute("timeOfListing", timeOfListing.getTime());
   }
 
+  /**
+   * Renders booking notifications for the recipient's display zone, in the app language but with
+   * the 12- or 24-hour clock of the browser region named by {@code acceptLanguage}, as the booking
+   * pages do.
+   */
   Map<Long, String> bookingNotificationMessages(
-      List<Notification> notifications, String username, HttpSession session) {
+      List<Notification> notifications,
+      String username,
+      HttpSession session,
+      String acceptLanguage) {
     if (notifications.stream()
         .noneMatch(
             notification ->
@@ -332,6 +349,7 @@ public class DashboardController extends BaseController {
         BookingNotificationMessageFormatter.zoneFor(preferences, browserZone, institutionZone);
     Map<Long, String> messages = new HashMap<>();
     Locale locale = LocaleContextHolder.getLocale();
+    Locale regionalLocale = BookingNotificationMessageFormatter.regionalLocaleFrom(acceptLanguage);
     for (Notification notification : notifications) {
       NotificationType type = notification.getNotificationType();
       if (!BookingNotificationMessageFormatter.isBookingNotification(type)) {
@@ -341,12 +359,16 @@ public class DashboardController extends BaseController {
         if (notification.getNotificationDataObject() instanceof BookingNotificationData data) {
           messages.put(
               notification.getId(),
-              bookingMessageFormatter.format(type, data, displayZone, locale));
+              bookingMessageFormatter.format(type, data, displayZone, locale, regionalLocale));
         } else {
           messages.put(
               notification.getId(),
               bookingMessageFormatter.formatLegacy(
-                  type, notification.getNotificationMessage(), displayZone, locale));
+                  type,
+                  notification.getNotificationMessage(),
+                  displayZone,
+                  locale,
+                  regionalLocale));
         }
       } catch (RuntimeException ex) {
         log.warn(
@@ -356,7 +378,7 @@ public class DashboardController extends BaseController {
         messages.put(
             notification.getId(),
             bookingMessageFormatter.formatLegacy(
-                type, notification.getNotificationMessage(), displayZone, locale));
+                type, notification.getNotificationMessage(), displayZone, locale, regionalLocale));
       }
     }
     return messages;
