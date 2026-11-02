@@ -141,7 +141,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
 
   @Override
   public Optional<CalendarSource> getCalendarSource(
-      Long configurationId, User actor, Date refreshedAt, int maxEvents) {
+      Long configurationId, User actor, Date refreshedAt, int maxEvents)
+      throws CalendarSourceTooLargeException {
     Date cutoff = calendarCutoff(actor, refreshedAt, maxEvents);
 
     Optional<BookingConfiguration> configuration =
@@ -169,7 +170,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   @Override
-  public CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents) {
+  public CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents)
+      throws CalendarSourceTooLargeException {
     Date cutoff = calendarCutoff(actor, refreshedAt, maxEvents);
     List<TimeSlotBooking> bookings =
         bookingDao.findUserCalendarBookings(actor.getId(), cutoff, maxEvents + 1);
@@ -208,7 +210,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   private void validateAndPrepareCalendarBookings(
-      List<TimeSlotBooking> bookings, User actor, int maxEvents) {
+      List<TimeSlotBooking> bookings, User actor, int maxEvents)
+      throws CalendarSourceTooLargeException {
     if (bookings.size() > maxEvents) {
       throw new CalendarSourceTooLargeException();
     }

@@ -556,7 +556,7 @@ class ApiV2OpenApiGeneratorTest {
             "id",
             "start",
             "end",
-            "search",
+            "q",
             "actions",
             "snapshotDate",
             "snapshotFingerprint",
@@ -571,7 +571,7 @@ class ApiV2OpenApiGeneratorTest {
         objectMap(
             objectMap(objectMap(auditResponses.get("200")).get("content")).get("application/json"));
     Map<String, Object> auditPageSchema = objectMap(auditPage.get("schema"));
-    assertTrue(((List<?>) auditPageSchema.get("required")).contains("totalDocs"));
+    assertFalse(((List<?>) auditPageSchema.get("required")).contains("totalDocs"));
     assertTrue(((List<?>) auditPageSchema.get("required")).contains("snapshotDate"));
     assertTrue(((List<?>) auditPageSchema.get("required")).contains("snapshotFingerprint"));
     Map<String, Object> auditPageProperties = objectMap(auditPageSchema.get("properties"));
