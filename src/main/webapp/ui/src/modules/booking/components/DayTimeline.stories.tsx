@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { DayTimeline, type DayTimelineEvent, type DayTimelineViewState } from "./DayTimeline";
 import { DayTimelineStory } from "./DayTimeline.story";
-import { formatDayDate, formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
+import { formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
 const denseBookings: Array<DayTimelineEvent> = Array.from({ length: 12 }, (_, index) => ({
@@ -145,10 +145,10 @@ export const Sub15MinuteEvents: Story = {
       const timeRange = eventBar.querySelector<HTMLElement>("[data-event-time-range]");
       expect(card).not.toBeNull();
       expect(time).not.toBeNull();
-      expect(eventDate).toHaveTextContent(formatDayDate(meta.args.date));
+      expect(eventDate).toBeNull();
       const { startMinute, endMinute } = denseBookings[index];
       expect(timeRange).toHaveTextContent(`${clock(startMinute)} - ${clock(endMinute)}`);
-      if (!card || !time || !eventDate || !timeRange) throw new Error("Timeline card content is missing");
+      if (!card || !time || !timeRange) throw new Error("Timeline card content is missing");
       expect(card).toHaveAttribute("title");
       expect(time.getBoundingClientRect().top).toBeGreaterThan(card.getBoundingClientRect().top);
       expect(time.getBoundingClientRect().bottom).toBeLessThanOrEqual(card.getBoundingClientRect().bottom);

@@ -43,12 +43,12 @@ export const AUDIT_ACTIONS = ["CREATE", "WRITE", "DELETE", "RESTORE"] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 /** A Booking-level reading of an audit event. A WRITE that sets the state to CANCELLED is a cancellation. */
-export type AuditEventKind = "created" | "changed" | "cancelled" | "deleted" | "restored";
+export type AuditEventKind = "created" | "changed" | "cancelled" | "deleted" | "permanentlyDeleted" | "restored";
 
 export function auditEventKind(event: Pick<AuditEvent, "action" | "payload">): AuditEventKind | null {
   if (event.action === "CREATE") return "created";
   if (event.action === "WRITE") return event.payload.state === "CANCELLED" ? "cancelled" : "changed";
-  if (event.action === "DELETE") return "deleted";
+  if (event.action === "DELETE") return typeof event.payload.deletedAt === "string" ? "permanentlyDeleted" : "deleted";
   if (event.action === "RESTORE") return "restored";
   return null;
 }

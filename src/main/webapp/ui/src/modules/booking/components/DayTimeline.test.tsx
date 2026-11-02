@@ -97,7 +97,7 @@ describe("DayTimeline table row", () => {
       kind: "booking",
       privacy: "full",
       title: "Confocal microscope",
-      bookedBy: "Ada Lovelace (ada)",
+      bookedBy: "Ada Lovelace",
       item: { name: "Confocal microscope", globalId: "IN123" },
       canEdit: false,
       startMinute: 480,
@@ -125,7 +125,7 @@ describe("DayTimeline table row", () => {
     short.unmount();
 
     const tall = card(112);
-    expect(within(tall.container).getByText("Ada Lovelace (ada)")).toBeInTheDocument();
+    expect(within(tall.container).getByText("Ada Lovelace")).toBeInTheDocument();
     expect(within(tall.container).getByText("Confocal microscope", { selector: "span[title]" })).toHaveClass(
       "line-clamp-2",
     );
@@ -161,7 +161,7 @@ describe("DayTimeline table row", () => {
         { wrapper },
       );
 
-      expect(screen.getByText("08/17/2026")).toBeVisible();
+      expect(screen.queryByText("08/17/2026")).not.toBeInTheDocument();
       expect(screen.getByText("08:00 AM - 09:00 AM")).toBeVisible();
       const details = screen.getByRole("button", {
         name: "Show details for Confocal microscope · Ada, 08:00 AM–09:00 AM",
@@ -214,8 +214,8 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.queryByText("17-08-2026 - 18-08-2026")).not.toBeInTheDocument();
-    expect(screen.getByText("23:00 - 00:00 (+1)")).toBeVisible();
+    expect(screen.queryByText(/08\/17\/2026/)).not.toBeInTheDocument();
+    expect(screen.getByText("11:00 PM - 12:00 AM (+1)")).toBeVisible();
   });
 
   it("shows both dates and day offsets for an event crossing the displayed day", async () => {

@@ -18,6 +18,7 @@ export function useAuditEventKindLabels(): Record<AuditEventKind, string> {
     changed: t("bookableItemDetails.audit.actions.changed"),
     cancelled: t("bookableItemDetails.audit.actions.cancelled"),
     deleted: t("bookableItemDetails.audit.actions.deleted"),
+    permanentlyDeleted: t("bookableItemDetails.audit.actions.permanentlyDeleted"),
     restored: t("bookableItemDetails.audit.actions.restored"),
   };
 }

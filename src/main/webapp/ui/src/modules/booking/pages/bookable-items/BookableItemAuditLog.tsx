@@ -134,7 +134,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const actionLabels: Record<AuditAction, string> = {
     CREATE: eventKindLabels.created,
     WRITE: t("bookableItemDetails.audit.actions.changedOrCancelled"),
-    DELETE: eventKindLabels.deleted,
+    DELETE: t("bookableItemDetails.audit.actions.archivedOrDeleted"),
     RESTORE: eventKindLabels.restored,
   };
 

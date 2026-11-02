@@ -278,3 +278,11 @@ stay below the panel. Escape returns focus to the event trigger.
 Instrument names link to the bookable-item view when configuration access permits it.
 Separate global-ID badges open Inventory records. Table action columns stay pinned
 while other columns scroll, and icon actions expose labels on hover and keyboard focus.
+
+## Audit DELETE labels
+
+The item audit log labels ordinary DELETE events as Archived and events with a
+string `payload.deletedAt` as Permanently deleted. The permanent-delete snapshot
+records that timestamp; archive snapshots do not. Booking's `relatedAuditFields`
+allowlist must retain `deletedAt` in the v2 audit response because descriptions
+are withheld. The Archived or deleted filter sends DELETE and includes both kinds.

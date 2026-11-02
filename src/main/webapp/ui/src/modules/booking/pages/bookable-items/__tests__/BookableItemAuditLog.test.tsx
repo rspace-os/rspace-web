@@ -14,10 +14,13 @@ import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import bookingCatalog from "@/modules/common/i18n/locales/en-US/booking.json";
+import commonCatalog from "@/modules/common/i18n/locales/en-US/common.json";
 import { BookableItemAuditLog } from "../BookableItemAuditLog";
-import { auditPage, snapshotFingerprint } from "./bookableItemAuditFixtures";
+import { auditPage, permanentDeleteEvent, snapshotFingerprint } from "./bookableItemAuditFixtures";
 
 vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
 
@@ -66,6 +69,52 @@ beforeEach(() => {
 });
 
 describe("BookableItemAuditLog", () => {
+  it("distinguishes archives and permanent deletions under the shared DELETE filter", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(
+          auditPage([
+            {
+              ...event,
+              action: "DELETE",
+              description: null,
+              target: "booking-configurations:7",
+              payload: { state: "ARCHIVED" },
+            },
+            {
+              ...event,
+              eventId: "f".repeat(64),
+              ...permanentDeleteEvent,
+              target: "booking-configurations:7",
+            },
+          ]),
+        );
+      }),
+    );
+    render(
+      await wrapWithRealI18n(<BookableItemAuditLog configurationId={7} />, {
+        resources: { booking: bookingCatalog, common: commonCatalog },
+        defaultNS: "booking",
+      }),
+      { wrapper },
+    );
+
+    expect(within(await screen.findByRole("article", { name: "Archived" })).getByText("Archived")).toBeVisible();
+    const permanentlyDeleted = screen.getByRole("article", { name: "Permanently deleted" });
+    expect(within(permanentlyDeleted).getByText("Permanently deleted")).toBeVisible();
+    await user.click(within(permanentlyDeleted).getByRole("button", { name: "Expand" }));
+    expect(within(permanentlyDeleted).getByText("Deleted at (UTC)")).toBeVisible();
+    const filter = screen.getByRole("combobox", { name: "Action" });
+    expect(within(filter).getByRole("option", { name: "Archived or deleted" })).toHaveValue("DELETE");
+    await user.selectOptions(filter, "Archived or deleted");
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[1].searchParams.getAll("actions")).toEqual(["DELETE"]);
+    expect(screen.getAllByRole("article")).toHaveLength(2);
+  });
+
   it("labels the permanent-deletion timestamp and retains unknown recorded field names", async () => {
     const user = userEvent.setup();
     server.use(
@@ -175,7 +224,7 @@ describe("BookableItemAuditLog", () => {
       ["", "booking:bookableItemDetails.audit.allActions"],
       ["CREATE", "booking:bookableItemDetails.audit.actions.created"],
       ["WRITE", "booking:bookableItemDetails.audit.actions.changedOrCancelled"],
-      ["DELETE", "booking:bookableItemDetails.audit.actions.deleted"],
+      ["DELETE", "booking:bookableItemDetails.audit.actions.archivedOrDeleted"],
       ["RESTORE", "booking:bookableItemDetails.audit.actions.restored"],
     ]);
     await expectAccessible(container);

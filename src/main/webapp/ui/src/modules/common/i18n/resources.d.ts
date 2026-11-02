@@ -892,11 +892,13 @@ export default interface Resources {
       "archived": "Archived",
       "audit": {
         "actions": {
+          "archivedOrDeleted": "Archived or deleted",
           "cancelled": "Cancelled",
           "changed": "Changed",
           "changedOrCancelled": "Changed or cancelled",
           "created": "Created",
-          "deleted": "Deleted",
+          "deleted": "Archived",
+          "permanentlyDeleted": "Permanently deleted",
           "restored": "Restored"
         },
         "allActions": "All actions",

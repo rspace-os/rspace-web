@@ -14,12 +14,15 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
+  auditEventKind,
   auditPresetRange,
   auditRangeToQuery,
   fetchBookingConfigurationAudit,
   recordedValues,
   validateAuditDateRange,
 } from "../bookableItemAudit";
+
+import { permanentDeleteEvent } from "./bookableItemAuditFixtures";
 
 const eventId = "a".repeat(64);
 const fingerprint = "b".repeat(64);
@@ -267,5 +270,15 @@ describe("audit UTC date ranges", () => {
       valid: false,
       fields: { from: "tooWide", to: "tooWide" },
     });
+  });
+});
+
+describe("DELETE audit event kinds", () => {
+  it("keeps the archive kind for ordinary DELETE events", () => {
+    expect(auditEventKind({ action: "DELETE", payload: { state: "ARCHIVED" } })).toBe("deleted");
+  });
+
+  it("recognizes a permanent deletion even when its prior state was ARCHIVED", () => {
+    expect(auditEventKind(permanentDeleteEvent)).toBe("permanentlyDeleted");
   });
 });
