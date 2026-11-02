@@ -6,12 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -19,16 +23,19 @@ import com.researchspace.Constants;
 import com.researchspace.api.v1.controller.OAuthClientController;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.auth.PasswordGrantGuessLimiter;
-import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
+import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.OAuthAppManager;
+import com.researchspace.service.ReauthenticationResult;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
@@ -37,6 +44,8 @@ import org.springframework.test.web.servlet.ResultActions;
 public class OAuthClientControllerMVCIT extends MVCTestBase {
   private static final String CLIENT_ERROR = "OAuth token could not be created.";
   private static final String INVALID_CREDENTIALS = "Invalid user credentials.";
+  private static final String SERVER_BUSY =
+      "The server is busy; retry after the Retry-After interval.";
 
   @Autowired private OAuthAppManager oAuthAppManager;
   @Autowired private OAuthClientController oAuthClientController;
@@ -44,9 +53,9 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
   private Object controllerTarget;
   private Object originalReauthenticator;
-  private Object originalCredentialsMatcher;
+  private Object originalSentinelCheck;
   private IReauthenticator reauthenticator;
-  private UsernamePasswordCredentialsMatcher credentialsMatcher;
+  private SentinelPasswordCheck sentinelCheck;
 
   /**
    * Spies are swapped into the shared beans by hand rather than with {@code @MockitoSpyBean}. A
@@ -61,16 +70,15 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     reauthenticator = mock(IReauthenticator.class, delegatesTo(originalReauthenticator));
     ReflectionTestUtils.setField(controllerTarget, "reauthenticator", reauthenticator);
 
-    originalCredentialsMatcher = ReflectionTestUtils.getField(guessLimiter, "credentialsMatcher");
-    credentialsMatcher =
-        mock(UsernamePasswordCredentialsMatcher.class, delegatesTo(originalCredentialsMatcher));
-    ReflectionTestUtils.setField(guessLimiter, "credentialsMatcher", credentialsMatcher);
+    originalSentinelCheck = ReflectionTestUtils.getField(guessLimiter, "sentinelCheck");
+    sentinelCheck = mock(SentinelPasswordCheck.class, delegatesTo(originalSentinelCheck));
+    ReflectionTestUtils.setField(guessLimiter, "sentinelCheck", sentinelCheck);
   }
 
   @AfterEach
   public void restoreOriginals() {
     ReflectionTestUtils.setField(controllerTarget, "reauthenticator", originalReauthenticator);
-    ReflectionTestUtils.setField(guessLimiter, "credentialsMatcher", originalCredentialsMatcher);
+    ReflectionTestUtils.setField(guessLimiter, "sentinelCheck", originalSentinelCheck);
   }
 
   /**
@@ -373,8 +381,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, times(5)).reauthenticate(any(), any());
-    verify(credentialsMatcher, times(1))
-        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), any());
+    verify(sentinelCheck, times(1)).pad(eq(username), any());
   }
 
   @Test
@@ -427,7 +434,48 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, never()).reauthenticate(any(), any());
-    verify(credentialsMatcher, times(1)).test(any(), any());
+    verify(sentinelCheck, times(1)).pad(any(), any());
+  }
+
+  @Test
+  public void passwordGrantAnswersBusyWith503AndRetryAfterWithoutUsingUpAGuess() throws Exception {
+    String username = RandomStringUtils.randomAlphabetic(10);
+    String password = RandomStringUtils.randomAlphabetic(10);
+    User user = createAndSaveUser(username, Constants.USER_ROLE, password);
+    OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
+
+    for (int i = 0; i < 4; i++) {
+      passwordGrant(app, username, "wrong-password").andExpect(status().isUnauthorized());
+    }
+    doReturn(ReauthenticationResult.BUSY).when(reauthenticator).reauthenticate(any(), any());
+    for (int i = 0; i < 3; i++) {
+      passwordGrant(app, username, password)
+          .andExpect(status().isServiceUnavailable())
+          .andExpect(header().string(HttpHeaders.RETRY_AFTER, "5"))
+          .andExpect(jsonPath("$.message").value(SERVER_BUSY));
+    }
+    doAnswer(delegatesTo(originalReauthenticator))
+        .when(reauthenticator)
+        .reauthenticate(any(), any());
+
+    passwordGrant(app, username, password).andExpect(status().isOk());
+  }
+
+  @Test
+  public void passwordGrantForAnUnknownUsernameAnswersBusyWhenItsPadIsBusy() throws Exception {
+    doThrow(new LoginVerificationBusyException("busy")).when(sentinelCheck).pad(any(), any());
+
+    mockMvc
+        .perform(
+            post("/oauth/token")
+                .param("client_id", "rsInventoryWebClient")
+                .param("client_secret", "rsInventoryPublicSecret")
+                .param("grant_type", "password")
+                .param("username", RandomStringUtils.randomAlphabetic(12))
+                .param("password", "any-password"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(header().string(HttpHeaders.RETRY_AFTER, "5"))
+        .andExpect(jsonPath("$.message").value(SERVER_BUSY));
   }
 
   private ResultActions passwordGrant(OAuthAppInfo app, String username, String password)

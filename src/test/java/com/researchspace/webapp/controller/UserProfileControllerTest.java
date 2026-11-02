@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,12 +31,17 @@ import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.ReauthenticationResult;
+import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.testutils.TestFactory;
+import com.researchspace.webapp.controller.UserProfileController.ApiKeyInfo;
 import com.researchspace.webapp.controller.UserProfileController.UserGroupInfo;
 import java.io.IOException;
 import java.security.Principal;
@@ -44,6 +51,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,6 +71,8 @@ public class UserProfileControllerTest {
   @Mock AnalyticsManager analMgr;
   @Mock OAuthAppManager oAuthAppManager;
   @Mock OAuthTokenManager oAuthTokenManager;
+  @Mock IReauthenticator reauthenticator;
+  @Mock UserApiKeyManager apiKeyMgr;
 
   @InjectMocks UserProfileController userProfileController;
   User anyUser, sessionUser;
@@ -75,6 +85,40 @@ public class UserProfileControllerTest {
     sessionUser = TestFactory.createAnyUser("session");
     sessionUser.setId(3L);
     this.mockRequest = new MockHttpServletRequest();
+  }
+
+  @Test
+  public void busyPasswordCheckOnApiKeyCreationSaysBusyAndCreatesNoKey() {
+    Subject subject = mock(Subject.class);
+    ShiroTestUtils shiro = new ShiroTestUtils();
+    shiro.setSubject(subject);
+    try {
+      when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
+      when(reauthenticator.reauthenticate(sessionUser, "pw"))
+          .thenReturn(ReauthenticationResult.BUSY);
+      when(messages.getMessage("errors.reauthentication.busy")).thenReturn("busy");
+
+      AjaxReturnObject<ApiKeyInfo> aro = userProfileController.generateApiKey("pw", mockRequest);
+
+      assertEquals(List.of("busy"), aro.getErrorMsg().getErrorMessages());
+      verify(apiKeyMgr, never()).createKeyForUser(any());
+    } finally {
+      shiro.clearSubject();
+    }
+  }
+
+  @Test
+  public void busyPasswordCheckOnEmailChangeSaysBusyAndChangesNothing() {
+    when(usrMgr.getUserByUsername("session", true)).thenReturn(sessionUser);
+    when(reauthenticator.reauthenticate(sessionUser, "pw")).thenReturn(ReauthenticationResult.BUSY);
+    when(messages.getMessage("errors.reauthentication.busy")).thenReturn("busy");
+
+    AjaxReturnObject<String> aro =
+        userProfileController.changeEmail(
+            "new@x.com", "new@x.com", "pw", mockRequest, null, () -> "session");
+
+    assertEquals(List.of("busy"), aro.getErrorMsg().getErrorMessages());
+    verify(usrMgr, never()).save(any(User.class));
   }
 
   @Test

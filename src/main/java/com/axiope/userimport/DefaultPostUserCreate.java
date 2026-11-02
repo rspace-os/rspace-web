@@ -1,6 +1,7 @@
 package com.axiope.userimport;
 
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
@@ -30,10 +31,21 @@ public class DefaultPostUserCreate implements IPostUserSignup {
   private @Autowired UserRoleHandler roleHandler;
   private @Autowired IPropertyHolder properties;
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>A {@link LoginVerificationBusyException} from the login is held until the PI promotion and
+   * the audit event have run, then rethrown: the account already exists, so the rest of signup must
+   * complete even when the verifier has no free slot. Other exceptions propagate at once.
+   */
   @Override
   public void postUserCreate(User created, HttpServletRequest req, String origPwd) {
-    // we'll log in
-    loginHelper.login(created, origPwd, req);
+    LoginVerificationBusyException loginRefused = null;
+    try {
+      loginHelper.login(created, origPwd, req);
+    } catch (LoginVerificationBusyException e) {
+      loginRefused = e;
+    }
     // Send user an e-mail
     if (properties.isPicreateGroupOnSignupEnabled() && created.isPicreateGroupOnSignup()) {
       log.info("User {} has chosen to be a PI", created.getUsername());
@@ -43,6 +55,9 @@ public class DefaultPostUserCreate implements IPostUserSignup {
 
     log.debug("Sending user '{}' an account information e-mail", created.getUsername());
     auditService.notify(new GenericEvent(created, created, AuditAction.CREATE));
+    if (loginRefused != null) {
+      throw loginRefused;
+    }
   }
 
   @Override
