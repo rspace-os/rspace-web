@@ -304,10 +304,11 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
         List.of(
             ApiV2BookingConfigurationResource.DESCRIPTION,
             ApiV2UserResource.DESCRIPTION,
-            bookingTarget));
+            bookingTarget,
+            com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION));
   }
 
-  private static ResourceRequest narrowedByTargetName(String term, List<Long> instrumentIds) {
+  private static ResourceRequest byTargetNameAndIds(String term, List<Long> instrumentIds) {
     return targetNameRequest(
         new FilterExpression.Comparison("target.name", Operator.LIKE, List.of(term), false),
         instrumentIds);
@@ -452,7 +453,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   }
 
   @Test
-  void narrowingByTargetIdsPrunesWithoutLosingTheTargetReadRule() {
+  void combinesTargetNameAndIdFiltersWithoutLosingTheTargetReadRule() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument confocal = createBasicInstrumentForUser(owner, "Confocal microscope");
     ApiInstrument centrifuge = createBasicInstrumentForUser(owner, "Centrifuge");
@@ -461,18 +462,18 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     FilterExpression noInstrumentIsReadable = NO_INSTRUMENT_IS_READABLE;
 
     assertEquals(
-        1, count(narrowedByTargetName("confocal", List.of(confocal.getId())), targets(null)));
+        1, count(byTargetNameAndIds("confocal", List.of(confocal.getId())), targets(null)));
     assertEquals(
-        0, count(narrowedByTargetName("confocal", List.of(centrifuge.getId())), targets(null)));
+        0, count(byTargetNameAndIds("confocal", List.of(centrifuge.getId())), targets(null)));
     assertEquals(
         1,
         count(
-            narrowedByTargetName("confocal", List.of(confocal.getId(), centrifuge.getId())),
+            byTargetNameAndIds("confocal", List.of(confocal.getId(), centrifuge.getId())),
             targets(null)));
     assertEquals(
         0,
         count(
-            narrowedByTargetName("confocal", List.of(confocal.getId())),
+            byTargetNameAndIds("confocal", List.of(confocal.getId())),
             targets(noInstrumentIsReadable)));
   }
 }

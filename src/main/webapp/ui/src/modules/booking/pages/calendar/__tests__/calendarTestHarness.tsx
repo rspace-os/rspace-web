@@ -15,7 +15,8 @@ import { createCalendarRouter } from "../calendarRouter";
 export const noParentBooking: BookingListDocument = {
   ...ownBooking,
   id: 44,
-  target: bookingTarget(125, "Mass spectrometer", null),
+  target: bookingTarget(125, "Mass spectrometer"),
+  location: null,
   start: "2026-08-20T08:00:00Z",
   end: "2026-08-20T09:00:00Z",
 };
