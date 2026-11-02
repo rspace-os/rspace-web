@@ -1589,7 +1589,6 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNull(subContainerAsSeenByOtherUser.getExtraFields());
     assertNull(subContainerAsSeenByOtherUser.getLocations());
 
-    // limited read is not enough to duplicate, as the copy would have full details
     Long subContainerId = apiSubContainer.getId();
     assertThrows(
         NotFoundException.class, () -> containerApiMgr.duplicate(subContainerId, otherUser));

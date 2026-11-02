@@ -222,7 +222,6 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertFalse(templateRetrievedByOtherUser.isClearedForPublicView());
     assertTrue(templateRetrievedByOtherUser.isClearedForLimitedView());
 
-    // limited read is not enough to duplicate, as the copy would have full details
     Long templateId = createdTemplate.getId();
     assertThrows(
         NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(templateId, otherUser));

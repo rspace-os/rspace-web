@@ -1230,7 +1230,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertNull(sampleAsSeenByOtherUser.getExtraFields());
     assertNull(sampleAsSeenByOtherUser.getSubSamples());
 
-    // limited read is not enough to duplicate, as the copy would have full details
     Long sampleId = createdSample.getId();
     assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(sampleId, otherUser));
 
