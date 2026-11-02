@@ -47,20 +47,32 @@ function AppBarRoute() {
   );
 }
 
-export function AppBarStory() {
+export function AppBarStory({
+  administrator = false,
+  bookingEnabled = false,
+  bannerImageUrl = "",
+}: {
+  administrator?: boolean;
+  bookingEnabled?: boolean;
+  bannerImageUrl?: string;
+}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(authQueryKeys.oauthToken(false), OAUTH_TOKEN);
   queryClient.setQueryData(authQueryKeys.oauthToken(true), OAUTH_TOKEN);
-  queryClient.setQueryData(currentUserQueryKeys.me(), storyUser);
+  queryClient.setQueryData(currentUserQueryKeys.me(), {
+    ...storyUser,
+    hasSysAdminRole: administrator,
+    capabilities: { ...storyUser.capabilities, canViewSystem: administrator },
+  });
   queryClient.setQueryData(appConfigQueryKeys.all, {
     version: "2.99.1",
-    branding: { bannerImageUrl: "" },
+    branding: { bannerImageUrl },
     helpLinks: [{ label: "Local help", url: "https://help.example.com" }],
     deploymentDescription: "",
     deploymentHelpEmail: null,
   });
   queryClient.setQueryData(nextMaintenanceQueryKeys.next(), null);
-  queryClient.setQueryData(featureFlagQueryKeys.flags(), disabledFeatureFlags());
+  queryClient.setQueryData(featureFlagQueryKeys.flags(), { ...disabledFeatureFlags(), bookingEnabled });
 
   const rootRoute = createRootRoute({ component: AppBarRoute });
   const router = createRouter({

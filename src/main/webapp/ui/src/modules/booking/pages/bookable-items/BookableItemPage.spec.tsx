@@ -60,6 +60,66 @@ afterEach(() => {
 });
 
 describe("BookableItemPage", () => {
+  test.each([375, 768, 1440])("keeps event rows and actions inside the table at %s px", async (width) => {
+    const purpose = "A long calibration purpose ".repeat(30);
+    worker.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json({
+          docs: [
+            {
+              id: 47,
+              version: 0,
+              target: bookableItemFixtures[0].target,
+              timezone: "UTC",
+              start: "2099-01-01T09:00:00Z",
+              end: "2099-01-01T10:00:00Z",
+              state: "CONFIRMED",
+              kind: "BOOKING",
+              requesterId: 1,
+              privacy: "full",
+              canViewConfiguration: true,
+              purpose,
+              cancellationReason: null,
+              bookedBy: "Alexandra Montgomery-Wellington with a very long name",
+              canEdit: true,
+              canCancel: false,
+              createdAt: "2026-08-01T09:00:00Z",
+              updatedAt: "2026-08-01T09:00:00Z",
+            },
+          ],
+          totalDocs: 1,
+          limit: 10,
+          page: 1,
+          pagingCounter: 1,
+          totalPages: 1,
+          hasPrevPage: false,
+          hasNextPage: false,
+          prevPage: null,
+          nextPage: null,
+        }),
+      ),
+    );
+    await withViewport(width, async () => {
+      render(<BookableItemPageStory history={history} />);
+      await expect.element(pageObj.heading).toBeVisible();
+      await expect.poll(() => pageObj.eventTables.all().length).toBe(2);
+      for (const table of pageObj.eventTables.all()) {
+        const row = table.getByRole("row").filter({ has: page.getByRole("link", { name: "View details" }) });
+        await expect.element(row).toBeVisible();
+        for (const name of ["View details", "Edit"]) {
+          const action = row.getByRole("link", { name, exact: true });
+          action.element().focus();
+          await expect.element(action).toHaveFocus();
+          const bounds = action.element().getBoundingClientRect();
+          expect(bounds.left).toBeGreaterThanOrEqual(0);
+          expect(bounds.right).toBeLessThanOrEqual(width);
+        }
+      }
+      await expect.poll(() => document.documentElement.scrollWidth).toBe(width);
+      await expectNoAxeViolations();
+    });
+  });
+
   test.each([200, 403])("keeps the Access tab mounted while its delayed read returns %s", async (status) => {
     const response = Promise.withResolvers<void>();
     worker.use(
