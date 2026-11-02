@@ -21,7 +21,9 @@ registerHandlers();
 
 let history: RouterHistory;
 
-beforeEach(() => {
+beforeEach(async () => {
+  // Timeline handles are a desktop interaction; narrow screens edit times in the bottom sheet.
+  await page.viewport(1440, 900);
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
