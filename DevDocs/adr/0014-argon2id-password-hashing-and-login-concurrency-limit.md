@@ -126,6 +126,17 @@ rules below apply to them too. Changing the verification password checks the cur
 never substitutes an operating-as sysadmin. Only LDAP users, who reauthenticate against the
 directory, skip the verifier; that path is as it was on main.
 
+Public links do not reach the verifier either. A visitor of a published document or notebook
+without a session is signed in as the shared anonymous guest with `AnonymousGuestAuthenticationToken`,
+a token with no credentials that only the server constructs, through `AnonymousGuestRealm`, which
+accepts only that token and always signs in the fixed guest username. Through the password realm
+every public visitor would share one username's lock (one check running, one waiting), so a third
+simultaneous visitor would get an error page and anyone could keep public pages failing with
+made-up links. Main checked the guest's password with SHA-256 and no limit, so taking it out of the
+password path changes nothing a visitor sees. A notebook link is now looked up before the guest is
+signed in, as a document link already was. Disabling the guest account makes the realm refuse the
+sign-in and so turns public pages off.
+
 One further rule stops a single account from monopolising the pool, and it writes nothing to the
 database: verifications are serialised per username ahead of the semaphore. One username has at
 most one verification in flight, so one account can hold at most one permit, and a burst of
@@ -198,6 +209,12 @@ application are unaffected.
   to authentication. Refusing instead of sleeping would have let one wrong guess per second deny an
   account's correct logins. Neither is worth the one property it bought, a per-account guess cap
   at endpoints without lockout, so reauthentication keeps only the per-username rule.
+- **Exempt the anonymous guest's username from the per-username lock.** Rejected: every public
+  visit would still run an Argon2 check and take a permit, so public traffic would compete with
+  logins for the pool and a burst of public views could push form logins into the busy refusal.
+- **Stop signing visitors in as the anonymous guest.** The cleaner end state, deferred to
+  RSDEV-1639: the image, attachment, chemistry, maths and comment endpoints a public page calls
+  all rely on the guest session, which is too wide a change for this ticket.
 - **Bound new-password encoding inside the shared encoder**, with its own semaphore, either
   refusing or blocking when full. Raised in review: anonymous signup and the password-reset reply
   reach `encode()` outside the verifier's permits. Rejected: a refusing bound turns into exception
@@ -270,9 +287,14 @@ That table must change in the same commit as any limit, default, message or rout
 - Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
   an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
-  Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
-  internal user's early exit the same way, and a temporarily locked account is padded the same
-  way before it is refused; parity with a directory bind is best effort. Each
+  Argon2 check against a random hash made at startup. A temporarily locked account is padded
+  the same way before it is refused. On directory-login installs a local account answers one
+  directory round trip faster than an unknown name, because a wrong local password stops in the
+  password realm before the directory is asked. That is accepted and tracked in RSDEV-1558 with
+  the other routes that reveal whether a username exists (for example the password-reset
+  request). `LdapRealm` no longer pads a local account's early exit: Shiro only reaches it after
+  the password realm has accepted the correct password, so the pad doubled the cost of a correct
+  local login and could refuse it as busy without hiding anything. Each
   padded check queues on its own lock and takes one permit, exactly like a real username, so
   admission timing is the same for both; the permit pool, not the lock, bounds a flood of made-up
   names, as it already does for a flood of real ones. The filter's whole-login lock and
@@ -287,6 +309,9 @@ That table must change in the same commit as any limit, default, message or rout
     timing, the disabled-account redirect, the API token route's account-state messages and the
     SSO emergency admin form, whose wrong-signup-source message confirms a regular account exists; this
     change closes only the login page.
+  - RSDEV-1639: serve public pages without signing visitors in as the anonymous guest.
+  - RSDEV-1640: each cookieless public view still sleeps one second on its request thread after
+    the guest sign-in.
   - RSDEV-1559: `User.salt` is write-only after the wrap and is dropped in a later release.
   - RSDEV-1560: `RequestUtil.remoteAddr` trusts `X-Forwarded-For`, so address-based throttling of
     busy refusals (and of the API token route, see RSDEV-1557) waits on a trusted-proxy list.

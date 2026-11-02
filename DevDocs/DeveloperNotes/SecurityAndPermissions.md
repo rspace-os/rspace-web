@@ -35,7 +35,7 @@ generated. Plain text passwords are not stored.
 ### Password storage
 
 The design and its trade-offs are in
-[ADR 0011](../adr/0011-argon2id-password-hashing-and-login-concurrency-limit.md).
+[ADR 0014](../adr/0014-argon2id-password-hashing-and-login-concurrency-limit.md).
 
 - **Encoder.** `RSpacePasswordEncoder` (bean in `SecurityBaseConfig`) wraps
   Spring Security's `DelegatingPasswordEncoder`. Every stored login and
@@ -100,7 +100,7 @@ The design and its trade-offs are in
   with a conditional update in the same transaction as the password
   change, so two simultaneous submits give one change. Authenticated
   encodes (password change, user creation, imports) are unbounded by
-  choice (ADR 0011). The initial verification-password set is serialised
+  choice (ADR 0014). The initial verification-password set is serialised
   per user in memory, and a duplicate submission returns success without
   hashing.
 - **Busy post-signup login.** Standalone signup logs the new user in
@@ -111,7 +111,7 @@ The design and its trade-offs are in
 - **No writes, no reauthentication lockout.** A password check never
   writes to the `User` row: an earlier version re-encoded legacy hashes on
   login and counted reauthentication failures on the row, and both broke
-  callers that held the same row in their own transaction (ADR 0011,
+  callers that held the same row in their own transaction (ADR 0014,
   considered options). Failed reauthentication is not counted toward the
   login-form lockout and has no other per-account rate limit; the
   per-username lock is the only bound, for verification password checks
@@ -138,6 +138,24 @@ anonymous access. An expired token with an active session can be refreshed for
 the same user without losing page state. Only GET requests retry automatically;
 pending writes fail without replay. API keys and external OAuth clients retain
 their stateless authentication behavior.
+
+### Public links and the anonymous guest
+
+A visitor who opens a published document or notebook without a session is signed in as the shared
+`rspace anonymous guest` account (`RecordGroupSharing.ANONYMOUS_USER`), so the permission checks
+and the image, attachment and comment endpoints the page calls work unchanged.
+`AnonymousUserFilter` keeps that session on the public URLs and sends it to the login page from
+`/workspace` and the other root pages.
+
+- `PublicDocumentsUtilities.loginAnonymousUser` signs in with
+  `AnonymousGuestAuthenticationToken`, which has no credentials and is only built by the server.
+  `AnonymousGuestRealm`, registered in every security manager, accepts only that token and always
+  signs in the fixed guest username, so public traffic never reaches the password check or its
+  limits (ADR 0014). A password login as the guest goes to the password realm like any other.
+- Disabling the guest account turns public pages off: the realm refuses the sign-in.
+- A new public page must look up its link and answer not found before signing the guest in, as
+  `PublicStructuredDocumentController` and `PublicNotebookEditorController` do, so made-up links
+  create no guest session.
 
 ## Authorization
 

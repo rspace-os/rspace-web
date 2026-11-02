@@ -12,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * accepted, so an unknown or missing prefix fails with {@link IllegalArgumentException} rather than
  * matching. {@link #BCRYPT_ID} is registered for verification passwords set before RSDEV-894 and
  * never encodes; {@link com.researchspace.auth.UsernamePasswordCredentialsMatcher} refuses it for
- * login passwords. See ADR 0011.
+ * login passwords. See ADR 0014.
  */
 public class RSpacePasswordEncoder implements PasswordEncoder {
 

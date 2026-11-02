@@ -1,18 +1,15 @@
 package com.researchspace.webapp.controller;
 
-import com.researchspace.model.RecordGroupSharing;
+import com.researchspace.auth.AnonymousGuestAuthenticationToken;
 import java.util.concurrent.TimeUnit;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 
 class PublicDocumentsUtilities {
 
-  public static void loginAnonymousUser(String password) {
-    String uName = RecordGroupSharing.ANONYMOUS_USER;
-    UsernamePasswordToken token = new UsernamePasswordToken(uName, password, false);
+  public static void loginAnonymousUser() {
     final Subject subject = SecurityUtils.getSubject();
-    subject.login(token);
+    subject.login(new AnonymousGuestAuthenticationToken());
     // Prevents race condition where loading public documents makes requests for the public images
     // but Shiro has not yet accepted that the
     // anonymous user has logged in. If this happens, image links on the public document are broken

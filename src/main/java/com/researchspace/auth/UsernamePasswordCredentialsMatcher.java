@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 /**
  * Checks a login password against the stored hash for both Shiro login ({@link ShiroRealm}) and
  * reauthentication, through the shared {@link BoundedPasswordVerifier}. A check never writes: a
- * hash stored in the legacy encoding stays as it is (ADR 0011). The {@code {bcrypt}} id the shared
+ * hash stored in the legacy encoding stays as it is (ADR 0014). The {@code {bcrypt}} id the shared
  * encoder registers for verification passwords is refused here, so a verification password can
  * never be used to log in.
  */

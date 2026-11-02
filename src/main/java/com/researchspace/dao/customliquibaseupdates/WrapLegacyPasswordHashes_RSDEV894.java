@@ -10,7 +10,7 @@ import org.hibernate.Session;
 
 /**
  * Wraps every pre-Argon2 SHA-256 login password hash in Argon2id, once, so no fast hash stays at
- * rest (RSDEV-894, ADR 0011). Rows already carrying an encoder id prefix are skipped, so running it
+ * rest (RSDEV-894, ADR 0014). Rows already carrying an encoder id prefix are skipped, so running it
  * again changes nothing. The salt moves into the wrapped value and the salt column is cleared. Rows
  * that are not a SHA-256 hex digest with a Base64 salt are logged at ERROR and left unchanged;
  * those users cannot log in until an administrator resets their password.

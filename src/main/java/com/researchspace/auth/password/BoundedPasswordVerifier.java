@@ -13,7 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /**
  * Runs Argon2 login-password checks (Shiro login and default-realm reauthentication) through one
  * shared pool of permits, so the per-check heap allocation is bounded however many requests arrive
- * (ADR 0011). A username has at most one check in flight, so one account cannot hold more than one
+ * (ADR 0014). A username has at most one check in flight, so one account cannot hold more than one
  * permit, and at most one more caller may wait for that username, so a burst of requests for one
  * name cannot hold the admissions other accounts need. At most {@code permits + maxQueued} callers
  * are inside at once; further callers are refused as busy without waiting. New passwords are not
