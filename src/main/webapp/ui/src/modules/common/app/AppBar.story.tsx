@@ -27,6 +27,9 @@ const storyUser: CurrentUser = {
   session: {
     operatedAs: false,
     lastSession: null,
+    canUseDevtools: false,
+    canOverrideFeatureFlags: false,
+    canChangeFeatureFlagBaselines: false,
   },
 };
 

@@ -107,6 +107,11 @@
     </filter>
 
     <filter>
+        <filter-name>featureFlagDevtoolsFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter>
         <filter-name>sitemesh</filter-name>
         <filter-class>com.researchspace.webapp.filter.FullPathSiteMeshFilter</filter-class>
         <async-supported>true</async-supported>
@@ -177,6 +182,13 @@
     <filter-mapping>
         <filter-name>shiroFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>featureFlagDevtoolsFilter</filter-name>
+        <url-pattern>/inventory/start.jsp</url-pattern>
+        <url-pattern>/eln/gallery.jsp</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
      <filter-mapping>
         <filter-name>encodingFilter</filter-name>
