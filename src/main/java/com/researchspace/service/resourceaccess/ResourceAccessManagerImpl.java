@@ -91,6 +91,13 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   }
 
   @Override
+  public ResolvedResourceAccess resolveForMutation(ResourceAccess access, User subject) {
+    ResourceAccessDao.AuthorizationFacts authorizationFacts =
+        withConcurrentLockMapping(() -> gateway.lockAuthorizationFacts(access, subject));
+    return resolveLocked(access, authorizationFacts);
+  }
+
+  @Override
   public Map<Long, ResolvedResourceAccess> resolveAll(
       Collection<ResourceAccess> accesses, User subject) {
     if (accesses.stream().anyMatch(access -> access.getId() == null)) {
