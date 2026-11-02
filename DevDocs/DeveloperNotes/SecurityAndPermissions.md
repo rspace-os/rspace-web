@@ -15,6 +15,10 @@ Is configured in `WEB-INF/security.xml`, which defines role based access
 to URLs and the various Spring bean integrations. There is some good
 documentation in the Shiro project web docs which describes the basics.
 
+Leave `unauthorizedUrl` unset so authenticated users lacking a URL's required
+role receive HTTP 403 through the existing `/403.jsp` error page. Unauthenticated
+requests still redirect to `/login`.
+
 ## Authentication
 
 ### Standalone application

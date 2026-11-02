@@ -20,7 +20,6 @@
 
         <property name="loginUrl" value="/login" />
         <property name="successUrl" value="/workspace" />
-        <property name="unauthorizedUrl" value="login?error=true" />
 
         <!-- Custom filters used in the chain definitions must be listed here; Shiro 3
              no longer auto-discovers Filter beans (we deliberately do not register its
