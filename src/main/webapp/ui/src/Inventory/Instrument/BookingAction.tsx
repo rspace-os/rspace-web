@@ -8,13 +8,25 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
-import { findBookingConfigurationByTarget } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
+import {
+  type BookingConfiguration,
+  findBookingConfigurationByTarget,
+} from "@/modules/booking/pages/bookable-items/bookingConfiguration";
+import { searchBookingTargets } from "@/modules/booking/pages/bookable-items/bookingConfigurationTargets";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 
 type BookingActionProps = {
   globalId: string | null;
   isOwner: boolean;
 };
+
+type BookingCardState = "bookable" | "configured" | "disabled" | "archived" | "setup";
+
+function configuredState(configuration: BookingConfiguration): BookingCardState {
+  if (configuration.state === "ARCHIVED") return "archived";
+  if (!configuration.enabled) return "disabled";
+  return configuration.capabilities.canCreateBooking ? "bookable" : "configured";
+}
 
 function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner: boolean }) {
   const { t } = useTranslation("inventory");
@@ -23,14 +35,60 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
     queryKey: ["api-v2", "booking-configurations", "inventory-action", globalId],
     queryFn: ({ signal }) => findBookingConfigurationByTarget(globalId, token, signal),
   });
+  // Owners can always set an unconfigured instrument up; anyone else can if the Add form would offer it,
+  // such as a sysadmin.
+  const checkEligibility = configuration.isSuccess && configuration.data === null && !isOwner;
+  const eligibleTargets = useQuery({
+    queryKey: ["api-v2", "booking-configuration-targets", "route-target", globalId],
+    queryFn: ({ signal }) => searchBookingTargets(globalId, token, signal),
+    enabled: checkEligibility,
+  });
 
   if (!configuration.isSuccess) return null;
 
   const current = configuration.data;
-  const configured = current !== null;
-  const canBook = current?.state === "ACTIVE" && current.enabled && current.capabilities.canCreateBooking;
-  if (!configured && !isOwner) return null;
-  const action = configured ? (canBook ? "book" : "open") : "setup";
+  const canSetUp =
+    isOwner ||
+    (eligibleTargets.data?.some((target) => target.globalId.toUpperCase() === globalId.toUpperCase()) ?? false);
+  if (current === null && !canSetUp) return null;
+  const state = current === null ? "setup" : configuredState(current);
+  const configuredCardText = {
+    title: t("instrument.booking.configured.title"),
+    description: t("instrument.booking.configured.description"),
+  } as const;
+
+  const cardText = {
+    bookable: {
+      ...configuredCardText,
+      action: t("instrument.booking.configured.book"),
+      href: (globalId: string) => `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`,
+    },
+    configured: {
+      ...configuredCardText,
+      action: t("instrument.booking.configured.open"),
+      href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
+    },
+    disabled: {
+      title: t("instrument.booking.disabled.title"),
+      description: t("instrument.booking.disabled.description"),
+      action: t("instrument.booking.configured.open"),
+      href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
+    },
+    archived: {
+      title: t("instrument.booking.archived.title"),
+      description: t("instrument.booking.archived.description"),
+      action: t("instrument.booking.configured.open"),
+      href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
+    },
+    setup: {
+      title: t("instrument.booking.notConfigured.title"),
+      description: t("instrument.booking.notConfigured.description"),
+      action: t("instrument.booking.notConfigured.action"),
+      href: (globalId: string) => `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`,
+    },
+  } as const;
+
+  const text = cardText[state];
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction={{ xs: "column", sm: "row" }} sx={{ alignItems: { sm: "center" }, gap: 2 }}>
@@ -50,35 +108,21 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
         </Box>
         <Box sx={{ minWidth: 0, flexGrow: 1 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            {t(configured ? "instrument.booking.configured.title" : "instrument.booking.notConfigured.title")}
+            {text.title}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t(
-              configured ? "instrument.booking.configured.description" : "instrument.booking.notConfigured.description",
-            )}
+            {text.description}
           </Typography>
         </Box>
         <Button
           component="a"
-          href={
-            action === "book"
-              ? `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`
-              : action === "open"
-                ? `/booking/bookable-items/${encodeURIComponent(globalId)}`
-                : `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
-          }
+          href={text.href(globalId)}
           variant="contained"
           color="callToAction"
           startIcon={<CalendarMonthIcon />}
           sx={{ flex: "0 0 auto", alignSelf: { xs: "stretch", sm: "center" } }}
         >
-          {t(
-            action === "book"
-              ? "instrument.booking.configured.book"
-              : action === "open"
-                ? "instrument.booking.configured.open"
-                : "instrument.booking.notConfigured.action",
-          )}
+          {text.action}
         </Button>
       </Stack>
     </Paper>

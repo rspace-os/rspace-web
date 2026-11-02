@@ -1130,7 +1130,7 @@ export default interface Resources {
         "menu": "Actions for {item}",
         "repairAccess": "Repair access for {item}",
         "restore": "Restore",
-        "save": "Save changes",
+        "save": "Save",
         "submit": "Submit",
         "viewDetails": "View details for {item}",
         "viewInventory": "View {globalId} in Inventory"
@@ -1195,11 +1195,13 @@ export default interface Resources {
         "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
         "updatedAt": "Last updated"
       },
+      "keepDraft": "Keep my value",
       "lifecycleErrors": {
         "restore": "The booking configuration could not be restored. Refresh and try again.",
         "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
         "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
       },
+      "mergeConflict": "Both editors changed {field}. Choose which value to keep.",
       "ownerHealth": {
         "error": "Could not find bookable items needing an owner.",
         "filter": "Owner attention needed",
@@ -1217,8 +1219,9 @@ export default interface Resources {
       "primer": {
         "description": "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing."
       },
+      "serverValue": "Server value: {value}",
       "singular": "Bookable item",
-      "staleEdit": "Someone else changed this configuration while you were editing. Your changes are kept: save again to replace the latest version with them, or discard them to load the latest version.",
+      "staleEdit": "Someone else changed this configuration while you were editing. Your changes are kept. Resolve any fields changed by both editors before saving, or discard your changes to load the latest version.",
       "states": {
         "active": "Active"
       },
@@ -1228,7 +1231,8 @@ export default interface Resources {
         "noEligible": "No unconfigured instruments you can manage. Create an instrument in Inventory first.",
         "results": "Eligible instruments",
         "search": "Search"
-      }
+      },
+      "useServer": "Use server value"
     },
     "bookings": {
       "actions": {
@@ -5388,11 +5392,19 @@ export default interface Resources {
     },
     "instrument": {
       "booking": {
+        "archived": {
+          "description": "This instrument's booking configuration is archived, so it cannot be booked. Open Booking to view it.",
+          "title": "Booking archived"
+        },
         "configured": {
           "book": "Book",
           "description": "Open Booking to view this instrument's calendar and booking configuration.",
           "open": "Open booking page",
           "title": "Booking configured"
+        },
+        "disabled": {
+          "description": "Booking is turned off for this instrument, so it cannot be booked. Open Booking to view its configuration.",
+          "title": "Booking disabled"
         },
         "notConfigured": {
           "action": "Set up booking",
