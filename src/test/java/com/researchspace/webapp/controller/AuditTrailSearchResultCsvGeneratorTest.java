@@ -17,7 +17,6 @@ import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.record.Record;
-import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.testutils.TestFactory;
@@ -36,9 +35,7 @@ public class AuditTrailSearchResultCsvGeneratorTest {
   @BeforeEach
   public void setUp() {
     ReflectionTestUtils.setField(
-        auditTrailSearchResultCsvGenerator,
-        "messages",
-        new MessageSourceUtils(new JsonMessageSource()));
+        auditTrailSearchResultCsvGenerator, "messages", BookingAuditMessageFixture.messages());
   }
 
   User anyUser = TestFactory.createAnyUser("any");
