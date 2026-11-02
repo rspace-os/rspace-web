@@ -21,7 +21,9 @@ function dateTime(
   return (
     <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
       {/* On a clock-change day the offset tells the two occurrences of a repeated hour apart. */}
-      <time dateTime={value}>{formatBookingDateTime(value, timeZone, undefined, timeFormat)}</time>
+      <time className="whitespace-normal" dateTime={value}>
+        {formatBookingDateTime(value, timeZone, undefined, timeFormat)}
+      </time>
     </BookingInstrumentTimeTooltip>
   );
 }
@@ -96,13 +98,20 @@ export function bookingListConfig(
             row.target ? (
               <InventoryItem
                 name={
-                  row.canViewConfiguration ? (
-                    <BookableItemName name={row.target.value.name} globalId={row.target.globalId} />
-                  ) : (
-                    row.target.value.name
-                  )
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={row.canViewConfiguration ? <span /> : <button type="button" className="text-left" />}
+                    >
+                      {row.canViewConfiguration ? (
+                        <BookableItemName name={row.target.value.name} globalId={row.target.globalId} />
+                      ) : (
+                        row.target.value.name
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent role="tooltip">{row.target.value.name}</TooltipContent>
+                  </Tooltip>
                 }
-                nameTitle={row.target.value.name}
+                nameClassName="whitespace-normal [&_a]:line-clamp-2 [&_button]:line-clamp-2"
                 globalId={row.target.globalId}
                 href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
                 idLinkLabel={
@@ -113,7 +122,7 @@ export function bookingListConfig(
                 compact
                 compactIdPlacement="below"
                 size="xs"
-                className={row.state === "CANCELLED" ? "text-muted-foreground" : undefined}
+                className={`min-w-48 ${row.state === "CANCELLED" ? "text-muted-foreground" : ""}`}
               />
             ) : (
               <UnknownItem size="xs" />
