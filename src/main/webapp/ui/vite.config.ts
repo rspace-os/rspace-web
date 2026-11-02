@@ -27,6 +27,23 @@ const intlMessageFormatBundlePath = path.join(
   "intl-messageformat.iife.js",
 );
 
+// Remove Roboto's legacy fallback before Vite resolves CSS assets, so WOFF files
+// never enter the bundle. Keep Fontsource's family, weights and unicode ranges.
+function robotoWoff2Only(): Plugin {
+  return {
+    name: "roboto-woff2-only",
+    enforce: "pre",
+    transform(code, id) {
+      const file = normalizePath(id);
+      if (!file.includes("/node_modules/@fontsource/roboto/") || !/\.css(\?|$)/.test(file)) return;
+      const stripped = code.replace(/,\s*url\([^)]*\.woff["']?\)\s*format\(['"]woff['"]\)/g, "");
+      // Fail loudly if a Fontsource upgrade changes the CSS shape and WOFF would ship again.
+      if (/format\(['"]woff['"]\)/.test(stripped)) this.error(`roboto-woff2-only: WOFF source left in ${id}`);
+      return stripped;
+    },
+  };
+}
+
 const legacyCatalogueFileName = (locale: string) => `legacyMessages.${locale}.js`;
 
 /*
@@ -284,7 +301,7 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages()];
+  const plugins: PluginOption[] = [react(), robotoWoff2Only(), legacyI18n(), legacyMessages()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
