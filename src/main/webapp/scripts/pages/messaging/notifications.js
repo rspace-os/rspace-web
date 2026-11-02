@@ -199,7 +199,7 @@ $(document).ready(function() {
 });
 
 function unescapeMessageContent(){
-	$('#notificationListContents').find('.msgContent').each(function (index){
+	$('#notificationListContents').find('.msgContent:not(.bookingNotificationMessage)').each(function (index){
 		var currHTml = $(this).html();
 		var unescapedMsg = RS.unescape(currHTml);
 		$(this).html(unescapedMsg);

@@ -12,6 +12,12 @@ public abstract class NotificationData {
       if (NotificationType.ARCHIVE_EXPORT_COMPLETED.equals(notificationType)) {
         return JacksonUtil.fromJson(notificationDataJson, ArchiveExportNotificationData.class);
       }
+      if (NotificationType.NOTIFICATION_BOOKING_CREATED.equals(notificationType)
+          || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(notificationType)
+          || NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(notificationType)
+          || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(notificationType)) {
+        return JacksonUtil.fromJson(notificationDataJson, BookingNotificationData.class);
+      }
     }
     return null;
   }

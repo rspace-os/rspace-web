@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
+import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import Alerts from "../../components/Alerts/Alerts";
@@ -557,7 +558,7 @@ function GalleryFileInFolder() {
 
 const queryClient = new QueryClient();
 
-export function Gallery() {
+export function Gallery({ canUseDevtools = false }: { canUseDevtools?: boolean }) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
@@ -620,6 +621,7 @@ export function Gallery() {
                 </ErrorBoundary>
               </LandmarksProvider>
             </Analytics>
+            <FeatureFlagDevtoolsMount canUseDevtools={canUseDevtools} />
           </QueryClientProvider>
         </Alerts>
       </ThemeProvider>
@@ -629,7 +631,8 @@ export function Gallery() {
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
-  if (domContainer) {
+  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
+    domContainer.dataset.reactRootMounted = "true";
     window.scrollTo(0, 1);
 
     const root = createRoot(domContainer);
@@ -637,7 +640,7 @@ window.addEventListener("load", () => {
       <React.StrictMode>
         <I18nRoot namespaces={["gallery", "common", "about", "inventory"]} fallback={<LoaderCircular />}>
           <BrowserRouter>
-            <Gallery />
+            <Gallery canUseDevtools={domContainer.dataset.canUseDevtools === "true"} />
           </BrowserRouter>
         </I18nRoot>
       </React.StrictMode>,

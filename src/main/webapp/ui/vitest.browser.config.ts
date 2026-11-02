@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { msw } from "msw/vite";
@@ -102,9 +103,8 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
-  // worker-only serves /mockServiceWorker.js from the installed msw.
-  // browserMocks.ts calls setupWorker itself.
-  plugins: [react(), tinymceAssetsPlugin(), pdfWorkerAssetPlugin(), msw({ mode: "worker-only" })],
+  // browserMocks.ts owns the worker; MSW serves its script.
+  plugins: [react(), tailwindcss(), tinymceAssetsPlugin(), pdfWorkerAssetPlugin(), msw({ mode: "worker-only" })],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the
@@ -130,6 +130,12 @@ export default defineConfig({
     // partial dependency cache can reload later files in a full run.
     entries: ["src/**/*.spec.{ts,tsx}", "!src/__tests__/e2e/**"],
     include: [
+      // Keep nuqs and its router adapter in the same pre-bundled module graph.
+      "nuqs/adapters/tanstack-router",
+      "nuqs/adapters/testing",
+      "nuqs/adapters/custom",
+      // Bookable-item tabs are discovered lazily through the route tree.
+      "@base-ui/react/tabs",
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
@@ -137,6 +143,8 @@ export default defineConfig({
       "@mui/material/Modal",
       // SidebarToggle is loaded by the gallery picker during stoichiometry tests.
       "@mui/icons-material/Menu",
+      // Used by the booking calendar-subscription dialog.
+      "@fortawesome/free-brands-svg-icons/faApple",
       // TinyMCE React wrapper: discovered lazily the first time a component
       // mounts a TinyMCE editor, causing a mid-run optimizer reload that
       // makes the Vitest runner warn and can cause flakiness.
@@ -153,6 +161,7 @@ export default defineConfig({
     // first-attempt timing miss does not fail the run; a test that fails every
     // attempt is a real failure.
     retry: 2,
+    clearMocks: true,
     // Every file shares one origin-level MSW service worker registration. Keep
     // files serial within each browser; the CI matrix provides engine parallelism.
     fileParallelism: false,
@@ -163,11 +172,31 @@ export default defineConfig({
     reporters: process.env.CI ? ["default", "junit"] : ["default"],
     outputFile: process.env.CI ? { junit: `browser-junit-${browsers.join("-")}.xml` } : undefined,
     browser: {
+      commands: {
+        async resizeTableColumn({ page, frame }, label: string, delta: number) {
+          const handle = (await frame()).getByRole("button", { name: `Resize column ${label}`, exact: true });
+          await handle.scrollIntoViewIfNeeded();
+          const rect = await handle.boundingBox();
+          if (!rect) throw new Error(`Missing resize handle: ${label}`);
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + delta, y, { steps: 4 });
+          await page.mouse.up();
+          return handle.evaluate((element) => element === document.activeElement);
+        },
+      },
       enabled: true,
-      provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      instances: browsers.map((browser) => ({ browser })),
+      instances: browsers.map((browser) => ({
+        browser,
+        provider: playwright({
+          // Assertions use English copy and decimal points on every host OS.
+          contextOptions: { locale: "en-US" },
+        }),
+      })),
     },
   },
 });

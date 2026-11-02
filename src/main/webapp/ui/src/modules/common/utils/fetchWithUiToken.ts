@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import { clearStoredToken, getStoredToken, saveStoredToken } from "./auth";
+import { clearStoredToken, getStoredToken, replaceUiToken, saveStoredToken } from "./auth";
 
 const recoveries = new Map<string, Promise<string | undefined>>();
 
@@ -49,7 +49,9 @@ async function recoverSession(authorization: string, identityRejected: boolean):
     return;
   }
 
-  const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken", {
+  // Mint a session-bound API v2 token: the legacy Inventory token route refuses Operate As.
+  const tokenResponse = await fetch("/api/v2/oauth/tokens", {
+    method: "POST",
     headers: { "X-Requested-With": "XMLHttpRequest" },
   });
   if (tokenResponse.status === 401 || tokenResponse.status === 403) {
@@ -64,7 +66,7 @@ async function recoverSession(authorization: string, identityRejected: boolean):
     globalThis.location.assign("/login");
     return;
   }
-  const { data: token } = (await tokenResponse.json()) as { data?: unknown };
+  const { accessToken: token } = (await tokenResponse.json()) as { accessToken?: unknown };
   if (typeof token !== "string" || !token) {
     clearStoredToken();
     globalThis.location.assign("/login");
@@ -78,6 +80,7 @@ async function recoverSession(authorization: string, identityRejected: boolean):
   if (!response.ok) return;
   clearStoredToken();
   saveStoredToken(token);
+  replaceUiToken(token);
   // The server keeps one refresh token per user, so a matching hash means the old token
   // merely expired and requests can safely keep using the page's identity.
   const previousHash = refreshTokenHash(authorization.slice("Bearer ".length));

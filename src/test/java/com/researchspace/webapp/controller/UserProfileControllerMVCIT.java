@@ -56,6 +56,7 @@ import com.researchspace.testutils.TestGroup;
 import com.researchspace.webapp.controller.UserProfileController.ApiKeyInfo;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -435,37 +436,59 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     //	StructuredDocument sdoc=setUpLoginAndCreateADocument();
     // mimic cboxes to false except 1
 
+    Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CREATED_PREF, true);
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+
     MvcResult result =
-        mockMvc
-            .perform(
-                post("/userform/ajax/messageSettings")
-                    .principal(mockPrincipal)
-                    .param(
-                        "messageCheckboxes",
-                        Preference.NOTIFICATION_DOCUMENT_EDITED_PREF.toString()))
-            .andReturn();
+        saveMessageSettings(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF).andReturn();
 
     assertThat(result.getResponse().getContentAsString())
         .as(result.getResponse().getContentAsString())
         .contains(getMsgFromResourceBundler("userProfile.messageSettingsChanged.confirmation"));
 
-    Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+    prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
 
     // this was passed in; should be true.
     assertBooleanPrefState(prefs, Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, true);
     // this was not passed in from ui, therefore is not checked, should be false
     assertBooleanPrefState(prefs, Preference.NOTIFICATION_DOCUMENT_SHARED_PREF, false);
 
+    saveMessageSettings(
+            Preference.NOTIFICATION_DOCUMENT_EDITED_PREF,
+            Preference.NOTIFICATION_BOOKING_CREATED_PREF)
+        .andExpect(status().isOk());
+    prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CREATED_PREF, true);
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, false);
+
+    saveMessageSettings(
+            Preference.NOTIFICATION_DOCUMENT_EDITED_PREF,
+            Preference.NOTIFICATION_BOOKING_CANCELLED_PREF)
+        .andExpect(status().isOk());
+    prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CREATED_PREF, false);
+    assertBooleanPrefState(prefs, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+
     // unset all prefs RSPAC-1967
-    MvcResult result2 =
-        mockMvc
-            .perform(post("/userform/ajax/messageSettings").principal(mockPrincipal))
-            .andReturn();
+    saveMessageSettings();
 
     Set<UserPreference> allPrefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
     assertEquals(
         true,
         allPrefs.stream().filter(this::isMessagePref).noneMatch(UserPreference::getValueAsBoolean));
+  }
+
+  private ResultActions saveMessageSettings(Preference... preferences) throws Exception {
+    MockHttpServletRequestBuilder request =
+        post("/userform/ajax/messageSettings").principal(mockPrincipal);
+    if (preferences.length > 0) {
+      request.param(
+          "messageCheckboxes",
+          Arrays.stream(preferences).map(Preference::toString).toArray(String[]::new));
+    }
+    return mockMvc.perform(request);
   }
 
   boolean isMessagePref(UserPreference userPref) {

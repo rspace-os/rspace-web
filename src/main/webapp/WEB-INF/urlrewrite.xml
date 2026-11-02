@@ -40,6 +40,10 @@
         <from>/resources/**</from>
         <to>/resources/$1</to>
     </rule>
+    <rule>
+        <from>/fonts/**</from>
+        <to>/fonts/$1</to>
+    </rule>
 
     <rule> <!-- RSPAC-1231  -->
         <from>/images/icons/unknownDocument.png.d0834f40bb92622d1f814dff980e9885.png</from>
@@ -157,13 +161,9 @@
         <from>/public/inventory/**</from>
         <to>/inventory/identifierPublicPage.jsp</to>
     </rule>
-    <rule>
-        <from>/about</from>
-        <to>/about/index.jsp</to>
-    </rule>
-    <rule>
-        <from>/about/**</from>
-        <to>/about/index.jsp</to>
+    <rule match-type="regex">
+        <from>^/(about|booking|public/maintenanceInProgress|public/apiDocs)(/.*)?$</from>
+        <to>/newApp/index.jsp</to>
     </rule>
     <rule>
         <from>/apps</from>

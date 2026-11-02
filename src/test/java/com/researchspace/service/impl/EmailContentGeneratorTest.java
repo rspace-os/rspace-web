@@ -23,7 +23,21 @@ class EmailContentGeneratorTest {
 
   @BeforeEach
   void setUp() {
-    VelocityEngine velocity = new VelocityEngine();
+    VelocityEngine velocity =
+        new VelocityEngine() {
+          @Override
+          public boolean mergeTemplate(
+              String name,
+              String encoding,
+              org.apache.velocity.context.Context context,
+              java.io.Writer writer) {
+            String path =
+                name.contains("/")
+                    ? name
+                    : "velocityTemplates/messageAndNotificationEmails/" + name;
+            return super.mergeTemplate(path, encoding, context, writer);
+          }
+        };
     velocity.setProperty("resource.loaders", "class");
     velocity.setProperty(
         "resource.loader.class.class",
@@ -91,6 +105,87 @@ class EmailContentGeneratorTest {
 
     assertThat(content.htmlContent()).doesNotContain("<head>");
     assertThat(content.plainTextContent()).contains(systemUser.getEmail());
+  }
+
+  @Test
+  void escapesNotificationOriginatorNames() {
+    setDeploymentLocale("en-US");
+    var originator = TestFactory.createAnyUser("actor");
+    originator.setId(7L);
+    originator.setFirstName("Actor <script>");
+    var notification = TestFactory.createANotification(originator);
+
+    EmailContent content =
+        new CommunicationEmailContentGenerator(generator, "https://rspace.example")
+            .generate(notification);
+
+    assertThat(content.htmlContent())
+        .contains("Actor &lt;script&gt;", "href=\"https://rspace.example/userform?userId=7\"")
+        .doesNotContain("Actor <script>");
+    assertThat(content.plainTextContent()).contains("Actor <script>");
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "NOTIFICATION_BOOKING_CREATED,Booking Created: Microscope <script>",
+    "NOTIFICATION_BOOKING_CANCELLED,Booking Cancelled: Microscope <script>",
+    "NOTIFICATION_BOOKING_RESTORED,Booking Restored: Microscope <script>",
+    "NOTIFICATION_BOOKING_CHANGED,Booking Changed: Microscope <script>"
+  })
+  void usesRecipientEmailContextForBookingSubjectsAndHeaders(
+      com.researchspace.model.comms.NotificationType type, String subject) {
+    setDeploymentLocale("en-US");
+    var originator = TestFactory.createAnyUser("actor");
+    originator.setId(7L);
+    originator.setFirstName("Actor <script>");
+    var notification = TestFactory.createANotification(originator);
+    notification.setNotificationType(type);
+    var data = new com.researchspace.model.comms.data.BookingNotificationData();
+    data.setInstrumentName("Microscope <script>");
+    data.setEmailDisplayTimezone("Asia/Tokyo");
+    data.setEmailTimeFormat(com.researchspace.model.booking.BookingTimeFormat.H24);
+    data.setBookingId("42");
+    data.setInstrumentGlobalIdentifier("IN12");
+    data.setStartTime("2026-01-02T03:04:05Z");
+    data.setEndTime("2026-01-02T04:04:05Z");
+    notification.setNotificationMessage(
+        new com.researchspace.booking.service.BookingNotificationMessageFormatter(
+                new JsonMessageSource(), "https://rspace.example/")
+            .formatForEmail(
+                type,
+                data,
+                java.time.ZoneId.of("Asia/Tokyo"),
+                Locale.US,
+                com.researchspace.model.booking.BookingTimeFormat.H24));
+    notification.setNotificationDataObject(data);
+    var fixedNow = java.time.Instant.parse("2026-01-15T21:17:00Z");
+    EmailContent content;
+    try (var instants =
+        org.mockito.Mockito.mockStatic(
+            java.time.Instant.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+      instants.when(java.time.Instant::now).thenReturn(fixedNow);
+      content =
+          new CommunicationEmailContentGenerator(generator, "https://rspace.example")
+              .generate(notification);
+    }
+    String header =
+        content.htmlContent().split("https://rspace.example/booking/calendar/bookings/42", 2)[0];
+    assertThat(header)
+        .contains("Jan 16, 2026", "06:17", "JST (Asia/Tokyo)")
+        .doesNotContain(" AM", " PM");
+    assertEquals(subject, content.subject());
+    assertThat(content.htmlContent())
+        .contains("Asia/Tokyo", "Actor &lt;script&gt;", "Microscope &lt;script&gt;")
+        .doesNotContain("Actor <script>", "href=\"/booking/")
+        .contains(
+            "href=\"https://rspace.example/booking/calendar/bookings/42\"",
+            "href=\"https://rspace.example/booking/bookable-items/IN12\"");
+    assertThat(content.plainTextContent())
+        .contains(
+            "Asia/Tokyo",
+            "Microscope <script>",
+            "https://rspace.example/booking/calendar/bookings/42",
+            "https://rspace.example/booking/bookable-items/IN12");
   }
 
   private void setDeploymentLocale(String languageTag) {

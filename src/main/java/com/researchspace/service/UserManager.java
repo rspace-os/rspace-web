@@ -8,6 +8,8 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
@@ -381,4 +383,18 @@ public interface UserManager extends GenericManager<User, Long> {
    * @throws IllegalStateException if the original user is not a sysadmin ROLE
    */
   User getOriginalUserForOperateAs(User subject);
+
+  /**
+   * A page of users matching a REST API v2 collection request.
+   *
+   * <p>The implementation adds an {@code id} constraint limiting an ordinary caller to their own
+   * row; a sysadmin may query every user.
+   */
+  ResourcePage<User> getUsers(ResourceRequest request, User actor);
+
+  /** Total users matching a REST API v2 collection request. */
+  long countUsers(ResourceRequest request, User actor);
+
+  /** Returns a REST API v2 user row only when the actor may read it. */
+  Optional<User> getUserResource(Long id, User actor);
 }

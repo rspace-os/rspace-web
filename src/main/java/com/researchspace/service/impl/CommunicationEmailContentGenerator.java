@@ -1,14 +1,18 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
+import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.NotificationTypeMessages;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.velocity.tools.generic.EscapeTool;
 
 /** Selects and renders the email content for a communication. */
 class CommunicationEmailContentGenerator {
@@ -23,6 +27,19 @@ class CommunicationEmailContentGenerator {
   }
 
   EmailContent generate(Communication communication) {
+    if (communication instanceof Notification notification
+        && BookingNotificationMessageFormatter.isBookingNotification(
+            notification.getNotificationType())
+        && notification.getNotificationDataObject() instanceof BookingNotificationData data) {
+      String eventKey = NotificationTypeMessages.keyFor(notification.getNotificationType());
+      Map<String, Object> model = velocityModelFor(communication);
+      model.put(
+          "bookingTimestamp",
+          BookingNotificationMessageFormatter.formatEmailTimestamp(
+              Instant.now(), data, contentGenerator.getLocale()));
+      return contentGenerator.render(
+          eventKey + "Subject", new Object[] {data.getInstrumentName()}, "notification.vm", model);
+    }
     if (communication.isNotification()) {
       return contentGenerator.render(
           "email.notification.subject", "notification.vm", velocityModelFor(communication));
@@ -42,6 +59,7 @@ class CommunicationEmailContentGenerator {
   private Map<String, Object> velocityModelFor(Communication communication) {
     Map<String, Object> model = new HashMap<>();
     model.put("cmm", communication);
+    model.put("esc", new EscapeTool());
     model.put("baseURL", htmlDomainPrefix);
     model.put("dateOb", new Date());
     model.put("date", new LocaleAwareDateTool(contentGenerator.getLocale()));

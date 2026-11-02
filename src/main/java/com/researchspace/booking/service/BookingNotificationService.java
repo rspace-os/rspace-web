@@ -1,0 +1,155 @@
+package com.researchspace.booking.service;
+
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.BookingNotificationData;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.CommunicationNotifyPolicy;
+import com.researchspace.service.NotificationConfig;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Sends RSpace notifications for booking lifecycle events. */
+@Service
+public class BookingNotificationService {
+
+  private final InstrumentDao instrumentDao;
+  private final CommunicationManager communicationManager;
+  private final BookingNotificationRecipientReader recipientReader;
+  private final BookingNotificationMessageFormatter messageFormatter;
+
+  public BookingNotificationService(
+      InstrumentDao instrumentDao,
+      CommunicationManager communicationManager,
+      BookingNotificationRecipientReader recipientReader,
+      BookingNotificationMessageFormatter messageFormatter) {
+    this.instrumentDao = instrumentDao;
+    this.communicationManager = communicationManager;
+    this.recipientReader = recipientReader;
+    this.messageFormatter = messageFormatter;
+  }
+
+  /**
+   * Notifies each eligible subscriber about a supported booking event.
+   *
+   * <p>This must run in the booking transaction so a notification cannot survive a failed booking
+   * write.
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notify(TimeSlotBooking booking, User actor, NotificationType notificationType) {
+    notify(booking, actor, notificationType, false);
+  }
+
+  /** Notifies subscribers that a cancelled booking was restored, using the creation preference. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyRestored(TimeSlotBooking booking, User actor) {
+    notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_RESTORED, true);
+  }
+
+  /** Notifies subscribers of a time change, retaining the interval before the edit. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyChanged(
+      TimeSlotBooking booking, User actor, Instant previousStart, Instant previousEnd) {
+    notify(
+        booking,
+        actor,
+        NotificationType.NOTIFICATION_BOOKING_CHANGED,
+        false,
+        previousStart.toString(),
+        previousEnd.toString());
+  }
+
+  private void notify(
+      TimeSlotBooking booking, User actor, NotificationType notificationType, boolean restored) {
+    notify(booking, actor, notificationType, restored, null, null);
+  }
+
+  private void notify(
+      TimeSlotBooking booking,
+      User actor,
+      NotificationType notificationType,
+      boolean restored,
+      String previousStart,
+      String previousEnd) {
+    if (booking == null || booking.getKind() != BookingEventKind.BOOKING || actor == null) {
+      return;
+    }
+
+    Optional<Instrument> instrument = currentInstrument(booking);
+    if (instrument.isEmpty()) {
+      return;
+    }
+    Instrument targetInstrument = instrument.orElseThrow();
+    Long requesterId = booking.getRequester() == null ? null : booking.getRequester().getId();
+    List<BookingNotificationRecipient> recipients =
+        recipientReader.selectRecipients(
+            targetInstrument.getId(), notificationType, actor.getId(), requesterId);
+    for (BookingNotificationRecipient recipient : recipients) {
+      BookingNotificationData data = notificationData(booking, targetInstrument);
+      data.setRestored(restored);
+      data.setPreviousStartTime(previousStart);
+      data.setPreviousEndTime(previousEnd);
+      data.setEmailDisplayTimezone(recipient.displayZone().getId());
+      data.setEmailTimeFormat(recipient.timeFormat());
+      NotificationConfig config = new NotificationConfig();
+      config.setNotificationType(notificationType);
+      config.setBroadcast(true);
+      config.setIncludeOriginator(true);
+      config.setPolicyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY);
+      config.setRecordAuthorisationRequired(false);
+      config.setNotificationTargetsOverride(new HashSet<>(Set.of(recipient.user())));
+      config.setNotificationData(data);
+      config.setNotificationEventPreferenceOverride(recipient.requester());
+
+      // The saved message is the email body, so its links must be absolute. In-app lists
+      // re-format the structured data with root-relative links at display time.
+      communicationManager.notify(
+          actor,
+          null,
+          config,
+          messageFormatter.formatForEmail(
+              notificationType,
+              data,
+              recipient.displayZone(),
+              LocaleContextHolder.getLocale(),
+              recipient.timeFormat()));
+    }
+  }
+
+  private Optional<Instrument> currentInstrument(TimeSlotBooking booking) {
+    if (booking.getBookingConfiguration() == null) {
+      return Optional.empty();
+    }
+    BookableTargetReference target = booking.getBookingConfiguration().getTarget();
+    if (target == null || target.type() != BookableTargetType.INSTRUMENT || target.id() == null) {
+      return Optional.empty();
+    }
+    return instrumentDao.getSafeNull(target.id()).filter(instrument -> !instrument.isDeleted());
+  }
+
+  private static BookingNotificationData notificationData(
+      TimeSlotBooking booking, Instrument instrument) {
+    BookingNotificationData data = new BookingNotificationData();
+    data.setBookingId(booking.getId().toString());
+    data.setInstrumentName(instrument.getName());
+    data.setInstrumentGlobalIdentifier(instrument.getGlobalIdentifier());
+    data.setStartTime(DateTimeFormatter.ISO_INSTANT.format(booking.getStartTime().toInstant()));
+    data.setEndTime(DateTimeFormatter.ISO_INSTANT.format(booking.getEndTime().toInstant()));
+    data.setCancellationReason(booking.getCancellationReason());
+    return data;
+  }
+}

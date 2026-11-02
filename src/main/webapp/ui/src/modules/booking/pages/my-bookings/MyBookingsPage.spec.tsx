@@ -1,0 +1,404 @@
+import "@/modules/common/styles/index.css";
+import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
+import { cleanup, render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { type Locator, page, userEvent } from "vitest/browser";
+import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
+import { withViewport } from "@/__tests__/pageObjects/viewport";
+import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
+import { MyBookingsPageStory, myBookingsStoryUrl } from "./MyBookingsPage.story";
+import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
+import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
+
+const pageObj = new MyBookingsPageObject();
+
+function clickWithoutDriverWait(locator: Locator) {
+  const element = locator.element();
+  if (!(element instanceof HTMLElement)) throw new TypeError("Expected an HTML element");
+  element.click();
+}
+
+function registerHandlers() {
+  worker.use(
+    http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+    ...bookableItemDetailsHandlers(),
+    ...bookingHandlers(),
+    http.get("/api/v2/bookings/41", () => HttpResponse.json(upcomingBooking)),
+  );
+}
+
+let history: RouterHistory;
+let browserUrl: string;
+
+beforeEach(() => {
+  history = createMemoryHistory({ initialEntries: [myBookingsStoryUrl] });
+  browserUrl = window.location.href;
+  registerHandlers();
+});
+
+afterEach(() => {
+  cleanup();
+  expect(window.location.href).toBe(browserUrl);
+});
+
+describe("the My Bookings page", () => {
+  test.each([1280, 1376])("keeps row actions on one line at %s px", async (width) => {
+    await withViewport(width, async () => {
+      render(<MyBookingsPageStory history={history} />);
+      await expect.element(pageObj.confocalMoreActions).toBeVisible();
+      const controls = [
+        pageObj.confocalItemCalendar,
+        pageObj.confocalDetails,
+        pageObj.confocalEdit,
+        pageObj.confocalMoreActions,
+      ];
+      const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+      expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
+    });
+  });
+
+  test("searches booking purpose and instrument IDs without dropping requester scope", async () => {
+    history.replace("/booking/my-bookings?period=upcoming");
+    const listRequests: URL[] = [];
+    worker.use(...bookingHandlers((url) => listRequests.push(url)));
+    render(<MyBookingsPageStory history={history} />);
+
+    const search = page.getByRole("textbox", { name: "Search Bookings" });
+    await expect.element(search).toBeVisible();
+
+    await search.fill("Scope training");
+    await expect
+      .poll(() => listRequests.map((url) => url.searchParams.get("where") ?? ""))
+      .toEqual(expect.arrayContaining([expect.stringContaining("purpose")]));
+    const purposeWhere = listRequests.find((url) => url.searchParams.get("where")?.includes("purpose=contains="));
+    expect(purposeWhere?.searchParams.get("where")).toContain("Scope training");
+    expect(purposeWhere?.searchParams.get("where")).toContain("requesterId==84");
+
+    await search.fill("IN123");
+    await expect
+      .poll(() => listRequests.map((url) => url.searchParams.get("where") ?? ""))
+      .toEqual(expect.arrayContaining([expect.stringContaining("target==IN123")]));
+    const globalIdWhere = listRequests.find((url) => url.searchParams.get("where")?.includes("target==IN123"));
+    expect(globalIdWhere?.searchParams.get("where")).toContain("requesterId==84");
+  });
+
+  test("shows a tooltip for every icon-only page control", async () => {
+    render(<MyBookingsPageStory history={history} />);
+    await expect.element(pageObj.upcoming).toHaveAccessibleName("Upcoming 2");
+
+    const controls = [
+      [pageObj.confocalDetails, "View details"],
+      [pageObj.confocalItemCalendar, "View item calendar"],
+      [pageObj.confocalEdit, "Edit"],
+      [pageObj.confocalMoreActions, "More actions"],
+    ] as const;
+
+    for (const [control, label] of controls) {
+      await control.hover();
+      await expect.element(pageObj.tooltip(label)).toBeVisible();
+      await page.getByRole("heading", { name: "My Bookings", exact: true }).hover();
+      control.element().focus();
+      await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+      await expect.element(pageObj.tooltip(label)).toBeVisible();
+    }
+  });
+
+  test("shows the instrument-local start time and timezone without private booking details", async () => {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const instrumentTimeZone = browserTimeZone === "Pacific/Auckland" ? "Europe/Berlin" : "Pacific/Auckland";
+    worker.use(...bookingHandlers(undefined, undefined, [{ ...upcomingBooking, timezone: instrumentTimeZone }]));
+    render(<MyBookingsPageStory history={history} />);
+
+    await pageObj.confocalStartDate.hover();
+
+    const tooltip = page.getByRole("tooltip");
+    await expect.element(tooltip).toBeVisible();
+    const expectedInstrumentDateTime = new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "shortOffset",
+      timeZone: instrumentTimeZone,
+    }).format(new Date(upcomingBooking.start));
+    await expect.element(tooltip).toMatchTextContent(expectedInstrumentDateTime);
+    await expect.element(tooltip).toMatchTextContent(instrumentTimeZone);
+    const tooltipText = tooltip.element().textContent ?? "";
+    expect(tooltipText).not.toContain("Scope training");
+    expect(tooltipText).not.toContain("Test User");
+  });
+
+  test("does not show an instrument-time tooltip when its timezone is the browser timezone or unknown", async () => {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    for (const timezone of [browserTimeZone, null]) {
+      cleanup();
+      worker.use(...bookingHandlers(undefined, undefined, [{ ...upcomingBooking, timezone }]));
+      render(<MyBookingsPageStory history={history} />);
+
+      await pageObj.confocalStartDate.hover();
+      await expect.element(page.getByRole("tooltip")).not.toBeInTheDocument();
+    }
+  });
+
+  test("uses the same appearance for every booking action", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    const controls = [
+      pageObj.confocalDetails,
+      pageObj.confocalItemCalendar,
+      pageObj.confocalEdit,
+      pageObj.confocalMoreActions,
+    ];
+    await expect.element(controls[0]).toBeVisible();
+    const styles = controls.map((control) => {
+      const element = control.element();
+      const style = getComputedStyle(element);
+      return {
+        border: style.border,
+        borderRadius: style.borderRadius,
+        color: style.color,
+        height: style.height,
+        width: style.width,
+      };
+    });
+
+    expect(styles).toEqual(controls.map(() => styles[0]));
+  });
+
+  test("reports each cancellation above the table, restores one on Undo and dismisses the other", async () => {
+    const electron = {
+      ...upcomingBooking,
+      id: 42,
+      target: {
+        ...upcomingBooking.target,
+        globalId: "IN124",
+        value: { ...upcomingBooking.target.value, id: 124, name: "Electron microscope" },
+      },
+    };
+    const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, electron];
+    const patches: Array<{ id: string; body: { state: string; cancellationReason?: string }; ifMatch: string | null }> =
+      [];
+    worker.use(
+      ...bookingHandlers(undefined, undefined, docs),
+      http.patch("/api/v2/bookings/:id", async ({ params, request }) => {
+        const body = (await request.json()) as { state: string; cancellationReason?: string };
+        patches.push({ id: String(params.id), body, ifMatch: request.headers.get("If-Match") });
+        const index = docs.findIndex((doc) => String(doc.id) === String(params.id));
+        docs[index] = {
+          ...docs[index],
+          state: body.state,
+          version: Number(docs[index].version ?? 0) + 1,
+          cancellationReason: body.cancellationReason ?? null,
+        };
+        return HttpResponse.json(docs[index]);
+      }),
+    );
+    render(<MyBookingsPageStory history={history} />);
+    const alerts = page.getByRole("list", { name: "Recent changes" });
+    const confocalAlert = alerts.getByRole("listitem", { name: "Cancelled Confocal microscope, ", exact: false });
+    const electronAlert = alerts.getByRole("listitem", { name: "Cancelled Electron microscope, ", exact: false });
+
+    await pageObj.confocalMoreActions.click();
+    await pageObj.cancelMenuItem.click();
+    await page.getByRole("textbox", { name: "Cancellation reason (optional)" }).fill("Instrument needs recalibration");
+    await pageObj.cancelDialog.getByRole("button", { name: "Cancel booking" }).click();
+
+    await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+    await expect.element(confocalAlert).toHaveFocus();
+    expect(patches[0]).toEqual({
+      id: "41",
+      body: { state: "CANCELLED", cancellationReason: "Instrument needs recalibration" },
+      ifMatch: '"0"',
+    });
+
+    // Electron's row is now the first with More actions.
+    await pageObj.confocalMoreActions.click();
+    await pageObj.cancelMenuItem.click();
+    await pageObj.cancelDialog.getByRole("button", { name: "Cancel booking" }).click();
+
+    await expect.element(electronAlert).toHaveFocus();
+    await expect
+      .poll(() =>
+        alerts
+          .getByRole("listitem")
+          .elements()
+          .map((item) => item.getAttribute("data-table-list-alert")),
+      )
+      .toEqual(["booking-cancelled-42", "booking-cancelled-41"]);
+
+    await confocalAlert.getByRole("button", { name: "Undo" }).click();
+
+    // Both presentations render the row again; CSS shows one.
+    await expect
+      .poll(() => page.getByText("Confocal microscope", { exact: true }).elements().length)
+      .toBeGreaterThan(0);
+    expect(patches[2]).toEqual({ id: "41", body: { state: "CONFIRMED" }, ifMatch: '"1"' });
+    await expect
+      .poll(() =>
+        document.activeElement?.closest("[data-table-list-row-actions]")?.getAttribute("data-table-list-row-actions"),
+      )
+      .toBe("41");
+    await expect.element(confocalAlert).not.toBeInTheDocument();
+
+    await electronAlert.getByRole("button", { name: "Dismiss" }).click();
+
+    await expect.element(alerts).not.toBeInTheDocument();
+    await expect.poll(() => document.activeElement?.hasAttribute("data-table-list-filters")).toBe(true);
+  });
+
+  test("keeps the booking actions on one line", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.confocalMoreActions).toBeVisible();
+    const controls = [
+      pageObj.confocalItemCalendar,
+      pageObj.confocalDetails,
+      pageObj.confocalEdit,
+      pageObj.confocalMoreActions,
+    ];
+    const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+    expect(tops).toEqual(controls.map(() => tops[0]));
+  });
+
+  test("shows the upcoming count inside its period button", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.upcomingCount).toBeVisible();
+    const buttonRect = pageObj.upcoming.element().getBoundingClientRect();
+    const badgeRect = pageObj.upcomingCount.element().getBoundingClientRect();
+
+    expect(badgeRect.left).toBeGreaterThanOrEqual(buttonRect.left);
+    expect(badgeRect.top).toBeGreaterThanOrEqual(buttonRect.top);
+    expect(badgeRect.right).toBeLessThanOrEqual(buttonRect.right);
+    expect(badgeRect.bottom).toBeLessThanOrEqual(buttonRect.bottom);
+  });
+
+  test("navigates from a booking row to the bookable item details page", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.confocalItemCalendar).toBeVisible();
+    clickWithoutDriverWait(pageObj.confocalItemCalendar);
+
+    await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
+    await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
+    await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123");
+  });
+
+  test("navigates from View details to the booking event", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.confocalDetails).toBeVisible();
+    clickWithoutDriverWait(pageObj.confocalDetails);
+
+    await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41");
+    await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
+  });
+});
+
+test("keeps all row actions visible at common desktop widths", async () => {
+  await page.viewport(1376, 795);
+  render(<MyBookingsPageStory history={history} />);
+  for (const control of [
+    pageObj.confocalItemCalendar,
+    pageObj.confocalDetails,
+    pageObj.confocalEdit,
+    pageObj.confocalMoreActions,
+  ]) {
+    await expect.element(control).toBeVisible();
+    await expect
+      .poll(() => {
+        const box = control.element().getBoundingClientRect();
+        return box.left >= 0 && box.right <= 1376;
+      })
+      .toBe(true);
+  }
+  await pageObj.confocalMoreActions.click();
+  await expect.element(pageObj.cancelMenuItem).toBeVisible();
+});
+
+test.each([1280, 1376])("fits the table and purpose beside sticky actions at %s pixels", async (width) => {
+  await page.viewport(width, 795);
+  const purpose =
+    "Extended imaging session to compare the complete set of samples across multiple acquisition settings and export the resulting measurements for the weekly analysis meeting.";
+  const name = "Live-cell confocal microscope with environmental control and automated high-resolution imaging";
+  worker.use(
+    ...bookingHandlers(undefined, undefined, [
+      {
+        ...upcomingBooking,
+        purpose,
+        target: { ...upcomingBooking.target, value: { ...upcomingBooking.target.value, name } },
+      },
+    ]),
+  );
+  render(
+    <div style={{ width: width - 346 }}>
+      <MyBookingsPageStory history={history} />
+    </div>,
+  );
+  await expect.element(pageObj.confocalDetails).toBeVisible();
+  const table = page.getByRole("table");
+  await expect
+    .poll(() => {
+      const element = table.element();
+      return element.scrollWidth <= (element.parentElement?.clientWidth ?? 0);
+    })
+    .toBe(true);
+  const itemName = page.getByRole("link", { name, exact: true });
+  await expect.element(itemName).toBeVisible();
+  const link = itemName.element();
+  const cell = link.closest("td");
+  if (!cell) throw new Error("Expected item table cell");
+  expect(link.closest("[title]")).toBeNull();
+  const style = getComputedStyle(link);
+  const lineHeight = Number.parseFloat(style.lineHeight);
+  expect(link.getBoundingClientRect().height).toBeCloseTo(2 * lineHeight, 0);
+  expect(link.scrollHeight).toBeGreaterThan(link.clientHeight);
+  expect(style.webkitLineClamp).toBe("2");
+  expect(style.overflow).toBe("hidden");
+  const controls = [
+    pageObj.confocalItemCalendar,
+    pageObj.confocalDetails,
+    pageObj.confocalEdit,
+    pageObj.confocalMoreActions,
+  ];
+  const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+  expect(tops).toEqual(controls.map(() => tops[0]));
+  link.focus();
+  await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(name);
+  await itemName.hover();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(name);
+  await userEvent.keyboard("{Tab}");
+  await page.getByRole("heading", { name: "My Bookings", exact: true }).hover();
+  await expect.element(page.getByRole("tooltip")).not.toBeInTheDocument();
+  await page.getByRole("button", { name: purpose, exact: true }).hover();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(purpose);
+});
+
+test("makes a long non-link item name's full tooltip accessible by keyboard after role loss", async () => {
+  const name = "Live-cell confocal microscope with environmental control and automated high-resolution imaging";
+  worker.use(
+    ...bookingHandlers(undefined, undefined, [
+      {
+        ...upcomingBooking,
+        canViewConfiguration: false,
+        canEdit: false,
+        canCancel: false,
+        target: { ...upcomingBooking.target, value: { ...upcomingBooking.target.value, name } },
+      },
+    ]),
+  );
+  render(<MyBookingsPageStory history={history} />);
+  const trigger = page.getByRole("button", { name, exact: true });
+  await expect.element(trigger).toBeVisible();
+  await expect.element(page.getByRole("link", { name, exact: true })).not.toBeInTheDocument();
+  expect(trigger.element().closest("[title]")).toBeNull();
+  trigger.element().focus();
+  await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+  await expect.element(trigger).toHaveFocus();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(name);
+});

@@ -12,16 +12,23 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
+import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
+
+  @Autowired private BookingConfigurationProtectedResourceAccess bookingProtectedAccess;
 
   @Test
   public void checkBasicInstrumentCreateRetrieveAndExists() throws Exception {
@@ -202,6 +209,31 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     Long transferredId = transferred.getId();
     assertThrows(
         Exception.class, () -> instrumentApiMgr.assertUserCanEditInstrument(transferredId, owner));
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_bookingOwnershipFollowsInventoryOwner() throws Exception {
+    withBookingEnabled(this::bookingOwnershipFollowsInventoryOwner);
+  }
+
+  private void bookingOwnershipFollowsInventoryOwner() throws Exception {
+    User owner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(owner);
+    User newOwner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(newOwner);
+
+    ApiInstrument created = createBasicInstrumentForUser(owner, "booking-owner-transfer");
+    BookingConfiguration configuration = bookingConfigurationFor(created, owner);
+
+    created.setOwner(new ApiUser(newOwner));
+    ApiInstrument transferred = instrumentApiMgr.changeApiInstrumentOwner(created, owner, owner);
+
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+    assertEquals(
+        Optional.of(BookingResourceRoleScheme.OWNER),
+        bookingProtectedAccess.resolveInherited(configuration, newOwner).effectiveRole());
+    assertTrue(
+        bookingProtectedAccess.resolveInherited(configuration, owner).effectiveRole().isEmpty());
   }
 
   @Test

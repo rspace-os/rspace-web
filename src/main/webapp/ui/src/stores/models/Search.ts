@@ -113,7 +113,17 @@ type SearchArgs = {
 };
 
 const DEFAULT_UI_CONFIG: UiConfig = {
-  allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
+  allowedSearchModules: new Set([
+    "BENCHES",
+    "TYPE",
+    "STATUS",
+    "OWNER",
+    "SCAN",
+    "TAG",
+    "SAVEDSEARCHES",
+    "SAVEDBASKETS",
+    "BOOKABLE",
+  ]),
   allowedTypeFilters: new Set([
     "ALL",
     "CONTAINER",
@@ -243,6 +253,7 @@ export default class Search implements SearchInterface {
       setOwner: action,
       setBench: action,
       setTypeFilter: action,
+      performSearch: action,
       setupAndPerformInitialSearch: action,
       setProcessingContextActions: action,
       enableBatchEditing: action,
@@ -261,6 +272,7 @@ export default class Search implements SearchInterface {
       showBenchFilter: computed,
       showTypeFilter: computed,
       showStatusFilter: computed,
+      showBookableFilter: computed,
       showOwnershipFilter: computed,
       showBarcodeScan: computed,
       showTagsFilter: computed,
@@ -920,8 +932,10 @@ export default class Search implements SearchInterface {
     this.setProcessingContextActions(true);
 
     const newOwner = await peopleStore.getUser(username);
-    records.forEach((r) => {
-      if (newOwner) r.owner = newOwner;
+    runInAction(() => {
+      records.forEach((r) => {
+        if (newOwner) r.owner = newOwner;
+      });
     });
 
     try {
@@ -1344,6 +1358,10 @@ export default class Search implements SearchInterface {
     return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("STATUS"));
   }
 
+  get showBookableFilter(): boolean {
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("BOOKABLE"));
+  }
+
   get showOwnershipFilter(): boolean {
     return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("OWNER"));
   }
@@ -1447,6 +1465,13 @@ export default class Search implements SearchInterface {
     this.staticFetcher.setDeletedItems(deletedItems);
     this.dynamicFetcher.setDeletedItems(deletedItems);
     this.cacheFetcher.setDeletedItems(deletedItems);
+    if (doSearch) this.performSearch();
+  }
+
+  setBookable(bookable: boolean | null, doSearch: boolean = true) {
+    this.staticFetcher.setBookable(bookable);
+    this.dynamicFetcher.setBookable(bookable);
+    this.cacheFetcher.setBookable(bookable);
     if (doSearch) this.performSearch();
   }
 

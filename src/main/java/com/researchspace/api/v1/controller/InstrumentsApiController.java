@@ -236,16 +236,24 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeInstrumentOwner(id, incomingInstrument, errors, user, user);
+  }
+
+  /** Internal bulk-operation entry point carrying represented-subject and actor semantics. */
+  public ApiInstrument changeInstrumentOwner(
+      Long id, ApiInstrument incomingInstrument, BindingResult errors, User subject, User actor)
+      throws BindException {
     throwBindExceptionIfErrors(errors);
     incomingInstrument.setIdIfNotSet(id);
-    instrumentApiMgr.assertUserCanTransferInstrument(id, user);
+    instrumentApiMgr.assertUserCanTransferInstrument(id, subject);
 
-    ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
+    ApiInstrument updated =
+        instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, subject, actor);
     // A transfer can change what the provider holds: RspaceToExternalProviderAdapterImpl
     // maps ownerName from the record owner's full name unless the Owner field overrides it. Left
     // unpushed, the registered record keeps naming the previous owner, which is exactly the drift
     // this ticket exists to stop.
-    pushExternalMetadataUpdates(updated, user);
+    pushExternalMetadataUpdates(updated, subject);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }

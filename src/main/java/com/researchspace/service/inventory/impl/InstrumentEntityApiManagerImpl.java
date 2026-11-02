@@ -14,12 +14,22 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
@@ -31,6 +41,7 @@ import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -38,6 +49,7 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -48,13 +60,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -65,7 +80,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
+  private @Autowired ObjectProvider<ResourceRegistry> resourceRegistry;
   private @Autowired InstrumentDao instrumentDao;
+  private @Autowired ContainerDao containerDao;
+  private @Autowired InstrumentReadAccess instrumentReadAccess;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
@@ -73,6 +91,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   @Override
   public boolean instrumentExists(long id) {
@@ -407,6 +426,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument updateApiInstrument(ApiInstrument apiInstrument, User user) {
+    calendarRevocations.affectInstrument(apiInstrument.getId());
     Instrument dbInstrument = assertUserCanEditInstrument(apiInstrument.getId(), user);
     ApiInstrument apiInstrumentOriginal = new ApiInstrument(dbInstrument);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
@@ -472,6 +492,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument markInstrumentAsDeleted(Long instrumentId, User user) {
+    calendarRevocations.affectInstrument(instrumentId);
     Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
@@ -529,6 +550,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument restoreDeletedInstrument(Long instrumentId, User user) {
+    calendarRevocations.affectInstrument(instrumentId);
     Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
@@ -555,15 +577,29 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user) {
+    return changeApiInstrumentOwner(apiInstrument, user, user);
+  }
+
+  @Override
+  public ApiInstrument changeApiInstrumentOwner(
+      ApiInstrument apiInstrument, User subject, User actor) {
+    calendarRevocations.affectInstrument(apiInstrument.getId());
     Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
     Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferInstrument(apiInstrument.getId(), user);
+    assertUserCanTransferInstrument(apiInstrument.getId(), subject);
     Instrument dbInstrument = (Instrument) getIfExists(apiInstrument.getId());
-    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, subject);
     try {
-      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      dbInstrument =
+          instrumentDao
+              .lockById(dbInstrument.getId())
+              .orElseThrow(() -> new NotFoundException("Instrument not found"));
       User originalOwner = dbInstrument.getOwner();
+      boolean hasCurrentGroupAuthority =
+          instrumentDao.hasLockedTransferAuthority(subject, originalOwner);
+      invPermissions.assertUserCanTransferInventoryRecord(
+          dbInstrument, subject, hasCurrentGroupAuthority);
       String newOwnerUsername = apiInstrument.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
         Validate.isTrue(
@@ -574,14 +610,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         moveItemBetweenWorkbenches(dbInstrument, originalOwner, newOwner);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(
-            new InventoryTransferEvent(dbInstrument, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbInstrument, actor, originalOwner, newOwner));
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbInstrument, user);
+        unlockItemAfterEdit(dbInstrument, subject);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+    return getInstrumentById(dbInstrument.getId(), subject);
   }
 
   @Override
@@ -1027,6 +1063,58 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     Instrument instrument = getInstrumentOrThrowNotFound(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
     return instrument;
+  }
+
+  @Override
+  public ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.getReadableResources(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
+  }
+
+  @Override
+  public ResourcePage<InstrumentReadSummary> getReadableInstrumentSummaries(
+      ResourceRequest request, User user) {
+    return instrumentDao.getReadableResourceSummaries(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
+  }
+
+  @Override
+  public ResourceSlice<InstrumentReadSummary> getReadableInstrumentSummarySlice(
+      ResourceRequest request, User user) {
+    return instrumentDao.getReadableResourceSummarySlice(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
+  }
+
+  @Override
+  public long countReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.countReadableResources(
+        request,
+        readAccess(user),
+        RelationshipReadAccess.forActor(resourceRegistry.getObject(), user));
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
+      Set<Long> instrumentIds, User user) {
+    return instrumentDao.getReadableSummaries(instrumentIds, user);
+  }
+
+  private AccessResult readAccess(User user) {
+    return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
+  }
+
+  @Override
+  public Optional<Instrument> findReadableInstrument(Long dbId, User user) {
+    return instrumentDao
+        .getSafeNull(dbId)
+        .filter(
+            instrument -> invPermissions.canUserReadOrLimitedReadInventoryRecord(instrument, user));
   }
 
   @Override

@@ -13,6 +13,7 @@ import com.researchspace.model.field.LocalizedIOException;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.LocalizedNullPointerException;
+import com.researchspace.model.inventory.field.FieldValueInvalidForLatestTemplateException;
 import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
@@ -249,6 +250,22 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  // 422
+  @ExceptionHandler({FieldValueInvalidForLatestTemplateException.class})
+  public ResponseEntity<Object> handleFieldValueInvalidForLatestTemplate(
+      final FieldValueInvalidForLatestTemplateException ex, final WebRequest request) {
+    log.warn("rejected update to latest template: {}", ex.getMessage());
+    String message =
+        messages.getMessage(FieldValueInvalidForLatestTemplateException.ERROR_CODE, ex.getArgs());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            message,
+            message);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
   // 429
   @ExceptionHandler({TooManyRequestsException.class})
   public ResponseEntity<Object> handleUnsupported(
@@ -341,5 +358,17 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             errors,
             errorList);
     return apiError;
+  }
+
+  @Override
+  protected ResponseEntity<Object> handle500Error(
+      final Exception ex, ApiErrorCodes code, String msg) {
+    logException(ex);
+    log.error("error", ex);
+    String genericMessage = messages.getMessage("errors.page.genericServerError");
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR, code.getCode(), genericMessage, genericMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 }

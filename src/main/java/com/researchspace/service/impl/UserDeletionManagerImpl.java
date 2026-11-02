@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import com.researchspace.Constants;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.dao.FormDao;
@@ -45,6 +46,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   private @Autowired IPermissionUtils permUtils;
   private @Autowired UserDeletionDao deletionDao;
   private @Autowired FileMetadataDao fileMetadataDao;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   private @Autowired @Qualifier("compositeFileStore") FileStore fileStore;
 
@@ -56,6 +58,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   @Override
   public ServiceOperationResult<User> removeUser(
       Long userId, UserDeletionPolicy policy, User subject) {
+    calendarRevocations.affectAll();
     Optional<String> errors = validate(userId, policy, subject);
     if (errors.isPresent()) {
       return new ServiceOperationResult<>(null, false, errors.get());

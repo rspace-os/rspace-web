@@ -61,7 +61,6 @@ import HelpDocs from "../Help/HelpDocs";
 import HelpLinkIcon from "../HelpLinkIcon";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
-import AboutRSpaceDialog from "./AboutRSpaceDialog";
 import type SidebarToggle from "./SidebarToggle";
 import useUiNavigationData, { type UiNavigationData } from "./useUiNavigationData";
 
@@ -359,7 +358,6 @@ function GalleryAppBar({
     setAppMenuAnchorEl(null);
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [aboutDialogOpen, setAboutDialogOpen] = React.useState(false);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
   const fetchedCurrentUser = useWhoAmI();
@@ -680,6 +678,16 @@ function GalleryAppBar({
                 }}
                 icon={<DynamicAvatar uiNavigationData={uiNavigationData} size="small" />}
                 title={t("appBar.accountMenu")}
+                ariaLabel={FetchingData.match(uiNavigationData, {
+                  loading: () => t("appBar.accountMenu"),
+                  error: () => t("appBar.accountMenu"),
+                  success: ({ userDetails: { fullName } }) =>
+                    t("appBar.accountMenuAccessible", {
+                      label: t("appBar.accountMenu"),
+                      name: fullName,
+                      initials: fullName[0],
+                    }),
+                })}
                 id="account-menu-button"
                 aria-haspopup="menu"
                 aria-controls="account-menu"
@@ -858,10 +866,9 @@ function GalleryAppBar({
                   title={t("appBar.aboutRSpace")}
                   avatar={<InfoIcon />}
                   compact
-                  onClick={() => {
-                    setAccountMenuAnchorEl(null);
-                    setAboutDialogOpen(true);
-                  }}
+                  onClick={() => setAccountMenuAnchorEl(null)}
+                  component="a"
+                  href="/about"
                 />
                 {FetchingData.getSuccessValue(uiNavigationData)
                   .map(({ operatedAs }) => operatedAs)
@@ -935,7 +942,6 @@ function GalleryAppBar({
                   ))
                   .orElse(null)}
               </Menu>
-              <AboutRSpaceDialog open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
             </Box>
           </>
         )}

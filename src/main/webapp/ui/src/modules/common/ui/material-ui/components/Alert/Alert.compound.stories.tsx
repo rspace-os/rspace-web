@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 const meta = {
   title: "Material UI/Feedback/Alert/Composition",
+  tags: ["autodocs"],
   component: Alert,
   parameters: { a11y: { test: "error" } },
   argTypes: {
