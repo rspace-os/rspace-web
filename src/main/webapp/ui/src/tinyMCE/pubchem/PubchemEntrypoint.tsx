@@ -1,7 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";
-import { createRoot } from "react-dom/client";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -9,6 +8,7 @@ import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
+import { getPluginDialogRoot } from "../pluginDialogRoot";
 import type { TinyMcePluginEditor } from "../types";
 import ImportDialog from "./ImportDialog";
 
@@ -36,85 +36,40 @@ declare global {
 
 class PubchemPlugin {
   constructor(editor: TinyMcePluginEditor) {
-    function* renderPubchem(
-      domContainer: HTMLElement,
-    ): Generator<void, void, React.ComponentProps<typeof ImportDialog>> {
-      const root = createRoot(domContainer);
-      while (true) {
-        const newProps: React.ComponentProps<typeof ImportDialog> = yield;
-        root.render(
-          <I18nRoot namespaces={["common"]}>
-            <StyledEngineProvider injectFirst enableCssLayer>
-              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                <Analytics>
-                  <ErrorBoundary>
-                    <Alerts>
-                      <ImportDialog {...newProps} />
-                    </Alerts>
-                  </ErrorBoundary>
-                </Analytics>
-              </ThemeProvider>
-            </StyledEngineProvider>
-          </I18nRoot>,
-        );
-      }
-    }
-
-    if (!document.getElementById("tinymce-pubchem")) {
-      const div = document.createElement("div");
-      div.id = "tinymce-pubchem";
-      document.body.appendChild(div);
-    }
-    const container = document.getElementById("tinymce-pubchem");
-    if (!container) {
-      throw new Error("tinymce-pubchem container not found");
-    }
-
-    const pubchemRenderer = renderPubchem(container);
-    pubchemRenderer.next();
-    const initialProps: React.ComponentProps<typeof ImportDialog> = {
-      open: false,
-      onClose: () => {},
-      editor: tinymce.activeEditor,
+    const root = getPluginDialogRoot("tinymce-pubchem");
+    const renderDialog = (props: Pick<React.ComponentProps<typeof ImportDialog>, "open" | "onClose">) => {
+      root.render(
+        <I18nRoot namespaces={["common"]}>
+          <StyledEngineProvider injectFirst enableCssLayer>
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+              <Analytics>
+                <ErrorBoundary>
+                  <Alerts>
+                    <ImportDialog editor={tinymce.activeEditor} {...props} />
+                  </Alerts>
+                </ErrorBoundary>
+              </Analytics>
+            </ThemeProvider>
+          </StyledEngineProvider>
+        </I18nRoot>,
+      );
     };
-    pubchemRenderer.next(initialProps);
+    const closeDialog = () => renderDialog({ open: false, onClose: () => {} });
+    const openDialog = () => renderDialog({ open: true, onClose: closeDialog });
+    closeDialog();
 
     // Add a button to the toolbar
     editor.ui.registry.addButton("pubchem", {
       tooltip: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
-      onAction() {
-        pubchemRenderer.next({
-          open: true,
-          onClose: () => {
-            pubchemRenderer.next({
-              open: false,
-              onClose: () => {},
-              editor: tinymce.activeEditor,
-            });
-          },
-          editor: tinymce.activeEditor,
-        });
-      },
+      onAction: openDialog,
     });
 
     // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPubchem", {
       text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
-      onAction() {
-        pubchemRenderer.next({
-          open: true,
-          onClose: () => {
-            pubchemRenderer.next({
-              open: false,
-              onClose: () => {},
-              editor: tinymce.activeEditor,
-            });
-          },
-          editor: tinymce.activeEditor,
-        });
-      },
+      onAction: openDialog,
     });
 
     // Adds an option to the slash-menu
@@ -124,19 +79,7 @@ class PubchemPlugin {
     window.insertActions.set("optPubchem", {
       text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.title"),
       icon: "pubchem",
-      action: () => {
-        pubchemRenderer.next({
-          open: true,
-          onClose: () => {
-            pubchemRenderer.next({
-              open: false,
-              onClose: () => {},
-              editor: tinymce.activeEditor,
-            });
-          },
-          editor: tinymce.activeEditor,
-        });
-      },
+      action: openDialog,
     });
   }
 }
