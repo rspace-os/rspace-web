@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1057,5 +1058,21 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () -> sampleApiMgr.updateSampleToLatestTemplateVersion(sampleId, testUser));
     assertEquals("Sample is not based on any template", iae.getMessage());
+  }
+
+  @Test
+  public void nonOwnerCanDuplicateDefaultSampleTemplate() {
+    User nonOwner = createInitAndLoginAnyUser();
+    SampleTemplate defaultTemplate =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery("from SampleTemplate order by id asc", SampleTemplate.class)
+            .setMaxResults(1)
+            .getSingleResult();
+    assertNotEquals(nonOwner.getUsername(), defaultTemplate.getOwner().getUsername());
+
+    ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(defaultTemplate.getId(), nonOwner);
+
+    assertEquals(nonOwner.getUsername(), duplicate.getOwner().getUsername());
   }
 }

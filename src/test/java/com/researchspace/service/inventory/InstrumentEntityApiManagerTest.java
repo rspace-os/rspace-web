@@ -29,7 +29,7 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
-import com.researchspace.api.v1.model.ApiListOfMaterials;
+import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
@@ -1472,12 +1472,10 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     // listing both in a document shared with the group gives testUser limited read
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi, "lom doc");
-    ApiListOfMaterials lom = new ApiListOfMaterials();
-    lom.setName("lom");
-    lom.setElnFieldId(doc.getFields().get(0).getId());
-    lom.addMaterialUsage(instrument, null, false);
-    lom.addMaterialUsage(template, null, false);
-    listOfMaterialsApiMgr.createNewListOfMaterials(lom, pi);
+    createBasicListOfMaterialsForUserAndDocField(
+        pi,
+        doc.getFields().get(0),
+        List.of(new ApiMaterialUsage(instrument, null), new ApiMaterialUsage(template, null)));
     logoutAndLoginAs(pi);
     shareRecordWithGroup(pi, group, doc);
     assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(instrument.getOid(), testUser));

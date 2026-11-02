@@ -522,7 +522,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
   @Override
   public ApiContainer duplicate(Long containerId, User user) {
-    Container dbContainer = assertUserCanReadContainer(containerId, user);
+    Container dbContainer = getIfExists(containerId);
     invPermissions.assertUserCanReadInventoryRecord(dbContainer, user);
     assertWorkbenchContainer(dbContainer, false); // workbench cannot be duplicated
 

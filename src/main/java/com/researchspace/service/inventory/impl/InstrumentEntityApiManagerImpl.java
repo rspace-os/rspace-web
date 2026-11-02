@@ -586,7 +586,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument duplicateInstrument(Long instrumentId, User user) {
-    Instrument dbInstrument = assertUserCanReadInstrument(instrumentId, user);
+    Instrument dbInstrument = getInstrumentOrThrowNotFound(instrumentId);
     invPermissions.assertUserCanReadInventoryRecord(dbInstrument, user);
     Instrument copy = (Instrument) dbInstrument.copy(user);
     clearLandingPage(copy);
@@ -883,7 +883,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrumentTemplate duplicateInstrumentTemplate(Long templateId, User user) {
-    InstrumentTemplate dbTemplate = assertUserCanReadInstrumentTemplate(templateId, user);
+    InstrumentTemplate dbTemplate = getInstrumentTemplateOrThrowNotFound(templateId);
     invPermissions.assertUserCanReadInventoryRecord(dbTemplate, user);
     InstrumentTemplate copy = (InstrumentTemplate) dbTemplate.copy(user);
     clearLandingPage(copy);

@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +46,7 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
   private User testUser;
 
   @Autowired private InventoryMoveHelper moveHelper;
+  @Autowired private InventoryPermissionUtils invPermissionUtils;
 
   @BeforeEach
   public void setUp() {
@@ -315,6 +317,8 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
     moveSubSampleIntoListContainer(
         sample.getSubSamples().get(0).getId(), sharedContainer.getId(), testUser);
+    assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(sample.getOid(), otherUser));
+    assertFalse(invPermissionUtils.canUserReadInventoryRecord(sample.getOid(), otherUser));
     int otherUserWorkbenchCount =
         getWorkbenchForUser(otherUser).getContentSummary().getTotalCount();
 
@@ -325,6 +329,8 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
 
     assertEquals(0, result.getSuccessCount());
     assertEquals(1, result.getErrorCount());
+    assertThat(result.getResults().get(0).getError().getErrors().get(0))
+        .contains("Inventory record");
     assertEquals(
         otherUserWorkbenchCount,
         getWorkbenchForUser(otherUser).getContentSummary().getTotalCount());
