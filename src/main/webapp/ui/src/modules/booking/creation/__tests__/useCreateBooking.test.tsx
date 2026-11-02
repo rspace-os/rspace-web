@@ -41,8 +41,8 @@ function problem(status: number, code: string, body: Record<string, unknown> = {
 
 async function englishT() {
   // Only the messages under test come from the English catalog, with real ICU interpolation; others stay as keys.
-  const { buffer, bufferAfter, bufferBefore, bufferUnknown, maximumDurationLimit } = bookingEnglish.bookings.errors;
-  const errors = { buffer, bufferAfter, bufferBefore, bufferUnknown, maximumDurationLimit };
+  const { buffer, bufferUnknown, maximumDurationLimit } = bookingEnglish.bookings.errors;
+  const errors = { buffer, bufferUnknown, maximumDurationLimit };
   return (await createTestI18n({ booking: { bookings: { errors } } }, "booking")).getFixedT("en-US", "booking");
 }
 
@@ -59,10 +59,10 @@ it("invalidates every booking view after creation, including the item list and a
   server.use(http.post("/api/v2/bookings", () => HttpResponse.json(upcomingBooking)));
   const queryClient = new QueryClient();
   const keys = [
-    ["api-v2", "bookings", "calendar-events"],
+    bookingKeys.calendarEvents(),
     bookingKeys.calendarAvailability(),
-    ["api-v2", "bookings", "bookable-item-events", 123],
-    ["api-v2", "bookings", "availability-quick-index"],
+    bookingKeys.itemEvents(123),
+    [...bookingKeys.all, "availability-quick-index"],
   ];
   for (const key of keys) queryClient.setQueryData(key, []);
   const { result } = renderHook(() => useCreateBooking("token"), {
@@ -77,7 +77,7 @@ it("invalidates every booking view after creation, including the item list and a
 it("treats a lost create response as uncertain and refreshes booking queries", async () => {
   server.use(http.post("/api/v2/bookings", () => HttpResponse.error()));
   const queryClient = new QueryClient();
-  const key = ["api-v2", "bookings", "calendar-events"];
+  const key = bookingKeys.calendarEvents();
   queryClient.setQueryData(key, []);
   const { result } = renderHook(() => useCreateBooking("token"), {
     wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
@@ -161,15 +161,17 @@ it("names the buffer instead of reporting an overlap", async () => {
     bookingProblemMessage(problem(409, "errors.api.v2.booking.buffer", body), t);
 
   expect(buffer({ bufferBeforeMinutes: 15, bufferAfterMinutes: 90 })).toBe(
-    "Too close to another booking. This item needs 15 minutes before and 1 hour, 30 minutes after each booking.",
+    "Too close to another event. This item needs 15 minutes before and 1 hour, 30 minutes after each booking. Gaps between bookings add up.",
   );
   expect(buffer({ bufferBeforeMinutes: 15, bufferAfterMinutes: 0 })).toBe(
-    "Too close to another booking. This item needs 15 minutes before each booking.",
+    "Too close to another event. This item needs 15 minutes before and 0 minutes after each booking. Gaps between bookings add up.",
   );
   expect(buffer({ bufferBeforeMinutes: 0, bufferAfterMinutes: 1 })).toBe(
-    "Too close to another booking. This item needs 1 minute after each booking.",
+    "Too close to another event. This item needs 0 minutes before and 1 minute after each booking. Gaps between bookings add up.",
   );
   expect(buffer({})).toBe("Too close to another booking.");
+  expect(buffer({ bufferBeforeMinutes: 15 })).toBe("Too close to another booking.");
+  expect(buffer({ bufferAfterMinutes: 15 })).toBe("Too close to another booking.");
 });
 
 it("spells out the maximum duration from the problem, then from the item", async () => {
@@ -196,13 +198,14 @@ it("lets a listed overlap speak for itself but keeps the buffer sentence", async
   });
   expect(
     bookingProblemFeedback(
-      problem(409, "errors.api.v2.booking.buffer", { conflict, bufferAfterMinutes: 15 }),
+      problem(409, "errors.api.v2.booking.buffer", { conflict, bufferBeforeMinutes: 0, bufferAfterMinutes: 15 }),
       t,
       context,
     ),
   ).toEqual({
     conflict: expect.objectContaining({ id: 59, bufferOnly: true }),
-    message: "Too close to another booking. This item needs 15 minutes after each booking.",
+    message:
+      "Too close to another event. This item needs 0 minutes before and 15 minutes after each booking. Gaps between bookings add up.",
   });
   expect(bookingProblemFeedback(problem(409, "errors.api.v2.booking.overlap"), t, context)).toEqual({
     conflict: undefined,

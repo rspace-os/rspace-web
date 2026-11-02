@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { cloneElement } from "react";
 import { useTranslation } from "react-i18next";
-import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import {
   BookingInstrumentTimeTooltip,
   type BookingInstrumentTimeTooltipProps,
@@ -10,6 +9,7 @@ import {
 import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { cn } from "@/modules/common/utils/cn";
+import { BookableItemName } from "./BookableItemName";
 import { BookingDetailRows } from "./BookingDetailRows";
 import { BookingKindIcon } from "./BookingKindIcon";
 

@@ -15,6 +15,7 @@ import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/book
 import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
 import BookingPage from "../BookingPage";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
@@ -34,7 +35,7 @@ export function AllBookableItemsStory({
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, institutionBookingPreferences);
   queryClient.setQueryData(
-    ["api-v2", "openapi", "booking-configurations"],
+    apiV2MetadataKey("booking-configurations"),
     apiV2CollectionMetadataFromOpenApi(bookableItemsOpenApi, "booking-configurations"),
   );
   const rootRoute = createRootRoute({

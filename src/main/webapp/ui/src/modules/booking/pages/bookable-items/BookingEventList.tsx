@@ -7,15 +7,21 @@ import type { Booking } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
+import {
+  bookableItemEventsQuery,
+  fetchBookableItemEvents,
+} from "@/modules/booking/pages/bookable-items/bookableItemEvents";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import type { CollectionQueryState } from "@/modules/common/table-list/types";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
+import type { BookingEventPeriod } from "./bookableItemEvents";
 
 export type BookingEventListProps = {
   globalId: string;
@@ -58,8 +64,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             type: "dateTime",
             labelKey: "booking:bookings.form.time" satisfies CollectionTranslationKey,
             list: {
-              width: 280,
-              minWidth: 220,
+              width: 200,
+              minWidth: 200,
               dependencies: ["end"],
               renderCell: ({ row }) => (
                 <BookingInstrumentTimeTooltip
@@ -68,8 +74,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
                   displayTimeZone={timezone}
                   instrumentTimeZone={row.timezone}
                 >
-                  <time dateTime={row.start}>
-                    {formatBookingPeriod(row.start, row.end, timezone, i18n.language, timeFormat)}
+                  <time dateTime={row.start} className="whitespace-normal">
+                    {formatBookingPeriod(row.start, row.end, timezone, undefined, timeFormat)}
                   </time>
                 </BookingInstrumentTimeTooltip>
               ),
@@ -86,7 +92,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
             list: {
-              width: 180,
+              width: 120,
               renderCell: ({ row }) =>
                 row.kind === "MAINTENANCE" ? t("bookings.form.typeBlockout") : t("bookings.form.typeBooking"),
             },
@@ -97,7 +103,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             nullable: true,
             labelKey: "booking:bookableItemDetails.events.actor" satisfies CollectionTranslationKey,
             list: {
-              width: 220,
+              width: 160,
               renderCell: ({ row }) => {
                 if (row.kind === "MAINTENANCE") {
                   return row.createdBy ? <UserBadge name={row.createdBy} /> : t("bookings.maintenanceLabel");
@@ -123,7 +129,23 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             nullable: true,
             labelKey: "booking:bookableItemDetails.events.purpose" satisfies CollectionTranslationKey,
             list: {
-              renderCell: ({ row }) => (row.kind === "MAINTENANCE" || row.privacy === "full" ? row.purpose : null),
+              widthMode: "fill",
+              renderCell: ({ row }) =>
+                (row.kind === "MAINTENANCE" || row.privacy === "full") && row.purpose ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          className="block min-w-24 text-left whitespace-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      }
+                    >
+                      <span className="line-clamp-2 break-words">{row.purpose}</span>
+                    </TooltipTrigger>
+                    <TooltipContent role="tooltip">{row.purpose}</TooltipContent>
+                  </Tooltip>
+                ) : null,
             },
           },
         ],
@@ -150,32 +172,21 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       return result.totalDocs;
     },
   });
+  const eventsOptions = (state: CollectionQueryState<Booking>) =>
+    bookableItemEventsQuery({
+      globalId,
+      period,
+      cutoff,
+      page: state.page.pageIndex,
+      limit: state.page.pageSize,
+      token,
+    });
   const table = useTableList<Booking>({
     config,
     dataSource: {
       type: "remote",
-      queryKey: (state) => [
-        "api-v2",
-        "bookings",
-        "bookable-item-events",
-        globalId,
-        period,
-        cutoff,
-        state.page.pageIndex,
-        state.page.pageSize,
-      ],
-      fetch: async (state, { signal }) => {
-        const result = await fetchBookableItemEvents({
-          globalId,
-          period,
-          cutoff,
-          page: state.page.pageIndex,
-          limit: state.page.pageSize,
-          token,
-          signal,
-        });
-        return { rows: result.docs, hasNextPage: result.hasNextPage };
-      },
+      queryKey: (state) => eventsOptions(state).queryKey,
+      fetch: (state, { signal }) => eventsOptions(state).queryFn({ signal }),
       keepPreviousData: true,
       retry: false,
     },
@@ -187,8 +198,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
     () => ({
       id: "actions",
       label: t("calendar.actions.label"),
-      width: 220,
-      minWidth: 180,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <div className="flex gap-2">
           {row.privacy === "full" ? (
@@ -242,7 +252,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       }}
       hideHeader
       emptyDescription={t("bookableItemDetails.events.empty")}
-      presentations={{ table: "wide", cards: "narrow" }}
+      presentations={{ table: "all", cards: false }}
+      stickyActions="always"
       rowActions={rowActions}
     />
   );

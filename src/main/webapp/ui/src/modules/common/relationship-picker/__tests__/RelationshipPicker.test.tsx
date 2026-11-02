@@ -1,3 +1,4 @@
+import { cacheScope, optionBatchCacheKey, optionCacheKey } from "@/modules/common/relationship-picker/queries";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
@@ -232,7 +233,7 @@ describe("relationship picker restore", () => {
 
     expect(await screen.findByText("Target 42")).toBeVisible();
     act(() => {
-      queryClient.setQueryData(["relationship-option", "fixture-targets", "caller-one", "test-token", "FX42"], {
+      queryClient.setQueryData(optionCacheKey(fixtureSource(), cacheScope([null, null], "caller-one"), "FX42"), {
         globalId: "FX42",
         name: "Updated target 42",
       });
@@ -241,7 +242,7 @@ describe("relationship picker restore", () => {
 
     await act(async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["relationship-option-batch", "fixture-targets", "caller-one", "test-token", "FX42"],
+        queryKey: optionBatchCacheKey(fixtureSource(), cacheScope([null, null], "caller-one"), ["FX42"]),
       });
     });
     expect(await screen.findByText("Refreshed target 42")).toBeVisible();
@@ -252,7 +253,7 @@ describe("relationship picker restore", () => {
     const request = vi.fn();
     const source = fixtureSource();
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    queryClient.setQueryData(["relationship-option", "fixture-targets", "caller-one", "test-token", "FX42"], {
+    queryClient.setQueryData(optionCacheKey(fixtureSource(), cacheScope([null, null], "caller-one"), "FX42"), {
       globalId: "FX42",
       name: "Cached target 42",
     });
@@ -430,7 +431,7 @@ describe("relationship picker restore", () => {
     );
     renderSelected("FX500", "caller-two");
 
-    expect(await screen.findByText("FX500 — common:relationshipPicker.restoreFailed")).toBeVisible();
+    expect(await screen.findByText("common:relationshipPicker.restoreFailed")).toBeVisible();
     expect(screen.queryByText("private endpoint error")).not.toBeInTheDocument();
   });
 

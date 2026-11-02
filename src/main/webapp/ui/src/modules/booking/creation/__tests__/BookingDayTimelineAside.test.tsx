@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { type BookingWindowDraft, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 import { BookingDayTimelineAside } from "../BookingDayTimelineAside";
 import type { BookableItemOption } from "../bookableItemOption";
 import { confocalBooking, confocalBookingPage, confocalTargetWithHours } from "./creationTestFixtures";
@@ -154,7 +155,12 @@ describe("BookingDayTimelineAside acceptance", () => {
     ],
     [
       "a closed weekday",
-      { ...target, openingHours: target.openingHours.filter((entry) => [2, 3, 4, 5, 6, 7].includes(entry.dayOfWeek)) },
+      {
+        ...target,
+        openingHours: target.openingHours.filter((entry) =>
+          [2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+        ),
+      },
       [{ top: "0px", height: "1344px" }],
     ],
   ])("shades the closed periods of %s on the draft day", async (_, selectedTarget, expected) => {
@@ -179,7 +185,11 @@ describe("BookingDayTimelineAside acceptance", () => {
     render(asideTree({ client: queryClient(), selectedTarget: { ...target, timezone: "Asia/Kolkata" }, timezone }));
 
     await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
-    expect(screen.getAllByText(`${expected} · Confocal microscope`)[0]).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        i18n.t("booking:dayTimeline.vertical.timezoneAndItem", { timezone: expected, item: "Confocal microscope" }),
+      )[0],
+    ).toBeInTheDocument();
   });
 
   it("keeps the loading state visible until the day schedule resolves", async () => {
@@ -292,7 +302,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     expect(requestedTargets).toContain("IN124");
   });
 
-  it("keeps a cross-day draft visible without day-canvas adjustment handles", async () => {
+  it("keeps a cross-day draft movable and explains why its later end cannot snap to midnight", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(confocalBookingPage([]))));
     const crossDayDraft: BookingWindowDraft = {
       startDate: "2026-08-17",
@@ -304,9 +314,16 @@ describe("BookingDayTimelineAside acceptance", () => {
     render(asideTree({ client, selectedDraft: crossDayDraft }));
 
     expect(screen.getByTestId("vertical-day-timeline-draft")).toBeVisible();
-    expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.resizeStart/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:dayTimeline.vertical.moveDraft" })).toBeInTheDocument();
+    // The item closes at 22:00, so no other start keeps the draft valid.
+    expect(screen.getByRole("button", { name: "booking:dayTimeline.vertical.resizeStart" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.queryByRole("button", { name: "booking:dayTimeline.vertical.resizeEnd" })).not.toBeInTheDocument();
+    const continuation = screen.getByRole("button", { name: "booking:timelineEdit.endAtMidnight" });
+    expect(continuation).toHaveAttribute("aria-disabled", "true");
+    expect(continuation).toHaveAccessibleDescription("booking:timelineEdit.unavailable.openingHours");
   });
 
   it("the floating schedule button opens and closes the sheet without changing the draft or refetching", async () => {
@@ -363,9 +380,11 @@ describe("BookingDayTimelineAside acceptance", () => {
     expect(onChange).toHaveBeenCalledOnce();
     expect(onChange).toHaveBeenCalledWith({
       startDate: "2026-08-17",
-      startTime: "09:05",
+      startTime: "09:01",
+      startOccurrence: undefined,
       endDate: "2026-08-17",
-      endTime: "10:05",
+      endTime: "10:01",
+      endOccurrence: undefined,
     });
     expect(requests).toBe(1);
   });

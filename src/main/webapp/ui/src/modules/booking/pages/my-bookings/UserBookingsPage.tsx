@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { CalendarClockIcon, CalendarX2Icon, HistoryIcon, RefreshCwIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useMemo } from "react";
@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import type { FieldName } from "@/modules/common/collection/config";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -39,6 +40,7 @@ const projection = {
     "id",
     "version",
     "target",
+    "requester",
     "canViewConfiguration",
     "timezone",
     "start",
@@ -105,7 +107,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     () => ({
       kind: "and",
       children: [
-        { kind: "comparison", field: "requester", operator: "equals", value: requesterId },
+        { kind: "comparison", field: "requester.value" as FieldName<BookingListDocument>, operator: "equals", value: requesterId },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
         // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
         ...(period === "cancelled"
@@ -146,16 +148,13 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     },
   });
   const upcomingCount = useQuery({
-    queryKey: ["api-v2", "bookings", "count", "upcoming", requesterId, asOfDate.toISOString()],
-    queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
+    ...upcomingBookingCountQuery(requesterId, asOfDate, token),
   });
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
-      width: 200,
-      minWidth: 200,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <BookingRowActions
           row={row}
@@ -221,6 +220,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                           : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                       }
                     >
+                      {" "}
                       {upcomingCount.data.totalIsLowerBound
                         ? t("myBookings.count.lowerBound")
                         : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
@@ -268,3 +268,9 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     </TooltipProvider>
   );
 }
+
+export const upcomingBookingCountQuery = (requesterId: number, asOf: Date, token: string) =>
+  queryOptions({
+    queryKey: [...bookingKeys.all, "count", "upcoming", requesterId, asOf.toISOString()] as const,
+    queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOf, token, signal),
+  });

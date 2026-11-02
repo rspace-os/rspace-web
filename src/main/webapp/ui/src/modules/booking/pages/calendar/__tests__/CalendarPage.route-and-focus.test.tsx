@@ -1,5 +1,5 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -25,6 +25,18 @@ beforeEach(() => setupCalendarBookableItems());
 afterAll(() => restoreCalendarScrollTo());
 
 describe("CalendarPage", () => {
+  it("preselects the filtered item for a new maintenance event", async () => {
+    const user = userEvent.setup();
+    await renderCalendar("/booking/calendar?date=2026-08-17&target=IN123");
+    await screen.findByRole("region", { name: "Resource booking schedule" });
+    await user.click(await screen.findByRole("button", { name: "More event creation options" }));
+    await user.click(await screen.findByRole("menuitem", { name: "New Maintenance Event" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByRole("combobox", { name: "Bookable item" })).toHaveValue(
+      "Confocal microscope (IN123)",
+    );
+  });
+
   it("filters calendar resources and events to Owned Items", async () => {
     const catalogueRequests: URL[] = [];
     const eventRequests: URL[] = [];
@@ -52,6 +64,7 @@ describe("CalendarPage", () => {
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("mine")).toBe("true");
       expect(eventRequests.some((request) => request.searchParams.get("mine") === "true")).toBe(true);
+      expect(new URLSearchParams(window.location.search).has("myItemsOnly")).toBe(true);
     });
   });
 

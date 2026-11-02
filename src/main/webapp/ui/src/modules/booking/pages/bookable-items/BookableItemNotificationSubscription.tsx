@@ -1,16 +1,19 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellIcon, CheckIcon, SaveIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import { bookingSubscriptionKeys } from "@/modules/booking/domain/bookingKeys";
 import {
   type BookingNotificationSubscription,
+  bookingNotificationSubscriptionQuery,
   bookingNotificationSubscriptionsQueryKey,
   fetchBookingNotificationSubscription,
   replaceBookingNotificationSubscription,
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -53,12 +56,14 @@ function ItemNotificationEditor({
       setBaselineVersion(subscription.version);
     }
   }, [dirty, form, subscription.enabled, subscription.version]);
-  const mutation = useMutation({
-    mutationFn: ({ enabled, version }: { enabled: boolean; version: number }) =>
-      replaceBookingNotificationSubscription(configurationId, enabled, version, token),
-    onSuccess: async (saved) => {
+  const mutation = useApiV2Mutation({
+    meta: { invalidates: [bookingSubscriptionKeys.notifications(subjectId)] },
+    mutationFn: async ({ enabled, version }: { enabled: boolean; version: number }) => {
+      const saved = await replaceBookingNotificationSubscription(configurationId, enabled, version, token);
       queryClient.setQueryData(queryKey, saved);
-      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
+      return saved;
+    },
+    onSuccess: async (saved) => {
       reset(form, { initialInput: bookingNotificationChoice(saved.enabled) });
       setBaselineVersion(saved.version);
       setFeedback("saved");
@@ -85,6 +90,7 @@ function ItemNotificationEditor({
     },
   });
   const saved = feedback === "saved" && !dirty;
+
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -124,6 +130,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
               aria-busy={mutation.isPending}
               className={
                 saved
@@ -167,10 +174,9 @@ export function BookableItemNotificationSubscription({
   const { t } = useTranslation("booking");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const [feedback, setFeedback] = useState<"saved" | "conflict" | "saveError" | null>(null);
-  const queryKey = bookingNotificationSubscriptionsQueryKey.item(subjectId, configurationId);
+  const _queryKey = bookingNotificationSubscriptionsQueryKey.item(subjectId, configurationId);
   const subscription = useQuery({
-    queryKey,
-    queryFn: ({ signal }) => fetchBookingNotificationSubscription(configurationId, token, signal),
+    ...bookingNotificationSubscriptionQuery(subjectId, configurationId, token),
   });
   const notificationCardHeader = () => (
     <CardHeader>
@@ -205,14 +211,19 @@ export function BookableItemNotificationSubscription({
   }
 
   return (
-    <ItemNotificationEditor
-      subjectId={subjectId}
-      configurationId={configurationId}
-      globalId={globalId}
-      token={token}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        subjectId={subjectId}
+        configurationId={configurationId}
+        globalId={globalId}
+        token={token}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
   );
 }

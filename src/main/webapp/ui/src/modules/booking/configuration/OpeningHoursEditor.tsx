@@ -1,5 +1,5 @@
 import { type FormStore, useField } from "@formisch/react";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
@@ -17,9 +17,14 @@ import { Checkbox } from "@/modules/common/ui/checkbox";
 import { FieldDescription, FieldError } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 
+// Mirrors FormField's inline row: the label keeps a 36px line at the top, and the control column is at
+// least one 36px line, so single-line controls centre against the label and taller ones grow downward.
 const LABEL_CLASS_NAME = "text-sm font-medium @md:flex @md:min-h-9 @md:items-center @md:self-start";
+
 const OPEN_ALL_DAY: OpeningInterval = { start: "00:00", end: "24:00" };
+/** Unchecking Open all day with no remembered custom hours opens this range. */
 const FALLBACK_HOURS: OpeningInterval = { start: "09:00", end: "17:00" };
+
 type Layout = "stacked" | "inline";
 
 function SettingRow({ layout, label, children }: { layout: Layout; label: ReactNode; children: ReactNode }) {
@@ -31,6 +36,11 @@ function SettingRow({ layout, label, children }: { layout: Layout; label: ReactN
   );
 }
 
+/**
+ * Start and end times with Open all day beside the end. The checkbox reflects the exact `00:00`-`24:00` pair, however
+ * it was reached; unchecking restores `remembered`, the last valid custom pair, or 09:00-17:00. Every change reports
+ * its newest valid custom pair through `onRemember`, including the pair just before typing selects the whole day.
+ */
 function TimeRange({
   labelledBy,
   hours,
@@ -47,6 +57,7 @@ function TimeRange({
   remembered: OpeningInterval | undefined;
   onChange: (hours: OpeningInterval) => void;
   onRemember: (hours: OpeningInterval) => void;
+  /** Whether a typed change has just selected the whole day, for a polite announcement. */
   onTypedAllDay: (selected: boolean) => void;
   disabled: boolean;
   invalid: boolean;
@@ -56,23 +67,17 @@ function TimeRange({
   const timeFormat = useBookingTimeFormat();
   const id = useId();
   const allDay = isOpenAllDay(hours);
-  const allDayRef = useRef<HTMLElement>(null);
-  const focusAllDay = useRef(false);
-
-  // Typing the whole day disables the edited input; loading and resetting must never move focus.
-  useEffect(() => {
-    if (focusAllDay.current && allDay) allDayRef.current?.focus();
-    focusAllDay.current = false;
-  }, [allDay]);
+  const [showTimes, setShowTimes] = useState(() => !allDay);
 
   const change = (next: OpeningInterval, typed: boolean) => {
     const custom = customOpeningHours(next) ?? customOpeningHours(hours);
     if (custom) onRemember(custom);
     const typedAllDay = typed && isOpenAllDay(next) && !allDay;
-    focusAllDay.current = typedAllDay;
+    setShowTimes(typed || !isOpenAllDay(next));
     onTypedAllDay(typedAllDay);
     onChange(next);
   };
+  const showMidnightHelp = showTimes && (hours.end === "24:00" || hours.end === "00:00");
   const midnightHelpId = `${id}-midnight`;
   const errorId = `${id}-error`;
   const input = (boundary: keyof OpeningInterval) => (
@@ -81,12 +86,14 @@ function TimeRange({
       type="time"
       step={60}
       required
-      disabled={disabled || allDay}
+      disabled={disabled}
       className="w-32"
       value={boundary === "end" && hours.end === "24:00" ? "00:00" : hours[boundary]}
       aria-invalid={invalid || undefined}
       aria-describedby={
-        [boundary === "end" ? midnightHelpId : null, invalid ? errorId : null].filter(Boolean).join(" ") || undefined
+        [boundary === "end" && showMidnightHelp ? midnightHelpId : null, invalid ? errorId : null]
+          .filter(Boolean)
+          .join(" ") || undefined
       }
       onChange={(event) => {
         const value = event.currentTarget.value;
@@ -97,17 +104,18 @@ function TimeRange({
   return (
     <fieldset aria-labelledby={labelledBy} className="min-w-0 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 max-w-full items-center gap-2">
-          {input("start")}
-          <span aria-hidden="true" className="shrink-0 text-muted-foreground">
-            {"–"}
-          </span>
-          {input("end")}
-        </div>
+        {showTimes && (
+          <div className="flex min-w-0 max-w-full items-center gap-2">
+            {input("start")}
+            <span aria-hidden="true" className="shrink-0 text-muted-foreground">
+              {"–"}
+            </span>
+            {input("end")}
+          </div>
+        )}
         <label className="flex items-center gap-2 text-sm whitespace-nowrap" htmlFor={`${id}-all-day`}>
           <Checkbox
             id={`${id}-all-day`}
-            ref={allDayRef}
             checked={allDay}
             disabled={disabled}
             onCheckedChange={(checked) => change(checked ? OPEN_ALL_DAY : (remembered ?? FALLBACK_HOURS), false)}
@@ -115,11 +123,13 @@ function TimeRange({
           {t("settings.openingHours.openAllDay")}
         </label>
       </div>
-      <FieldDescription id={midnightHelpId}>
-        {t("settings.openingHours.midnightEnd", {
-          midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
-        })}
-      </FieldDescription>
+      {showMidnightHelp && (
+        <FieldDescription id={midnightHelpId}>
+          {t("settings.openingHours.midnightEnd", {
+            midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
+          })}
+        </FieldDescription>
+      )}
       {invalid ? <FieldError id={errorId}>{error}</FieldError> : null}
     </fieldset>
   );
@@ -127,7 +137,7 @@ function TimeRange({
 
 /** Seven independent weekday intervals. Closing a day retains its hours for this edit session. */
 export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore; disabled: boolean; layout: Layout }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const id = useId();
   const field = useField(form, { path: ["openingHours"] });
   const entries = Array.isArray(field.input) ? (field.input as OpeningHoursEntry[]) : [];
@@ -160,7 +170,7 @@ export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore
       >
         {ALL_ISO_WEEKDAYS.map((day) => {
           const entry = entries.find((candidate) => candidate.dayOfWeek === day);
-          const dayName = formatIsoWeekday(day, "long", i18n.language === "cimode" ? "en-US" : i18n.language);
+          const dayName = formatIsoWeekday(day);
           return (
             <li key={day} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-3">
               <div className="flex min-h-9 w-28 shrink-0 items-center gap-2">

@@ -2,13 +2,7 @@
 /* biome-ignore-all lint/style/noJsxLiterals: throwaway prototype copy. */
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { useState } from "react";
-import {
-  adjustVerticalTimelineRange,
-  stepVerticalTimelineRange,
-  type VerticalTimelineRange,
-  type VerticalTimelineRangeContext,
-} from "@/modules/booking/creation/verticalTimelineRange";
-import { openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
+import { timelineAdjuster, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { dayMinuteToZonedTime, instantToDayMinute } from "@/modules/booking/domain/bookingTime";
 import { SCENARIO_IDS, SCENARIOS } from "./verticalDayTimelineOpusFixtures";
 
@@ -35,34 +29,11 @@ function Example({
           .toString()
       : fixture.draftEnd,
   }));
-  const context: VerticalTimelineRangeContext = {
+  const adjuster = timelineAdjuster(range, {
     date: fixture.date,
     displayTimezone: fixture.displayTimezone,
-    schedulingTimezone: fixture.item.timezone,
-    slotGranularityMinutes: fixture.item.slotGranularityMinutes,
-  };
-  const accepted = (candidate: VerticalTimelineRange | undefined) => {
-    if (!candidate || (candidate.start === range.start && candidate.end === range.end)) return undefined;
-    const duration = (Date.parse(candidate.end) - Date.parse(candidate.start)) / 60_000;
-    if (fixture.item.maxBookingDurationMinutes > 0 && duration > fixture.item.maxBookingDurationMinutes)
-      return undefined;
-    const opening = openingIntervals(fixture.item, fixture.item.timezone, candidate);
-    return opening.some(
-      (interval) =>
-        Date.parse(interval.start) <= Date.parse(candidate.start) &&
-        Date.parse(interval.end) >= Date.parse(candidate.end),
-    )
-      ? candidate
-      : undefined;
-  };
-  const step = (edge: "start" | "end", direction: "previous" | "next") =>
-    accepted(stepVerticalTimelineRange(range, edge, direction, context));
-  const adjuster = {
-    step,
-    adjust: (edge: "start" | "end", target: { toString(): string }) =>
-      accepted(adjustVerticalTimelineRange(range, edge, target.toString(), context)),
-    canResize: (edge: "start" | "end") => Boolean(step(edge, "previous") || step(edge, "next")),
-  };
+    policy: timelinePolicy(fixture.item),
+  });
   const start = instantToDayMinute(range.start, fixture.date, fixture.displayTimezone);
   const end = instantToDayMinute(range.end, fixture.date, fixture.displayTimezone);
   const origin = 360;

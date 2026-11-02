@@ -15,19 +15,22 @@ class BookingSchedulingSettingsTest {
   void defaultsContainSevenFullDaysAndKeepTheInitialGranularity() {
     BookingConfiguration configuration = new BookingConfiguration();
     BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
-    assertEquals(5, configuration.getSlotGranularityMinutes());
+    assertEquals(15, configuration.getSlotGranularityMinutes());
+    assertEquals(BookingIncrementUnit.MINUTES, configuration.getIncrementUnit());
+    assertEquals(BookingIncrementUnit.MINUTES, defaults.getIncrementUnit());
     assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, configuration.getOpeningHours());
     assertEquals(configuration.getOpeningHours(), defaults.getOpeningHours());
   }
 
   @Test
   void patchKeepsOmittedValuesAndReplacesTheCompleteWeekInOrder() {
-    BookingSchedulingSettings current = BookingSchedulingSettings.from(new BookingConfiguration());
+    BookingSchedulingSettings current = increment(1440, BookingIncrementUnit.HOURS);
     assertTrue(BookingSchedulingSettings.Patch.empty().isEmpty());
     assertEquals(current, BookingSchedulingSettings.Patch.empty().merge(current));
     BookingSchedulingSettings.Patch patch =
         new BookingSchedulingSettings.Patch(
             null,
+            BookingIncrementUnit.MINUTES,
             List.of(
                 new BookingOpeningHoursEntry(5, "10:00", "12:00"),
                 new BookingOpeningHoursEntry(1, "08:00", "18:00")),
@@ -37,11 +40,12 @@ class BookingSchedulingSettingsTest {
             null);
     BookingSchedulingSettings merged = patch.merge(current);
     assertFalse(patch.isEmpty());
-    assertEquals(current.slotGranularityMinutes(), merged.slotGranularityMinutes());
+    assertEquals(1440, merged.slotGranularityMinutes());
+    assertEquals(BookingIncrementUnit.MINUTES, merged.incrementUnit());
     assertEquals(
         Optional.of(new BookingSchedulingSettings.DailyHours("08:00", "18:00")),
         merged.effectiveHours(1));
-    assertTrue(merged.effectiveHours(2).isEmpty());
+    assertEquals(Optional.empty(), merged.effectiveHours(2));
     assertEquals(1, merged.openingHours().get(0).dayOfWeek());
     BookingConfiguration configuration = new BookingConfiguration();
     BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
@@ -68,5 +72,51 @@ class BookingSchedulingSettingsTest {
     assertEquals(
         BookingSchedulingSettings.DEFAULT_OPENING_HOURS.subList(1, 7),
         configuration.getOpeningHours().subList(1, 7));
+  }
+
+  @Test
+  void theIncrementRuleNeverTreatsDaysAsElapsedMinutes() {
+    assertEquals(
+        new BookingSchedulingSettings.DayIncrement(2),
+        increment(2880, BookingIncrementUnit.DAYS).incrementRule());
+    assertEquals(
+        new BookingSchedulingSettings.ElapsedIncrement(1440),
+        increment(1440, BookingIncrementUnit.HOURS).incrementRule());
+    assertEquals(
+        new BookingSchedulingSettings.ElapsedIncrement(90),
+        increment(90, BookingIncrementUnit.HOURS).incrementRule());
+  }
+
+  @Test
+  void incrementAndMaximumValidityDependOnTheUnit() {
+    assertTrue(BookingSchedulingSettings.isGranularityValid(90, BookingIncrementUnit.HOURS));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(1440, BookingIncrementUnit.DAYS));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(527_040, BookingIncrementUnit.DAYS));
+    assertFalse(BookingSchedulingSettings.isGranularityValid(720, BookingIncrementUnit.DAYS));
+    assertFalse(BookingSchedulingSettings.isGranularityValid(2160, BookingIncrementUnit.DAYS));
+    assertFalse(BookingSchedulingSettings.isGranularityValid(15, null));
+    assertTrue(
+        BookingSchedulingSettings.isMaximumDurationValid(1500, 1440, BookingIncrementUnit.DAYS));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(1380, 1440, BookingIncrementUnit.DAYS));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(1500, 1440, BookingIncrementUnit.HOURS));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(527_041, 1440, BookingIncrementUnit.DAYS));
+    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(0, 1440, null));
+
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setIncrementUnit(BookingIncrementUnit.DAYS);
+    configuration.setSlotGranularityMinutes(1440);
+    configuration.setMaxBookingDurationMinutes(1500);
+    assertTrue(configuration.isGranularityValid());
+    assertTrue(configuration.isMaximumDurationValid());
+    configuration.setSlotGranularityMinutes(720);
+    assertFalse(configuration.isGranularityValid());
+  }
+
+  private static BookingSchedulingSettings increment(long minutes, BookingIncrementUnit unit) {
+    return new BookingSchedulingSettings(
+        minutes, unit, BookingSchedulingSettings.DEFAULT_OPENING_HOURS, 0, 0, 0, false);
   }
 }

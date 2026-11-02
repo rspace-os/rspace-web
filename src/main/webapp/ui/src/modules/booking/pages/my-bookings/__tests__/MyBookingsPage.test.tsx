@@ -1,5 +1,6 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
+import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
 
 beforeBookingCatalog(async () => {
   appI18n.addResourceBundle(
@@ -69,7 +70,7 @@ async function renderPage({
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
-  queryClient.setQueryData(["api-v2", "openapi", "bookings"], apiV2CollectionMetadataFromOpenApi(openApi, "bookings"));
+  queryClient.setQueryData(apiV2MetadataKey("bookings"), apiV2CollectionMetadataFromOpenApi(openApi, "bookings"));
   let search = location.search;
   const onUrlUpdate = ({ queryString }: UrlUpdateEvent) => {
     search = queryString;
@@ -182,7 +183,7 @@ describe("My Bookings page", () => {
     );
     await waitFor(() => expect(counts).toHaveLength(1));
     const countWhere = counts[0].searchParams.get("where");
-    expect(countWhere).toMatch(/^requester.value==84;kind==BOOKING;state==CONFIRMED;end=gt=.+Z$/);
+    expect(countWhere).toMatch(/^requester\.value==84;kind==BOOKING;state==CONFIRMED;end=gt=.+Z$/);
     expect(countWhere).not.toContain("confocal");
     expect(countWhere).not.toContain("target.name");
     expect([...counts[0].searchParams.keys()]).toEqual(["where", "max"]);

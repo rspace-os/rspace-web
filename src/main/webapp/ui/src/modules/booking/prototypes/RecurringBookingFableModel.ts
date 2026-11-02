@@ -27,6 +27,7 @@ export const item: BookableItemOption = {
   name: "Confocal microscope",
   timezone: CONFIGURATION_TIMEZONE,
   slotGranularityMinutes: 15,
+  incrementUnit: "MINUTES",
   openingHours: [1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
@@ -108,7 +109,11 @@ function fixtureBooking(input: {
 }
 
 export function toListDocument(booking: Booking): BookingListDocument {
-  return { ...booking, canViewConfiguration: true, requester: booking.privacy === "full" ? { relationTo: "users", value: { id: 84 } } : null };
+  return {
+    ...booking,
+    canViewConfiguration: true,
+    requester: booking.privacy === "full" ? { relationTo: "users", value: { id: 84 } } : null,
+  };
 }
 
 /** Existing events on the item. Served to the day timeline by MSW and used by the simulated dry run. */

@@ -8,6 +8,7 @@ import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
 
 beforeEach(() => {
+  vi.stubGlobal("location", { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" });
   resetUiTokenForTests();
   sessionStorage.clear();
   document.getElementById("public_document_view")?.remove();
@@ -48,6 +49,7 @@ describe("AuthStore", () => {
       await vi.advanceTimersByTimeAsync(3300_000);
       await vi.waitFor(() => expect(requestCount).toBe(4));
       expect(authStore.isAuthenticated).toBe(false);
+      expect(window.location.href).toBe("/login");
       expect(authStore.timeoutId).toBeNull();
       await vi.advanceTimersByTimeAsync(60_000);
       expect(requestCount).toBe(4);
@@ -83,6 +85,7 @@ describe("AuthStore", () => {
       await vi.advanceTimersByTimeAsync(1);
       await vi.waitFor(() => expect(requestCount).toBe(6));
       expect(authStore.isAuthenticated).toBe(false);
+      expect(window.location.href).toBe("/login");
       expect(authStore.timeoutId).toBeNull();
     } finally {
       if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
@@ -113,6 +116,7 @@ describe("AuthStore", () => {
     await rejection;
 
     expect(authStore.isAuthenticated).toBe(false);
+    expect(window.location.href).toBe("/login");
     expect(authStore.isSynchronizing).toBe(false);
     expect(authStore.timeoutId).toBeNull();
   });
@@ -134,7 +138,9 @@ describe("AuthStore", () => {
     }
   });
 
-  it.each([429, 500])("keeps the page when token minting fails with %s", async (status) => {
+  it.each([429, 500])("keeps the page and retries with a valid token after %s", async (status) => {
+    vi.useFakeTimers();
+    JwtService.saveToken(tokenExpiringIn(20));
     const location = { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" };
     vi.stubGlobal("location", location);
     server.use(http.post("/api/v2/oauth/tokens", () => new HttpResponse(null, { status })));
@@ -145,6 +151,9 @@ describe("AuthStore", () => {
     expect(window.location).toBe(location);
     expect(location.href).toBe("http://localhost:3000/inventory");
     expect(authStore.isSynchronizing).toBe(false);
+    expect(authStore.timeoutId).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(21_000);
+    await vi.waitFor(() => expect(window.location.href).toBe("/login"));
   });
 
   it("redirects on an authentication failure", async () => {

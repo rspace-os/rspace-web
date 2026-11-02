@@ -1,22 +1,19 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
-import { loadBookingSettings } from "@/modules/booking/configuration/schedulingSettings";
+import { bookingSettingsQuery } from "@/modules/booking/configuration/schedulingSettingsApi";
+import { bookingRouteTargetQuery } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { AddBookableItemForm } from "./AddBookableItemForm";
 import { AddBookableItemSkeleton } from "./AddBookableItemSkeleton";
-import { searchBookingTargets } from "./bookingConfigurationTargets";
 
 export function AddBookableItemContent() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const defaults = useSuspenseQuery({
-    queryKey: ["api-v2", "booking-settings"],
-    queryFn: ({ signal }) => loadBookingSettings(token, signal),
+    ...bookingSettingsQuery(token),
   }).data;
   const search = useSearch({ from: "/booking/bookable-items/add/" });
   const routeTargetResults = useQuery({
-    queryKey: ["api-v2", "booking-configuration-targets", "route-target", search.target],
-    queryFn: ({ signal }) => searchBookingTargets(search.target ?? "", token, signal),
-    enabled: search.target !== undefined,
+    ...bookingRouteTargetQuery(search.target, token),
   });
   if (search.target !== undefined && routeTargetResults.isPending && !routeTargetResults.isFetched) {
     return <AddBookableItemSkeleton />;
@@ -28,6 +25,7 @@ export function AddBookableItemContent() {
       defaults={defaults}
       token={token}
       initialTargetId={initialTarget?.id}
+      initialTargetName={initialTarget?.name}
     />
   );
 }
