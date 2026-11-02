@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { useCanOpenBookableItemsAdministration } from "@/modules/booking/pages/bookable-items/bookableItemsAdministrationAccess";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
 import {
@@ -26,17 +25,7 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-// Bookable items appears once the user can read a configuration or set up an instrument; with neither,
-// its table would be empty and offer no Add. Settings edits institution-wide defaults and stays sysadmin-only.
-const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean) => {
-  const administration = [
-    ...(isSysAdmin
-      ? [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> } as const]
-      : []),
-    ...(canOpenBookableItems
-      ? [{ key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> } as const]
-      : []),
-  ];
+const items = (today: string, isSysAdmin: boolean) => {
   return [
     {
       key: "dashboard",
@@ -70,8 +59,14 @@ const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean
       icon: SlidersHorizontalIcon,
       link: <Link {...linkOptions({ to: "/booking/preferences" })} />,
     },
-    ...(administration.length > 0
-      ? [{ key: "administration", icon: SettingsIcon, children: administration } as const]
+    ...(isSysAdmin
+      ? [
+          {
+            key: "administration",
+            icon: SettingsIcon,
+            children: [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> }],
+          } as const,
+        ]
       : []),
   ] as const;
 };
@@ -88,12 +83,10 @@ export function BookingSidebar() {
     preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
-    bookableItems: t("sidebar.bookableItems"),
   };
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const canOpenBookableItems = useCanOpenBookableItemsAdministration();
-  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole, canOpenBookableItems);
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole);
 
   return (
     <SidebarGroup>

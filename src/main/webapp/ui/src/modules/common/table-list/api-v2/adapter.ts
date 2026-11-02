@@ -71,6 +71,8 @@ export function createApiV2CollectionAdapter<TDocument>({
 }: ApiV2CollectionDefinition<TDocument>): ApiV2CollectionAdapter<TDocument> {
   const allowedFields = new Set(metadata.fields);
   for (const field of sourceConfig.fields) {
+    // Filter-only members are published selectors without a response projection.
+    if (!allowedFields.has(field.name) && metadata.filtering.selectors[field.name] && field.form === false) continue;
     if (!allowedFields.has(field.name)) throw new Error(`Collection config references unknown API field ${field.name}`);
     // The response projection picks these names out of the schema, so a name that the schema does
     // not carry must fail here rather than inside the parser.

@@ -2,7 +2,6 @@ import { QueryClient } from "@tanstack/react-query";
 import { HttpResponse, http } from "msw";
 import { expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { readableBookingConfigurationCountQuery } from "../bookableItemsAdministrationAccess";
 import { eligibleBookingTargetsQuery } from "../bookingConfigurationTargets";
 
 it("shares completed and in-flight administration lookups for the same user", async () => {
@@ -18,13 +17,9 @@ it("shares completed and in-flight administration lookups for the same user", as
     }),
   );
   const client = new QueryClient();
-  const load = () =>
-    Promise.all([
-      client.fetchQuery(readableBookingConfigurationCountQuery(42, "token")),
-      client.fetchQuery(eligibleBookingTargetsQuery(42, "token")),
-    ]);
+  const load = () => Promise.all([client.fetchQuery(eligibleBookingTargetsQuery(42, "token"))]);
   await Promise.all([load(), load()]);
   await load();
-  expect(requests).toEqual({ count: 1, targets: 1 });
+  expect(requests).toEqual({ count: 0, targets: 1 });
   client.clear();
 });

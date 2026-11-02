@@ -181,7 +181,7 @@ export function AddBookableItemForm({
         ),
       });
       // The new configuration is readable, and its instrument is no longer an eligible target.
-      await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+      await navigate({ to: "/booking/all-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {

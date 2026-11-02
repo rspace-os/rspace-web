@@ -15,42 +15,41 @@ import { buttonVariants } from "@/modules/common/ui/button";
 import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
-import { BookingConfigurationActionsMenu } from "../bookable-items/BookingConfigurationActionsMenu";
+import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
 import { bookableItemLifecycleNotice } from "../bookable-items/bookableItemFeedback";
+import type { BookingConfigurationRow as AllBookableItem } from "../bookable-items/bookingConfiguration";
 import {
   archiveBookingConfiguration,
   permanentlyDeleteBookingConfiguration,
 } from "../bookable-items/bookingConfiguration";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
-import type { AllBookableItem } from "../calendar/availability/availabilityQuickFilters";
 import { ownerPreset } from "../ownerPreset";
-import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
-type AllBookableItemsTableProps = Omit<
-  ReturnType<typeof useAllBookableItemsData>,
-  | "config"
-  | "invalidFilter"
-  | "catalogue"
-  | "runtimeFieldState"
-  | "bulkMutation"
-  | "failedBulkAction"
-  | "rows"
-  | "selectedRowIds"
-  | "selectionPending"
-  | "setFailedBulkAction"
-> & {
-  types?: readonly string[];
+type AllBookableItemsTableProps = {
+  filters: FilterState<AllBookableItem>;
+  hasNoBookableItems: boolean;
+  clearSelection: () => void;
   directSysadmin: boolean;
   tableProps: TableListProps<AllBookableItem>;
   resetView: () => void;
   setFilters: (next: FilterState<AllBookableItem>) => void;
+  canAdd: boolean;
+  onLifecycleChanged: (ids: readonly number[]) => Promise<void>;
+  onRestore: (row: AllBookableItem) => Promise<void>;
+  token: string;
+  alertsRef: import("react").RefObject<
+    import("@/modules/common/table-list/components/TableListAlerts").TableListAlertsApi | null
+  >;
+  attachAlerts: (
+    api: import("@/modules/common/table-list/components/TableListAlerts").TableListAlertsApi | null,
+  ) => void;
 };
 
 export function AllBookableItemsTable({
   filters,
   hasNoBookableItems,
   clearSelection,
-  types,
+  onRestore,
   directSysadmin,
   tableProps,
   resetView,
@@ -69,7 +68,16 @@ export function AllBookableItemsTable({
       width: 224,
       minWidth: 176,
       renderCell: ({ row, activate }) => {
-        if (!row.target) return null;
+        if (!row.target)
+          return (
+            <BookableItemActionTriggers
+              configuration={row}
+              directSysadmin={directSysadmin}
+              activate={activate}
+              onRestore={onRestore}
+              hideDetails
+            />
+          );
         const detailsLabel = t("allBookableItems.actions.viewDetails");
         const bookLabel = t("allBookableItems.actions.book");
         return (
@@ -82,7 +90,7 @@ export function AllBookableItemsTable({
                 params={{ globalId: row.target.globalId, tab: undefined }}
               />
             </TooltipIconLink>
-            {row.capabilities?.canCreateBooking ? (
+            {row.state === "ACTIVE" && row.enabled && row.capabilities?.canCreateBooking ? (
               <TooltipIconLink label={bookLabel} icon={<CalendarPlusIcon aria-hidden="true" />}>
                 <Link
                   className={buttonVariants({ variant: "outline", size: "icon-lg" })}
@@ -92,7 +100,7 @@ export function AllBookableItemsTable({
                 />
               </TooltipIconLink>
             ) : null}
-            {row.capabilities?.canEditConfiguration ? (
+            {row.state === "ACTIVE" && row.enabled && row.capabilities?.canEditConfiguration ? (
               <TooltipIconLink
                 label={t("allBookableItems.actions.settings")}
                 icon={<SettingsIcon aria-hidden="true" />}
@@ -106,14 +114,12 @@ export function AllBookableItemsTable({
                 />
               </TooltipIconLink>
             ) : null}
-            {/* The Administration lifecycle actions; listed items are always active, so never Restore. */}
-            <BookingConfigurationActionsMenu
+            <BookableItemActionTriggers
               configuration={row}
-              itemName={row.target.value.name}
               directSysadmin={directSysadmin}
-              // The neighbouring links render borderless at 40 px.
-              triggerClassName="min-h-10 min-w-10 border-transparent"
-              onAction={activate}
+              activate={activate}
+              onRestore={onRestore}
+              hideDetails
             />
           </div>
         );
@@ -141,12 +147,12 @@ export function AllBookableItemsTable({
           />
         ) : null,
     }),
-    [directSysadmin, onLifecycleChanged, t, token],
+    [directSysadmin, onLifecycleChanged, onRestore, t, token],
   );
 
   const quickFilters: TableListFilterButtons = {
     legend: t("allBookableItems.legend"),
-    hasChanges: Boolean(types?.length),
+
     align: "end",
     buttons: [
       {
@@ -178,12 +184,11 @@ export function AllBookableItemsTable({
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
         filterButtons={quickFilters}
-        presentations={{ table: "wide", cards: "narrow" }}
         rowActions={rowActions}
         emptyDescription={
           hasNoBookableItems ? (
             <>
-              {t("bookableItems.primer.description")}
+              {t("allBookableItems.primer.description")}
               {canAdd && (
                 <>
                   {" "}

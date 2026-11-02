@@ -35,7 +35,7 @@ const EMPTY_BOOKING_NOTICES: Pick<BookingNoticesValue, "notify"> = { notify: noo
 
 function hostForPath(pathname: string): BookingNoticeHost | null {
   if (pathname === "/booking/calendar" || pathname.startsWith("/booking/calendar/")) return "calendar";
-  if (pathname === "/booking/config/bookable-items" || pathname === "/booking/all-items") return "bookable-items";
+  if (pathname === "/booking/all-items") return "bookable-items";
   if (/^\/booking\/bookable-items\/IN\d+(?:\/|$)/.test(pathname)) return "item-detail";
   return null;
 }

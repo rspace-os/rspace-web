@@ -128,7 +128,7 @@ describe("BookableItemPicker", () => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     const user = userEvent.setup();
     renderPicker();
-    expect(await screen.findByText("booking:bookableItems.primer.description")).toBeVisible();
+    expect(await screen.findByText("booking:allBookableItems.primer.description")).toBeVisible();
     expect(screen.getByText("booking:bookings.form.itemAccess")).toBeVisible();
     expect(screen.getByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
       "href",

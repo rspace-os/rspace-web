@@ -5,10 +5,10 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
-import { storyUser } from "./BookableItemPage.story";
-import { BookableItemsStory } from "./BookableItemsPage.story";
-import { bookableItemsHandlers } from "./mocks/bookableItemsMocks";
-import { BookableItemsPage } from "./pageObjects/BookableItemsPage";
+import { AllBookableItemsStory as BookableItemsStory } from "../all-bookable-items/AllBookableItemsPage.story";
+import { storyUser } from "../bookable-items/BookableItemPage.story";
+import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
+import { BookableItemsPage } from "../bookable-items/pageObjects/BookableItemsPage";
 
 const pageObj = new BookableItemsPage();
 let collectionQuery = "";
@@ -17,7 +17,7 @@ let history: RouterHistory;
 let browserUrl: string;
 
 beforeEach(() => {
-  history = createMemoryHistory({ initialEntries: ["/booking/config/bookable-items"] });
+  history = createMemoryHistory({ initialEntries: ["/booking/all-items"] });
   browserUrl = window.location.href;
   collectionQuery = "";
   worker.use(

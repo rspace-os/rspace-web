@@ -192,7 +192,7 @@ export function useLoadedBookableItemPageActions({
           item: target?.value.name ?? commonT("values.unknownItem"),
         }),
       });
-      void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+      void navigate({ to: "/booking/all-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {

@@ -98,9 +98,9 @@ export function VerticalDayTimeline({
   scheduleWindow,
 }: VerticalDayTimelineProps) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const now = useBookingNow();
   const pastMinute = elapsedNowMinute(now, date, timezone);
-  const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
   const dateHeadingId = `${instanceId}-date-heading`;

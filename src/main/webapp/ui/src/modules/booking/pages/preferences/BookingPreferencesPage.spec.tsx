@@ -139,7 +139,7 @@ describe("Booking display preferences", () => {
     await expect.element(page.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
 
     history.push("/booking/all-items");
-    await expect.element(page.getByRole("heading", { name: "All Bookable Items" })).toBeVisible();
+    await expect.element(page.getByRole("heading", { name: "All items" })).toBeVisible();
     const itemNames = ["Confocal microscope", "Electron microscope", "Mass spectrometer", "Flow cytometer"];
     for (const name of itemNames) {
       await expect.element(page.getByRole("link", { name, exact: true })).toBeVisible();

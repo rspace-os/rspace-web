@@ -120,7 +120,9 @@ describe("BookableItemPage", () => {
     const maximum = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.maximumDuration",
     });
-    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "booking:allBookableItems.fields.timezone" }),
+    ).not.toBeInTheDocument();
     await user.clear(maximum);
     await user.type(maximum, "60");
     // A background refresh alone does not move the draft onto a version the user has not been told about.

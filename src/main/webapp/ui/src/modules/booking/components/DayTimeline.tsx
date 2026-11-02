@@ -190,11 +190,11 @@ export function DayTimeline({
     [date, timezone, wallEndWindow],
   );
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const now = useBookingNow();
   const pastMinute = elapsedNowMinute(now, date, timezone);
   const nowMinute =
     suppliedNowMinute ?? (date === todayInTimeZone(timezone, new Date(now.epochMilliseconds)) ? pastMinute : undefined);
-  const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
   const [dragRange, setDragRange] = React.useState<{ from: number; to: number; pointerId: number } | null>(null);

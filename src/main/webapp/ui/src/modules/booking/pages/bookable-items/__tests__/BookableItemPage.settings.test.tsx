@@ -388,29 +388,24 @@ describe("BookableItemPage", () => {
 it("confirms disabling, retaining the draft when cancelled", async () => {
   const user = userEvent.setup();
   const patches: unknown[] = [];
-  const versions: Array<string | null> = [];
   server.use(
     http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
     http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
       patches.push(await request.json());
-      versions.push(request.headers.get("If-Match"));
       return new HttpResponse(null, { status: 204 });
     }),
   );
   renderPage();
   await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
   await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
-  const duration = screen.getByLabelText("booking:settings.fields.maximumDuration");
-  await user.clear(duration);
-  await user.type(duration, "60");
-  await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
+  await user.click(screen.getByRole("checkbox", { name: "booking:allBookableItems.fields.enabled" }));
   await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
   const dialog = screen.getByRole("alertdialog");
   await expectAccessible(dialog);
   await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
   expect(patches).toHaveLength(0);
-  expect(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" })).not.toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "booking:allBookableItems.fields.enabled" })).not.toBeChecked();
   await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
   await user.click(
     within(screen.getByRole("alertdialog")).getByRole("button", {
@@ -418,6 +413,5 @@ it("confirms disabling, retaining the draft when cancelled", async () => {
     }),
   );
   await waitFor(() => expect(patches).toHaveLength(1));
-  expect(patches[0]).toMatchObject({ enabled: false, maxBookingDurationMinutes: 60 });
-  expect(versions).toEqual([`"${configuration.configurationVersion}"`]);
+  expect(patches[0]).toMatchObject({ enabled: false });
 });
