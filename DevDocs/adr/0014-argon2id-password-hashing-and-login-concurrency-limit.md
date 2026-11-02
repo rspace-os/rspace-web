@@ -266,9 +266,14 @@ That table must change in the same commit as any limit, default, message or rout
 - Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
   an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an
-  Argon2 check against a random hash made at startup. On LDAP installs `LdapRealm` pads an
-  internal user's early exit the same way, and a temporarily locked account is padded the same
-  way before it is refused; parity with a directory bind is best effort. Each
+  Argon2 check against a random hash made at startup. A temporarily locked account is padded
+  the same way before it is refused. On directory-login installs a local account answers one
+  directory round trip faster than an unknown name, because a wrong local password stops in the
+  password realm before the directory is asked. That is accepted and tracked in RSDEV-1558 with
+  the other routes that reveal whether a username exists (for example the password-reset
+  request). `LdapRealm` no longer pads a local account's early exit: Shiro only reaches it after
+  the password realm has accepted the correct password, so the pad doubled the cost of a correct
+  local login and could refuse it as busy without hiding anything. Each
   padded check queues on its own lock and takes one permit, exactly like a real username, so
   admission timing is the same for both; the permit pool, not the lock, bounds a flood of made-up
   names, as it already does for a flood of real ones. The filter's whole-login lock and
