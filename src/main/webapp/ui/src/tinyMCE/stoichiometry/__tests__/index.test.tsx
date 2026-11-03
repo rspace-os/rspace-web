@@ -343,7 +343,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(getLastRenderedDialogProps()).toBe(bProps);
   });
 
-  it("keeps editor B's dialog open when editor A is removed", async () => {
+  it("closes the dialog only when the editor that owns it is removed", async () => {
     const registeredPlugins = registerTinymcePlugins();
     await instantiateStoichiometryPlugin();
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
@@ -360,6 +360,10 @@ describe("TinyMCE stoichiometry plugin", () => {
     a.handlers.get("remove")?.();
 
     expect(getLastRenderedDialogProps()).toBe(bProps);
+
+    b.handlers.get("remove")?.();
+
+    expect(getLastRenderedDialogProps()).toBeNull();
   });
 
   it("registers toolbar/menu/slash actions and opens a new table with a tableOnly div", async () => {
