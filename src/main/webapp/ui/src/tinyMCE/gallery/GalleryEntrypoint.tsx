@@ -6,7 +6,7 @@ import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import { type Alert, mkAlert } from "@/stores/contexts/Alert";
 import GalleryPickerRoot from "@/tinyMCE/gallery/GalleryPickerRoot";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
-import { getPluginDialogRoot } from "@/tinyMCE/pluginDialogRoot";
+import { createPluginDialog } from "@/tinyMCE/pluginDialogRoot";
 import type RsSet from "@/util/set";
 
 declare global {
@@ -21,7 +21,8 @@ declare global {
 
 // biome-ignore lint/complexity/useArrowFunction: TinyMCE instantiates plugins with `new`, so this factory must be constructable (an arrow function throws "is not a constructor")
 parent.tinymce.PluginManager.add("gallery", function (editor) {
-  const root = getPluginDialogRoot("tinymce-gallery");
+  const dialog = createPluginDialog("tinymce-gallery");
+  editor.on("remove", () => dialog.release());
   let addAlert: ((alert: Alert) => void) | null = null;
 
   const handleValidateSelection = (file: GalleryFile) => {
@@ -30,7 +31,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
     return IsValid();
   };
 
-  const renderDialog = (props: { open: boolean; onClose?: () => void }) => {
+  const renderDialog = (props: { open: boolean; onClose?: () => void }, { claim = false } = {}) => {
     const handleSubmit = (files: RsSet<GalleryFile>) => {
       const localFiles = files.toArray().filter((file): file is LocalGalleryFile => file instanceof LocalGalleryFile);
       localFiles.forEach((file) => {
@@ -85,7 +86,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
       props.onClose?.();
     };
 
-    root.render(
+    (claim ? dialog.open : dialog.update)(
       <I18nRoot namespaces={["common"]}>
         <GalleryPickerRoot
           open={props.open}
@@ -101,26 +102,21 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
   };
 
   const openGalleryAction = () => {
-    renderDialog({ open: true, onClose: () => renderDialog({ open: false }) });
+    renderDialog({ open: true, onClose: () => renderDialog({ open: false }) }, { claim: true });
   };
 
-  // Add a button to the toolbar
   editor.ui.registry.addButton("btnMediaGallery", {
     tooltip: i18n.t("workspace:tinymce.gallery.insertFromGallery"),
     icon: "image",
-    //shortcut: 'ctrl+shift+1',
     onAction: openGalleryAction,
   });
 
-  // Adds a menu item to the insert menu
   editor.ui.registry.addMenuItem("optMediaGallery", {
     text: i18n.t("workspace:tinymce.gallery.fromGallery"),
     icon: "image",
-    //shortcut: 'ctrl+shift+1',
     onAction: openGalleryAction,
   });
 
-  // Adds an option to the slash-menu
   if (!window.insertActions) window.insertActions = new Map();
   window.insertActions.set("optMediaGallery", {
     text: i18n.t("workspace:tinymce.gallery.fromGallery"),

@@ -1,28 +1,60 @@
+import { createElement, Fragment, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-const roots = new Map<string, Root>();
+export type PluginDialog = {
+  open(node: ReactNode): void;
+  update(node: ReactNode): void;
+  release(): void;
+};
+
+const roots = new Map<string, { root: Root; container: HTMLElement; owner: string | null }>();
+let nextOwner = 0;
 
 /**
- * The React root that a TinyMCE plugin renders its dialog into, attached to a
- * container with the given id at the end of the page.
+ * A plugin instance's handle to the shared dialog root for this container id.
+ * Only open creates a root and takes ownership. Each instance has a unique React
+ * key so taking over from another editor mounts fresh component state. Updates
+ * and release affect the tree only while this instance owns it. Register release
+ * on the editor's remove event to drop references to that editor.
  *
- * TinyMCE constructs a plugin for every editor, and each field that enters
- * edit mode gets a new editor, so every instance of a plugin shares this one
- * container. React allows one root per container, so the root is created on
- * first use and reused afterwards; re-render the dialog by calling `render` on
- * it again with new props.
+ * Roots are reused while their containers remain connected; the next open
+ * unmounts a detached root and finds or creates a connected container.
  */
-export function getPluginDialogRoot(containerId: string): Root {
-  const existingRoot = roots.get(containerId);
-  if (existingRoot) return existingRoot;
+export function createPluginDialog(containerId: string): PluginDialog {
+  const key = String(nextOwner++);
 
-  let container = document.getElementById(containerId);
-  if (!container) {
-    container = document.createElement("div");
-    container.id = containerId;
-    document.body.appendChild(container);
-  }
-  const root = createRoot(container);
-  roots.set(containerId, root);
-  return root;
+  return {
+    open(node) {
+      let entry = roots.get(containerId);
+      if (!entry?.container.isConnected) {
+        if (entry) {
+          entry.owner = null;
+          entry.root.unmount();
+        }
+        let container = document.getElementById(containerId);
+        if (!container) {
+          container = document.createElement("div");
+          container.id = containerId;
+          document.body.appendChild(container);
+        }
+        entry = { root: createRoot(container), container, owner: null };
+        roots.set(containerId, entry);
+      }
+      entry.owner = key;
+      entry.root.render(createElement(Fragment, { key }, node));
+    },
+    update(node) {
+      const entry = roots.get(containerId);
+      if (entry?.owner === key) {
+        entry.root.render(createElement(Fragment, { key }, node));
+      }
+    },
+    release() {
+      const entry = roots.get(containerId);
+      if (entry?.owner === key) {
+        entry.root.render(null);
+        entry.owner = null;
+      }
+    },
+  };
 }

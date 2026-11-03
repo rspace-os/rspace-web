@@ -15,6 +15,7 @@ import RsSet from "../../../util/set";
 import { toTitleCase } from "../../../util/Util";
 
 export type Editor = {
+  on(name: string, callback: () => void): void;
   ui: {
     registry: {
       addMenuItem: (menuItemIdentifier: string, options: { text: string; icon: string; onAction: () => void }) => void;

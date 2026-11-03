@@ -4,7 +4,7 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { getPluginDialogRoot } from "../pluginDialogRoot";
+import { createPluginDialog } from "../pluginDialogRoot";
 import type { TinyMcePluginEditor } from "../types";
 import PyratDialog, { type PyratDialogProps } from "./PyratDialog";
 
@@ -18,9 +18,10 @@ declare const tinymce: {
 
 class PyratPlugin {
   constructor(editor: TinyMcePluginEditor) {
-    const root = getPluginDialogRoot("tinymce-pyrat");
-    const renderDialog = (props: PyratDialogUpdates) => {
-      root.render(
+    const dialog = createPluginDialog("tinymce-pyrat");
+    editor.on("remove", () => dialog.release());
+    const renderDialog = (props: PyratDialogUpdates, { claim = false } = {}) => {
+      (claim ? dialog.open : dialog.update)(
         <I18nRoot namespaces={["apps", "common", "workspace"]}>
           <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -31,24 +32,21 @@ class PyratPlugin {
       );
     };
     const openDialog = () => {
-      renderDialog({ open: true, onClose: () => renderDialog({ open: false }) });
+      renderDialog({ open: true, onClose: () => renderDialog({ open: false }) }, { claim: true });
     };
 
-    // Add a button to the toolbar
     editor.ui.registry.addButton("pyrat", {
       tooltip: i18n.t("workspace:tinymce.pyrat.linkTooltip"),
       icon: "pyrat",
       onAction: openDialog,
     });
 
-    // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPyrat", {
       text: i18n.t("workspace:tinymce.pyrat.fromPyrat"),
       icon: "pyrat",
       onAction: openDialog,
     });
 
-    // Adds an option to the slash-menu
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optPyrat", {
       text: i18n.t("workspace:tinymce.pyrat.fromPyrat"),
