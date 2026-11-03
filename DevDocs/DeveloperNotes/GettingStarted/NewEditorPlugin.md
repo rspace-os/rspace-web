@@ -165,17 +165,24 @@ interoperating with other systems. This is implemented using an accented theme
 that is applied to all of the UI elements, most notably the header where we
 consistently provide a link to the documentation for the integration.
 
-In the constructor of our new plugin, we want a function that re-renders the
-react component with new props, allowing us to change the `open` state.
-TinyMCE constructs the plugin for every field that enters edit mode, but React
-allows only one root per DOM container, so `getPluginDialogRoot` from
+Create one `createPluginDialog` handle in each plugin constructor. TinyMCE
+constructs a plugin for every field that enters edit mode, while React allows
+only one root per DOM container. The helper in
 [/src/main/webapp/ui/src/tinyMCE/pluginDialogRoot.ts](/src/main/webapp/ui/src/tinyMCE/pluginDialogRoot.ts)
-creates the container and its root on first use and returns the same root to
-every later instance. Calling `render` on a root again updates what it shows.
+shares that root and tracks which instance owns it. `open` creates the root when
+needed and takes ownership. A different instance opening the dialog mounts fresh
+component state. `update` changes the rendered props only while this instance owns
+the dialog, so late callbacks from a previous editor cannot overwrite it.
+Register `release` on the editor's `remove` event to clear its tree when it owns
+the dialog and drop references to the removed editor.
 ```tsx
-const root = getPluginDialogRoot("tinymce-new-plugin");
-const renderDialog = (props: Pick<React.ComponentProps<typeof NewPluginDialog>, "open" | "onClose">) => {
-  root.render(
+const dialog = createPluginDialog("tinymce-new-plugin");
+editor.on("remove", () => dialog.release());
+const renderDialog = (
+  props: Pick<React.ComponentProps<typeof NewPluginDialog>, "open" | "onClose">,
+  { claim = false } = {},
+) => {
+  (claim ? dialog.open : dialog.update)(
     <I18nRoot namespaces={["common"]}>
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -186,7 +193,10 @@ const renderDialog = (props: Pick<React.ComponentProps<typeof NewPluginDialog>, 
   );
 };
 const openDialog = () => {
-  renderDialog({ open: true, onClose: () => renderDialog({ open: false, onClose: () => {} }) });
+  renderDialog(
+    { open: true, onClose: () => renderDialog({ open: false, onClose: () => {} }) },
+    { claim: true },
+  );
 };
 ```
 
@@ -206,7 +216,7 @@ import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/newPlugin";
-import { getPluginDialogRoot } from "../pluginDialogRoot";
+import { createPluginDialog } from "../pluginDialogRoot";
 import type { TinyMcePluginEditor } from "../types";
 import NewPluginDialog from "./NewPluginDialog";
 ```
