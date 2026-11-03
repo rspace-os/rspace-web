@@ -76,6 +76,7 @@
                role="form" modelAttribute="user"
                class="form-horizontal rs-sign-in-form__body">
       <fieldset>
+        <form:errors cssClass="text-danger col-lg-12" element="p" htmlEscape="true" role="alert"></form:errors>
 
         <spring:message code="signup.form.usernamePlaceholder" var="signupUsernamePlaceholder"/>
         <spring:message code="signup.form.usernameLengthTitle" arguments="${applicationScope['RS_DEPLOY_PROPS']['minUsernameLength']}" var="signupUsernameLengthTitle"/>
@@ -112,7 +113,7 @@
                         path="password"
                         placeholder="${signupPasswordPlaceholder}"
                         required="required"
-                        pattern="[ -~]{8,50}"
+                        pattern="[ -~]{8,128}"
                         title="${signupPasswordCharsTitle}"
                         class="form-control rs-field__input"/>
             <p class="form-text"><spring:message code="signup.form.passwordCharsHint"/></p>
@@ -128,7 +129,7 @@
                         path="confirmPassword"
                         placeholder="${signupConfirmPasswordPlaceholder}"
                         required="required"
-                        pattern="[ -~]{8,50}"
+                        pattern="[ -~]{8,128}"
                         title="${signupConfirmPasswordTitle}"
                         class="form-control rs-field__input"/>
             <div class="rs-field__icon glyphicon fa-key"></div>

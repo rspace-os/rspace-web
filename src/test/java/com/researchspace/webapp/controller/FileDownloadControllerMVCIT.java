@@ -19,6 +19,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.AuditManager;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.hibernate.HibernateException;
 import org.junit.jupiter.api.AfterEach;
@@ -54,7 +55,11 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
           List<SignatureHash> hashes2;
           try {
             hashes2 = getSignatureHashesForSignature(signResult.getSignature().get());
-            return hashes2.stream().filter(h -> h.getFile() != null).findAny().get().getFile();
+            return hashes2.stream()
+                .map(SignatureHash::getFile)
+                .filter(Objects::nonNull)
+                .findAny()
+                .orElse(null);
           } catch (Exception e) {
             return fail("Invokable threw internal exception", e);
           }

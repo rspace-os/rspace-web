@@ -172,7 +172,8 @@ public class PostRecordSigningExportHash implements PostSigningManager {
             "export to {} failed for signed document {}  - id: {}",
             job.getSignatureHashType(),
             exported.getName(),
-            exported.getId());
+            exported.getId(),
+            e);
       }
     }
     commMgr.systemNotify(

@@ -110,7 +110,8 @@ export class UserProfilePage extends BasePage {
     const dialog = new ConfirmPasswordDialogComponent(this.page);
     await dialog.waitUntilVisible();
     await dialog.submit(password);
-    const keyBlock = this.page.locator(".api-menu__key");
+    // The menu is already visible while password verification is still pending.
+    const keyBlock = this.page.locator(".api-menu__key").filter({ hasText: "Key:" });
     await keyBlock.waitFor({ state: "visible" });
     const text = await keyBlock.innerText();
     return text.split("Key:")[1].split("\n")[0].trim();
