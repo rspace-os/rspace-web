@@ -1,4 +1,6 @@
 import com.researchspace.build.MavenPlaceholderFilter
+import com.researchspace.build.RecreateDatabase
+import com.researchspace.build.TestDatabase
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -437,6 +439,22 @@ file('gradle/resource-filter.properties').withReader('UTF-8') { reader ->
   props.load(reader)
   props.each { k, v -> filterProperties[k.toString()] = providers.gradleProperty(k.toString()).getOrElse(v.toString()) }
 }
+// -Penvironment=drop-recreate-db mirrors pom.xml's mysql-clean-liquibase profile: test tasks
+// first run recreateDatabase, and resources get the profile's properties.
+def dropRecreateDb = providers.gradleProperty('environment').getOrNull() == 'drop-recreate-db'
+def profileFilterProperties = dropRecreateDb ? [
+  'ssl.enabled': 'false',
+  // as in pom.xml, which yields ?false=false rather than ?useSSL=false
+  'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false',
+] : [:]
+// Maven filters with every -D property. These placeholders have no default and are replaced only
+// when given as -P<name>=<value> (or by the profile above); others stay for Spring to resolve.
+['jdbc.url', 'ssl.enabled', 'RS.devlogLevel'].each { name ->
+  def value = providers.gradleProperty(name).getOrNull() ?: profileFilterProperties[name]
+  if (value != null) {
+    filterProperties[name] = value
+  }
+}
 filterProperties['project.version'] = version.toString()
 filterProperties['version'] = version.toString()
 filterProperties['project.artifactId'] = 'researchspace'
@@ -495,10 +513,44 @@ tasks.named('processTestResources') {
 // ---------------------------------------------------------------------------------------------
 // Tests, mirroring the Surefire executions in pom.xml
 // ---------------------------------------------------------------------------------------------
+def jdbcDriverScope = configurations.dependencyScope('jdbcDriver')
+def jdbcDriverClasspath = configurations.resolvable('jdbcDriverClasspath') { extendsFrom(jdbcDriverScope.get()) }
+dependencies {
+  jdbcDriver "com.mysql:mysql-connector-j:${mavenModules['com.mysql:mysql-connector-j'].version}"
+}
+
+tasks.register('recreateDatabase', RecreateDatabase) {
+  description = 'Drops the test database and recreates it from the baseline schema (-Penvironment=drop-recreate-db).'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  driverClasspath.from(jdbcDriverClasspath)
+  driverClassName = filterProperties['jdbc.driverClassName.maven']
+  serverUrl = filterProperties['jdbc.url.maven']
+  databaseName = filterProperties['jdbc.db.maven']
+  username = filterProperties['jdbc.username.maven']
+  password = filterProperties['jdbc.password.maven']
+  baselineScript = layout.projectDirectory.file('src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql')
+}
+
+// Surefire passes every Maven -D property to the test JVM. Gradle passes on only these -D
+// properties: switches the tests read, and JVM settings CI sets. Add new ones here.
+def forwardedTestSystemProperties = [
+  'fast', 'deployment', 'nightly', 'weekly', 'RS_FILE_BASE', 'hibtest.db', 'loggingDirectory',
+  'javax.xml.accessExternalDTD', 'log4j2.configurationFile', 'bioportal.api.key',
+  'bioportal.realConnectionTests', 'digitalCommons.realConnectionTests',
+  'fieldmark.realConnectionTests', 'licenseServer.realConnectionTests', 'slack.realConnectionTests',
+]
+
 def runProfileITs = ['RunConfigWiringTestIT', 'SysAdminConfigControllerMVCIT', 'SysAdminSupportControllerMVCIT']
 def problematicITs = ['ExportApiControllerMVCIT', 'CreateMissingUserFoldersForLabAdminsAndPIsIT']
 
+// With the configuration cache on, Gradle runs a project's tasks in parallel. Test tasks share one
+// database, so they take turns, as Surefire's executions do.
+def testDatabase = gradle.sharedServices.registerIfAbsent('testDatabase', TestDatabase) {
+  maxParallelUsages = 1
+}
+
 tasks.withType(Test).configureEach {
+  usesService(testDatabase)
   useJUnitPlatform {
     def included = providers.gradleProperty('includedTestGroups').getOrElse('')
     if (!included.isBlank()) {
@@ -509,12 +561,15 @@ tasks.withType(Test).configureEach {
   maxHeapSize = '1536m'
   jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED',
     '--add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED'
-  // Surefire forwards Maven -D user properties to the test JVM; forward the ones tests read.
-  ['fast', 'deployment'].each { name ->
+  forwardedTestSystemProperties.each { name ->
     def value = providers.systemProperty(name).getOrNull()
     if (value != null) {
       systemProperty name, value
     }
+  }
+  if (dropRecreateDb) {
+    dependsOn 'recreateDatabase'
+    doNotTrackState('Runs against a database recreated for this build')
   }
   def forks = providers.gradleProperty('maxTestForks').getOrNull()
   if (forks != null) {
@@ -537,7 +592,7 @@ def registerItTask = { String name, String desc, Closure configure ->
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    shouldRunAfter tasks.named('test')
+    mustRunAfter tasks.named('test')
     configure.delegate = it
     configure()
   }
@@ -553,6 +608,9 @@ def integrationTestRun = registerItTask('integrationTestRun', 'Runs the run-prof
 def integrationTestProblematic = registerItTask('integrationTestProblematic', 'Runs the problematic *IT tests.') {
   problematicITs.each { include "**/${it}.class" }
 }
+// Surefire's execution order
+integrationTestRun.configure { mustRunAfter integrationTest }
+integrationTestProblematic.configure { mustRunAfter integrationTestRun }
 tasks.named('check') { dependsOn integrationTest, integrationTestRun, integrationTestProblematic }
 
 // ---------------------------------------------------------------------------------------------
