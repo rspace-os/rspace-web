@@ -3,8 +3,10 @@ package com.researchspace.service.cloud;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
@@ -78,6 +80,25 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     grpMgr.removeUserFromGroup(labAdmin.getUsername(), collabGroup.getId(), labAdmin);
 
     assertFalse(grpMgr.getGroup(collabGroup.getId()).hasMember(labAdmin));
+  }
+
+  @Test
+  public void selfPromotionToPiLeavesCollabGroupRoleUnchanged() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(0);
+    logoutAndLoginAs(tg1.getPi());
+    Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
+    User member = tg1.u1();
+    grpMgr.addUserToGroup(member.getUsername(), collabGroup.getId(), RoleInGroup.DEFAULT);
+
+    logoutAndLoginAs(member);
+    User toPromote = userMgr.get(member.getId());
+    User promoted = cloudGroupManager.promoteUserToPI(toPromote, toPromote);
+
+    assertTrue(promoted.hasRole(Role.PI_ROLE));
+    assertEquals(
+        RoleInGroup.DEFAULT,
+        grpMgr.getGroup(collabGroup.getId()).getUserGroupForUser(member).getRoleInGroup());
   }
 
   @Test

@@ -38,7 +38,10 @@ public class CloudGroupManagerImpl implements CloudGroupManager {
       initializer.init(toPromote.getId());
     }
 
-    groupManager.setPiRoleInCollaborationGroups(toPromote, subject);
+    // self-promotion must not grant PI in collab groups the user's existing PIs never agreed to
+    if (!subject.getId().equals(toPromote.getId())) {
+      groupManager.setPiRoleInCollaborationGroups(toPromote, subject);
+    }
 
     /** In cloud environment, we just promote an user to PI by just updating the ROLE. */
     toPromote = userManager.get(toPromote.getId());

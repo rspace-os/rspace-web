@@ -135,13 +135,12 @@ public interface GroupManager {
   void setRoleForUser(long groupId, Long userId, String role, User subject);
 
   /**
-   * Gives the user the PI role in every collaboration group they belong to. For Community
-   * self-service PI promotion, where the user is not yet a PI in those groups, so the usual
-   * role-change check would refuse them.
+   * Gives the user the PI role in every collaboration group they belong to, when an admin promotes
+   * them to PI on Community. Self-service promotion does not use this.
    *
    * @param toPromote the user being promoted to PI
-   * @param subject the user requesting the promotion; must be <code>toPromote</code> or an admin
-   * @throws AuthorizationException if <code>subject</code> is neither
+   * @param subject the user requesting the promotion; must be an admin
+   * @throws AuthorizationException if <code>subject</code> is not an admin
    */
   void setPiRoleInCollaborationGroups(User toPromote, User subject);
 

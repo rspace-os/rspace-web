@@ -920,7 +920,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public void setPiRoleInCollaborationGroups(User toPromote, User subject) {
-    if (!(subject.getId().equals(toPromote.getId()) || subject.hasAdminRole())) {
+    if (!subject.hasAdminRole()) {
       throw new AuthorizationException(
           String.format(
               "%s cannot give %s the PI role in their collaboration groups",
