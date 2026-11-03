@@ -23,6 +23,7 @@ function renderDialog(subSampleCount: number | null) {
         sampleName="Sample Fifty Five"
         requesterId={2}
         requesterFullName="Rita Requester"
+        isNewlyCreatedSample={false}
         subSampleCount={subSampleCount}
         otherActiveRequests={null}
         isProcessingAction={false}

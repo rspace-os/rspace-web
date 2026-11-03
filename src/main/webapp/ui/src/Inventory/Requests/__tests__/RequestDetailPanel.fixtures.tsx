@@ -64,10 +64,15 @@ vi.mock("@/stores/use-stores", () => ({
 
 // ApiServiceBase gates every call behind `when(() => !getRootStore().authStore.isSynchronizing)`
 // (see ApiServiceBase.ts) - without this, the real ApiService code backing MSW's handlers below
-// would never even issue its requests.
+// would never even issue its requests. unitStore is needed too: constructing the SubSampleModel
+// the Operations Wizard launch tests build from the subSamples fetch touches HasQuantity's
+// quantityUnitLabel, which reads getRootStore().unitStore.getUnit(...) directly.
 vi.mock("@/stores/stores/getRootStore", () => ({
   __esModule: true,
-  default: () => ({ authStore: { isSynchronizing: false } }),
+  default: () => ({
+    authStore: { isSynchronizing: false },
+    unitStore: { getUnit: () => ({ label: "ml" }) },
+  }),
 }));
 
 // RequestSampleLocations does its own fetching and rendering of the location table; all this

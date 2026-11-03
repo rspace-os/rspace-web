@@ -27,7 +27,12 @@ import { useSampleRequestsListQuery } from "./queries";
 import RequestsSearchbar from "./RequestsSearchbar";
 import RequestsStatusChip, { requestStatusLabel } from "./RequestsStatusChip";
 import RequestsTableHead, { type AdjustableColumnKey, type ColumnKey, type SortDirection } from "./RequestsTableHead";
-import type { ApiSampleRequestListItem, RequestsFilter, StatusFilter } from "./sampleRequest";
+import {
+  type ApiSampleRequestListItem,
+  type RequestsFilter,
+  type StatusFilter,
+  userDisplayName,
+} from "./sampleRequest";
 import { useClientPagination } from "./useClientPagination";
 
 // Smaller than the main Inventory search's (5, 10, 25, 100): this list is rarely as long.
@@ -55,9 +60,20 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
     case "sample":
       return request.sample.id;
     case "requester":
-      // Matches the name shown in the UserDetails chip below, rather than the
-      // underlying id, since that's the value a user sorting this column sees.
-      return `${request.requester.firstName} ${request.requester.lastName}`;
+      // Matches the name shown in the UserDetails chip below, rather than the underlying id,
+      // since that's the value a user sorting this column sees. A deleted account has no current
+      // name (both firstName and lastName come back null) to sort by - comparing a
+      // Number.NEGATIVE_INFINITY sentinel against a name string left the comparator below
+      // inconsistent: `<`/`>` coerce the string operand to NaN, which is neither less than nor
+      // greater than anything, so every deleted-vs-live comparison came out "equal" instead of
+      // grouping deleted accounts to one end as intended. A single string key keeps every
+      // comparison the same (string-to-string) type: an order prefix that always sorts before a
+      // live user's name groups deleted accounts together, and the username (the one field still
+      // guaranteed to identify a deleted account - see userDisplayName) orders them consistently
+      // against each other.
+      return request.requester.firstName === null && request.requester.lastName === null
+        ? `0:${request.requester.username}`
+        : `1:${request.requester.firstName} ${request.requester.lastName}`;
     case "status":
       return request.status;
     case "submitted":
@@ -75,22 +91,45 @@ function requestMatchesQuery(request: ApiSampleRequestListItem, lowerCaseQuery: 
   const searchableText = [
     request.sample.globalId,
     request.sample.name,
-    `${request.requester.firstName} ${request.requester.lastName}`,
+    // Blank, not "null null", once the requester's account has been deleted - username (below)
+    // still covers searching for them in that case.
+    request.requester.firstName === null || request.requester.lastName === null
+      ? ""
+      : `${request.requester.firstName} ${request.requester.lastName}`,
     request.requester.username,
     request.note ?? "",
   ];
   return searchableText.some((text) => text.toLowerCase().includes(lowerCaseQuery));
 }
 
-function renderAdjustableCell(request: ApiSampleRequestListItem, column: AdjustableColumnKey): React.ReactNode {
+function AdjustableRequestCell({
+  request,
+  column,
+}: {
+  request: ApiSampleRequestListItem;
+  column: AdjustableColumnKey;
+}): React.ReactNode {
   switch (column) {
     case "status":
-      return <RequestsStatusChip status={request.status} />;
+      return (
+        <TableCell>
+          <RequestsStatusChip status={request.status} />
+        </TableCell>
+      );
     case "id":
-      return request.id;
+      return <TableCell>{request.id}</TableCell>;
     case "submitted":
-      return isoToLocale(request.created);
+      return <TableCell>{isoToLocale(request.created)}</TableCell>;
   }
+}
+
+function RequesterCell({ requester }: { requester: ApiSampleRequestListItem["requester"] }): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
+  return requester.firstName === null && requester.lastName === null ? (
+    userDisplayName(requester, t)
+  ) : (
+    <UserDetails userId={requester.id} fullName={userDisplayName(requester, t)} position={["bottom", "right"]} />
+  );
 }
 
 export default function RequestsList({
@@ -229,7 +268,7 @@ export default function RequestsList({
                       tabIndex={0}
                       aria-label={t("requestsManagement.rowLabel", {
                         sampleGlobalId: request.sample.globalId,
-                        requester: `${request.requester.firstName} ${request.requester.lastName}`,
+                        requester: userDisplayName(request.requester, t),
                         status: requestStatusLabel(request.status, t),
                       })}
                       onClick={() => onSelect(request)}
@@ -252,13 +291,9 @@ export default function RequestsList({
                         <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
                       </TableCell>
                       <TableCell>
-                        <UserDetails
-                          userId={request.requester.id}
-                          fullName={`${request.requester.firstName} ${request.requester.lastName}`}
-                          position={["bottom", "right"]}
-                        />
+                        <RequesterCell requester={request.requester} />
                       </TableCell>
-                      <TableCell>{renderAdjustableCell(request, adjustableColumn)}</TableCell>
+                      <AdjustableRequestCell request={request} column={adjustableColumn} />
                     </TableRow>
                   ))}
                 </TableBody>

@@ -4,15 +4,24 @@ import { type SampleRequestDetail, sampleRequestsQueryKeys } from "./queries";
 
 async function updateSampleRequestStatus(
   requestId: number,
-  body: { status: string; reason?: string },
+  body: { status: string; reason?: string; transferredSampleGlobalId?: string },
 ): Promise<{ status: string }> {
   const { data } = await ApiService.update<{ status: string }>("sampleRequests", `${requestId}/status`, body);
   return data;
 }
 
-/** Shared by useFulfilSampleRequestMutation and useTransferSampleOwnershipMutation below. */
-function markSampleRequestFulfilled(requestId: number): Promise<{ status: string }> {
-  return updateSampleRequestStatus(requestId, { status: "FULFILLED" });
+/**
+ * Shared by useFulfilSampleRequestMutation and useTransferSampleOwnershipMutation below.
+ * transferredSampleGlobalId records which sample the request was actually fulfilled against -
+ * the originally requested one, or (via the Operations Wizard's "wizard" radio) a newly-created
+ * one - so RequestDetailPanel's own transferredSampleGlobalId derivation (reading this back out of
+ * statusChanges) can show the right one instead of always falling back to the original sample.
+ */
+function markSampleRequestFulfilled(
+  requestId: number,
+  transferredSampleGlobalId?: string,
+): Promise<{ status: string }> {
+  return updateSampleRequestStatus(requestId, { status: "FULFILLED", transferredSampleGlobalId });
 }
 
 /**

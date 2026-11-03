@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
 import type { ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
-import type { ApiSampleRequestListItem, RequestsFilter, StatusFilter } from "./sampleRequest";
+import {
+  type ApiSampleRequestListItem,
+  type RequestsFilter,
+  type StatusFilter,
+  userDisplayName,
+} from "./sampleRequest";
 
 const ACTIVE_STATUSES = "PENDING,APPROVED";
 const PAST_STATUSES = "REJECTED,FULFILLED,CANCELLED";
@@ -86,7 +92,7 @@ export function useSampleRequestDetailQuery(requestId: number | null) {
   });
 }
 
-export type OtherActiveSampleRequest = { id: number; requester: { firstName: string; lastName: string } };
+export type OtherActiveSampleRequest = { id: number; status: string; requesterName: string };
 
 /**
  * Other PENDING/APPROVED requests against the same sample, excluding `excludeRequestId` - backs
@@ -102,6 +108,7 @@ export type OtherActiveSampleRequest = { id: number; requester: { firstName: str
  * that's cosmetic formatting for whichever caller renders it to decide, not this query.
  */
 export function useOtherActiveSampleRequestsQuery(sampleId: number | null, excludeRequestId: number) {
+  const { t } = useTranslation(["inventory", "common"]);
   return useQuery({
     queryKey: sampleRequestsQueryKeys.otherActiveForSample(sampleId ?? -1, excludeRequestId),
     queryFn: () => {
@@ -110,8 +117,21 @@ export function useOtherActiveSampleRequestsQuery(sampleId: number | null, exclu
         status: "PENDING,APPROVED",
         pageSize: "100",
       });
-      return ApiService.query<{ requests: Array<OtherActiveSampleRequest> }>("sampleRequests", params).then(
-        ({ data }): Array<OtherActiveSampleRequest> => data.requests.filter((r) => r.id !== excludeRequestId),
+      return ApiService.query<{
+        requests: Array<{
+          id: number;
+          status: string;
+          requester: { id: number; username: string; firstName: string | null; lastName: string | null };
+        }>;
+      }>("sampleRequests", params).then(
+        ({ data }): Array<OtherActiveSampleRequest> =>
+          data.requests
+            .filter((r) => r.id !== excludeRequestId)
+            .map((r) => ({
+              id: r.id,
+              status: r.status,
+              requesterName: userDisplayName(r.requester, t),
+            })),
       );
     },
     enabled: sampleId !== null,

@@ -111,7 +111,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   // On success the newly-created request's status simply replaces the request button, and the
   // dialog closes.
   const sendRequest = () => {
-    if (!activeResult.globalId || isProcessingAction) return;
+    if (!activeResult.globalId || isProcessingAction || requestText.trim() === "") return;
     sendRequestMutation.mutate(
       { sampleGlobalId: activeResult.globalId, note: requestText },
       {
@@ -244,6 +244,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                 multiline
                 minRows={3}
                 fullWidth
+                autoFocus
                 value={requestText}
                 onChange={({ target: { value } }) => setRequestText(value)}
               />
@@ -252,7 +253,12 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button color="primary" variant="contained" disabled={isProcessingAction} onClick={sendRequest}>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={isProcessingAction || requestText.trim() === ""}
+            onClick={sendRequest}
+          >
             {t("sample.requestMaterialSection.sendRequestButton")}
           </Button>
         </DialogActions>
