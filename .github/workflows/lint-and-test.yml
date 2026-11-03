@@ -75,6 +75,14 @@ jobs:
               - 'src/main/webapp/WEB-INF/**'
               - 'pom.xml'
               - 'scripts/run-chemistry-tests.sh'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle.properties'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'gradle/**'
+              - 'buildSrc/**'
+              - 'scripts/gradle/**'
               - '.github/workflows/**'
 
   fast-junit-tests:
@@ -224,6 +232,80 @@ jobs:
           ./mvnw -q spotless:check -DspotlessStrict \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+
+  # Keeps the trial Gradle build (DevDocs/DeveloperNotes/GradleMigrationTrial.md)
+  # in step with pom.xml, which stays the source of truth: the pinned versions
+  # and the resolved classpaths must match Maven's, and the build and fast unit
+  # tests must pass under Gradle. No Spring or database tests run here; the
+  # Maven jobs cover those.
+  gradle-build:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
+      inputs.fast_java_tests ||
+      needs.changed-files.outputs.java == 'true'
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6.4.1
+
+      # The Maven cache serves the dependency:list calls in the checks below.
+      - name: Set up JDK
+        uses: actions/setup-java@v5.4.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # cache-provider basic is the open-source GitHub Actions cache; the
+      # default ('enhanced') is a proprietary component under Gradle's terms
+      # of use since gradle/actions v6.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.4.1
+        with:
+          cache-provider: basic
+
+      - name: Check pinned Maven versions are current
+        run: scripts/gradle/export-maven-versions.sh --check
+
+      # Runs even if the versions check failed, so both kinds of drift show up
+      # in one run.
+      - name: Check classpaths match Maven
+        if: ${{ !cancelled() }}
+        run: scripts/gradle/compare-classpaths.sh --check
+
+      - name: Setup filestore
+        run: |
+          rm -rf "$RS_FILE_BASE"
+          mkdir -p "$RS_FILE_BASE"
+
+      - name: Seed dev deployment.properties
+        run: |
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
+      - name: Compile and package WAR
+        id: build
+        if: ${{ !cancelled() }}
+        run: ./gradlew testClasses war
+
+      - name: Run fast tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: ./gradlew test -Dfast=true -PmaxTestForks="$(nproc)"
+
+      - name: Upload test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: gradle-test-reports
+          path: build/reports/tests/test
+          retention-days: 7
 
   vitest-tests:
     runs-on: ubuntu-latest
