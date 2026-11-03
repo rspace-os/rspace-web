@@ -38,4 +38,13 @@ public class LoggingInitializerTest {
     loggingInit.init();
     assertEquals(".", loggingInit.getLoggingDir());
   }
+
+  @Test
+  public void testRegularFileHandled() throws IOException {
+    File regularFile = new File(folder, "not-a-directory");
+    assertTrue(regularFile.createNewFile());
+    loggingInit.setLoggingDir(regularFile.getPath());
+    loggingInit.init();
+    assertEquals(".", loggingInit.getLoggingDir());
+  }
 }
