@@ -17,7 +17,9 @@ documentation in the Shiro project web docs which describes the basics.
 
 Leave `unauthorizedUrl` unset so authenticated users lacking a URL's required
 role receive HTTP 403 through the existing `/403.jsp` error page. Unauthenticated
-requests still redirect to `/login`.
+requests still redirect to `/login`. The previous relative value,
+`login?error=true`, resolved under nested restricted paths, for example
+`/system/x` to `/system/login`, which was denied again and caused a redirect loop.
 
 ## Authentication
 
