@@ -1,6 +1,7 @@
 import { describe, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import type React from "react";
 import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderOfLists";
@@ -151,12 +152,15 @@ function makeRootStore({ activeResult, batchEditingRecords }: MakeRootStoreArgs)
   });
 }
 function getSectionNames(reactComponent: React.ReactNode, rootStore: MakeRootStoreArgs): Array<string> {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <ThemeProvider theme={materialTheme}>
-      <storesContext.Provider value={makeRootStore(rootStore)}>
-        <SynchroniseFormSections>{reactComponent}</SynchroniseFormSections>
-      </storesContext.Provider>
-    </ThemeProvider>,
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider value={makeRootStore(rootStore)}>
+          <SynchroniseFormSections>{reactComponent}</SynchroniseFormSections>
+        </storesContext.Provider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   );
   const sectionNames = screen
     .getAllByRole("region")

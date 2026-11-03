@@ -14,6 +14,7 @@ import MoveDialog from "./components/MoveToTarget/MoveDialog";
 import IdentifiersRouter from "./Identifiers/Router";
 import ImportRouter from "./Import/ImportRouter";
 import PermalinkRouter from "./PermalinkRouter";
+import Requests from "./Requests";
 import SearchRouter from "./Search/SearchRouter";
 
 const RedirectToBench = () => {
@@ -45,6 +46,7 @@ function InventoryRouter(): React.ReactNode {
                 <Route path="/search/*" element={<SearchRouter />} />
                 <Route path="/import/*" element={<ImportRouter />} />
                 <Route path="/identifiers/*" element={<IdentifiersRouter />} />
+                <Route path="/requests" element={<Requests />} />
                 <Route path="*" element={<PageNotFoundScreen />} />
               </Routes>
             </Box>
