@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import {
   ChangeEmailDialogComponent,
   ChangePasswordDialogComponent,
@@ -111,7 +111,7 @@ export class UserProfilePage extends BasePage {
     await dialog.waitUntilVisible();
     await dialog.submit(password);
     const keyBlock = this.page.locator(".api-menu__key");
-    await keyBlock.waitFor({ state: "visible" });
+    await expect(keyBlock).toContainText("Key:");
     const text = await keyBlock.innerText();
     return text.split("Key:")[1].split("\n")[0].trim();
   }
