@@ -427,7 +427,7 @@ These optional settings will enable you to import user data from LDAP, or enable
 * **ldap.fallbackDnCalculationEnabled** if set to 'true' RSpace will run the 'ldapsearch' command to retrieve user's dn
 
 * **ldap.bindQuery.dn** user to use for non-anonymous LDAP bind
-* **ldap.bindQuery.password** password to use for non-anonymous LDAP bind
+* **ldap.bindQuery.password** password to use for non-anonymous LDAP bind; must not be empty when ldap.anonymousBind is false
 * **ldap.anonymousBind** whether anonymous bind should be used
 
 * **ldap.userSearchQuery.uidField** name of LDAP attribute that is supposed to match the searched username ('uid' by default)
