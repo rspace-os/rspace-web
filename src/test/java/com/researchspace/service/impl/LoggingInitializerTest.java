@@ -31,6 +31,7 @@ public class LoggingInitializerTest {
 
   @Test
   public void testImpossibleFileHandled() throws IOException {
+    // A child of a regular file cannot be created on any OS, even as root.
     File regularFile = new File(folder, "not-a-directory");
     assertTrue(regularFile.createNewFile());
     loggingInit.setLoggingDir(new File(regularFile, "child").getPath());
