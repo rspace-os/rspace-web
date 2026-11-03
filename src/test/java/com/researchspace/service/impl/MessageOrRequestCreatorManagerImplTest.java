@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.CommunicationDao;
@@ -8,6 +9,8 @@ import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Group;
+import com.researchspace.model.GroupType;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
@@ -76,6 +79,66 @@ public class MessageOrRequestCreatorManagerImplTest {
     assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, notInGroup));
     when(properties.isCloud()).thenReturn(false);
     assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, notInGroup));
+  }
+
+  @Test
+  public void collabGroupPiCanInviteAPiToTheCollabGroup() {
+    makeCollabGroup();
+    MsgOrReqstCreationCfg cmd = createInviteToCollabGroupCmnd();
+    setUpMocks(cmd, pi);
+
+    requestCreator.checkPerms(cmd, pi);
+  }
+
+  @Test
+  public void piOutsideTheCollabGroupCannotInviteToIt() {
+    makeCollabGroup();
+    User otherPi = TestFactory.createAnyUserWithRole("otherPi", Role.PI_ROLE.getName());
+    MsgOrReqstCreationCfg cmd = createInviteToCollabGroupCmnd();
+    setUpMocks(cmd, otherPi);
+
+    assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, otherPi));
+  }
+
+  @Test
+  public void collabGroupMemberWhoIsNotPiCannotInviteToIt() {
+    makeCollabGroup();
+    MsgOrReqstCreationCfg cmd = createInviteToCollabGroupCmnd();
+    setUpMocks(cmd, anyUser);
+
+    assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, anyUser));
+  }
+
+  @Test
+  public void sysadminCanInviteAPiToACollabGroup() {
+    makeCollabGroup();
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName());
+    MsgOrReqstCreationCfg cmd = createInviteToCollabGroupCmnd();
+    setUpMocks(cmd, sysadmin);
+
+    requestCreator.checkPerms(cmd, sysadmin);
+  }
+
+  @Test
+  public void collabInviteWithoutAGroupIsRefused() {
+    MsgOrReqstCreationCfg cmd = createInviteToCollabGroupCmnd();
+    cmd.setGroupId(null);
+    when(permUtils.isPermitted(cmd.getMessageType(), PermissionType.READ, pi)).thenReturn(true);
+
+    assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, pi));
+    verifyNoInteractions(grpDao);
+  }
+
+  private void makeCollabGroup() {
+    group.setGroupType(GroupType.COLLABORATION_GROUP);
+  }
+
+  private MsgOrReqstCreationCfg createInviteToCollabGroupCmnd() {
+    MsgOrReqstCreationCfg cmd = new MsgOrReqstCreationCfg();
+    cmd.setMessageType(MessageType.REQUEST_JOIN_EXISTING_COLLAB_GROUP);
+    cmd.setGroupId(group.getId());
+    cmd.setRecipientnames(toInvite.getUsername());
+    return cmd;
   }
 
   private void setUpMocks(MsgOrReqstCreationCfg cmd, User subject) {
