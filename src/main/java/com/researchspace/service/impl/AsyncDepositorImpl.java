@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.argos.model.ArgosDMP;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
@@ -72,6 +73,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.web.client.RestClientResponseException;
 
 public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
@@ -170,6 +172,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       User subject,
       RepoDepositConfig repoDepositConfig) {
     boolean updateSucceed = false;
+    boolean doiNotFound = false;
     String doiLink = "";
     if (result.isSucceeded()) {
       try { // only supports DATAVERSE and ZENODO
@@ -194,6 +197,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
                 + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                 + "\" relatedObjects because of the following error: "
                 + e);
+        doiNotFound = isDoiNotFoundByRaid(e);
       } finally {
         if (updateSucceed) {
           log.info(
@@ -215,7 +219,27 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         app.getLabel(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidAgencyUrl(),
-        doiLink);
+        doiLink,
+        doiNotFound);
+  }
+
+  // RAiD answers 400 with a "uri not found" failure on a related object it cannot resolve
+  private static boolean isDoiNotFoundByRaid(Exception e) {
+    if (!(e instanceof RestClientResponseException responseException)) {
+      return false;
+    }
+    JsonNode body =
+        JacksonUtil.fromJson(responseException.getResponseBodyAsString(), JsonNode.class);
+    if (body == null) {
+      return false;
+    }
+    for (JsonNode failure : body.path("failures")) {
+      if (failure.path("fieldId").asText().matches("relatedObject\\[\\d+]\\.id")
+          && "uri not found".equals(failure.path("message").asText())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -282,6 +306,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     config.put("identifier", result.getRaidIdentifier());
     config.put("url", result.getRaidUrl());
     config.put("doi", result.getDoi());
+    config.put("doiNotFound", result.isDoiNotFound());
     config.put("msg", messages);
 
     String msg =
