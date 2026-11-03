@@ -8,11 +8,10 @@ import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
-import { getPluginDialogRoot } from "../pluginDialogRoot";
+import { createPluginDialog } from "../pluginDialogRoot";
 import type { TinyMcePluginEditor } from "../types";
 import ImportDialog from "./ImportDialog";
 
-// Declare the global tinymce object
 declare const tinymce: {
   PluginManager: {
     add: (name: string, plugin: new (editor: TinyMcePluginEditor) => unknown) => void;
@@ -36,9 +35,13 @@ declare global {
 
 class PubchemPlugin {
   constructor(editor: TinyMcePluginEditor) {
-    const root = getPluginDialogRoot("tinymce-pubchem");
-    const renderDialog = (props: Pick<React.ComponentProps<typeof ImportDialog>, "open" | "onClose">) => {
-      root.render(
+    const dialog = createPluginDialog("tinymce-pubchem");
+    editor.on("remove", () => dialog.release());
+    const renderDialog = (
+      props: Pick<React.ComponentProps<typeof ImportDialog>, "open" | "onClose">,
+      { claim = false } = {},
+    ) => {
+      (claim ? dialog.open : dialog.update)(
         <I18nRoot namespaces={["common"]}>
           <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -55,23 +58,20 @@ class PubchemPlugin {
       );
     };
     const closeDialog = () => renderDialog({ open: false, onClose: () => {} });
-    const openDialog = () => renderDialog({ open: true, onClose: closeDialog });
+    const openDialog = () => renderDialog({ open: true, onClose: closeDialog }, { claim: true });
 
-    // Add a button to the toolbar
     editor.ui.registry.addButton("pubchem", {
       tooltip: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
       onAction: openDialog,
     });
 
-    // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPubchem", {
       text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
       onAction: openDialog,
     });
 
-    // Adds an option to the slash-menu
     if (!window.insertActions) {
       window.insertActions = new Map();
     }

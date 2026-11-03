@@ -6,7 +6,7 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
 import Alerts from "../../../components/Alerts/Alerts";
 import i18n from "../../../modules/common/i18n";
 import I18nRoot from "../../../modules/common/i18n/I18nRoot";
-import { getPluginDialogRoot } from "../../pluginDialogRoot";
+import { createPluginDialog } from "../../pluginDialogRoot";
 
 declare const tinyMCE: {
   PluginManager: {
@@ -35,9 +35,10 @@ type IdentifiersDialogProps = {
 
 class IdentifiersPlugin {
   constructor(editor: Editor) {
-    const root = getPluginDialogRoot("tinymce-inventory-identifiers");
-    const renderDialog = (props: IdentifiersDialogProps) => {
-      root.render(
+    const dialog = createPluginDialog("tinymce-inventory-identifiers");
+    editor.on("remove", () => dialog.release());
+    const renderDialog = (props: IdentifiersDialogProps, { claim = false } = {}) => {
+      (claim ? dialog.open : dialog.update)(
         <I18nRoot namespaces={["workspace", "common"]}>
           <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -50,7 +51,7 @@ class IdentifiersPlugin {
       );
     };
     const openDialog = () => {
-      renderDialog({ open: true, onClose: () => renderDialog({ open: false }) });
+      renderDialog({ open: true, onClose: () => renderDialog({ open: false }) }, { claim: true });
     };
 
     editor.ui.registry.addMenuItem("optIdentifiers", {
