@@ -16,6 +16,9 @@ overrides:
   # second vitest whose expect our tests never use. Share the root vitest
   # until sa11y supports Vitest 5.
   '@sa11y/vitest>vitest': 5.0.5
+  # @jupyter-kit/katex and rehype-katex still ask for katex ^0.16, which is
+  # below the patched 0.18.2 line.
+  katex@<0.18.2: 0.18.4
 
 # Each entry declares a dependency the package imports but doesn't declare.
 # Version-pinned keys stop matching silently after an upgrade; retarget them.
