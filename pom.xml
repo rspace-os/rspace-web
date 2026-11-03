@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
   </parent>
 
   <repositories>
@@ -2674,11 +2674,11 @@
 
     <assertj.version>3.27.7</assertj.version>
 
-    <!-- TEMPORARY: rspace-parent 3.2.0 still manages Mockito 3.7.7. Parent 3.3.0 carries
+    <!-- TEMPORARY: rspace-parent 3.2.1 still manages Mockito 3.7.7. Parent 3.3.0 carries
          5.23.0, so delete this override once the pinned parent version is bumped. -->
     <mockito.version>5.23.0</mockito.version>
 
-    <!-- TEMPORARY: rspace-parent 3.2.0 still says 1.3, which only ever shipped as
+    <!-- TEMPORARY: rspace-parent 3.2.1 still says 1.3, which only ever shipped as
          hamcrest-core/hamcrest-all. Parent 3.3.0 carries 3.0; delete this override then. -->
     <hamcrest.version>3.0</hamcrest.version>
 
