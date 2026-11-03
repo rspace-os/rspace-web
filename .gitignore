@@ -100,3 +100,9 @@ src/main/resources/deployments/dev/deployment.properties
 # Lucene index written by the HibernateTest-based model tests (Hibernate Search
 # local-filesystem backend rooted at the test db name)
 hibtest*/
+# Gradle build (alongside Maven)
+/build/
+/.gradle/
+/buildSrc/build/
+/buildSrc/.gradle/
+/build-benchmarks/
