@@ -1,6 +1,5 @@
 package com.researchspace.auth;
 
-import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserGroupDao;
 import com.researchspace.model.Community;
@@ -17,6 +16,7 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.Set;
@@ -30,7 +30,7 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
   private @Autowired IPermissionUtils permissionUtils;
   private @Autowired UserGroupDao ugDao;
   private @Autowired UserDao userDao;
-  private @Autowired CommunityDao communityDao;
+  private @Autowired CommunityServiceManager communityServiceManager;
   private @Autowired IPropertyHolder properties;
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgrPermUtils;
@@ -62,7 +62,7 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
   // (RSPAC-2500)
   private boolean hasLabInAdminsCommunity(Group collabGroup, User admin) {
     Set<Long> adminCommunityIds =
-        communityDao.listCommunitiesForAdmin(admin.getId()).stream()
+        communityServiceManager.listCommunitiesForAdmin(admin.getId()).stream()
             .map(Community::getId)
             .collect(Collectors.toSet());
     for (User pi : collabGroup.getPiusers()) {

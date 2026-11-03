@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.dao.CommunityDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
@@ -15,6 +14,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,7 @@ class GroupPermissionUtilsUnitTest {
   private static final Long COMMUNITY_ID = 5L;
 
   @Mock private IPermissionUtils permissionUtils;
-  @Mock private CommunityDao communityDao;
+  @Mock private CommunityServiceManager communityServiceManager;
   @Mock private IPropertyHolder properties;
 
   @InjectMocks private GroupPermissionUtils groupPermUtils;
@@ -80,7 +80,7 @@ class GroupPermissionUtilsUnitTest {
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin1411", Role.SYSTEM_ROLE.getName());
 
     assertTrue(groupPermUtils.subjectCanAlterGroupRole(group, sysadmin, member));
-    verifyNoInteractions(permissionUtils, communityDao);
+    verifyNoInteractions(permissionUtils, communityServiceManager);
   }
 
   @Test
@@ -89,7 +89,7 @@ class GroupPermissionUtilsUnitTest {
     Group otherPiLab = TestFactory.createAnyGroup(otherPi);
     otherPiLab.setCommunityId(COMMUNITY_ID);
     User commAdmin = TestFactory.createAnyUserWithRole("admin1411", Role.ADMIN_ROLE.getName());
-    when(communityDao.listCommunitiesForAdmin(commAdmin.getId()))
+    when(communityServiceManager.listCommunitiesForAdmin(commAdmin.getId()))
         .thenReturn(List.of(communityWithId(COMMUNITY_ID)));
 
     assertTrue(groupPermUtils.subjectCanAlterGroupRole(group, commAdmin, member));
@@ -102,7 +102,7 @@ class GroupPermissionUtilsUnitTest {
     Group otherPiLab = TestFactory.createAnyGroup(otherPi);
     otherPiLab.setCommunityId(COMMUNITY_ID + 1);
     User commAdmin = TestFactory.createAnyUserWithRole("admin1411", Role.ADMIN_ROLE.getName());
-    when(communityDao.listCommunitiesForAdmin(commAdmin.getId()))
+    when(communityServiceManager.listCommunitiesForAdmin(commAdmin.getId()))
         .thenReturn(List.of(communityWithId(COMMUNITY_ID)));
 
     assertFalse(groupPermUtils.subjectCanAlterGroupRole(group, commAdmin, member));

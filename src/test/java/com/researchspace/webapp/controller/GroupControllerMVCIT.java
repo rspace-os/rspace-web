@@ -918,6 +918,93 @@ public class GroupControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void communityAdminCanViewAndChangeRolesInCollabGroupWithLabInTheirCommunity()
+      throws Exception {
+    CollabSetup setup = createCollabGroupWithMember();
+    User admin = createCommunityAdminFor(setup.labGroup);
+
+    assertRoleEditableOnGroupPage(setup.collabGroup, admin, true);
+    MvcResult res =
+        mockMvc
+            .perform(
+                post(CHANGE_ROLE_URL, setup.collabGroup.getId(), setup.member.getId())
+                    .param("role", RoleInGroup.RS_LAB_ADMIN.name())
+                    .principal(admin::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(res.getResolvedException());
+    assertEquals(RoleInGroup.RS_LAB_ADMIN, collabRoleOf(setup));
+  }
+
+  @Test
+  public void communityAdminFromOtherCommunityCannotChangeCollabGroupRoles() throws Exception {
+    CollabSetup setup = createCollabGroupWithMember();
+    User otherPi = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    initUsers(otherPi);
+    Group unrelatedLab = createGroupForUsers(otherPi, otherPi.getUsername(), "", otherPi);
+    User admin = createCommunityAdminFor(unrelatedLab);
+
+    assertRoleEditableOnGroupPage(setup.collabGroup, admin, false);
+    MvcResult res =
+        mockMvc
+            .perform(
+                post(CHANGE_ROLE_URL, setup.collabGroup.getId(), setup.member.getId())
+                    .param("role", RoleInGroup.RS_LAB_ADMIN.name())
+                    .principal(admin::getUsername))
+            .andReturn();
+    assertInstanceOf(AuthorizationException.class, res.getResolvedException());
+    assertEquals(RoleInGroup.DEFAULT, collabRoleOf(setup));
+  }
+
+  private static class CollabSetup {
+    Group labGroup;
+    Group collabGroup;
+    User member;
+  }
+
+  private CollabSetup createCollabGroupWithMember() throws Exception {
+    User pi1 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    User pi2 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
+    User member1 = createAndSaveUser(getRandomName(7));
+    initUsers(pi1, pi2, member1);
+    logoutAndLoginAs(pi1);
+    CollabSetup setup = new CollabSetup();
+    setup.labGroup = createGroupForUsers(pi1, pi1.getUsername(), "", pi1, member1);
+    Group g2 = createGroupForUsers(pi2, pi2.getUsername(), "", pi2);
+    setup.collabGroup = createCollabGroupBetweenGroups(setup.labGroup, g2);
+    grpMgr.addUserToGroup(member1.getUsername(), setup.collabGroup.getId(), RoleInGroup.DEFAULT);
+    setup.member = member1;
+    return setup;
+  }
+
+  private User createCommunityAdminFor(Group labGroup) {
+    User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Role.ADMIN_ROLE.getName());
+    initUsers(admin);
+    Community comm = createAndSaveCommunity(admin, getRandomAlphabeticString("comm"));
+    logoutAndLoginAs(admin);
+    addGroupToCommunity(labGroup, comm, admin);
+    return admin;
+  }
+
+  private void assertRoleEditableOnGroupPage(Group group, User subject, boolean expected)
+      throws Exception {
+    MvcResult page =
+        mockMvc
+            .perform(get("/groups/view/{id}", group.getId()).principal(subject::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(page.getResolvedException());
+    assertEquals(expected, page.getModelAndView().getModel().get("roleEditable"));
+  }
+
+  private RoleInGroup collabRoleOf(CollabSetup setup) {
+    return grpMgr
+        .getGroup(setup.collabGroup.getId())
+        .getUserGroupForUser(setup.member)
+        .getRoleInGroup();
+  }
+
+  @Test
   public void collabGroupMgt() throws Exception {
     User pi1 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
     User pi2 = createAndSaveUser(getRandomName(7), Constants.PI_ROLE);
