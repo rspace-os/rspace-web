@@ -182,6 +182,18 @@
         <artifactId>protobuf-java</artifactId>
         <version>3.25.8</version>
       </dependency>
+      <!-- box-java-sdk brings in 0.4.4 -->
+      <dependency>
+        <groupId>org.bitbucket.b_c</groupId>
+        <artifactId>jose4j</artifactId>
+        <version>0.9.6</version>
+      </dependency>
+      <!-- spring-batch-core brings in 3.4.1 -->
+      <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-commons</artifactId>
+        <version>3.5.12</version>
+      </dependency>
       <dependency>
         <groupId>javax.measure</groupId>
         <artifactId>unit-api</artifactId>
@@ -1465,6 +1477,10 @@
         <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
