@@ -20,6 +20,7 @@ import Tags from "../components/Fields/Tags";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
 import Expiry from "./Fields/Expiry";
+import Requestable from "./Fields/Requestable";
 import Source from "./Fields/Source";
 import StorageTemperature from "./Fields/StorageTemperature";
 
@@ -43,6 +44,7 @@ function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
       sectionName="overview"
       recordType="sample"
     >
+      <Requestable collection={collection} />
       <Image fieldOwner={collection} alt={t("sample.batch.imageAlt", { count: collection.size })} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>

@@ -4700,6 +4700,7 @@ export default interface Resources {
         "whatYouNeedLabel": "Describe your request"
       },
       "requestsSection": {
+        "batchEditLabel": "Batch edit the sample requests field",
         "description": "Let others request material from this sample. You review every request.",
         "switchLabel": "Requestable",
         "title": "Sample requests"
