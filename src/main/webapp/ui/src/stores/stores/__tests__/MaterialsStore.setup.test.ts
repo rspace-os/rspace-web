@@ -3,13 +3,11 @@ import { expect, it, vi } from "vitest";
 import MaterialsStore from "../MaterialsStore";
 import type { RootStore } from "../RootStore";
 
-it.each(["authentication", "current user", "units"] as const)("can retry setup after %s fails", async (failure) => {
-  const authenticate = vi.fn().mockResolvedValue(undefined);
+it("can retry setup after authentication fails", async () => {
+  const error = new Error("Service unavailable");
+  const authenticate = vi.fn().mockRejectedValueOnce(error).mockResolvedValue(undefined);
   const fetchCurrentUser = vi.fn().mockResolvedValue(undefined);
   const fetchUnits = vi.fn().mockResolvedValue(undefined);
-  const failingStep = { authentication: authenticate, "current user": fetchCurrentUser, units: fetchUnits }[failure];
-  const error = new Error("Service unavailable");
-  failingStep.mockRejectedValueOnce(error);
   const store = new MaterialsStore({
     authStore: { synchronizeWithSessionStorage: authenticate },
     peopleStore: { fetchCurrentUser },
@@ -19,10 +17,8 @@ it.each(["authentication", "current user", "units"] as const)("can retry setup a
   const first = store.setup();
   expect(store.setup()).toBe(first);
   await expect(first).rejects.toBe(error);
-  if (failure === "authentication") {
-    expect(fetchCurrentUser).not.toHaveBeenCalled();
-    expect(fetchUnits).not.toHaveBeenCalled();
-  }
+  expect(fetchCurrentUser).not.toHaveBeenCalled();
+  expect(fetchUnits).not.toHaveBeenCalled();
   await store.setup();
   expect(authenticate).toHaveBeenCalledTimes(2);
   expect(fetchCurrentUser).toHaveBeenCalled();

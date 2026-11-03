@@ -26,11 +26,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const failWith = (status: number) =>
-  server.use(http.get("*/userform/ajax/inventoryOauthToken", () => new HttpResponse(null, { status })));
+const failWith = (status: number | "network") =>
+  server.use(
+    http.get("*/userform/ajax/inventoryOauthToken", () =>
+      status === "network" ? HttpResponse.error() : new HttpResponse(null, { status }),
+    ),
+  );
 
 describe("AuthStore refresh recovery", () => {
-  it.each([429, 500, 503])("retains the mounted session and recovers after %s", async (status) => {
+  it.each([429, 500, 503, "network"] as const)("retains the mounted session and recovers after %s", async (status) => {
     const authenticate = vi.spyOn(store, "authenticate");
     const token = tokenExpiringIn(3600);
     JwtService.saveToken(token);
@@ -70,18 +74,50 @@ describe("AuthStore refresh recovery", () => {
       expect(requests).toBe(index + 2);
     }
     expect(window.location.href).toBe("/login");
-    expect(store.isAuthenticated).toBe(false);
+    expect(store.isAuthenticated).toBe(true);
     expect(JwtService.getToken()).toBeNull();
     expect(store.timeoutId).toBeNull();
   });
 
-  it.each([401, 500])("clears expired authentication and redirects after %s", async (status) => {
+  it("caps the backoff at 32 seconds and resets it after a success", async () => {
+    const authenticate = vi.spyOn(store, "authenticate");
+    JwtService.saveToken(tokenExpiringIn(3600));
+    store.isAuthenticated = true;
+    let requests = 0;
+    failWith(500);
+    server.use(
+      http.get("*/userform/ajax/inventoryOauthToken", () => {
+        requests++;
+        return undefined;
+      }),
+    );
+    await store.authenticate();
+    for (const [index, delay] of [1000, 2000, 4000, 8000, 16_000, 32_000, 32_000].entries()) {
+      await vi.advanceTimersByTimeAsync(delay - 1);
+      expect(requests).toBe(index + 1);
+      await vi.advanceTimersByTimeAsync(1);
+      await authenticate.mock.results.at(-1)?.value;
+      expect(requests).toBe(index + 2);
+    }
+    server.use(
+      http.get("*/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: tokenExpiringIn(3600) })),
+    );
+    await store.authenticate();
+    failWith(500);
+    await store.authenticate();
+    authenticate.mockClear();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(authenticate).toHaveBeenCalledTimes(1);
+    expect(window.location.href).toBe(initialLocation);
+  });
+
+  it.each([401, 500])("clears an expired token and redirects after %s", async (status) => {
     JwtService.saveToken(tokenExpiringIn(-1));
     store.isAuthenticated = true;
     failWith(status);
     await expect(store.authenticate()).rejects.toBeDefined();
     expect(window.location.href).toBe("/login");
-    expect(store.isAuthenticated).toBe(false);
+    expect(store.isAuthenticated).toBe(true);
     expect(JwtService.getToken()).toBeNull();
     expect(store.timeoutId).toBeNull();
   });
@@ -140,7 +176,7 @@ describe("AuthStore refresh recovery", () => {
     await vi.advanceTimersByTimeAsync(1000);
     response.resolve(new HttpResponse(null, { status: 503 }));
     await rejected;
-    expect(store.isAuthenticated).toBe(false);
+    expect(store.isAuthenticated).toBe(true);
     expect(JwtService.getToken()).toBeNull();
     expect(window.location.href).toBe("/login");
     expect(store.timeoutId).toBeNull();

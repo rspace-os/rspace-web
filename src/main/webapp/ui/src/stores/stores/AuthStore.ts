@@ -65,7 +65,7 @@ export default class AuthStore {
     this.timeoutId = null;
     if (this.isSigningOut) return Promise.resolve();
     /*
-     * Keep valid authentication while refreshing: Router renders the
+     * Never clear isAuthenticated here, even on 401 or expiry: Router renders the
      * Inventory routes only while it is true, so clearing it would unmount the
      * page for every refresh, and on failure would empty the page behind the
      * "leave page?" prompt that the redirect to /login can raise.
@@ -101,13 +101,13 @@ export default class AuthStore {
           const validityMs = token ? JwtService.secondsToExpiry(token) * 1000 : 0;
           const status = axios.isAxiosError(error) ? error.response?.status : undefined;
           if (status === 401 || !(validityMs > 0)) {
-            this.isAuthenticated = false;
             JwtService.destroyToken();
             window.location.href = "/login";
             throw error;
           }
           // Network failures and non-Axios errors have no status; retry while the token is usable.
           if (status === undefined || status === 429 || status >= 500) {
+            if (!axios.isAxiosError(error)) console.error("Inventory token refresh failed", error);
             const backoffMs = 1000 * 2 ** Math.min(this.refreshFailures++, 5);
             this.scheduleRefresh(Math.min(backoffMs, validityMs));
             this.isAuthenticated = true;
