@@ -188,9 +188,11 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
                 subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
       } catch (Exception e) {
         log.error(
-            "Impossible to report the RelatedObject to the RAiD \""
+            "Impossible to report the RelatedObject link \""
+                + doiLink
+                + "\" to the RAiD \""
                 + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
-                + "\"relatedObjects becasue of the following error: "
+                + "\" relatedObjects because of the following error: "
                 + e);
       } finally {
         if (updateSucceed) {
@@ -205,7 +207,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               "RelatedObject to the RAiD \""
                   + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                   + "\" has not been updated correctly.");
-          doiLink = "";
         }
       }
     }
