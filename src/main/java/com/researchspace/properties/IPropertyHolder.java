@@ -124,13 +124,13 @@ public interface IPropertyHolder extends Versionable {
 
   /**
    * Minimum length, in characters, of a text search term for every searcher but a sysadmin
-   * (deployment property search.user.minTermLength). 0 or less disables the check.
+   * (deployment property search.minTermLength.user). 0 or less disables the check.
    */
   int getUserMinSearchTermLength();
 
   /**
    * Minimum length, in characters, of a text search term for a sysadmin, whose search spans every
-   * user's content (deployment property search.sysadmin.minTermLength). 0 or less disables the
+   * user's content (deployment property search.minTermLength.sysadmin). 0 or less disables the
    * check.
    */
   int getSysadminMinSearchTermLength();

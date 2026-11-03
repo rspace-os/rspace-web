@@ -40,10 +40,10 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${netfilestores.s3.delete.window.minutes}")
   private int s3DeleteWindowMinutes;
 
-  @Value("${search.user.minTermLength}")
+  @Value("${search.minTermLength.user}")
   private int userMinSearchTermLength;
 
-  @Value("${search.sysadmin.minTermLength}")
+  @Value("${search.minTermLength.sysadmin}")
   private int sysadminMinSearchTermLength;
 
   @Value("${netfilestores.export.enabled}")
