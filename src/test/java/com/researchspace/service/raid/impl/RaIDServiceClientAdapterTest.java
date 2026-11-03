@@ -5,6 +5,7 @@ import static java.net.URLEncoder.encode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -19,6 +20,7 @@ import com.researchspace.raid.client.RaIDClient;
 import com.researchspace.raid.model.RaID;
 import com.researchspace.raid.model.RaIDServicePoint;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
@@ -39,6 +41,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 @TestPropertySource(
@@ -239,6 +242,64 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
 
     assertTrue(
         raidServiceClientAdapter.addRaIDRelatedObject(user.getUsername(), raidReference, DOI_LINK));
+  }
+
+  @Test
+  public void testAddRaIDRelatedObjectRefusedAsNotFound() throws Exception {
+    // GIVEN
+    when(mockedRaidClient.addRaIDRelatedObject(
+            API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX, DOI_LINK))
+        .thenThrow(raidRelatedObjectFailure("uri not found"));
+    RaIDReferenceDTO raidReference =
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaid.getTitle().get(0).getText(),
+            expectedRaid.getIdentifier().getId(),
+            expectedRaid.getIdentifier().getRaidAgencyUrl());
+    raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
+
+    // WHEN / THEN
+    assertThrows(
+        RaIDDoiNotFoundException.class,
+        () ->
+            raidServiceClientAdapter.addRaIDRelatedObject(
+                user.getUsername(), raidReference, DOI_LINK));
+  }
+
+  @Test
+  public void testAddRaIDRelatedObjectOtherFailureIsRethrown() throws Exception {
+    // GIVEN
+    when(mockedRaidClient.addRaIDRelatedObject(
+            API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX, DOI_LINK))
+        .thenThrow(raidRelatedObjectFailure("must not be null"));
+    RaIDReferenceDTO raidReference =
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaid.getTitle().get(0).getText(),
+            expectedRaid.getIdentifier().getId(),
+            expectedRaid.getIdentifier().getRaidAgencyUrl());
+    raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
+
+    // WHEN / THEN
+    assertThrows(
+        HttpClientErrorException.class,
+        () ->
+            raidServiceClientAdapter.addRaIDRelatedObject(
+                user.getUsername(), raidReference, DOI_LINK));
+  }
+
+  private static HttpClientErrorException raidRelatedObjectFailure(String message) {
+    String body =
+        "{\"failures\":[{\"fieldId\":\"relatedObject[27].id\",\"errorType\":\"invalidValue\","
+            + "\"message\":\""
+            + message
+            + "\"}],\"type\":\"https://raid.org.au/errors#ValidationException\","
+            + "\"title\":\"There were validation failures.\",\"status\":400}";
+    return new HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Bad Request",
+        body.getBytes(StandardCharsets.UTF_8),
+        StandardCharsets.UTF_8);
   }
 
   @Test

@@ -18,6 +18,7 @@ import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
@@ -26,7 +27,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.velocity.app.VelocityEngine;
@@ -296,23 +296,13 @@ public class AsyncDepositorImplTest {
     String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
     String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
-    String raidUriNotFoundResponse =
-        "{\"failures\":[{\"fieldId\":\"relatedObject[27].id\",\"errorType\":\"invalidValue\","
-            + "\"message\":\"uri not found\"}],"
-            + "\"type\":\"https://raid.org.au/errors#ValidationException\","
-            + "\"title\":\"There were validation failures.\",\"status\":400,"
-            + "\"detail\":\"Request had 1 validation failure(s). See failures for more"
-            + " details...\",\"instance\":\"https://raid.org.au\"}";
     RaIDReferenceDTO expectedRaidReference =
         new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
     when(mockRaidServiceClientAdapter.addRaIDRelatedObject(
             anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
         .thenThrow(
-            new HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                raidUriNotFoundResponse.getBytes(StandardCharsets.UTF_8),
-                StandardCharsets.UTF_8));
+            new RaIDDoiNotFoundException(
+                "uri not found", new HttpClientErrorException(HttpStatus.BAD_REQUEST)));
 
     RepoDepositConfig raidDepositConfig = new RepoDepositConfig();
     raidDepositConfig.setExportToRaid(true);

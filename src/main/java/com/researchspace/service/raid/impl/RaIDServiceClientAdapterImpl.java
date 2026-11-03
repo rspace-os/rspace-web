@@ -5,7 +5,9 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
@@ -14,6 +16,7 @@ import com.researchspace.raid.model.RaID;
 import com.researchspace.raid.model.RaIDRelatedObject;
 import com.researchspace.raid.model.RaIDServicePoint;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServerConfigurationDTO;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.MultiInstanceBaseClient;
@@ -136,14 +139,38 @@ public class RaIDServiceClientAdapterImpl
   @Override
   public boolean addRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
       throws URISyntaxException, JsonProcessingException {
-    RaID newUpdatedRaid =
-        raidClient.addRaIDRelatedObject(
-            getApiBaseUrl(raid.getRaidServerAlias()),
-            getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias()),
-            raid.getRaidPrefix(),
-            raid.getRaidSuffix(),
-            doiLink);
+    RaID newUpdatedRaid;
+    try {
+      newUpdatedRaid =
+          raidClient.addRaIDRelatedObject(
+              getApiBaseUrl(raid.getRaidServerAlias()),
+              getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias()),
+              raid.getRaidPrefix(),
+              raid.getRaidSuffix(),
+              doiLink);
+    } catch (HttpClientErrorException e) {
+      if (isRelatedObjectNotFound(e)) {
+        throw new RaIDDoiNotFoundException(
+            "RAiD could not resolve the related object link \"" + doiLink + "\"", e);
+      }
+      throw e;
+    }
     return newUpdatedRaid.getRelatedObject().contains(new RaIDRelatedObject(doiLink));
+  }
+
+  // RAiD answers 400 with a "uri not found" failure on a related object it cannot resolve
+  private static boolean isRelatedObjectNotFound(HttpClientErrorException e) {
+    JsonNode body = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
+    if (body == null) {
+      return false;
+    }
+    for (JsonNode failure : body.path("failures")) {
+      if (failure.path("fieldId").asText().matches("relatedObject\\[\\d+]\\.id")
+          && "uri not found".equals(failure.path("message").asText())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

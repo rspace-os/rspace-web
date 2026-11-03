@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.argos.model.ArgosDMP;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
@@ -40,6 +39,7 @@ import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFileResult;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import java.io.File;
 import java.io.IOException;
@@ -73,7 +73,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.AsyncResult;
-import org.springframework.web.client.RestClientResponseException;
 
 public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
@@ -197,7 +196,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
                 + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                 + "\" relatedObjects because of the following error: "
                 + e);
-        doiNotFound = isDoiNotFoundByRaid(e);
+        doiNotFound = e instanceof RaIDDoiNotFoundException;
       } finally {
         if (updateSucceed) {
           log.info(
@@ -221,25 +220,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         repoDepositConfig.getRaidAssociated().getRaid().getRaidAgencyUrl(),
         doiLink,
         doiNotFound);
-  }
-
-  // RAiD answers 400 with a "uri not found" failure on a related object it cannot resolve
-  private static boolean isDoiNotFoundByRaid(Exception e) {
-    if (!(e instanceof RestClientResponseException responseException)) {
-      return false;
-    }
-    JsonNode body =
-        JacksonUtil.fromJson(responseException.getResponseBodyAsString(), JsonNode.class);
-    if (body == null) {
-      return false;
-    }
-    for (JsonNode failure : body.path("failures")) {
-      if (failure.path("fieldId").asText().matches("relatedObject\\[\\d+]\\.id")
-          && "uri not found".equals(failure.path("message").asText())) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**
