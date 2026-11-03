@@ -345,6 +345,8 @@ const baseTheme = createTheme({
     filterToggle: "filter .2s ease-in-out, opacity .2s ease-in-out",
   },
   typography: {
+    // "Roboto Variable" comes from `@/fonts`; pages without it fall back to the legacy "Roboto".
+    fontFamily: '"Roboto Variable", "Roboto", "Helvetica", "Arial", sans-serif',
     h6: {
       fontSize: "1.1rem",
     },

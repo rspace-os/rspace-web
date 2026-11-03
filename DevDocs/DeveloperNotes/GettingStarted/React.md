@@ -33,16 +33,14 @@ replacing the previous ESLint + Prettier setup.
 
 ## React page fonts
 
-`src/main/webapp/ui/src/fonts.ts` loads the pinned Fontsource Roboto stylesheets
-for 300, 400, 500 and 700 normal and 400 italic. Pages that SiteMesh leaves
-undecorated get no legacy Roboto stylesheet, so their entrypoints must import
-`@/fonts`. Today these are Inventory, Gallery, Apps, About and the public
-identifier page.
+`src/main/webapp/ui/src/fonts.ts` loads the pinned `@fontsource-variable/roboto`
+weight axis in normal and italic. The variable package ships only WOFF2 files and
+names its family `Roboto Variable`, which the shared MUI theme lists before the
+legacy `Roboto`. Pages that SiteMesh leaves undecorated get no legacy Roboto
+stylesheet, so their entrypoints must import `@/fonts`. Today these are Inventory,
+Gallery, Apps, About and the public identifier page.
 
-The `roboto-woff2-only` Vite plugin removes WOFF fallbacks before CSS asset
-resolution, keeping the `Roboto` family and every unicode-range slice. Keep this
-transform before Vite's CSS processing so unused WOFF files are not emitted. CSS
-asset URLs are relative to the emitted stylesheet so they also work under a
+CSS asset URLs are relative to the emitted stylesheet so they also work under a
 servlet context prefix.
 
 ## Editor set up

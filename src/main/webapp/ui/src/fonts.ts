@@ -1,6 +1,4 @@
-// Load local Roboto faces for standalone React pages that use the shared MUI theme.
-import "@fontsource/roboto/300.css";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
-import "@fontsource/roboto/400-italic.css";
+// Load local Roboto for standalone React pages that use the shared MUI theme.
+// Fontsource's variable package ships only WOFF2 and covers every weight.
+import "@fontsource-variable/roboto/wght.css";
+import "@fontsource-variable/roboto/wght-italic.css";
