@@ -6715,7 +6715,7 @@ export default interface Resources {
           "notificationFromRSpace": "Notification from RSpace"
         },
         "raidUpdateCompleteNotification": {
-          "doiNotFound": "Your research output recently deposited on \"{0}\" with the DOI <a href=\"{1}\">{1}</a> could not be added to your RAiD record <a href=\"{2}\">{3}</a>. RAiD refused the DOI because it could not find it. RAiD only accepts DOIs that are public, so check that the deposit has been published.",
+          "doiNotFound": "Your research output recently deposited on \"{0}\" with the DOI <a href=\"{1}\">{1}</a> could not be added to your RAiD record <a href=\"{2}\">{3}</a>. RAiD refused the DOI because it could not find it. This RAiD instance only accepts DOIs that are already published",
           "response": "{0, select, true {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> has been added to your RAiD record <a href=\"{3}\">{4}</a>.} other {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> could not be added to your RAiD record <a href=\"{3}\">{4}</a>.}}"
         },
         "repoDepositCompleteNotification": {
