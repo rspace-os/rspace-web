@@ -246,10 +246,12 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
 
   @Test
   public void testAddRaIDRelatedObjectRefusedAsNotFound() throws Exception {
-    // GIVEN
+    // GIVEN the RAiD already has 1 related object, so the DOI is appended at index 1
+    when(mockedRaidClient.getRaID(API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX))
+        .thenReturn(expectedRaidWithRelatedObject);
     when(mockedRaidClient.addRaIDRelatedObject(
             API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX, DOI_LINK))
-        .thenThrow(raidRelatedObjectFailure("uri not found"));
+        .thenThrow(raidRelatedObjectFailure(1, "uri not found"));
     RaIDReferenceDTO raidReference =
         new RaIDReferenceDTO(
             SERVER_ALIAS,
@@ -267,11 +269,13 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testAddRaIDRelatedObjectOtherFailureIsRethrown() throws Exception {
-    // GIVEN
+  public void testAddRaIDRelatedObjectOlderLinkNotFoundIsRethrown() throws Exception {
+    // GIVEN the RAiD already has 1 related object, and RAiD refuses that one at index 0
+    when(mockedRaidClient.getRaID(API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX))
+        .thenReturn(expectedRaidWithRelatedObject);
     when(mockedRaidClient.addRaIDRelatedObject(
             API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX, DOI_LINK))
-        .thenThrow(raidRelatedObjectFailure("must not be null"));
+        .thenThrow(raidRelatedObjectFailure(0, "uri not found"));
     RaIDReferenceDTO raidReference =
         new RaIDReferenceDTO(
             SERVER_ALIAS,
@@ -288,9 +292,33 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
                 user.getUsername(), raidReference, DOI_LINK));
   }
 
-  private static HttpClientErrorException raidRelatedObjectFailure(String message) {
+  @Test
+  public void testAddRaIDRelatedObjectOtherFailureIsRethrown() throws Exception {
+    // GIVEN
+    when(mockedRaidClient.addRaIDRelatedObject(
+            API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX, DOI_LINK))
+        .thenThrow(raidRelatedObjectFailure(1, "must not be null"));
+    RaIDReferenceDTO raidReference =
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaid.getTitle().get(0).getText(),
+            expectedRaid.getIdentifier().getId(),
+            expectedRaid.getIdentifier().getRaidAgencyUrl());
+    raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
+
+    // WHEN / THEN
+    assertThrows(
+        HttpClientErrorException.class,
+        () ->
+            raidServiceClientAdapter.addRaIDRelatedObject(
+                user.getUsername(), raidReference, DOI_LINK));
+  }
+
+  private static HttpClientErrorException raidRelatedObjectFailure(int index, String message) {
     String body =
-        "{\"failures\":[{\"fieldId\":\"relatedObject[27].id\",\"errorType\":\"invalidValue\","
+        "{\"failures\":[{\"fieldId\":\"relatedObject["
+            + index
+            + "].id\",\"errorType\":\"invalidValue\","
             + "\"message\":\""
             + message
             + "\"}],\"type\":\"https://raid.org.au/errors#ValidationException\","

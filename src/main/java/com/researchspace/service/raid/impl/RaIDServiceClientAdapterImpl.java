@@ -27,10 +27,13 @@ import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -57,6 +60,8 @@ public class RaIDServiceClientAdapterImpl
   public static final String RAID_CONFIGURED_SERVERS = "RAID_CONFIGURED_SERVERS";
   public static final String RAID_OAUTH_CONNECTED = "RAID_OAUTH_CONNECTED";
   public static final String RAID_ALIAS = "RAID_ALIAS";
+  private static final Pattern RELATED_OBJECT_ID_FIELD =
+      Pattern.compile("relatedObject\\[(\\d+)]\\.id");
 
   @Setter
   @Getter
@@ -139,17 +144,16 @@ public class RaIDServiceClientAdapterImpl
   @Override
   public boolean addRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
       throws URISyntaxException, JsonProcessingException {
+    String apiBaseUrl = getApiBaseUrl(raid.getRaidServerAlias());
+    String accessToken =
+        getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias());
     RaID newUpdatedRaid;
     try {
       newUpdatedRaid =
           raidClient.addRaIDRelatedObject(
-              getApiBaseUrl(raid.getRaidServerAlias()),
-              getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias()),
-              raid.getRaidPrefix(),
-              raid.getRaidSuffix(),
-              doiLink);
+              apiBaseUrl, accessToken, raid.getRaidPrefix(), raid.getRaidSuffix(), doiLink);
     } catch (HttpClientErrorException e) {
-      if (isRelatedObjectNotFound(e)) {
+      if (isAppendedRelatedObjectNotFound(e, apiBaseUrl, accessToken, raid)) {
         throw new RaIDDoiNotFoundException(
             "RAiD could not resolve the related object link \"" + doiLink + "\"", e);
       }
@@ -158,19 +162,43 @@ public class RaIDServiceClientAdapterImpl
     return newUpdatedRaid.getRelatedObject().contains(new RaIDRelatedObject(doiLink));
   }
 
-  // RAiD answers 400 with a "uri not found" failure on a related object it cannot resolve
-  private static boolean isRelatedObjectNotFound(HttpClientErrorException e) {
-    JsonNode body = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
-    if (body == null) {
+  // The client appends the link after the related objects the RAiD already has, so RAiD refused
+  // the new link only if it reports "uri not found" at that index
+  private boolean isAppendedRelatedObjectNotFound(
+      HttpClientErrorException e, String apiBaseUrl, String accessToken, RaIDReferenceDTO raid) {
+    List<Integer> notFoundIndexes = getNotFoundRelatedObjectIndexes(e);
+    if (notFoundIndexes.isEmpty()) {
       return false;
     }
+    try {
+      Set<RaIDRelatedObject> existingRelatedObjects =
+          raidClient
+              .getRaID(apiBaseUrl, accessToken, raid.getRaidPrefix(), raid.getRaidSuffix())
+              .getRelatedObject();
+      return notFoundIndexes.contains(
+          existingRelatedObjects == null ? 0 : existingRelatedObjects.size());
+    } catch (RuntimeException readFailure) {
+      log.warn(
+          "Could not read the RAiD \"{}\" to check which related object was refused",
+          raid.getRaidIdentifier(),
+          readFailure);
+      return false;
+    }
+  }
+
+  private static List<Integer> getNotFoundRelatedObjectIndexes(HttpClientErrorException e) {
+    List<Integer> indexes = new ArrayList<>();
+    JsonNode body = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
+    if (body == null) {
+      return indexes;
+    }
     for (JsonNode failure : body.path("failures")) {
-      if (failure.path("fieldId").asText().matches("relatedObject\\[\\d+]\\.id")
-          && "uri not found".equals(failure.path("message").asText())) {
-        return true;
+      Matcher fieldId = RELATED_OBJECT_ID_FIELD.matcher(failure.path("fieldId").asText());
+      if (fieldId.matches() && "uri not found".equals(failure.path("message").asText())) {
+        indexes.add(Integer.parseInt(fieldId.group(1)));
       }
     }
-    return false;
+    return indexes;
   }
 
   @Override
