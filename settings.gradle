@@ -1,0 +1,18 @@
+rootProject.name = 'researchspace'
+
+dependencyResolutionManagement {
+  repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+  repositories {
+    mavenCentral()
+    // Content filters keep Gradle from probing JitPack and DICE for every Maven Central
+    // artifact, which is slow and would let those hosts shadow Central.
+    maven {
+      url = 'https://jitpack.io'
+      content { includeGroupByRegex 'com\\.github\\..*' }
+    }
+    maven {
+      url = 'https://raw.github.com/DICE-UNC/DICE-Maven/master/releases'
+      content { includeGroupByRegex 'org\\.irods.*' }
+    }
+  }
+}
