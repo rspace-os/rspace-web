@@ -33,6 +33,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
@@ -72,6 +73,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired BasketApiManager basketApiManager;
   private @Autowired InventoryPermissionUtils invPermissionUtils;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired IPropertyHolder properties;
 
   private ISearchResults<BaseRecord> getAttachments(WorkspaceListingConfig input, User user)
       throws IOException {
@@ -88,7 +90,11 @@ public class SearchManagerImpl implements SearchManager {
       return getAttachments(input, user);
     }
 
-    WorkspaceSearchInputValidator validator = new WorkspaceSearchInputValidator(user);
+    WorkspaceSearchInputValidator validator =
+        new WorkspaceSearchInputValidator(
+            user,
+            properties.getUserMinSearchTermLength(),
+            properties.getSysadminMinSearchTermLength());
     Errors errors = new BeanPropertyBindingResult(input, "MyObject");
     validator.validate(input, errors);
     Validate.isTrue(!errors.hasErrors(), resolveErrorMsg(errors));
@@ -194,7 +200,11 @@ public class SearchManagerImpl implements SearchManager {
             false);
 
     // Validate the created WorkspaceListingConfig
-    WorkspaceSearchInputValidator validator = new WorkspaceSearchInputValidator(user);
+    WorkspaceSearchInputValidator validator =
+        new WorkspaceSearchInputValidator(
+            user,
+            properties.getUserMinSearchTermLength(),
+            properties.getSysadminMinSearchTermLength());
     Errors errors = new BeanPropertyBindingResult(config, "MyObject");
     validator.validate(config, errors);
     if (errors.hasErrors()) {
@@ -260,9 +270,11 @@ public class SearchManagerImpl implements SearchManager {
     searchConfig.setOptions(options.toArray(new String[0]));
     searchConfig.setTerms(terms.toArray(new String[0]));
 
-    // validate the provided query - use WorkspaceSearchInputValidator as the rules seem relevant
-    // enough
-    InventorySearchInputValidator validator = new InventorySearchInputValidator(user);
+    InventorySearchInputValidator validator =
+        new InventorySearchInputValidator(
+            user,
+            properties.getUserMinSearchTermLength(),
+            properties.getSysadminMinSearchTermLength());
     Errors errors = new BeanPropertyBindingResult(searchConfig, "MyObject");
     validator.validate(searchConfig, errors);
     if (errors.hasErrors()) {
