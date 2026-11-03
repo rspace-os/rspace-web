@@ -148,6 +148,40 @@
         <artifactId>micrometer-observation</artifactId>
         <version>1.15.12</version>
       </dependency>
+      <!-- Bouncy Castle jars must all be on the same version: shiro-crypto-hash brings in
+           bcprov 1.84 and Tika brings in the others at 1.81 -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcutil-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcjmail-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <!-- tika-parser-pkg-module brings in 7.5.5 -->
+      <dependency>
+        <groupId>com.github.junrar</groupId>
+        <artifactId>junrar</artifactId>
+        <version>7.6.1</version>
+      </dependency>
+      <!-- mysql-connector-j brings in 3.25.1 -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>3.25.8</version>
+      </dependency>
       <dependency>
         <groupId>javax.measure</groupId>
         <artifactId>unit-api</artifactId>
@@ -1829,10 +1863,9 @@
       <version>2.4.0</version>
     </dependency>
     <dependency>
-      <!-- Argon2PasswordEncoder (RSDEV-894); pinned to the version shiro-crypto-hash brings in -->
+      <!-- Argon2PasswordEncoder -->
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
-      <version>1.84</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -2680,9 +2713,12 @@
 
     <aspectj.version>1.9.22.1</aspectj.version>
     <apache.batik.version>1.19</apache.batik.version>
-    <commons.fileupload.version>1.4</commons.fileupload.version>
+    <bouncycastle.version>1.86</bouncycastle.version>
+    <commons.fileupload.version>1.6.0</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
     <icu4j.version>78.3</icu4j.version>
+    <!-- newer than the rspace-parent default, for security fixes -->
+    <jackson.version>2.22.4</jackson.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <jstl.version>3.0.0</jstl.version>
     <lucene.version>9.8.0</lucene.version>
