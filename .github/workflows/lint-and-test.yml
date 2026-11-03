@@ -116,8 +116,8 @@ jobs:
 
       - name: Run fast tests
         run: |
-          # ponytail: one fork per vCPU on the 4-core public-repo runner; isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
-          ./mvnw clean test -U -Dfast=true -DforkCount=4 -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+          # ponytail: 1C = one fork per CPU core the runner reports (4 on the public-repo runner); isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
+          ./mvnw clean test -U -Dfast=true -DforkCount=1C -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE} \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
