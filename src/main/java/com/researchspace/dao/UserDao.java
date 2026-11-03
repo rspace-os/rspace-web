@@ -5,8 +5,10 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import java.util.List;
@@ -48,6 +50,9 @@ public interface UserDao extends GenericDao<User, Long> {
    * @return the persisted User object
    */
   User saveUser(User user);
+
+  /** Atomically inserts or updates the unique preference and returns its persisted value. */
+  UserPreference upsertPreference(User user, Preference preference, String value);
 
   String getUserPassword(String username);
 
