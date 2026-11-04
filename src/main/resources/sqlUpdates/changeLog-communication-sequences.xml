@@ -3,33 +3,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
   <changeSet id="communication-native-sequences" author="rspace" context="run" dbms="mariadb" runInTransaction="false">
-    <comment>Requires all application nodes stopped. Preserve the TABLE counters for manual rollback.
-      The pooled optimizer uses each source value as the upper bound of 50 ids. The first
-      lower bound must exceed both existing ids and the old allocator's reserved high water mark.
-      Include optional retained audit tables. Do not automatically drop sequences on rollback.</comment>
-    <sql splitStatements="true"><![CDATA[
-SET @comm_max = 0;
-SELECT CONCAT('SELECT GREATEST(0, ', GROUP_CONCAT(CONCAT('COALESCE((SELECT MAX(id) FROM `', table_name, '`), 0)') SEPARATOR ', '), ') INTO @comm_max') INTO @comm_sql FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('Notification', 'MessageOrRequest', 'GroupMessageOrRequest', 'CreateGroupMessageOrRequest', 'ShareRecordMessageOrRequest', 'Notification_AUD', 'MessageOrRequest_AUD', 'GroupMessageOrRequest_AUD', 'CreateGroupMessageOrRequest_AUD', 'ShareRecordMessageOrRequest_AUD');
-PREPARE comm_statement FROM @comm_sql;
-EXECUTE comm_statement;
-DEALLOCATE PREPARE comm_statement;
-SET @comm_high = GREATEST(@comm_max, COALESCE((SELECT MAX(next_val) FROM hibernate_sequences WHERE sequence_name = 'Communication'), 0));
-SET @comm_start = (FLOOR(@comm_high / 50) + 2) * 50;
-SET @comm_sql = CONCAT('CREATE SEQUENCE communication_seq START WITH ', @comm_start, ' INCREMENT BY 50 NOCACHE');
-PREPARE comm_statement FROM @comm_sql;
-EXECUTE comm_statement;
-DEALLOCATE PREPARE comm_statement;
-SET @comm_max = 0;
-SELECT CONCAT('SELECT GREATEST(0, ', GROUP_CONCAT(CONCAT('COALESCE((SELECT MAX(id) FROM `', table_name, '`), 0)') SEPARATOR ', '), ') INTO @comm_max') INTO @comm_sql FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('CommunicationTarget', 'CommunicationTarget_AUD');
-PREPARE comm_statement FROM @comm_sql;
-EXECUTE comm_statement;
-DEALLOCATE PREPARE comm_statement;
-SET @comm_high = GREATEST(@comm_max, COALESCE((SELECT MAX(next_val) FROM hibernate_sequences WHERE sequence_name = 'CommunicationTarget'), 0));
-SET @comm_start = (FLOOR(@comm_high / 50) + 2) * 50;
-SET @comm_sql = CONCAT('CREATE SEQUENCE communication_target_seq START WITH ', @comm_start, ' INCREMENT BY 50 NOCACHE');
-PREPARE comm_statement FROM @comm_sql;
-EXECUTE comm_statement;
-DEALLOCATE PREPARE comm_statement;
-    ]]></sql>
+    <comment>Stop all application nodes first: the old hibernate_sequences allocator must never run
+      alongside the new sequences. The old hibernate_sequences rows are kept for a manual rollback.</comment>
+    <customChange class="com.researchspace.dao.customliquibaseupdates.CreateCommunicationSequences"/>
   </changeSet>
 </databaseChangeLog>

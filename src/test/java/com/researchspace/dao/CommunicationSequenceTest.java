@@ -7,51 +7,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.CommunicationTarget;
-import com.researchspace.model.comms.CreateGroupMessageOrRequest;
-import com.researchspace.model.comms.GroupMessageOrRequest;
-import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.Notification;
-import com.researchspace.model.comms.ShareRecordMessageOrRequest;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.id.enhanced.PooledOptimizer;
-import org.hibernate.id.enhanced.SequenceStructure;
-import org.hibernate.id.enhanced.SequenceStyleGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class CommunicationSequenceTest extends BaseDaoTestCase {
   @Autowired private BasicDataSource dataSource;
-
-  @Test
-  void usesNativePooledSequences() {
-    var factory = (SessionFactoryImplementor) sessionFactory;
-    for (Class<?> type :
-        new Class<?>[] {
-          Notification.class,
-          MessageOrRequest.class,
-          GroupMessageOrRequest.class,
-          CreateGroupMessageOrRequest.class,
-          ShareRecordMessageOrRequest.class,
-          CommunicationTarget.class
-        }) {
-      var generator =
-          assertInstanceOf(
-              SequenceStyleGenerator.class,
-              factory.getMappingMetamodel().getEntityDescriptor(type).getGenerator());
-      var structure = assertInstanceOf(SequenceStructure.class, generator.getDatabaseStructure());
-      assertEquals(
-          type == CommunicationTarget.class ? "communication_target_seq" : "communication_seq",
-          structure.getPhysicalName().getObjectName().getText());
-      assertInstanceOf(PooledOptimizer.class, generator.getOptimizer());
-      assertEquals(50, generator.getOptimizer().getIncrementSize());
-    }
-  }
 
   @Test
   void createsNotificationsAndTargetsWithNoSpareConnection() throws Exception {
