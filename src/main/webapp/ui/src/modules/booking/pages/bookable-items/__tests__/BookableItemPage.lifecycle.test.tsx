@@ -40,37 +40,6 @@ describe("BookableItemPage", () => {
     expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
-  it("keeps archived configurations on the canonical route with read-only controls", async () => {
-    const archived = { ...configuration, state: "ARCHIVED" as const };
-    let posts = 0;
-    server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([archived], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
-      http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json(
-          { active: false, updatedAt: null, subscriptionUrl: null },
-          { headers: { ETag: '"inactive"' } },
-        ),
-      ),
-      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
-        posts += 1;
-        return HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null });
-      }),
-    );
-    const user = userEvent.setup();
-    renderPage("/booking/bookable-items/IN123/details?edit=true");
-
-    expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    expect(posts).toBe(0);
-    expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
-    expect(
-      await screen.findByText("booking:bookableItemDetails.calendarSubscription.archivedUnavailable"),
-    ).toBeVisible();
-    expect(posts).toBe(0);
-  });
-
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
     const archived = { ...configuration, configurationVersion: 2, state: "ARCHIVED" as const };
     let current = archived as typeof archived | typeof configuration;

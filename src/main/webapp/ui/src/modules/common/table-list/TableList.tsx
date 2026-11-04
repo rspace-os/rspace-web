@@ -48,11 +48,13 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   createAction,
   createLabel,
   headerContent,
+  headingClassName,
   uiColumns,
   rowActions,
   selection,
   filterButtons,
   hideFilterPanel,
+  debounceSearch,
   presentations,
   renderRows,
   renderRowsWhenEmpty,
@@ -114,6 +116,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                 onCreate={onCreate}
                 createAction={createAction}
                 createLabel={createLabel}
+                headingClassName={headingClassName}
                 divided={variant === "transparent"}
               />
               {headerContent ? <div className="mt-5">{headerContent}</div> : null}
@@ -139,6 +142,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                   filterCount={filterCount}
                   filterButtons={filterButtons}
                   hideFilterPanel={hideFilterPanel}
+                  debounceSearch={debounceSearch}
                   onPanelChange={setActivePanel}
                   onReset={() => setActivePanel(null)}
                   resetView={onReset}
