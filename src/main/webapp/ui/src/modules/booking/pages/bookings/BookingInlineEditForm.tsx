@@ -15,7 +15,7 @@ import {
 } from "@/modules/booking/domain/booking";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { Panel, useBookingEvent } from "./BookingEventPage";
+import { Panel, useBookingEvent } from "./BookingEventContext";
 
 function editable(booking: BookingDetails): booking is BookingDetails & { canEdit: true; state: "CONFIRMED" } {
   return booking.canEdit && booking.state === "CONFIRMED";

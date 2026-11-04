@@ -409,13 +409,7 @@ export function BookingForm(props: BookingFormProps) {
             )}
           </div>
         )}
-        <RenderFields
-          fields={textFields}
-          form={form}
-          disabled={busy}
-          density={props.density}
-          layout={inline ? "inline" : "stacked"}
-        />
+        <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} layout="stacked" />
         <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-6")} aria-live="polite">
           {t(eventKind === "MAINTENANCE" ? "bookings.form.notesCount" : "bookings.form.purposeCount", {
             count: purposeValue.length,
@@ -424,6 +418,7 @@ export function BookingForm(props: BookingFormProps) {
       </div>
       {inline ? null : compact ? (
         <ActionBar
+          className="sticky bottom-0 z-10 bg-popover"
           actions={[
             ...(props.onMoreOptions
               ? [

@@ -90,7 +90,7 @@ describe("calendar availability", () => {
       expect.objectContaining({
         kind: "blockout",
         startsAt: new Date("2026-08-17T09:50:00Z"),
-        endsAt: new Date("2026-08-17T11:00:00Z"),
+        endsAt: new Date("2026-08-17T11:10:00Z"),
         source: expect.objectContaining({ booking: expect.objectContaining({ id: 1, kind: "MAINTENANCE" }) }),
       }),
     ]);
@@ -373,7 +373,7 @@ describe("calendar availability", () => {
       sourced(
         "booking:1",
         "booking",
-        "2026-08-17T09:50:00Z",
+        "2026-08-17T09:40:00Z",
         "2026-08-17T11:20:00Z",
         "2026-08-17T10:00:00Z",
         "2026-08-17T11:00:00Z",
@@ -387,6 +387,52 @@ describe("calendar availability", () => {
       new AbortController().signal,
     );
     expect(available.get("IN1")?.filter(({ kind }) => kind === "booking")).toEqual([]);
+  });
+
+  it("uses the shared maximum gap in query bounds and allows its exact boundary", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(
+          collectionResponse([
+            booking(1, "IN1", "2026-08-17T09:00:00Z", "2026-08-17T09:40:00Z"),
+            booking(2, "IN1", "2026-08-17T09:00:00Z", "2026-08-17T09:41:00Z"),
+            booking(3, "IN1", "2026-08-17T11:19:00Z", "2026-08-17T12:00:00Z"),
+            booking(4, "IN1", "2026-08-17T11:20:00Z", "2026-08-17T12:00:00Z"),
+          ]),
+        );
+      }),
+    );
+    const result = await loadCalendarAvailability(
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, bufferAfterMinutes: 20 }],
+      displayInterval("2026-08-17", "UTC", "10:00", "11:00"),
+      "token",
+      new AbortController().signal,
+    );
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].searchParams.get("where")).toBe(
+      "target=in=(IN1);start<2026-08-17T11:20:00Z;end>2026-08-17T09:40:00Z;state==CONFIRMED",
+    );
+    expect(result.get("IN1")).toEqual([
+      sourced(
+        "booking:2",
+        "booking",
+        "2026-08-17T10:00:00Z",
+        "2026-08-17T10:01:00Z",
+        "2026-08-17T09:00:00Z",
+        "2026-08-17T09:41:00Z",
+      ),
+      sourced(
+        "booking:3",
+        "booking",
+        "2026-08-17T10:59:00Z",
+        "2026-08-17T11:00:00Z",
+        "2026-08-17T11:19:00Z",
+        "2026-08-17T12:00:00Z",
+      ),
+    ]);
   });
 
   it("honors cancellation before starting a batch", async () => {
