@@ -143,6 +143,26 @@ class TimeSlotBookingManagerLifecycleTest {
   }
 
   @Test
+  void preparesParentIdsWithOneBatchedLookup() {
+    TimeSlotBooking stored = booking(1L, 12L, actor);
+    TimeSlotBooking unreadable = booking(2L, 13L, actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(stored, unreadable), 2));
+    when(fixture.bookingInstruments.getBookingSummaries(Set.of(12L, 13L)))
+        .thenReturn(
+            Map.of(
+                12L,
+                new com.researchspace.model.inventory.InstrumentReadSummary(
+                    12L, "Item", false, 7L)));
+
+    List<TimeSlotBooking> prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources();
+
+    assertEquals(7L, prepared.get(0).getVisibleLocation());
+    assertNull(prepared.get(1).getVisibleLocation());
+  }
+
+  @Test
   void preparesRolelessRequesterOwnRowAsFullButNonNavigableAndReadOnly() {
     TimeSlotBooking requested = booking(1L, 12L, actor);
     when(bookingDao.getReadableResources(any(), any()))

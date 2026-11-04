@@ -35,13 +35,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class ContainerReadConstraintParityTest extends SpringTransactionalTest {
 
+  private final com.researchspace.api.v2.resource.ApiV2ResourceCatalog catalog;
   private final InstrumentDao instrumentDao;
   private final CriteriaBuilderFactory criteria;
   private final ContainerReadAccess access;
 
   @Autowired
   ContainerReadConstraintParityTest(
-      InstrumentDao instrumentDao, CriteriaBuilderFactory criteria, ContainerReadAccess access) {
+      InstrumentDao instrumentDao,
+      CriteriaBuilderFactory criteria,
+      ContainerReadAccess access,
+      com.researchspace.api.v2.resource.ApiV2ResourceCatalog catalog) {
+    this.catalog = catalog;
     this.instrumentDao = instrumentDao;
     this.criteria = criteria;
     this.access = access;
@@ -205,6 +210,13 @@ class ContainerReadConstraintParityTest extends SpringTransactionalTest {
             .map(Container::getId)
             .collect(Collectors.toSet());
     assertEquals(containerDao.getReadableActiveContainerIds(ids, user), actual);
+    assertEquals(
+        actual,
+        catalog
+            .find("containers")
+            .orElseThrow()
+            .resolveReadable(new java.util.HashSet<Object>(ids), user)
+            .keySet());
     return actual;
   }
 

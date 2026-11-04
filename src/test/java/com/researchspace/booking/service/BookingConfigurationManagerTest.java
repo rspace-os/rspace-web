@@ -188,6 +188,7 @@ class BookingConfigurationManagerTest {
     BookingConfigurationResourceOperations operations =
         new BookingConfigurationResourceOperations(
             manager,
+            mock(BookingLocationFilterManager.class),
             mock(BookingConfigurationProtectedResourceAccess.class),
             featureFlags,
             Clock.fixed(Instant.EPOCH, ZoneId.of("CST6CDT")),

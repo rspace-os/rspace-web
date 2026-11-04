@@ -13,9 +13,8 @@ import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigatio
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import type { RelationshipSource } from "@/modules/common/relationship-picker/sources";
+import { instrumentRelationshipOption, type RelationshipSource } from "@/modules/common/relationship-picker/sources";
 import { Button } from "@/modules/common/ui/button";
-import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -23,6 +22,7 @@ import {
   type BookingConfigurationInput,
   BookingConfigurationInputSchema,
   bookingConfigurationFields,
+  invalidateBookingCatalogueQueries,
 } from "./bookingConfiguration";
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
@@ -82,23 +82,7 @@ const bookingConfigurationTargetSource: RelationshipSource = {
       ),
     ),
   ownsValue: (value) => /^IN\d+$/i.test(value.trim()),
-  toOption: (document, context) => {
-    const instrument = parseOrThrow(BookingTargetSchema, document);
-    return {
-      value: instrument.globalId,
-      label: instrument.name,
-      content: (
-        <InventoryItem
-          name={instrument.name}
-          globalId={instrument.globalId}
-          href={`/globalId/${instrument.globalId}`}
-          idLinkLabel={context.idLinkLabel(instrument.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
-      ),
-    };
-  },
+  toOption: (document, context) => instrumentRelationshipOption(parseOrThrow(BookingTargetSchema, document), context),
 };
 
 function targetSelection(input: unknown): TargetSelection {
@@ -153,7 +137,7 @@ export function AddBookableItemForm({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+        invalidateBookingCatalogueQueries(queryClient),
       ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },

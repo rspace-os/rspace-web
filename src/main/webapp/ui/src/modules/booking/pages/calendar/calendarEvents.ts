@@ -13,7 +13,7 @@ const PageSchema = v.object({
 });
 
 export const CALENDAR_BOOKING_FIELDS =
-  "id,version,target,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
+  "id,version,target,location,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 
 type CalendarEventFilterScope = { where?: string; q?: string; mine?: boolean };
 
