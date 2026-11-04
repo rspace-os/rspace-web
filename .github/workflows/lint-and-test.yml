@@ -81,6 +81,8 @@ jobs:
               - 'gradlew.bat'
               - 'gradle/**'
               - 'buildSrc/**'
+              - 'src/jetty/**'
+              - '.github/actions/**'
               - '.github/workflows/**'
 
   fast-junit-tests:
@@ -931,7 +933,7 @@ jobs:
         env:
           FRONTEND_BUILD_STATS: ${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}
         run: |
-          ./gradlew war -DgenerateReactDist -DrenameResourcesMD5=true \
+          ./gradlew testClasses war -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
             -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}

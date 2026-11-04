@@ -156,7 +156,7 @@ pipeline {
                 echo 'Building feature branch'
                 withFrontendTools {
                     sh '''
-                    ./gradlew clean war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
+                    ./gradlew clean testClasses war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                     -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                     -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -185,7 +185,7 @@ pipeline {
                 echo "Building prodRelease .war package"
                 withFrontendTools {
                      sh '''
-                     ./gradlew clean war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
+                     ./gradlew clean testClasses war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                     -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                     -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
