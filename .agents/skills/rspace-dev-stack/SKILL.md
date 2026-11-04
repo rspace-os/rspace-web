@@ -16,8 +16,10 @@ do not require booting it.
 
 Commands affect only this worktree. Only pnpm is shared. Gradle home, project
 caches and outputs use per-stack volumes. `down` retains them; `nuke` deletes
-them and the legacy per-stack `app-target`. All build state lives outside
-`/rspace`; host clean/build commands can run concurrently.
+them and the legacy per-stack `app-target`. All backend build state lives outside
+`/rspace`, so host Gradle builds, `./gradlew clean` and `rm -rf build` can run while the
+stack is up. A host `git clean -fdX` also removes the frontend's `node_modules` mount;
+run `down` then `up` afterwards (`restart` recreates only the app).
 
 ## Start and inspect
 

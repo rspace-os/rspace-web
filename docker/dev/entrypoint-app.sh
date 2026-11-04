@@ -50,27 +50,44 @@ export GRADLE_USER_HOME=/var/rspace-build/gradle-home
 # Gradle 9.8 creates buildSrc's cache service before init scripts can change its
 # StartParameter. Give it an external project directory, with links to live source.
 # No mountpoint or symlink is created inside the host worktree.
+#
+# Only what the build reads is linked in. Anything else, such as RSLogs.txt or archive/,
+# which the app writes relative to its working directory, then stays in this volume
+# rather than reaching the worktree as root-owned files. Build scripts are copied, not
+# linked, and every sync removes links and copies whose source has gone.
 PROJECT=/var/rspace-build/project
-for source in /rspace/* /rspace/.[!.]*; do
-  [ -e "${source}" ] || continue
-  name="${source##*/}"
-  case "${name}" in build|.gradle|buildSrc) continue ;; esac
-  case "${name}" in
-    settings.gradle|settings.gradle.kts|build.gradle|build.gradle.kts)
-      rm -f "${PROJECT}/${name}"
-      cp -p "${source}" "${PROJECT}/${name}" ;;
-    *) ln -sfn "${source}" "${PROJECT}/${name}" ;;
-  esac
+PROJECT_LINKS=(src gradle gradlew gradle.properties jetty)
+PROJECT_COPIES=(build.gradle settings.gradle)
+sync_entry() { # source target copy|link
+  if [ ! -e "$1" ]; then
+    rm -rf "$2"
+  elif [ "$3" = copy ]; then
+    rm -rf "$2"
+    cp -p "$1" "$2"
+  else
+    # rm first: ln -sfn onto a real directory would create the link inside it
+    [ -L "$2" ] || rm -rf "$2"
+    ln -sfn "$1" "$2"
+  fi
+}
+for entry in "${PROJECT}"/* "${PROJECT}"/.[!.]*; do
+  [ -L "${entry}" ] || continue
+  name="${entry##*/}"
+  case " ${PROJECT_LINKS[*]} " in *" ${name} "*) ;; *) rm -f "${entry}" ;; esac
 done
+for name in "${PROJECT_LINKS[@]}"; do sync_entry "/rspace/${name}" "${PROJECT}/${name}" link; done
+for name in "${PROJECT_COPIES[@]}"; do sync_entry "/rspace/${name}" "${PROJECT}/${name}" copy; done
 mkdir -p "${PROJECT}/buildSrc"
+for entry in "${PROJECT}"/buildSrc/*; do
+  name="${entry##*/}"
+  [ -e "/rspace/buildSrc/${name}" ] || rm -rf "${entry}"
+done
 for source in /rspace/buildSrc/*; do
   name="${source##*/}"
-  case "${name}" in build) continue ;; esac
   case "${name}" in
-    *.gradle|*.gradle.kts)
-      rm -f "${PROJECT}/buildSrc/${name}"
-      cp -p "${source}" "${PROJECT}/buildSrc/${name}" ;;
-    *) ln -sfn "${source}" "${PROJECT}/buildSrc/${name}" ;;
+    build) continue ;;
+    *.gradle) sync_entry "${source}" "${PROJECT}/buildSrc/${name}" copy ;;
+    *) sync_entry "${source}" "${PROJECT}/buildSrc/${name}" link ;;
   esac
 done
 cd "${PROJECT}"
@@ -171,7 +188,9 @@ if [ "${RSPACE_MAILPIT:-false}" = "true" ]; then
 fi
 
 if [ "${1:-}" = "--compile" ]; then
-  echo "[entrypoint] Compiling RSpace (db mode: ${DB_MODE}) ..."
+  # DB_MODE only selects the startup's resource-filter settings here: compiling never
+  # touches the database.
+  echo "[entrypoint] Compiling RSpace with the ${DB_MODE} startup's build settings (no database changes) ..."
 else
   echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
   echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
