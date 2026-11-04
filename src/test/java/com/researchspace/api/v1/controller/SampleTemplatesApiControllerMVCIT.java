@@ -654,12 +654,12 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
                     String.format(
                         "/samples/%d/actions/updateToLatestTemplateVersion", createdSample.getId()),
                     anyUser))
-            .andExpect(status().is5xxServerError())
+            .andExpect(status().isUnprocessableEntity())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertEquals(
-        "Field [updated choice] value [[\"c1\",\"c2\"]] is invalid according to latest template"
-            + " field definition",
+        "Field 'updated choice' has the value '[\"c1\",\"c2\"]', which the latest template no"
+            + " longer allows. Change the value before updating to the latest template.",
         error.getMessage());
 
     // try updating 2nd sample to latest template definition
@@ -770,7 +770,8 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(2, bulkUpdateResult.getErrorCount());
     // error from attempt to update the 1st sample - radio option no longer available
     assertEquals(
-        "Field [updated radio] value [r1] is invalid according to latest template field definition",
+        "Field 'updated radio' has the value 'r1', which the latest template no longer allows."
+            + " Change the value before updating to the latest template.",
         bulkUpdateResult.getResults().get(0).getError().getErrors().get(0));
     // success from attempt to update 2nd and 3rd sample
     assertEquals(
