@@ -252,7 +252,7 @@ export E2E_MOCK_PORT="${E2E_MOCK_PORT:-9099}"
 ./gradlew clean war -DgenerateReactDist -Dtimestamp=e2e-local
 
 # 2. Start RSpace pointing at the mock server
-./gradlew jettyRunWar -PwarFile="$PWD/build/libs/researchspace-2.28.0-SNAPSHOT-e2e-local.war" \
+./gradlew jettyRunWar -PwarFile="$(ls "$PWD"/build/libs/researchspace-*-e2e-local.war)" \
   -Dtimestamp=e2e-local \
   -Denvironment=drop-recreate-db -Dspring.profiles.active=run \
   -DreactDevMode=false \

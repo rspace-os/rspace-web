@@ -40,7 +40,7 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `./gradlew test -Dfast=true` | Run all pure backend unit tests |
 | `./gradlew test -Dtest=MyClassName` | Run one Spring transactional test class |
 | `./gradlew test` | Run unit and Spring tests; requires a database |
-| `./gradlew integrationTests -Dtest=MyClassIT` | Run one `*IT` class; requires a database |
+| `./gradlew integrationTest -Dtest=MyClassIT` | Run one `*IT` class; requires a database |
 | `./gradlew verify -Denvironment=drop-recreate-db` | Run unit, Spring and `*IT` tests and build the WAR; resets the database |
 | `./gradlew war -DgenerateReactDist` | Build a WAR with the frontend |
 | `./gradlew spotlessApply` | Format Java |

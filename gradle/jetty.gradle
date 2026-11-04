@@ -8,7 +8,7 @@
 //   the Maven JVM that ran jetty:run in-process.
 // - -Djetty.http.port=<port> sets the HTTP port (default 8080).
 // - -Dssl.enabled=true configures the server from jetty/*.xml (HTTP on 8080, HTTPS on 8443), as
-//   pom.xml's jetty-ssl profile does.
+//   the Maven build's jetty-ssl profile did.
 // - -PjettyJvmArgs='<args>' (or the ORG_GRADLE_PROJECT_jettyJvmArgs environment variable) adds
 //   whitespace-separated JVM arguments, e.g. -Xmx4g, -agentlib:jdwp=..., -javaagent:..., which
 //   Maven took from MAVEN_OPTS.
