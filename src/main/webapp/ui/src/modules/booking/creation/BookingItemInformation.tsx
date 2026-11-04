@@ -8,10 +8,13 @@ import { BookingItemInformationContent } from "./BookingItemInformationContent";
 export function BookingItemInformationCard({
   item,
   displayTimezone,
+  date,
   as: Container = "aside",
 }: {
   item: BookableItemOption;
   displayTimezone: string;
+  /** The selected booking date, which sets the week the opening hours are converted for. */
+  date?: string;
   as?: "aside" | "section";
 }) {
   const { t } = useTranslation("booking");
@@ -25,7 +28,7 @@ export function BookingItemInformationCard({
             {t("bookings.itemInformation.title")}
           </CardTitle>
         </CardHeader>
-        <BookingItemInformationContent item={item} displayTimezone={displayTimezone} />
+        <BookingItemInformationContent item={item} displayTimezone={displayTimezone} date={date} />
       </Card>
     </Container>
   );

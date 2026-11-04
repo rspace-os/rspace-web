@@ -6,7 +6,7 @@ describe("My Bookings search", () => {
     expect(myBookingsSearch({ period })).toEqual({ period: "upcoming" });
   });
 
-  it.each(["past"])("keeps the %s period", (period) => {
+  it.each(["past", "cancelled"])("keeps the %s period", (period) => {
     expect(myBookingsSearch({ period })).toEqual({ period });
   });
 });
