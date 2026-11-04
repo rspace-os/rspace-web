@@ -105,6 +105,25 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void findReadableInstrumentHidesPrivateMissingAndTemplateRecords() {
+    ApiInstrument instrument = createBasicInstrumentForUser(testUser, "readable-instrument");
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(otherUser);
+    ApiInstrumentTemplate template =
+        createBasicInstrumentTemplateForUser(testUser, "not-an-instrument");
+
+    assertEquals(
+        instrument.getId(),
+        instrumentApiMgr
+            .findReadableInstrument(instrument.getId(), testUser)
+            .orElseThrow()
+            .getId());
+    assertTrue(instrumentApiMgr.findReadableInstrument(instrument.getId(), otherUser).isEmpty());
+    assertTrue(instrumentApiMgr.findReadableInstrument(Long.MAX_VALUE, testUser).isEmpty());
+    assertTrue(instrumentApiMgr.findReadableInstrument(template.getId(), testUser).isEmpty());
+  }
+
+  @Test
   public void createAndRetrieveBasicInstrument() {
     // create a minimal instrument
     ApiInstrument created = createBasicInstrumentForUser(testUser);

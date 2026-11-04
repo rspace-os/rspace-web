@@ -97,8 +97,7 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
     return collectionQuery.page(
         criteriaBuilderFactory,
         getSession(),
-        request,
-        access.constraintOrEmpty().map(collectionQuery::compileConstraint).orElse(null));
+        access.constraintOrEmpty().map(request::restrict).orElse(request));
   }
 
   /** Counts the records this user may read that match a REST API v2 collection request. */
@@ -110,8 +109,7 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
     return collectionQuery.count(
         criteriaBuilderFactory,
         getSession(),
-        request,
-        access.constraintOrEmpty().map(collectionQuery::compileConstraint).orElse(null));
+        access.constraintOrEmpty().map(request::restrict).orElse(request));
   }
 
   protected String getOwnedByAndPermittedItemsSqlQueryFragment(

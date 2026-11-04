@@ -4,10 +4,11 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import getRootStore from "../../getRootStore";
 
 const NOW = 1_700_000_000_000;
-const TOKEN_URL = "/userform/ajax/inventoryOauthToken";
+const TOKEN_URL = "/api/v2/oauth/tokens";
 
 const fakeJwt = (secondsToExpiry: number) => {
   const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, "");
@@ -15,13 +16,15 @@ const fakeJwt = (secondsToExpiry: number) => {
 };
 
 const serveTokens = (secondsToExpiry: number) => {
-  const tokenEndpoint = vi.fn(() => HttpResponse.json({ data: fakeJwt(secondsToExpiry) }));
-  server.use(http.get(TOKEN_URL, tokenEndpoint));
+  const tokenEndpoint = vi.fn(() => HttpResponse.json({ accessToken: fakeJwt(secondsToExpiry) }));
+  server.use(http.post(TOKEN_URL, tokenEndpoint));
   return tokenEndpoint;
 };
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
+  resetUiTokenForTests();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -36,9 +39,9 @@ describe("AuthStore token refresh", () => {
   test("stays authenticated while a refresh is in flight", async () => {
     const response = Promise.withResolvers<void>();
     server.use(
-      http.get(TOKEN_URL, async () => {
+      http.post(TOKEN_URL, async () => {
         await response.promise;
-        return HttpResponse.json({ data: fakeJwt(3600) });
+        return HttpResponse.json({ accessToken: fakeJwt(3600) });
       }),
     );
     const store = getRootStore().authStore;
@@ -54,7 +57,7 @@ describe("AuthStore token refresh", () => {
     expect(store.isAuthenticated).toBe(true);
   });
 
-  test.each(["authenticate", "synchronizeWithSessionStorage"] as const)(
+  test.each(["authenticate", "refreshAuthentication"] as const)(
     "%s refreshes the token five minutes before it expires",
     async (method) => {
       sessionStorage.setItem("id_token", fakeJwt(3600));
@@ -91,13 +94,14 @@ describe("AuthStore token refresh", () => {
     ["the login page", () => HttpResponse.html("<html>login</html>")],
   ])("stays authenticated when the refresh gets %s", async (_, response) => {
     onTestFinished(silenceConsole(["error"], ["Not implemented: navigation"]));
-    server.use(http.get(TOKEN_URL, response));
+    sessionStorage.setItem("id_token", fakeJwt(3600));
+    server.use(http.post(TOKEN_URL, response));
     const store = getRootStore().authStore;
     runInAction(() => {
       store.isAuthenticated = true;
     });
 
-    await store.authenticate();
+    await store.authenticate().catch(() => undefined);
 
     expect(store.isAuthenticated).toBe(true);
   });

@@ -34,7 +34,11 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
 
   @Override
   public User authenticate(HttpServletRequest request) {
-    String accessToken = retrieveTokenFromHeader(request);
+    return authenticate(request, retrieveTokenFromHeader(request));
+  }
+
+  /** Authenticates a token that has already been retrieved and validated. */
+  protected User authenticate(HttpServletRequest request, String accessToken) {
     Optional<AuthenticationResult> result = findUserForToken().apply(accessToken);
 
     if (!result.isPresent()) {

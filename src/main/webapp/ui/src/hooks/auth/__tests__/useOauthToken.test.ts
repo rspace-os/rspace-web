@@ -3,10 +3,11 @@ import { HttpResponse, http } from "msw";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import useOauthToken from "../useOauthToken";
 
 const NOW = 1_700_000_000_000;
-const TOKEN_URL = "/userform/ajax/inventoryOauthToken";
+const TOKEN_URL = "/api/v2/oauth/tokens";
 
 const fakeJwt = (secondsToExpiry: number) => {
   const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, "");
@@ -14,13 +15,15 @@ const fakeJwt = (secondsToExpiry: number) => {
 };
 
 const serveTokens = (secondsToExpiry: number) => {
-  const tokenEndpoint = vi.fn(() => HttpResponse.json({ data: fakeJwt(secondsToExpiry) }));
-  server.use(http.get(TOKEN_URL, tokenEndpoint));
+  const tokenEndpoint = vi.fn(() => HttpResponse.json({ accessToken: fakeJwt(secondsToExpiry) }));
+  server.use(http.post(TOKEN_URL, tokenEndpoint));
   return tokenEndpoint;
 };
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
+  resetUiTokenForTests();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -60,10 +63,10 @@ describe("useOauthToken", () => {
     const { result } = renderHook(() => useOauthToken());
     await result.current.getToken();
 
-    server.use(http.get(TOKEN_URL, () => new HttpResponse(null, { status: 403 })));
+    server.use(http.post(TOKEN_URL, () => new HttpResponse(null, { status: 403 })));
     await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
 
-    const tokenEndpoint = serveTokens(3600);
+    const tokenEndpoint = serveTokens(7200);
     await result.current.getToken();
     await vi.advanceTimersByTimeAsync(60 * 1000);
     expect(tokenEndpoint).toHaveBeenCalledTimes(1);
@@ -95,6 +98,6 @@ describe("useOauthToken", () => {
 
     await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
 
-    expect(tokenEndpoint).toHaveBeenCalledTimes(1);
+    expect(tokenEndpoint).toHaveBeenCalledTimes(2);
   });
 });

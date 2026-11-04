@@ -1,7 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
-import { tokenRefreshDelayMs } from "@/modules/common/utils/auth";
+import { isPublicDocumentView, mintUiToken, tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -20,9 +20,6 @@ import {
   systemSettingsFromApiResponse,
 } from "./systemSettingsMapping";
 
-/* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
-const publicView = document.getElementById("public_document_view") !== null;
-
 export type {
   B2InstSettings,
   DataCiteServerUrl,
@@ -37,6 +34,7 @@ export default class AuthStore {
   isSynchronizing: boolean = true;
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
+  private refreshFailures = 0;
   systemSettings: SystemSettings | undefined;
   pidinstEnabled: boolean = false;
 
@@ -49,7 +47,7 @@ export default class AuthStore {
       pidinstEnabled: observable,
       authenticate: action,
       signOut: action,
-      synchronizeWithSessionStorage: action,
+      refreshAuthentication: action,
       getSystemSettings: action,
       setSystemSettings: action,
       fetchPidinstEnabled: action,
@@ -61,19 +59,16 @@ export default class AuthStore {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
     }
-    /*
-     * isAuthenticated only changes when a token arrives: Router renders the
-     * Inventory routes only while it is true, so clearing it would unmount the
-     * page for every refresh, and on failure would empty the page behind the
-     * "leave page?" prompt that the redirect to /login can raise.
-     */
-    const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
-    return axios
-      .get<{ data: string }>(oAuthUrl)
+    this.timeoutId = null;
+    // Keep Inventory mounted while refreshing; invalidate only after a rejected or expired refresh.
+    const tokenRequest = isPublicDocumentView()
+      ? axios
+          .get<{ data: string }>("/public/publicView/userform/ajax/inventoryOauthToken")
+          .then((response) => response.data.data)
+      : mintUiToken();
+    return tokenRequest
       .then(
-        action((response) => {
-          const token = response.data.data;
-
+        action((token) => {
           if (typeof token === "undefined") {
             // Usually this means that backend returned login.html in response.data
             window.location.href = "/login";
@@ -82,19 +77,41 @@ export default class AuthStore {
           JwtService.saveToken(token);
           InvApiService.setAuthorizationHeader();
           ElnApiService.setAuthorizationHeader();
+          this.refreshFailures = 0;
           this.isAuthenticated = true;
           this.isSynchronizing = false;
-          this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
+          this.scheduleRefresh(tokenRefreshDelayMs(token));
         }),
       )
       .then(() => {})
-      .catch(() => {
-        // @ts-expect-error I can update the location by assigning a string to it
-        window.location = "/login";
+      .catch((error: unknown) => {
+        this.isSynchronizing = false;
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          this.isAuthenticated = false;
+          JwtService.destroyToken();
+          window.location.href = "/login";
+          return;
+        }
+        const storedToken = JwtService.getToken();
+        const millisecondsToExpiry = storedToken ? JwtService.secondsToExpiry(storedToken) * 1000 : 0;
+        if (millisecondsToExpiry > 0) {
+          const backoffMs = 1000 * 2 ** Math.min(this.refreshFailures++, 5);
+          this.scheduleRefresh(Math.min(backoffMs, millisecondsToExpiry));
+        } else {
+          this.isAuthenticated = false;
+        }
+        throw error;
       });
   }
 
+  private scheduleRefresh(delay: number) {
+    if (!Number.isFinite(delay)) return;
+    // authenticate schedules recovery before rejecting; timer callers must consume that rejection.
+    this.timeoutId = setTimeout(() => void this.authenticate().catch(() => undefined), delay);
+  }
+
   signOut() {
+    if (this.timeoutId) clearTimeout(this.timeoutId);
     this.isSigningOut = true;
     this.isAuthenticated = false;
     JwtService.destroyToken();
@@ -104,21 +121,8 @@ export default class AuthStore {
     await ElnApiService.get<void>("status");
   }
 
-  synchronizeWithSessionStorage(): Promise<void> {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-    }
+  refreshAuthentication(): Promise<void> {
     this.isSynchronizing = true;
-    const token = JwtService.getToken();
-
-    if (token && !JwtService.isExpiringSoon(token)) {
-      this.isAuthenticated = true;
-      InvApiService.setAuthorizationHeader();
-      ElnApiService.setAuthorizationHeader();
-      this.isSynchronizing = false;
-      this.timeoutId = setTimeout(() => void this.authenticate(), tokenRefreshDelayMs(token));
-      return Promise.resolve();
-    }
 
     return this.authenticate();
   }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -40,6 +41,7 @@ import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.ShiroTestUtils;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.UserProfileController.ApiKeyInfo;
 import com.researchspace.webapp.controller.UserProfileController.UserGroupInfo;
@@ -51,6 +53,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -131,6 +134,31 @@ public class UserProfileControllerTest {
     assertNotNull(aro.getData());
     assertNull(aro.getError());
     assertEquals(result.getClientId(), aro.getData().getOAuthApps().get(0).getClientId());
+  }
+
+  @Test
+  public void inventoryOAuthTokenDelegatesToSharedUiTokenCreation() {
+    Principal principal = () -> sessionUser.getUsername();
+    when(usrMgr.getUserByUsername(sessionUser.getUsername())).thenReturn(sessionUser);
+    when(oAuthTokenManager.createUiToken(sessionUser)).thenReturn("access-token");
+
+    AjaxReturnObject<String> result =
+        userProfileController.getInventoryOauthToken(principal, mockRequest);
+
+    assertEquals("access-token", result.getData());
+    verify(oAuthTokenManager).createUiToken(sessionUser);
+  }
+
+  @Test
+  public void inventoryOAuthTokenRefusesRunAsSession() {
+    Principal principal = () -> sessionUser.getUsername();
+    mockRequest.getSession().setAttribute(SessionAttributeUtils.IS_RUN_AS, Boolean.TRUE);
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> userProfileController.getInventoryOauthToken(principal, mockRequest));
+
+    verify(oAuthTokenManager, never()).createUiToken(Mockito.any());
   }
 
   @Test
