@@ -78,6 +78,6 @@ public class NfsFileHandlerTest extends SpringTransactionalTest {
     assertNotNull(downloadedFile);
     assertThat(downloadedFile).exists();
     assertThat(downloadedFile).hasName(testFileDetails.getName()); // name from nfsFileDetails
-    assertThat(downloadedFile).hasSize(13248L); // length of simpleExcel.xlsx file
+    assertThat(downloadedFile).hasSize(8577L); // length of simpleExcel.xlsx file
   }
 }

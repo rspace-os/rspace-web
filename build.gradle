@@ -465,11 +465,11 @@ filterProperties['project.basedir'] = projectDir.absolutePath
 }
 def deployment = filterProperties['deployment']
 
-// Maven only skips pom.xml's nonFilteredFileExtensions and corrupts the other binaries it
-// filters (docx, xlsx, odt, mp4...); Gradle skips every binary type the resources contain.
+// The extensions in pom.xml's nonFilteredFileExtensions: binaries, which filtering would corrupt.
+// Keep the two lists in step.
 def binaryPatterns = [
-  'zip', 'doc', 'docx', 'tif', 'tiff', 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp3', 'mp4',
-  'flv', 'ttf', 'xlsx', 'odt', 'ods', 'odp', 'cdx', 'rtf', 'b64',
+  'zip', 'doc', 'tif', 'tiff', 'jpg', 'png', 'pdf', 'mp3', 'ttf',
+  'jpeg', 'gif', 'docx', 'xlsx', 'odt', 'ods', 'odp', 'cdx', 'mp4', 'flv',
 ].collectMany { ["**/*.${it}".toString(), "**/*.${it.toUpperCase()}".toString()] }
 
 sourceSets {

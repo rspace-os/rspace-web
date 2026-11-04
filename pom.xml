@@ -287,6 +287,16 @@
             <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
             <nonFilteredFileExtension>mp3</nonFilteredFileExtension>
             <nonFilteredFileExtension>ttf</nonFilteredFileExtension>
+            <nonFilteredFileExtension>jpeg</nonFilteredFileExtension>
+            <nonFilteredFileExtension>gif</nonFilteredFileExtension>
+            <nonFilteredFileExtension>docx</nonFilteredFileExtension>
+            <nonFilteredFileExtension>xlsx</nonFilteredFileExtension>
+            <nonFilteredFileExtension>odt</nonFilteredFileExtension>
+            <nonFilteredFileExtension>ods</nonFilteredFileExtension>
+            <nonFilteredFileExtension>odp</nonFilteredFileExtension>
+            <nonFilteredFileExtension>cdx</nonFilteredFileExtension>
+            <nonFilteredFileExtension>mp4</nonFilteredFileExtension>
+            <nonFilteredFileExtension>flv</nonFilteredFileExtension>
           </nonFilteredFileExtensions>
         </configuration>
       </plugin>
