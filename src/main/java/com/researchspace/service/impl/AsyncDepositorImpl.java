@@ -39,6 +39,7 @@ import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFileResult;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import java.io.File;
 import java.io.IOException;
@@ -170,6 +171,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       User subject,
       RepoDepositConfig repoDepositConfig) {
     boolean updateSucceed = false;
+    boolean doiNotFound = false;
     String doiLink = "";
     if (result.isSucceeded()) {
       try { // only supports DATAVERSE and ZENODO
@@ -188,10 +190,13 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
                 subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
       } catch (Exception e) {
         log.error(
-            "Impossible to report the RelatedObject to the RAiD \""
+            "Impossible to report the RelatedObject link \""
+                + doiLink
+                + "\" to the RAiD \""
                 + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
-                + "\"relatedObjects becasue of the following error: "
+                + "\" relatedObjects because of the following error: "
                 + e);
+        doiNotFound = e instanceof RaIDDoiNotFoundException;
       } finally {
         if (updateSucceed) {
           log.info(
@@ -205,7 +210,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               "RelatedObject to the RAiD \""
                   + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                   + "\" has not been updated correctly.");
-          doiLink = "";
         }
       }
     }
@@ -214,7 +218,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         app.getLabel(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidAgencyUrl(),
-        doiLink);
+        doiLink,
+        doiNotFound);
   }
 
   /**
@@ -281,6 +286,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     config.put("identifier", result.getRaidIdentifier());
     config.put("url", result.getRaidUrl());
     config.put("doi", result.getDoi());
+    config.put("doiNotFound", result.isDoiNotFound());
     config.put("msg", messages);
 
     String msg =

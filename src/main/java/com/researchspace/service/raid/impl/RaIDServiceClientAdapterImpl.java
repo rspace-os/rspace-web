@@ -5,7 +5,9 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
@@ -14,6 +16,7 @@ import com.researchspace.raid.model.RaID;
 import com.researchspace.raid.model.RaIDRelatedObject;
 import com.researchspace.raid.model.RaIDServicePoint;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServerConfigurationDTO;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.MultiInstanceBaseClient;
@@ -24,10 +27,13 @@ import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -54,6 +60,8 @@ public class RaIDServiceClientAdapterImpl
   public static final String RAID_CONFIGURED_SERVERS = "RAID_CONFIGURED_SERVERS";
   public static final String RAID_OAUTH_CONNECTED = "RAID_OAUTH_CONNECTED";
   public static final String RAID_ALIAS = "RAID_ALIAS";
+  private static final Pattern RELATED_OBJECT_ID_FIELD =
+      Pattern.compile("relatedObject\\[(\\d+)]\\.id");
 
   @Setter
   @Getter
@@ -136,14 +144,62 @@ public class RaIDServiceClientAdapterImpl
   @Override
   public boolean addRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
       throws URISyntaxException, JsonProcessingException {
-    RaID newUpdatedRaid =
-        raidClient.addRaIDRelatedObject(
-            getApiBaseUrl(raid.getRaidServerAlias()),
-            getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias()),
-            raid.getRaidPrefix(),
-            raid.getRaidSuffix(),
-            doiLink);
+    String apiBaseUrl = getApiBaseUrl(raid.getRaidServerAlias());
+    String accessToken =
+        getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias());
+    RaID newUpdatedRaid;
+    try {
+      newUpdatedRaid =
+          raidClient.addRaIDRelatedObject(
+              apiBaseUrl, accessToken, raid.getRaidPrefix(), raid.getRaidSuffix(), doiLink);
+    } catch (HttpClientErrorException e) {
+      if (isAppendedRelatedObjectNotFound(e, apiBaseUrl, accessToken, raid)) {
+        throw new RaIDDoiNotFoundException(
+            "RAiD could not resolve the related object link \"" + doiLink + "\"", e);
+      }
+      throw e;
+    }
     return newUpdatedRaid.getRelatedObject().contains(new RaIDRelatedObject(doiLink));
+  }
+
+  // The client appends the link after the related objects the RAiD already has, so RAiD refused
+  // the new link only if it reports "uri not found" at that index. The RAiD stores a list that can
+  // repeat a link, but it reads back as a set, so the new link can sit past the counted ones.
+  private boolean isAppendedRelatedObjectNotFound(
+      HttpClientErrorException e, String apiBaseUrl, String accessToken, RaIDReferenceDTO raid) {
+    List<Integer> notFoundIndexes = getNotFoundRelatedObjectIndexes(e);
+    if (notFoundIndexes.isEmpty()) {
+      return false;
+    }
+    try {
+      Set<RaIDRelatedObject> existingRelatedObjects =
+          raidClient
+              .getRaID(apiBaseUrl, accessToken, raid.getRaidPrefix(), raid.getRaidSuffix())
+              .getRelatedObject();
+      int existingCount = existingRelatedObjects == null ? 0 : existingRelatedObjects.size();
+      return notFoundIndexes.stream().anyMatch(index -> index >= existingCount);
+    } catch (RuntimeException readFailure) {
+      log.warn(
+          "Could not read the RAiD \"{}\" to check which related object was refused",
+          raid.getRaidIdentifier(),
+          readFailure);
+      return false;
+    }
+  }
+
+  private static List<Integer> getNotFoundRelatedObjectIndexes(HttpClientErrorException e) {
+    List<Integer> indexes = new ArrayList<>();
+    JsonNode body = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
+    if (body == null) {
+      return indexes;
+    }
+    for (JsonNode failure : body.path("failures")) {
+      Matcher fieldId = RELATED_OBJECT_ID_FIELD.matcher(failure.path("fieldId").asText());
+      if (fieldId.matches() && "uri not found".equals(failure.path("message").asText())) {
+        indexes.add(Integer.parseInt(fieldId.group(1)));
+      }
+    }
+    return indexes;
   }
 
   @Override
