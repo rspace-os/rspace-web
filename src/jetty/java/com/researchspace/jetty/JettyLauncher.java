@@ -198,7 +198,8 @@ public final class JettyLauncher {
                   System.out.println("[jetty] Redeploying the webapp ...");
                   try {
                     // Session attributes belong to the old webapp classloader. Match Maven's
-                    // clean login redirect after redeploy instead of retaining incompatible objects.
+                    // clean login redirect after redeploy instead of retaining incompatible
+                    // objects.
                     webapp.getSessionHandler().getSessionCache().setInvalidateOnShutdown(true);
                     webapp.stop();
                     // Drop the servlets, filters and listeners remembered from the last start,
