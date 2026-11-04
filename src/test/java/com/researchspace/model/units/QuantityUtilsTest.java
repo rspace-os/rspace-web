@@ -69,6 +69,16 @@ public class QuantityUtilsTest {
     assertThrows(IllegalArgumentException.class, () -> qUtils.sum(emptyQuantities));
   }
 
+  /** An unknown or missing unit id used to be summed as "items". */
+  @Test
+  public void sumRejectsUnknownAndMissingUnitIds() {
+    var items = new QuantityInfo(BigDecimal.ONE, RSUnitDef.DIMENSIONLESS.getId());
+    var unknownUnit = List.<Quantifiable>of(items, new QuantityInfo(BigDecimal.ONE, 99));
+    var missingUnit = List.<Quantifiable>of(items, new QuantityInfo(BigDecimal.ONE, null));
+    assertThrows(IllegalArgumentException.class, () -> qUtils.sum(unknownUnit));
+    assertThrows(IllegalArgumentException.class, () -> qUtils.sum(missingUnit));
+  }
+
   @Test
   public void sumMassReturnsAppropriateUnitsInString() {
     SomeQuantifiableThing inMicroGrammes =

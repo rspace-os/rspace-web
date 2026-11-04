@@ -18,13 +18,6 @@ beforeAll(async () => {
   InEnglish = await createRealI18nWrapper({ resources: { common, inventory }, defaultNS: "common" });
 });
 
-/*
- * The store is mocked as a fresh profile - getUnit answering undefined for every id - which is the
- * one thing OperationWizard.test.tsx's category-aware mock cannot express. In that window
- * SubSampleModel.quantityCategory throws, and ProcessAction mounts this wizard as soon as the
- * selection is processable, NOT only while the dialog is open, so the throw took out the whole
- * context menu.
- */
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
@@ -33,7 +26,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
       getTemplate: vi.fn(() => Promise.resolve(null)),
     },
     uiStore: { addAlert: vi.fn() },
-    unitStore: { getUnit: () => undefined, unitsOfCategory: () => [] },
   }),
 }));
 
@@ -56,12 +48,14 @@ function render(ui: React.ReactElement) {
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-describe("OperationWizard while the unit store is still loading", () => {
+describe("OperationWizard for origins of every unit category", () => {
   /*
    * Molarity (unit ids 11-14) and concentration (15-17) are real, server-supported inventory units
    * (RSUnitDef), and the sample/subsample API applies no category restriction, so a subsample can
-   * genuinely hold one. The static unit table only knows volume, mass and dimensionless, so
-   * toCommonUnit -> atomicUnitOfSameCategory THROWS "Unknown unit: N" for them.
+   * genuinely hold one. toCommonUnit -> atomicUnitOfSameCategory only knows volume, mass and
+   * dimensionless, so it THROWS "Unknown unit: N" for them. ProcessAction mounts this wizard as
+   * soon as the selection is processable, NOT only while the dialog is open, so a throw would take
+   * out the whole context menu.
    */
   it.each([
     ["a single origin", [makeMockSubSample({})]],
@@ -78,7 +72,7 @@ describe("OperationWizard while the unit store is still loading", () => {
     expect(() => render(<OperationWizard open={false} onClose={vi.fn()} origins={origins} />)).not.toThrow();
   });
 
-  it("renders the per-subsample amount inputs without dereferencing the unit store", () => {
+  it("renders the per-subsample amount inputs", () => {
     expect(() =>
       render(
         <OperationDetailsStep

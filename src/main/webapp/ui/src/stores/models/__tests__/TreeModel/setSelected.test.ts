@@ -9,9 +9,6 @@ vi.mock("../../../stores/getRootStore", () => ({
     uiStore: {
       setVisiblePanel: () => {},
     },
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
     peopleStore: {
       currentUser: { username: "user" },
     },

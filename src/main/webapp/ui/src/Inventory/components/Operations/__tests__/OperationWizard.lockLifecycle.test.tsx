@@ -18,7 +18,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
       getTemplate: vi.fn(() => Promise.resolve(null)),
     },
     uiStore: { addAlert: vi.fn() },
-    unitStore: { getUnit: () => ({ label: "ml" }), unitsOfCategory: () => [] },
   }),
 }));
 

@@ -10,26 +10,9 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {},
 }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "foo",
-        category: "mass",
-        description: "foo is mass",
-      }),
-    },
-  }),
+  default: () => ({}),
 }));
 
-const unitOptions = [
-  {
-    id: 1,
-    label: "foo",
-    category: "mass",
-    description: "foo is mass",
-  },
-];
 describe("Quantity", () => {
   describe("Unit selector", () => {
     test('When there is only one subsample being created, "per subsample" should not be shown.', () => {
@@ -47,10 +30,6 @@ describe("Quantity", () => {
           });
           const rootStore = makeMockRootStore({
             uiStore: {},
-            unitStore: {
-              units: unitOptions,
-              unitsOfCategory: () => unitOptions,
-            },
           });
           const { container } = render(
             <storesContext.Provider value={rootStore}>
@@ -77,10 +56,6 @@ describe("Quantity", () => {
           });
           const rootStore = makeMockRootStore({
             uiStore: {},
-            unitStore: {
-              units: unitOptions,
-              unitsOfCategory: () => unitOptions,
-            },
           });
           const { container } = render(
             <storesContext.Provider value={rootStore}>
@@ -109,10 +84,6 @@ describe("Quantity", () => {
           });
           const rootStore = makeMockRootStore({
             uiStore: {},
-            unitStore: {
-              units: unitOptions,
-              unitsOfCategory: () => unitOptions,
-            },
           });
           const { container } = render(
             <storesContext.Provider value={rootStore}>
@@ -139,10 +110,6 @@ describe("Quantity", () => {
           });
           const rootStore = makeMockRootStore({
             uiStore: {},
-            unitStore: {
-              units: unitOptions,
-              unitsOfCategory: () => unitOptions,
-            },
           });
           const { container } = render(
             <storesContext.Provider value={rootStore}>

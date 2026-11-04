@@ -10,9 +10,7 @@ vi.mock("../../../common/InvApiService", () => ({ default: {} }));
 // cut the RootStore -> SearchStore -> TemplateModel module cycle, which is not
 // exercised by these model-level tests
 vi.mock("../../stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: { getUnit: () => ({ label: "ml" }) },
-  }),
+  default: () => ({}),
 }));
 
 function makeLinkField(

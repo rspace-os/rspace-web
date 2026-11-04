@@ -44,7 +44,6 @@ it("loads the current user with an expiring token after a transient mint failure
   const fetchCurrentUser = vi.fn().mockResolvedValue({ getBench: vi.fn().mockResolvedValue(undefined) });
   stores.current = {
     peopleStore: { fetchCurrentUser, currentUser: {} },
-    unitStore: { fetchUnits: vi.fn().mockResolvedValue(undefined) },
   } as unknown as RootStore;
   const authStore = new AuthStore(stores.current);
   stores.current.authStore = authStore;

@@ -30,9 +30,6 @@ vi.mock("../../../../../stores/stores/getRootStore", () => ({
       addAlert: () => {},
       setVisiblePanel: () => {},
     },
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
     peopleStore: {
       currentUser: {
         id: 1,

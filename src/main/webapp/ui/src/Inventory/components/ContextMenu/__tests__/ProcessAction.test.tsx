@@ -44,7 +44,7 @@ vi.mock("../../Operations/OperationWizard", () => ({
 vi.mock("../useProcessAvailable", () => ({ useProcessAvailable: () => true }));
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
-  default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) }, uiStore: { addAlert } }),
+  default: () => ({ uiStore: { addAlert } }),
 }));
 
 describe("isProcessableSelection", () => {

@@ -9,11 +9,7 @@ import CustomField from "../CustomField";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),

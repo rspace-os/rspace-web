@@ -7,11 +7,7 @@ import { makeMockSubSample } from "../SubSampleModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 const arbitraryQuantity: Arbitrary<Quantity> = fc.record({
   unitId: fc.nat(),
