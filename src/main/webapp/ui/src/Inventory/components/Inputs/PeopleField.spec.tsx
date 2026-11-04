@@ -1,11 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, expect, test } from "vitest";
+import { render } from "@testing-library/react";
+import { expect, test } from "vitest";
 import { page } from "vitest/browser";
 import materialTheme from "@/theme";
 import PeopleField from "./PeopleField";
-
-afterEach(cleanup);
 
 test("names the people selector and its loading indicator", async () => {
   render(
