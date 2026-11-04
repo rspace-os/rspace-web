@@ -48,7 +48,7 @@ exit
 ```
 ***For local development with docker MariaDB, you might need to use ``` GRANT ALL ON rspace.* TO 'rspacedbuser'``` or ``` GRANT ALL ON rspace.* TO 'rspacedbuser'@'localhost'``` instead***
 
-(Note for developers - no need to manually import and run this file when using maven to drop-recreate-db on your locally installed MariaDB and RSpace)
+(Note for developers - no need to manually import and run this file when using Gradle with `-Denvironment=drop-recreate-db` on your locally installed MariaDB and RSpace)
 You will also need the SQL file to import into the DB, which you can find here - https://github.com/rspace-os/rspace-web/blob/main/src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql
 
 At this stage you will need to import the SQL file into the database, you can do this by coping the file into the docker container and then importing the file from the containers bash command line.

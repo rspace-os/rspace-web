@@ -16,7 +16,7 @@ This document is written in Markdown format.
 - If it has FK references to any BaseRecord or User/Group table, we need to update `UserDeletionManagerImpl` to support the 'Delete User' use case.
 - If you've written some JUnit tests that extend from RealTransactionSpringTestBase (i.e. test cases that run real transactions) then remember to add to the 'DatabaseCleaner.cleanUp' method
   the table name in the list of tables to delete after a test run -  this keeps the database clean between test runs. The order in which rows are removed is important, to avoid FK constraint errors.
-- Is this a table that is defined as a Hibernate entity? Sometimes a 3rd party library (e.g. liquibase, spring-social, chemistry tables) requires its own table that is not created or managed by Hibernate. In this case you may need to edit scripts in the *maven* folder.
+- Is this a table that is defined as a Hibernate entity? Sometimes a 3rd party library (e.g. liquibase, spring-social, chemistry tables) requires its own table that is not created or managed by Hibernate. In this case add it with a Liquibase changeset, and check `DatabaseCleaner` and the baseline script `liquibaseConfig/rs-dbbaseline-utf8.sql` handle it.
 - Ensure your Java @Entity-annotated class implements Serializable. 
 - If rows are likely to be read more often than written to, consider registering the class with Hibernate's second-level cache 
 - Review Hibernate association mappings - even though @ManyToOne is eager by default, consider using a lazy fetch strategy if queries don't usually need data from the associated entity.
@@ -105,8 +105,9 @@ Java updates should be tested first on community-test using a realistic database
 
 ## Using Liquibase 
 
-We use Liquibase to apply schema updates to the database. When you run `mvn -Denvironment=drop-recreate-db`
-what happens in the background is that maven drops the `rspace` database and re-creates it from the
+We use Liquibase to apply schema updates to the database. When you run a Gradle test task with `-Denvironment=drop-recreate-db`
+(e.g. `./gradlew test -Denvironment=drop-recreate-db`), what happens in the background is that its
+`recreateDatabase` task drops the `rspace` database and re-creates it from the
 `src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql` script. Then, when RSpace is 
 started, all the changesets defined in liquibase "changelog" xmls are applied. On production, 
 the database already exists, the new changesets will be applied on top of it. 
@@ -139,40 +140,39 @@ Then append them into the current version's changeset file in *src/main/resource
 
 ### Auto-generating the changesets by comparing to the schema created out of Hibernate/JPA annotations 
 
-In `pom.xml` file there is a profile that can generate database schema out of Hibernate/JPA annotations, 
-using `hibernate4-maven-plugin`. To run the maven task & generate such schema you need to first 
-create a separate database called `rspace_hib`, you can do that with the following mysql commands:
+The idea is to compare the schema built by the baseline script and Liquibase updates with a schema
+generated from the Hibernate/JPA annotations, held in a separate database called `rspace_hib`.
 
-        drop database rspace_hib;
-        CREATE DATABASE rspace_hib collate 'utf8mb4_unicode_ci';
+**The build no longer generates that schema.** The Maven `mysql-clean-hibernate` profile used to
+run `hibernate4-maven-plugin` to export it; that plugin went in the Hibernate 6 migration, and
+nothing replaced it. What remains is the database setup:
+
+    ./gradlew recreateDatabase -Denvironment=drop-recreate-hibernate-db
+
+drops `rspace_hib` and creates it again, empty: `-Denvironment=drop-recreate-hibernate-db` points
+`recreateDatabase` at `rspace_hib` and skips the baseline script. The `rspacedbuser` user needs
+rights on it, e.g.:
+
         GRANT ALL ON rspace_hib.* TO 'rspacedbuser'@'localhost';
 
-Then populate `rspace_hib` with the schema generated from the Hibernate/JPA annotations:
-
-    mvn process-classes -Denvironment=drop-recreate-hibernate-db
-
-The `-Denvironment=drop-recreate-hibernate-db` activates the `mysql-clean-hibernate` profile, which
-drops/recreates `rspace_hib` (in the `initialize` phase) and then runs the `hibernate4-maven-plugin`
-`export` goal (bound to `process-classes`) to write the annotation-derived schema into it. Running up
-to `process-classes` is enough; do not pass `-Dmaven.test.skip=true` (the drop/recreate step is gated
-on it).
-
-This is a DDL-only comparison, so `rspace_hib` should contain *only* the Hibernate-generated schema.
-Do not boot the webapp against `rspace_hib`, and do not run the Liquibase seed/changesets on it: the
-seed targets tables that are not Hibernate entities (e.g. the Spring Batch `BATCH_*` tables) and would
-fail or add noise to the diff.
+You then need to fill `rspace_hib` with the annotation-derived schema yourself, e.g. with
+Hibernate's schema export. This is a DDL-only comparison, so `rspace_hib` should contain *only* the
+Hibernate-generated schema. Do not boot the webapp against `rspace_hib`, and do not run the
+Liquibase seed/changesets on it: the seed targets tables that are not Hibernate entities (e.g. the
+Spring Batch `BATCH_*` tables) and would fail or add noise to the diff.
 
 Next, you can compare a regular database schema created from baseline script and  liquibase updates 
 (i.e. one in your regular `rspace` database), to the schema auto-generated from Hibernate/JPA 
-annotations (i.e. one in your new `rspace_hib` database).
+annotations (i.e. one in your `rspace_hib` database).
 
-You can compare manually, or run another maven command:
+You can compare manually, or run:
 
-    mvn -e process-resources -Denvironment=keepdbintact -PgenerateDiff
+    ./gradlew liquibaseDiff
 
-which is based on `liquibase-maven-plugin` and will compare your `rspace` database with `rspace_hib`
+which runs Liquibase's `diff-changelog` command to compare your `rspace` database with `rspace_hib`
 database, and generate a time-stamped changeset file in a folder *generatedDBChangeSets/* in your 
-project home (the command expects the folder to exist, so create it before running the command). 
+project home (`generatedDBChangeSets/diffChangeset-<timestamp>.xml`). The connection settings come
+from `liquibaseConfig/liquibase.properties`; override one with `-Dliquibase.<key>=<value>`.
 This changeset file describes the changes that should be applied to convert the `rspace` 
 database schema to be the same as `rspace_hib`. There will likely be some existing differences 
 relating to constraints, field types etc., so search for the ones related to your recent changes.
@@ -191,9 +191,9 @@ checksums of the changesets and it just sets in the new value.
 *Debugging liquibase changesets*
 
 If you get a liquibase error that you need to fix, it might be faster to use the command-line client rather
- than running the application or `mvn test` each time to test a new change.
+ than running the application or `./gradlew test` each time to test a new change.
  
- E.g. download liquibase ( the same version as is declared in pom.xml) and run e.g.
+ E.g. download liquibase ( the same version as is pinned in `gradle/pinned-versions.txt`) and run e.g.
  
     ./liquibase --changeLogFile=/path/to/rspace/src/main/resources/sqlUpdates/liquibase-master.xml --username=rspacedbuser --password=rspacedbpwd --url=jdbc:mysql://localhost:3306/rspace --contexts=dev-test update
  

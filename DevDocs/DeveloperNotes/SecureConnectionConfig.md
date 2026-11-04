@@ -14,7 +14,7 @@ Currently, this is 8443, the default HTTPS port.
 There is a switch that enables/disables a Shiro filter, so that for
 example, the ssl filter can be enabled in production but disabled during
 development. This is set up by overriding the default filter instance in
-the 'filters' property. We have set this up to use Maven Resource
+the 'filters' property. We have set this up to use Gradle resource
 filtering, so that ssl can be enabled from a build (more on this below)
 
 ## Configuring Jetty
@@ -22,15 +22,17 @@ filtering, so that ssl can be enabled from a build (more on this below)
 For development, we run on jetty localhost, and normally running over
 HTTP is fine for development purposes. This is the default.
 
-Jetty (12, via the `jetty-ee10-maven-plugin`) is configured to run over
+Jetty (12, via the Gradle `jettyRun` task) is configured to run over
 HTTPS (using HTTP2) if need be though.
 
-Since Jetty 9, this can't be configured in Maven Jetty plugin anymore,
-but needs specific Jetty configuration files. These are in the project root /jetty
-folder and are adapted from config files here http://juplo.de/configure-https-for-jetty-maven-plugin-9-0-x/#comment-53736
+HTTPS needs specific Jetty configuration files. These are in the project root /jetty
+folder and were adapted from config files here http://juplo.de/configure-https-for-jetty-maven-plugin-9-0-x/#comment-53736
 with reference to the jetty docs https://jetty.org/docs/jetty/12/operations-guide/xml/index.html
 
-To run, run with flag `-Dssl.enabled=true`.
+To run, run `./gradlew jettyRun` with flag `-Dssl.enabled=true`.
+
+<!-- TODO(jetty): check that jettyRun -Dssl.enabled=true loads jetty/*.xml and serves HTTPS on
+     8443, and whether it still serves security.xml unfiltered (see below). -->
 
 For Shiro, in `security.xml`:
 ```
@@ -41,10 +43,9 @@ to
 <property name="enabledOverride" value="true"/>
 ```
 
-For `jetty:run`, this needs to be hardcoded, as the resource filtering and
-replacement of the variable `${ssl.enabled}` only works when filtering
-files in the target/ folder - but `jetty:run` runs the webapp from the
-source file.
+For `jettyRun`, this needs to be hardcoded, as the resource filtering and
+replacement of the variable `${ssl.enabled}` only happens when the WAR is
+built - but `jettyRun` runs the webapp from the source files.
 
 Later, when you switch back to non-SSL mode and try login into RSpace
 http port (8080) with the same browser, you may see your login

@@ -69,8 +69,8 @@ In practice the two sorts of Spring tests do not seem to run well
 together; there are possibly some problems with AOP transactional proxy
 behaviour with the two types of test using the same Spring context causing
 unreliable and hard-to-reproduce behaviour. So the transactional tests
-are named with a name ending in 'IT', and run in the *Verify* Maven
-phase, distinct from the non-transactional tests.
+are named with a name ending in 'IT', and run by the Gradle
+`integrationTests` task, distinct from the non-transactional tests.
 
 Spring 3.2 introduced WebMVC tests; the test `DashboardControllerMVCIT`
 illustrates the setup for this. These test the full web stack of
@@ -85,10 +85,10 @@ and the tests run properly.
 
 There are three profiles:
 1. `dev` configuration for running tests. This is set automatically when
-   you call `mvn test` or `mvn verify`, or run tests through eclipse.
+   you call `./gradlew test` or `./gradlew verify`, or run tests through your IDE.
 2. `run` configuration for running the application on localhost. This is
-   set automatically by default when you run the app through `mvn jetty:run`
-   either from command line or Eclipse.
+   set automatically by default when you run the app through `./gradlew jettyRun`
+   either from command line or your IDE.
 3. `prod` configuration for production environment. To switch this on,
    switch the line `<param-value>run</param-value>` in `web.xml` to
     `<param-value>prod</param-value>`. Or run from the command line
@@ -106,27 +106,26 @@ explicitly in one place.
 `dev` profile for tests is set in Spring JUnit
 base classes via the `@ActiveProfiles` annotation.
 
-Ideally we would choose profile through a ~~D option in Maven to set
+Ideally we would choose profile through a ~~D option in the build to set
 the Spring property in a property file~~ this would work for building a
 war file but not for running in Jetty so we haven't implemented this yet.
 
-#### Maven integration
+#### Gradle integration
 
-Test categories 1 and 2 (from above) are bound to the regular Maven test
-lifecycle phase. If these tests fail, the war package will not be
-generated.
+Test categories 1 and 2 (from above) run in the Gradle `test` task.
 
-Test category 3 (from above) is bound to the integration-test phase,
-run after _package_. If these tests fail, a war is generated, but the
-build will be reported as a failure.
+Test category 3 (from above) runs in the `integrationTests` task, which
+`./gradlew verify` runs after `test` and after building the war. If these
+tests fail, a war is generated, but the build will be reported as a failure.
+See [Gradle.md](../Gradle.md#tests) for which classes each task runs.
 
 Tests tagged `chemistry` require the OSS chemistry service and are excluded
-from ordinary Maven runs. GitHub Actions and Jenkins run them in a separate
+from ordinary Gradle runs. GitHub Actions and Jenkins run them in a separate
 service-backed job. To run that group locally against a chemistry service on
 port 8090, use:
 
 ```bash
-./mvnw integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
+./gradlew integrationTests -Denvironment=drop-recreate-db \
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url=http://localhost:8090
 ```
@@ -144,13 +143,13 @@ which provides utility methods to run transactions and tidy up the
 database afterwards.
 
 The test class name should end with `IT` which is the convention for
-defining `IntegrationTest` classes in Maven.
+defining integration test classes; the Gradle `integrationTests` task runs them.
 
 ### Suggested convention for running tests:
 
-- Run `mvn test -Dfast` during development; these should run relatively
+- Run `./gradlew test -Dfast` during development; these should run relatively
 quickly.
-- Run `mvn verify` before committing; this runs the default unit and
+- Run `./gradlew verify` before committing; this runs the default unit and
 integration tests. Jenkins also runs service-backed groups such as chemistry
 in separate jobs.
 
@@ -336,10 +335,10 @@ are sent. Mail server configuration is set up in mail.properties.
 
 ### Java
 The Java codebase adheres to the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html).
-Code formatting is applied via the [Spotless Maven Plugin](https://github.com/diffplug/spotless/blob/main/plugin-maven/README.md).
+Code formatting is applied via the [Spotless Gradle Plugin](https://github.com/diffplug/spotless/blob/main/plugin-gradle/README.md).
 
-The formatting is applied (if there are any changes) each time rspace-web is compiled, as the plugin is tied to the Maven compile phase.
-Doing so ensures that before a PR is created the formatting is as expected and changesets should therefore only contain actual code changes rather than formatting/whitespace changes.
+Run `./gradlew spotlessApply -DspotlessStrict` to format the code; compiling does not format it. The pre-commit hook and CI
+run `spotlessCheck -DspotlessStrict` and fail on unformatted files. Doing so ensures that before a PR is created the formatting is as expected and changesets should therefore only contain actual code changes rather than formatting/whitespace changes.
 
 To sync Intellij formatting with the formatting applied by Spotless, import the [intellij-java-google-style.xml](/intellij-java-google-style.xml) file:
 1. Open File -> Settings

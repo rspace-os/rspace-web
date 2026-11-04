@@ -99,7 +99,7 @@ instances and leave it disabled in production. A WAR build includes the bundle
 only when Storybook generation is enabled:
 
 ```bash
-mvn clean package -DgenerateReactDist -DgenerateStorybook=true -DskipTests=true
+./gradlew clean war -DgenerateReactDist -DgenerateStorybook=true
 ```
 
 Jenkins exposes this as the **STORYBOOK** option. The preview route is disabled
