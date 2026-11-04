@@ -39,17 +39,16 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Java backend: Maven + Temurin JDK 17 running `mvn jetty:run`. The worktree
+  # Java backend: Gradle wrapper + JBR 17 running `./gradlew jettyRun`. The worktree
   # source tree is bind-mounted at /rspace so edits on the host are live in the
-  # container; build/output dirs are masked with named volumes so host (often
-  # macOS/arm64) artifacts never mix with the Linux container's.
+  # container. Gradle project state and build outputs stay on the bind mount.
   # ---------------------------------------------------------------------------
   app:
     build:
       context: .
       dockerfile: Dockerfile.app
       args:
-        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
+        APP_BASE_IMAGE: ${APP_BASE_IMAGE:-debian:bookworm-slim}
     image: rspace-dev-app:local
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-app
     depends_on:
@@ -64,7 +63,7 @@ services:
       RSPACE_DB_MODE: ${RSPACE_DB_MODE:-keepdbintact}
       RS_FILE_BASE: /var/rspace/filestore
       JDBC_URL: jdbc:mysql://db:3306/rspace
-      JDBC_URL_MAVEN: jdbc:mysql://db:3306
+      JDBC_SERVER_URL: jdbc:mysql://db:3306
       # The app shares the frontend's network namespace (see network_mode below),
       # so Vite is reachable at localhost — a host its dev-server host check
       # trusts by default, unlike the service name "frontend".
@@ -76,7 +75,7 @@ services:
       # the entrypoint) to keep concurrent worktree logins from evicting each
       # other. Set this in .env only if you need a fixed name.
       RSPACE_SESSION_COOKIE_NAME: ${RSPACE_SESSION_COOKIE_NAME:-}
-      MAVEN_OPTS: ${MAVEN_OPTS:--Xmx2g}
+      ORG_GRADLE_PROJECT_jettyJvmArgs: ${ORG_GRADLE_PROJECT_jettyJvmArgs:--Xmx2g}
       # Remote JVM debugging (JDWP) for IntelliJ etc. Listens on 5005 in the
       # container (published on the frontend service, since the app shares its
       # network namespace). Set RSPACE_DEBUG=false to disable, or
@@ -109,10 +108,9 @@ services:
       RSPACE_MAILPIT: ${RSPACE_MAILPIT:-false}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
-      - m2-repo:/root/.m2
-      - app-target:/rspace/target
+      - gradle-cache:/root/.gradle
       # Search indices live in volumes OUTSIDE the bind mount. The entrypoint
-      # points Hibernate Search / Lucene at these paths, because under jetty:run
+      # points Hibernate Search / Lucene at these paths, because under jettyRun
       # the default index base is unset and Lucene would otherwise scatter
       # per-entity index dirs into the worktree root.
       - search-index:/var/rspace/search/hibernate
@@ -218,23 +216,22 @@ services:
     restart: unless-stopped
 
 volumes:
-  # Per-worktree (namespaced by the compose project name): isolated DB, build
-  # outputs, indices, filestore, and node_modules.
+  # Per-worktree (namespaced by the compose project name): isolated DB,
+  # indices, filestore, and node_modules.
   db-data:
   chemistry-files:
-  app-target:
   search-index:
   lucene-index:
   filestore:
   node-modules:
-  # Shared across all worktrees (fixed names) to avoid re-downloading Maven
+  # Shared across all worktrees (fixed names) to avoid re-downloading Gradle
   # artifacts and npm packages for every worktree. Declared `external` so that
   # `rspace-dev nuke` (docker compose down -v) NEVER removes them — tearing down
   # one worktree must not wipe the cache the others rely on. The launcher creates
   # them on `up`.
-  m2-repo:
+  gradle-cache:
     external: true
-    name: rspace-dev-m2-repo
+    name: rspace-dev-gradle-cache
   pnpm-store:
     external: true
     name: rspace-dev-pnpm-store

@@ -14,7 +14,7 @@ Use the stack to reproduce crashes, inspect runtime state, diagnose regressions,
 and verify fixes end to end. Code reading and covered unit/integration behavior
 do not require booting it.
 
-Commands affect only this worktree. Maven/pnpm caches are shared across
+Commands affect only this worktree. Gradle/pnpm caches are shared across
 worktrees; `down` and `nuke` never delete them.
 
 ## Start and inspect
@@ -72,11 +72,12 @@ Drawing a structure in Ketcher enables its 3D Viewer, which loads `miew-react`.
 | Frontend `.ts/.tsx/.css` | Vite HMR reloads automatically |
 | JSP | Recompiles on next request |
 | Java, existing bean | `./docker/dev/rspace-dev reload` or IDE hot code replace |
-| Spring XML / web.xml / new beans / pom | `./docker/dev/rspace-dev restart` |
+| Spring XML / web.xml / new beans / build.gradle | `./docker/dev/rspace-dev restart` |
 | Liquibase / schema | `./docker/dev/rspace-dev reset-db` or `up --fresh` |
 
 See README sections "Hot reloading Java" and "What still requires a full
-restart" if behavior remains stale.
+restart" if behavior remains stale. See [REFERENCE.md](REFERENCE.md) for Gradle
+JVM, cache and reload details.
 
 ```bash
 ./docker/dev/rspace-dev logs app          # Jetty/Spring
