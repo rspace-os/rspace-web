@@ -1,9 +1,9 @@
+import com.researchspace.build.CurrentUtcTimestamp
 import com.researchspace.build.PlaceholderFilter
 import com.researchspace.build.RecreateDatabase
 import com.researchspace.build.TestDatabase
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
@@ -58,8 +58,10 @@ if (!(JavaVersion.current().majorVersion in ['17', '21'])) {
 
 // Stamped into the version and rs.properties. A fixed default keeps resources up to date between
 // local builds; release builds pass -Dtimestamp=<value>, or -Dtimestamp=now.
+// 'now' is read through a value source, which Gradle re-evaluates on every build, so the
+// configuration cache cannot freeze an earlier build's time.
 def buildTimestamp = (setting('timestamp') ?: 'dev').with {
-  it == 'now' ? DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").format(ZonedDateTime.now(ZoneOffset.UTC)) : it
+  it == 'now' ? providers.of(CurrentUtcTimestamp) {}.get() : it
 }
 version = "2.28.0-SNAPSHOT-${buildTimestamp}"
 
@@ -910,8 +912,12 @@ tasks.register('liquibaseDiff', JavaExec) {
   def lbProperties = new Properties()
   file('src/main/resources/sqlUpdates/liquibaseConfig/liquibase.properties').withReader('UTF-8') { lbProperties.load(it) }
   def lb = { String key -> cliSystemProperties["liquibase.${key}".toString()] ?: lbProperties.getProperty(key) }
-  def stamp = setting('timestamp') ?: DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").format(ZonedDateTime.now(ZoneOffset.UTC))
-  def outFile = layout.projectDirectory.file("generatedDBChangeSets/diffChangeset-${stamp}.xml")
+  // Liquibase writes to a fixed file, renamed when the task runs to diffChangeset-<stamp>.xml.
+  // The stamp is -Dtimestamp, or the time the task runs: computed at configuration time, the
+  // configuration cache would reuse it and later diffs would overwrite the first.
+  def fixedStamp = setting('timestamp')
+  def changeSetsDir = layout.projectDirectory.dir('generatedDBChangeSets').asFile
+  def outFile = layout.projectDirectory.file('generatedDBChangeSets/diffChangeset-inprogress.xml')
   def password = lb('password')
   def referencePassword = lb('referencePassword')
   args '--show-banner=false', '--log-level=WARNING',
@@ -922,7 +928,18 @@ tasks.register('liquibaseDiff', JavaExec) {
   environment 'LIQUIBASE_COMMAND_PASSWORD', password
   environment 'LIQUIBASE_COMMAND_REFERENCE_PASSWORD', referencePassword
   outputs.upToDateWhen { false }
-  doFirst { outFile.asFile.parentFile.mkdirs() }
+  doFirst {
+    changeSetsDir.mkdirs()
+    outFile.asFile.delete()
+  }
+  doLast { task ->
+    def stamp = fixedStamp ?: CurrentUtcTimestamp.FORMAT.format(ZonedDateTime.now(ZoneOffset.UTC))
+    def target = new File(changeSetsDir, "diffChangeset-${stamp}.xml")
+    if (outFile.asFile.exists()) {
+      java.nio.file.Files.move(outFile.asFile.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+      task.logger.lifecycle("Wrote ${target}")
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------------------------
