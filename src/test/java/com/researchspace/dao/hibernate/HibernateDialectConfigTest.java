@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>The application context resolves the dialect placeholder in {@code applicationContext-dao.xml}
  * from deployment properties at runtime; {@code defaultDeployment.properties} supplies the default
- * for every deployment. If the value is missing (or the build-time substitution from pom.xml
+ * for every deployment. If the value is missing (or the build-time substitution from build.gradle
  * breaks), Hibernate 6 silently drops the unresolved setting and probes the database at startup to
  * guess the dialect, so the application fails to boot wherever that probe cannot connect.
  */
