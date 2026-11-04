@@ -58,8 +58,9 @@ Every `-D<name>=<value>` on the Gradle command line is a build setting. It:
 
 So `-Dspring.profiles.active=run`, `-DRS_FILE_BASE=...` or `-Djdbc.db.maven=rspace` reach both
 the filtered resources and the running code. A bare `-Dname` means `-Dname=true`. `-P<name>=<value>`
-also works for the switches below and the resource-filter properties, but is not passed to test or
-Jetty JVMs.
+also works for the switches below and for the names in `gradle/resource-filter.properties` (plus
+`jdbc.url`, `ssl.enabled` and `RS.devlogLevel`), but no other placeholder, and it is not passed to
+test or Jetty JVMs. Use `-D` for anything else, such as `-Djdbc.username` or `-Dmail.host`.
 
 Switches:
 
@@ -106,6 +107,10 @@ between local builds; release builds pass `-Dtimestamp=now` or a build number.
 
 Results: JUnit XML in `build/test-results/<task>/`, HTML reports in `build/reports/tests/<task>/`.
 Failures print in full on the console.
+
+Only `-Dfast=true` runs, which skip every test that needs a database, can be up to date or come
+from the build cache. Any other test run always executes, because it reads a database Gradle cannot
+see. Add `--rerun` to force a `-Dfast` run.
 
 ### Selecting tests
 
@@ -224,7 +229,8 @@ with build settings. Values come from, lowest precedence first:
 
 1. `gradle/resource-filter.properties`;
 2. the `-Denvironment` value's settings (in `build.gradle`);
-3. `-P<name>=<value>`;
+3. `-P<name>=<value>`, for the names in `gradle/resource-filter.properties` and `jdbc.url`,
+   `ssl.enabled` and `RS.devlogLevel`;
 4. `-D<name>=<value>`.
 
 `buildSrc`'s `PlaceholderFilter` replaces only known names and leaves line endings alone. Binary

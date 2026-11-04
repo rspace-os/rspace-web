@@ -640,6 +640,7 @@ def testGroups = { String name, String defaultGroups ->
   def value = setting(name)
   value == null ? defaultGroups : (value in ['', 'true'] ? '' : value)
 }
+def fastRun = setting('fast') != null
 def includedTestGroups = testGroups('includedTestGroups', '')
 def excludedTestGroups = testGroups('excludedTestGroups', 'chemistry')
 
@@ -659,7 +660,12 @@ tasks.withType(Test).configureEach {
   systemProperties cliSystemProperties
   if (recreatesDatabase) {
     dependsOn 'recreateDatabase'
-    doNotTrackState('Runs against a database recreated for this build')
+  }
+  // Only -Dfast runs, which skip every test that needs a database, may be up to date or come from
+  // the build cache. Any other run reads a database whose state Gradle cannot see, so it always
+  // runs, as Maven's did.
+  if (recreatesDatabase || !fastRun) {
+    doNotTrackState('Runs against a database, whose state Gradle cannot track')
   }
   if (testForks != null) {
     maxParallelForks = testForks
@@ -780,13 +786,16 @@ if (flag('enableTestCoverage')) {
 // ---------------------------------------------------------------------------------------------
 def uiDir = layout.projectDirectory.dir('src/main/webapp/ui')
 def uiSources = uiDir.asFileTree.matching {
-  include 'src/**', '.storybook/**', '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html'
+  include 'src/**', '.storybook/**', '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html',
+    '.browserslistrc', '.env', '.env.*', '.npmrc'
 }
+// The pnpm workspace, its lockfile and the build scripts live at the repository root.
+def frontendRootInputs = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']
 def pnpmInstall = tasks.register('pnpmInstall', Exec) {
   description = 'Installs frontend dependencies.'
   workingDir = projectDir
   commandLine(['pnpm'] + (setting('frontend.dependencies.install.arg') ?: 'install --frozen-lockfile').split(' ').toList())
-  inputs.files('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', uiDir.file('package.json'))
+  inputs.files(frontendRootInputs + ['src/main/webapp/ui/package.json'].findAll { file(it).exists() })
   outputs.dir(uiDir.dir('node_modules'))
 }
 def buildFrontend = tasks.register('buildFrontend', Exec) {
@@ -795,6 +804,7 @@ def buildFrontend = tasks.register('buildFrontend', Exec) {
   workingDir = projectDir
   commandLine 'pnpm', 'run', 'build'
   inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files(frontendRootInputs).withPathSensitivity(PathSensitivity.RELATIVE)
   outputs.dir(uiDir.dir('dist'))
 }
 def buildStorybook = tasks.register('buildStorybook', Exec) {
@@ -803,6 +813,7 @@ def buildStorybook = tasks.register('buildStorybook', Exec) {
   workingDir = projectDir
   commandLine 'pnpm', 'run', 'storybook:build'
   inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files(frontendRootInputs).withPathSensitivity(PathSensitivity.RELATIVE)
   outputs.dir(uiDir.dir('storybook-static'))
 }
 
@@ -970,12 +981,30 @@ tasks.register('dumpClasspaths') {
 // Every module on a classpath needs a pin, so that its version is chosen deliberately, and every
 // pin needs a module, so the list does not rot.
 tasks.register('checkPinnedVersions') {
-  description = 'Checks that gradle/pinned-versions.txt lists exactly the modules on the classpaths.'
+  description = 'Checks that gradle/pinned-versions.txt lists exactly the modules on the classpaths, at the declared versions.'
   group = LifecycleBasePlugin.VERIFICATION_GROUP
   def classpaths = classpathNames.collect { resolvedModules(it) }
   def pinned = pinnedModules.keySet()
+  def pinVersions = pinnedModules.collectEntries { ga, m -> [(ga): m.version] }
+  // Versions written in the dependencies blocks, which the forced pins silently override. The jetty
+  // configurations are left out: gradle/jetty.gradle clears the pins there on purpose.
+  def declared = configurations.findAll { !it.name.startsWith('jetty') }.collectMany { conf ->
+    conf.dependencies.withType(ExternalModuleDependency).findAll { it.version }
+      .collect { "${conf.name} ${it.group}:${it.name} ${it.version}".toString() }
+  }.unique()
   inputs.file('gradle/pinned-versions.txt')
   doLast {
+    def mismatched = declared.findAll { line ->
+      def (conf, ga, version) = line.split(' ')
+      pinVersions[ga] != null && pinVersions[ga] != version
+    }.collect { line ->
+      def (conf, ga, version) = line.split(' ')
+      "${ga}: declared ${version} in ${conf}, pinned ${pinVersions[ga]}"
+    }.unique()
+    if (mismatched) {
+      throw new GradleException('Declared dependency versions differ from gradle/pinned-versions.txt, ' +
+        'whose versions win. Make them equal:\n  ' + mismatched.sort().join('\n  '))
+    }
     def resolved = classpaths.collectMany { it.get() }.collect { it.split(':')[0..1].join(':') }.toSet()
     // Gradle-only: JUnit's launcher, and the bnd/OSGi annotations log4j's Gradle metadata adds
     def unpinned = (resolved - pinned).findAll { !(it ==~ /org\.junit\.platform:junit-platform-launcher|biz\.aQute\.bnd:.*|org\.osgi:.*/) }

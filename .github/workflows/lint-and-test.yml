@@ -239,6 +239,15 @@ jobs:
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
+      # gradle/pinned-versions.txt forces every dependency version, so it must list each module
+      # on the classpaths at the version its declaration names. Runs even if Spotless failed.
+      - name: Check pinned dependency versions
+        if: ${{ !cancelled() }}
+        run: |
+          ./gradlew -q checkPinnedVersions \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+
   vitest-tests:
     runs-on: ubuntu-latest
     needs: changed-files
