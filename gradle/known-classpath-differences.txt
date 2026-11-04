@@ -1,4 +1,4 @@
-# Accepted differences between Maven's and the trial Gradle build's resolved classpaths, checked by
+# Accepted differences between Maven's and the Gradle build's resolved classpaths, checked by
 # scripts/gradle/compare-classpaths.sh --check. Versions are left out so routine bumps need no edit.
 # Format: <classpath|*> <maven-only|gradle-only> group:artifact
 
