@@ -223,6 +223,16 @@
         <artifactId>retrofit</artifactId>
         <version>2.11.0</version>
       </dependency>
+      <!-- okhttp's okio 3.6.0 pulls in the kotlin-stdlib-common 1.9.10 jar. kotlin-bom cannot override it:
+           stdlib-common is pom-only since Kotlin 1.9.20, so the BOM manages it as type pom, and Maven
+           treats that as a different artifact from the jar okio asks for. okio 3.9+ no longer uses it. -->
+      <dependency>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio-bom</artifactId>
+        <version>3.18.2</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <!-- Aligns the kotlin-stdlib versions that okhttp and okio pull in -->
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
