@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compares the trial Gradle build's resolved classpaths with Maven's, printing modules (with
+# Compares the Gradle build's resolved classpaths with Maven's, printing modules (with
 # versions) that only one build resolves.
 #
 # Usage: scripts/gradle/compare-classpaths.sh [--check] [--offline]

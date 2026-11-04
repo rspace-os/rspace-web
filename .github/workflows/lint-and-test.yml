@@ -233,7 +233,7 @@ jobs:
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
-  # Keeps the trial Gradle build (DevDocs/DeveloperNotes/GradleMigrationTrial.md)
+  # Keeps the Gradle build (DevDocs/DeveloperNotes/Gradle.md)
   # in step with pom.xml, which stays the source of truth: the pinned versions
   # and the resolved classpaths must match Maven's, and the build and fast unit
   # tests must pass under Gradle. No Spring or database tests run here; the
