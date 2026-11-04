@@ -48,6 +48,7 @@ import { tablePaginationClasses } from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import {
   ColumnsPanelTrigger,
   DataGrid,
@@ -1414,19 +1415,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         <ViewColumnIcon sx={{ fontSize: 18, mr: 1 }} />
         {t("usersPage.columns.button")}
       </ColumnsPanelTrigger>
-      {/* visually hidden, as in VisuallyHiddenHeading */}
-      <Box
-        role="status"
-        sx={{
-          position: "absolute",
-          height: "1px",
-          width: "1px",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          clip: "rect(1px, 1px, 1px, 1px)",
-          clipPath: "inset(50%)",
-        }}
-      >
+      <Box role="status" sx={visuallyHidden}>
         {exportingAll ? t("usersPage.export.allRowsInProgress") : ""}
       </Box>
       <GridToolbarExportContainer
