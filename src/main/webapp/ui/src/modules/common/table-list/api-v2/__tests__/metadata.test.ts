@@ -382,6 +382,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
         catalog: "/api/v2/instruments/fields/customFields",
         responseField: "",
         via: "target",
+        viaResource: "instruments",
         filterable: true,
         columnSelectable: false,
         sortable: false,
@@ -396,6 +397,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
 
     expect(namespace?.namespace).toBe("target.customFields");
     expect(namespace?.via).toBe("target");
+    expect(namespace).toHaveProperty("viaResource", "instruments");
     expect(namespace?.columnSelectable).toBe(false);
   });
 

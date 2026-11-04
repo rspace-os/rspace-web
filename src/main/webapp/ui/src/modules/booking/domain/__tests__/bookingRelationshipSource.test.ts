@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { bookingInstrumentSource, bookingRelationshipSources } from "../bookingRelationshipSource";
 
@@ -13,44 +13,43 @@ describe("booking relationship source", () => {
     server.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const params = new URL(request.url).searchParams;
-        expect(params.get("where")).toBe("target==IN42");
+        expect(params.get("where")).toBe("target=in=(IN42)");
         expect(params.get("depth")).toBe("1");
+        expect(params.get("limit")).toBe("1");
         return HttpResponse.json({
           docs: [{ target: { globalId: "IN42", value: { id: 42, name: "Archived centrifuge" } } }],
         });
       }),
     );
-    await expect(bookingInstrumentSource.resolve?.("IN42", "token", signal())).resolves.toEqual({
-      id: 42,
-      globalId: "IN42",
-      name: "Archived centrifuge",
+    await expect(bookingInstrumentSource.resolveMany?.(["IN42"], "token", signal())).resolves.toEqual({
+      IN42: { id: 42, globalId: "IN42", name: "Archived centrifuge" },
     });
   });
-  it("returns unavailable rather than dropping an unresolvable saved ID", async () => {
+  it("restores archived targets in one bounded target=in request", async () => {
+    let requested: URL | undefined;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json({ docs: [] })),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ docs: [] })),
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        requested = new URL(request.url);
+        return HttpResponse.json({
+          docs: [
+            { target: { globalId: "IN42", value: { id: 42, name: "Archived centrifuge" } } },
+            { target: { globalId: "IN43", value: { id: 43, name: "Archived microscope" } } },
+          ],
+        });
+      }),
     );
-    await expect(bookingInstrumentSource.resolve?.("IN42", "token", signal())).resolves.toBeNull();
-    expect(bookingInstrumentSource.ownsValue("IN42")).toBe(true);
+
+    await expect(bookingInstrumentSource.resolveMany?.(["in0042", "IN43"], "token", signal())).resolves.toEqual({
+      IN42: { id: 42, name: "Archived centrifuge", globalId: "IN42" },
+      IN43: { id: 43, name: "Archived microscope", globalId: "IN43" },
+    });
+    expect(bookingInstrumentSource.normalizeValue?.("in0042")).toBe("IN42");
+    expect(requested?.searchParams.get("where")).toBe("target=in=(IN42,IN43)");
+    expect(requested?.searchParams.get("limit")).toBe("2");
+    expect(requested?.searchParams.get("depth")).toBe("1");
   });
-
-  it("does not treat an unsafe numeric ID as a booking relationship", async () => {
-    const request = vi.fn();
-    server.use(
-      http.get("/api/v2/booking-configurations", () => {
-        request();
-        return HttpResponse.json({ docs: [] });
-      }),
-      http.get("/api/v2/bookings", () => {
-        request();
-        return HttpResponse.json({ docs: [] });
-      }),
-    );
-
+  it("does not treat an unsafe numeric ID as a booking relationship", () => {
     const unsafe = "IN9007199254740992";
     expect(bookingInstrumentSource.ownsValue(unsafe)).toBe(false);
-    await expect(bookingInstrumentSource.resolve?.(unsafe, "token", signal())).resolves.toBeNull();
-    expect(request).not.toHaveBeenCalled();
   });
 });
