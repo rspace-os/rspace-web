@@ -278,8 +278,6 @@ The rest of this section describes the manual (non-Docker) workflow.
 
 ### Launch RSpace with Gradle and Jetty
 
-<!-- TODO(jetty): check this section against the jettyRun task once it lands in build.gradle. -->
-
 When starting RSpace for the first time use the following command: 
 
 ```bash
@@ -287,7 +285,10 @@ When starting RSpace for the first time use the following command:
 -Dspring.profiles.active=run -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
-This command clears and sets up the database, so it takes a bit longer to run.
+This command clears and sets up the database, so it takes a bit longer to run. RSpace is then
+at http://localhost:8080 (`-Djetty.http.port=<port>` changes the port). JVM options such as
+`-Xmx` or a debugger agent go in `-PjettyJvmArgs='<args>'`; see
+[Gradle.md](../Gradle.md#jetty).
 
 When `-DreactDevMode=true` is set, Jetty proxies frontend asset requests to a
 local Vite dev server for Hot Module Replacement (HMR). Start the Vite dev

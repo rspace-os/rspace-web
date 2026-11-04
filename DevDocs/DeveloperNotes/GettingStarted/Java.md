@@ -174,8 +174,10 @@ shows the old Maven version of this configuration:
 
 ![](../images/extToolConfig.png)
 
-<!-- TODO(jetty): describe how to start the jettyRun JVM with a JDWP agent on port 4000
-     (suspend=y) once the task lands; the old MAVEN_OPTS setting does not reach it. -->
+Jetty runs in its own JVM, so `MAVEN_OPTS`-style settings don't reach it: put the debug agent in
+`-PjettyJvmArgs` in the tool configuration's arguments, for example
+`jettyRun -Denvironment=keepdbintact -Dspring.profiles.active=run
+-PjettyJvmArgs='-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=4000'`.
 
 2. Create a new 'Debug' configuration of type 'External Java
 application' and configure as follows:
