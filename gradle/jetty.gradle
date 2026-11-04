@@ -78,10 +78,12 @@ def writeWebappClasspath = tasks.register('jettyWebappClasspath') {
   }
 }
 
+def launcherClasspath = sourceSets.jetty.runtimeClasspath
+def launcherMain = 'com.researchspace.jetty.JettyLauncher'
 def configureJetty = { JavaExec task ->
   task.group = 'application'
-  task.classpath = sourceSets.jetty.runtimeClasspath
-  task.mainClass = 'com.researchspace.jetty.JettyLauncher'
+  task.classpath = launcherClasspath
+  task.mainClass = launcherMain
   task.workingDir = projectDir
   task.jvmArgs defaultJvmArgs
   task.jvmArgumentProviders.add({ extraJvmArgs.getOrElse([]) } as CommandLineArgumentProvider)
@@ -96,19 +98,59 @@ def configureJetty = { JavaExec task ->
   }
 }
 
+// Both launch paths consume the same JVM options, properties, classpath and program args.
+def explodedArgs = ['--webapp', file('src/main/webapp').absolutePath,
+                    '--context-path', '/', '--redeploy-on-stdin',
+                    '--classpath-file', jettyDir.get().file('webapp-classpath.txt').asFile.absolutePath,
+                    '--temp-dir', jettyDir.get().dir('run-tmp').asFile.absolutePath]
+def sslArgs = sslEnabled ? jettyXmls.collectMany { ['--jetty-xml', it] } : []
+def prepareExploded = { task ->
+  task.dependsOn writeWebappClasspath
+  if (project.ext.recreatesDatabase) task.dependsOn 'recreateDatabase'
+  if (cliOrGradleProperty('generateReactDist') != null && tasks.names.contains('buildFrontend')) {
+    task.dependsOn 'buildFrontend'
+  }
+}
+
 tasks.register('jettyRun', JavaExec) {
   description = 'Runs RSpace exploded on Jetty, from compiled classes and src/main/webapp.'
   configureJetty(it)
-  dependsOn writeWebappClasspath
-  def classpathFile = jettyDir.map { it.file('webapp-classpath.txt').asFile.absolutePath }
-  def tempDir = jettyDir.map { it.dir('run-tmp').asFile.absolutePath }
-  args '--webapp', file('src/main/webapp').absolutePath, '--context-path', '/', '--redeploy-on-stdin'
-  argumentProviders.add({ ['--classpath-file', classpathFile.get(), '--temp-dir', tempDir.get()] } as CommandLineArgumentProvider)
-  // a line on stdin redeploys the webapp, as jetty:run does with <scan>0</scan>
+  prepareExploded(it)
+  args explodedArgs
   standardInput = System.in
-  // -DgenerateReactDist also rebuilds the frontend bundle, as with jetty:run
-  if (cliOrGradleProperty('generateReactDist') != null && tasks.names.contains('buildFrontend')) {
-    dependsOn 'buildFrontend'
+}
+
+tasks.register('jettyLaunchArgs') {
+  group = 'application'
+  description = 'Builds the exploded webapp and writes build/jetty/launch.args for java @argfile.'
+  prepareExploded(it)
+  def launchArgs = defaultJvmArgs + cliProps.collect { k, v -> "-D${k}=${v}".toString() }
+  def programArgs = sslArgs + explodedArgs
+  def extra = extraJvmArgs
+  def cp = launcherClasspath
+  def main = launcherMain
+  def out = jettyDir.map { it.file('launch.args') }
+  inputs.property('jvmArgs', launchArgs)
+  inputs.property('extraJvmArgs', extra.orElse([]))
+  inputs.property('programArgs', programArgs)
+  inputs.files(cp).withPropertyName('launcherClasspath')
+  outputs.file(out)
+  doLast {
+    // Java argfiles need quoting even for JSON properties and paths containing spaces.
+    def quote = { String arg ->
+      '"' + arg.replace('\\', '\\\\').replace('"', '\\"')
+          .replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t') + '"'
+    }
+    def args = launchArgs + extra.getOrElse([]) + ['-cp', cp.asPath, main] + programArgs
+    def output = out.get().asFile
+    output.parentFile.mkdirs()
+    output.createNewFile()
+    // JVM properties may contain local integration credentials.
+    output.setReadable(false, false)
+    output.setReadable(true, true)
+    output.setWritable(false, false)
+    output.setWritable(true, true)
+    output.text = args.collect { quote(it.toString()) }.join('\n') + '\n'
   }
 }
 
