@@ -159,6 +159,19 @@ describe("AuthStore refresh recovery", () => {
     expect(JwtService.getToken()).toBeNull();
     expect(store.timeoutId).toBeNull();
   });
+  it("redirects at token expiry when a retry never responds", async () => {
+    JwtService.saveToken(tokenExpiringIn(20));
+    store.isAuthenticated = true;
+    failWith(503);
+    await store.authenticate();
+    server.use(http.get("*/userform/ajax/inventoryOauthToken", () => new Promise<Response>(() => {})));
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(window.location.href).toBe("/login");
+    expect(store.isAuthenticated).toBe(true);
+    expect(JwtService.getToken()).toBeNull();
+    expect(store.timeoutId).toBeNull();
+  });
+
   it("rejects when the stored token expires while a refresh is pending", async () => {
     JwtService.saveToken(tokenExpiringIn(1));
     store.isAuthenticated = true;

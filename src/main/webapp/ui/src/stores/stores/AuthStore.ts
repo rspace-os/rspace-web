@@ -31,6 +31,17 @@ export type {
   SystemSettings,
 } from "./systemSettingsMapping";
 
+const MAX_TIMER_DELAY_MS = 2 ** 31 - 1;
+
+function storedTokenValidityMs(): number {
+  const token = JwtService.getToken();
+  try {
+    return token ? JwtService.secondsToExpiry(token) * 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export default class AuthStore {
   rootStore: RootStore;
   isAuthenticated: boolean = false;
@@ -71,8 +82,14 @@ export default class AuthStore {
      * "leave page?" prompt that the redirect to /login can raise.
      */
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
+    // Abort a request still pending when the stored token expires, so the catch below redirects.
+    const request = new AbortController();
+    const validityMs = storedTokenValidityMs();
+    const expiryTimer =
+      validityMs > 0 && validityMs <= MAX_TIMER_DELAY_MS ? setTimeout(() => request.abort(), validityMs) : undefined;
     return axios
-      .get<{ data: string }>(oAuthUrl)
+      .get<{ data: string }>(oAuthUrl, { signal: request.signal })
+      .finally(() => clearTimeout(expiryTimer))
       .then(
         action((response) => {
           const token = response.data.data;
@@ -97,8 +114,7 @@ export default class AuthStore {
         action((error: unknown) => {
           this.isSynchronizing = false;
           if (this.isSigningOut) return;
-          const token = JwtService.getToken();
-          const validityMs = token ? JwtService.secondsToExpiry(token) * 1000 : 0;
+          const validityMs = storedTokenValidityMs();
           const status = axios.isAxiosError(error) ? error.response?.status : undefined;
           if (status === 401 || !(validityMs > 0)) {
             JwtService.destroyToken();
