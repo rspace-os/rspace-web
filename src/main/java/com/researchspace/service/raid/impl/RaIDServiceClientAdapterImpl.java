@@ -163,7 +163,8 @@ public class RaIDServiceClientAdapterImpl
   }
 
   // The client appends the link after the related objects the RAiD already has, so RAiD refused
-  // the new link only if it reports "uri not found" at that index
+  // the new link only if it reports "uri not found" at that index. The RAiD stores a list that can
+  // repeat a link, but it reads back as a set, so the new link can sit past the counted ones.
   private boolean isAppendedRelatedObjectNotFound(
       HttpClientErrorException e, String apiBaseUrl, String accessToken, RaIDReferenceDTO raid) {
     List<Integer> notFoundIndexes = getNotFoundRelatedObjectIndexes(e);
@@ -175,8 +176,8 @@ public class RaIDServiceClientAdapterImpl
           raidClient
               .getRaID(apiBaseUrl, accessToken, raid.getRaidPrefix(), raid.getRaidSuffix())
               .getRelatedObject();
-      return notFoundIndexes.contains(
-          existingRelatedObjects == null ? 0 : existingRelatedObjects.size());
+      int existingCount = existingRelatedObjects == null ? 0 : existingRelatedObjects.size();
+      return notFoundIndexes.stream().anyMatch(index -> index >= existingCount);
     } catch (RuntimeException readFailure) {
       log.warn(
           "Could not read the RAiD \"{}\" to check which related object was refused",

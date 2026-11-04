@@ -269,6 +269,31 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void testAddRaIDRelatedObjectRefusedAfterRepeatedLinks() throws Exception {
+    // GIVEN the RAiD stores the same link twice, which reads back as 1 related object, so the DOI
+    // is appended at index 2
+    when(mockedRaidClient.getRaID(API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX))
+        .thenReturn(expectedRaidWithRelatedObject);
+    when(mockedRaidClient.addRaIDRelatedObject(
+            API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX, DOI_LINK))
+        .thenThrow(raidRelatedObjectFailure(2, "uri not found"));
+    RaIDReferenceDTO raidReference =
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaid.getTitle().get(0).getText(),
+            expectedRaid.getIdentifier().getId(),
+            expectedRaid.getIdentifier().getRaidAgencyUrl());
+    raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
+
+    // WHEN / THEN
+    assertThrows(
+        RaIDDoiNotFoundException.class,
+        () ->
+            raidServiceClientAdapter.addRaIDRelatedObject(
+                user.getUsername(), raidReference, DOI_LINK));
+  }
+
+  @Test
   public void testAddRaIDRelatedObjectOlderLinkNotFoundIsRethrown() throws Exception {
     // GIVEN the RAiD already has 1 related object, and RAiD refuses that one at index 0
     when(mockedRaidClient.getRaID(API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX))
