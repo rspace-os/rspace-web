@@ -13,7 +13,7 @@
 		<property name="useCodeAsDefaultMessage" value="true" />
 	</bean>
    <!-- this is loaded first, and these properties override defaults 
-   ${propertyFileDirPlaceholder} is replaced  by Maven (build/test) 
+   ${propertyFileDirPlaceholder} is replaced  by Gradle resource filtering (build/test) 
    , either with a literal  value, or another property reference, which will itself be resolved in as system property at
    runtime startup -->
     <context:property-placeholder
