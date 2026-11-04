@@ -11,13 +11,13 @@ import java.util.regex.Pattern;
 
 /**
  * Replaces {@code ${name}} and {@code @name@} placeholders whose name is a known property and
- * leaves unknown ones untouched, as maven-resources-plugin filtering does. Unlike Gradle's line
+ * leaves unknown ones untouched, as Maven resource filtering did. Unlike Gradle's line
  * filters it keeps the file's line endings, including lone carriage returns.
  *
- * <p>Gradle sets {@link #setProperties} from {@code filter(MavenPlaceholderFilter, properties:
+ * <p>Gradle sets {@link #setProperties} from {@code filter(PlaceholderFilter, properties:
  * map)}.
  */
-public class MavenPlaceholderFilter extends FilterReader {
+public class PlaceholderFilter extends FilterReader {
 
   private static final Pattern PLACEHOLDER =
       Pattern.compile("\\$\\{([A-Za-z0-9_.\\-]+)}|@([A-Za-z0-9_.\\-]+)@");
@@ -25,7 +25,7 @@ public class MavenPlaceholderFilter extends FilterReader {
   private Map<String, String> properties = Map.of();
   private Reader filtered;
 
-  public MavenPlaceholderFilter(Reader in) {
+  public PlaceholderFilter(Reader in) {
     super(in);
   }
 
