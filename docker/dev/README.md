@@ -21,15 +21,18 @@ fully isolated RSpace at the same time:
 
 - a Compose **project name** derived from the worktree directory, so containers,
   networks, and volumes never collide;
-- its **own database** in a volume and **build artifacts** in the worktree;
+- its **own database, build artifacts and Gradle caches** in named volumes;
 - its **own host ports**, auto-allocated to be free and recorded in
   `docker/dev/.env` (git-ignored);
 - its **own session cookie** (`JSESSIONID_<app port>`), so logging into one
   instance does not log you out of the others — browsers scope cookies by host
   only, and every instance lives on `localhost`.
 
-Heavy, safe-to-share caches (the Gradle `~/.gradle` cache and the pnpm store)
-are reused across worktrees so you only download dependencies once.
+Only the content-addressed pnpm store is shared. Each stack has its own Gradle
+user home, project cache and outputs. Writable Gradle homes cannot be shared
+across container network namespaces because Gradle coordinates cache locks over
+loopback UDP. Each new stack downloads Gradle and Java dependencies on first boot;
+later boots reuse its volumes. Host and container Gradle builds can run together.
 
 On first run `rspace-dev` also creates the git-ignored
 `src/main/resources/deployments/dev/deployment.properties` from the checked-in
@@ -39,7 +42,9 @@ local credentials.
 ## Prerequisites
 
 - Docker Engine + Docker Compose v2 (Docker Desktop on macOS/Windows works).
-- ~6 GB free RAM for the stack and a few GB of disk for caches.
+- Allow 8 GB free RAM per stack during compilation and several GB of disk per
+  stack for Gradle dependencies and outputs. Steady-state usage is lower because
+  Gradle exits before Jetty starts; reload temporarily adds a build JVM.
 - No local Java, Gradle, Node, or MariaDB needed — it all runs in containers.
 - **Windows: run this inside WSL2** — see [Windows (WSL2)](#windows-wsl2) below.
   The launcher is a bash script and will not run from PowerShell or `cmd`.
@@ -224,21 +229,25 @@ another worktree's instance):
 
 ```bash
 # Stop it (reversible): remove the containers, KEEP this worktree's database,
-# node_modules and the shared caches. Bind-mounted build output also stays.
+# node_modules, Gradle caches and build outputs.
 # `up` later resumes fast.
 ./docker/dev/rspace-dev down
 
 # Destroy it: remove the containers AND this worktree's volumes — database (all
-# local data), node_modules, search indices, and filestore. The
-# next `up` re-initialises the database from scratch. Bind-mounted `.gradle/`
-# and `build/` are retained; remove them separately if needed.
+# local data), node_modules, search indices, filestore, Gradle home and outputs.
+# The next `up` downloads dependencies and re-initialises the database.
 ./docker/dev/rspace-dev nuke
 ```
 
-`nuke` is `docker compose down --volumes` under the hood. It removes only the
-per-worktree volumes (named `rspace-<worktree>_*`). The **shared** Gradle (`~/.gradle`)
-and pnpm caches (`rspace-dev-gradle-cache`, `rspace-dev-pnpm-store`) are declared
-`external`, so `nuke` never deletes them and other worktrees are unaffected.
+`nuke` runs `docker compose down --volumes` and removes the legacy
+`<project>_app-target` volume if present. It only removes this project's volumes.
+The shared pnpm store survives. Host build directories are never deleted.
+
+The launcher reports an existing Maven-era `rspace-dev-m2-repo` volume but never
+deletes it. Older branches may still need it. Once those stacks are retired,
+remove it with `docker volume rm rspace-dev-m2-repo`. The old shared
+`rspace-dev-gradle-cache` is also unused by this stack; only remove it once no
+older Gradle stacks need it.
 
 Verify it is gone:
 
@@ -253,9 +262,8 @@ Going further (rarely needed):
 # Remove the locally-built dev images too (next up rebuilds them):
 docker image rm rspace-dev-app:local rspace-dev-frontend:local
 
-# Remove the SHARED caches — affects EVERY worktree (they will re-download
-# Gradle/npm deps on next up). Only do this to reclaim disk or force a clean cache:
-docker volume rm rspace-dev-gradle-cache rspace-dev-pnpm-store
+# Remove the SHARED pnpm store only when no stacks need it:
+docker volume rm rspace-dev-pnpm-store
 ```
 
 > After `nuke`, the generated `docker/dev/.env` (ports for this worktree) is
@@ -267,9 +275,12 @@ docker volume rm rspace-dev-gradle-cache rspace-dev-pnpm-store
 The whole worktree is bind-mounted at `/rspace` in the `app` and `frontend`
 containers. To keep host (often macOS/arm64) and Linux-container artifacts from
 mixing for frontend dependencies, `node_modules/` uses a named volume. Search
-indices and the filestore also use volumes. Gradle project state `.gradle/` and
-compiled output `build/` stay on the bind mount. Do not run host and container
-builds concurrently. The writable `~/.gradle` cache is a shared external volume.
+indices and the filestore also use volumes. Named volumes cover `/rspace/build`,
+`/rspace/.gradle`, `/rspace/buildSrc/build` and `/rspace/buildSrc/.gradle`.
+The Gradle user home is also per-stack. Container builds leave host outputs and
+locks alone, so host/IDE builds can run concurrently. HotswapAgent watches the
+container's volume-backed class and resource directories. Existing frontend
+writes such as `ui/dist` and application log files still use the bind mount.
 
 | You change…                | What to do                                              |
 | -------------------------- | ------------------------------------------------------- |
@@ -286,7 +297,7 @@ builds concurrently. The writable `~/.gradle` cache is a shared external volume.
 > file changes are picked up via polling over the bind mount, giving true hot
 > reload inside the container.
 
-`reload` works because the backend runs `./gradlew jettyRun` with Jetty's manual
+`reload` works because the backend runs Jetty directly with manual
 redeploy mode; the entrypoint feeds Jetty's stdin from a FIFO, and `reload`
 writes to it to trigger a webapp redeploy after recompiling.
 
@@ -416,8 +427,9 @@ HotSpot HotSwap). The existing bean runs the new code; it is not re-created.
 >   or `reload` to compile and rebuild the context.
 
 `reload` runs `classes` with the same container settings as startup, using a
-single-use Gradle daemon and `.gradle/dev-compile` as its project cache. This
-avoids waiting on the project cache lock held by the long-running `jettyRun`.
+single-use Gradle daemon and the same project cache as startup. Gradle has
+already exited, so no build locks remain held while Jetty runs. Incremental
+compilation reuses the startup state instead of clearing live class directories.
 It preserves filtered resource settings and always uses `keepdbintact`.
 Dependency resolution stays online so newly added dependencies can be fetched.
 
@@ -514,7 +526,7 @@ is the quick lookup.
 
 The stack reproduces the documented local workflow, just containerized:
 
-- backend: `./gradlew jettyRun -Dspring.profiles.active=run -DreactDevMode=true`
+- backend: `./gradlew --no-daemon jettyLaunchArgs` then `exec java @build/jetty/launch.args`
   with the DB pointed at the `db` service and the Vite dev-server proxy pointed
   at `localhost:5173`. The app container shares the `frontend` container's
   network namespace, so "localhost" reaches Vite; this is also why Vite accepts
@@ -525,3 +537,13 @@ The stack reproduces the documented local workflow, just containerized:
   MariaDB 10.11. Set `DB_IMAGE=mariadb:10.11` in `docker/dev/.env` before the
   first `up` to run the dev stack against that version. Use a separate worktree
   for each version; do not reuse a database volume across MariaDB major versions.
+
+The launch argfile uses the same options, properties, launcher classpath and
+program arguments as `jettyRun`. Jetty is PID 1 and receives SIGTERM directly;
+its shutdown hook stops Jetty and the Spring context. Compose allows 60 seconds
+before forcing termination. No Gradle daemon remains resident after startup.
+
+An existing `MAVEN_OPTS` entry in `.env` triggers a warning. Move its heap flags
+and application `-D` properties, including PyRAT configuration, to
+`ORG_GRADLE_PROJECT_jettyJvmArgs`. Gradle's build heap uses `org.gradle.jvmargs`.
+The launcher never prints the old variable's value.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Entrypoint for the RSpace backend dev container.
 #
-# Launches `./gradlew jettyRun` against the bind-mounted worktree at /rspace.
+# Builds with Gradle, then runs Jetty directly as PID 1.
 #
 # Jetty redeploys the webapp for each line on stdin. A FIFO keeps stdin open
 # and lets `rspace-dev reload` request a redeploy without restarting the JVM.
@@ -125,8 +125,13 @@ if [ "${RSPACE_MAILPIT:-false}" = "true" ]; then
   echo "[entrypoint] Mailpit enabled — SMTP at mailpit:1025, UI/API on the published host port"
 fi
 
-echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
-echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
+if [ "${1:-}" = "--compile" ]; then
+  DB_MODE=keepdbintact
+  echo "[entrypoint] Compiling RSpace (db mode: ${DB_MODE}) ..."
+else
+  echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
+  echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
+fi
 
 # The same build settings must reach resource filtering during reload, otherwise
 # `classes` would replace the running app's resources with non-container defaults.
@@ -152,10 +157,7 @@ GRADLE_ARGS=(
 )
 
 if [ "${1:-}" = "--compile" ]; then
-  # jettyRun holds the normal project cache lock for its lifetime. A separate
-  # project cache and single-use daemon let this build finish alongside it.
-  exec ./gradlew --no-daemon --console=plain --project-cache-dir .gradle/dev-compile \
-    classes "${GRADLE_ARGS[@]}" -Denvironment=keepdbintact
+  exec ./gradlew --no-daemon --console=plain classes "${GRADLE_ARGS[@]}"
 fi
 
 export ORG_GRADLE_PROJECT_jettyJvmArgs="${ORG_GRADLE_PROJECT_jettyJvmArgs:--Xmx2g}"
@@ -168,7 +170,10 @@ if [ "${RSPACE_HOTSWAP:-true}" != "false" ]; then
   echo "[entrypoint] HotswapAgent enabled (JBR enhanced class redefinition)"
 fi
 
+# Gradle exits, including its single-use daemon, before the long-lived JVM starts.
+./gradlew --no-daemon --console=plain jettyLaunchArgs "${GRADLE_ARGS[@]}"
 rm -f "${FIFO}"
 mkfifo "${FIFO}"
-( exec > "${FIFO}"; while :; do sleep 3600; done ) &
-exec ./gradlew --no-daemon --console=plain jettyRun "${GRADLE_ARGS[@]}" < "${FIFO}"
+# Open read/write so startup never blocks and stdin stays open between reloads.
+exec 3<> "${FIFO}"
+exec java @build/jetty/launch.args <&3

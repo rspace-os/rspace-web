@@ -39,9 +39,9 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Java backend: Gradle wrapper + JBR 17 running `./gradlew jettyRun`. The worktree
+  # Java backend: Gradle builds and exits, then JBR 17 runs Jetty as PID 1. The worktree
   # source tree is bind-mounted at /rspace so edits on the host are live in the
-  # container. Gradle project state and build outputs stay on the bind mount.
+  # container. Gradle project state and outputs live in per-stack volumes.
   # ---------------------------------------------------------------------------
   app:
     build:
@@ -109,6 +109,10 @@ services:
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - gradle-cache:/root/.gradle
+      - app-build:/rspace/build
+      - app-gradle:/rspace/.gradle
+      - buildsrc-build:/rspace/buildSrc/build
+      - buildsrc-gradle:/rspace/buildSrc/.gradle
       # Search indices live in volumes OUTSIDE the bind mount. The entrypoint
       # points Hibernate Search / Lucene at these paths, because under jettyRun
       # the default index base is unset and Lucene would otherwise scatter
@@ -124,6 +128,7 @@ services:
     network_mode: "service:frontend"
     # stdin/tty kept open so Jetty's manual-redeploy console reader has a stable
     # stdin; the entrypoint feeds it from a FIFO for `rspace-dev reload`.
+    stop_grace_period: 60s
     stdin_open: true
     tty: true
     restart: unless-stopped
@@ -224,14 +229,13 @@ volumes:
   lucene-index:
   filestore:
   node-modules:
-  # Shared across all worktrees (fixed names) to avoid re-downloading Gradle
-  # artifacts and npm packages for every worktree. Declared `external` so that
-  # `rspace-dev nuke` (docker compose down -v) NEVER removes them — tearing down
-  # one worktree must not wipe the cache the others rely on. The launcher creates
-  # them on `up`.
+  app-build:
+  app-gradle:
+  buildsrc-build:
+  buildsrc-gradle:
+  # Gradle's writable caches cannot be shared across container network namespaces.
   gradle-cache:
-    external: true
-    name: rspace-dev-gradle-cache
+  # Only the content-addressed pnpm store is shared across worktrees.
   pnpm-store:
     external: true
     name: rspace-dev-pnpm-store
