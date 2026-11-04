@@ -18,7 +18,6 @@ import com.researchspace.model.UserGroup;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.elninventory.MaterialUsage;
@@ -338,7 +337,6 @@ public abstract class HibernateTest {
       UserRaid.class,
       BookingConfiguration.class,
       BookingConfigurationDefaults.class,
-      BookingDefaultAccessGrantee.class,
       ResourceAccess.class,
       ResourceRoleAssignment.class,
       InstrumentEntity.class,

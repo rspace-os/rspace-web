@@ -16,6 +16,7 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
+import com.researchspace.service.AfterCommit;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -26,6 +27,9 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** Adds idempotent bookable-item and booking fixtures to development deployments. */
 public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
@@ -56,6 +60,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private final TimeSlotBookingManager bookingManager;
   private final BookingConfigurationDao configurationDao;
   private final TimeSlotBookingDao bookingDao;
+  private final TransactionTemplate fixtureTransaction;
   private final BookingInventoryFixtureFactory inventoryFixtures;
   private final BookingSchedulingFixtureFactory schedulingFixtures;
 
@@ -70,7 +75,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       BookingConfigurationManager configurationManager,
       TimeSlotBookingManager bookingManager,
       BookingConfigurationDao configurationDao,
-      TimeSlotBookingDao bookingDao) {
+      TimeSlotBookingDao bookingDao,
+      PlatformTransactionManager transactionManager) {
     this.devUserPassword = devUserPassword;
     this.userDao = userDao;
     this.containerDao = containerDao;
@@ -88,10 +94,26 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     this.schedulingFixtures =
         new BookingSchedulingFixtureFactory(
             configurationManager, bookingManager, configurationDao, bookingDao);
+    this.fixtureTransaction = new TransactionTemplate(transactionManager);
+    this.fixtureTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
   }
 
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
+    AfterCommit.runAfterCompletion(this::createFixturesInCommittedStages);
+  }
+
+  // Start only after committed completion has cleared the startup transaction's booking state.
+  // Each fixture stage still needs its own transaction.
+  private void createFixturesInCommittedStages() {
+    FixtureIds fixtureIds = fixtureTransaction.execute(ignored -> createInventoryFixtures());
+    if (fixtureIds == null) {
+      return;
+    }
+    fixtureTransaction.executeWithoutResult(ignored -> createBookingFixtures(fixtureIds));
+  }
+
+  private FixtureIds createInventoryFixtures() {
     User owner = userDao.getUserByUsername(FIXTURE_USER);
     User restrictedInstrumentOwner = userDao.getUserByUsername(RESTRICTED_INSTRUMENT_OWNER);
     User restrictedContainerOwner = userDao.getUserByUsername(RESTRICTED_CONTAINER_OWNER);
@@ -101,7 +123,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
         || restrictedContainerOwner == null
         || sysadmin == null) {
       log.info("Skipping booking fixtures because the Docker development users are unavailable");
-      return;
+      return null;
     }
 
     List<Instrument> instruments = new ArrayList<>();
@@ -196,6 +218,19 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     moveToParent(restrictedLocation, restrictedParent);
     instruments.add(restrictedLocation);
 
+    return new FixtureIds(
+        owner.getId(),
+        sysadmin.getId(),
+        instruments.stream().map(Instrument::getId).toList(),
+        bookingCardInstruments.stream().map(Instrument::getId).toList());
+  }
+
+  private void createBookingFixtures(FixtureIds fixtureIds) {
+    User owner = userDao.get(fixtureIds.ownerId());
+    User sysadmin = userDao.get(fixtureIds.sysadminId());
+    List<Instrument> instruments = reloadInstruments(fixtureIds.instrumentIds());
+    List<Instrument> bookingCardInstruments =
+        reloadInstruments(fixtureIds.bookingCardInstrumentIds());
     List<BookingConfiguration> configurations;
     try {
       login(new UsernamePasswordToken(SYSADMIN_UNAME, SYSADMIN_PWD, false));
@@ -287,6 +322,16 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       logout();
     }
   }
+
+  private List<Instrument> reloadInstruments(List<Long> instrumentIds) {
+    return instrumentIds.stream().map(instrumentDao::get).toList();
+  }
+
+  private record FixtureIds(
+      Long ownerId,
+      Long sysadminId,
+      List<Long> instrumentIds,
+      List<Long> bookingCardInstrumentIds) {}
 
   private Instrument ensureInstrument(String name, User owner) {
     return inventoryFixtures.ensureInstrument(name, owner);

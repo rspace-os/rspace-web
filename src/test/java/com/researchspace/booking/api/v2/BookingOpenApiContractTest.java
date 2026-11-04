@@ -46,7 +46,6 @@ class BookingOpenApiContractTest {
           Set.of(
               "/api/v2/booking-settings",
               "/api/v2/booking-settings/admin",
-              "/api/v2/booking-settings/access-grantees",
               "/api/v2/booking-catalogue",
               "/api/v2/booking-catalogue/locations",
               "/api/v2/booking-configuration-targets"),

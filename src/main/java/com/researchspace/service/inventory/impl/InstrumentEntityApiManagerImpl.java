@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.booking.service.BookingConfigurationOwnershipManager;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.ContainerDao;
@@ -92,6 +93,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired MessageSourceUtils messages;
   private @Autowired BookingConfigurationOwnershipManager bookingOwnershipManager;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   @Override
   public boolean instrumentExists(long id) {
@@ -426,6 +428,13 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument updateApiInstrument(ApiInstrument apiInstrument, User user) {
+    if (apiInstrument.getSharingMode() != null || apiInstrument.getSharedWith() != null) {
+      calendarRevocations.affectInstrument(apiInstrument.getId());
+    }
+    instrumentDao
+        .lockById(apiInstrument.getId())
+        .orElseThrow(
+            () -> new NotFoundException("No instrument with id: " + apiInstrument.getId()));
     Instrument dbInstrument = assertUserCanEditInstrument(apiInstrument.getId(), user);
     ApiInstrument apiInstrumentOriginal = new ApiInstrument(dbInstrument);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
@@ -491,6 +500,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument markInstrumentAsDeleted(Long instrumentId, User user) {
+    calendarRevocations.affectInstrument(instrumentId);
     Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
@@ -548,6 +558,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument restoreDeletedInstrument(Long instrumentId, User user) {
+    calendarRevocations.affectInstrument(instrumentId);
     Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
@@ -583,6 +594,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       User subject,
       User actor,
       boolean transferBookingConfigurationOwnership) {
+    calendarRevocations.affectInstrument(apiInstrument.getId());
     Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
     Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
 

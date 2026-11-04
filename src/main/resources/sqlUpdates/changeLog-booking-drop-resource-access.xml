@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="booking-inherited-access-drop-acl" author="tchoi-rs" context="run">
+    <comment>Remove independent Booking ACL columns after adopting inherited Inventory access</comment>
+    <dropForeignKeyConstraint
+        baseTableName="BookingConfiguration"
+        constraintName="FK_BookingConfiguration_resourceAccess"/>
+    <dropColumn tableName="BookingConfiguration" columnName="resourceAccess_id"/>
+    <dropColumn tableName="BookingConfiguration_AUD" columnName="resourceAccess_id"/>
+  </changeSet>
+</databaseChangeLog>

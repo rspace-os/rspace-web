@@ -24,14 +24,14 @@ import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -42,12 +42,12 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
@@ -64,12 +64,13 @@ class BookingConfigurationManagerTest {
 
   private final BookingConfigurationManagerTestFixtures fixture =
       new BookingConfigurationManagerTestFixtures();
+  private final AuditDao auditDao = fixture.auditDao;
   private final BookingConfigurationDao dao = fixture.dao;
   private final BookingConfigurationDefaultsDao defaultsDao = fixture.defaultsDao;
   private final InstrumentDao instrumentDao = fixture.instrumentDao;
   private final User actor = fixture.actor;
   private final ApplicationEventPublisher events = fixture.events;
-  private final ResourceAccessManager accessManager = fixture.accessManager;
+  private final BookingItemPermissions itemPermissions = fixture.itemPermissions;
   private final LocalValidatorFactoryBean validator = fixture.validator;
   private final BookingConfigurationManager manager = fixture.manager;
 
@@ -81,6 +82,29 @@ class BookingConfigurationManagerTest {
   @AfterEach
   void closeValidatorFactory() {
     validator.close();
+  }
+
+  @Test
+  void onlySysadminCanResolveDeletedConfigurationForAudit() {
+    BookingConfiguration deleted = configuration(42L, 11L);
+    when(auditDao.getNewestRevisionForEntity(BookingConfiguration.class, 42L))
+        .thenReturn(new AuditedEntity<>(deleted, 1));
+
+    assertEquals(Optional.of(deleted), manager.getConfigurationForAudit(42L, actor));
+    assertTrue(manager.getConfiguration(42L, actor).isEmpty());
+
+    when(actor.hasSysadminRole()).thenReturn(false);
+    assertTrue(manager.getConfigurationForAudit(42L, actor).isEmpty());
+    verify(auditDao, times(1)).getNewestRevisionForEntity(BookingConfiguration.class, 42L);
+  }
+
+  @Test
+  void auditDoesNotRecoverAnUnreadableLiveConfiguration() {
+    BookingConfiguration unreadable = configuration(42L, 11L);
+    when(dao.getSafeNull(42L)).thenReturn(Optional.of(unreadable));
+
+    assertTrue(manager.getConfigurationForAudit(42L, actor).isEmpty());
+    verify(auditDao, never()).getNewestRevisionForEntity(any(), any());
   }
 
   @Test
@@ -123,20 +147,6 @@ class BookingConfigurationManagerTest {
     assertEquals(created.getCreatedAt(), created.getUpdatedAt());
     assertEquals(5, created.getSlotGranularityMinutes());
     assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, created.getOpeningHours());
-    assertEquals(BookingResourceRoleScheme.SCHEME_KEY, created.getResourceAccess().getSchemeKey());
-    assertEquals(2, created.getResourceAccess().getAssignments().size());
-    assertTrue(
-        created.getResourceAccess().getAssignments().stream()
-            .anyMatch(
-                assignment ->
-                    assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER)
-                        && assignment.getGranteeKey().equals("user:1")));
-    assertTrue(
-        created.getResourceAccess().getAssignments().stream()
-            .anyMatch(
-                assignment ->
-                    assignment.getRoleKey().equals(BookingResourceRoleScheme.BOOKER)
-                        && assignment.getGranteeKey().equals("audience:all-users")));
     verify(dao).saveAndFlush(created);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
@@ -309,6 +319,13 @@ class BookingConfigurationManagerTest {
     when(owner.getId()).thenReturn(2L);
     when(instrumentDao.lockById(12L)).thenReturn(Optional.of(instrument(12L, owner)));
     when(actor.hasSysadminRole()).thenReturn(false);
+    when(itemPermissions.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
+        .thenReturn(ResolvedResourceAccess.none())
+        .thenReturn(
+            new ResolvedResourceAccess(
+                Optional.of(BookingResourceRoleScheme.OWNER),
+                Set.of(BookingResourceRoleScheme.EDIT_CONFIGURATION),
+                List.of()));
     assertThrows(
         AuthorizationException.class,
         () ->
@@ -334,6 +351,8 @@ class BookingConfigurationManagerTest {
     when(currentOwner.getId()).thenReturn(2L);
     Instrument staleRelationshipTarget = instrument(12L, formerOwner);
     Instrument lockedTarget = instrument(12L, currentOwner);
+    when(itemPermissions.resolveForMutation(any(BookingConfiguration.class), eq(formerOwner)))
+        .thenReturn(ResolvedResourceAccess.none());
     when(instrumentDao.lockById(12L)).thenReturn(Optional.of(lockedTarget));
 
     assertThrows(
@@ -370,7 +389,7 @@ class BookingConfigurationManagerTest {
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), updated.getTarget());
     assertSame(actor, updated.getUpdatedBy());
     assertTrue(updated.getUpdatedAt() != null);
-    verify(accessManager).resolveForMutation(configuration.getResourceAccess(), actor);
+    verify(itemPermissions).resolveForMutation(configuration, actor);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
@@ -438,29 +457,6 @@ class BookingConfigurationManagerTest {
     assertThrows(
         InvalidBookableTargetException.class,
         () -> manager.createConfiguration(new Create(true, "UTC", target), actor, actor));
-    verify(dao, never()).saveAndFlush(any());
-  }
-
-  @Test
-  void selectedDefaultsCannotCreateMoreThanOneHundredNamedAssignments() {
-    BookingConfigurationDefaults defaults = defaults(5, "00:00", "24:00", 0, 0, 0, false);
-    defaults.setDefaultSharedWith(BookingDefaultSharedWith.SELECTED);
-    for (long id = 2; id <= 101; id++) {
-      User selected = mock(User.class);
-      when(selected.getId()).thenReturn(id);
-      when(selected.getDisplayName()).thenReturn("Selected " + id);
-      when(selected.getUsername()).thenReturn("selected-" + id);
-      defaults.addSelectedAccessGrantee(BookingDefaultAccessGrantee.forUser(selected));
-    }
-    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
-        .thenReturn(Optional.of(defaults));
-
-    ResourceAccessException error =
-        assertThrows(
-            ResourceAccessException.class,
-            () -> manager.createConfiguration(new Create(true, "UTC", target(12L)), actor, actor));
-
-    assertEquals(ResourceAccessException.Reason.ASSIGNMENT_LIMIT, error.reason());
     verify(dao, never()).saveAndFlush(any());
   }
 

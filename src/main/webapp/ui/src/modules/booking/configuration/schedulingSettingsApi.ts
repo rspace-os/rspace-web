@@ -53,8 +53,6 @@ export async function saveBookingSettings(
     body: JSON.stringify({
       ...scheduling,
       ...display,
-      defaultSharedWith: input.defaultSharedWith,
-      selectedGranteeKeys: input.defaultSharedWith === "SELECTED" ? input.selectedGranteeKeys : [],
     }),
   });
   if (!response.ok) throw await parseApiV2Problem(response);
