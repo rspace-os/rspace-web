@@ -1013,6 +1013,23 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void sysadminPromotionToPiSetsPiRoleInCollabGroup() {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(0);
+    logoutAndLoginAs(tg1.getPi());
+    Group collab = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
+    User toPromote = tg1.u1();
+    grpMgr.addUserToGroup(toPromote.getUsername(), collab.getId(), RoleInGroup.DEFAULT);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    grpMgr.promoteUserToPi(userMgr.get(toPromote.getId()), sysadmin);
+
+    assertEquals(
+        RoleInGroup.PI,
+        grpMgr.getGroup(collab.getId()).getUserGroupForUser(toPromote).getRoleInGroup());
+  }
+
+  @Test
   public void testIsRecordPartOfGroup() throws Exception {
     User pi1 = createAndSaveAPi();
     initialiseContentWithEmptyContent(pi1);

@@ -404,10 +404,9 @@ public class CommunityControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertTrue(getFromJsonAjaxReturnObject(result, Boolean.class));
 
-    // Now after creating a group as PI, existingUser1 becomes PI within the
-    // collaboration group.
+    // creating their own lab group must not make existingUser1 PI in the collaboration group
     collaborationGroup = grpMgr.getGroup(collaborationGroup.getId());
-    assertUserHasRoleInGroup(existingUser1, collaborationGroup, RoleInGroup.PI);
+    assertUserHasRoleInGroup(existingUser1, collaborationGroup, RoleInGroup.DEFAULT);
   }
 
   private void assertUserHasRoleInGroup(
