@@ -171,16 +171,17 @@ The chemistry tests need the OSS chemistry service; `scripts/run-chemistry-tests
 
 ## Jetty
 
-`gradle/jetty.gradle` adds two tasks, which took over from the Maven build's `jetty:run` and
+`gradle/jetty.gradle` adds these tasks, which took over from the Maven build's `jetty:run` and
 `jetty:run-war`:
 
 | Task | Runs |
 |---|---|
+| `./gradlew jettyLaunchArgs <-D flags>` | builds the exploded app and writes `build/jetty/launch.args` for `java @argfile` |
 | `./gradlew jettyRun <-D flags>` | the webapp exploded from the build outputs and `src/main/webapp` |
 | `./gradlew jettyRunWar -PwarFile=<path> <-D flags>` | a WAR built earlier |
 | `./gradlew jettyRunWar <-D flags>` | the WAR this build makes, building it first |
 
-Both run `src/jetty/java`'s launcher in a separate JVM on Jetty 12.1 ee10, at context path `/`.
+The run tasks execute `src/jetty/java`'s launcher in a separate JVM on Jetty 12.1 ee10, at context path `/`.
 The Jetty jars stay in the `jetty` source set, so they never reach the WAR.
 
 - **What `jettyRun` serves:** `build/classes/java/main`, `build/resources/main` and the WAR's
@@ -223,7 +224,15 @@ A typical development run:
   -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
 
-The Docker dev stack (`docker/dev/`) runs the same thing in a container.
+The Docker dev stack (`docker/dev/`) builds with `jettyLaunchArgs --no-daemon`,
+then execs `java @build/jetty/launch.args`. The argfile and `jettyRun` share JVM
+options, properties, classpaths and program arguments. The file can contain
+credentials, so it is owner-readable only. Jetty becomes PID 1 and receives
+SIGTERM directly. Its shutdown hook stops Jetty and Spring; Compose allows
+60 seconds before killing it. Gradle exits before Jetty starts, so reload uses
+the same project cache without a resident build daemon. Container outputs and
+Gradle caches use per-stack volumes, allowing concurrent host builds and other
+stacks without shared locks or root-owned outputs.
 
 ## Resource filtering
 
