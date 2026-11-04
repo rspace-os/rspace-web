@@ -81,7 +81,7 @@ export class TableListReorderingPage {
   private touchTarget: EventTarget | null = null;
 
   get filterButton(): Locator {
-    return page.getByRole("button", { name: "Filters, 12 applied" });
+    return page.getByRole("button", { name: "Filters 12 applied" });
   }
 
   get sortingButton(): Locator {

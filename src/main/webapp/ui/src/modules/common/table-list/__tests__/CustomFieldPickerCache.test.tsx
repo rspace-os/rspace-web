@@ -8,6 +8,7 @@ import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMock
 import { server } from "@/__tests__/mswServer";
 import type { RuntimeNamespaceSummary } from "@/modules/common/collection/config";
 import { queryKeys } from "@/modules/common/hooks/auth";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { CustomFieldPicker } from "@/modules/common/table-list/components/CustomFieldPicker";
 import { replaceUiToken } from "@/modules/common/utils/auth";
@@ -106,7 +107,7 @@ describe("CustomFieldPicker catalog cache", () => {
     }
   });
 
-  it("loads suggestions again when the OAuth token changes for the same catalog", async () => {
+  it("loads suggestions again when the user identity changes for the same catalog", async () => {
     const user = userEvent.setup();
     const client = createQueryClient();
     const catalog = source("/api/v2/instruments/fields/customFields");
@@ -123,6 +124,7 @@ describe("CustomFieldPicker catalog cache", () => {
       }),
     );
 
+    client.setQueryData(currentUserQueryKeys.me(), { id: 11, session: { operatedAs: false } });
     render(picker(client, [catalog]));
     const input = await screen.findByRole("combobox", { name: searchLabel });
     await user.click(input);
@@ -134,6 +136,7 @@ describe("CustomFieldPicker catalog cache", () => {
     replaceUiToken("rotated-session-token");
     await act(async () => {
       await client.invalidateQueries({ queryKey: queryKeys.oauthToken(true) });
+      client.setQueryData(currentUserQueryKeys.me(), { id: 22, session: { operatedAs: false } });
     });
 
     await screen.findByText("Token B field");

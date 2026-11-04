@@ -11,8 +11,8 @@ export type ApiV2FilterOperator = FilterOperatorToken;
 
 const filterOperator = v.picklist(Object.values(filterOperatorTokens));
 
-const positiveInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(1));
-const nonNegativeInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(0));
+const positiveInteger = v.pipe(v.number(), v.integer(), v.minValue(1));
+const nonNegativeInteger = v.pipe(v.number(), v.integer(), v.minValue(0));
 const strings = v.array(v.string());
 export const objectInput = v.custom<Record<string, unknown>>(
   (input) => typeof input === "object" && input !== null && !Array.isArray(input),
@@ -57,7 +57,7 @@ function primitiveType(type: v.InferOutput<typeof jsonType>, format?: string): P
 const fieldTypeSchema = v.pipe(
   v.union([
     v.object({ ...typedEntries, type: declaredType }),
-    v.object({ ...noComposition, type: v.optional(v.never()), oneOf: v.pipe(v.array(scalarSchema), v.minLength(1)) }),
+    v.object({ ...noComposition, type: v.optional(v.never()), oneOf: v.pipe(v.array(scalarSchema), v.nonEmpty()) }),
   ]),
   v.transform((schema) => {
     if (schema.oneOf !== undefined) {
@@ -67,8 +67,6 @@ const fieldTypeSchema = v.pipe(
     return primitiveType(schema.type, schema.format);
   }),
 );
-
-export type ApiV2PrimitiveFieldType = Exclude<v.InferOutput<typeof fieldTypeSchema>, null>;
 
 const selectorName = v.pipe(v.string(), v.regex(/^[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)?$/));
 const selectorSchema = v.pipe(
@@ -89,7 +87,18 @@ export const metadataFilterSchema = v.object({
   maximumLikeComparisons: positiveInteger,
   maximumNesting: positiveInteger,
   maximumArguments: positiveInteger,
-  selectors: v.pipe(objectInput, v.record(selectorName, selectorSchema)),
+  selectors: v.pipe(
+    objectInput,
+    v.record(selectorName, selectorSchema),
+    v.rawCheck(({ dataset, addIssue }) => {
+      if (!dataset.typed) return;
+      for (const [name, selector] of Object.entries(dataset.value)) {
+        if (selector.picker && !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
+          addIssue({ message: `Filter selector ${name} has an invalid picker` });
+        }
+      }
+    }),
+  ),
 });
 export type ApiV2ParsedFilterMetadata = v.InferOutput<typeof metadataFilterSchema>;
 export type ApiV2ParsedSelector = v.InferOutput<typeof selectorSchema>;
@@ -113,7 +122,16 @@ const runtimeNamespaceSchema = v.object({
   viaResource: v.optional(v.string()),
 });
 export type ApiV2RuntimeFieldNamespace = v.InferOutput<typeof runtimeNamespaceSchema>;
-export const metadataRuntimeFieldsSchema = v.optional(v.array(runtimeNamespaceSchema), () => []);
+export const metadataRuntimeFieldsSchema = v.optional(
+  v.pipe(
+    v.array(runtimeNamespaceSchema),
+    v.checkItems(
+      (item, index, items) => items.findIndex((other) => other.namespace === item.namespace) === index,
+      (issue) => `Duplicate runtime field namespace ${issue.input.namespace}`,
+    ),
+  ),
+  () => [],
+);
 
 export const metadataDocumentSchema = v.object({
   paths: objectInput,
@@ -146,16 +164,19 @@ export const metadataReadSchema = v.object({
 const rowBoundEntries = { minItems: v.optional(nonNegativeInteger), maxItems: v.optional(nonNegativeInteger) };
 export const metadataRowBoundsSchema = v.pipe(
   v.object(rowBoundEntries),
-  v.check(
-    ({ minItems, maxItems }) => minItems === undefined || maxItems === undefined || minItems <= maxItems,
-    "Invalid row bounds",
+  v.forward(
+    v.check(
+      ({ minItems, maxItems }) => minItems === undefined || maxItems === undefined || minItems <= maxItems,
+      "Invalid row bounds",
+    ),
+    ["maxItems"],
   ),
   v.transform(({ minItems, maxItems }) => ({
     ...(minItems === undefined ? {} : { minRows: minItems }),
     ...(maxItems === undefined ? {} : { maxRows: maxItems }),
   })),
 );
-const enumValues = v.pipe(strings, v.minLength(1));
+const enumValues = v.pipe(strings, v.nonEmpty());
 const writeConstraints = v.pipe(
   objectInput,
   v.looseObject({
@@ -164,12 +185,8 @@ const writeConstraints = v.pipe(
     enum: v.optional(enumValues),
   }),
 );
-export const metadataChildrenSchema = v.pipe(v.array(v.unknown()), v.minLength(1));
-export const metadataChildSchema = v.object({
-  name: v.pipe(
-    v.string(),
-    v.check((name) => name.trim() !== "", "Child name must not be empty"),
-  ),
+const childEntries = {
+  name: v.pipe(v.string(), v.regex(/\S/, "Child name must not be empty")),
   type: v.object({
     jsonType,
     format: v.nullish(v.string()),
@@ -188,12 +205,26 @@ export const metadataChildSchema = v.object({
       format: v.nullish(v.string()),
     }),
   ),
-  fields: v.array(v.unknown()),
+};
+export type ApiV2MetadataChild = v.InferOutput<v.ObjectSchema<typeof childEntries, undefined>> & {
+  fields: ApiV2MetadataChild[];
+};
+const metadataChildSchema: v.GenericSchema<unknown, ApiV2MetadataChild> = v.object({
+  ...childEntries,
+  fields: v.lazy(() => metadataChildListSchema),
 });
+// Names identify children, so a list may not repeat one.
+const metadataChildListSchema = v.pipe(
+  v.array(metadataChildSchema),
+  v.checkItems(
+    (item, index, items) => items.findIndex((other) => other.name === item.name) === index,
+    (issue) => `duplicate child field ${issue.input.name}`,
+  ),
+);
 export const metadataStructuredPropertySchema = v.object({
   type: declaredType,
   readOnly: v.optional(v.boolean(), false),
-  "x-rspace-fields": metadataChildrenSchema,
+  "x-rspace-fields": v.pipe(metadataChildListSchema, v.nonEmpty()),
 });
 
 /**
@@ -204,8 +235,8 @@ export type ApiV2DocumentSchema<TDocument> = v.ObjectSchema<v.ObjectEntries, und
   v.GenericSchema<unknown, TDocument>;
 
 export const runtimeFieldSchema = v.object({
-  id: v.pipe(v.string(), v.minLength(1)),
-  selector: v.pipe(v.string(), v.minLength(1)),
+  id: v.pipe(v.string(), v.nonEmpty()),
+  selector: v.pipe(v.string(), v.nonEmpty()),
   label: v.string(),
   type: v.picklist(runtimeFieldValueTypes),
   jsonType: v.picklist(["string", "number", "array"]),
