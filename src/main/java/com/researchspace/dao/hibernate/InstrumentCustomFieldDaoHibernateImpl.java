@@ -1,0 +1,219 @@
+package com.researchspace.dao.hibernate;
+
+import com.blazebit.persistence.CriteriaBuilder;
+import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.researchspace.dao.InstrumentCustomFieldDao;
+import com.researchspace.dao.query.LikeEscaper;
+import com.researchspace.dao.query.LookAheadPagination;
+import com.researchspace.dao.query.RsqlCollectionQuery;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.model.collection.QueryConstraint;
+import com.researchspace.model.collection.RuntimeFieldValueType;
+import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.field.InventoryChoiceField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryRadioField;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.hibernate.SessionFactory;
+import org.springframework.stereotype.Repository;
+
+/**
+ * Reads instrument custom-field definitions and values against the caller's own read rule.
+ *
+ * <p>The read rule arrives as a {@link QueryConstraint} and is recompiled here at this query's own
+ * instrument alias, which is the same rule the instrument list applies. That is what makes a custom
+ * field a narrowing of an already-authorized row set rather than a second, weaker access path.
+ */
+@Repository("instrumentCustomFieldDao")
+public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFieldDao {
+
+  public record OptionRow(Long fieldId, String storedOptions) {}
+
+  private static final String DEFINITION_ALIAS = "customFieldDef";
+  private static final String COPY_ALIAS = "customFieldCopy";
+  private static final String INSTRUMENT_ALIAS = "customFieldInstrument";
+  private static final String SOURCE_ALIAS = "customFieldSource";
+
+  private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final SessionFactory sessionFactory;
+
+  public InstrumentCustomFieldDaoHibernateImpl(
+      CriteriaBuilderFactory criteriaBuilderFactory, SessionFactory sessionFactory) {
+    this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.sessionFactory = sessionFactory;
+  }
+
+  @Override
+  public LookAheadPagination.Result<DefinitionRow> readableDefinitions(
+      QueryConstraint constraint,
+      String search,
+      Set<Long> ids,
+      Set<FieldType> types,
+      int offset,
+      int limit) {
+    if (types.isEmpty()) {
+      return new LookAheadPagination.Result<>(List.of(), 0L, false);
+    }
+    RsqlCollectionQuery.Predicate predicate = readablePredicate(constraint, "customFieldAccess");
+    CriteriaBuilder<DefinitionRow> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), DefinitionRow.class)
+            .from(InventoryEntityField.class, DEFINITION_ALIAS)
+            .innerJoin(DEFINITION_ALIAS + ".instrumentEntity", SOURCE_ALIAS)
+            .selectNew(DefinitionRow.class)
+            .with(DEFINITION_ALIAS + ".id")
+            .with(DEFINITION_ALIAS + ".name")
+            .with(DEFINITION_ALIAS + ".type")
+            .with(DEFINITION_ALIAS + ".columnIndex")
+            .with(SOURCE_ALIAS + ".id")
+            .with(SOURCE_ALIAS + ".editInfo.name")
+            .end();
+    restrict(query, predicate, search, ids, types);
+    query.orderByAsc(DEFINITION_ALIAS + ".id");
+    boolean hydrating = !ids.isEmpty();
+    if (!hydrating) {
+      query.setFirstResult(offset).setMaxResults(limit + 1);
+    }
+    List<DefinitionRow> rows = new ArrayList<>(query.getResultList());
+    return LookAheadPagination.apply(rows, offset, limit, hydrating);
+  }
+
+  private RsqlCollectionQuery.Predicate readablePredicate(
+      QueryConstraint constraint, String queryName) {
+    return new RsqlCollectionQuery(ApiV2InstrumentResource.DESCRIPTION, INSTRUMENT_ALIAS, queryName)
+        .translateTrusted(constraint);
+  }
+
+  private void restrict(
+      CriteriaBuilder<?> query,
+      RsqlCollectionQuery.Predicate predicate,
+      String search,
+      Set<Long> ids,
+      Set<FieldType> types) {
+    query.whereExpression(DEFINITION_ALIAS + ".type IN :publishedTypes");
+    query.setParameter("publishedTypes", types);
+    query.whereExpression(DEFINITION_ALIAS + ".templateField IS NULL");
+    var readableCopy =
+        query
+            .whereExists()
+            .from(InventoryEntityField.class, COPY_ALIAS)
+            .from(Instrument.class, INSTRUMENT_ALIAS)
+            .select("1")
+            .whereExpression(
+                COPY_ALIAS
+                    + ".templateField.id = "
+                    + DEFINITION_ALIAS
+                    + ".id AND "
+                    + COPY_ALIAS
+                    + ".deleted = false AND "
+                    + COPY_ALIAS
+                    + ".instrumentEntity.id = "
+                    + INSTRUMENT_ALIAS
+                    + ".id");
+    if (predicate != null) {
+      predicate.applyTo(readableCopy, query);
+    }
+    readableCopy.end();
+    if (!ids.isEmpty()) {
+      query.whereExpression(DEFINITION_ALIAS + ".id IN :requestedIds");
+      query.setParameter("requestedIds", ids);
+    } else if (search != null) {
+      query.whereExpression("LOWER(" + DEFINITION_ALIAS + ".name) LIKE :nameSearch ESCAPE '!'");
+      query.setParameter("nameSearch", "%" + LikeEscaper.escape(search) + "%");
+    }
+  }
+
+  @Override
+  public Set<Long> readableInstruments(QueryConstraint constraint, Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Set.of();
+    }
+    RsqlCollectionQuery.Predicate predicate = readablePredicate(constraint, "customFieldRowAccess");
+    CriteriaBuilder<Long> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), Long.class)
+            .from(Instrument.class, INSTRUMENT_ALIAS)
+            .select(INSTRUMENT_ALIAS + ".id");
+    query.whereExpression(INSTRUMENT_ALIAS + ".id IN :instrumentIds");
+    query.setParameter("instrumentIds", instrumentIds);
+    if (predicate != null) {
+      predicate.applyTo(query);
+    }
+    return new LinkedHashSet<>(query.getResultList());
+  }
+
+  @Override
+  public Map<Long, List<String>> optionsFor(Set<Long> definitionIds) {
+    Map<Long, List<String>> options = new LinkedHashMap<>();
+    if (definitionIds.isEmpty()) {
+      return options;
+    }
+    collectOptions(options, InventoryChoiceField.class, "choiceDef.choiceOptions", definitionIds);
+    collectOptions(options, InventoryRadioField.class, "radioDef.radioOptions", definitionIds);
+    return options;
+  }
+
+  private void collectOptions(
+      Map<Long, List<String>> options,
+      Class<? extends InventoryEntityField> fieldType,
+      String optionPath,
+      Set<Long> ids) {
+    CriteriaBuilder<OptionRow> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), OptionRow.class)
+            .from(fieldType, "field")
+            .selectNew(OptionRow.class)
+            .with("field.id")
+            .with("field." + optionPath)
+            .end()
+            .whereExpression("field.id in :optionDefinitionIds")
+            .setParameter("optionDefinitionIds", ids);
+    for (OptionRow row : query.getResultList()) {
+      String stored = row.storedOptions();
+      Object parsed = stored == null ? null : RuntimeFieldValueType.CHOICE.serialize(stored);
+      options.put(row.fieldId(), asStrings(parsed));
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<String> asStrings(Object parsed) {
+    return parsed instanceof List ? List.copyOf((List<String>) parsed) : List.of();
+  }
+
+  @Override
+  public Map<Long, Map<Long, ValueRow>> valuesByInstrument(
+      Set<Long> instrumentIds, Set<Long> definitionIds) {
+    Map<Long, Map<Long, ValueRow>> values = new LinkedHashMap<>();
+    if (instrumentIds.isEmpty() || definitionIds.isEmpty()) {
+      return values;
+    }
+    List<ValueRow> rows =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), ValueRow.class)
+            .from(InventoryEntityField.class, "f")
+            .selectNew(ValueRow.class)
+            .with("f.instrumentEntity.id")
+            .with("f.templateField.id")
+            .with("f.type")
+            .with("f.data")
+            .end()
+            .whereExpression("f.instrumentEntity.id in :instrumentIds")
+            .whereExpression("f.templateField.id in :definitionIds")
+            .whereExpression("f.deleted = false")
+            .setParameter("instrumentIds", instrumentIds)
+            .setParameter("definitionIds", definitionIds)
+            .getResultList();
+    for (ValueRow row : rows) {
+      values
+          .computeIfAbsent(row.instrumentId(), ignored -> new LinkedHashMap<>())
+          .put(row.definitionId(), row);
+    }
+    return values;
+  }
+}
