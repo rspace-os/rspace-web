@@ -7,8 +7,8 @@
 #   test      tests only
 # Format: group:artifact=version scope
 # Edit by hand when adding, removing or upgrading a dependency, then run
-# ./gradlew checkPinnedVersions. This list carries the versions that rspace-parent's and pom.xml's
-# dependencyManagement used to choose, so modules converge on one version each.
+# ./gradlew checkPinnedVersions. This list started from the versions that the former Maven build's
+# dependencyManagement (pom.xml and rspace-parent) chose, so modules converge on one version each.
 com.adobe.xmp:xmpcore=6.1.11 compile
 com.apicatalog:titanium-jcs=1.1.1 runtime
 com.apicatalog:titanium-json-ld=1.7.0 runtime
