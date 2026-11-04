@@ -4,8 +4,10 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -23,6 +25,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -34,6 +37,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -251,6 +255,27 @@ public class UserDeletionManagerTest {
     assertFalse(result.isSucceeded());
     assertEquals(
         "Only user with sysadmin role can delete filestore resources", result.getMessage());
+  }
+
+  @Test
+  public void formsAndTemplatesUsageReportsEachFlagSeparately() {
+    enablePermissions();
+    when(userDao.get(1L)).thenReturn(toDelete);
+    when(formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)).thenReturn(true);
+    when(recordDao.hasUserSharedTemplatesUsedByOtherUsers(toDelete)).thenReturn(false);
+
+    FormsAndTemplatesUsage usage = userDeletionMgr.getFormsAndTemplatesUsage(1L);
+
+    assertTrue(usage.formsUsedByOtherUsers());
+    assertFalse(usage.templatesUsedByOtherUsers());
+  }
+
+  @Test
+  public void formsAndTemplatesUsageRequiresUserDeletePermission() {
+    when(permUtils.isPermitted("USER:DELETE")).thenReturn(false);
+
+    assertThrows(AuthorizationException.class, () -> userDeletionMgr.getFormsAndTemplatesUsage(1L));
+    verifyNoInteractions(userDao, formDao, recordDao);
   }
 
   private Date nYearsAgo(int nYears) {
