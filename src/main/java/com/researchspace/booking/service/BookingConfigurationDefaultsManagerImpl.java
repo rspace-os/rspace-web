@@ -184,8 +184,7 @@ public class BookingConfigurationDefaultsManagerImpl
   }
 
   private BookingConfigurationDefaults lockedDefaults() {
-    return defaultsDao
-        .lockSingleton()
+    return BookingCurrentReads.read(defaultsDao::lockSingleton)
         .orElseThrow(
             () -> new IllegalStateException("Booking configuration defaults row is missing"));
   }
