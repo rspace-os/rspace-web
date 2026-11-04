@@ -148,8 +148,8 @@ class EmailContentGeneratorTest {
     data.setEndTime("2026-01-02T04:04:05Z");
     notification.setNotificationMessage(
         new com.researchspace.booking.service.BookingNotificationMessageFormatter(
-                new JsonMessageSource())
-            .format(type, data, java.time.ZoneId.of("Asia/Tokyo"), Locale.US));
+                new JsonMessageSource(), "https://rspace.example/")
+            .formatForEmail(type, data, java.time.ZoneId.of("Asia/Tokyo"), Locale.US));
     notification.setNotificationDataObject(data);
     var fixedNow = java.time.Instant.parse("2026-01-15T21:17:00Z");
     EmailContent content;
@@ -161,13 +161,22 @@ class EmailContentGeneratorTest {
           new CommunicationEmailContentGenerator(generator, "https://rspace.example")
               .generate(notification);
     }
-    String header = content.htmlContent().split("Booking 42", 2)[0];
+    String header =
+        content.htmlContent().split("https://rspace.example/booking/calendar/bookings/42", 2)[0];
     assertThat(header).contains("Jan 16, 2026", "6:17 AM", "Asia/Tokyo, UTC+09:00");
     assertEquals(subject, content.subject());
     assertThat(content.htmlContent())
         .contains("Asia/Tokyo", "Actor &lt;script&gt;", "Microscope &lt;script&gt;")
-        .doesNotContain("Actor <script>");
-    assertThat(content.plainTextContent()).contains("Asia/Tokyo", "Microscope <script>");
+        .doesNotContain("Actor <script>", "href=\"/booking/")
+        .contains(
+            "href=\"https://rspace.example/booking/calendar/bookings/42\"",
+            "href=\"https://rspace.example/booking/bookable-items/IN12\"");
+    assertThat(content.plainTextContent())
+        .contains(
+            "Asia/Tokyo",
+            "Microscope <script>",
+            "https://rspace.example/booking/calendar/bookings/42",
+            "https://rspace.example/booking/bookable-items/IN12");
   }
 
   private void setDeploymentLocale(String languageTag) {
