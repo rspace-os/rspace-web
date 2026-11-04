@@ -84,8 +84,8 @@ Switches:
 | `-DforkCount=<n>` or `<n>C`, `-PmaxTestForks=<n>` | Parallel test JVMs (`1C` = one per core) |
 | `-Dmaven.test.failure.ignore=true` | Test failures do not fail the build |
 
-The `environment`, `generateReactDist`, `enableTestCoverage` and `spotlessStrict` switches are on
-whenever they are given, whatever their value; `generateStorybook` needs `=true`. An unknown
+The `generateReactDist`, `enableTestCoverage` and `spotlessStrict` switches are on whenever they
+are given, whatever their value; `generateStorybook` needs `=true`. An unknown
 `-Denvironment` value fails the build. The `jdbc.*.maven`, `surefire.*` and `maven.*` names are
 kept from the old Maven build so that existing commands and CI jobs keep working.
 
@@ -120,6 +120,9 @@ It replaces each test task's own class patterns, so `./gradlew test -Dtest=MyCla
 `*IT` class under `test`. A task with no matching class passes. Gradle's own
 `--tests '<pattern>'` also works, on one task at a time.
 
+So `integrationTests -Dtest=MyClassIT` runs the class three times, once in each integration task,
+as Maven's three Surefire executions did. Run one `*IT` class with `integrationTest -Dtest=...`.
+
 ### Retries
 
 The `org.gradle.test-retry` plugin reruns failed tests when `-Dsurefire.rerunFailingTestsCount=<n>`
@@ -144,7 +147,8 @@ runs:
 ./gradlew integrationTests --continue -Dsurefire.rerunFailingTestsCount=1 <same flags>
 ```
 
-For a server on another port, add `-Djdbc.url.maven=jdbc:mysql://localhost:<port>`.
+For a server on another port, change the port in `-Djdbc.url`, which the app and tests connect
+to, and add `-Djdbc.url.maven=jdbc:mysql://localhost:<port>`, which `recreateDatabase` uses.
 
 With `-Denvironment=drop-recreate-db`, every test task depends on `recreateDatabase`, which:
 
@@ -159,13 +163,14 @@ The chemistry tests need the OSS chemistry service; `scripts/run-chemistry-tests
 
 ## Jetty
 
-`gradle/jetty.gradle` adds two tasks, which replace Maven's `jetty:run` and `jetty:run-war`:
+`gradle/jetty.gradle` adds two tasks, which took over from the Maven build's `jetty:run` and
+`jetty:run-war`:
 
-| Gradle | Maven equivalent |
+| Task | Runs |
 |---|---|
-| `./gradlew jettyRun <-D flags>` | `mvn jetty:run <-D flags>` |
-| `./gradlew jettyRunWar -PwarFile=<path> <-D flags>` | `mvn jetty:run-war -Dmaven.war.skip=true <-D flags>` |
-| `./gradlew jettyRunWar <-D flags>` | `mvn jetty:run-war` (builds the WAR first) |
+| `./gradlew jettyRun <-D flags>` | the webapp exploded from the build outputs and `src/main/webapp` |
+| `./gradlew jettyRunWar -PwarFile=<path> <-D flags>` | a WAR built earlier |
+| `./gradlew jettyRunWar <-D flags>` | the WAR this build makes, building it first |
 
 Both run `src/jetty/java`'s launcher in a separate JVM on Jetty 12.1 ee10, at context path `/`.
 The Jetty jars stay in the `jetty` source set, so they never reach the WAR.

@@ -417,7 +417,7 @@ fields in the wizard is deferred.
   bodies' annotations, the controller, the transactional core, the error catalog).
   `./gradlew test -Dtest='*Operation*Test' -Dfast=true`.
 - Backend, end to end: the operation `*MVCIT` classes. Run with
-  `./gradlew integrationTests -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
+  `./gradlew integrationTest -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
 - Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/__tests__`, plus
   `ProcessAction.test.tsx` and `ContextActions.process.test.tsx` in `ContextMenu/__tests__`. `pnpm test <path>` from the repo root.
 - The field-name uniqueness rule is implemented in both languages, and
