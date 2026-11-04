@@ -275,8 +275,10 @@ docker volume rm rspace-dev-pnpm-store
 The whole worktree is bind-mounted at `/rspace` in the `app` and `frontend`
 containers. To keep host (often macOS/arm64) and Linux-container artifacts from
 mixing for frontend dependencies, `node_modules/` uses a named volume. Search
-indices and the filestore also use volumes. Named volumes cover `/rspace/build`,
-`/rspace/.gradle`, `/rspace/buildSrc/build` and `/rspace/buildSrc/.gradle`.
+indices and the filestore also use volumes. All Gradle state lives in named volumes outside `/rspace`, under
+`/var/rspace-build`. The entrypoint creates a project view there with links to
+live source and copies of the Gradle settings and build scripts. This keeps
+buildSrc's default `.gradle` directory outside the host worktree too.
 The Gradle user home is also per-stack. Container builds leave host outputs and
 locks alone, so host/IDE builds can run concurrently. HotswapAgent watches the
 container's volume-backed class and resource directories. Existing frontend
@@ -429,8 +431,12 @@ HotSpot HotSwap). The existing bean runs the new code; it is not re-created.
 `reload` runs `classes` with the same container settings as startup, using a
 single-use Gradle daemon and the same project cache as startup. Gradle has
 already exited, so no build locks remain held while Jetty runs. Incremental
-compilation reuses the startup state instead of clearing live class directories.
-It preserves filtered resource settings and always uses `keepdbintact`.
+compilation reuses the startup state and preserves the startup environment,
+including `drop-recreate-db`, and all resource-filter flags. `classes` does not
+depend on `recreateDatabase`, so reload never resets the database. Unchanged
+resources and classes stay present; incremental compilation may briefly remove
+changed classes. Changed resource inputs can still cause `processResources` to
+replace its outputs.
 Dependency resolution stays online so newly added dependencies can be fetched.
 
 ### What still requires a full restart
@@ -526,7 +532,7 @@ is the quick lookup.
 
 The stack reproduces the documented local workflow, just containerized:
 
-- backend: `./gradlew --no-daemon jettyLaunchArgs` then `exec java @build/jetty/launch.args`
+- backend: `./gradlew --no-daemon jettyLaunchArgs` then `exec java @/var/rspace-build/app/jetty/launch.args`
   with the DB pointed at the `db` service and the Vite dev-server proxy pointed
   at `localhost:5173`. The app container shares the `frontend` container's
   network namespace, so "localhost" reaches Vite; this is also why Vite accepts
@@ -540,10 +546,15 @@ The stack reproduces the documented local workflow, just containerized:
 
 The launch argfile uses the same options, properties, launcher classpath and
 program arguments as `jettyRun`. Jetty is PID 1 and receives SIGTERM directly;
-its shutdown hook stops Jetty and the Spring context. Compose allows 60 seconds
+its shutdown hook stops Jetty and the Spring context. Compose allows 120 seconds
 before forcing termination. No Gradle daemon remains resident after startup.
 
 An existing `MAVEN_OPTS` entry in `.env` triggers a warning. Move its heap flags
 and application `-D` properties, including PyRAT configuration, to
 `ORG_GRADLE_PROJECT_jettyJvmArgs`. Gradle's build heap uses `org.gradle.jvmargs`.
 The launcher never prints the old variable's value.
+
+SIGTERM during an in-flight redeploy waits for Spring to finish starting before
+Jetty stops it. The 120-second grace period allows slower shared machines to
+finish; Docker kills the process if it exceeds that limit. Manual redeploy
+invalidates logged-in sessions, matching Maven's redirect to login.

@@ -32,6 +32,51 @@ SEARCH_INDEX_DIR="${SEARCH_INDEX_DIR:-/var/rspace/search/hibernate}"
 LUCENE_INDEX_DIR="${LUCENE_INDEX_DIR:-/var/rspace/search/lucene}"
 FIFO=/tmp/jetty.in
 
+# Refuse both startup and --compile without the isolated volumes. Never fall back
+# to root-owned build outputs or caches in the source bind mount.
+for dir in /var/rspace-build/{app,buildsrc,gradle-home,project}; do
+  if ! awk -v path="${dir}" '$5 == path { found=1 } END { exit !found }' /proc/self/mountinfo; then
+    echo "[entrypoint] Refusing to build: ${dir} is not mounted. Run via docker/dev/rspace-dev with its build volumes." >&2
+    exit 1
+  fi
+done
+for dir in /var/rspace-build/project/.gradle /var/rspace-build/project/buildSrc/.gradle; do
+  if ! awk -v path="${dir}" '$5 == path { found=1 } END { exit !found }' /proc/self/mountinfo; then
+    echo "[entrypoint] Refusing to build: ${dir} cache volume is not mounted." >&2
+    exit 1
+  fi
+done
+export GRADLE_USER_HOME=/var/rspace-build/gradle-home
+# Gradle 9.8 creates buildSrc's cache service before init scripts can change its
+# StartParameter. Give it an external project directory, with links to live source.
+# No mountpoint or symlink is created inside the host worktree.
+PROJECT=/var/rspace-build/project
+for source in /rspace/* /rspace/.[!.]*; do
+  [ -e "${source}" ] || continue
+  name="${source##*/}"
+  case "${name}" in build|.gradle|buildSrc) continue ;; esac
+  case "${name}" in
+    settings.gradle|settings.gradle.kts|build.gradle|build.gradle.kts)
+      rm -f "${PROJECT}/${name}"
+      cp -p "${source}" "${PROJECT}/${name}" ;;
+    *) ln -sfn "${source}" "${PROJECT}/${name}" ;;
+  esac
+done
+mkdir -p "${PROJECT}/buildSrc"
+for source in /rspace/buildSrc/*; do
+  name="${source##*/}"
+  case "${name}" in build) continue ;; esac
+  case "${name}" in
+    *.gradle|*.gradle.kts)
+      rm -f "${PROJECT}/buildSrc/${name}"
+      cp -p "${source}" "${PROJECT}/buildSrc/${name}" ;;
+    *) ln -sfn "${source}" "${PROJECT}/buildSrc/${name}" ;;
+  esac
+done
+cd "${PROJECT}"
+GRADLE_BUILD_ARGS=(--project-dir "${PROJECT}" --no-daemon --console=plain
+  --init-script /rspace/docker/dev/gradle-state.init.gradle)
+
 # RSpace fails to start if these directories do not exist.
 mkdir -p "${RS_FILE_BASE}" "${SEARCH_INDEX_DIR}" "${LUCENE_INDEX_DIR}"
 
@@ -126,7 +171,6 @@ if [ "${RSPACE_MAILPIT:-false}" = "true" ]; then
 fi
 
 if [ "${1:-}" = "--compile" ]; then
-  DB_MODE=keepdbintact
   echo "[entrypoint] Compiling RSpace (db mode: ${DB_MODE}) ..."
 else
   echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
@@ -157,7 +201,7 @@ GRADLE_ARGS=(
 )
 
 if [ "${1:-}" = "--compile" ]; then
-  exec ./gradlew --no-daemon --console=plain classes "${GRADLE_ARGS[@]}"
+  exec ./gradlew "${GRADLE_BUILD_ARGS[@]}" classes "${GRADLE_ARGS[@]}"
 fi
 
 export ORG_GRADLE_PROJECT_jettyJvmArgs="${ORG_GRADLE_PROJECT_jettyJvmArgs:--Xmx2g}"
@@ -171,9 +215,9 @@ if [ "${RSPACE_HOTSWAP:-true}" != "false" ]; then
 fi
 
 # Gradle exits, including its single-use daemon, before the long-lived JVM starts.
-./gradlew --no-daemon --console=plain jettyLaunchArgs "${GRADLE_ARGS[@]}"
+./gradlew "${GRADLE_BUILD_ARGS[@]}" jettyLaunchArgs "${GRADLE_ARGS[@]}"
 rm -f "${FIFO}"
 mkfifo "${FIFO}"
 # Open read/write so startup never blocks and stdin stays open between reloads.
 exec 3<> "${FIFO}"
-exec java @build/jetty/launch.args <&3
+exec java @/var/rspace-build/app/jetty/launch.args <&3

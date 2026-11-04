@@ -231,9 +231,6 @@ legacy_notices() {
 cmd_up() {
   ensure_env
   ensure_shared_volumes
-  # Docker otherwise creates missing bind-mounted volume mountpoints as root.
-  mkdir -p "${RSPACE_SRC}/build" "${RSPACE_SRC}/.gradle" \
-    "${RSPACE_SRC}/buildSrc/build" "${RSPACE_SRC}/buildSrc/.gradle"
   local fresh="false" arg
   for arg in "$@"; do
     case "${arg}" in

@@ -108,11 +108,12 @@ services:
       RSPACE_MAILPIT: ${RSPACE_MAILPIT:-false}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
-      - gradle-cache:/root/.gradle
-      - app-build:/rspace/build
-      - app-gradle:/rspace/.gradle
-      - buildsrc-build:/rspace/buildSrc/build
-      - buildsrc-gradle:/rspace/buildSrc/.gradle
+      - gradle-cache:/var/rspace-build/gradle-home
+      - app-project:/var/rspace-build/project
+      - app-build:/var/rspace-build/app
+      - app-gradle:/var/rspace-build/project/.gradle
+      - buildsrc-build:/var/rspace-build/buildsrc
+      - buildsrc-gradle:/var/rspace-build/project/buildSrc/.gradle
       # Search indices live in volumes OUTSIDE the bind mount. The entrypoint
       # points Hibernate Search / Lucene at these paths, because under jettyRun
       # the default index base is unset and Lucene would otherwise scatter
@@ -128,7 +129,9 @@ services:
     network_mode: "service:frontend"
     # stdin/tty kept open so Jetty's manual-redeploy console reader has a stable
     # stdin; the entrypoint feeds it from a FIFO for `rspace-dev reload`.
-    stop_grace_period: 60s
+    # Shutdown waits for an in-flight Spring startup/redeploy before stopping it.
+    # Allow slow startups on shared development machines to finish cleanly.
+    stop_grace_period: 120s
     stdin_open: true
     tty: true
     restart: unless-stopped
@@ -229,6 +232,7 @@ volumes:
   lucene-index:
   filestore:
   node-modules:
+  app-project:
   app-build:
   app-gradle:
   buildsrc-build:

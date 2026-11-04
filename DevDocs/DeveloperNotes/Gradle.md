@@ -225,14 +225,25 @@ A typical development run:
 ```
 
 The Docker dev stack (`docker/dev/`) builds with `jettyLaunchArgs --no-daemon`,
-then execs `java @build/jetty/launch.args`. The argfile and `jettyRun` share JVM
+then execs `java @/var/rspace-build/app/jetty/launch.args`. The argfile and `jettyRun` share JVM
 options, properties, classpaths and program arguments. The file can contain
 credentials, so it is owner-readable only. Jetty becomes PID 1 and receives
 SIGTERM directly. Its shutdown hook stops Jetty and Spring; Compose allows
-60 seconds before killing it. Gradle exits before Jetty starts, so reload uses
+120 seconds before killing it. Gradle exits before Jetty starts, so reload uses
 the same project cache without a resident build daemon. Container outputs and
-Gradle caches use per-stack volumes, allowing concurrent host builds and other
-stacks without shared locks or root-owned outputs.
+Gradle caches use per-stack volumes outside `/rspace`, under `/var/rspace-build`.
+An external project view links to the live source and copies Gradle settings and
+build scripts. An init script sets root and buildSrc output directories.
+Both builds use separate default `.gradle` caches in the external view. Host clean/build commands cannot detach these mounts.
+Host and container builds and other stacks use independent outputs and locks.
+Reload keeps the startup environment and resource-filter flags. `classes` does
+not depend on `recreateDatabase`, even with `drop-recreate-db`. Unchanged
+classes/resources stay present; incremental compilation may briefly remove
+changed classes. Changed resource inputs can still replace resource outputs.
+
+SIGTERM during redeploy waits for Spring startup before shutdown. The Docker
+stack allows 120 seconds for slow shared machines. Manual redeploy invalidates
+sessions, matching Maven's clean redirect to login.
 
 ## Resource filtering
 
