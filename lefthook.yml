@@ -47,6 +47,10 @@ pre-commit:
     # `sh -c "…"` wrapper halves its backslashes into an invalid regex (`[/\]`,
     # "Unclosed character class"). `[^A-Za-z0-9_]` has no backslash, so it clears
     # the wrapper the way a bare `.` would, but without `.`'s any-char looseness.
+    # Regex metacharacters in file names (`.`, `$` in inner-class files, and so on)
+    # are made literal the same backslash-free way, as one-character classes
+    # (`[.]`, `[$]`); `[` and `]`, which Java source file names never contain,
+    # are left alone because Java reads `[` inside a class as a nested class.
     # Guard against an empty list (drop blank lines) so we never fall back to
     # `-DspotlessFiles=".*"`, which would match every file in the repo.
     # -DspotlessStrict adds the CleanThat checks; scoped to staged files, so it
@@ -55,7 +59,7 @@ pre-commit:
       glob: "**/*.java"
       run: |
         spotless_files=$(printf '%s\n' {staged_files} \
-          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#[^A-Za-z0-9_]#g; s#^#.*#' \
+          | sed '/^$/d; s/[(.){}+$|*?]/[&]/g; s#/#[^A-Za-z0-9_]#g; s#^#.*#' \
           | paste -sd, -)
         if [ -n "$spotless_files" ]; then
           ./gradlew -q spotlessCheck -DspotlessStrict -DspotlessFiles="$spotless_files"
