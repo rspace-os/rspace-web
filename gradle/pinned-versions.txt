@@ -1,6 +1,14 @@
-# Module versions and scopes Maven resolves for pom.xml (mvn dependency:list), so Gradle
-# picks the same artifacts as Maven's nearest-wins mediation. Format: group:artifact=version scope
-# Regenerate with scripts/gradle/export-maven-versions.sh after changing pom.xml.
+# Version and scope of every module on the build's classpaths. build.gradle forces these
+# versions on every configuration, so a transitive dependency cannot drift, and keeps each module
+# off the classpaths its scope excludes:
+#   compile   main compile and runtime, and tests
+#   provided  main compile and tests, not the runtime classpath or the WAR
+#   runtime   main runtime and tests (also put on the test compile classpath)
+#   test      tests only
+# Format: group:artifact=version scope
+# Edit by hand when adding, removing or upgrading a dependency, then run
+# ./gradlew checkPinnedVersions. This list carries the versions that rspace-parent's and pom.xml's
+# dependencyManagement used to choose, so modules converge on one version each.
 com.adobe.xmp:xmpcore=6.1.11 compile
 com.apicatalog:titanium-jcs=1.1.1 runtime
 com.apicatalog:titanium-json-ld=1.7.0 runtime

@@ -6,3 +6,12 @@ java {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
 }
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  // Renders DevDocs/public to HTML as pegdown did for the old markdown-page-generator-plugin
+  implementation 'com.vladsch.flexmark:flexmark-profile-pegdown:0.64.8'
+}

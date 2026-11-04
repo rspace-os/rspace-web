@@ -20,16 +20,16 @@ import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.UntrackedTask;
 
 /**
- * Drops a MariaDB/MySQL database, recreates it with utf8mb4_unicode_ci collation, and loads a
- * baseline SQL script into it, as pom.xml's {@code mysql-clean-liquibase} profile does with
- * sql-maven-plugin. Failures to drop or create are logged and ignored, as that profile's {@code
- * onError=continue} does; a failure in the baseline script fails the task.
+ * Drops a MariaDB/MySQL database, recreates it with utf8mb4_unicode_ci collation, and loads an
+ * optional baseline SQL script into it. Failures to drop or create are logged and ignored; a
+ * failure in the baseline script fails the task.
  */
 @UntrackedTask(because = "Resets external database state on every run")
 public abstract class RecreateDatabase extends DefaultTask {
@@ -54,7 +54,9 @@ public abstract class RecreateDatabase extends DefaultTask {
   @Internal
   public abstract Property<String> getPassword();
 
+  /** Loaded into the new database when set. */
   @InputFile
+  @Optional
   @PathSensitive(PathSensitivity.NONE)
   public abstract RegularFileProperty getBaselineScript();
 
@@ -65,7 +67,9 @@ public abstract class RecreateDatabase extends DefaultTask {
       throw new GradleException("Database name must be a plain identifier: " + db);
     }
     String script =
-        Files.readString(getBaselineScript().get().getAsFile().toPath(), StandardCharsets.UTF_8);
+        getBaselineScript().isPresent()
+            ? Files.readString(getBaselineScript().get().getAsFile().toPath(), StandardCharsets.UTF_8)
+            : null;
     URL[] urls = new URL[getDriverClasspath().getFiles().size()];
     int i = 0;
     for (File jar : getDriverClasspath().getFiles()) {
@@ -88,9 +92,13 @@ public abstract class RecreateDatabase extends DefaultTask {
         executeContinuingOnError(statement, "drop database if exists " + db);
         executeContinuingOnError(
             statement, "create database if not exists " + db + " collate 'utf8mb4_unicode_ci'");
-        statement.execute("use " + db);
-        runScript(statement, script);
-        getLogger().lifecycle("Recreated database {} from {}", db, getBaselineScript().get());
+        if (script != null) {
+          statement.execute("use " + db);
+          runScript(statement, script);
+          getLogger().lifecycle("Recreated database {} from {}", db, getBaselineScript().get());
+        } else {
+          getLogger().lifecycle("Recreated empty database {}", db);
+        }
       } catch (SQLException e) {
         throw new GradleException("Could not recreate database " + db + " at " + url, e);
       }
