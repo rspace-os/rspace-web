@@ -61,7 +61,9 @@ function validateSearchSelectors<TDocument>(
     if (isRelationshipWireSelector(selector)) {
       throw new Error(`Relationship wire field is not searchable: ${selector}`);
     }
-    if (!published.operators.includes("=contains=")) {
+    // A globalId search is an exact match, so it needs no contains operator.
+    const isGlobalId = selector.slice(selector.indexOf(".") + 1) === "globalId";
+    if (!isGlobalId && !published.operators.includes("=contains=")) {
       throw new Error(`Searchable field does not support contains: ${selector}`);
     }
     if (published.fieldType !== undefined && published.fieldType !== "text") {
