@@ -110,7 +110,9 @@ Failures print in full on the console.
 
 Only `-Dfast=true` runs, which skip every test that needs a database, can be up to date or come
 from the build cache. Any other test run always executes, because it reads a database Gradle cannot
-see. Add `--rerun` to force a `-Dfast` run.
+see. `-Dfast` runs also track the files tests read straight from the source tree
+(`src/main/webapp`, `src/main/java`, `src/main/resources`, `src/test/resources`). Add `--rerun` to
+force a `-Dfast` run.
 
 ### Selecting tests
 
@@ -131,8 +133,9 @@ as Maven's three Surefire executions did. Run one `*IT` class with `integrationT
 ### Retries
 
 The `org.gradle.test-retry` plugin reruns failed tests when `-Dsurefire.rerunFailingTestsCount=<n>`
-is set. A test that passes on a retry is reported as flaky, and does not fail the build. CI's
-integration job retries once.
+is set. A test that passes on a retry does not fail the build, and its JUnit XML matches
+Surefire's: one test case with a `flakyFailure`, left out of the suite's failure count, so CI's
+test-results checks and Jenkins treat it as passed. CI's integration job retries once.
 
 ### Database suites
 
