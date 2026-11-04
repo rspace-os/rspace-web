@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class FileDownloadControllerMVCIT extends MVCTestBase {
 
@@ -47,6 +49,10 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
   public void testDownloadSignedHashHappyCase() throws Exception {
     User any = createInitAndLoginAnyUser();
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(any, "any");
+    // the post-signing exports only run when signRecord's own transaction commits
+    assertFalse(
+        TransactionSynchronizationManager.isActualTransactionActive(),
+        "transaction leaked from an earlier test");
     SigningResult signResult =
         signingManager.signRecord(doc.getId(), any, new String[] {"NoWitnesses"}, "statement");
     assertTrue(signResult.isSuccessful());
