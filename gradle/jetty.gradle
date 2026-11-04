@@ -45,7 +45,7 @@ dependencies {
   jettyRuntimeOnly 'org.eclipse.jetty.ee10:jetty-ee10-glassfish-jstl'
   jettyRuntimeOnly 'org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jakarta-server'
   jettyRuntimeOnly 'org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jetty-server'
-  // what pom.xml's jetty-ssl profile adds, for jetty/jetty-https.xml
+  // what the Maven build's jetty-ssl profile added, for jetty/jetty-https.xml
   jettyRuntimeOnly 'org.eclipse.jetty:jetty-alpn-server'
   jettyRuntimeOnly 'org.eclipse.jetty:jetty-alpn-java-server'
   jettyRuntimeOnly 'org.eclipse.jetty.http2:jetty-http2-server'
