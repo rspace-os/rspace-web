@@ -3,11 +3,7 @@ import { makeMockSample } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 
 describe("paramsForBackend with a Link extra-field", () => {

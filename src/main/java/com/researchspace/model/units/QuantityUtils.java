@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -24,27 +23,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import tech.units.indriya.AbstractUnit;
 import tech.units.indriya.format.SimpleQuantityFormat;
-import tech.units.indriya.format.SimpleUnitFormat;
 import tech.units.indriya.quantity.Quantities;
 
 public class QuantityUtils {
 
-  /**
-   * Get unit by id
-   *
-   * @param id
-   * @return The found unit definition, or RSUnitDefs.DIMENSIONLESS if not found
-   */
-  public RSUnitDef getUnitById(Integer id) {
-    return EnumSet.allOf(RSUnitDef.class).stream()
-        .filter(def -> def.getId() == id)
-        .findFirst()
-        .orElse(RSUnitDef.DIMENSIONLESS);
-  }
-
   public <Q extends Quantity<Q>> Quantity<Q> getQuantityFor(
       Quantifiable quantifiable, Class<Q> clazz) {
-    Unit<Q> unit = getUnitById(quantifiable.getUnitId()).getDefinition().asType(clazz);
+    Unit<Q> unit = RSUnitDef.getUnitById(quantifiable.getUnitId()).getDefinition().asType(clazz);
     Quantity<Q> q1 = Quantities.getQuantity(quantifiable.getNumericValue(), unit).asType(clazz);
     return q1;
   }
@@ -62,9 +47,9 @@ public class QuantityUtils {
   public boolean isComparableQuantities(Collection<? extends Quantifiable> toTest) {
     Validate.isTrue(!toTest.isEmpty(), "cannot compare an empty collection of quantities");
     Quantifiable initialComparator = toTest.iterator().next();
-    Unit<?> initialDefUnit = getUnitById(initialComparator.getUnitId()).getDefinition();
+    Unit<?> initialDefUnit = RSUnitDef.getUnitById(initialComparator.getUnitId()).getDefinition();
     return toTest.stream()
-        .map(q -> getUnitById(q.getUnitId()))
+        .map(q -> RSUnitDef.getUnitById(q.getUnitId()))
         .map(RSUnitDef::getDefinition)
         .allMatch(initialDefUnit::isCompatible);
   }
@@ -158,7 +143,7 @@ public class QuantityUtils {
    * Control method to invoke a unit-specific method based on the quantity type.
    */
   <T> T getForQuantifiable(Collection<? extends Quantifiable> q1, QuantityTypeVisitor<T> visitor) {
-    RSUnitDef def = getUnitById(q1.iterator().next().getUnitId());
+    RSUnitDef def = RSUnitDef.getUnitById(q1.iterator().next().getUnitId());
     if (def.isMass()) {
       return visitor.visitMass(q1);
     } else if (def.isVolume()) {
@@ -354,17 +339,13 @@ public class QuantityUtils {
     return orgQuantity;
   }
 
-  private Unit<?> parseUnit(String fmtString) {
-    return SimpleUnitFormat.getInstance().parse(fmtString);
-  }
-
-  private String getLargestUnitLabel(Collection<? extends Quantifiable> toSum) {
-    Quantifiable largestQuantifiable = Collections.max(toSum, this::sortByOrder);
-    return getUnitById(largestQuantifiable.getUnitId()).getLabel();
-  }
-
-  int sortByOrder(Quantifiable a, Quantifiable b) {
-    return getUnitById(a.getUnitId()).getOrder().compareTo(getUnitById(b.getUnitId()).getOrder());
+  /** The unit with the highest {@link RSUnitDef#getOrder()} among the quantities. */
+  private Unit<?> getLargestUnit(Collection<? extends Quantifiable> quantities) {
+    return quantities.stream()
+        .map(q -> RSUnitDef.getUnitById(q.getUnitId()))
+        .max(Comparator.comparing(RSUnitDef::getOrder))
+        .orElseThrow()
+        .getDefinition();
   }
 
   /**
@@ -446,8 +427,7 @@ public class QuantityUtils {
 
     @Override
     public Quantity<?> visitMass(Collection<? extends Quantifiable> q1) {
-      String fmtString = getLargestUnitLabel(q1);
-      Quantity<Mass> sum = Quantities.getQuantity(0, parseUnit(fmtString).asType(Mass.class));
+      Quantity<Mass> sum = Quantities.getQuantity(0, getLargestUnit(q1).asType(Mass.class));
       for (Quantifiable q : q1) {
         sum = sum.add(getQuantityFor(q, Mass.class));
       }
@@ -456,8 +436,7 @@ public class QuantityUtils {
 
     @Override
     public Quantity<?> visitVolume(Collection<? extends Quantifiable> q1) {
-      String fmtString = getLargestUnitLabel(q1);
-      Quantity<Volume> sum = Quantities.getQuantity(0, parseUnit(fmtString).asType(Volume.class));
+      Quantity<Volume> sum = Quantities.getQuantity(0, getLargestUnit(q1).asType(Volume.class));
       for (Quantifiable q : q1) {
         sum = sum.add(getQuantityFor(q, Volume.class));
       }

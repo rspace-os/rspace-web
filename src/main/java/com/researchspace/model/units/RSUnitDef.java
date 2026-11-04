@@ -17,6 +17,13 @@ import tech.units.indriya.unit.Units;
  * <p>The 'order' field orders the scaling of units and is used to generate an appropriate string
  * representation for quantities in mixed units (the underlying library shows measurements in std
  * units which is sometimes hard to read, e.g. 0.0001g where 100ug would be more easily read.
+ *
+ * <p>The set of units is fixed and ids are stored in the database and used by API clients, so an id
+ * must never be renumbered or reused. A unit added here must also be added to the frontend's {@code
+ * src/main/webapp/ui/src/stores/definitions/units.json} (and, for a mass, volume or count unit, to
+ * the id and magnitude tables in {@code Units.ts}) and to the {@code UnitId} schema of both OpenAPI
+ * specs in {@code src/main/webapp/resources/}. {@code RSUnitDefsTest} and the frontend's {@code
+ * amountIdTables.test.ts} fail until they agree.
  */
 @ToString
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)

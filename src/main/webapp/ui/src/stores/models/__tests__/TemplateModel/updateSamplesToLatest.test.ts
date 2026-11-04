@@ -10,9 +10,6 @@ const mockRootStore = {
     confirm: vi.fn(() => Promise.resolve(true)),
     addAlert: vi.fn(() => {}),
   },
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
 };
 
 vi.mock("../../../stores/getRootStore", () => ({

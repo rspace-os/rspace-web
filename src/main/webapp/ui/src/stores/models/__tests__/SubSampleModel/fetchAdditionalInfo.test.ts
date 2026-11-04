@@ -19,9 +19,6 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
     trackingStore: {
       trackEvent: () => {},
     },
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
   }),
 }));
 describe("fetchAdditionalInfo", () => {

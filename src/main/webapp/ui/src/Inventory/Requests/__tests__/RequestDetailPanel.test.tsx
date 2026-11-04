@@ -27,7 +27,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   __esModule: true,
   default: () => ({
     authStore: { isSynchronizing: false },
-    unitStore: { getUnit: () => ({ label: "ml" }) },
   }),
 }));
 

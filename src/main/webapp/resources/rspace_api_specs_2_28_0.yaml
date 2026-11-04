@@ -2763,7 +2763,10 @@ paths:
   /units:
     get:
       summary: A list of recognized units
-      description: A list of scientific units organised by category
+      description: >
+        Every unit RSpace supports, sorted by category and then from smallest to largest. The list
+        is fixed: it is the same as the `UnitId` schema, so clients may hard-code it instead of
+        fetching it.
       tags:
         - Units & Quantities
       responses:
@@ -2772,33 +2775,21 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    description: Identifier for the unit.
-                  label:
-                    type: string
-                    description: The standard abbreviated text represetation of the unit
-                  category:
-                    type: string
-                    description: The type of measurement this unit measure; e.g. mass,volume,
-                      temperature etc
-                  description:
-                    type: string
-                    description: Optional additional information may be provided, to clarify their
-                      intended usage
+                type: array
+                items:
+                  $ref: "#/components/schemas/Unit"
               examples:
                 response:
                   value:
+                    - id: 15
+                      label: µg/µl
+                      category: concentration
                     - id: 1
                       label: items
                       category: dimensionless
-                      description: For measuring numbers of items
-                    - id: 2
-                      label: mg
+                    - id: 20
+                      label: pg
                       category: mass
-                      description: ""
   /quantities/add:
     get:
       summary: Add two quantities
@@ -2827,8 +2818,7 @@ paths:
           in: query
           description: unit id of first quantity
           schema:
-            type: integer
-            format: int32
+            $ref: "#/components/schemas/UnitId"
         - name: value2
           in: query
           description: numeric value of second quantity
@@ -2838,8 +2828,7 @@ paths:
           in: query
           description: unit id of second quantity
           schema:
-            type: integer
-            format: int32
+            $ref: "#/components/schemas/UnitId"
       tags:
         - Units & Quantities
       responses:
@@ -3671,6 +3660,115 @@ components:
           scopes:
             all: Grants access to whole of API
   schemas:
+    UnitId:
+      type: integer
+      description: |
+        The id of a unit of measure. RSpace supports this fixed set of units. Ids never change and
+        are never reused. Units of one category measure the same thing, so the server can convert
+        between them; units of different categories cannot be mixed. `GET /api/v1/units` returns
+        the same list with each unit's label and category.
+
+        | Id | Name | Unit | Symbol | Category |
+        |---|---|---|---|---|
+        | 1 | `DIMENSIONLESS` | items | items | dimensionless |
+        | 2 | `MICRO_LITRE` | microlitre | µL | volume |
+        | 3 | `MILLI_LITRE` | millilitre | mL | volume |
+        | 4 | `LITRE` | litre | L | volume |
+        | 5 | `MICRO_GRAM` | microgram | µg | mass |
+        | 6 | `MILLI_GRAM` | milligram | mg | mass |
+        | 7 | `GRAM` | gram | g | mass |
+        | 8 | `CELSIUS` | degree Celsius | °C | temperature |
+        | 9 | `KELVIN` | kelvin | K | temperature |
+        | 10 | `FAHRENHEIT` | degree Fahrenheit | °F | temperature |
+        | 11 | `NANOMOLAR` | nanomolar | nmol/L | molarity |
+        | 12 | `MICROMOLAR` | micromolar | µmol/L | molarity |
+        | 13 | `MILLIMOLAR` | millimolar | mmol/L | molarity |
+        | 14 | `MOLAR` | molar | mol/L | molarity |
+        | 15 | `MICROGM_PER_MICROLITRE` | microgram per microlitre | µg/µL | concentration |
+        | 16 | `MGMS_PER_ML` | milligram per millilitre | mg/mL | concentration |
+        | 17 | `GMS_PER_L` | gram per litre | g/L | concentration |
+        | 18 | `PICO_LITRE` | picolitre | pL | volume |
+        | 19 | `NANO_LITRE` | nanolitre | nL | volume |
+        | 20 | `PICO_GRAM` | picogram | pg | mass |
+        | 21 | `NANO_GRAM` | nanogram | ng | mass |
+        | 22 | `KILO` | kilogram | kg | mass |
+        | 23 | `CUBIC_MILLIMETRE` | cubic millimetre | mm³ | volume |
+        | 24 | `CUBIC_CENTIMETRE` | cubic centimetre | cm³ | volume |
+        | 25 | `CUBIC_DECIMETRE` | cubic decimetre | dm³ | volume |
+        | 26 | `CUBIC_METRE` | cubic metre | m³ | volume |
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+        - 21
+        - 22
+        - 23
+        - 24
+        - 25
+        - 26
+      x-enum-varnames:
+        - DIMENSIONLESS
+        - MICRO_LITRE
+        - MILLI_LITRE
+        - LITRE
+        - MICRO_GRAM
+        - MILLI_GRAM
+        - GRAM
+        - CELSIUS
+        - KELVIN
+        - FAHRENHEIT
+        - NANOMOLAR
+        - MICROMOLAR
+        - MILLIMOLAR
+        - MOLAR
+        - MICROGM_PER_MICROLITRE
+        - MGMS_PER_ML
+        - GMS_PER_L
+        - PICO_LITRE
+        - NANO_LITRE
+        - PICO_GRAM
+        - NANO_GRAM
+        - KILO
+        - CUBIC_MILLIMETRE
+        - CUBIC_CENTIMETRE
+        - CUBIC_DECIMETRE
+        - CUBIC_METRE
+    Unit:
+      type: object
+      description: A unit of measure RSpace supports.
+      properties:
+        id:
+          $ref: "#/components/schemas/UnitId"
+        label:
+          type: string
+          description: A short text label for the unit, e.g. `ml`.
+        category:
+          type: string
+          description: What the unit measures. Units of one category can be converted between.
+          enum:
+            - concentration
+            - dimensionless
+            - mass
+            - molarity
+            - temperature
+            - volume
     ChemicalSearchRequest:
       description: Request object for searching chemicals
     QuantityInfo:
@@ -3682,11 +3780,7 @@ components:
           description: Numeric value of the quantity
           example: 10.5
         unitId:
-          type: integer
-          format: int32
-          description: Unit identifier from RSUnitDef. Options can be retrieved from
-            /units endpoint.
-          example: 6
+          $ref: "#/components/schemas/UnitId"
       example:
         numericValue: 10.5
         unitId: 6

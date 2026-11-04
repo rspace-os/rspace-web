@@ -1,4 +1,5 @@
 import { computed, makeObservable, observable, override } from "mobx";
+import { getUnit, type UnitCategory } from "@/stores/definitions/Units";
 import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import type { Factory } from "../definitions/Factory";
@@ -10,8 +11,6 @@ import {
   type Quantity,
 } from "../definitions/HasQuantity";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/getRootStore";
-import type { UnitCategory } from "../stores/UnitStore";
 import type InventoryBaseRecord from "./InventoryBaseRecord";
 import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
 
@@ -21,8 +20,7 @@ import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFi
  */
 export const getUnitId = (q: Quantity | null): number => q?.unitId ?? 3;
 export const getValue = (q: Quantity | null): number => q?.numericValue || 0;
-export const getQuantityUnitLabel = (q: Quantity | null): string =>
-  q ? (getRootStore().unitStore.getUnit(q.unitId)?.label ?? "...") : "";
+export const getQuantityUnitLabel = (q: Quantity | null): string => (q ? (getUnit(q.unitId)?.label ?? "...") : "");
 export const getLabel = (q: Quantity | null): string => (q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "");
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -73,8 +71,7 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
     }
 
     get quantityCategory(): UnitCategory {
-      const unitStore = getRootStore().unitStore;
-      const unit = unitStore.getUnit(this.quantityUnitId);
+      const unit = getUnit(this.quantityUnitId);
       if (!unit) throw new Error("Could not get unit category");
       return unit.category;
     }
