@@ -281,8 +281,15 @@ live source and copies of the Gradle settings and build scripts. This keeps
 buildSrc's default `.gradle` directory outside the host worktree too.
 The Gradle user home is also per-stack. Container builds leave host outputs and
 locks alone, so host/IDE builds can run concurrently. HotswapAgent watches the
-container's volume-backed class and resource directories. Existing frontend
-writes such as `ui/dist` and application log files still use the bind mount.
+container's volume-backed class and resource directories. Only the build's own inputs
+(`src`, `gradle`, `jetty`, the wrapper and the build scripts) are linked into the project
+view, so the app's log files (`RSLogs.txt` and friends) and export `archive/`, which it
+writes relative to its working directory, stay in the `app-project` volume, in
+`/var/rspace-build/project` in the app container: open them with `rspace-dev shell`, not
+from the worktree (`rspace-dev logs` follows the console output). The frontend
+container still writes `ui/dist` and `node_modules` through the bind mount, as before; a
+host `git clean -fdX` removes its `node_modules` mount too, so run `rspace-dev down` and
+`rspace-dev up` afterwards if Vite stops serving (`restart` recreates only the app).
 
 | You change…                | What to do                                              |
 | -------------------------- | ------------------------------------------------------- |
