@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * catalogue file. How a code maps onto the JSON - dot flattening, the empty prefix for {@code
  * server.*} - is the message source's business, so a test that walked the file itself would be
  * restating those rules rather than exercising them. The catalogue is on the test classpath (see
- * the {@code i18n/locales} resource in {@code pom.xml}), which is what makes this a fast unit test.
+ * the {@code i18n/locales} resource in build.gradle), which is what makes this a fast unit test.
  */
 class ExternalUpdateMessageKeysTest {
 

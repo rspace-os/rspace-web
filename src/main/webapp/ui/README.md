@@ -60,9 +60,9 @@ instead use React Context and custom hooks for state management.
 ## Building the code
 
 To build the codebase you will need to have standalone pnpm installed; pnpm
-downloads the Node.js version pinned in the root `package.json`. Maven
-builds the production frontend bundle by default. This can be quite slow and is
-not necessary for frontend development, instead run the maven command with
+downloads the Node.js version pinned in the root `package.json`. Gradle
+builds the production frontend bundle when given `-DgenerateReactDist`. This can be quite slow and is
+not necessary for frontend development, instead run the Gradle command with
 `-DreactDevMode=true` but in a separate terminal at the repo root run
 `pnpm install --frozen-lockfile` and then `pnpm run serve` to start a process that watches
 for changes to the React code and recompiles it as necessary. This is much
@@ -86,7 +86,7 @@ When `-DreactDevMode=true`, JSP-emitted asset URLs stay root-relative
 (`/ui/dist/...`). `ViteDevServerProxyServlet` reverse-proxies those requests
 from Jetty to the Vite dev server, so the browser never sees the dev server's
 origin for HTTP module fetches. The dev server's port can be overridden via
-the optional Maven/system flag
+the optional Gradle/system flag
 `-DviteDevServerOrigin=http://127.0.0.1:5174` (or
 `VITE_DEV_SERVER_PORT` env var for the Vite side). The HMR WebSocket is **not**
 proxied — the `@vite/client` script connects directly to the dev server using
@@ -109,7 +109,7 @@ unauthenticated and must only be exposed on local/dev instances.
 
 Check **STORYBOOK** in Jenkins to build and bundle the catalog in the WAR.
 For a local WAR build, run
-`mvn clean package -DgenerateReactDist -DgenerateStorybook=true -DskipTests=true`.
+`./gradlew clean war -DgenerateReactDist -DgenerateStorybook=true`.
 The checkbox defaults off. Omitting `generateStorybook`, or setting it to
 `false`, excludes Storybook even if a local static build exists. Use a clean
 build when changing the option. Bundling does not enable the public route:

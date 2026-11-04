@@ -14,7 +14,7 @@ public class ZipCopyTest {
       Path.of("src/main/resources/StartUpData/chemical-data-sheet.zip");
   private static final String START_UP_DATA_C4_ZIP = "/StartUpData/chemical-data-sheet.zip";
 
-  // Guards against Maven resource filtering corrupting the binary fixture.
+  // Guards against build resource filtering corrupting the binary fixture.
   @Test
   public void classPathAndFileReadsAreTheSameBytes() throws IOException {
     // Fixed buffers can compare only a prefix or include equal zero padding.
