@@ -1,14 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
-import {
-  availabilityEnvelope,
-  type CalendarAvailabilityRow,
-  rowAvailabilityIntervals,
-  type SourcedAvailabilityInterval,
-} from "@/modules/booking/domain/availability";
-import type { Booking } from "@/modules/booking/domain/booking";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import type { CalendarAvailabilityRow } from "@/modules/booking/domain/availability";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
+import { availabilityEnvelope, rowAvailabilityIntervals, type SourcedAvailabilityInterval } from "./availability";
+import type { Booking } from "./booking";
 import { fetchDayBookings } from "./fetchDayBookings";
+
+export function useCalendarAvailability(
+  rows: readonly CalendarAvailabilityRow[],
+  intervalOrDate: AbsoluteDisplayInterval | string,
+  token: string,
+  authScope?: string | number,
+) {
+  const scope = useQueryIdentityScope(authScope);
+  const interval =
+    typeof intervalOrDate === "string"
+      ? displayInterval(intervalOrDate, rows[0]?.timezone ?? "UTC", "00:00", "24:00")
+      : intervalOrDate;
+  return useQuery({
+    ...calendarAvailabilityQuery(rows, interval, token, scope),
+    enabled: rows.length > 0 && token.length > 0,
+  });
+}
 
 type AvailabilityRowInterval = {
   row: CalendarAvailabilityRow;
@@ -62,31 +77,30 @@ export async function loadCalendarAvailability(
   );
 }
 
-export function useCalendarAvailability(
+export const calendarAvailabilityQuery = (
   rows: readonly CalendarAvailabilityRow[],
-  intervalOrDate: AbsoluteDisplayInterval | string,
+  interval: AbsoluteDisplayInterval,
   token: string,
-  authScope: string | number = token,
-) {
-  const interval =
-    typeof intervalOrDate === "string"
-      ? displayInterval(intervalOrDate, rows[0]?.timezone ?? "UTC", "00:00", "24:00")
-      : intervalOrDate;
-  const sortedRows = rows
-    .map((row) => [
-      row.globalId,
-      row.timezone,
-      JSON.stringify(row.openingHours),
-      row.bufferBeforeMinutes,
-      row.bufferAfterMinutes,
-      row.allowDoubleBooking,
-    ])
-    .toSorted();
-  return useQuery({
-    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, interval.start, interval.end, authScope],
+  scope: unknown,
+) =>
+  queryOptions({
+    queryKey: [
+      ...bookingKeys.calendarAvailability(),
+      scope,
+      rows
+        .map((row) => [
+          row.globalId,
+          row.timezone,
+          JSON.stringify(row.openingHours),
+          row.bufferBeforeMinutes,
+          row.bufferAfterMinutes,
+          row.allowDoubleBooking,
+        ])
+        .toSorted(),
+      interval.start,
+      interval.end,
+    ] as const,
     queryFn: ({ signal }) => loadCalendarAvailability(rows, interval, token, signal),
-    enabled: rows.length > 0 && token.length > 0,
     staleTime: 30_000,
     meta: navigationProgressQueryMeta,
   });
-}

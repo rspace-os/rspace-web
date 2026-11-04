@@ -38,17 +38,29 @@ class BookingDisplaySettingsTest {
   @Test
   void validatesAndNormalizesTimezoneSelections() {
     assertTrue(
-        new BookingDisplaySettings("08:00", "18:00", BookingTimezoneMode.CUSTOM, "America/New_York")
+        new BookingDisplaySettings(
+                "08:00",
+                "18:00",
+                BookingTimezoneMode.CUSTOM,
+                "America/New_York",
+                BookingTimeFormat.AUTOMATIC)
             .hasValidTimezoneChoice());
     assertFalse(
-        new BookingDisplaySettings("08:00", "18:00", BookingTimezoneMode.CUSTOM, null)
+        new BookingDisplaySettings(
+                "08:00", "18:00", BookingTimezoneMode.CUSTOM, null, BookingTimeFormat.AUTOMATIC)
             .hasValidTimezoneChoice());
     assertFalse(
-        new BookingDisplaySettings("08:00", "18:00", BookingTimezoneMode.CUSTOM, "Not/AZone")
+        new BookingDisplaySettings(
+                "08:00",
+                "18:00",
+                BookingTimezoneMode.CUSTOM,
+                "Not/AZone",
+                BookingTimeFormat.AUTOMATIC)
             .hasValidTimezoneChoice());
 
     BookingDisplaySettings browser =
-        new BookingDisplaySettings("08:00", "18:00", BookingTimezoneMode.BROWSER, "UTC");
+        new BookingDisplaySettings(
+            "08:00", "18:00", BookingTimezoneMode.BROWSER, "UTC", BookingTimeFormat.AUTOMATIC);
     assertNull(browser.customTimezone());
     assertTrue(browser.hasValidTimezoneChoice());
   }
@@ -56,11 +68,12 @@ class BookingDisplaySettingsTest {
   @Test
   void patchMergesIntoOneCompleteNormalizedValue() {
     BookingDisplaySettings current =
-        new BookingDisplaySettings("09:00", "17:00", BookingTimezoneMode.CUSTOM, "UTC");
+        new BookingDisplaySettings(
+            "09:00", "17:00", BookingTimezoneMode.CUSTOM, "UTC", BookingTimeFormat.AUTOMATIC);
 
     BookingDisplaySettings merged =
         new BookingDisplaySettings.Patch(
-                null, "18:00", BookingTimezoneMode.INSTITUTION, "Europe/Paris")
+                null, "18:00", BookingTimezoneMode.INSTITUTION, "Europe/Paris", null)
             .merge(current);
 
     assertEquals("09:00", merged.availabilityWindowStart());
@@ -70,19 +83,17 @@ class BookingDisplaySettingsTest {
   }
 
   @Test
-  void timeFormatDefaultsToAutomaticAndPatchesOnlyWhenGiven() {
+  void timeFormatPatchesOnlyWhenGiven() {
     BookingDisplaySettings current =
         new BookingDisplaySettings(
             "09:00", "17:00", BookingTimezoneMode.BROWSER, null, BookingTimeFormat.H12);
 
-    assertEquals(
-        BookingTimeFormat.AUTOMATIC,
-        new BookingDisplaySettings("09:00", "17:00", BookingTimezoneMode.BROWSER, null)
-            .timeFormat());
     assertEquals(BookingTimeFormat.AUTOMATIC, BookingDisplaySettings.defaults().timeFormat());
     assertEquals(
         BookingTimeFormat.H12,
-        new BookingDisplaySettings.Patch(null, "18:00", null, null).merge(current).timeFormat());
+        new BookingDisplaySettings.Patch(null, "18:00", null, null, null)
+            .merge(current)
+            .timeFormat());
     assertEquals(
         BookingTimeFormat.H24,
         new BookingDisplaySettings.Patch(null, null, null, null, BookingTimeFormat.H24)
@@ -91,6 +102,7 @@ class BookingDisplaySettingsTest {
   }
 
   private static BookingDisplaySettings settings(String start, String end) {
-    return new BookingDisplaySettings(start, end, BookingTimezoneMode.BROWSER, null);
+    return new BookingDisplaySettings(
+        start, end, BookingTimezoneMode.BROWSER, null, BookingTimeFormat.AUTOMATIC);
   }
 }

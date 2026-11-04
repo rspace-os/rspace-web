@@ -129,6 +129,7 @@ class EmailContentGeneratorTest {
   @org.junit.jupiter.params.provider.CsvSource({
     "NOTIFICATION_BOOKING_CREATED,Booking Created: Microscope <script>",
     "NOTIFICATION_BOOKING_CANCELLED,Booking Cancelled: Microscope <script>",
+    "NOTIFICATION_BOOKING_RESTORED,Booking Restored: Microscope <script>",
     "NOTIFICATION_BOOKING_CHANGED,Booking Changed: Microscope <script>"
   })
   void usesRecipientEmailContextForBookingSubjectsAndHeaders(

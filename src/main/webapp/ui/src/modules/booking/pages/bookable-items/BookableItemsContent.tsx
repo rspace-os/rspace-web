@@ -4,6 +4,7 @@ import { PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
@@ -116,6 +117,7 @@ export function BookableItemsContent() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
         ...(configurationId === undefined
           ? []
           : [queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configurationId) })]),
@@ -156,6 +158,7 @@ export function BookableItemsContent() {
         ...(variables.action === "archive"
           ? [
               queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+              queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
               ...variables.selectedRowIds.map((id) =>
                 queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(Number(id)) }),
               ),

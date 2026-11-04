@@ -53,10 +53,16 @@ export const BookingDisplayPreferencesDocumentSchema = v.pipe(
 export const BookingDisplayPreferencesInputSchema = v.pipe(
   v.strictObject({
     ...BookingDisplayPreferencesEntries,
-    timeFormat: v.optional(BookingTimeFormatSchema),
+    timeFormat: BookingTimeFormatSchema,
   }),
-  v.forward(v.check(hasValidAvailabilityWindow), ["availabilityWindowEnd"]),
-  v.forward(v.check(hasValidCustomTimezone), ["customTimezone"]),
+  v.forward(
+    v.check((document) => hasValidAvailabilityWindow(document)),
+    ["availabilityWindowEnd"],
+  ),
+  v.forward(
+    v.check((document) => hasValidCustomTimezone(document)),
+    ["customTimezone"],
+  ),
 );
 
 export type BookingDisplayPreferencesDocument = v.InferInput<typeof BookingDisplayPreferencesDocumentSchema>;

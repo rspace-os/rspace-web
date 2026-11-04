@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.shiro.authz.AuthorizationException;
@@ -79,7 +80,7 @@ public class BookingNotificationSubscriptionManagerImpl
   @Override
   public Preferences replacePreferences(PreferenceChanges changes, User subject, User actor) {
     requireAccess(subject, actor);
-    java.util.Objects.requireNonNull(changes, "Booking notification preference changes");
+    Objects.requireNonNull(changes, "Booking notification preference changes");
     setPreference(
         subject,
         Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS,

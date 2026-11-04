@@ -27,6 +27,7 @@ export function ExpandedEventCard({
   timezone,
   event,
   exactPeriod,
+  eventAnchor,
   renderEventActions,
   renderBlockoutActions,
 }: DayTimelineActionRenderers & {
@@ -34,6 +35,7 @@ export function ExpandedEventCard({
   timezone: string;
   event: DetailedDayTimelineEvent;
   exactPeriod: string;
+  eventAnchor?: HTMLElement | null;
 }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
@@ -60,7 +62,9 @@ export function ExpandedEventCard({
       children
     );
   const actions =
-    event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
+    event.kind === "booking"
+      ? renderEventActions?.(event, exactPeriod, eventAnchor)
+      : renderBlockoutActions?.(event, exactPeriod, eventAnchor);
   const dateTimeRows = [
     { key: "start", label: t("bookings.form.start"), date: startDate, minute: event.startMinute },
     { key: "end", label: t("bookings.form.end"), date: endDate, minute: event.endMinute },

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
@@ -220,6 +221,7 @@ export function useAllBookableItemsData({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
         ...configurationIds.map((id) => queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(id) })),
         // A permanently deleted item's instrument becomes an eligible target again.
         ...(permanent
