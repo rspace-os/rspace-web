@@ -50,6 +50,22 @@ public class JoinExistingCollGroupRequestHandlerTest extends SpringTransactional
   }
 
   @Test
+  public void piInvitedByACollabGroupLabAdminJoinsAsPi() throws Exception {
+    TestGroup tg1 = createTestGroup(1);
+    TestGroup tg2 = createTestGroup(0);
+    TestGroup tg3 = createTestGroup(0);
+    logoutAndLoginAs(tg1.getPi());
+    Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
+    User labAdmin = tg1.u1();
+    grpMgr.addUserToGroup(labAdmin.getUsername(), collabGroup.getId(), RoleInGroup.RS_LAB_ADMIN);
+    User invited = tg3.getPi();
+
+    acceptInvitation(labAdmin, invited, collabGroup);
+
+    assertEquals(RoleInGroup.PI, grpMgr.getGroup(collabGroup.getId()).getRoleForUser(invited));
+  }
+
+  @Test
   public void invitationFromADemotedPiAddsNobody() throws Exception {
     TestGroup tg1 = createTestGroup(0);
     TestGroup tg2 = createTestGroup(0);

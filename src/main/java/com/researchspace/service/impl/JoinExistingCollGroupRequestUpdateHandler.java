@@ -47,10 +47,9 @@ public class JoinExistingCollGroupRequestUpdateHandler extends AbstractRSpaceReq
     if (grReq.getGroup() != null) {
       Group collabGroup = groupMgr.getGroup(grReq.getGroup().getId());
       User inviter = grReq.getOriginator();
-      if (!(inviter.hasRoleInGroup(collabGroup, RoleInGroup.PI)
-          || inviter.hasRole(Role.SYSTEM_ROLE))) {
+      if (!(inviter.isPiOrLabAdminOfGroup(collabGroup) || inviter.hasRole(Role.SYSTEM_ROLE))) {
         logger.warn(
-            "Ignoring invitation to collab group {} from {}, who is no longer its PI",
+            "Ignoring invitation to collab group {} from {}, who is no longer its PI or lab admin",
             collabGroup.getId(),
             inviter.getUsername());
         return;

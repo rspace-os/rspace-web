@@ -11,6 +11,7 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.Role;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
@@ -98,6 +99,17 @@ public class MessageOrRequestCreatorManagerImplTest {
     setUpMocks(cmd, otherPi);
 
     assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, otherPi));
+  }
+
+  @Test
+  public void collabGroupLabAdminCanInviteAPiToTheCollabGroup() {
+    makeCollabGroup();
+    User labAdmin = TestFactory.createAnyUser("labAdmin");
+    group.addMember(labAdmin, RoleInGroup.RS_LAB_ADMIN);
+    MsgOrReqstCreationCfg cmd = createInviteToCollabGroupCmnd();
+    setUpMocks(cmd, labAdmin);
+
+    requestCreator.checkPerms(cmd, labAdmin);
   }
 
   @Test

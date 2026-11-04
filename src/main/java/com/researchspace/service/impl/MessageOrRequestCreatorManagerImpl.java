@@ -7,7 +7,6 @@ import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
-import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -142,7 +141,7 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
     }
     Group collabGroup = grpDao.get(groupId);
     return collabGroup.isCollaborationGroup()
-        && (user.hasRoleInGroup(collabGroup, RoleInGroup.PI) || user.hasRole(Role.SYSTEM_ROLE));
+        && (user.isPiOrLabAdminOfGroup(collabGroup) || user.hasRole(Role.SYSTEM_ROLE));
   }
 
   private boolean isJoinGroupRequest(MsgOrReqstCreationCfg reqCmnd) {
