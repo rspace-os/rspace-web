@@ -1,141 +1,342 @@
 # Gradle build
 
-`build.gradle` (Groovy DSL, Gradle 9.8.2 wrapper) builds the same classes, resources, WAR and
-test runs as `pom.xml`, with Gradle's incremental compilation, up-to-date checks and build cache.
-It runs **alongside Maven, which stays the source of truth**:
+RSpace builds with Gradle only. `build.gradle` (Groovy DSL) compiles, tests, packages the WAR,
+formats Java and runs the database tooling; `buildSrc/` holds its Java helper classes. Use the
+wrapper, `./gradlew` (`gradlew.bat` on Windows), which downloads the pinned Gradle version
+(`gradle/wrapper/gradle-wrapper.properties`).
 
-- dependencies are declared in `pom.xml` and mirrored into Gradle;
-- Jetty, Liquibase, release packaging, Jenkins and most CI jobs still run through Maven.
+`gradle.properties` turns on the build cache and the configuration cache, so unchanged tasks are
+skipped, `clean` builds restore outputs from the cache, and a repeated command skips
+configuration.
 
-Use Gradle for the local edit-compile-test loop if you like; nothing requires it.
+## Before you start
+
+- **JDK:** run Gradle on Java 17 or 21 (`JAVA_HOME`). The build fails fast on any other version,
+  because Spotless and the other plugins run in Gradle's own JVM. The code always compiles with
+  `--release 17`, so a WAR built on either JDK runs on both.
+- **Locale:** run Gradle under a UTF-8 locale, e.g. `LANG=en_US.UTF-8` (CI uses `C.UTF-8`), and
+  never with `LC_ALL=C`. Some test resource file names are non-ASCII, and a daemon started under
+  `LC_ALL=C` cannot read them. If one did, run `./gradlew --stop`.
+- **pnpm:** frontend tasks (`-DgenerateReactDist`, `-DgenerateStorybook=true`) call standalone
+  `pnpm` from `PATH`.
+- **Database:** the Spring and integration tests and Jetty need MariaDB; see
+  [GettingStarted.md](GettingStarted/GettingStarted.md).
 
 ## Commands
 
-Run Gradle with Java 17 and a UTF-8 locale. A daemon started with `LC_ALL=C` cannot read the
-non-ASCII test resource file names, so if one did, run `./gradlew --stop`. Java 21 has not been
-tried with this build yet.
-
-| Gradle | Maven equivalent |
+| Command | What it does |
 |---|---|
-| `./gradlew testClasses` | `mvn test-compile` |
-| `./gradlew test -Dfast=true` | `mvn test -Dfast=true` |
-| `./gradlew test --tests '*MyClassTest'` | `mvn test -Dtest=MyClassTest` |
-| `./gradlew integrationTest integrationTestRun integrationTestProblematic` | `mvn integration-test -DskipUnitTests=true` |
-| `./gradlew war` | `mvn package -DskipTests` |
-| `./gradlew war -PgenerateReactDist` | `mvn package -DgenerateReactDist -DskipTests` |
-| `./gradlew spotlessApply` / `spotlessCheck` | `spotless:apply` (Maven runs it on every compile) |
-| `-PmaxTestForks=4` | `-DforkCount=4` |
+| `./gradlew classes` / `testClasses` | Compile main / main and test classes |
+| `./gradlew test -Dfast=true` | Run the pure unit tests (no database) |
+| `./gradlew test` | Run the unit and Spring tests against the database as it is |
+| `./gradlew test -Dtest=MyClassTest` | Run one test class (see [-Dtest](#selecting-tests)) |
+| `./gradlew integrationTests` | Run the `*IT` tests: `integrationTest`, `integrationTestRun`, then `integrationTestProblematic` |
+| `./gradlew verify -Denvironment=drop-recreate-db` | Recreate the database, run `test`, build the WAR, then run `integrationTests` |
+| `./gradlew check` | `test`, `integrationTests`, `spotlessCheck` and `checkPinnedVersions` |
+| `./gradlew war` | Build `build/libs/researchspace-<version>.war` |
+| `./gradlew war -DgenerateReactDist` | Build the WAR with the React/Vite bundle |
+| `./gradlew jettyRun` | Run RSpace in Jetty from the compiled classes (see [Jetty](#jetty)) |
+| `./gradlew jettyRunWar -PwarFile=<path>` | Run a built WAR in Jetty |
+| `./gradlew spotlessApply` / `spotlessCheck` | Format Java / check its formatting |
+| `./gradlew liquibaseDiff` | Write a Liquibase changelog of `rspace` versus `rspace_hib` |
+| `./gradlew checkPinnedVersions` | Check `gradle/pinned-versions.txt` against the classpaths |
+| `./gradlew dumpClasspaths` | Write each classpath's modules to `build/classpaths/` |
+| `./gradlew printVersion` | Print the project version |
 
-**`-P` versus `-D`:** pass build-time settings as `-P`. These are the switches Maven reads as
-profile properties (`environment`, `deployment`, `timestamp`, `jdbc.*`, `RS.devlogLevel`), which
-also feed resource filtering. Pass test-JVM settings as `-D`. Surefire forwards every Maven `-D`
-to the test JVM; Gradle forwards only the list in `forwardedTestSystemProperties` in
-`build.gradle`, so add a property there when tests start reading a new one.
+`./gradlew tasks --all` lists every task, and `./gradlew help --task <task>` describes one.
 
-**Version stamp:** local builds stamp the version as `2.28.0-SNAPSHOT-dev`, so resources stay
-up to date between builds. Pass `-Ptimestamp=<value>`, or `-Ptimestamp=now`, for a real stamp.
+Test tasks whose inputs have not changed are skipped as up to date. Add `--rerun` to run one
+again (`./gradlew test --rerun`), or `--continue` to keep going after a failing task. Test tasks
+always run when the build recreates the database.
 
-### Database test suites
+## Build settings: `-D` and `-P`
+
+Every `-D<name>=<value>` on the Gradle command line is a build setting. It:
+
+- overrides the resource-filter property of the same name (see [Resource filtering](#resource-filtering));
+- is passed as a system property to every test JVM and to the Jetty JVM.
+
+So `-Dspring.profiles.active=run`, `-DRS_FILE_BASE=...` or `-Djdbc.db.maven=rspace` reach both
+the filtered resources and the running code. A bare `-Dname` means `-Dname=true`. `-P<name>=<value>`
+also works for the switches below and the resource-filter properties, but is not passed to test or
+Jetty JVMs.
+
+Switches:
+
+| Setting | Effect |
+|---|---|
+| `-Denvironment=drop-recreate-db` | Test tasks (and `jettyRun`) first drop the test database and reload it from the baseline schema |
+| `-Denvironment=drop-recreate-hibernate-db` | As above, but for an empty `rspace_hib` (see [Database tasks](#database-tasks)) |
+| `-Denvironment=keepdbintact` | Use the database as it is |
+| `-Denvironment=prodRelease` | Release build: renders `htmlDocs` and runs `checkReleaseDependencies` before `war` |
+| `-DgenerateReactDist` | `war` first runs `pnpm install --frozen-lockfile` and the Vite build |
+| `-DgenerateStorybook=true` | `war` builds Storybook into `WEB-INF/storybook` |
+| `-DenableTestCoverage` | JaCoCo on every test task (see [Coverage](#coverage)) |
+| `-DspotlessStrict` | Spotless adds the CleanThat steps |
+| `-DspotlessFiles=<regex>,...` | Limit Spotless to files whose absolute path matches one regex |
+| `-Dtimestamp=<value>` / `-Dtimestamp=now` | Version stamp; defaults to `dev` |
+| `-Ddeployment=<name>` | Package `src/main/resources/deployments/<name>/` (default `dev`) |
+| `-Djava-version=<17\|21>`, `-Djava-vendor=<vendor>` | Pick a toolchain JDK (see [Toolchains](#toolchains)) |
+| `-Dtest=<pattern>,...` | Select test classes or methods |
+| `-Dfast=true` | Tests skip the Spring and database tests |
+| `-DincludedTestGroups=<tags>` / `-DexcludedTestGroups=<tags>` | JUnit tags to include / exclude; `chemistry` is excluded by default, and `-DexcludedTestGroups=` excludes nothing |
+| `-Dsurefire.rerunFailingTestsCount=<n>` | Retry each failed test up to n times |
+| `-DforkCount=<n>` or `<n>C`, `-PmaxTestForks=<n>` | Parallel test JVMs (`1C` = one per core) |
+| `-Dmaven.test.failure.ignore=true` | Test failures do not fail the build |
+
+The `environment`, `generateReactDist`, `enableTestCoverage` and `spotlessStrict` switches are on
+whenever they are given, whatever their value; `generateStorybook` needs `=true`. An unknown
+`-Denvironment` value fails the build. The `jdbc.*.maven`, `surefire.*` and `maven.*` names are
+kept from the old Maven build so that existing commands and CI jobs keep working.
+
+The version is `2.28.0-SNAPSHOT-<timestamp>`. The fixed `dev` default keeps resources up to date
+between local builds; release builds pass `-Dtimestamp=now` or a build number.
+
+## Tests
+
+| Task | Classes |
+|---|---|
+| `test` | `Test*`, `*Test`, `*Tests`, `*TestCase` |
+| `integrationTest` | `*IT`, apart from the two lists below |
+| `integrationTestRun` | `RunConfigWiringTestIT`, `SysAdminConfigControllerMVCIT`, `SysAdminSupportControllerMVCIT` |
+| `integrationTestProblematic` | `ExportApiControllerMVCIT`, `CreateMissingUserFoldersForLabAdminsAndPIsIT` |
+
+`integrationTests` runs the three integration tasks in that order, and `verify` runs `test` and
+`war` before them. Test tasks share one database, so they never run in parallel with each other.
+
+Results: JUnit XML in `build/test-results/<task>/`, HTML reports in `build/reports/tests/<task>/`.
+Failures print in full on the console.
+
+### Selecting tests
+
+`-Dtest=<pattern>[,<pattern>...]` takes:
+
+- a class name or glob: `MyClassTest`, `*Operation*Test`;
+- a method: `MyClassTest#myMethod`, or `MyClassTest#m1+m2`;
+- a path: `**/MyClassTest.java`;
+- `!pattern` to exclude.
+
+It replaces each test task's own class patterns, so `./gradlew test -Dtest=MyClassIT` runs an
+`*IT` class under `test`. A task with no matching class passes. Gradle's own
+`--tests '<pattern>'` also works, on one task at a time.
+
+### Retries
+
+The `org.gradle.test-retry` plugin reruns failed tests when `-Dsurefire.rerunFailingTestsCount=<n>`
+is set. A test that passes on a retry is reported as flaky, and does not fail the build. CI's
+integration job retries once.
+
+### Database suites
 
 Set the database up as CI does: start MariaDB, run the "Configure MariaDB" SQL from the
 `spring-tests` job in `.github/workflows/lint-and-test.yml`, and seed
-`src/main/resources/deployments/dev/deployment.properties` from its `.example`. Then:
+`src/main/resources/deployments/dev/deployment.properties` from its `.example`. Then run what CI
+runs:
 
 ```bash
-# Spring tests (CI: mvnw clean test -Denvironment=drop-recreate-db ...)
-./gradlew clean test -Penvironment=drop-recreate-db -Pjdbc.db.maven=rspace \
-  -Pjdbc.url=jdbc:mysql://localhost:3306/rspace -PRS.devlogLevel=INFO \
+# Spring tests
+./gradlew test -Denvironment=drop-recreate-db \
   -Djavax.xml.accessExternalDTD=all -Dlog4j2.configurationFile=log4j2-dev.xml \
-  -DRS_FILE_BASE=$RS_FILE_BASE
+  -Djdbc.db.maven=rspace -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+  -DRS.devlogLevel=INFO -DRS_FILE_BASE=$RS_FILE_BASE
 
-# Integration tests (CI: mvnw clean integration-test -DskipUnitTests=true ...)
-./gradlew clean integrationTest integrationTestRun integrationTestProblematic --continue \
-  <same flags>
+# Integration tests
+./gradlew integrationTests --continue -Dsurefire.rerunFailingTestsCount=1 <same flags>
 ```
 
-For a server on another port, add `-Pjdbc.url.maven=jdbc:mysql://localhost:<port>`.
+For a server on another port, add `-Djdbc.url.maven=jdbc:mysql://localhost:<port>`.
 
-`-Penvironment=drop-recreate-db` makes every test task first run `recreateDatabase`, the
-equivalent of the `mysql-clean-liquibase` profile. That task:
+With `-Denvironment=drop-recreate-db`, every test task depends on `recreateDatabase`, which:
 
-- drops and recreates the database;
-- loads `rs-dbbaseline-utf8.sql`;
-- applies the profile's resource-filter values.
+- drops and recreates `jdbc.db.maven` (default `rspace`) on `jdbc.url.maven`, as
+  `jdbc.username.maven`;
+- loads `src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql`;
+- leaves the Liquibase changesets for RSpace to apply when it starts.
 
-In this mode, test tasks always run and are never cached. Test tasks take turns, because with the
-configuration cache on Gradle would otherwise run them in parallel against the same database. The
-integration tasks run in Surefire's execution order.
+`clean` then also empties the `archive/` and `pdfs/` folders of the attachment search index.
 
-Unlike CI's Maven integration job (`-Dsurefire.rerunFailingTestsCount=1`), Gradle does not rerun
-failed tests. A flaky integration test that passes on Maven's rerun fails under Gradle.
+The chemistry tests need the OSS chemistry service; `scripts/run-chemistry-tests.sh` runs them.
 
-## Keeping it in step with Maven
+## Jetty
 
-- **Dependencies:**
-  - `scripts/gradle/pom2gradle.py` generated `build.gradle`'s dependency declarations, exclusions
-    included, from the effective POM.
-  - `gradle/maven-resolved-versions.txt` records the version and scope of every module
-    `mvn dependency:list` resolves. The build forces those versions, and keeps modules off the
-    classpaths Maven keeps them off.
-- **After changing a version or scope in `pom.xml`:** run `scripts/gradle/export-maven-versions.sh`
-  and commit the regenerated file.
-- **After adding or removing a dependency, or changing its exclusions:** make the same change in
-  `build.gradle`'s dependencies block, then regenerate the versions file.
-- **Checks:**
-  - `scripts/gradle/export-maven-versions.sh --check` fails if the versions file is stale.
-  - `scripts/gradle/compare-classpaths.sh --check` fails if any classpath differs from Maven's,
-    beyond the accepted differences in `gradle/known-classpath-differences.txt`.
-  - The `gradle-build` job in `lint-and-test.yml` runs both checks, then compiles, packages the
-    WAR and runs the fast unit tests under Gradle. It runs whenever the Java or build files
-    change.
-- **Resource filtering:** `buildSrc`'s `MavenPlaceholderFilter` replaces `${name}` and `@name@`
-  only for known properties (`gradle/resource-filter.properties`), as maven-resources-plugin
-  does. Unlike Gradle's line filters, it leaves line endings alone. The binary extensions it
-  skips must match `nonFilteredFileExtensions` in `pom.xml`.
+<!-- TODO(jetty): jettyRun and jettyRunWar were still being written when this was documented.
+     Check the commands, flags and behaviour below against build.gradle once they land. -->
 
-## Verified against Maven
+- `./gradlew jettyRun` serves the compiled classes, resources and `src/main/webapp` exploded
+  (no WAR), at context path `/` on port 8080, or `-Djetty.http.port=<port>`.
+- `./gradlew jettyRunWar -PwarFile=<path>` runs a WAR built earlier; without `-PwarFile` it
+  builds and runs `war`.
+- `-D` settings reach the Jetty JVM as system properties, so `-Dspring.profiles.active=run`,
+  `-DreactDevMode=true` and the deployment properties work as they do for tests.
+- `-Denvironment=drop-recreate-db` recreates the database first.
+- `-Dssl.enabled=true` serves HTTPS with the configuration in `jetty/*.xml`; see
+  [SecureConnectionConfig.md](SecureConnectionConfig.md).
 
-Verified on 2026-11-04 against `main`, on MariaDB 11.8 for the database suites.
+A typical development run:
 
-- **Classpaths:** the main runtime classpath is identical apart from okio's metadata-only
-  root jar. The accepted differences are listed, with reasons, in
-  `gradle/known-classpath-differences.txt`.
-- **Resources:** all main and test resources are byte-identical, apart from the version stamp in
-  `rs.properties`.
-- **WAR:** every class file and library is byte-identical. The differences are:
-  - Maven's `META-INF/maven` metadata;
-  - three empty `package-info.class` files maven-compiler-plugin generates;
-  - the manifest;
-  - `rs.properties`;
-  - `okio-3.6.0.jar`, okio's metadata-only root jar, which only Maven ships (both ship
-    `okio-jvm-3.6.0.jar`).
-- **Tests:** every test case has the same outcome under both builds in the fast unit tests, the
-  integration suite (1,211 cases) and the Spring suite (6,291 passing). The exceptions:
-  - `PublicDocumentsUtilitiesTest.signsInTheGuestWithoutAPasswordCheck` depends on test order
-    and can fail under either build.
-  - The `HibernateTest`-based model tests skip unless MariaDB is on `localhost:3306`. They were
-    not exercised under either build.
-- **End to end:** a WAR built with `./gradlew war -PgenerateReactDist` boots on the Jetty setup
-  CI uses (`./mvnw jetty:run-war -Dmaven.war.skip=true`). It gave the same final result as a
-  Maven-built WAR for every test in the mocked Chromium, mobile and api projects (609 tests).
-  Its `ui/dist` bundle is identical apart from Vite's random asset ids in three source maps.
-  `sharingDeleteMove.e2e.ts:54` is flaky under both WARs (3 failures in 16 runs each).
-- **Test counts:** they look different only in how they're reported.
-  - Surefire's XML undercounts `@Nested` tests in its summary attribute.
-  - Surefire reports a class skipped by an assumption as 0 tests; Gradle counts each skipped
-    method.
-  - Gradle reports `@DisplayName` text as the test name.
+```bash
+./gradlew jettyRun -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
+  -Dspring.profiles.active=run -DreactDevMode=true \
+  -Dlog4j2.configurationFile=log4j2-dev.xml
+```
 
-## Not ported
+The Docker dev stack (`docker/dev/`) runs the same thing in a container.
 
-Jetty (`jetty-http`, `jetty-ssl`, and the Docker dev stack's `jetty:run`), `prodRelease`,
-Storybook, JaCoCo, Sonar, OWASP, the Liquibase diff profile, `mysql-clean-hibernate`,
-`mysql-nochange`, the toolchains plugin and the enforcer. Version pinning covers dependency
-convergence while Maven resolves the versions.
+## Resource filtering
+
+`processResources`, `processTestResources` and `war` replace `${name}` and `@name@` placeholders
+with build settings. Values come from, lowest precedence first:
+
+1. `gradle/resource-filter.properties`;
+2. the `-Denvironment` value's settings (in `build.gradle`);
+3. `-P<name>=<value>`;
+4. `-D<name>=<value>`.
+
+`buildSrc`'s `PlaceholderFilter` replaces only known names and leaves line endings alone. Binary
+files (images, archives, Office documents and so on) are copied unfiltered, as is
+`applicationContext-dao.xml`, whose placeholders Spring resolves from `deployment.properties` at
+runtime. The WAR filters only `META-INF/**` and `WEB-INF/security.xml`.
+
+Only the `-Ddeployment` folder of `src/main/resources/deployments/` is packaged.
+
+## Coverage
+
+`-DenableTestCoverage` puts JaCoCo on every test task and adds two report tasks, which run after
+the tests:
+
+```bash
+./gradlew test -DenableTestCoverage                # also runs jacocoTestReport
+./gradlew integrationTests -DenableTestCoverage    # also runs jacocoIntegrationTestReport
+```
+
+- Unit and Spring tests: `build/reports/jacoco/test/jacocoTestReport.{xml,csv}` and `html/`.
+- Integration tests: `build/reports/jacoco/integrationTests/jacocoIntegrationTestReport.{xml,csv}`
+  and `html/`.
+- Execution data: `build/jacoco/<task>.exec`.
+
+`.github/workflows/coverage.yml` merges the exec files of its shards with the JaCoCo CLI.
+
+## Formatting (Spotless)
+
+`spotlessApply` formats Java with google-java-format and removes unused imports;
+`spotlessCheck`, part of `check`, fails on unformatted files. Code between
+`// spotless:off` and `// spotless:on` is left alone.
+
+- `-DspotlessStrict` adds the CleanThat steps. CI and the pre-commit hook check with it, so fix
+  their failures with `./gradlew spotlessApply -DspotlessStrict`.
+- `-DspotlessFiles=<regex>,...` limits both tasks to files whose absolute path matches one regex,
+  e.g. `-DspotlessFiles='.*/MyClass[.]java'`. The lefthook pre-commit hook uses it to check only
+  staged files.
+
+## Database tasks
+
+- `recreateDatabase` drops and recreates the test database. Test tasks run it under
+  `-Denvironment=drop-recreate-db` or `drop-recreate-hibernate-db`.
+- `./gradlew recreateDatabase -Denvironment=drop-recreate-hibernate-db` drops and recreates an
+  empty `rspace_hib`, without the baseline schema. Nothing in the build generates a schema from
+  the Hibernate mappings; see
+  [DatabaseChangeGuidelines.md](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md).
+- `liquibaseDiff` compares `rspace` with `rspace_hib` and writes the changes that would bring
+  `rspace` in line to `generatedDBChangeSets/diffChangeset-<timestamp>.xml`. The connection
+  settings come from `src/main/resources/sqlUpdates/liquibaseConfig/liquibase.properties`;
+  override one with `-Dliquibase.<key>=<value>`, e.g. `-Dliquibase.referenceUrl=...`.
+
+## Release builds
+
+`-Denvironment=prodRelease`:
+
+- renders `DevDocs/public/*.md` to `build/htmlDocs/` (`htmlDocs`);
+- fails `war` if the version or any dependency is a snapshot (`checkReleaseDependencies`).
+
+See the Jenkinsfile's "Build prodRelease-like package" stage for the full command, e.g.:
+
+```bash
+./gradlew clean war -DgenerateReactDist -Dtimestamp=now -Denvironment=prodRelease \
+  -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production
+```
+
+## Storybook
+
+`./gradlew war -DgenerateReactDist -DgenerateStorybook=true` builds Storybook
+(`buildStorybook`, `pnpm run storybook:build`) and packages it under `WEB-INF/storybook`, where
+the deployment properties control access to it. See [Storybook.md](Storybook.md).
+
+## Toolchains
+
+Without `-Djava-version` or `-Djava-vendor`, the JDK running Gradle compiles and runs the tests.
+With them, Gradle uses a matching installed JDK as a toolchain for compiling and testing:
+
+- `-Djava-version` is `17` (the default) or `21`;
+- `-Djava-vendor` is e.g. `temurin`, `zulu`, `corretto` or `oracle`; `openjdk` matches any vendor.
+
+Gradle looks for JDKs in `JAVA_HOME`, `~/.m2/toolchains.xml`, SDKMAN, asdf, the OS's usual
+locations and the other places it
+[auto-detects](https://docs.gradle.org/current/userguide/toolchains.html#sec:auto_detection).
+Nothing is downloaded. `./gradlew javaToolchains` lists the JDKs it found. To add one elsewhere,
+set `org.gradle.java.installations.paths` in `~/.gradle/gradle.properties`.
+
+Spotless and the other plugins always run on the JDK running Gradle, which must be 17 or 21.
+
+## Dependencies
+
+Repositories are declared once, in `settings.gradle`: Maven Central, JitPack for
+`com.github.*` (the `rspace-os` libraries), and the DICE repository for `org.irods*`. Projects
+cannot add their own, and `mavenLocal()` is never used, so a library built locally cannot
+shadow the published one. To change an `rspace-os` library, push it, wait for JitPack to build
+the release, then update the version here.
+
+Versions are chosen by hand, in `gradle/pinned-versions.txt`: one line per module on any
+classpath, `group:artifact=version scope`. `build.gradle` forces every pinned version, so no
+transitive dependency drifts, and keeps each module off the classpaths its scope excludes:
+
+| Scope | Classpaths |
+|---|---|
+| `compile` | main compile and runtime, tests |
+| `provided` | main compile and tests; not the runtime classpath or the WAR |
+| `runtime` | main runtime and tests |
+| `test` | tests only |
+
+`checkPinnedVersions` (part of `check`, and run by CI) fails if a module on a classpath has no
+pin, or a pin matches no module, and lists them.
+
+**To add a dependency:**
+
+1. Declare it in `build.gradle`'s `dependencies` block, with the configuration for its scope
+   (`implementation`, `runtimeOnly`, `providedCompile`, `testImplementation`, ...) and any
+   `exclude`s.
+2. Add a pin for it to `gradle/pinned-versions.txt`.
+3. Run `./gradlew checkPinnedVersions` and add pins for the new transitive modules it lists.
+
+**To upgrade or downgrade one:** change the version in the pin, and in `build.gradle` too if it is
+declared there. The pin wins if they differ, so keep them equal. Transitive modules have only a
+pin.
+
+**To remove one:** delete its declaration, then remove the pins `checkPinnedVersions` lists.
+
+To review a change, run `./gradlew dumpClasspaths` before and after and diff
+`build/classpaths/*.txt`. `./gradlew dependencyInsight --configuration runtimeClasspath
+--dependency <name>` shows why a module is on a classpath.
+
+## CI
+
+GitHub Actions jobs set up Java and Gradle with the local action
+`.github/actions/setup-gradle-cached`. It:
+
+- installs the JDK with `actions/setup-java`, and sets `LANG=C.UTF-8`;
+- caches `~/.gradle/caches` and `~/.gradle/wrapper` with `actions/cache`, keyed by the job's
+  `cache-key` family (`tests`, `spotless`, `war`, `jetty`, `coverage`) and a hash of the
+  `*.gradle*` files, the wrapper properties, `gradle/pinned-versions.txt` and `buildSrc/`;
+- saves the cache only on `main`; other branches and pull requests restore `main`'s;
+- runs `gradle/actions/setup-gradle` with `cache-provider: external`, which leaves caching to
+  the step above and still validates the wrapper.
+
+Run it after checkout and before `pnpm install`, so the cache key's `**/*.gradle*` glob does not
+walk `node_modules`. Jenkins runs the same `./gradlew` commands; see the `Jenkinsfile`.
 
 ## Benchmark
 
-`scripts/gradle/benchmark.sh [reps] [filter]` writes `build-benchmarks/results.csv`.
+Measured on 2026-11-04 while Maven still built RSpace alongside Gradle, before Maven was removed.
+The benchmark script went with it.
 
 - **Method:** medians of 3 runs, in seconds. Maven and Gradle runs were interleaved within each
   rep, both offline with warm dependency caches, and Gradle used a warm daemon unless noted.
@@ -167,8 +368,8 @@ compile.
 
 Why the results differ:
 
-- **Incremental compilation:** maven-compiler-plugin recompiles the whole module, all 2,467 main
-  or 1,350 test files, when any source in it changes. Gradle recompiles only the classes a change
+- **Incremental compilation:** maven-compiler-plugin recompiled the whole module, all 2,467 main
+  or 1,350 test files, when any source in it changed. Gradle recompiles only the classes a change
   affects, and tracks class ABIs, so a private or method-body edit does not recompile dependents.
 - **Up-to-date checks and caching:** Gradle skips tasks whose inputs are unchanged, including
   `test`, and its build cache restores outputs after `clean` or a branch switch.
