@@ -16,7 +16,8 @@ do not require booting it.
 
 Commands affect only this worktree. Only pnpm is shared. Gradle home, project
 caches and outputs use per-stack volumes. `down` retains them; `nuke` deletes
-them and the legacy per-stack `app-target`. Host builds can run concurrently.
+them and the legacy per-stack `app-target`. All build state lives outside
+`/rspace`; host clean/build commands can run concurrently.
 
 ## Start and inspect
 

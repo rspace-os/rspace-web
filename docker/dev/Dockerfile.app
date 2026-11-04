@@ -36,7 +36,7 @@ RUN set -eux; \
 
 # Run the short Gradle build and the standalone Jetty JVM on JBR.
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-ENV GRADLE_USER_HOME=/root/.gradle
+ENV GRADLE_USER_HOME=/var/rspace-build/gradle-home
 ENV JAVA_HOME=/opt/jbr
 ENV PATH="/opt/jbr/bin:${PATH}"
 
