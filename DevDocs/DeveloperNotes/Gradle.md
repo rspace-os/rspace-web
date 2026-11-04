@@ -159,18 +159,48 @@ The chemistry tests need the OSS chemistry service; `scripts/run-chemistry-tests
 
 ## Jetty
 
-<!-- TODO(jetty): jettyRun and jettyRunWar were still being written when this was documented.
-     Check the commands, flags and behaviour below against build.gradle once they land. -->
+`gradle/jetty.gradle` adds two tasks, which replace Maven's `jetty:run` and `jetty:run-war`:
 
-- `./gradlew jettyRun` serves the compiled classes, resources and `src/main/webapp` exploded
-  (no WAR), at context path `/` on port 8080, or `-Djetty.http.port=<port>`.
-- `./gradlew jettyRunWar -PwarFile=<path>` runs a WAR built earlier; without `-PwarFile` it
-  builds and runs `war`.
-- `-D` settings reach the Jetty JVM as system properties, so `-Dspring.profiles.active=run`,
-  `-DreactDevMode=true` and the deployment properties work as they do for tests.
-- `-Denvironment=drop-recreate-db` recreates the database first.
-- `-Dssl.enabled=true` serves HTTPS with the configuration in `jetty/*.xml`; see
-  [SecureConnectionConfig.md](SecureConnectionConfig.md).
+| Gradle | Maven equivalent |
+|---|---|
+| `./gradlew jettyRun <-D flags>` | `mvn jetty:run <-D flags>` |
+| `./gradlew jettyRunWar -PwarFile=<path> <-D flags>` | `mvn jetty:run-war -Dmaven.war.skip=true <-D flags>` |
+| `./gradlew jettyRunWar <-D flags>` | `mvn jetty:run-war` (builds the WAR first) |
+
+Both run `src/jetty/java`'s launcher in a separate JVM on Jetty 12.1 ee10, at context path `/`.
+The Jetty jars stay in the `jetty` source set, so they never reach the WAR.
+
+- **What `jettyRun` serves:** `build/classes/java/main`, `build/resources/main` and the WAR's
+  libraries as the webapp classpath, with `src/main/webapp` as the exploded webapp. JSPs,
+  `web.xml`, `ServletContainerInitializer`s and JNDI work as under `jetty:run`.
+- **System properties:** every command-line `-D<name>=<value>` becomes a system property of the
+  Jetty JVM, as it was of the Maven JVM that ran `jetty:run` in-process.
+- **Port:** `-Djetty.http.port=<port>` (default 8080).
+- **HTTPS:** `-Dssl.enabled=true` configures the server from `jetty/*.xml`: HTTP on 8080 (or
+  `-Djetty.http.port`), HTTPS with HTTP/2 on 8443 (`-Dhttps.port`). The app's Shiro config
+  redirects to 8443, so keep the default for the full flow.
+- **Database:** `-Denvironment=drop-recreate-db` runs `recreateDatabase` first.
+- **Frontend:** `-DgenerateReactDist` runs `buildFrontend` first (`jettyRun` only).
+- **JVM arguments:** pass them in `-PjettyJvmArgs='<args>'`, or the
+  `ORG_GRADLE_PROJECT_jettyJvmArgs` environment variable, separated by whitespace. These are the
+  flags Maven took from `MAVEN_OPTS`, for example:
+
+  ```bash
+  ./gradlew jettyRun -Dspring.profiles.active=run ... \
+    -PjettyJvmArgs='-Xmx4g -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+  ```
+
+  The `--add-opens` flags the app needs on Java 17 (formerly in `.mvn/jvm.config`) are always
+  added. The Jetty JVM is the JVM that runs Gradle, unless a Java toolchain is selected.
+- **Redeploy:** with `jettyRun`, each line read on stdin restarts the webapp and reloads its
+  classes, like `jetty:run` with `<scan>0</scan>`. Run `./gradlew classes` (or `processResources`)
+  in another shell first, then press Enter.
+- **Hot swap:** under the JetBrains Runtime, pass the HotswapAgent flags in `jettyJvmArgs`. The
+  agent can read its config from a file instead of the webapp classpath:
+  `-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=external
+  -javaagent:<path>/hotswap-agent.jar=propertiesFilePath=<path>/docker/dev/hotswap-agent.properties`.
+- **Stopping:** Ctrl-C or SIGTERM to the Gradle client stops Jetty cleanly.
+
 
 A typical development run:
 

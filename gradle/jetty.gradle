@@ -1,0 +1,131 @@
+// jettyRun and jettyRunWar: RSpace on embedded Jetty, replacing Maven's `jetty:run` and
+// `jetty:run-war`. Applied from build.gradle. See DevDocs/DeveloperNotes/Gradle.md.
+//
+// The launcher (src/jetty/java) runs in its own JVM with Jetty 12 ee10 on its classpath. The
+// Jetty jars live only in the `jetty` source set's configurations, so they never reach the WAR.
+//
+// - Every command-line -D<name>=<value> becomes a system property of the Jetty JVM, as it was of
+//   the Maven JVM that ran jetty:run in-process.
+// - -Djetty.http.port=<port> sets the HTTP port (default 8080).
+// - -Dssl.enabled=true configures the server from jetty/*.xml (HTTP on 8080, HTTPS on 8443), as
+//   pom.xml's jetty-ssl profile does.
+// - -PjettyJvmArgs='<args>' (or the ORG_GRADLE_PROJECT_jettyJvmArgs environment variable) adds
+//   whitespace-separated JVM arguments, e.g. -Xmx4g, -agentlib:jdwp=..., -javaagent:..., which
+//   Maven took from MAVEN_OPTS.
+
+def jettyVersion = '12.1.11'
+
+// The command-line -D map. gradle.startParameter is not a configuration cache input, so a build
+// that only changes -D flags would reuse a cache entry with the old values. Reading all system
+// properties through a provider makes any change to them (and so to the -D flags) invalidate it.
+def cliPropNames = (project.ext.has('cliSystemProperties') ?
+  project.ext.cliSystemProperties as Map<String, String> :
+  gradle.startParameter.systemPropertiesArgs).keySet()
+def allSystemProps = providers.systemPropertiesPrefixedBy('').get()
+def cliProps = new TreeMap<String, String>(cliPropNames.collectEntries { [(it): allSystemProps[it]] })
+def cliOrGradleProperty = { String name -> cliProps.containsKey(name) ? cliProps[name] : providers.gradleProperty(name).getOrNull() }
+
+sourceSets {
+  jetty {
+    java.srcDir 'src/jetty/java'
+  }
+}
+
+// The build forces the app's pinned versions (e.g. slf4j-api) onto every configuration. The Jetty
+// launcher's classpath is separate from the app's, so it resolves Jetty's own versions instead.
+['jettyCompileClasspath', 'jettyRuntimeClasspath'].each { name ->
+  configurations.named(name) { resolutionStrategy.setForcedModules() }
+}
+
+dependencies {
+  jettyImplementation platform("org.eclipse.jetty:jetty-bom:${jettyVersion}")
+  jettyImplementation platform("org.eclipse.jetty.ee10:jetty-ee10-bom:${jettyVersion}")
+  // what jetty-ee10-maven-plugin puts on the server classpath
+  jettyImplementation 'org.eclipse.jetty.ee10:jetty-ee10-webapp'
+  jettyImplementation 'org.eclipse.jetty.ee10:jetty-ee10-annotations'
+  jettyImplementation 'org.eclipse.jetty.ee10:jetty-ee10-plus'
+  jettyImplementation 'org.eclipse.jetty:jetty-xml'
+  jettyRuntimeOnly 'org.eclipse.jetty:jetty-jndi'
+  jettyRuntimeOnly 'org.eclipse.jetty.ee10:jetty-ee10-apache-jsp'
+  jettyRuntimeOnly 'org.eclipse.jetty.ee10:jetty-ee10-glassfish-jstl'
+  jettyRuntimeOnly 'org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jakarta-server'
+  jettyRuntimeOnly 'org.eclipse.jetty.ee10.websocket:jetty-ee10-websocket-jetty-server'
+  // what pom.xml's jetty-ssl profile adds, for jetty/jetty-https.xml
+  jettyRuntimeOnly 'org.eclipse.jetty:jetty-alpn-server'
+  jettyRuntimeOnly 'org.eclipse.jetty:jetty-alpn-java-server'
+  jettyRuntimeOnly 'org.eclipse.jetty.http2:jetty-http2-server'
+  // Jetty's own logging; the webapp keeps its log4j2 binding
+  jettyRuntimeOnly 'org.eclipse.jetty:jetty-slf4j-impl'
+}
+
+def jettyDir = layout.buildDirectory.dir('jetty')
+def sslEnabled = cliOrGradleProperty('ssl.enabled') == 'true'
+def jettyXmls = ['jetty.xml', 'jetty-http.xml', 'jetty-ssl.xml', 'jetty-https.xml'].collect {
+  file("jetty/${it}").absolutePath
+}
+// the JVM options formerly in .mvn/jvm.config, which the Maven jetty:run JVM had
+def defaultJvmArgs = [
+  '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED',
+  '--add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED',
+]
+def extraJvmArgs = providers.gradleProperty('jettyJvmArgs').map { it.trim().split(/\s+/).findAll { !it.isEmpty() } }
+
+// jetty:run's classpath: compiled classes, processed resources and the WAR's libraries.
+def webappClasspath = sourceSets.main.output + (configurations.runtimeClasspath - configurations.providedRuntime)
+def writeWebappClasspath = tasks.register('jettyWebappClasspath') {
+  description = 'Lists the webapp classpath for jettyRun.'
+  def entries = webappClasspath
+  def out = jettyDir.map { it.file('webapp-classpath.txt') }
+  inputs.files(entries).withPropertyName('classpath')
+  outputs.file(out)
+  doLast {
+    out.get().asFile.text = entries.files.collect { it.absolutePath }.join('\n') + '\n'
+  }
+}
+
+def configureJetty = { JavaExec task ->
+  task.group = 'application'
+  task.classpath = sourceSets.jetty.runtimeClasspath
+  task.mainClass = 'com.researchspace.jetty.JettyLauncher'
+  task.workingDir = projectDir
+  task.jvmArgs defaultJvmArgs
+  task.jvmArgumentProviders.add({ extraJvmArgs.getOrElse([]) } as CommandLineArgumentProvider)
+  task.systemProperties cliProps
+  if (sslEnabled) {
+    jettyXmls.each { task.args '--jetty-xml', it }
+  }
+  // -Denvironment=drop-recreate-db recreates the database first, as Maven's
+  // mysql-clean-liquibase profile does in the initialize phase.
+  if (cliOrGradleProperty('environment') == 'drop-recreate-db' && tasks.names.contains('recreateDatabase')) {
+    task.dependsOn 'recreateDatabase'
+  }
+}
+
+tasks.register('jettyRun', JavaExec) {
+  description = 'Runs RSpace exploded on Jetty, from compiled classes and src/main/webapp.'
+  configureJetty(it)
+  dependsOn writeWebappClasspath
+  def classpathFile = jettyDir.map { it.file('webapp-classpath.txt').asFile.absolutePath }
+  def tempDir = jettyDir.map { it.dir('run-tmp').asFile.absolutePath }
+  args '--webapp', file('src/main/webapp').absolutePath, '--context-path', '/', '--redeploy-on-stdin'
+  argumentProviders.add({ ['--classpath-file', classpathFile.get(), '--temp-dir', tempDir.get()] } as CommandLineArgumentProvider)
+  // a line on stdin redeploys the webapp, as jetty:run does with <scan>0</scan>
+  standardInput = System.in
+  // -DgenerateReactDist also rebuilds the frontend bundle, as with jetty:run
+  if (cliOrGradleProperty('generateReactDist') != null && tasks.names.contains('buildFrontend')) {
+    dependsOn 'buildFrontend'
+  }
+}
+
+tasks.register('jettyRunWar', JavaExec) {
+  description = 'Runs a WAR on Jetty: -PwarFile=<path>, or else the WAR this build makes.'
+  configureJetty(it)
+  def warFile = providers.gradleProperty('warFile').map { file(it).absolutePath }
+  if (!warFile.isPresent()) {
+    def war = tasks.named('war', War)
+    dependsOn war
+    warFile = war.flatMap { it.archiveFile }.map { it.asFile.absolutePath }
+  }
+  def tempDir = jettyDir.map { it.dir('run-war-tmp').asFile.absolutePath }
+  argumentProviders.add({ ['--war', warFile.get(), '--context-path', '/', '--temp-dir', tempDir.get()] } as CommandLineArgumentProvider)
+}
