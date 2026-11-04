@@ -122,7 +122,7 @@ tasks.register('jettyRun', JavaExec) {
 
 tasks.register('jettyLaunchArgs') {
   group = 'application'
-  description = 'Builds the exploded webapp and writes build/jetty/launch.args for java @argfile.'
+  description = 'Builds the exploded webapp and writes jetty/launch.args under the build directory for java @argfile.'
   prepareExploded(it)
   def launchArgs = defaultJvmArgs + cliProps.collect { k, v -> "-D${k}=${v}".toString() }
   def programArgs = sslArgs + explodedArgs
