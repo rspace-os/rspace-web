@@ -10,6 +10,7 @@ beforeBookingCatalog(async () => {
 });
 
 import "@/__tests__/__mocks__/matchMedia";
+import { QueryClient } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -109,7 +110,7 @@ describe("BookableItemPage", () => {
     );
     renderPage();
 
-    expect(await screen.findByText("booking:bookableItemDetails.error.title")).toBeVisible();
+    expect(await screen.findByText("booking:bookableItemDetails.notFound.title")).toBeVisible();
     expect(eventRequests).toBe(0);
     lookupFails = false;
     await user.click(screen.getByRole("button", { name: "common:actions.retry" }));
@@ -119,18 +120,44 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(eventRequests).toBe(4));
   });
 
-  it("does not show the configuration update timestamp in booking rules", async () => {
-    const updatedAt = "2026-08-10T12:00:00Z";
+  it.each([
+    ["an unreadable or unconfigured item", () => HttpResponse.json(collectionPage([], 2))],
+    ["a forbidden lookup", () => new HttpResponse(null, { status: 403 })],
+    ["a missing lookup", () => new HttpResponse(null, { status: 404 })],
+  ])("shows the not-found state at once, without retrying, for %s", async (_label, respond) => {
+    let lookups = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(collectionPage([{ ...configuration, updatedAt }], 2)),
-      ),
+      http.get("/api/v2/booking-configurations", () => {
+        lookups += 1;
+        return respond();
+      }),
+    );
+    // The application's QueryClient defaults, which retry failed queries three times with backoff.
+    renderPage("/booking/bookable-items/IN999", new QueryClient());
+
+    expect(await screen.findByText("booking:bookableItemDetails.notFound.title", {}, { timeout: 500 })).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.notFound.description")).toBeVisible();
+    expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy");
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    expect(lookups).toBe(1);
+  });
+
+  it("retries a server error before giving up on the item", async () => {
+    let lookups = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => {
+        lookups += 1;
+        return lookups === 1
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json(collectionPage([configuration], 2));
+      }),
       http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
-    renderPage("/booking/bookable-items/IN123/details");
+    renderPage(undefined, new QueryClient());
 
-    await screen.findByText("booking:bookableItemDetails.rules");
-    expect(screen.queryByText("booking:bookableItemDetails.fields.updatedAt")).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Confocal microscope" }, { timeout: 4000 })).toBeVisible();
+    expect(lookups).toBe(2);
+    expect(screen.queryByText("booking:bookableItemDetails.notFound.title")).not.toBeInTheDocument();
   });
 
   it("reformats existing events after a display timezone refresh without refetching events", async () => {

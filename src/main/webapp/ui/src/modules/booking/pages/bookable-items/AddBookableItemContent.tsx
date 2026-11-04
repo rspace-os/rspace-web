@@ -2,8 +2,9 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import { loadBookingSettings } from "@/modules/booking/configuration/schedulingSettings";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { AddBookableItemForm, searchBookingTargets } from "./AddBookableItemForm";
+import { AddBookableItemForm } from "./AddBookableItemForm";
 import { AddBookableItemSkeleton } from "./AddBookableItemSkeleton";
+import { searchBookingTargets } from "./bookingConfigurationTargets";
 
 export function AddBookableItemContent() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
