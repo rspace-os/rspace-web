@@ -37,10 +37,10 @@
 #   db             Open a MariaDB client against this worktree's database.
 #   build          Rebuild the app + frontend images.
 #   nuke           Stop and remove containers AND this worktree's volumes
-#                  (database, node_modules, build output, filestore).
+#                  (database, node_modules, filestore, indices).
 #   compose ...    Run an arbitrary `docker compose` subcommand for this stack.
 #
-# Shared Maven (.m2) and pnpm caches are reused across worktrees to save
+# Shared Gradle (~/.gradle) and pnpm caches are reused across worktrees to save
 # bandwidth; databases and node_modules are per-worktree.
 set -euo pipefail
 
@@ -215,11 +215,11 @@ print_urls() {
 EOF
 }
 
-# The Maven (.m2) and pnpm caches are shared across worktrees and declared
+# The Gradle (~/.gradle) and pnpm caches are shared across worktrees and declared
 # `external` in the compose file (so `nuke` can't delete them). external volumes
 # are not auto-created, so create them here (idempotent).
 ensure_shared_volumes() {
-  docker volume create rspace-dev-m2-repo >/dev/null
+  docker volume create rspace-dev-gradle-cache >/dev/null
   docker volume create rspace-dev-pnpm-store >/dev/null
 }
 
@@ -295,18 +295,7 @@ cmd_restart() {
 
 cmd_reload() {
   echo "rspace-dev: recompiling changed Java ..."
-  # Compile offline first (fast). Retry online ONLY when the failure looks like
-  # a missing dependency — a genuine compile error would otherwise be shown
-  # twice (offline, then again online) before failing.
-  compose exec -T app sh -c '
-    mvn -B -q -o compile > /tmp/rspace-compile.log 2>&1 && exit 0
-    if grep -qiE "offline mode|Cannot access .* in offline|dependencies could not be resolved" /tmp/rspace-compile.log; then
-      mvn -B -q compile
-    else
-      cat /tmp/rspace-compile.log
-      exit 1
-    fi
-  '
+  compose exec -T app /usr/local/bin/entrypoint-app.sh --compile
   echo "rspace-dev: triggering Jetty hot redeploy (full Spring context rebuild) ..."
   compose exec -T app sh -c 'printf "\n" > /tmp/jetty.in'
   echo "rspace-dev: redeploy signalled — watch '${0##*/} logs app'."
