@@ -1,0 +1,16 @@
+export const bookingSettingsFixture = {
+  slotGranularityMinutes: 5,
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
+  availabilityWindowStart: "08:00",
+  availabilityWindowEnd: "18:00",
+  timezoneMode: "BROWSER" as const,
+  customTimezone: null,
+  institutionTimezone: "UTC",
+  defaultSharedWith: "ALL_USERS" as const,
+  selectedAccessGrantees: [],
+  configurationVersion: 0,
+};
