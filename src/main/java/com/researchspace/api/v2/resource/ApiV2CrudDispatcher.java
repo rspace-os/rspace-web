@@ -342,6 +342,21 @@ public final class ApiV2CrudDispatcher<T, ID> {
         () -> document(operations.create(document, caller), selection, caller.subject()));
   }
 
+  public ResourceOperations.CreateResult<Map<String, Object>> create(
+      ParsedDocument document, ApiV2Caller caller, FieldSelection selection, String key) {
+    return invoke(
+        ResourceOperation.CREATE,
+        () -> {
+          ResourceOperations.CreateResult<T> result =
+              key == null
+                  ? new ResourceOperations.CreateResult<>(
+                      operations.create(document, caller), false)
+                  : operations.create(document, caller, key);
+          return new ResourceOperations.CreateResult<>(
+              document(result.resource(), selection, caller.subject()), result.replayed());
+        });
+  }
+
   public ApiV2BulkResult<Map<String, Object>> createMany(
       List<ParsedDocument> documents, ApiV2Caller caller, FieldSelection selection) {
     return invoke(

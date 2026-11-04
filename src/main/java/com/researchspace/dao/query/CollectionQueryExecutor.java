@@ -118,6 +118,34 @@ public final class CollectionQueryExecutor<T> {
   }
 
   /**
+   * Selects the ordered page IDs before fetching its entity graph in one ID-scoped query. This
+   * keeps wide actor rows out of the database's paginated sort and bounds hydration to the selected
+   * page. The ID query retains the access restrictions and counted navigation.
+   */
+  public ResourcePage<T> pageWithBatchedFetch(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      Predicate restriction,
+      RelationshipReadAccess targets,
+      List<String> fetchPaths) {
+    String idProperty = alias + "." + description.requireField(description.idField()).property();
+    CriteriaBuilder<Object> ids = factory.create(session, Object.class).from(entityType, alias);
+    ids.select(idProperty);
+    applyRequest(ids, request, restriction, targets);
+    ResourcePage<Object> page = paged(ids, request);
+    if (page.resources().isEmpty()) {
+      return new ResourcePage<>(List.of(), page.total());
+    }
+    CriteriaBuilder<T> entities = factory.create(session, entityType).from(entityType, alias);
+    entities.where(idProperty).in(page.resources());
+    fetchPaths.forEach(path -> entities.fetch(alias + "." + path));
+    var byId = new java.util.HashMap<Object, T>();
+    entities.getResultList().forEach(entity -> byId.put(session.getIdentifier(entity), entity));
+    return new ResourcePage<>(page.resources().stream().map(byId::get).toList(), page.total());
+  }
+
+  /**
    * Reads scalar constructor arguments without materializing the collection's entity aggregate.
    *
    * <p>Properties are trusted persistence paths, relative to this collection's alias. Projection
