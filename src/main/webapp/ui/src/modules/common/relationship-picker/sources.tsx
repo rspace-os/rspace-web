@@ -1,0 +1,182 @@
+import { escapeRegExp } from "es-toolkit";
+import { cmp, eq, escapeValue, Operation } from "rsql-builder";
+import { is } from "valibot";
+import type { RelationshipFilterPicker } from "@/modules/common/collection/schema";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import type { RelationshipOption } from "@/modules/common/relationship-picker/types";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+import { InstrumentSchema, RelationshipSearchResponseSchema } from "./schema";
+
+/**
+ * What the picker owns and this layer cannot supply: the wording, because this layer has no i18n of
+ * its own, and the density, because only the picker knows how much width it has.
+ */
+export type RelationshipOptionContext = {
+  idLinkLabel: (globalId: string) => string;
+  /** Renders each option on one line, for a picker in a narrow control such as a filter row. */
+  compact?: boolean;
+  unavailableLabel?: (value: string) => string;
+  /** Generic, non-sensitive restore failure message for saved values. */
+  failedLabel?: (value: string) => string;
+};
+
+export type RelationshipSource = {
+  /** Stable source identity, also used to partition query caches. */
+  id: string;
+  /** Optional REST API v2 resource name for collection-backed sources. */
+  resourceName?: string;
+  /** Global-ID prefix owned by this resource, used to recognize a pasted global ID. */
+  globalIdPrefix?: string;
+  /** Converts a source-owned value to its canonical form, or rejects it when it is malformed. */
+  normalizeValue?: (value: string) => string | null;
+  /** Searches this source. The source owns its URL, scope, and query encoding. */
+  search: (term: string, token: string | undefined, signal: AbortSignal) => Promise<readonly unknown[]>;
+  /** Resolves a stored value when a picker is restored without a prior search. */
+  resolve?: (value: string, token: string | undefined, signal: AbortSignal) => Promise<unknown | null>;
+  /**
+   * Resolves canonical source values in bounded batches. Return documents keyed by canonical value;
+   * omitted keys and null values both mean the value is unavailable. Keep batchSize at or below 100.
+   */
+  resolveMany?: (
+    values: readonly string[],
+    token: string | undefined,
+    signal: AbortSignal,
+  ) => Promise<Readonly<Record<string, unknown | null>>>;
+  /** Maximum values passed to resolveMany, capped at 100 by the picker. */
+  batchSize?: number;
+  /** Returns whether a stored value belongs to this source. */
+  ownsValue: (value: string) => boolean;
+  /** Validates one source document and renders it as a selectable option. */
+  toOption: (document: unknown, context: RelationshipOptionContext) => RelationshipOption;
+};
+
+export type RelationshipOptionWithSource = RelationshipOption & {
+  sourceId: string;
+  /** Safe state when a saved value could not be restored; the original value remains in `value`. */
+  restoreStatus?: "loading" | "missing" | "failed" | "invalid" | "unknown" | "unresolved";
+};
+
+async function instrumentRequest(
+  url: string,
+  token: string | undefined,
+  signal: AbortSignal,
+  allowNotFound = false,
+): Promise<Response> {
+  const response = await fetchWithUiToken(url, {
+    headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    signal,
+  });
+  if (!response.ok && !(allowNotFound && response.status === 404)) {
+    throw new Error(`Relationship option request failed with status ${response.status}`);
+  }
+  return response;
+}
+
+/** Returns a positive JavaScript-safe database ID from a resource global ID. */
+export function databaseIdFromGlobalId(value: string, prefix: string): number | null {
+  const escapedPrefix = escapeRegExp(prefix);
+  const match = new RegExp(`^${escapedPrefix}(\\d+)$`, "i").exec(value.trim());
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+const instruments: RelationshipSource = {
+  id: "instruments",
+  resourceName: "instruments",
+  globalIdPrefix: "IN",
+  normalizeValue: (value) => {
+    const id = databaseIdFromGlobalId(value, "IN");
+    return id === null ? null : `IN${id}`;
+  },
+  search: async (term, token, signal) => {
+    const value = term.trim();
+    const id = databaseIdFromGlobalId(value, "IN");
+    const params = new URLSearchParams({ page: "1", limit: "20" });
+    params.set("fields[instruments]", "id,name,globalId");
+    params.set(
+      "where",
+      id === null
+        ? cmp("name", new Operation(escapeValue(value), "=contains=")).toString()
+        : cmp("id", eq(id)).toString(),
+    );
+    const response = await instrumentRequest(`/api/v2/instruments?${params}`, token, signal);
+    const body: unknown = await response.json();
+    return is(RelationshipSearchResponseSchema, body) ? body.docs : [];
+  },
+  resolve: async (value, token, signal) => {
+    const id = databaseIdFromGlobalId(value, "IN");
+    if (id === null) return null;
+    const params = new URLSearchParams({ "fields[instruments]": "id,name,globalId" });
+    const response = await instrumentRequest(`/api/v2/instruments/${id}?${params}`, token, signal, true);
+    if (response.status === 404) return null;
+    return response.json();
+  },
+  batchSize: 100,
+  resolveMany: async (values, token, signal) => {
+    const ids = [...new Set(values.map((value) => databaseIdFromGlobalId(value, "IN")))].filter(
+      (id): id is number => id !== null,
+    );
+    if (ids.length === 0) return {};
+    const params = new URLSearchParams({
+      page: "1",
+      limit: String(Math.min(ids.length, 100)),
+      where: `id=in=(${ids.join(",")})`,
+      "fields[instruments]": "id,name,globalId",
+    });
+    const response = await instrumentRequest(`/api/v2/instruments?${params}`, token, signal);
+    const body: unknown = await response.json();
+    if (!is(RelationshipSearchResponseSchema, body)) {
+      throw new Error("Relationship option response has an invalid envelope");
+    }
+    const requested = new Set(ids.map((id) => `IN${id}`));
+    const instruments = body.docs.map((document) => {
+      const instrument = parseOrThrow(InstrumentSchema, document);
+      if (databaseIdFromGlobalId(instrument.globalId, "IN") !== instrument.id) {
+        throw new Error("Relationship option response contains an invalid instrument");
+      }
+      return instrument;
+    });
+    return Object.fromEntries(
+      instruments
+        .filter((instrument) => requested.has(`IN${instrument.id}`))
+        .map((instrument) => [`IN${instrument.id}`, instrument]),
+    );
+  },
+  ownsValue: (value) => databaseIdFromGlobalId(value, "IN") !== null,
+  toOption: (document, context) => {
+    const instrument = parseOrThrow(InstrumentSchema, document);
+    return {
+      value: instrument.globalId,
+      label: instrument.name,
+      content: (
+        <InventoryItem
+          name={instrument.name}
+          globalId={instrument.globalId}
+          href={`/globalId/${instrument.globalId}`}
+          idLinkLabel={context.idLinkLabel(instrument.globalId)}
+          compact={context.compact}
+          size="xs"
+        />
+      ),
+    };
+  },
+};
+
+/**
+ * Pickable relationship targets, keyed by the `relationTo` a relationship field already declares,
+ * so a collection configuration needs nothing extra to reach the right backend collection.
+ *
+ * ponytail: one entry, extended per target as more relationships become pickable. Searching every
+ * target at once needs a different backend query, not a longer registry.
+ */
+export const relationshipSources: Readonly<Record<string, RelationshipSource>> = { instruments };
+
+export function relationshipSourceForPicker(
+  picker: RelationshipFilterPicker,
+  sources: Readonly<Record<string, RelationshipSource>>,
+): RelationshipSource | undefined {
+  const source = sources[picker.resource];
+  return source?.globalIdPrefix === picker.globalIdPrefix ? source : undefined;
+}
