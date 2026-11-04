@@ -1,0 +1,101 @@
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import * as React from "react";
+import * as v from "valibot";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+
+const CurrentUserOrcidSchema = v.object({
+  available: v.boolean(),
+  id: v.nullable(v.string()),
+});
+
+const CurrentUserCapabilitiesSchema = v.object({
+  canUseInventory: v.boolean(),
+  canPublish: v.boolean(),
+  canViewSystem: v.boolean(),
+});
+
+const CurrentUserSessionSchema = v.object({
+  operatedAs: v.boolean(),
+  lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
+});
+
+const CurrentUserLivechatSchema = v.object({
+  enabled: v.boolean(),
+  serverKey: v.nullable(v.string()),
+});
+
+const CurrentUserResponseSchema = v.object({
+  id: v.pipe(v.number(), v.integer()),
+  username: v.string(),
+  email: v.string(),
+  firstName: v.string(),
+  lastName: v.string(),
+  homeFolderId: v.nullable(v.pipe(v.number(), v.integer())),
+  workbenchId: v.nullable(v.pipe(v.number(), v.integer())),
+  hasPiRole: v.boolean(),
+  hasSysAdminRole: v.boolean(),
+  profileImageUrl: v.nullable(v.string()),
+  profileImageApiUrl: v.nullable(v.string()),
+  orcid: CurrentUserOrcidSchema,
+  capabilities: CurrentUserCapabilitiesSchema,
+  livechat: CurrentUserLivechatSchema,
+  session: CurrentUserSessionSchema,
+});
+
+export type CurrentUser = v.InferOutput<typeof CurrentUserResponseSchema>;
+
+const currentUserEvents = ["USER_RENAME", "USER_SET_ORCID", "USER_SET_EMAIL"] as const;
+
+export const currentUserQueryKeys = {
+  all: ["rspace.api.v2.users"] as const,
+  me: () => [...currentUserQueryKeys.all, "me"] as const,
+};
+
+export async function getCurrentUser(token: string): Promise<CurrentUser> {
+  const response = await fetchWithUiToken("/api/v2/users/me", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch current user: ${response.status} ${response.statusText}`.trim());
+  }
+
+  const data: unknown = await response.json();
+  return parseOrThrow(CurrentUserResponseSchema, data);
+}
+
+export function useCurrentUserQuery() {
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  return useSuspenseQuery({
+    queryKey: currentUserQueryKeys.me(),
+    queryFn: () => getCurrentUser(token),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
+
+export function useCurrentUserEventSync() {
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const invalidateCurrentUser = () => {
+      void queryClient.invalidateQueries({ queryKey: currentUserQueryKeys.me() });
+    };
+
+    for (const eventName of currentUserEvents) {
+      window.addEventListener(eventName, invalidateCurrentUser);
+    }
+
+    return () => {
+      for (const eventName of currentUserEvents) {
+        window.removeEventListener(eventName, invalidateCurrentUser);
+      }
+    };
+  }, [queryClient]);
+}

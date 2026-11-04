@@ -7,7 +7,7 @@
     "defaultBranch": "main"
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css", "src/routes/**", "!!src/routeTree.gen.ts"]
   },
   "formatter": {
     "enabled": true,
@@ -61,6 +61,19 @@
         "rules": {
           "style": {
             "useComponentExportOnlyModules": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/routes/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": { "match": "(?:index|route|__root)[.]tsx" }
+            }
           }
         }
       }
