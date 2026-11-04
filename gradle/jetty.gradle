@@ -15,14 +15,9 @@
 
 def jettyVersion = '12.1.11'
 
-// The command-line -D map. gradle.startParameter is not a configuration cache input, so a build
-// that only changes -D flags would reuse a cache entry with the old values. Reading all system
-// properties through a provider makes any change to them (and so to the -D flags) invalidate it.
-def cliPropNames = (project.ext.has('cliSystemProperties') ?
-  project.ext.cliSystemProperties as Map<String, String> :
-  gradle.startParameter.systemPropertiesArgs).keySet()
-def allSystemProps = providers.systemPropertiesPrefixedBy('').get()
-def cliProps = new TreeMap<String, String>(cliPropNames.collectEntries { [(it): allSystemProps[it]] })
+// The command-line -D map from build.gradle: bare flags read as 'true', as with Maven, and the
+// values are configuration cache inputs, so changing a -D flag invalidates a stored entry.
+def cliProps = new TreeMap<String, String>(project.ext.cliSystemProperties as Map<String, String>)
 def cliOrGradleProperty = { String name -> cliProps.containsKey(name) ? cliProps[name] : providers.gradleProperty(name).getOrNull() }
 
 sourceSets {
@@ -94,9 +89,9 @@ def configureJetty = { JavaExec task ->
   if (sslEnabled) {
     jettyXmls.each { task.args '--jetty-xml', it }
   }
-  // -Denvironment=drop-recreate-db recreates the database first, as Maven's
-  // mysql-clean-liquibase profile does in the initialize phase.
-  if (cliOrGradleProperty('environment') == 'drop-recreate-db' && tasks.names.contains('recreateDatabase')) {
+  // -Denvironment=drop-recreate-db (or drop-recreate-hibernate-db) recreates the database first,
+  // as the Maven build's database reset profiles did in its initialize phase.
+  if (project.ext.recreatesDatabase) {
     task.dependsOn 'recreateDatabase'
   }
 }
