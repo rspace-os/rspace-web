@@ -415,9 +415,9 @@ fields in the wizard is deferred.
 - Backend unit and validator tests: `src/test/java/com/researchspace/service/inventory/operations`,
   plus the `InventoryOperation*Test` classes elsewhere under `src/test/java` (the request
   bodies' annotations, the controller, the transactional core, the error catalog).
-  `mvn test -Dtest='*Operation*Test' -Dfast=true`.
+  `./gradlew test -Dtest='*Operation*Test' -Dfast=true`.
 - Backend, end to end: the operation `*MVCIT` classes. Run with
-  `mvn verify -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
+  `./gradlew integrationTests -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
 - Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/__tests__`, plus
   `ProcessAction.test.tsx` and `ContextActions.process.test.tsx` in `ContextMenu/__tests__`. `pnpm test <path>` from the repo root.
 - The field-name uniqueness rule is implemented in both languages, and
