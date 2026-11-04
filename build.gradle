@@ -632,8 +632,14 @@ def testForks = forkCountSetting == null ? null : forkCountSetting.endsWith('C')
   ? Math.max(1, (forkCountSetting[0..-2].toBigDecimal() * Runtime.runtime.availableProcessors()).intValue())
   : forkCountSetting.toInteger()
 def rerunFailingTestsCount = (setting('surefire.rerunFailingTestsCount') ?: '0').toInteger()
-def includedTestGroups = setting('includedTestGroups') ?: ''
-def excludedTestGroups = setting('excludedTestGroups') ?: 'chemistry'
+// JUnit tags. Gradle reads -DexcludedTestGroups= (empty, as Surefire's "exclude nothing") the same
+// as a bare -DexcludedTestGroups, which cliSystemProperties turns into 'true', so both mean none.
+def testGroups = { String name, String defaultGroups ->
+  def value = setting(name)
+  value == null ? defaultGroups : (value in ['', 'true'] ? '' : value)
+}
+def includedTestGroups = testGroups('includedTestGroups', '')
+def excludedTestGroups = testGroups('excludedTestGroups', 'chemistry')
 
 tasks.withType(Test).configureEach {
   usesService(testDatabase)
