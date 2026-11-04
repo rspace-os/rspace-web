@@ -17,6 +17,9 @@ public interface BookingCalendarCurrentAccessDao {
   /** Resolves one subject/instrument pair from locking scalar reads in the physical transaction. */
   Access resolve(Long subjectId, Long instrumentId);
 
+  /** Resolves current scalar facts with shared locks after the gate and instrument locks. */
+  Access resolveForRead(Long subjectId, Long instrumentId);
+
   /**
    * Permanently revokes tokens that have lost read permission in the coalesced scope.
    *

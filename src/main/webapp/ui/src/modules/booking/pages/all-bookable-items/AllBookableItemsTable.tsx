@@ -29,7 +29,7 @@ import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 type AllBookableItemsTableProps = Omit<
   ReturnType<typeof useAllBookableItemsData>,
-  "config" | "invalidFilter" | "catalogue" | "runtimeFieldState" | "currentUser"
+  "config" | "invalidFilter" | "catalogue" | "runtimeFieldState"
 > & {
   types?: readonly string[];
   mine: boolean;
@@ -142,11 +142,12 @@ export function AllBookableItemsTable({
         label: t("allBookableItems.quickFilters.myItems"),
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: mine,
-        onClick: () =>
+        onClick: () => {
           void navigate({
             search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
             replace: true,
-          }),
+          });
+        },
       },
       ...(["available-now", "free-later-today"] as const).map((mode) => ({
         id: mode,
