@@ -10,7 +10,7 @@
         <property name="dataSource" ref="dataSource" />
         <property name="changeLog" value="classpath:sqlUpdates/liquibase-master.xml" />
         <!-- contexts specifies the runtime contexts to use. variable is substituted 
-            by Maven at build time. -->
+            by Gradle resource filtering at build time. -->
         <property name="contexts" value="${liquibase.context}" />
     </bean>
 
