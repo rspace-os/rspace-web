@@ -17,7 +17,7 @@ X-1 to X.
 3. cd into src/main/resources/sqlUpdates/liquibaseConfig and run the script
    `mysql -urspacedbuser -p < rs-dbbaseline-utf8.sql` which will populate the DB
    with the baseline tables.
-4. Launch with `mvn clean jetty:run -Denvironment=keepdbintact -Dlog4j2.configurationFile=log4j2-dev.xml -DRS.logLevel=INFO -Dspring.profiles.active=run -Dliquibase.context=run`.
+4. Launch with `./gradlew jettyRun -Denvironment=keepdbintact -Dlog4j2.configurationFile=log4j2-dev.xml -DRS.logLevel=INFO -Dspring.profiles.active=run -Dliquibase.context=run`.
    Note `-Dliquibase.context=run`, which will execute DB scripts from liquibase.
 5. Now reproduce the state of the DB to reproduce the bug.
 6. Now stop, checkout version X , relaunch as in step 4 - try to reproduce the error.

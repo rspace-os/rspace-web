@@ -14,9 +14,9 @@ https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-f
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
-Use Java 21 for development; builds, CI and the Docker dev stack default to it. Production servers may still run Java 17, so the code is still compiled for 17 (`release 17`) and a WAR built on either JDK runs on both. CI keeps testing on 17: a nightly job runs the Java tests on it, and the mocked e2e tests run on it after each merge to main. Run Maven on JDK 21 (`JAVA_HOME`): it compiles and runs the tests on that JDK, and the build fails fast on any other.
+Use Java 21 for development; builds, CI and the Docker dev stack default to it. Production servers may still run Java 17, so the code is still compiled for 17 (`release 17`) and a WAR built on either JDK runs on both. CI keeps testing on 17: a nightly job runs the Java tests on it, and the mocked e2e tests run on it after each merge to main. Gradle itself must run on 17 or 21 (`JAVA_HOME`), not just the toolchain JDK, because Spotless and the other plugins run in Gradle's own JVM; the build fails fast otherwise.
 
--   Install Java JDK 21 via [Adoptium](https://adoptium.net/temurin/releases/?version=21). Add JDK 17 if you want to reproduce a Java 17 failure (see [Run the build on Java 17](#optional-run-the-build-on-java-17)).
+-   Install Java JDK 21 via [Adoptium](https://adoptium.net/temurin/releases/?version=21). Add JDK 17 if you want to reproduce a Java 17 failure (see [Set up JDK toolchains](#set-up-jdk-toolchains-optional)).
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.11 or 11.8, the versions tested in CI and supported for production RSpace. The Docker dev stack
     defaults to 11.8, as does [rspace-docker](https://github.com/rspace-os/rspace-docker). For native installs, follow
@@ -29,17 +29,17 @@ Database installation can be skipped if your only goal is to compile/build the p
 
 ### Recommended software
 
-Install [Maven 3](https://maven.apache.org/download.cgi) (>=3.8.1).
-
-Alternatively, you can run builds using the `./mvnw` (Unix/Linux/Mac) or `./mvnw.cmd` (Windows) which installs Maven for you
-if you don't have it already.
+RSpace builds with Gradle. Run builds with the `./gradlew` (Unix/Linux/Mac) or `gradlew.bat` (Windows) wrapper,
+which downloads the right Gradle version for you; there is nothing else to install.
+Run it under a UTF-8 locale (e.g. `LANG=en_US.UTF-8`), never `LC_ALL=C`.
+See [Gradle.md](../Gradle.md) for the full build documentation.
 
 ### Install pnpm
 
-Maven's frontend build requires standalone pnpm on `PATH`. Maven invokes pnpm
+The Gradle frontend build requires standalone pnpm on `PATH`. Gradle invokes pnpm
 from `PATH`; it does not install pnpm. The root `package.json` pins Node.js in
 `devEngines.runtime`, and pnpm downloads that Node.js version for installs,
-scripts and Maven builds, checking it against the lockfile.
+scripts and Gradle builds, checking it against the lockfile.
 
 Install standalone pnpm once by following the [official pnpm installation
 instructions](https://pnpm.io/installation). On macOS and Linux, the installer
@@ -54,26 +54,18 @@ standalone binary, run `corepack disable pnpm` and make sure the standalone
 pnpm directory is first on `PATH`. The root `package.json` pins the pnpm version;
 pnpm itself honors this pin.
 
-### (Optional) Run the build on Java 17
+### Set up JDK toolchains (optional)
 
-Builds use the JDK that Maven runs on, so no Maven toolchain setup is needed. To compile and run the tests on Java 17, add a JDK 17 entry to `$HOME/.m2/toolchains.xml` and pass `-Djava-version=17`. This turns on the Maven toolchains plugin, which uses that JDK for compiling and testing.
+This enables us to run builds & tests using different JDK versions.
+Without any options, the JDK running Gradle compiles the code and runs the tests.
+To use another installed JDK, pass `-Djava-version=<17|21>` and optionally
+`-Djava-vendor=<vendor>` (e.g. `temurin`; `openjdk` matches any vendor). Gradle
+finds JDKs in `JAVA_HOME`, SDKMAN, asdf, the usual OS locations and an existing
+`~/.m2/toolchains.xml`; it does not download any. Run `./gradlew javaToolchains`
+to see what it found, and see [Gradle.md](../Gradle.md#toolchains) to add a JDK it
+doesn't find. So to run the tests on Java 17, install JDK 17 and pass `-Djava-version=17`.
 
-```xml
-<toolchains>
-   <toolchain>
-     <type>jdk</type>
-     <provides>
-       <version>17</version>
-       <vendor>openjdk</vendor> <!-- Only vendor=openjdk is accepted at the moment, though it does not have to be actual OpenJDK -->
-     </provides>
-     <configuration>
-       <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
-     </configuration>
-   </toolchain>
-</toolchains>
-```
-
-To run a branch on Java 17 in CI, start the "Coverage" workflow on that branch from the Actions tab. It builds on 21 and runs the unit, Spring and integration tests on a Java 17 JVM; the mocked e2e workflow runs on 17 for pushes to main and can be started on 17 by hand; every other workflow runs on 21. To do the same locally, add `-Djvm=/path/to/jdk17/bin/java` to a test command; this needs no toolchain.
+To run a branch on Java 17 in CI, start the "Coverage" workflow on that branch from the Actions tab. It builds on 21 and runs the unit, Spring and integration tests on Java 17; the mocked e2e workflow runs on 17 for pushes to main and can be started on 17 by hand; every other workflow runs on 21.
 
 ### Enable git hooks (recommended)
 
@@ -92,8 +84,8 @@ when dependencies live outside the project tree.
 
 The install command sets up a `pre-commit` hook that, on the relevant staged files:
 
-- runs `mvn spotless:check` on staged `*.java` files and **blocks the commit if
-  any need reformatting** (run `./mvnw spotless:apply` to fix), and
+- runs `./gradlew spotlessCheck -DspotlessStrict` on staged `*.java` files and **blocks the commit if
+  any need reformatting** (run `./gradlew spotlessApply -DspotlessStrict` to fix), and
 - runs `pnpm run tsc` when frontend `*.ts`/`*.tsx` files are staged and
   **blocks the commit if the type-check fails**.
 
@@ -130,29 +122,30 @@ made only there never reaches anyone else or CI.
 #### Sanity check
 
 As the 1st goal, you should be able to compile the java side of the code. 
-In command line, navigate to RSpace project top dir and run `mvn clean compile`.
+In command line, navigate to RSpace project top dir and run `./gradlew classes`.
 
-Note that on first run it'll take a while (a few minutes) to download artifacts/dependencies 
-from configured maven/jitpack repositories into your local maven repository.
+Note that on first run it'll take a while (a few minutes) to download Gradle and the 
+dependencies from Maven Central and JitPack into the Gradle cache (`~/.gradle`).
 
-If you get BUILD FAILURE message pointing to some missing jar, that could be intermittent issue
-so re-run mvn command with -U option which forces re-download on missing dependencies 
-(i.e. run `mvn -U clean compile`).
+If you get BUILD FAILED message pointing to some missing jar, that could be intermittent issue
+so re-run the command with `--refresh-dependencies`, which forces Gradle to check the
+repositories again (i.e. run `./gradlew classes --refresh-dependencies`).
 
-Eventually you should see the BUILD SUCCESS message, which means maven was able to resolve
+Eventually you should see the BUILD SUCCESSFUL message, which means Gradle was able to resolve
 all code dependencies and compile the code.
 
 ### (Optional) Build RSpace application package
 
-The application .war file can be built with the following maven command:  
+The application .war file can be built with the following Gradle command:  
 
 ```
-mvn clean package -DgenerateReactDist -DskipTests=true \
-  -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production
+./gradlew clean war -DgenerateReactDist \
+  -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
+  -Dtimestamp=now
 ```
 
-The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
-which runs `pnpm install --frozen-lockfile` and the Vite production build using
+The WAR is written to `build/libs/`. The `-DgenerateReactDist` flag makes `war` run
+`pnpm install --frozen-lockfile` and the Vite production build using
 Node.js and pnpm from `PATH`, then bundles the resulting `dist/` files into the
 WAR. Without this flag the frontend is not built.
 
@@ -220,10 +213,6 @@ or you see `'Access denied for user 'rspacedbuser'@'%' to database 'rspace'`
 
 **NOTE:** if you subsequently drop the rspace DB, the rspacedbuser user will stay; do not try to recreate the user.
 
-**NOTE:** on FIRST startup of Rspace with an empty rspace, don't skip the tests else liquibase fails for unknown reasons;
-i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
-in your launch config
-
 At the end of this, you should be able to connect to a standalone mysql rspace database from
 your command line. with `bash mysql -urspacedbuser -prspacedbpwd rspace`.
 For Mariadb use
@@ -241,7 +230,7 @@ if this folder does not exist)
 
 ### Run the default test suite (recommended)
 
-To run tests: `mvn clean test` runs all unit and Spring integration tests
+To run tests: `./gradlew test` runs all unit and Spring integration tests
 and may take over 10 mins to run. If these pass, or there are just a few
 failures, then your setup is basically fine.
 
@@ -253,24 +242,24 @@ database instead, pass `-Djdbc.url` (plus `-Djdbc.username`/`-Djdbc.password`
 if not the defaults). Only point it at a database whose contents you are happy
 to lose. To reset it from the baseline first, the reset step needs the same
 server and database spelled out separately, with credentials in
-`-Djdbc.username.maven`/`-Djdbc.password.maven`; the build fails if they
+`-Djdbc.server.username`/`-Djdbc.server.password`; the build fails if they
 disagree with `jdbc.url`:
 
 ```bash
-mvn clean test -Denvironment=drop-recreate-db \
+./gradlew test -Denvironment=drop-recreate-db \
   -Djdbc.url=jdbc:mysql://localhost:3307/rspace_test \
-  -Djdbc.url.maven=jdbc:mysql://localhost:3307 -Djdbc.db.maven=rspace_test
+  -Djdbc.server.url=jdbc:mysql://localhost:3307 -Djdbc.server.db=rspace_test
 ```
 
 Tests tagged `chemistry` are excluded because they require the OSS chemistry
 service. CI runs them in a separate job. See
-[CodingStandards.md](CodingStandards.md#maven-integration) for the local command
+[CodingStandards.md](CodingStandards.md#gradle-integration) for the local command
 and the conventions for performance and live-service tests.
 
 ### Running fast tests
 This just runs plain Junit tests and is much faster to run:
 
-`mvn clean test -Dfast=true`
+`./gradlew test -Dfast=true`
 
 ## Running RSpace server
 
@@ -278,10 +267,10 @@ This just runs plain Junit tests and is much faster to run:
 
 > **Experimental.** This is a newer, convenience-focused workflow and is not yet
 > the officially supported way to run RSpace from source. If you hit problems,
-> fall back to the manual Maven/Jetty workflow described below. Feedback welcome.
+> fall back to the manual Gradle/Jetty workflow described below. Feedback welcome.
 
 If you want a complete, running RSpace (database + backend + frontend) without
-installing Java, Maven, Node, or MariaDB locally, use the Dockerized dev stack
+installing Java, Node, or MariaDB locally, use the Dockerized dev stack
 in [`docker/dev/`](/docker/dev/README.md). From inside your checkout (or any git
 worktree):
 
@@ -303,12 +292,14 @@ needed for this option; the manual workflow below does not use Docker.
 
 The rest of this section describes the manual (non-Docker) workflow.
 
-### Launch RSpace with Maven and Jetty
+### Launch RSpace with Gradle and Jetty
+
+<!-- TODO(jetty): check this section against the jettyRun task once it lands in build.gradle. -->
 
 When starting RSpace for the first time use the following command: 
 
 ```bash
-mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
+./gradlew jettyRun -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
 -Dspring.profiles.active=run -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
@@ -329,12 +320,8 @@ no Vite dev server.
 
 Legacy `rst:assetUrl` references under `/scripts/**` and `/styles/**` do not add the `?v=`
 cache-busting token in dev mode by default. To opt back in while debugging legacy frontend asset
-changes, add `-DlegacyAssetCacheBustingInDevMode=true` to the Maven command. Production always
+changes, add `-DlegacyAssetCacheBustingInDevMode=true` to the Gradle command. Production always
 keeps cache busting enabled.
-
-**NOTE:** dont skip the tests compilation when cleaning the DB this way else existing data will not be deleted.
-- you can skip test compilation phase by adding -Dmaven.test.skip=true
-- you may find this useful if you want to apply new liquibase updates without deleting existing data.
 
 To keep the database intact, replace `-Denvironment=drop-recreate-db`
 with `-Denvironment=keepdbintact`. Unless you're working on new database
@@ -367,7 +354,7 @@ There are 3 product variants:
 3. Community (a slightly customized version that runs at community.researchspace.com)
 
 These have slightly different behaviours. To run in development, add the
-following to your mvn launch command:
+following to your Gradle launch command:
 
 Enterprise Standalone: this is the default, no extra configuration is needed.
 
@@ -418,7 +405,7 @@ docker run -d --name mailpit --rm \
   -e MP_SMTP_AUTH_ACCEPT_ANY=1 -e MP_SMTP_AUTH_ALLOW_INSECURE=1 \
   axllent/mailpit:latest
 
-mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
+./gradlew jettyRun -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
   -Dspring.profiles.active=run -DreactDevMode=true \
   -Demail.enabled=true -Dmail.emailHost=localhost -Dmail.port=1025 \
   -Dmail.emailAccount=mailpit -Dmail.password=mailpit -Dmail.ssl.enabled=false \
@@ -435,12 +422,12 @@ doesn't set it, so it inherits `defaultDeployment.properties`' literal
 validation rejects outright (`553 5.1.3 The address is not a valid RFC 5321
 address`) on `MAIL FROM`. Read captured mail at
 `http://localhost:8025`. If you're using the Docker dev stack instead of a
-bare `mvn jetty:run`, use `rspace-dev up --mailpit` instead (see
+bare `./gradlew jettyRun`, use `rspace-dev up --mailpit` instead (see
 `docker/dev/README.md`) — it wires the same properties automatically.
 
 #### Running RSpace in production mode locally
 
-Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`
+Run the usual `./gradlew jettyRun` command, just change the active spring profile to `prod`
 i.e. pass a `-Dspring.profiles.active=prod` parameter.
 
 Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
@@ -448,7 +435,7 @@ That means deployment properties that are not explicitly set in your `deployment
 
 #### Compiling RSpace production mode package
 
-Check the Jenkinsfile and mvn command run during "Build prodRelease-like package" stage:
+Check the Jenkinsfile and the Gradle command run during "Build prodRelease-like package" stage.
 
 ### Developer docs on specific subjects
 
@@ -457,6 +444,7 @@ Developer docs on specific subjects are as follows:
 | Document                                                              | Explanation |
 | ----------------------------------------------------------------------|-------------|
 |[Java.md](Java.md)                                         | How to setup your machine for back-end development. |
+|[Gradle.md](../Gradle.md)                                  | The build: commands, settings, tests and dependencies. |
 |[CodingStandards.md](CodingStandards.md)                   | Our conventions. |
 |[Logging.md](../Logging.md)                                | How to configure and use logging. |
 |[Caching.md](../Caching.md)                                | About server-side and client-side caching. |
