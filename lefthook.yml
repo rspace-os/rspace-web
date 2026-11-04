@@ -58,7 +58,7 @@ pre-commit:
           | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#[^A-Za-z0-9_]#g; s#^#.*#' \
           | paste -sd, -)
         if [ -n "$spotless_files" ]; then
-          ./mvnw -q spotless:check -DspotlessStrict -DspotlessFiles="$spotless_files"
+          ./gradlew -q spotlessCheck -DspotlessStrict -DspotlessFiles="$spotless_files"
         fi
     # Type-check the frontend when any staged TS/TSX file changes. tsc is a
     # whole-project check, so we run the full `tsc --noEmit` rather than a
