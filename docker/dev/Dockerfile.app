@@ -34,7 +34,7 @@ RUN set -eux; \
     # flag or cannot run.
     /opt/jbr/bin/java -XX:+AllowEnhancedClassRedefinition -version
 
-# Run both Gradle and its Jetty JavaExec child on JBR.
+# Run the short Gradle build and the standalone Jetty JVM on JBR.
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 ENV GRADLE_USER_HOME=/root/.gradle
 ENV JAVA_HOME=/opt/jbr

@@ -14,8 +14,9 @@ Use the stack to reproduce crashes, inspect runtime state, diagnose regressions,
 and verify fixes end to end. Code reading and covered unit/integration behavior
 do not require booting it.
 
-Commands affect only this worktree. Gradle/pnpm caches are shared across
-worktrees; `down` and `nuke` never delete them.
+Commands affect only this worktree. Only pnpm is shared. Gradle home, project
+caches and outputs use per-stack volumes. `down` retains them; `nuke` deletes
+them and the legacy per-stack `app-target`. Host builds can run concurrently.
 
 ## Start and inspect
 
