@@ -1,4 +1,4 @@
-import com.researchspace.build.MavenPlaceholderFilter
+import com.researchspace.build.PlaceholderFilter
 import com.researchspace.build.RecreateDatabase
 import com.researchspace.build.TestDatabase
 import java.time.ZoneOffset
@@ -7,28 +7,87 @@ import java.time.format.DateTimeFormatter
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
-// Gradle build mirroring pom.xml for compile, test, and WAR packaging, alongside Maven, which
-// stays the source of truth. See DevDocs/DeveloperNotes/Gradle.md.
+// The RSpace build: compile, test, WAR packaging, formatting and database tooling.
+// See DevDocs/DeveloperNotes/Gradle.md.
 
 plugins {
   id 'war'
   id 'com.diffplug.spotless' version '8.11.0'
+  id 'org.gradle.test-retry' version '1.6.6'
 }
 
 group = 'com.github.rspace-os'
 
-// Maven stamps every build with a fresh timestamp, so rs.properties changes on every run and
-// nothing downstream of it can be up to date. Local builds use a fixed value; release builds
-// pass -Ptimestamp=<value>, or -Ptimestamp=now.
-def buildTimestamp = providers.gradleProperty('timestamp').map {
+// ---------------------------------------------------------------------------------------------
+// Build settings. Every -D<name>=<value> on the command line is a build setting, as Maven user
+// properties were: it overrides the resource-filter property of that name, and reaches every test
+// JVM and the Jetty JVM as a system property. -P<name>=<value> also works for the switches below
+// and the resource-filter defaults.
+// ---------------------------------------------------------------------------------------------
+// The Gradle client sets these itself on every invocation.
+def gradleClientProperties = ['file.encoding', 'user.country', 'user.language', 'user.variant']
+def cliPropertyNames = gradle.startParameter.systemPropertiesArgs.keySet() - gradleClientProperties
+// Read through a provider so that the configuration cache notices added or changed -D values.
+// A bare -D<name> means true, as it did for Maven.
+def cliSystemProperties = new TreeMap<String, String>(
+  providers.systemPropertiesPrefixedBy('').get().findAll { k, v -> k in cliPropertyNames }
+    .collectEntries { k, v -> [(k): v == '' ? 'true' : v] })
+// gradle/jetty.gradle forwards these to the Jetty JVM.
+ext.cliSystemProperties = cliSystemProperties
+
+def setting = { String name -> cliSystemProperties.containsKey(name) ? cliSystemProperties[name] : providers.gradleProperty(name).getOrNull() }
+// Maven activated these profiles when the property was defined at all, whatever its value.
+def flag = { String name -> setting(name) != null }
+
+def buildEnvironment = setting('environment')
+def knownEnvironments = [null, 'drop-recreate-db', 'drop-recreate-hibernate-db', 'keepdbintact', 'prodRelease']
+if (!(buildEnvironment in knownEnvironments)) {
+  throw new GradleException("Unknown -Denvironment=${buildEnvironment}; expected one of ${knownEnvironments.drop(1).join(', ')}")
+}
+def prodRelease = buildEnvironment == 'prodRelease'
+// Test tasks (and jettyRun) first drop and recreate the test database.
+def recreatesDatabase = buildEnvironment in ['drop-recreate-db', 'drop-recreate-hibernate-db']
+ext.recreatesDatabase = recreatesDatabase
+
+// As maven-enforcer-plugin's requireJavaVersion did: the JVM running Gradle also runs Spotless and
+// the other plugins, which fail late and cryptically on other versions.
+if (!(JavaVersion.current().majorVersion in ['17', '21'])) {
+  throw new GradleException("RSpace builds on Java 17 or 21, not ${JavaVersion.current()}. Run Gradle with one of those " +
+    '(JAVA_HOME), and pass -Djava-version to pick the toolchain JDK.')
+}
+
+// Stamped into the version and rs.properties. A fixed default keeps resources up to date between
+// local builds; release builds pass -Dtimestamp=<value>, or -Dtimestamp=now.
+def buildTimestamp = (setting('timestamp') ?: 'dev').with {
   it == 'now' ? DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").format(ZonedDateTime.now(ZoneOffset.UTC)) : it
-}.getOrElse('dev')
+}
 version = "2.28.0-SNAPSHOT-${buildTimestamp}"
 
+// -Djava-version / -Djava-vendor pick the JDK that compiles and runs the tests from the installed
+// ones (JAVA_HOME, ~/.m2/toolchains.xml, SDKMAN and the other places Gradle looks), as the Maven
+// toolchains plugin did. Nothing is downloaded. Without them, the JDK running Gradle compiles.
+def toolchainVendors = [
+  temurin: JvmVendorSpec.ADOPTIUM, adoptium: JvmVendorSpec.ADOPTIUM, zulu: JvmVendorSpec.AZUL,
+  azul: JvmVendorSpec.AZUL, corretto: JvmVendorSpec.AMAZON, amazon: JvmVendorSpec.AMAZON,
+  microsoft: JvmVendorSpec.MICROSOFT, oracle: JvmVendorSpec.ORACLE, graalvm: JvmVendorSpec.GRAAL_VM,
+  liberica: JvmVendorSpec.BELLSOFT, bellsoft: JvmVendorSpec.BELLSOFT, semeru: JvmVendorSpec.IBM,
+  ibm: JvmVendorSpec.IBM, sapmachine: JvmVendorSpec.SAP, sap: JvmVendorSpec.SAP,
+]
+def javaVersionSetting = setting('java-version')
+def javaVendorSetting = setting('java-vendor')
 java {
-  // The JDK running Gradle compiles with --release 17, as maven-compiler-plugin does.
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  if (javaVersionSetting != null || javaVendorSetting != null) {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(javaVersionSetting ?: '17')
+      // "openjdk", Maven's default vendor, names no particular build, so it matches any JDK.
+      if (javaVendorSetting != null && javaVendorSetting.toLowerCase() != 'openjdk') {
+        vendor = toolchainVendors[javaVendorSetting.toLowerCase()] ?: JvmVendorSpec.matching(javaVendorSetting)
+      }
+    }
+  } else {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+  }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -38,35 +97,35 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Dependency versions and scopes: match what Maven resolves for pom.xml, since Gradle's
-// highest-version conflict resolution and scope handling differ from Maven's nearest-wins.
+// Dependency versions and scopes, from gradle/pinned-versions.txt. Forcing every module's version
+// replaces Gradle's highest-version conflict resolution with one chosen version per module.
 // ---------------------------------------------------------------------------------------------
-def mavenModules = [:]
-file('gradle/maven-resolved-versions.txt').eachLine { line ->
+def pinnedModules = [:]
+file('gradle/pinned-versions.txt').eachLine { line ->
   if (line.isBlank() || line.startsWith('#')) {
     return
   }
   def (ga, rest) = line.split('=', 2)
   def (version, scope) = rest.trim().split(' ')
-  mavenModules[ga] = [version: version, scope: scope]
+  pinnedModules[ga] = [version: version, scope: scope]
 }
 
-configurations.configureEach {
-  resolutionStrategy.force(mavenModules.collect { ga, m -> "${ga}:${m.version}".toString() })
+// JaCoCo's own tooling resolves its own versions.
+configurations.matching { !it.name.startsWith('jacoco') }.configureEach {
+  resolutionStrategy.force(pinnedModules.collect { ga, m -> "${ga}:${m.version}".toString() })
 }
 
-// Maven narrows a module to the scope of its nearest declaration, so spring-test declared
-// test-scoped stays off the main classpath even when a compile dependency drags it in. Gradle
-// keeps each edge's own scope, so exclude what Maven keeps out. Maven's test classpaths hold
-// every scope and need no excludes.
-def excludeMavenScopes = { Configuration conf, List<String> scopes ->
-  mavenModules.findAll { ga, m -> m.scope in scopes }.keySet().each { ga ->
+// A module stays off the classpaths its pinned scope excludes, even when a dependency of another
+// scope drags it in: spring-test, say, stays off the main classpath. Test classpaths hold every
+// scope.
+def excludePinnedScopes = { Configuration conf, List<String> scopes ->
+  pinnedModules.findAll { ga, m -> m.scope in scopes }.keySet().each { ga ->
     def (g, a) = ga.split(':')
     conf.exclude(group: g, module: a)
   }
 }
-configurations.compileClasspath { excludeMavenScopes(it, ['runtime', 'test']) }
-configurations.runtimeClasspath { excludeMavenScopes(it, ['test', 'provided']) }
+configurations.compileClasspath { excludePinnedScopes(it, ['runtime', 'test']) }
+configurations.runtimeClasspath { excludePinnedScopes(it, ['test', 'provided']) }
 
 dependencies {
   implementation('org.mnode.ical4j:ical4j:3.0.11') {
@@ -416,57 +475,58 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-core:2.25.5'
   implementation 'org.apache.logging.log4j:log4j-api:2.25.5'
 
-  // Maven's provided scope is on the test classpath too
+  // provided-scope modules are on the test classpath too
   testImplementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
   testImplementation 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
-  // Gradle 9 needs the launcher on the test runtime classpath; Surefire brings its own
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.1.3'
-  // Maven compiles tests against runtime-scoped jars too (e.g. json-smart, which
-  // SysAdminControllerMVCIT imports); Gradle's testCompileClasspath holds only API jars.
-  mavenModules.findAll { ga, m -> m.scope == 'runtime' }.each { ga, m ->
+  // Tests compile against runtime-scoped modules too (e.g. json-smart, which
+  // SysAdminControllerMVCIT imports), so put every pinned runtime module on that classpath.
+  pinnedModules.findAll { ga, m -> m.scope == 'runtime' }.each { ga, m ->
     testCompileOnly("${ga}:${m.version}") { transitive = false }
   }
 }
 
 // ---------------------------------------------------------------------------------------------
-// Resource filtering: values for ${name} and @name@ placeholders, from
-// gradle/resource-filter.properties (pom.xml's <properties>), overridable with -P<name>=<value>
-// as Maven allowed with -D<name>=<value>.
+// Resource filtering: values for ${name} and @name@ placeholders. Precedence, lowest first:
+// gradle/resource-filter.properties, the -Denvironment profile's values, -P<name>=<value>, and
+// -D<name>=<value>.
 // ---------------------------------------------------------------------------------------------
 def filterProperties = new TreeMap<String, String>()
 file('gradle/resource-filter.properties').withReader('UTF-8') { reader ->
   def props = new Properties()
   props.load(reader)
-  props.each { k, v -> filterProperties[k.toString()] = providers.gradleProperty(k.toString()).getOrElse(v.toString()) }
+  props.each { k, v -> filterProperties[k.toString()] = v.toString() }
 }
-// -Penvironment=drop-recreate-db mirrors pom.xml's mysql-clean-liquibase profile: test tasks
-// first run recreateDatabase, and resources get the profile's properties.
-def dropRecreateDb = providers.gradleProperty('environment').getOrNull() == 'drop-recreate-db'
-def profileFilterProperties = dropRecreateDb ? [
-  'ssl.enabled': 'false',
-  // as in pom.xml, which yields ?false=false rather than ?useSSL=false
-  'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false',
-] : [:]
-// Maven filters with every -D property. These placeholders have no default and are replaced only
-// when given as -P<name>=<value> (or by the profile above); others stay for Spring to resolve.
-['jdbc.url', 'ssl.enabled', 'RS.devlogLevel'].each { name ->
-  def value = providers.gradleProperty(name).getOrNull() ?: profileFilterProperties[name]
+def environmentFilterProperties = [
+  // as Maven gave it, ?false=false rather than ?useSSL=false
+  'drop-recreate-db'          : ['context.path': '/', 'ssl.enabled': 'false',
+                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false'],
+  'drop-recreate-hibernate-db': ['jdbc.db.maven': 'rspace_hib', 'context.path': '/', 'ssl.enabled': 'false',
+                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false'],
+  'keepdbintact'              : ['context.path': '/', 'ssl.enabled': 'false'],
+  'prodRelease'               : ['context.path': '/'],
+]
+filterProperties.putAll(environmentFilterProperties[buildEnvironment] ?: [:])
+// Placeholders with no default, left for Spring to resolve unless given.
+(filterProperties.keySet() + ['jdbc.url', 'ssl.enabled', 'RS.devlogLevel']).each { name ->
+  def value = providers.gradleProperty(name).getOrNull()
   if (value != null) {
     filterProperties[name] = value
   }
 }
+filterProperties.putAll(cliSystemProperties)
 filterProperties['project.version'] = version.toString()
 filterProperties['version'] = version.toString()
 filterProperties['project.artifactId'] = 'researchspace'
 filterProperties['project.basedir'] = projectDir.absolutePath
+filterProperties['timestamp'] = buildTimestamp
 // resolve values that reference other properties, e.g. propertyFileDirPlaceholder
 5.times {
   filterProperties.replaceAll { k, v -> v.replaceAll(/\$\{([A-Za-z0-9_.\-]+)}/) { all, name -> filterProperties[name] ?: all } }
 }
 def deployment = filterProperties['deployment']
 
-// The extensions in pom.xml's nonFilteredFileExtensions: binaries, which filtering would corrupt.
-// Keep the two lists in step.
+// Binary files, which filtering would corrupt
 def binaryPatterns = [
   'zip', 'doc', 'tif', 'tiff', 'jpg', 'png', 'pdf', 'mp3', 'ttf',
   'jpeg', 'gif', 'docx', 'xlsx', 'odt', 'ods', 'odp', 'cdx', 'mp4', 'flv',
@@ -475,6 +535,7 @@ def binaryPatterns = [
 sourceSets {
   main {
     resources {
+      // only the selected deployment's folder
       include '*.*', 'formIcons/**', 'META-INF/**', 'sqlUpdates/**', 'scripts/**',
         'velocityTemplates/**', 'archiveResources/**', 'StartUpData/**', 'inventory/**',
         "deployments/${deployment}/**", 'deployments/defaultDeployment.properties', 'fonts/*'
@@ -487,10 +548,12 @@ tasks.named('processResources') {
   inputs.properties(filterProperties)
   filteringCharset = 'UTF-8'
   def filterArgs = [properties: new HashMap(filterProperties)]
+  // applicationContext-dao.xml keeps its placeholders for deployment.properties at runtime
   filesNotMatching(['applicationContext-dao.xml', 'fonts/**', 'com/**', 'org/**', 'i18n/**'] + binaryPatterns) {
-    filter(filterArgs, MavenPlaceholderFilter)
+    filter(filterArgs, PlaceholderFilter)
   }
   from('src/main/java') { include '**/*.properties' }
+  // shared i18next phrases for JsonMessageSource
   from('src/main/webapp/ui/src/modules/common/i18n/locales') {
     include '**/*.json'
     into 'i18n/locales'
@@ -506,21 +569,23 @@ tasks.named('processTestResources') {
     exclude 'ui/node/**', 'ui/node_modules/**', 'ui/dist/**', 'ui/storybook-static/**'
   }
   filesNotMatching(binaryPatterns) {
-    filter(filterArgs, MavenPlaceholderFilter)
+    filter(filterArgs, PlaceholderFilter)
   }
 }
 
 // ---------------------------------------------------------------------------------------------
-// Tests, mirroring the Surefire executions in pom.xml
+// Test database: -Denvironment=drop-recreate-db reloads it from the baseline schema before the
+// tests; -Denvironment=drop-recreate-hibernate-db leaves rspace_hib empty, for a schema
+// generated from the Hibernate mappings (see liquibaseDiff).
 // ---------------------------------------------------------------------------------------------
 def jdbcDriverScope = configurations.dependencyScope('jdbcDriver')
 def jdbcDriverClasspath = configurations.resolvable('jdbcDriverClasspath') { extendsFrom(jdbcDriverScope.get()) }
 dependencies {
-  jdbcDriver "com.mysql:mysql-connector-j:${mavenModules['com.mysql:mysql-connector-j'].version}"
+  jdbcDriver "com.mysql:mysql-connector-j:${pinnedModules['com.mysql:mysql-connector-j'].version}"
 }
 
 tasks.register('recreateDatabase', RecreateDatabase) {
-  description = 'Drops the test database and recreates it from the baseline schema (-Penvironment=drop-recreate-db).'
+  description = 'Drops and recreates the test database (-Denvironment=drop-recreate-db or drop-recreate-hibernate-db).'
   group = LifecycleBasePlugin.VERIFICATION_GROUP
   driverClasspath.from(jdbcDriverClasspath)
   driverClassName = filterProperties['jdbc.driverClassName.maven']
@@ -528,52 +593,88 @@ tasks.register('recreateDatabase', RecreateDatabase) {
   databaseName = filterProperties['jdbc.db.maven']
   username = filterProperties['jdbc.username.maven']
   password = filterProperties['jdbc.password.maven']
-  baselineScript = layout.projectDirectory.file('src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql')
+  if (buildEnvironment != 'drop-recreate-hibernate-db') {
+    baselineScript = layout.projectDirectory.file('src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql')
+  }
 }
 
-// Surefire passes every Maven -D property to the test JVM. Gradle passes on only these -D
-// properties: switches the tests read, and JVM settings CI sets. Add new ones here.
-def forwardedTestSystemProperties = [
-  'fast', 'deployment', 'nightly', 'weekly', 'RS_FILE_BASE', 'hibtest.db', 'loggingDirectory',
-  'javax.xml.accessExternalDTD', 'log4j2.configurationFile', 'bioportal.api.key',
-  'bioportal.realConnectionTests', 'digitalCommons.realConnectionTests',
-  'fieldmark.realConnectionTests', 'licenseServer.realConnectionTests', 'slack.realConnectionTests',
-]
+if (recreatesDatabase) {
+  // Archives and PDFs left in the attachment index folder by earlier runs
+  tasks.named('clean') {
+    delete fileTree(filterProperties['lucene.attachment.searchIndex']) { include 'archive/*', 'pdfs/*' }
+  }
+}
 
+// ---------------------------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------------------------
 def runProfileITs = ['RunConfigWiringTestIT', 'SysAdminConfigControllerMVCIT', 'SysAdminSupportControllerMVCIT']
 def problematicITs = ['ExportApiControllerMVCIT', 'CreateMissingUserFoldersForLabAdminsAndPIsIT']
 
 // With the configuration cache on, Gradle runs a project's tasks in parallel. Test tasks share one
-// database, so they take turns, as Surefire's executions do.
+// database, so they take turns.
 def testDatabase = gradle.sharedServices.registerIfAbsent('testDatabase', TestDatabase) {
   maxParallelUsages = 1
 }
 
+// -Dtest=<pattern>[,<pattern>...], as Surefire took it: a class name or glob, optionally with
+// #method (or #m1+m2), a !-prefixed pattern to exclude, or a path such as **/FooTest.java. It
+// replaces each test task's own class includes, so -Dtest=FooIT runs FooIT under `test` too.
+def testPatterns = setting('test')?.split(',')*.trim()?.findAll { it } ?: []
+def toGradleTestPatterns = { String pattern ->
+  def (cls, methods) = pattern.contains('#') ? pattern.split('#', 2) as List : [pattern, null]
+  cls = cls.replaceAll(/\.(java|class)$/, '').replace('/', '.').replaceAll(/^(\*\*\.)+/, '*.')
+  methods ? methods.split('\\+').collect { "${cls}.${it}".toString() } : [cls]
+}
+
+def forkCountSetting = setting('forkCount') ?: setting('maxTestForks')
+def testForks = forkCountSetting == null ? null : forkCountSetting.endsWith('C')
+  ? Math.max(1, (forkCountSetting[0..-2].toBigDecimal() * Runtime.runtime.availableProcessors()).intValue())
+  : forkCountSetting.toInteger()
+def rerunFailingTestsCount = (setting('surefire.rerunFailingTestsCount') ?: '0').toInteger()
+def includedTestGroups = setting('includedTestGroups') ?: ''
+def excludedTestGroups = setting('excludedTestGroups') ?: 'chemistry'
+
 tasks.withType(Test).configureEach {
   usesService(testDatabase)
   useJUnitPlatform {
-    def included = providers.gradleProperty('includedTestGroups').getOrElse('')
-    if (!included.isBlank()) {
-      includeTags(*included.split(','))
+    if (!includedTestGroups.isBlank()) {
+      includeTags(*includedTestGroups.split(','))
     }
-    excludeTags(*providers.gradleProperty('excludedTestGroups').getOrElse('chemistry').split(','))
+    if (!excludedTestGroups.isBlank()) {
+      excludeTags(*excludedTestGroups.split(','))
+    }
   }
   maxHeapSize = '1536m'
   jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED',
     '--add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED'
-  forwardedTestSystemProperties.each { name ->
-    def value = providers.systemProperty(name).getOrNull()
-    if (value != null) {
-      systemProperty name, value
-    }
-  }
-  if (dropRecreateDb) {
+  systemProperties cliSystemProperties
+  if (recreatesDatabase) {
     dependsOn 'recreateDatabase'
     doNotTrackState('Runs against a database recreated for this build')
   }
-  def forks = providers.gradleProperty('maxTestForks').getOrNull()
-  if (forks != null) {
-    maxParallelForks = forks.toInteger()
+  if (testForks != null) {
+    maxParallelForks = testForks
+  }
+  ignoreFailures = setting('maven.test.failure.ignore') == 'true'
+  retry {
+    maxRetries = rerunFailingTestsCount
+    // a test that passes on a rerun counts as flaky, not failed
+    failOnPassedAfterRetry = false
+  }
+  if (testPatterns) {
+    setIncludes([])
+    setExcludes([])
+    filter {
+      failOnNoMatchingTests = false
+      testPatterns.each { pattern ->
+        if (pattern.startsWith('!')) {
+          toGradleTestPatterns(pattern.substring(1)).each { excludeTestsMatching it }
+        } else {
+          toGradleTestPatterns(pattern).each { includeTestsMatching it }
+        }
+      }
+    }
   }
   testLogging {
     events 'failed'
@@ -582,8 +683,9 @@ tasks.withType(Test).configureEach {
 }
 
 tasks.named('test') {
-  // Surefire's default includes
-  include '**/Test*.class', '**/*Test.class', '**/*Tests.class', '**/*TestCase.class'
+  if (!testPatterns) {
+    include '**/Test*.class', '**/*Test.class', '**/*Tests.class', '**/*TestCase.class'
+  }
 }
 
 def registerItTask = { String name, String desc, Closure configure ->
@@ -592,13 +694,15 @@ def registerItTask = { String name, String desc, Closure configure ->
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    mustRunAfter tasks.named('test')
-    configure.delegate = it
-    configure()
+    mustRunAfter tasks.named('test'), tasks.named('war')
+    if (!testPatterns) {
+      configure.delegate = it
+      configure()
+    }
   }
 }
 
-def integrationTest = registerItTask('integrationTest', 'Runs *IT tests (Surefire integration-tests execution).') {
+def integrationTest = registerItTask('integrationTest', 'Runs the *IT tests, apart from the two groups below.') {
   include '**/*IT.class'
   (runProfileITs + problematicITs).each { exclude "**/${it}.class" }
 }
@@ -608,20 +712,72 @@ def integrationTestRun = registerItTask('integrationTestRun', 'Runs the run-prof
 def integrationTestProblematic = registerItTask('integrationTestProblematic', 'Runs the problematic *IT tests.') {
   problematicITs.each { include "**/${it}.class" }
 }
-// Surefire's execution order
 integrationTestRun.configure { mustRunAfter integrationTest }
 integrationTestProblematic.configure { mustRunAfter integrationTestRun }
-tasks.named('check') { dependsOn integrationTest, integrationTestRun, integrationTestProblematic }
+
+def integrationTests = tasks.register('integrationTests') {
+  description = 'Runs integrationTest, integrationTestRun and integrationTestProblematic, in that order.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  dependsOn integrationTest, integrationTestRun, integrationTestProblematic
+}
+tasks.named('check') { dependsOn integrationTests }
+tasks.register('verify') {
+  description = 'Runs the unit and Spring tests, builds the WAR, then runs the integration tests.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  dependsOn tasks.named('test'), tasks.named('war'), integrationTests
+}
+
+// -DenableTestCoverage: JaCoCo agents on every test task, and XML, CSV and HTML reports after
+// `test` (jacocoTestReport) and after the integration tests (jacocoIntegrationTestReport).
+if (flag('enableTestCoverage')) {
+  apply plugin: 'jacoco'
+  jacoco {
+    toolVersion = '0.8.15'
+  }
+  tasks.named('jacocoTestReport', JacocoReport) {
+    reports {
+      xml.required = true
+      csv.required = true
+      html.required = true
+    }
+  }
+  def jacocoIntegrationTestReport = tasks.register('jacocoIntegrationTestReport', JacocoReport) {
+    description = 'Writes the coverage report for the integration tests.'
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    def itTasks = [integrationTest, integrationTestRun, integrationTestProblematic]
+    mustRunAfter itTasks
+    // a task skipped by -Dtest leaves no exec file
+    executionData.from(files(itTasks.collect { t -> t.map { it.extensions.getByType(JacocoTaskExtension).destinationFile } })
+      .filter { it.exists() })
+    sourceSets sourceSets.main
+    def outDir = layout.buildDirectory.dir('reports/jacoco/integrationTests')
+    reports {
+      xml.required = true
+      xml.outputLocation = outDir.map { it.file('jacocoIntegrationTestReport.xml') }
+      csv.required = true
+      csv.outputLocation = outDir.map { it.file('jacocoIntegrationTestReport.csv') }
+      html.required = true
+      html.outputLocation = outDir.map { it.dir('html') }
+    }
+  }
+  tasks.named('test') { finalizedBy 'jacocoTestReport' }
+  [integrationTest, integrationTestRun, integrationTestProblematic].each { t ->
+    t.configure { finalizedBy jacocoIntegrationTestReport }
+  }
+}
 
 // ---------------------------------------------------------------------------------------------
-// Frontend bundle (Maven's -DgenerateReactDist profile). Unlike the exec-maven-plugin
-// executions, these tasks are skipped when their inputs have not changed.
+// Frontend bundle (-DgenerateReactDist) and Storybook (-DgenerateStorybook=true), skipped when
+// their inputs have not changed.
 // ---------------------------------------------------------------------------------------------
 def uiDir = layout.projectDirectory.dir('src/main/webapp/ui')
+def uiSources = uiDir.asFileTree.matching {
+  include 'src/**', '.storybook/**', '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html'
+}
 def pnpmInstall = tasks.register('pnpmInstall', Exec) {
   description = 'Installs frontend dependencies.'
   workingDir = projectDir
-  commandLine 'pnpm', 'install', '--frozen-lockfile'
+  commandLine(['pnpm'] + (setting('frontend.dependencies.install.arg') ?: 'install --frozen-lockfile').split(' ').toList())
   inputs.files('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', uiDir.file('package.json'))
   outputs.dir(uiDir.dir('node_modules'))
 }
@@ -630,10 +786,56 @@ def buildFrontend = tasks.register('buildFrontend', Exec) {
   dependsOn pnpmInstall
   workingDir = projectDir
   commandLine 'pnpm', 'run', 'build'
-  inputs.dir(uiDir.dir('src')).withPathSensitivity(PathSensitivity.RELATIVE)
-  inputs.files(uiDir.asFileTree.matching { include '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html' })
-    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
   outputs.dir(uiDir.dir('dist'))
+}
+def buildStorybook = tasks.register('buildStorybook', Exec) {
+  description = 'Builds Storybook into src/main/webapp/ui/storybook-static.'
+  dependsOn pnpmInstall
+  workingDir = projectDir
+  commandLine 'pnpm', 'run', 'storybook:build'
+  inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
+  outputs.dir(uiDir.dir('storybook-static'))
+}
+
+// ---------------------------------------------------------------------------------------------
+// -Denvironment=prodRelease: release checks and htmlDocs, as the old prodRelease profile did.
+// ---------------------------------------------------------------------------------------------
+// DevDocs/public rendered to HTML. Nothing in this repository reads them; release tooling may.
+def htmlDocs = tasks.register('htmlDocs', com.researchspace.build.MarkdownToHtml) {
+  description = 'Renders DevDocs/public/*.md to build/htmlDocs/*.html (run by -Denvironment=prodRelease).'
+  source = layout.projectDirectory.dir('DevDocs/public')
+  outputDir = layout.buildDirectory.dir('htmlDocs')
+}
+
+// A Maven snapshot version: ends in SNAPSHOT, or is a deployed snapshot such as 1.0-20260101.120000-1
+def isSnapshot = { String v -> v.endsWith('SNAPSHOT') || v ==~ /^.*-\d{8}\.\d{6}-\d+$/ }
+def checkReleaseDependencies = tasks.register('checkReleaseDependencies') {
+  description = 'Fails if the build or any dependency is a snapshot version (run by -Denvironment=prodRelease).'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  def projectVersion = version.toString()
+  def resolved = ['compileClasspath', 'runtimeClasspath', 'testCompileClasspath', 'testRuntimeClasspath'].collect { name ->
+    configurations.named(name).flatMap { it.incoming.artifacts.resolvedArtifacts }.map { arts ->
+      arts.collect { it.id.componentIdentifier }.findAll { it instanceof ModuleComponentIdentifier }
+        .collect { "${it.group}:${it.module}:${it.version}".toString() }
+    }
+  }
+  doLast {
+    // The -<timestamp> suffix makes 2.28.0-SNAPSHOT-<timestamp> a release version, as it was for
+    // the enforcer's requireReleaseVersion rule.
+    if (isSnapshot(projectVersion)) {
+      throw new GradleException("Release builds need a release version, not ${projectVersion}")
+    }
+    def snapshots = resolved.collectMany { it.get() }.unique().sort().findAll { isSnapshot(it.split(':')[2]) }
+    if (snapshots) {
+      throw new GradleException("Release builds cannot depend on snapshots:\n  ${snapshots.join('\n  ')}")
+    }
+  }
+}
+
+if (prodRelease) {
+  tasks.named('processResources') { dependsOn htmlDocs }
+  tasks.named('war') { dependsOn checkReleaseDependencies }
 }
 
 tasks.named('war') {
@@ -642,39 +844,124 @@ tasks.named('war') {
   inputs.properties(filterProperties)
   def filterArgs = [properties: new HashMap(filterProperties)]
   filesMatching(['META-INF/**', 'WEB-INF/security.xml']) {
-    filter(filterArgs, MavenPlaceholderFilter)
+    filter(filterArgs, PlaceholderFilter)
   }
-  if (providers.gradleProperty('generateReactDist').isPresent()) {
+  if (flag('generateReactDist')) {
     dependsOn buildFrontend
+  }
+  if (setting('generateStorybook') == 'true') {
+    // under WEB-INF, so the deployment property controls access to it
+    from(buildStorybook) { into 'WEB-INF/storybook' }
   }
 }
 
+tasks.register('printVersion') {
+  description = 'Prints the project version.'
+  def v = version.toString()
+  doLast { println v }
+}
+
 // ---------------------------------------------------------------------------------------------
-// Formatting. Maven runs spotless:apply on every compile; here it is an explicit spotlessApply
-// task plus spotlessCheck under `check`, so compilation stays cacheable.
+// Formatting: spotlessApply and spotlessCheck (under `check`). -DspotlessStrict adds CleanThat;
+// -DspotlessFiles=<regex>[,<regex>...] limits both to files whose absolute path matches one.
 // ---------------------------------------------------------------------------------------------
+def spotlessFiles = setting('spotlessFiles')?.split(',')*.trim()?.findAll { it }
 spotless {
   java {
+    if (spotlessFiles) {
+      target(sourceSets.main.allJava.plus(sourceSets.test.allJava).filter { f ->
+        spotlessFiles.any { f.absolutePath.matches(it) }
+      })
+    }
     toggleOffOn()
+    if (flag('spotlessStrict')) {
+      // Off by default because it rewrites more than formatting
+      cleanthat().sourceCompatibility('1.7')
+    }
     removeUnusedImports()
     googleJavaFormat('1.28.0').reflowLongStrings()
   }
 }
 
-// Writes resolved module coordinates per classpath to build/classpaths, for comparison with
-// `mvn dependency:list` (see scripts/gradle/compare-classpaths.sh).
-tasks.register('dumpClasspaths') {
-  def classpaths = ['compileClasspath', 'runtimeClasspath', 'testCompileClasspath', 'testRuntimeClasspath'].collectEntries { name ->
-    [(name): configurations.named(name).flatMap { it.incoming.artifacts.resolvedArtifacts }.map { arts ->
-      arts.collect { it.id.componentIdentifier }
-        .findAll { it instanceof ModuleComponentIdentifier }
-        .collect { "${it.group}:${it.module}:${it.version}".toString() }
-        .sort()
-    }]
+// ---------------------------------------------------------------------------------------------
+// liquibaseDiff: writes the changes that would bring the rspace database's schema in line with
+// rspace_hib's to generatedDBChangeSets/diffChangeset-<timestamp>.xml. Connection settings come
+// from sqlUpdates/liquibaseConfig/liquibase.properties; override one with -Dliquibase.<key>.
+// ---------------------------------------------------------------------------------------------
+def liquibaseScope = configurations.dependencyScope('liquibase')
+def liquibaseClasspath = configurations.resolvable('liquibaseClasspath') { extendsFrom(liquibaseScope.get()) }
+dependencies {
+  liquibase "org.liquibase:liquibase-core:${pinnedModules['org.liquibase:liquibase-core'].version}"
+  liquibase "com.mysql:mysql-connector-j:${pinnedModules['com.mysql:mysql-connector-j'].version}"
+  // the command line's parser, which liquibase-core does not bring along
+  liquibase "info.picocli:picocli:${pinnedModules['info.picocli:picocli'].version}"
+}
+tasks.register('liquibaseDiff', JavaExec) {
+  description = 'Writes a Liquibase changelog of the schema differences between rspace and rspace_hib.'
+  group = 'database'
+  classpath = files(liquibaseClasspath)
+  mainClass = 'liquibase.integration.commandline.LiquibaseCommandLine'
+  def lbProperties = new Properties()
+  file('src/main/resources/sqlUpdates/liquibaseConfig/liquibase.properties').withReader('UTF-8') { lbProperties.load(it) }
+  def lb = { String key -> cliSystemProperties["liquibase.${key}".toString()] ?: lbProperties.getProperty(key) }
+  def stamp = setting('timestamp') ?: DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").format(ZonedDateTime.now(ZoneOffset.UTC))
+  def outFile = layout.projectDirectory.file("generatedDBChangeSets/diffChangeset-${stamp}.xml")
+  def password = lb('password')
+  def referencePassword = lb('referencePassword')
+  args '--show-banner=false', '--log-level=WARNING',
+    "--driver=${lb('driver')}", "--url=${lb('url')}", "--username=${lb('username')}",
+    "--reference-url=${lb('referenceUrl')}", "--reference-username=${lb('referenceUsername')}",
+    "--changelog-file=${outFile.asFile.absolutePath}", 'diff-changelog'
+  // kept out of the command line, which other users of the machine can read
+  environment 'LIQUIBASE_COMMAND_PASSWORD', password
+  environment 'LIQUIBASE_COMMAND_REFERENCE_PASSWORD', referencePassword
+  outputs.upToDateWhen { false }
+  doFirst { outFile.asFile.parentFile.mkdirs() }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Dependency checks
+// ---------------------------------------------------------------------------------------------
+def classpathNames = ['compileClasspath', 'runtimeClasspath', 'testCompileClasspath', 'testRuntimeClasspath']
+def resolvedModules = { String name ->
+  configurations.named(name).flatMap { it.incoming.artifacts.resolvedArtifacts }.map { arts ->
+    arts.collect { it.id.componentIdentifier }
+      .findAll { it instanceof ModuleComponentIdentifier }
+      .collect { "${it.group}:${it.module}:${it.version}".toString() }
+      .unique().sort()
   }
+}
+
+// Writes resolved module coordinates per classpath to build/classpaths, to diff before and after
+// a dependency change.
+tasks.register('dumpClasspaths') {
+  description = 'Writes the modules on each classpath to build/classpaths/<classpath>.txt.'
+  def classpaths = classpathNames.collectEntries { [(it): resolvedModules(it)] }
   def outDir = layout.buildDirectory.dir('classpaths')
   outputs.dir(outDir)
   doLast {
     classpaths.each { name, coords -> outDir.get().file("${name}.txt").asFile.text = coords.get().join('\n') + '\n' }
   }
 }
+
+// Every module on a classpath needs a pin, so that its version is chosen deliberately, and every
+// pin needs a module, so the list does not rot.
+tasks.register('checkPinnedVersions') {
+  description = 'Checks that gradle/pinned-versions.txt lists exactly the modules on the classpaths.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  def classpaths = classpathNames.collect { resolvedModules(it) }
+  def pinned = pinnedModules.keySet()
+  inputs.file('gradle/pinned-versions.txt')
+  doLast {
+    def resolved = classpaths.collectMany { it.get() }.collect { it.split(':')[0..1].join(':') }.toSet()
+    // Gradle-only: JUnit's launcher, and the bnd/OSGi annotations log4j's Gradle metadata adds
+    def unpinned = (resolved - pinned).findAll { !(it ==~ /org\.junit\.platform:junit-platform-launcher|biz\.aQute\.bnd:.*|org\.osgi:.*/) }
+    def unused = (pinned - resolved).findAll { it != 'com.squareup.okio:okio' }
+    if (unpinned || unused) {
+      throw new GradleException('gradle/pinned-versions.txt is out of step with the classpaths.' +
+        (unpinned ? "\nAdd a pin for:\n  ${unpinned.sort().join('\n  ')}" : '') +
+        (unused ? "\nRemove the pin for:\n  ${unused.sort().join('\n  ')}" : ''))
+    }
+  }
+}
+tasks.named('check') { dependsOn 'checkPinnedVersions' }
