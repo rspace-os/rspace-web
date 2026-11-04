@@ -5,16 +5,7 @@ import materialTheme from "../../../../theme";
 import Quantity from "../Quantity";
 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      unitsOfCategory: vi.fn(() => [
-        { id: 5, label: "µg", category: "mass" },
-        { id: 6, label: "mg", category: "mass" },
-        { id: 7, label: "g", category: "mass" },
-      ]),
-      getUnit: vi.fn(),
-    },
-  }),
+  default: () => ({}),
 }));
 describe("Quantity", () => {
   test("Should support scientific notation.", () => {

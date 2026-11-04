@@ -11,9 +11,6 @@ vi.mock("../../../stores/getRootStore", () => ({
         globalId: "IT1",
       },
     },
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
   }),
 }));
 describe("isActiveResultTemplateOfAny", () => {

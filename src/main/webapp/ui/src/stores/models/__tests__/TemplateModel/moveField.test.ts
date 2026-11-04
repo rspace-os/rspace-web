@@ -6,11 +6,7 @@ import { makeMockTemplate } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      assertValidUnitId: () => {},
-    },
-  }),
+  default: () => ({}),
 }));
 const fieldData: Array<FieldModelAttrs> = [
   {

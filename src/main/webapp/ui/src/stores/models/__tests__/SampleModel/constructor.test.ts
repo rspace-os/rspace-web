@@ -9,9 +9,6 @@ import { sampleAttrs } from "./mocking";
 vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     peopleStore: {},
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
   }),
 })); // break import cycle
 function mockSampleWithTwoSubsamples(factory: Factory) {
