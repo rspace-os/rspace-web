@@ -239,6 +239,7 @@ export function AllBookableItemsTable({
                     showCurrentAvailability
                     showPeriodLabels
                     timeZone={preferences.timeZone}
+                    instrumentTimeZone={row.timezone}
                     item={item}
                   />
                 );
@@ -266,6 +267,7 @@ export function AllBookableItemsTable({
                   showCurrentAvailability
                   showPeriodLabels
                   timeZone={preferences.timeZone}
+                  instrumentTimeZone={row.timezone}
                   item={item}
                 />
               );

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -19,11 +20,22 @@ export function BookingDetailsView() {
     [
       t("bookings.details.when"),
       <span key="when">
-        <time dateTime={booking.start}>
-          {formatBookingEventDateTime(booking.start, displayTimeZone, i18n.language)}
-        </time>
-        {" – "}
-        <time dateTime={booking.end}>{formatBookingEventDateTime(booking.end, displayTimeZone, i18n.language)}</time>
+        <BookingInstrumentTimeTooltip
+          start={booking.start}
+          end={booking.end}
+          displayTimeZone={displayTimeZone}
+          instrumentTimeZone={booking.timezone}
+        >
+          <span>
+            <time dateTime={booking.start}>
+              {formatBookingEventDateTime(booking.start, displayTimeZone, i18n.language)}
+            </time>
+            {" – "}
+            <time dateTime={booking.end}>
+              {formatBookingEventDateTime(booking.end, displayTimeZone, i18n.language)}
+            </time>
+          </span>
+        </BookingInstrumentTimeTooltip>
         <span className="text-muted-foreground">{` · ${t("bookableItemDetails.minutes", { count: durationMinutes })}`}</span>
       </span>,
     ],

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { TriangleAlertIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
@@ -45,7 +46,15 @@ export function BookingFormAlerts({
           return (
             <li key={booking.id}>
               <span className="font-medium">{label}</span>
-              {` · ${formatAgendaPeriod(booking.start, booking.end, displayTimezone, i18n.language)}`}
+              {" · "}
+              <BookingInstrumentTimeTooltip
+                start={booking.start}
+                end={booking.end}
+                displayTimeZone={displayTimezone}
+                instrumentTimeZone={booking.instrumentTimeZone}
+              >
+                {formatAgendaPeriod(booking.start, booking.end, displayTimezone, i18n.language)}
+              </BookingInstrumentTimeTooltip>
             </li>
           );
         })}
