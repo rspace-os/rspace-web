@@ -7,11 +7,12 @@ window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   window.scrollTo(0, 1);
 
-  if (domContainer) {
+  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
+    domContainer.dataset.reactRootMounted = "true";
     const root = createRoot(domContainer);
     root.render(
       <I18nRoot namespaces={["inventory", "common", "about"]} fallback={<LoaderCircular />}>
-        <App />
+        <App canUseDevtools={domContainer.dataset.canUseDevtools === "true"} />
       </I18nRoot>,
     );
   }
