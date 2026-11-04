@@ -28,9 +28,13 @@ echo 'Building rspace-web'
  When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
  The script takes several parameters; there are other Jenkins jobs to run nightly test-suites on other JDKs and also
  with 'nightly' tests which are more long running tests.
+ The build runs through the Gradle wrapper (./gradlew). Every -D flag below is forwarded to Gradle's resource
+ filtering and to the test JVMs, as it was with Maven.
  Java 17 and 21 are both supported. The defaults below stay on 17 until Java 21 is installed on the agents,
- then flip MAVEN_TOOLCHAIN_JAVA_VERSION to 21. MAVEN_TOOLCHAIN_JAVA_VENDOR must match the <vendor> label of
- the agent's toolchains.xml entry (openjdk today), whatever distribution is installed.
+ then flip MAVEN_TOOLCHAIN_JAVA_VERSION to 21. They are passed as -Djava-version/-Djava-vendor, which select a
+ Gradle Java toolchain, so the requested JDK must be one Gradle can find on the agent (auto-detected, or listed in
+ org.gradle.java.installations.paths in the agent's ~/.gradle/gradle.properties). The parameters keep their
+ MAVEN_TOOLCHAIN_ names because other Jenkins jobs (the nightly JDK runs) pass them by name.
 */
 
 pipeline {
@@ -39,9 +43,9 @@ pipeline {
     options { disableConcurrentBuilds() }
 
     parameters {
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain (17 or 21)')
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
-        string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version of the Gradle toolchain (17 or 21); the name is kept from the Maven build')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor of the Gradle toolchain; the name is kept from the Maven build')
+        string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional extra Gradle arguments for the full Java tests, e.g. -DincludedTestGroups=nightly')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
         booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
@@ -52,8 +56,8 @@ pipeline {
     }
 
     //tools {
-    //    // this is the JDK used to run maven itself
-    //    // the toolchain settings just affect compilation
+    //    // this is the JDK used to run Gradle itself
+    //    // the toolchain settings just affect compilation and tests
     //    jdk 'OPEN-JDK-17'
     //}
 
@@ -69,7 +73,9 @@ pipeline {
         HIBTEST_DBNAME = branchToDbName("hibtest_${branchNameHash(BRANCH_NAME)}_${BRANCH_NAME}")
         CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
         AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
-        APP_VERSION = readMavenPom().getVersion()
+        APP_VERSION = gradleBaseVersion(readFile('build.gradle'))
+        // Gradle cannot read the non-ASCII test resource file names under a POSIX/ASCII locale
+        LANG = 'C.UTF-8'
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
     }
@@ -81,8 +87,8 @@ pipeline {
                 echo "Building branch - ${BRANCH_NAME}"
                 sh '''
                     echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
                     echo "Using Java: `java -version`"
+                    ./gradlew --version
                 '''
                 echo 'Cleaning out filestore'
                 sh "rm -rf $RS_FILE_BASE"
@@ -106,7 +112,7 @@ pipeline {
 
             steps {
                 echo 'This is the main branch, running fast, non Spring tests only'
-                sh "./mvnw clean  test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+                sh "./gradlew clean test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
                    -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                    -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR}"
             }
@@ -120,7 +126,7 @@ pipeline {
                     notify currentBuild.result
                 }
                 success {
-                    junit 'target/surefire-reports/*.xml'
+                    junit 'build/test-results/**/*.xml'
                 }
             }
         }
@@ -156,7 +162,7 @@ pipeline {
                 echo 'Building feature branch'
                 withFrontendTools {
                     sh '''
-                    ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
+                    ./gradlew clean war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                     -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                     -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -185,7 +191,7 @@ pipeline {
                 echo "Building prodRelease .war package"
                 withFrontendTools {
                      sh '''
-                     ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
+                     ./gradlew clean war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                     -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                     -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
@@ -230,7 +236,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'WAR',
-                                        value: "$WORKSPACE/target/*.war"
+                                        value: "$WORKSPACE/build/libs/*.war"
                                 ],
                                 [
                                         $class: 'StringParameterValue',
@@ -254,12 +260,12 @@ pipeline {
             }
             steps {
                 echo 'Running liquibase tests on main branch...'
-                sh "./mvnw -e clean test -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./gradlew --stacktrace clean test -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
                   -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate \
                   -Dliquibase.context=run \
-                  -Dmaven.test.failure.ignore=false   -Denvironment=keepdbintact  \
+                  -Denvironment=keepdbintact \
                   -DRS.devlogLevel=INFO -DRS_FILE_BASE=/var/lib/jenkins/userContent/RS_FileRepoLiquibase"
             }
             post {
@@ -293,12 +299,13 @@ pipeline {
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
                 withFrontendTools {
-                    sh "./mvnw clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                    // --continue runs every test task even after one fails, so all suites report and get coverage
+                    sh "./gradlew --continue clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                       -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                       -Djavax.xml.accessExternalDTD=all\
                       -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
                       -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
-                      -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
+                      -Denvironment=drop-recreate-db \
                       -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
                       -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
                 }
@@ -324,12 +331,11 @@ pipeline {
                 }
 
                 success {
-                    junit 'target/surefire-reports/*.xml'
+                    junit 'build/test-results/**/*.xml'
                     jacoco(
-                            execPattern: '**/**.exec',
-                            classPattern: '**/classes',
-                            sourcePattern: '**/src/main/java',
-                            exclusionPattern: '**/src/test*'
+                            execPattern: 'build/jacoco/*.exec',
+                            classPattern: 'build/classes/java/main',
+                            sourcePattern: 'src/main/java'
                     )
                 }
             } // end post test handler
@@ -362,7 +368,7 @@ pipeline {
                 always {
                     script {
                         try {
-                            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+                            junit testResults: 'build/test-results/**/*.xml', allowEmptyResults: true
                         } finally {
                             sh 'docker stop "${CHEMISTRY_CONTAINER_NAME}" || true'
                             sh 'rm -rf "${RS_FILE_BASE}"'
@@ -381,6 +387,13 @@ pipeline {
             }
         }
     }
+}
+
+// The version declared in build.gradle (e.g. '2.28.0-SNAPSHOT'), without the per-build timestamp suffix.
+@NonCPS
+def gradleBaseVersion (String buildGradle) {
+    def m = buildGradle =~ /(?m)^version\s*=\s*["']([^"'$]*)/
+    return m.find() ? m.group(1).replaceAll(/-$/, '') : 'unknown'
 }
 
 def branchToDbName (String name) {
