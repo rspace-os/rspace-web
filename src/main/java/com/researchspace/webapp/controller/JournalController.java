@@ -316,7 +316,11 @@ public class JournalController extends BaseController {
 
     BindingResult br = new BeanPropertyBindingResult(config, "config");
     User user = userManager.getAuthenticatedUserInSession();
-    new WorkspaceSearchInputValidator(user).validate(config, br);
+    new WorkspaceSearchInputValidator(
+            user,
+            properties.getUserMinSearchTermLength(),
+            properties.getSysadminMinSearchTermLength())
+        .validate(config, br);
     if (br.hasErrors()) {
       return null;
     }

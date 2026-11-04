@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
   </parent>
 
   <repositories>
@@ -136,17 +136,63 @@
       <dependency>
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-core</artifactId>
-        <version>1.14.14</version>
+        <version>1.15.12</version>
       </dependency>
       <dependency>
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-commons</artifactId>
-        <version>1.14.14</version>
+        <version>1.15.12</version>
       </dependency>
       <dependency>
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-observation</artifactId>
-        <version>1.14.14</version>
+        <version>1.15.12</version>
+      </dependency>
+      <!-- Bouncy Castle jars must all be on the same version: shiro-crypto-hash brings in
+           bcprov 1.84 and Tika brings in the others at 1.81 -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcutil-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcjmail-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <!-- tika-parser-pkg-module brings in 7.5.5 -->
+      <dependency>
+        <groupId>com.github.junrar</groupId>
+        <artifactId>junrar</artifactId>
+        <version>7.6.1</version>
+      </dependency>
+      <!-- mysql-connector-j brings in 3.25.1 -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>3.25.8</version>
+      </dependency>
+      <!-- box-java-sdk brings in 0.4.4 -->
+      <dependency>
+        <groupId>org.bitbucket.b_c</groupId>
+        <artifactId>jose4j</artifactId>
+        <version>0.9.6</version>
+      </dependency>
+      <!-- spring-batch-core brings in 3.4.1 -->
+      <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-commons</artifactId>
+        <version>3.5.12</version>
       </dependency>
       <dependency>
         <groupId>javax.measure</groupId>
@@ -165,6 +211,41 @@
         <groupId>com.github.rspace-os</groupId>
         <artifactId>dryad-java-client</artifactId>
         <version>1.0.0</version>
+      </dependency>
+      <!-- Segment's dependencies disagree on okhttp and Retrofit; pinned for dependencyConvergence -->
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>4.12.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.retrofit2</groupId>
+        <artifactId>retrofit</artifactId>
+        <version>2.11.0</version>
+      </dependency>
+      <!-- okhttp's okio 3.6.0 pulls in the kotlin-stdlib-common 1.9.10 jar. kotlin-bom cannot override it:
+           stdlib-common is pom-only since Kotlin 1.9.20, so the BOM manages it as type pom, and Maven
+           treats that as a different artifact from the jar okio asks for. okio 3.9+ no longer uses it. -->
+      <dependency>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio-bom</artifactId>
+        <version>3.18.2</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Aligns the kotlin-stdlib versions that okhttp and okio pull in -->
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-bom</artifactId>
+        <version>2.4.21</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <!-- Managed so it also overrides the 13.0 that kotlin-stdlib pulls in -->
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>26.1.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -341,10 +422,8 @@
             <dependency>jaxen:jaxen</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.fasterxml:classmate</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.hibernate.orm:hibernate-jcache</dependency> <!-- used but not referenced in code -->
-            <dependency>org.jetbrains.kotlin:kotlin-stdlib</dependency> <!-- used for annotations -->
             <dependency>org.apache.tika:tika-parsers</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.codehaus.woodstox:wstx-asl</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>com.squareup.okhttp3:okhttp</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.slf4j:slf4j-log4j12</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.lowagie:itext</dependency> <!-- used by javamelody -->
             <dependency>xalan:xalan</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
@@ -837,6 +916,12 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.unboundid</groupId>
+      <artifactId>unboundid-ldapsdk</artifactId>
+      <version>7.0.6</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -1380,44 +1465,21 @@
     <dependency>
       <groupId>com.segment.analytics.java</groupId>
       <artifactId>analytics</artifactId>
-      <version>3.1.3</version>
+      <version>3.5.5</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.gson</groupId>
           <artifactId>gson</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.squareup.okhttp3</groupId>
-          <artifactId>okhttp</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-stdlib</artifactId>
+          <groupId>javax.annotation</groupId>
+          <artifactId>javax.annotation-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <!-- segment-analytics internally-conflicting dependency,
-      used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <version>4.3.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-stdlib</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-stdlib-common</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <!-- used for annotations -->
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-stdlib</artifactId>
-      <version>1.3.61</version>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.box</groupId>
@@ -1431,6 +1493,10 @@
         <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1504,12 +1570,12 @@
     <dependency>
       <groupId>org.springframework.ldap</groupId>
       <artifactId>spring-ldap-core</artifactId>
-      <version>2.3.4.RELEASE</version>
+      <version>3.3.8</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.retry</groupId>
       <artifactId>spring-retry</artifactId>
-      <version>2.0.11</version>
+      <version>2.0.13</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -1829,15 +1895,9 @@
       <version>2.4.0</version>
     </dependency>
     <dependency>
-      <!-- Argon2PasswordEncoder (RSDEV-894); pinned to the version shiro-crypto-hash brings in -->
+      <!-- Argon2PasswordEncoder -->
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
-      <version>1.84</version>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.70</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -2630,11 +2690,11 @@
 
     <assertj.version>3.27.7</assertj.version>
 
-    <!-- TEMPORARY: rspace-parent 3.2.0 still manages Mockito 3.7.7. Parent 3.3.0 carries
+    <!-- TEMPORARY: rspace-parent 3.2.1 still manages Mockito 3.7.7. Parent 3.3.0 carries
          5.23.0, so delete this override once the pinned parent version is bumped. -->
     <mockito.version>5.23.0</mockito.version>
 
-    <!-- TEMPORARY: rspace-parent 3.2.0 still says 1.3, which only ever shipped as
+    <!-- TEMPORARY: rspace-parent 3.2.1 still says 1.3, which only ever shipped as
          hamcrest-core/hamcrest-all. Parent 3.3.0 carries 3.0; delete this override then. -->
     <hamcrest.version>3.0</hamcrest.version>
 
@@ -2685,7 +2745,8 @@
 
     <aspectj.version>1.9.22.1</aspectj.version>
     <apache.batik.version>1.19</apache.batik.version>
-    <commons.fileupload.version>1.4</commons.fileupload.version>
+    <bouncycastle.version>1.86</bouncycastle.version>
+    <commons.fileupload.version>1.6.0</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
     <icu4j.version>78.3</icu4j.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
