@@ -9,6 +9,7 @@ import com.researchspace.service.NotificationTypeMessages;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.velocity.tools.generic.EscapeTool;
 
 /** Selects and renders the email content for a communication. */
 class CommunicationEmailContentGenerator {
@@ -42,6 +43,7 @@ class CommunicationEmailContentGenerator {
   private Map<String, Object> velocityModelFor(Communication communication) {
     Map<String, Object> model = new HashMap<>();
     model.put("cmm", communication);
+    model.put("esc", new EscapeTool());
     model.put("baseURL", htmlDomainPrefix);
     model.put("dateOb", new Date());
     model.put("date", new LocaleAwareDateTool(contentGenerator.getLocale()));
