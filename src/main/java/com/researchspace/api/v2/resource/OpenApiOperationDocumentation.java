@@ -14,7 +14,29 @@ public record OpenApiOperationDocumentation(
     Object requestExample,
     Object responseExample,
     Map<Integer, Response> responses,
-    Map<String, Object> extensions) {
+    Map<String, Object> extensions,
+    Map<Integer, Class<?>> problemSchemas) {
+
+  public OpenApiOperationDocumentation(
+      String summary,
+      String description,
+      List<String> tags,
+      boolean deprecated,
+      Object requestExample,
+      Object responseExample,
+      Map<Integer, Response> responses,
+      Map<String, Object> extensions) {
+    this(
+        summary,
+        description,
+        tags,
+        deprecated,
+        requestExample,
+        responseExample,
+        responses,
+        extensions,
+        Map.of());
+  }
 
   /** Documentation for one response. Error responses also carry their stable problem codes. */
   public record Response(String description, Map<String, String> errors) {
@@ -66,6 +88,10 @@ public record OpenApiOperationDocumentation(
           null, null, List.of(), false, null, null, Map.of(), Map.of());
 
   public OpenApiOperationDocumentation {
+    problemSchemas = Map.copyOf(problemSchemas);
+    if (problemSchemas.keySet().stream().anyMatch(status -> status < 400 || status > 599)) {
+      throw new IllegalArgumentException("Problem schemas require an error response status");
+    }
     summary = blankToNull(summary);
     description = blankToNull(description);
     tags = List.copyOf(tags);
@@ -109,7 +135,8 @@ public record OpenApiOperationDocumentation(
         requestExample,
         responseExample,
         combined,
-        extensions);
+        extensions,
+        problemSchemas);
   }
 
   private static String blankToNull(String value) {
@@ -121,6 +148,7 @@ public record OpenApiOperationDocumentation(
   }
 
   public static final class Builder {
+    private final Map<Integer, Class<?>> problemSchemas = new LinkedHashMap<>();
     private String summary;
     private String description;
     private final List<String> tags = new ArrayList<>();
@@ -129,6 +157,12 @@ public record OpenApiOperationDocumentation(
     private Object responseExample;
     private final Map<Integer, Response> responses = new LinkedHashMap<>();
     private final Map<String, Object> extensions = new LinkedHashMap<>();
+
+    /** Documents a specialized RFC 9457 schema for one response status. */
+    public Builder problemSchema(int status, Class<?> schema) {
+      problemSchemas.put(status, schema);
+      return this;
+    }
 
     public Builder summary(String value) {
       summary = value;
@@ -185,7 +219,8 @@ public record OpenApiOperationDocumentation(
           requestExample,
           responseExample,
           responses,
-          extensions);
+          extensions,
+          problemSchemas);
     }
   }
 }

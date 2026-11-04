@@ -93,11 +93,11 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
     Instant afterStart15 = start.plus(1, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, afterStart15, afterStart15.plus(1, ChronoUnit.HOURS)));
     Instant afterStart19 = start.plus(1, ChronoUnit.HOURS).plus(19, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, afterStart19, afterStart19.plus(1, ChronoUnit.HOURS)));
     Instant afterStart20 = start.plus(1, ChronoUnit.HOURS).plus(20, ChronoUnit.MINUTES);
     create(target, owner, afterStart20, afterStart20.plus(1, ChronoUnit.HOURS));
@@ -106,11 +106,11 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     create(target, owner, laterStart, laterStart.plus(1, ChronoUnit.HOURS));
     Instant beforeStart15 = laterStart.minus(1, ChronoUnit.HOURS).minus(15, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, beforeStart15, beforeStart15.plus(1, ChronoUnit.HOURS)));
     Instant beforeStart19 = laterStart.minus(1, ChronoUnit.HOURS).minus(19, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, beforeStart19, beforeStart19.plus(1, ChronoUnit.HOURS)));
     Instant beforeStart20 = laterStart.minus(1, ChronoUnit.HOURS).minus(20, ChronoUnit.MINUTES);
     create(target, owner, beforeStart20, beforeStart20.plus(1, ChronoUnit.HOURS));
