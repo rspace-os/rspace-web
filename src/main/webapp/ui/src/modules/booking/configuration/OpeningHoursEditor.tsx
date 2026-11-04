@@ -1,6 +1,7 @@
 import { type FormStore, useField } from "@formisch/react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   ALL_ISO_WEEKDAYS,
   customOpeningHours,
@@ -10,6 +11,7 @@ import {
   type OpeningInterval,
   validOpeningHours,
 } from "@/modules/booking/domain/bookingOpeningHours";
+import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { FieldDescription, FieldError } from "@/modules/common/ui/field";
@@ -51,6 +53,7 @@ function TimeRange({
   error: ReactNode;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const id = useId();
   const allDay = isOpenAllDay(hours);
   const allDayRef = useRef<HTMLElement>(null);
@@ -114,7 +117,7 @@ function TimeRange({
       </div>
       <FieldDescription id={midnightHelpId}>
         {t("settings.openingHours.midnightEnd", {
-          midnight: "00:00",
+          midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
         })}
       </FieldDescription>
       {invalid ? <FieldError id={errorId}>{error}</FieldError> : null}

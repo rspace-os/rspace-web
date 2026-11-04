@@ -4,8 +4,14 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { type WeekdayOpening, weeklyOpeningHours } from "@/modules/booking/configuration/openingHoursFacts";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
-import { currentWallClock, isPlainDate, sameTimeZone } from "@/modules/booking/domain/bookingTime";
+import {
+  bookingDateTimeLocale,
+  currentWallClock,
+  isPlainDate,
+  sameTimeZone,
+} from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { CardContent } from "@/modules/common/ui/card";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
@@ -138,6 +144,7 @@ export function BookingItemInformationContent({
   date?: string;
 }) {
   const { t, i18n } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const referenceDate =
     date && isPlainDate(date) ? date : currentWallClock(new Date().toISOString(), displayTimezone).date;
   const facts: Array<[string, ReactNode]> = [
@@ -145,12 +152,15 @@ export function BookingItemInformationContent({
       t("bookings.itemInformation.open"),
       <WeeklyOpeningHours
         key="open"
-        days={weeklyOpeningHours(item, displayTimezone, referenceDate)}
+        days={weeklyOpeningHours(item, displayTimezone, referenceDate, bookingDateTimeLocale(timeFormat))}
         displayTimezone={displayTimezone}
         itemDays={
           sameTimeZone(item.timezone, displayTimezone)
             ? undefined
-            : { timezone: item.timezone, days: weeklyOpeningHours(item, item.timezone, referenceDate) }
+            : {
+                timezone: item.timezone,
+                days: weeklyOpeningHours(item, item.timezone, referenceDate, bookingDateTimeLocale(timeFormat)),
+              }
         }
       />,
     ],
