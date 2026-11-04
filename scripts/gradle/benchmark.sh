@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Times Maven against the trial Gradle build for clean, no-op, and incremental compiles,
+# Times Maven against the Gradle build for clean, no-op, and incremental compiles,
 # unit tests, and WAR packaging. Usage: scripts/gradle/benchmark.sh [reps] [scenario-filter]
 # Set TOOLS to choose compile-benchmark tools (default "maven maven-lean gradle").
 # Pass a regex as the second argument to run only matching <tool>-<scenario> names.

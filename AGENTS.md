@@ -44,6 +44,8 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
 
 Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goals; local artifacts can shadow JitPack. Use `compile`, `package`, `test`, or `verify`. For sibling-project changes, push, wait for the remote build, then update the pinned commit hash.
+
+An optional Gradle build runs alongside Maven; see `DevDocs/DeveloperNotes/Gradle.md`. `pom.xml` stays the source of truth. After a dependency change there, run `scripts/gradle/export-maven-versions.sh`; mirror added or removed dependencies and exclusions into `build.gradle`; confirm with `scripts/gradle/compare-classpaths.sh --check`. CI's `gradle-build` job runs that check.
 </important>
 
 <important if="editing repository files">

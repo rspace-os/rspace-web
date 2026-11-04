@@ -7,8 +7,8 @@ import java.time.format.DateTimeFormatter
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
-// Trial Gradle build mirroring pom.xml for compile, test, and WAR packaging. Maven remains
-// the supported build. See DevDocs/DeveloperNotes/GradleMigrationTrial.md.
+// Gradle build mirroring pom.xml for compile, test, and WAR packaging, alongside Maven, which
+// stays the source of truth. See DevDocs/DeveloperNotes/Gradle.md.
 
 plugins {
   id 'war'
