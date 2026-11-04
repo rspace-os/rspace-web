@@ -402,3 +402,11 @@ jobs:
           name: e2e-report-${{ inputs.mode }}-${{ matrix.suite.cloud && 'cloud' || 'standard' }}-${{ matrix.suite.project }}-${{ matrix.suite.shard }}-java${{ matrix.java-version }}
           path: src/main/webapp/ui/e2e-junit.xml
           retention-days: 14
+
+      # actions/cache saves ~/.gradle in its post step, after this one; stop Jetty and the Gradle
+      # daemon first so it doesn't archive caches a running build still holds open.
+      - name: Stop RSpace and Gradle
+        if: always()
+        run: |
+          pkill -f 'com[.]researchspace[.]jetty[.]JettyLauncher' || true
+          ./gradlew --stop || true

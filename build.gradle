@@ -1,4 +1,5 @@
 import com.researchspace.build.CurrentUtcTimestamp
+import com.researchspace.build.JUnitXmlSuiteCounts
 import com.researchspace.build.PlaceholderFilter
 import com.researchspace.build.RecreateDatabase
 import com.researchspace.build.TestDatabase
@@ -676,6 +677,18 @@ tasks.withType(Test).configureEach {
     // a test that passes on a rerun counts as flaky, not failed
     failOnPassedAfterRetry = false
   }
+  // Report a test that passes on a rerun as Surefire did: one test case with a flakyFailure, and
+  // suite counts that leave it out, so report publishers don't count it as failed.
+  reports.junitXml.mergeReruns = true
+  def junitXmlDir = reports.junitXml.outputLocation
+  doLast { JUnitXmlSuiteCounts.recount(junitXmlDir.get().asFile) }
+  // Files tests read from the source tree rather than the classpath (JSPs, legacy scripts, API
+  // specs, frontend sources), so that a change to one reruns a cacheable (-Dfast) test run.
+  inputs.files(fileTree('src/main/webapp') {
+    exclude 'ui/node_modules/**', 'ui/dist/**', 'ui/storybook-static/**', 'ui/playwright/**', 'ui/.vite/**'
+  }).withPropertyName('webappSources').withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files('src/main/java', 'src/main/resources', 'src/test/resources')
+    .withPropertyName('sourceTreeFiles').withPathSensitivity(PathSensitivity.RELATIVE)
   if (testPatterns) {
     setIncludes([])
     setExcludes([])
