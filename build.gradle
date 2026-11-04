@@ -971,3 +971,5 @@ tasks.register('checkPinnedVersions') {
   }
 }
 tasks.named('check') { dependsOn 'checkPinnedVersions' }
+
+apply from: 'gradle/jetty.gradle'
