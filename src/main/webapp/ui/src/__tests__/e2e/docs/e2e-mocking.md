@@ -245,8 +245,6 @@ because the mock and backend share a Docker network namespace.
 
 ### Manual Gradle/Jetty
 
-<!-- TODO(jetty): check step 2 against the jettyRunWar task once it lands in build.gradle. -->
-
 ```bash
 export E2E_MOCK_PORT="${E2E_MOCK_PORT:-9099}"
 
