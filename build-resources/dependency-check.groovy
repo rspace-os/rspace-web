@@ -15,7 +15,9 @@ pipeline {
     }
 
     environment {
-        APP_VERSION = readMavenPom().getVersion()
+        APP_VERSION = gradleBaseVersion(readFile('build.gradle'))
+        // Gradle cannot read the non-ASCII test resource file names under a POSIX/ASCII locale
+        LANG = 'C.UTF-8'
     }
 
     stages {
@@ -30,12 +32,12 @@ pipeline {
                 echo "Analysing branch"
                 sh '''
                     echo "PATH = ${PATH}"
-                    ./mvnw -v
                     echo "App version: ${APP_VERSION}"
+                    ./gradlew --version
                 '''
                 /* we build the package, to figure actually-bundled runtime Java deps (WEB-INF/lib)
                    and the vendored/legacy non-react JS bundled as static resources */
-                sh './mvnw clean package -Dmaven.test.skip=true'
+                sh './gradlew clean war'
             }
         }
 
@@ -54,12 +56,12 @@ pipeline {
                        publisher's failedNew* thresholds are baseline-relative, so an empty scan
                        passes green and coverage silently disappears. Guard the inputs explicitly. */
                     sh '''
-                        ls ./target/*.war
+                        ls ./build/libs/*.war
                         test -f ./pnpm-lock.yaml
                     '''
 
                     /* Scan the specific dependency sources, not the whole tree (which double-counts):
-                       - './target/*.war' is what ships to production. It carries the runtime Java
+                       - './build/libs/*.war' is what ships to production. It carries the runtime Java
                          deps (WEB-INF/lib) and the vendored/legacy JS bundled as static resources,
                          so RetireJS still catches those (e.g. lodash.js). Scanning the WAR alone
                          avoids reporting each dependency twice (once from the WAR, once from the
@@ -74,7 +76,7 @@ pipeline {
                     --nvdApiDelay 2000
                     --nvdMaxRetryCount 10                    
                     -o './'
-                    -s './target/*.war'
+                    -s './build/libs/*.war'
                     -s './pnpm-lock.yaml'
                     --nodeAuditSkipDevDependencies
                     -f 'XML'
@@ -90,6 +92,13 @@ pipeline {
             notifySlackOfFailure()
         }
     }
+}
+
+// The version declared in build.gradle (e.g. '2.28.0-SNAPSHOT'), without the per-build timestamp suffix.
+@NonCPS
+def gradleBaseVersion (String buildGradle) {
+    def m = buildGradle =~ /(?m)^version\s*=\s*["']([^"'$]*)/
+    return m.find() ? m.group(1).replaceAll(/-$/, '') : 'unknown'
 }
 
 def notifySlackOfFailure() {
