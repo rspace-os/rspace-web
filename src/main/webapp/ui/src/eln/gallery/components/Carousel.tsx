@@ -351,7 +351,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
             },
           }}
         >
-          <Document file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
+          <Document suspense={false} file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
             {[...take(incrementForever(), numPages)].map((index) => (
               <Page key={`page_${index + 1}`} pageNumber={index + 1} scale={zoom} />
             ))}
