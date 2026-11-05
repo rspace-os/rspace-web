@@ -23,9 +23,16 @@ export class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string): Promise<void> {
-    await this.usernameInput.fill(username);
+    // Fill the autofocus field last: the legacy login page may restore focus and clear it while
+    // browser password handling settles.
     await this.passwordInput.fill(password);
-    await this.submitButton.click();
+    await this.usernameInput.fill(username);
+    if ((await this.usernameInput.inputValue()) !== username || (await this.passwordInput.inputValue()) !== password) {
+      throw new Error("Login credentials were not retained by the form");
+    }
+    // The form performs a document navigation even when a failed attempt returns to /login.
+    // Wait for this submission's new document, rather than an error from the previous one.
+    await Promise.all([this.page.waitForNavigation({ waitUntil: "domcontentloaded" }), this.submitButton.click()]);
   }
 
   async clickForgotUsername(): Promise<RequestUsernameReminderPage> {
