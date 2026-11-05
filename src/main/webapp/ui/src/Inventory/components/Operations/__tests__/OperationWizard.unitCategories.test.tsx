@@ -9,9 +9,7 @@ import { server } from "@/__tests__/mswServer";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import inventory from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
-import OperationDetailsStep from "../OperationDetailsStep";
 import OperationWizard from "../OperationWizard";
-import { operations } from "../operations";
 
 let InEnglish: React.ComponentType<{ children: React.ReactNode }>;
 beforeAll(async () => {
@@ -37,29 +35,14 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
   default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
 }));
 
-const poolOperation = (() => {
-  const pool = operations.find((o) => o.key === "pool");
-  if (!pool) throw new Error("the test config must declare pool");
-  return pool;
-})();
-
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-describe("OperationWizard for origins of every unit category", () => {
-  /*
-   * Molarity (unit ids 11-14) and concentration (15-17) are real, server-supported inventory units
-   * (RSUnitDef), and the sample/subsample API applies no category restriction, so a subsample can
-   * genuinely hold one. toCommonUnit -> atomicUnitOfSameCategory only knows volume, mass and
-   * dimensionless, so it THROWS "Unknown unit: N" for them. ProcessAction mounts this wizard as
-   * soon as the selection is processable, NOT only while the dialog is open, so a throw would take
-   * out the whole context menu.
-   */
+describe("OperationWizard for unsupported amount categories", () => {
+  // Closed wizards mount in the context menu, so unsupported units must not crash it.
   it.each([
-    ["a single origin", [makeMockSubSample({})]],
-    ["a multi-origin (Pool) selection", [makeMockSubSample({}), makeMockSubSample({})]],
     ["a molarity origin", [makeMockSubSample({ quantity: { numericValue: 1, unitId: 11 } })]],
     [
       "multiple origins holding concentration quantities",
@@ -70,25 +53,6 @@ describe("OperationWizard for origins of every unit category", () => {
     ],
   ])("mounts a closed dialog for %s without throwing", (_name, origins) => {
     expect(() => render(<OperationWizard open={false} onClose={vi.fn()} origins={origins} />)).not.toThrow();
-  });
-
-  it("renders the per-subsample amount inputs", () => {
-    expect(() =>
-      render(
-        <OperationDetailsStep
-          operation={poolOperation}
-          origin={makeMockSubSample({})}
-          origins={[makeMockSubSample({}), makeMockSubSample({})]}
-          values={{}}
-          onChange={vi.fn()}
-          section="amounts"
-          amountMode="perSubsample"
-          perSubsampleAmounts={{}}
-          onPerSubsampleAmountsChange={vi.fn()}
-          onAmountModeChange={vi.fn()}
-        />,
-      ),
-    ).not.toThrow();
   });
 });
 

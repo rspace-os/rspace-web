@@ -5,8 +5,6 @@ import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mock
 import { menuIDs } from "@/util/menuIDs";
 import contextActions from "../ContextActions";
 
-// The action components are only constructed here, never rendered; the models they carry read the
-// root store for units, so a minimal stand-in is enough.
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({}),
 }));
