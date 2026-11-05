@@ -16,3 +16,10 @@ dependencyResolutionManagement {
     }
   }
 }
+
+// Keep task outputs separate from the dependency archive restored by CI.
+buildCache {
+  local {
+    directory = new File(gradle.gradleUserHomeDir, 'rspace-build-cache')
+  }
+}

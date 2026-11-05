@@ -130,6 +130,37 @@ It replaces each test task's own class patterns, so `./gradlew test -Dtest=MyCla
 So `integrationTests -Dtest=MyClassIT` runs the class three times, once in each integration task,
 as Maven's three Surefire executions did. Run one `*IT` class with `integrationTest -Dtest=...`.
 
+### CI test partitions and shards
+
+`test` without suite options keeps running all unit and Spring tests. CI partitions it by
+JUnit's inherited `slow` tag: `-Dfast` excludes that tag and `-PtestSuite=slow` includes it.
+`@WithSpringContext` and the non-Spring `HibernateTest` base carry the tag. The PDF/SVG tests previously skipped in fast mode carry
+it directly. Add the tag to any new test that needs Spring, a database, or the slow-only setup.
+
+The Spring and integration jobs each run two shards per MariaDB version, with an independent
+database and filestore on every runner. `-PtestShard=1/2` and `-PtestShard=2/2` assign complete
+top-level classes using duration estimates in `gradle/ci-test-durations.json`. Nested tests stay
+with their parent. Unknown classes are assigned too; estimates affect balancing, never coverage.
+The run-profile and problematic integration groups retain their ordering and run on shard 1.
+JUnit XML and HTML report directories have a `-shardN` suffix; CI publishes only its current
+shard, so switching shards locally cannot republish stale special-group results.
+Sharding cannot be combined with `-Dfast` or `-Dtest`; shard `test` with `-PtestSuite=slow`.
+
+The initial estimates come from the November 4 Maven/Gradle parity reports. Refresh them after
+large test changes with full JUnit XML report directories, for example:
+
+```bash
+python3 scripts/gradle/update-ci-test-durations.py reports/spring reports/integration
+```
+
+CI uploads the shard JUnit XML reports as seven-day artifacts. Combine all shards from one
+run into one report directory per suite and MariaDB version before refreshing estimates. Keep separate full-run
+directories for repeated samples; the script takes the median per class.
+To check selection without running test bodies, use `--test-dry-run` on each concrete test task,
+and compare the combined class/method inventory against the unpartitioned task. `integrationTests`
+is an aggregate; apply `--test-dry-run` to `integrationTest`, `integrationTestRun`, and
+`integrationTestProblematic` individually.
+
 ### Retries
 
 The `org.gradle.test-retry` plugin reruns failed tests when `-Dsurefire.rerunFailingTestsCount=<n>`
@@ -145,8 +176,8 @@ Set the database up as CI does: start MariaDB, run the "Configure MariaDB" SQL f
 runs:
 
 ```bash
-# Spring tests
-./gradlew test -Denvironment=drop-recreate-db \
+# Slow tests, including Spring tests; pure units run separately with -Dfast
+./gradlew test -PtestSuite=slow -Denvironment=drop-recreate-db \
   -Djavax.xml.accessExternalDTD=all -Dlog4j2.configurationFile=log4j2-dev.xml \
   -Djdbc.db.maven=rspace -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
   -DRS.devlogLevel=INFO -DRS_FILE_BASE=$RS_FILE_BASE
@@ -155,6 +186,7 @@ runs:
 ./gradlew integrationTests --continue -Dsurefire.rerunFailingTestsCount=1 <same flags>
 ```
 
+The Hibernate model tests use `jdbc.url.maven` for their scratch database too.
 For a server on another port, change the port in `-Djdbc.url`, which the app and tests connect
 to, and add `-Djdbc.url.maven=jdbc:mysql://localhost:<port>`, which `recreateDatabase` uses.
 
@@ -387,15 +419,51 @@ GitHub Actions jobs set up Java and Gradle with the local action
 `.github/actions/setup-gradle-cached`. It:
 
 - installs the JDK with `actions/setup-java`, and sets `LANG=C.UTF-8`;
-- caches `~/.gradle/caches` and `~/.gradle/wrapper` with `actions/cache`, keyed by the job's
-  `cache-key` family (`tests`, `spotless`, `war`, `jetty`, `coverage`) and a hash of the
-  `*.gradle*` files, the wrapper properties, `gradle/pinned-versions.txt` and `buildSrc/`;
+- caches dependencies and wrapper files in `~/.gradle/caches` and `~/.gradle/wrapper`, keyed
+  by job family and build/dependency declarations;
+- separately caches task outputs in `~/.gradle/rspace-build-cache`, keyed by OS, JDK vendor/version,
+  job family, build declarations and main commit. Restore prefixes reuse the latest compatible
+  archive. A new main commit saves new outputs even when dependencies have not changed; Actions
+  cache entries are immutable, so dependency-only keys would leave compiled outputs stuck at
+  the first seed;
 - saves the cache only on `main`; other branches and pull requests restore `main`'s;
 - runs `gradle/actions/setup-gradle` with `cache-provider: external`, which leaves caching to
   the step above and still validates the wrapper.
 
+The first trusted main run seeds these archives. Until then, PR jobs remain cold. PRs do not
+publish caches. Database-backed test results remain uncacheable; compilation outputs can still
+be reused. Frontend and Storybook bundles are explicitly cacheable across runners, with source,
+config, public assets, build environment, OS/architecture, Node and pnpm versions as inputs.
+The release Markdown renderer has its own source set and runtime classpath; ordinary builds
+neither compile the renderer nor resolve Flexmark through build logic.
+
 Run it after checkout and before `pnpm install`, so the cache key's `**/*.gradle*` glob does not
 walk `node_modules`. Jenkins runs the same `./gradlew` commands; see the `Jenkinsfile`.
+
+## CI optimization verification
+
+Checked locally on November 5, Java 17 and MariaDB 11.8. The two full Spring shards and two
+full integration shards passed. The final fast partition and Hibernate model tests were then
+rerun after moving the non-Spring Hibernate base into the slow partition and making its scratch
+connections respect `jdbc.url.maven`. This is combined verification, rather than one fresh full
+suite run after that final fixture change.
+
+| Check | Result |
+|---|---|
+| Final selector coverage | The old inventory is retained, plus two URL-setting tests. Fast and slow partitions are disjoint; both slow shards and both integration shards have complete coverage. |
+| Pure unit partition | 4,777 cases, 16 skipped, no failures or errors |
+| Full slow shard runs before the Hibernate-tag follow-up | 759 and 827 cases, no failures or errors |
+| Hibernate model follow-up | All 41 cases execute against an isolated scratch schema, none skipped or failed |
+| Full integration shards | 610 and 601 cases, 33 skipped in total, no failures or errors |
+| Frontend cache | `FROM-CACHE` restores 1,300 files byte for byte; the local Gradle invocation took 3.6 seconds with warm dependencies. This is not a GitHub CI benchmark. |
+| Release docs | All ten generated HTML files match their previous SHA-256 hashes |
+| WAR | All 3,307 class and library entries match the previous WAR; no renderer or Flexmark library ships in it |
+| Build checks | Strict Spotless, dependency pins, three build-helper tests and `pnpm tsc` pass |
+| Dev stack | App starts and workspace login works through both browser MCPs; no console errors or failed inspected requests |
+
+Backend CI runs its build-helper tests alongside formatting and pin checks in one Gradle
+invocation. Warm-cache GitHub timings still need the first trusted main run to populate the
+archives. Java 21 and MariaDB 10.11 were not rerun locally in this optimization round.
 
 ## Benchmark
 
