@@ -17,6 +17,9 @@ inputs:
       that resolves only a few (Spotless, CodeQL) never saves the entry the test
       jobs restore.
     required: true
+  compilation-artifact:
+    description: Optional compilation artifact from this workflow run and checkout.
+    default: ""
   save-cache:
     description: Whether this job may save the cache. Only runs on main ever save.
     default: "true"
@@ -72,6 +75,7 @@ runs:
         key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
         restore-keys: |
           gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
+          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
 
     - name: Restore Gradle task outputs
       if: github.ref != 'refs/heads/main' || inputs.save-cache != 'true'
@@ -81,6 +85,26 @@ runs:
         key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
         restore-keys: |
           gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
+          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
+
+    # Artifacts are scoped to this workflow run. PR-produced entries never
+    # become global caches or cross the main/PR trust boundary.
+    - name: Download shared compilation
+      id: shared-compilation
+      continue-on-error: true
+      if: inputs.compilation-artifact != ''
+      uses: actions/download-artifact@v8.0.1
+      with:
+        name: ${{ inputs.compilation-artifact }}
+        path: ${{ runner.temp }}/rspace-compilation
+
+    - name: Restore shared compilation
+      if: steps.shared-compilation.outcome == 'success'
+      shell: bash
+      run: |
+        mkdir -p "$HOME/.gradle/rspace-build-cache"
+        tar -xf "$RUNNER_TEMP/rspace-compilation/compilation-cache.tar" \
+          -C "$HOME/.gradle/rspace-build-cache" --no-same-owner
 
     # cache-provider external leaves Gradle User Home to the steps above: the
     # default ('enhanced') is a proprietary component under Gradle's terms of

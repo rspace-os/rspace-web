@@ -142,11 +142,15 @@ database and filestore on every runner. `-PtestShard=1/2` and `-PtestShard=2/2` 
 top-level classes using duration estimates in `gradle/ci-test-durations.json`. Nested tests stay
 with their parent. Unknown classes are assigned too; estimates affect balancing, never coverage.
 The run-profile and problematic integration groups retain their ordering and run on shard 1.
+The balancer reserves their estimated class durations and ten seconds per extra test JVM on
+that shard before assigning ordinary integration classes.
 JUnit XML and HTML report directories have a `-shardN` suffix; CI publishes only its current
 shard, so switching shards locally cannot republish stale special-group results.
 Sharding cannot be combined with `-Dfast` or `-Dtest`; shard `test` with `-PtestSuite=slow`.
 
-The initial estimates come from the November 4 Maven/Gradle parity reports. Refresh them after
+Estimates retain the November 4 parity samples for unsampled classes and use the November 5
+[Gradle CI reports](https://github.com/rspace-os/rspace-web/actions/runs/42038679444) for the
+Spring and integration classes. Refresh them after
 large test changes with full JUnit XML report directories, for example:
 
 ```bash
@@ -422,23 +426,37 @@ GitHub Actions jobs set up Java and Gradle with the local action
 - caches dependencies and wrapper files in `~/.gradle/caches` and `~/.gradle/wrapper`, keyed
   by job family and build/dependency declarations;
 - separately caches task outputs in `~/.gradle/rspace-build-cache`, keyed by OS, JDK vendor/version,
-  job family, build declarations and main commit. Restore prefixes reuse the latest compatible
-  archive. A new main commit saves new outputs even when dependencies have not changed; Actions
+  job family, build declarations and main commit. Restore prefixes first match build declarations,
+  then fall back within the same OS/JDK/job family. Gradle validates individual task inputs.
+  A new main commit saves new outputs even when dependencies have not changed; Actions
   cache entries are immutable, so dependency-only keys would leave compiled outputs stuck at
   the first seed;
 - saves the cache only on `main`; other branches and pull requests restore `main`'s;
 - runs `gradle/actions/setup-gradle` with `cache-provider: external`, which leaves caching to
   the step above and still validates the wrapper.
 
-The first trusted main run seeds these archives. Until then, PR jobs remain cold. PRs do not
-publish caches. Database-backed test results remain uncacheable; compilation outputs can still
-be reused. Frontend and Storybook bundles are explicitly cacheable across runners, with source,
+The first trusted main run seeds these global archives. PRs restore them and share new
+compilation outputs within their own workflow run; they do not publish global caches.
+Database-backed test results remain uncacheable. Frontend and Storybook bundles are explicitly cacheable across runners, with source,
 config, public assets, build environment, OS/architecture, Node and pnpm versions as inputs.
 The release Markdown renderer has its own source set and runtime classpath; ordinary builds
 neither compile the renderer nor resolve Flexmark through build logic.
 
 Run it after checkout and before `pnpm install`, so the cache key's `**/*.gradle*` glob does not
 walk `node_modules`. Jenkins runs the same `./gradlew` commands; see the `Jenkinsfile`.
+
+### Reusing work without additional runners
+
+The existing change-detection job compiles main and test Java once when Java jobs are selected.
+`scripts/gradle/share-ci-compilation.py` exports newly written compilation entries, with all
+non-compilation caching disabled by its init script. Existing entries restored from main stay
+in the global archive; the artifact contains only the new entries. Java jobs restore the
+artifact from this same workflow run, named by checkout SHA and JDK, before invoking Gradle.
+Filtered resources are generated per job and database test results are never shared. Failed
+preparation or a missing artifact falls back to ordinary per-job compilation. This adds
+compilation to the initial gate, including the wait before frontend jobs on mixed changes,
+but removes repeated compilation from the existing Java runners. Check both elapsed time and
+runner minutes when measuring the next CI run.
 
 ## CI optimization verification
 
@@ -464,6 +482,17 @@ suite run after that final fixture change.
 Backend CI runs its build-helper tests alongside formatting and pin checks in one Gradle
 invocation. Warm-cache GitHub timings still need the first trusted main run to populate the
 archives. Java 21 and MariaDB 10.11 were not rerun locally in this optimization round.
+
+The follow-up without additional runners passed 3,521 frontend tests across all 507 source test
+files, JUnit/blob reports and Istanbul report merging. TypeScript, Biome, strict Spotless,
+dependency pins and build-helper tests passed. A fresh consumer restored both Java compile
+tasks from the exported cache while regenerating its filtered resources; an unchanged producer
+exported a valid empty archive. Both Spring and integration shard discovery inventories match
+the unsharded suites with no overlap, and the special integration groups remain on shard one.
+Database test bodies were not rerun for this balancing-only follow-up. The statistics-enabled
+WAR builds successfully, emits fresh JSON without rebuilding the HTML report with `CI=true`, and excludes
+bundle diagnostics. Job lists and runner matrices are unchanged. End-to-end CI timing and
+runner-minute effects still need measurement after the push.
 
 ## Benchmark
 
