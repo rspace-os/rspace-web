@@ -58,6 +58,7 @@ import java.util.function.Predicate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.LazyInitializationException;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
@@ -460,6 +461,7 @@ public abstract class BaseRecord
       mappedBy = "record",
       fetch = FetchType.EAGER,
       cascade = {CascadeType.REFRESH, CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST})
+  @BatchSize(size = 50)
   public Set<RecordToFolder> getParents() {
     return parents;
   }
