@@ -994,8 +994,12 @@ paths:
             type: boolean
             default: false
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The sample object returned by the delete operation. If deletion proceeds, the sample is marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sample"
   "/samples/{sampleId}/restore":
     put:
       summary: Restore deleted Sample
@@ -1705,8 +1709,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/subSampleIdParam"
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The subsample marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubSample"
   "/subSamples/{subSampleId}/restore":
     put:
       summary: Restore deleted SubSample
@@ -2103,8 +2111,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sampleTemplateIdParam"
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The sample template marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleTemplate"
   "/sampleTemplates/{sampleTemplateId}/restore":
     put:
       summary: Restore deleted Sample Template
@@ -2486,8 +2498,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/containerIdParam"
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The container marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Container"
   "/containers/{containerId}/restore":
     put:
       summary: Restore deleted Container
