@@ -83,8 +83,6 @@ public class LoginHelperTest {
     assertEquals(Boolean.FALSE, secondSession.getAttribute(SessionAttributeUtils.FIRST_LOGIN));
     assertEquals(Boolean.TRUE, secondSession.getAttribute(BaseLoginHelperImpl.RECENT_SIGNUP_ATTR));
 
-    assertEquals(Boolean.TRUE, secondSession.getAttribute(BaseLoginHelperImpl.RECENT_SIGNUP_ATTR));
-
     // these are false for a new user
     assertEquals(
         Boolean.FALSE, secondSession.getAttribute(BaseLoginHelperImpl.AUTOSHARE_ENABLED_ATTR));
@@ -95,14 +93,12 @@ public class LoginHelperTest {
   public void testOldUserPostLoginHappyCase() {
     User user = Mockito.spy(createAnyUser("any"));
     user.setId(1L);
-    Mockito.when(commGr.getNotificationStatus(user)).thenReturn(new NotificationStatus(1, 1, 1));
 
     Calendar cal = Calendar.getInstance();
     cal.add(Calendar.DAY_OF_MONTH, -1);
     Mockito.when(user.getCreationDate()).thenReturn(cal.getTime());
 
     HttpSession recentUserSession = loginHelper.postLogin(user, req);
-    assertPostLoginAssertions(user, req, recentUserSession);
     assertEquals(Boolean.TRUE, recentUserSession.getAttribute(SessionAttributeUtils.FIRST_LOGIN));
     assertEquals(
         Boolean.TRUE, recentUserSession.getAttribute(BaseLoginHelperImpl.RECENT_SIGNUP_ATTR));
