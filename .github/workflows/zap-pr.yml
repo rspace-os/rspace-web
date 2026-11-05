@@ -34,11 +34,15 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Set up Node + pnpm
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.1.1
+        with:
+          run_install: false
+
+      - name: Set up Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
-      - run: corepack enable
+          node-version-file: package.json
 
       - name: Seed dev deployment.properties
         run: |
