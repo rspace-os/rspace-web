@@ -1,5 +1,5 @@
 import { pick } from "es-toolkit";
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, computed, makeObservable, observable, observableRef } from "mobx";
 import type React from "react";
 import { isMobile } from "react-device-detect";
 import i18n from "@/modules/common/i18n";
@@ -75,7 +75,7 @@ export default class UiStore {
       infoVisible: observable,
       dialogVisiblePanel: observable,
       confirmPageNavigation: observable,
-      confirmationDialogProps: observable.ref,
+      confirmationDialogProps: observableRef,
       viewportSize: observable,
       dirty: observable,
       updateViewportSize: action,
@@ -219,7 +219,7 @@ export default class UiStore {
           message,
           yesLabel,
           noLabel,
-          yes: () => {
+          yes: action(() => {
             const returnYes = action(() => {
               this.closeConfirmationDialog();
               resolve(true);
@@ -231,7 +231,7 @@ export default class UiStore {
             } else {
               returnYes();
             }
-          },
+          }),
           no: () => {
             this.closeConfirmationDialog();
             resolve(false);
