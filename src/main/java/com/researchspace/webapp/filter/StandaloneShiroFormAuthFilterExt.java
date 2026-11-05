@@ -89,31 +89,36 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
 
   private boolean checkLockoutThenContinue(ServletRequest request, ServletResponse response)
       throws Exception {
-    // check if account isn't temporarily locked due to wrong password attempts (RSPAC-2265)
-    try {
-      String username = getUsername(request);
-      User u = userMgr.getUserByUsernameOrAlias(username);
-      if (u.isAccountLocked()
-          && u.getLoginFailure() != null
-          && !lockoutPolicy.isAfterLockoutTime(u)) {
-        String password = getPassword(request);
-        if (isLoginSubmission(request, response) && password != null) {
-          sentinelCheck.pad(userMgr.loginLockKey(username), password);
+    // check if account isn't temporarily locked due to wrong password attempts.
+    // A login-page GET has no username parameter: there is no account to check, so don't
+    // issue the user lookup at all (it costs several queries per unauthenticated request).
+    String username = getUsername(request);
+    if (username != null) {
+      try {
+        User u = userMgr.getUserByUsernameOrAlias(username);
+        if (u.isAccountLocked()
+            && u.getLoginFailure() != null
+            && !lockoutPolicy.isAfterLockoutTime(u)) {
+          String password = getPassword(request);
+          if (isLoginSubmission(request, response) && password != null) {
+            sentinelCheck.pad(userMgr.loginLockKey(username), password);
+          }
+          setFailureAttribute(request, new AuthenticationException());
+          SECURITY_LOG.warn(
+              "Attempt to log in as [{}], from {}, but the account is temporarily locked",
+              username,
+              RequestUtil.remoteAddr(WebUtils.toHttp(request)));
+          return true; /* true as the request should continue, failureAttribute will take it back to login page */
         }
-        setFailureAttribute(request, new AuthenticationException());
-        SECURITY_LOG.warn(
-            "Attempt to log in as [{}], from {}, but the account is temporarily locked",
-            username,
-            RequestUtil.remoteAddr(WebUtils.toHttp(request)));
-        return true; /* true as the request should continue, failureAttribute will take it back to login page */
-      }
-    } catch (DataAccessException re) {
-      if (getUsername(request) != null
-          && !properties.isUserSignup()
-          && properties.isLdapAuthenticationEnabled()) {
-        HttpSession session = ((HttpServletRequest) request).getSession();
-        session.setAttribute("userName", getUsername(request));
-        WebUtils.issueRedirect(request, response, "/public/noldapsignup", null);
+      } catch (DataAccessException re) {
+        // expected for an unknown username (the login failure itself is logged by
+        // onLoginFailure), but worth a trace of the cause in case of real DB trouble
+        log.warn("Could not check lockout state for username [{}]: {}", username, re.getMessage());
+        if (!properties.isUserSignup() && properties.isLdapAuthenticationEnabled()) {
+          HttpSession session = ((HttpServletRequest) request).getSession();
+          session.setAttribute("userName", username);
+          WebUtils.issueRedirect(request, response, "/public/noldapsignup", null);
+        }
       }
     }
 
