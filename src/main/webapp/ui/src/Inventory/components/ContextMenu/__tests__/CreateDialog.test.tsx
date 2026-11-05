@@ -3,8 +3,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
+import { findTableCell } from "@/__tests__/tableQueries";
 import AlertContext from "../../../../stores/contexts/Alert";
 import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { fieldAttrs } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockSubSample, subsampleAttrs } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
@@ -296,6 +298,43 @@ describe("CreateDialog", () => {
     });
   });
   describe("New template from sample", () => {
+    test("Default values display local times without a date", async () => {
+      const user = userEvent.setup();
+      const sample = makeMockSample({
+        fields: [
+          fieldAttrs({ id: 1, name: "Collection time", type: "time", content: "14:30" }),
+          fieldAttrs({ id: 2, name: "Collection date", type: "date", content: "2026-11-05" }),
+          fieldAttrs({ id: 3, name: "Unset time", type: "time", content: "" }),
+          fieldAttrs({
+            id: 4,
+            name: "Medium",
+            type: "choice",
+            definition: { options: ["Agar", "Broth"] },
+            selectedOptions: ["Broth"],
+          }),
+        ],
+      });
+      vi.spyOn(sample, "fetchAdditionalInfo").mockResolvedValue();
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
+        </ThemeProvider>,
+      );
+      await user.click(await screen.findByRole("radio", { name: "inventory:sample.createOptions.template.label" }));
+      await user.type(screen.getByRole("textbox", { name: "inventory:createOptions.common.name" }), "Timed template");
+      await user.click(nextButton());
+
+      const table = await screen.findByRole("table");
+      const defaultValueCell = (rowIndex: number) =>
+        findTableCell(table, {
+          columnHeading: "inventory:contextMenu.createDialog.columns.defaultValue",
+          rowIndex,
+        });
+      expect(await defaultValueCell(0)).toHaveTextContent("14:30");
+      expect(await defaultValueCell(1)).toHaveTextContent("2026-11-05");
+      expect(await defaultValueCell(2)).toBeEmptyDOMElement();
+      expect(await defaultValueCell(3)).toHaveTextContent("Broth");
+    });
     test("No fields", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
