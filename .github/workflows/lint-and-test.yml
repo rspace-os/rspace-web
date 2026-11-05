@@ -235,18 +235,9 @@ jobs:
       # frontend checks (and vice versa).
       # -DspotlessStrict adds the CleanThat checks. Plain spotlessApply will not
       # fix those; use `./gradlew spotlessApply -DspotlessStrict`.
-      - name: Spotless check
+      - name: Formatting and dependency checks
         run: |
-          ./gradlew -q spotlessCheck -DspotlessStrict \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
-
-      # gradle/pinned-versions.txt forces every dependency version, so it must list each module
-      # on the classpaths at the version its declaration names. Runs even if Spotless failed.
-      - name: Check pinned dependency versions
-        if: ${{ !cancelled() }}
-        run: |
-          ./gradlew -q checkPinnedVersions \
+          ./gradlew -q --continue spotlessCheck checkPinnedVersions :buildSrc:test -DspotlessStrict \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
@@ -591,12 +582,11 @@ jobs:
           # changed (added/removed/bigger/smaller) and omit the unchanged list.
           describe-assets: changed-only
 
-  # The slow DB-backed suite is split into two jobs that run on parallel runners:
-  # - spring-tests: runs the `test` task (pure-unit + Spring-transactional tests)
+  # Database suites and their shards run on independent runners:
+  # - spring-tests: runs only slow-tagged tests; fast-junit-tests covers pure units
   # - integration-tests: runs only the `integrationTests` task
-  # Their union equals a full `./gradlew verify`. Both jobs run drop-recreate-db independently.
-  # ponytail: this doubles DB schema-init cost (each job runs drop-recreate-db); a
-  # pre-seeded DB image (planned) would remove that overhead.
+  # Together with fast-junit-tests their union equals a full `./gradlew verify`.
+  # Every shard owns a separate MariaDB and filestore. Special IT groups run on shard 1.
 
   spring-tests:
     runs-on: ubuntu-latest
@@ -610,6 +600,7 @@ jobs:
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
         mariadb-version: ['10.11', '11.8']
+        shard: [1, 2]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -671,7 +662,7 @@ jobs:
 
       - name: Run Spring tests
         run: |
-          ./gradlew test -Denvironment=drop-recreate-db \
+          ./gradlew test -PtestSuite=slow -PtestShard=${{ matrix.shard }}/2 -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
@@ -690,9 +681,17 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }})
+          check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }}, shard ${{ matrix.shard }})
           comment_mode: off
-          files: build/test-results/test/*.xml
+          files: build/test-results/test-shard${{ matrix.shard }}/*.xml
+
+      - name: Upload spring JUnit reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: spring-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
+          path: build/test-results/test-shard${{ matrix.shard }}/*.xml
+          retention-days: 7
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -706,6 +705,7 @@ jobs:
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
         mariadb-version: ['10.11', '11.8']
+        shard: [1, 2]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -763,7 +763,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          ./gradlew integrationTests --continue -Denvironment=drop-recreate-db \
+          ./gradlew integrationTests --continue -PtestShard=${{ matrix.shard }}/2 -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
@@ -783,9 +783,17 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }})
+          check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }}, shard ${{ matrix.shard }})
           comment_mode: off
-          files: build/test-results/integrationTest*/*.xml
+          files: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
+
+      - name: Upload integration JUnit reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: integration-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
+          path: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
+          retention-days: 7
 
   chemistry-tests:
     runs-on: ubuntu-latest

@@ -11,11 +11,10 @@ import java.util.regex.Pattern;
 
 /**
  * Replaces {@code ${name}} and {@code @name@} placeholders whose name is a known property and
- * leaves unknown ones untouched, as Maven resource filtering did. Unlike Gradle's line
- * filters it keeps the file's line endings, including lone carriage returns.
+ * leaves unknown ones untouched, as Maven resource filtering did. Unlike Gradle's line filters it
+ * keeps the file's line endings, including lone carriage returns.
  *
- * <p>Gradle sets {@link #setProperties} from {@code filter(PlaceholderFilter, properties:
- * map)}.
+ * <p>Gradle sets {@link #setProperties} from {@code filter(PlaceholderFilter, properties: map)}.
  */
 public class PlaceholderFilter extends FilterReader {
 

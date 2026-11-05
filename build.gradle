@@ -793,13 +793,15 @@ if (flag('enableTestCoverage')) {
   }
 }
 
+apply from: 'gradle/ci-tests.gradle'
+
 // ---------------------------------------------------------------------------------------------
 // Frontend bundle (-DgenerateReactDist) and Storybook (-DgenerateStorybook=true), skipped when
 // their inputs have not changed.
 // ---------------------------------------------------------------------------------------------
 def uiDir = layout.projectDirectory.dir('src/main/webapp/ui')
 def uiSources = uiDir.asFileTree.matching {
-  include 'src/**', '.storybook/**', '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html',
+  include 'src/**', 'public/**', '.storybook/**', '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html',
     '.browserslistrc', '.env', '.env.*', '.npmrc'
 }
 // The pnpm workspace, its lockfile and the build scripts live at the repository root.
@@ -811,11 +813,28 @@ def pnpmInstall = tasks.register('pnpmInstall', Exec) {
   inputs.files(frontendRootInputs + ['src/main/webapp/ui/package.json'].findAll { file(it).exists() })
   outputs.dir(uiDir.dir('node_modules'))
 }
+// Bundle reuse across runners needs explicit caching, beyond local up-to-date checks.
+def frontendToolVersions = ['node': ['pnpm', 'exec', 'node', '--version'], 'pnpm': ['pnpm', '--version']]
+def configureFrontendCache = { Exec task ->
+  task.outputs.cacheIf('Frontend bundle inputs include source, config, environment and tool versions') { true }
+  frontendToolVersions.each { name, command ->
+    task.inputs.property(name + 'Version', providers.exec { commandLine command }.standardOutput.asText.map { it.trim() })
+  }
+  task.inputs.property('viteEnvironment', providers.environmentVariablesPrefixedBy('VITE_'))
+  task.inputs.property('storybookEnvironment', providers.environmentVariablesPrefixedBy('STORYBOOK_'))
+  ['NODE_ENV', 'NODE_OPTIONS', 'FRONTEND_BUILD_STATS', 'VITEST', 'CI', 'BROWSERSLIST', 'BROWSERSLIST_ENV', 'BROWSERSLIST_CONFIG', 'SOURCE_DATE_EPOCH'].each { name ->
+    task.inputs.property(name, providers.environmentVariable(name).orElse(''))
+  }
+  task.inputs.property('platform', System.getProperty('os.name') + '/' + System.getProperty('os.arch'))
+  task.inputs.files('scripts').withPathSensitivity(PathSensitivity.RELATIVE)
+}
 def buildFrontend = tasks.register('buildFrontend', Exec) {
   description = 'Builds the React/Vite bundle into src/main/webapp/ui/dist.'
   dependsOn pnpmInstall
   workingDir = projectDir
   commandLine 'pnpm', 'run', 'build'
+  inputs.property('buildCommand', 'pnpm run build')
+  configureFrontendCache(delegate)
   inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
   inputs.files(frontendRootInputs).withPathSensitivity(PathSensitivity.RELATIVE)
   outputs.dir(uiDir.dir('dist'))
@@ -825,6 +844,8 @@ def buildStorybook = tasks.register('buildStorybook', Exec) {
   dependsOn pnpmInstall
   workingDir = projectDir
   commandLine 'pnpm', 'run', 'storybook:build'
+  inputs.property('buildCommand', 'pnpm run storybook:build')
+  configureFrontendCache(delegate)
   inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
   inputs.files(frontendRootInputs).withPathSensitivity(PathSensitivity.RELATIVE)
   outputs.dir(uiDir.dir('storybook-static'))
@@ -833,11 +854,18 @@ def buildStorybook = tasks.register('buildStorybook', Exec) {
 // ---------------------------------------------------------------------------------------------
 // -Denvironment=prodRelease: release checks and htmlDocs, as the old prodRelease profile did.
 // ---------------------------------------------------------------------------------------------
+// Resolve the Markdown renderer only when the release-only htmlDocs task runs.
+sourceSets {
+  markdownRenderer { java.srcDir('src/markdownRenderer/java') }
+}
+dependencies.add('markdownRendererImplementation', 'com.vladsch.flexmark:flexmark-profile-pegdown:0.64.8')
+
 // DevDocs/public rendered to HTML. Nothing in this repository reads them; release tooling may.
 def htmlDocs = tasks.register('htmlDocs', com.researchspace.build.MarkdownToHtml) {
   description = 'Renders DevDocs/public/*.md to build/htmlDocs/*.html (run by -Denvironment=prodRelease).'
   source = layout.projectDirectory.dir('DevDocs/public')
   outputDir = layout.buildDirectory.dir('htmlDocs')
+  rendererClasspath.from(sourceSets.markdownRenderer.runtimeClasspath)
 }
 
 // A Maven snapshot version: ends in SNAPSHOT, or is a deployed snapshot such as 1.0-20260101.120000-1
@@ -900,8 +928,9 @@ tasks.register('printVersion') {
 def spotlessFiles = setting('spotlessFiles')?.split(',')*.trim()?.findAll { it }
 spotless {
   java {
+    target 'src/**/*.java', 'buildSrc/src/**/*.java'
     if (spotlessFiles) {
-      target(sourceSets.main.allJava.plus(sourceSets.test.allJava).filter { f ->
+      target(sourceSets.main.allJava.plus(sourceSets.test.allJava).plus(sourceSets.markdownRenderer.allJava).plus(fileTree('buildSrc/src') { include '**/*.java' }).filter { f ->
         spotlessFiles.any { f.absolutePath.matches(it) }
       })
     }

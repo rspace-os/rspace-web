@@ -8,8 +8,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("slow")
 public class SvgToPngConverterTest {
 
   public static final String SIMPLEST_SVG =
