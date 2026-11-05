@@ -36,6 +36,18 @@ class CiTestShardTest {
   }
 
   @Test
+  void accountsForWorkPinnedToTheFirstShard() {
+    List<String> classes = List.of("short", "medium", "slow");
+    Map<String, Double> times = Map.of("short", 2.0, "medium", 5.0, "slow", 8.0);
+    assertEquals(List.of("medium"), CiTestShard.select(classes, times, 1, 2, 5.0));
+    assertEquals(List.of("slow", "short"), CiTestShard.select(classes, times, 2, 2, 5.0));
+    assertThrows(
+        IllegalArgumentException.class, () -> CiTestShard.select(classes, times, 1, 2, -1));
+    assertThrows(
+        IllegalArgumentException.class, () -> CiTestShard.select(classes, times, 1, 2, Double.NaN));
+  }
+
+  @Test
   void rejectsInvalidShardCoordinates() {
     List<String> classes = List.of("test");
     Map<String, Double> times = Map.of();

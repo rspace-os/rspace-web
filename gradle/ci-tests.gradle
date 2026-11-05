@@ -32,6 +32,16 @@ new JsonSlurper().parseText(providers.fileContents(durationFile).asText.get()).e
   durations[name] = seconds.doubleValue()
 }
 
+// These groups keep their shared database and order on shard one. Reserve their
+// class estimates plus ten seconds for each additional test JVM before balancing.
+def specialGroups = ['integrationTestRun', 'integrationTestProblematic']
+def specialClassNames = specialGroups.collectMany { name ->
+  tasks.named(name, Test).get().includes.collect { it.tokenize('/').last().replace('.class', '') }
+}
+def reservedIntegrationSeconds = specialGroups.size() * 10.0 + specialClassNames.sum { simpleName ->
+  durations.findAll { name, seconds -> name.tokenize('.').last() == simpleName }.values().sum(0.0) ?: 1.0
+}
+
 tasks.withType(Test).configureEach {
   inputs.property('testShard', shardSpec)
   inputs.file(durationFile).withPathSensitivity(PathSensitivity.RELATIVE)
@@ -60,7 +70,8 @@ tasks.withType(Test).configureEach {
         roots.find { path.startsWith(it) }.relativize(path).toString()
           .replace(File.separator, '.').replaceAll(/[.]class$/, '')
       }
-      def selected = CiTestShard.select(names, durations, index, count)
+      def reservedSeconds = task.name == 'integrationTest' ? reservedIntegrationSeconds : 0.0
+      def selected = CiTestShard.select(names, durations, index, count, reservedSeconds)
       task.filter {
         failOnNoMatchingTests = false
         // A nonmatching pattern prevents an empty shard from selecting everything.
