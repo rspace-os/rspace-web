@@ -69,7 +69,7 @@ public class QuantityUtilsTest {
     assertThrows(IllegalArgumentException.class, () -> qUtils.sum(emptyQuantities));
   }
 
-  /** An unknown or missing unit id used to be summed as "items". */
+  /** Invalid unit ids must not be accepted as dimensionless quantities. */
   @Test
   public void sumRejectsUnknownAndMissingUnitIds() {
     var items = new QuantityInfo(BigDecimal.ONE, RSUnitDef.DIMENSIONLESS.getId());
