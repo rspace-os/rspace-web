@@ -16,8 +16,6 @@ overrides:
   # second vitest whose expect our tests never use. Share the root vitest
   # until sa11y supports Vitest 5.
   '@sa11y/vitest>vitest': 5.0.5
-  # Keep React-PDF's API on the same version as the bundled PDF.js worker.
-  react-pdf>pdfjs-dist: 5.7.284
   # @jupyter-kit/katex and rehype-katex still ask for katex ^0.16, which is
   # below the patched release used by this project.
   katex@<0.19.1: 0.19.1

@@ -139,7 +139,7 @@ if (typeof globalThis.IntersectionObserver !== "function") {
 
 /*
  * Polyfill for DOMMatrix in Vitest tests. jsdom does not implement it, but
- * pdfjs-dist v5 (pulled in by react-pdf) references DOMMatrix at module-load
+ * pdfjs-dist (pulled in by react-pdf) references DOMMatrix at module-load
  * time, so importing any component that uses react-pdf (e.g. the gallery
  * Carousel / PDF preview) throws "DOMMatrix is not defined". A minimal,
  * chainable stub is enough for tests that import these components without
