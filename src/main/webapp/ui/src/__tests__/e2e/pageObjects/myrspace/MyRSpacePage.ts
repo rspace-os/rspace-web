@@ -68,10 +68,10 @@ export class MyRSpacePage extends BasePage {
 
   async openPublishedDocuments(): Promise<PublishedDocumentsPage> {
     const published = new PublishedDocumentsPage(this.page);
-    await Promise.all([
-      this.page.waitForURL((url) => url.pathname === published.path),
-      this.page.getByRole("link", { name: "My Group's Published Documents" }).click(),
-    ]);
+    const link = this.page.getByRole("link", { name: "My Group's Published Documents" });
+    // The legacy menu scroll-snaps; keyboard activation keeps its moving hitbox out of navigation.
+    await link.focus();
+    await Promise.all([this.page.waitForURL((url) => url.pathname === published.path), link.press("Enter")]);
     await published.waitUntilLoaded();
     return published;
   }

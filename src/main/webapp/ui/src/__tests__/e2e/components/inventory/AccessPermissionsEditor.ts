@@ -19,7 +19,10 @@ export class AccessPermissionsEditor {
   }
 
   async setSharingMode(mode: SharingMode): Promise<void> {
-    await this.radio(mode).check();
+    // Keyboard selection avoids a WebKit pointer click landing during layout/scroll changes.
+    // Space is idempotent for a radio: an already selected option stays selected.
+    await this.radio(mode).focus();
+    await this.radio(mode).press("Space");
     await expect(this.radio(mode)).toBeChecked();
   }
 

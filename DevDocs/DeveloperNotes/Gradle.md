@@ -569,3 +569,14 @@ Playwright MCP verified focused/unfocused menu positioning against the served sc
 DevTools verified publication navigation and inspected console/network results. The stack was
 left running. The broad CI-specific Vitest slowdown remains unconfirmed by the local comparison
 and needs the next instrumented CI run; no timing improvement is claimed for that issue yet.
+
+On the first instrumented CI follow-up all checks passed and Vitest completed its unchanged
+509 files/3,531 tests in 529.04 seconds, so the prior broad slowdown did not reproduce. WebKit
+still retried a radio click that failed to select and a scroll-snapping menu link that failed
+to navigate. The setup helpers now use native keyboard activation for these controls and retain
+the checked-state, persisted-sharing, destination-URL and rendered-page assertions. This changes
+the input method, not the expected permissions or page behavior; it does not establish that
+pointer interaction in those controls is fixed.
+
+The keyboard-activation follow-up passed both affected WebKit scenarios three times each
+with retries disabled, plus TypeScript and Biome checks. Full CI verification follows the push.
