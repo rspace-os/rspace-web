@@ -49,6 +49,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   createLabel,
   headerContent,
   headingClassName,
+  stickyActions,
   uiColumns,
   rowActions,
   selection,
@@ -170,6 +171,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                   reserveEmptyRows={reserveEmptyRows}
                   uiColumns={tableUiColumns}
                   selection={selection}
+                  stickyActions={stickyActions}
                   presentations={presentations}
                   renderRows={renderRows}
                   renderRowsWhenEmpty={renderRowsWhenEmpty}

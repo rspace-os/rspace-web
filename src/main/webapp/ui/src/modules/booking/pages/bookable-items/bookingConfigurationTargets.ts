@@ -1,26 +1,14 @@
-import * as v from "valibot";
-import { parseApiV2Problem } from "@/modules/booking/domain/booking";
-import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+import { queryOptions } from "@tanstack/react-query";
+import { bookingTargetKeys } from "@/modules/booking/domain/bookingKeys";
+import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
+import { searchBookingTargets } from "./bookingConfigurationApi";
 
-export const BookingTargetSchema = v.object({
-  id: v.number(),
-  globalId: v.string(),
-  name: v.string(),
-  deleted: v.literal(false),
-});
+export { BookingTargetSchema, MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationApi";
 
-export const MINIMUM_TARGET_QUERY_LENGTH = 2;
-
-/** Searches eligible instruments; a blank query lists the first eligible instruments by name. */
-export async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
-  const parameters = new URLSearchParams({ limit: "20" });
-  // The API rejects a non-blank query shorter than two characters.
-  if (query.trim().length >= MINIMUM_TARGET_QUERY_LENGTH) parameters.set("q", query.trim());
-  const response = await fetchWithUiToken(`/api/v2/booking-configuration-targets?${parameters}`, {
-    headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    signal,
+export const eligibleBookingTargetsQuery = (scope: number, token: string) =>
+  queryOptions({
+    queryKey: [...bookingTargetKeys.all, "browse", scope] as const,
+    queryFn: ({ signal }) => searchBookingTargets("", token, signal),
+    retry: retryUnlessClientError,
+    staleTime: 10 * 60 * 1000,
   });
-  if (!response.ok) throw await parseApiV2Problem(response);
-  return parseOrThrow(v.object({ docs: v.array(BookingTargetSchema) }), (await response.json()) as unknown).docs;
-}

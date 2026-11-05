@@ -22,14 +22,20 @@ rejected.
 
 For booking domain rules and API examples, see [Booking](Booking.md).
 
-### Inventory container read constraints
+### Containers and trusted read constraints
+
+The read-only `containers` collection exposes `id`, `globalId`, `name`, `containerType`
+and `deleted`, with list, count and single reads.
 
 `InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
 `ContainerReadAccess` excludes deleted containers and allows direct Inventory read
 access or access through an active immediate child Container, Instrument or SubSample.
 Role visibility applies to the container itself, not its children. System administrators
 can read every active container, including workbenches. The query compiler uses correlated
-subqueries so filtering, totals and pagination use the same rule.
+subqueries so filtering, totals and pagination use the same rule. Booking location queries
+reuse this constraint. For domain rules that caller filter syntax cannot express, add a typed
+`QueryConstraint` carrying caller facts and compile it centrally; combine it with caller filters
+instead of rebuilding the access predicate in each feature.
 
 Instrument location is the nullable `parentContainer` to-one relationship to
 `containers`, bound to `parentLocation.container.id`. Use relationship expansion
@@ -189,7 +195,7 @@ by the query compiler.
 
 Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. For client catalog
 allowlisting and redirect rejection, see [Relationship filters](TableListInteractions.md#relationship-filters).
-Target-only aliases may delegate catalogs; never infer the catalog resource from `viaResource`.
+Relationship runtime catalogs belong to the registered target collection.
 
 The 50-comparison budget covers direct, relationship, and runtime
 predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection

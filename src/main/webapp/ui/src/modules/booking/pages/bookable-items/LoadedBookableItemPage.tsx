@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { BookingLocalNotices, useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
@@ -106,7 +107,9 @@ export function LoadedBookableItemPage({
     setRulesSaveBlocked,
     conflictVersion,
     discardConflictedDraft,
+    localNotices,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab, token });
+  useBookingNoticeHost("item-detail", localNotices.notify);
   const [cutoff] = useState(() => new Date().toISOString());
   const formId = `bookable-item-details-${useId()}`;
   const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
@@ -116,7 +119,8 @@ export function LoadedBookableItemPage({
   if (target === null) return null;
 
   return (
-    <main className={detailPageClassName}>
+    <main className={detailPageClassName} tabIndex={-1}>
+      <BookingLocalNotices alerts={localNotices.alerts} onDismiss={localNotices.dismiss} />
       {readError ? (
         <Alert variant="destructive">
           <AlertDescription>
@@ -159,6 +163,7 @@ export function LoadedBookableItemPage({
                 (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
                   <BookingCreationButtonGroup
                     ownerId={`bookable-item-${configuration.id}`}
+                    originHost="item-detail"
                     target={bookableItemOption({ ...configuration, target })}
                     lockTarget
                     disabled={!configuration.enabled}
@@ -426,13 +431,11 @@ export function LoadedBookableItemPage({
       <p role="status" aria-live="polite" className="sr-only">
         {updateMutation.isPending
           ? t("bookableItemDetails.update.pending")
-          : saveAnnouncement === "saved"
-            ? t("bookableItemDetails.update.saved")
-            : saveAnnouncement === "archived"
-              ? t("bookableItemDetails.update.archived")
-              : saveAnnouncement === "restored"
-                ? t("bookableItemDetails.update.restored")
-                : null}
+          : saveAnnouncement === "archived"
+            ? t("bookableItemDetails.update.archived")
+            : saveAnnouncement === "restored"
+              ? t("bookableItemDetails.update.restored")
+              : null}
       </p>
     </main>
   );

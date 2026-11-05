@@ -213,18 +213,20 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   };
 }
 
-async function fetchApiV2CollectionMetadata<TDocument>(
-  resourceName: string,
-  options: { fetch?: typeof globalThis.fetch; signal?: AbortSignal } = {},
-): Promise<ApiV2CollectionMetadata<TDocument>> {
-  const response = await (options.fetch ?? fetchWithUiToken)("/api/v2/openapi.json", {
-    headers: { "X-Requested-With": "XMLHttpRequest" },
-    signal: options.signal,
+export const apiV2OpenApiOptions = (fetcher = fetchWithUiToken) =>
+  queryOptions({
+    queryKey: ["rspace.api.v2.openapi", "document"],
+    queryFn: async ({ signal }) => {
+      const response = await fetcher("/api/v2/openapi.json", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        signal,
+      });
+      if (!response.ok) throw new Error(`API V2 OpenAPI request failed with status ${response.status}`);
+      return (await response.json()) as unknown;
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
-  if (!response.ok) throw new Error(`API V2 OpenAPI request failed with status ${response.status}`);
-  const document: unknown = await response.json();
-  return apiV2CollectionMetadataFromOpenApi<TDocument>(document, resourceName);
-}
 
 export function apiV2MetadataOptions<T>(
   resource: string,
@@ -232,8 +234,9 @@ export function apiV2MetadataOptions<T>(
 ) {
   return queryOptions({
     queryKey: apiV2MetadataKey(resource),
-    queryFn: ({ signal }) =>
-      options.metadata ?? fetchApiV2CollectionMetadata<T>(resource, { fetch: options.fetch, signal }),
+    queryFn: async ({ client }) =>
+      options.metadata ??
+      apiV2CollectionMetadataFromOpenApi<T>(await client.fetchQuery(apiV2OpenApiOptions(options.fetch)), resource),
     staleTime: Infinity,
     gcTime: Infinity,
   });

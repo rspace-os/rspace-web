@@ -1,22 +1,23 @@
 import { Form, isDirty, reset, useField, useForm } from "@formisch/react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { CheckIcon, SaveIcon } from "lucide-react";
 import { type Ref, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { bookingSubscriptionKeys } from "@/modules/booking/domain/bookingKeys";
 import {
   type BookingNotificationPreferencesInput,
+  bookingNotificationPreferencesQuery,
   bookingNotificationPreferencesQueryKey,
-  bookingNotificationSubscriptionsQueryKey,
-  fetchBookingNotificationPreferences,
   unsubscribeFromAllBookingNotificationSubscriptions,
   useReplaceBookingNotificationPreferences,
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
-import { Field, FieldLabel } from "@/modules/common/ui/field";
+import { Field, FieldContent, FieldDescription, FieldLabel } from "@/modules/common/ui/field";
 import { Switch } from "@/modules/common/ui/switch";
 import { Heading } from "@/modules/common/ui/typography";
 import {
@@ -81,11 +82,10 @@ export function BookingNotificationPreferencesSection() {
 function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: number }) {
   const { t } = useTranslation("booking");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const queryClient = useQueryClient();
-  const queryKey = bookingNotificationPreferencesQueryKey(subjectId);
+  const _queryClient = useQueryClient();
+  const _queryKey = bookingNotificationPreferencesQueryKey(subjectId);
   const preferences = useSuspenseQuery({
-    queryKey,
-    queryFn: ({ signal }) => fetchBookingNotificationPreferences(token, signal),
+    ...bookingNotificationPreferencesQuery(subjectId, token),
   }).data;
   const form = useForm({
     schema: NotificationPreferencesFormSchema,
@@ -96,11 +96,11 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
   const notifyOnCancelled = useField(form, { path: ["notifyOnCancelled"] });
   const replace = useReplaceBookingNotificationPreferences(subjectId);
   const [unsubscribeCount, setUnsubscribeCount] = useState<number>();
-  const unsubscribeAll = useMutation({
+  const unsubscribeAll = useApiV2Mutation({
+    meta: { invalidates: [bookingSubscriptionKeys.notifications(subjectId)] },
     mutationFn: () => unsubscribeFromAllBookingNotificationSubscriptions(token),
     onSuccess: async (count) => {
       setUnsubscribeCount(count);
-      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
     },
   });
   const dirty = isDirty(form);
@@ -185,8 +185,15 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             {t("notificationSubscriptions.preferences.saveError")}
           </p>
         ) : null}
-        <div className="space-y-2">
-          <label htmlFor="notify-own-actions">{t("notificationSubscriptions.preferences.ownActions.label")}</label>
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="notify-own-actions">
+              {t("notificationSubscriptions.preferences.ownActions.label")}
+            </FieldLabel>
+            <FieldDescription id="notify-own-actions-description">
+              {t("notificationSubscriptions.preferences.ownActions.description")}
+            </FieldDescription>
+          </FieldContent>
           <Switch
             id="notify-own-actions"
             checked={notifyOwnActions.input ?? false}
@@ -194,8 +201,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             aria-describedby="notify-own-actions-description"
             onCheckedChange={(checked) => notifyOwnActions.onChange(checked)}
           />
-          <p id="notify-own-actions-description">{t("notificationSubscriptions.preferences.ownActions.description")}</p>
-        </div>
+        </Field>
         <Button
           type="submit"
           size="sm"
@@ -222,6 +228,9 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         >
           {t("notificationSubscriptions.preferences.cancel")}
         </Button>
+        <p role="status" className="sr-only">
+          {saved ? t("preferences.actions.saved") : null}
+        </p>
       </Form>
       <div className="space-y-3 rounded-sm border p-4">
         <p className="text-sm text-muted-foreground">
@@ -232,11 +241,11 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             {t("notificationSubscriptions.preferences.unsubscribeError")}
           </p>
         ) : null}
-        {unsubscribeCount !== undefined ? (
-          <p role="status" className="text-sm text-muted-foreground">
-            {t("notificationSubscriptions.preferences.unsubscribed", { count: unsubscribeCount })}
-          </p>
-        ) : null}
+        <p role="status" className={unsubscribeCount !== undefined ? "text-sm text-muted-foreground" : "sr-only"}>
+          {unsubscribeCount !== undefined
+            ? t("notificationSubscriptions.preferences.unsubscribed", { count: unsubscribeCount })
+            : null}
+        </p>
         <Button
           type="button"
           variant="outline"

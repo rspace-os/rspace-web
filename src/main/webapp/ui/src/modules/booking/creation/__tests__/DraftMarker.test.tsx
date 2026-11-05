@@ -1,10 +1,9 @@
-import { Temporal } from "@js-temporal/polyfill";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import { DraftMarker } from "../DraftMarker";
-import type { TimelineMovePolicy } from "../timelineMove";
+import { type TimelinePolicy, unrestrictedTimelinePolicy } from "../timelineRange";
 
 function mockTimelineBounds() {
   const canvas = screen.getByTestId("day-timeline-canvas");
@@ -27,13 +26,13 @@ function renderDraftMarker(
     timeZone = "UTC",
     schedulingTimezone = timeZone,
     snapIncrementMinutes = 5,
-    movementPolicy,
+    policy,
     onChange,
   }: {
     timeZone?: string;
     schedulingTimezone?: string;
     snapIncrementMinutes?: number;
-    movementPolicy?: TimelineMovePolicy;
+    policy?: Partial<TimelinePolicy>;
     onChange?: (draft: BookingWindowDraft) => void;
   } = {},
 ) {
@@ -46,26 +45,18 @@ function renderDraftMarker(
     <DraftMarker
       creation={{ ownerId: "test", triggerId: "timeline", initialDate: draft.startDate, eventKind: "BOOKING" }}
       timeZone={timeZone}
-      schedulingTimezone={schedulingTimezone}
-      snapIncrementMinutes={snapIncrementMinutes}
-      movementPolicy={movementPolicy}
+      policy={{
+        ...unrestrictedTimelinePolicy(schedulingTimezone),
+        slotGranularityMinutes: snapIncrementMinutes,
+
+        ...policy,
+      }}
       draft={draft}
       onChange={onChange}
     />,
   );
   mockTimelineBounds();
   return screen.getByRole("button", { name: "booking:calendar.windowEditor.move" });
-}
-
-function expectKathmanduGrid(draft: BookingWindowDraft | undefined) {
-  expect(draft).toBeDefined();
-  if (!draft) return;
-  for (const edge of ["start", "end"] as const) {
-    const instant = Temporal.PlainDateTime.from(`${draft[`${edge}Date`]}T${draft[`${edge}Time`]}`)
-      .toZonedDateTime("UTC")
-      .toInstant();
-    expect(instant.toZonedDateTimeISO("Asia/Kathmandu").minute % 10).toBe(0);
-  }
 }
 
 it("retains the elapsed width of a booking across the repeated hour", () => {
@@ -103,9 +94,9 @@ it("keeps an overnight booking's true interval when moved by keyboard", async ()
 
   expect(onChange).toHaveBeenCalledWith({
     startDate: "2026-08-17",
-    startTime: "21:55",
+    startTime: "21:59",
     endDate: "2026-08-18",
-    endTime: "01:55",
+    endTime: "01:59",
   });
 });
 
@@ -123,9 +114,9 @@ it("preserves a 2,880-minute interval when moved by keyboard", async () => {
   const moved = onChange.mock.lastCall?.[0];
   expect(moved).toEqual({
     startDate: "2026-08-17",
-    startTime: "08:05",
+    startTime: "08:01",
     endDate: "2026-08-19",
-    endTime: "08:05",
+    endTime: "08:01",
   });
   expect(
     Date.parse(`${moved?.endDate}T${moved?.endTime}:00Z`) - Date.parse(`${moved?.startDate}T${moved?.startTime}:00Z`),
@@ -159,7 +150,7 @@ it("preserves a 2,880-minute interval when moved by pointer", async () => {
   ).toBe(2_880 * 60_000);
 });
 
-it("keeps a hidden start and chooses the earlier Kathmandu grid slot on a left-edge tie", async () => {
+it("keeps a hidden start and moves to the left display edge", async () => {
   const user = userEvent.setup();
   const onChange = vi.fn();
   const move = renderDraftMarker(
@@ -175,15 +166,14 @@ it("keeps a hidden start and chooses the earlier Kathmandu grid slot on a left-e
   ]);
 
   expect(onChange).toHaveBeenCalledWith({
-    startDate: "2026-08-16",
-    startTime: "23:55",
+    startDate: "2026-08-17",
+    startTime: "00:00",
     endDate: "2026-08-17",
-    endTime: "00:55",
+    endTime: "01:00",
   });
-  expectKathmanduGrid(onChange.mock.lastCall?.[0]);
 });
 
-it("keeps the full interval on the Kathmandu grid when moved at the right edge", async () => {
+it("keeps the full interval in a fractional-offset scheduling timezone when moved at the right edge", async () => {
   const user = userEvent.setup();
   const onChange = vi.fn();
   const move = renderDraftMarker(
@@ -200,18 +190,17 @@ it("keeps the full interval on the Kathmandu grid when moved at the right edge",
 
   expect(onChange).toHaveBeenCalledWith({
     startDate: "2026-08-17",
-    startTime: "23:55",
+    startTime: "23:59",
     endDate: "2026-08-18",
-    endTime: "00:55",
+    endTime: "00:59",
   });
-  expectKathmanduGrid(onChange.mock.lastCall?.[0]);
 });
 
 it("does not emit a keyboard move when no valid next interval remains on the displayed day", async () => {
   const user = userEvent.setup();
   const onChange = vi.fn();
   const move = renderDraftMarker(
-    { startDate: "2026-08-17", startTime: "23:55", endDate: "2026-08-18", endTime: "00:55" },
+    { startDate: "2026-08-17", startTime: "23:59", endDate: "2026-08-18", endTime: "00:59" },
     { schedulingTimezone: "Asia/Kathmandu", snapIncrementMinutes: 10, onChange },
   );
 
@@ -227,7 +216,7 @@ it("does not emit a keyboard move when the complete interval exceeds the item du
   const move = renderDraftMarker(
     { startDate: "2026-08-17", startTime: "09:00", endDate: "2026-08-17", endTime: "09:30" },
     {
-      movementPolicy: {
+      policy: {
         maxBookingDurationMinutes: 15,
         openingHours: [],
         enforceOpeningHours: false,
@@ -240,4 +229,68 @@ it("does not emit a keyboard move when the complete interval exceeds the item du
   await user.keyboard("{ArrowRight}");
 
   expect(onChange).not.toHaveBeenCalled();
+});
+
+it("moves an overnight booking by one minute without pulling its end into the day", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(
+    <section id="timeline">
+      <div data-testid="day-timeline-canvas" />
+    </section>,
+  );
+  render(
+    <DraftMarker
+      creation={{ ownerId: "test", triggerId: "timeline", initialDate: "2026-08-17", eventKind: "BOOKING" }}
+      timeZone="UTC"
+      draft={{
+        startDate: "2026-08-17",
+        startTime: "22:00",
+        endDate: "2026-08-18",
+        endTime: "02:00",
+      }}
+      onChange={onChange}
+    />,
+  );
+
+  screen.getByRole("button", { name: "booking:calendar.windowEditor.move" }).focus();
+  await user.keyboard("{ArrowLeft}");
+
+  expect(onChange).toHaveBeenCalledWith({
+    startDate: "2026-08-17",
+    startTime: "21:59",
+    endDate: "2026-08-18",
+    endTime: "01:59",
+  });
+});
+
+it("ends an overnight booking at midnight on double-click or Enter, but not on a single click", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(
+    <section id="timeline">
+      <div data-testid="day-timeline-canvas" />
+    </section>,
+  );
+  render(
+    <DraftMarker
+      creation={{ ownerId: "test", triggerId: "timeline", initialDate: "2026-08-17", eventKind: "BOOKING" }}
+      timeZone="UTC"
+      draft={{ startDate: "2026-08-17", startTime: "22:00", endDate: "2026-08-18", endTime: "02:00" }}
+      onChange={onChange}
+    />,
+  );
+  const continuation = screen.getByRole("button", { name: "booking:timelineEdit.endAtMidnight" });
+  expect(screen.queryByRole("button", { name: "booking:calendar.windowEditor.end" })).not.toBeInTheDocument();
+
+  await user.click(continuation);
+  expect(onChange).not.toHaveBeenCalled();
+  expect(continuation).toHaveFocus();
+
+  await user.keyboard("{Enter}");
+  await user.dblClick(continuation);
+  const midnight = { startDate: "2026-08-17", startTime: "22:00", endDate: "2026-08-18", endTime: "00:00" };
+  expect(onChange).toHaveBeenNthCalledWith(1, midnight);
+  expect(onChange).toHaveBeenNthCalledWith(2, midnight);
+  expect(onChange).toHaveBeenCalledTimes(2);
 });

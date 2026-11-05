@@ -7,6 +7,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.ResourceSlice;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,7 +79,7 @@ public interface ResourceOperations<T, ID> {
   }
 
   /** Earliest timestamp for related rows missing the required identity fields. */
-  default java.time.Instant relatedAuditFallbackFrom(T entity) {
+  default Instant relatedAuditFallbackFrom(T entity) {
     return null;
   }
 

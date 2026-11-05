@@ -1,8 +1,12 @@
+import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
 import { schedulingSettingsEntries } from "@/modules/booking/configuration/schedulingSettings";
+import { bookingCatalogueKeys, bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+import type { BookableItemOption } from "../creation/bookableItemOption";
+import type { BookingEventKind } from "./booking";
 
 export const BookingCatalogueLocationSchema = v.object({
   globalId: v.string(),
@@ -74,6 +78,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
     state: "ACTIVE" as const,
     timezone: item.timezone,
     slotGranularityMinutes: item.slotGranularityMinutes,
+    incrementUnit: item.incrementUnit,
     openingHours: item.openingHours,
     bufferBeforeMinutes: item.bufferBeforeMinutes,
     bufferAfterMinutes: item.bufferAfterMinutes,
@@ -204,3 +209,120 @@ export async function fetchBookingCatalogueLocations(
   if (!response.ok) throw new Error(`Booking catalogue location request failed (${response.status})`);
   return parseOrThrow(BookingCatalogueLocationPageSchema, await response.json());
 }
+
+export async function loadBookableItems(
+  search: { term?: string; target?: string; page?: number; eventKind?: BookingEventKind },
+  token: string,
+  signal: AbortSignal,
+): Promise<{ options: readonly BookableItemOption[]; totalPages: number }> {
+  const result = await fetchBookingCatalogue(
+    {
+      q: search.term,
+      target: search.target,
+      capability: search.eventKind === "MAINTENANCE" ? "CREATE_BLOCKOUT" : "CREATE_BOOKING",
+      page: search.page,
+      pageSize: 20,
+    },
+    token,
+    signal,
+  );
+  return {
+    options: result.items
+      .filter((item) =>
+        search.eventKind === "MAINTENANCE" ? item.capabilities.canCreateBlockout : item.capabilities.canCreateBooking,
+      )
+      .map((item) => ({
+        configurationId: item.configurationId,
+        targetId: item.targetId,
+        globalId: item.globalId,
+        name: item.name,
+        timezone: item.timezone,
+        slotGranularityMinutes: item.slotGranularityMinutes,
+        incrementUnit: item.incrementUnit,
+        openingHours: item.openingHours,
+        bufferBeforeMinutes: item.bufferBeforeMinutes,
+        bufferAfterMinutes: item.bufferAfterMinutes,
+        maxBookingDurationMinutes: item.maxBookingDurationMinutes,
+        allowDoubleBooking: item.allowDoubleBooking,
+        capabilities: item.capabilities,
+      })),
+    totalPages: Math.max(1, Math.ceil(result.total / result.pageSize)),
+  };
+}
+
+export const enabledBookingPickerTargetQuery = (globalId: string | undefined, token: string) =>
+  queryOptions({
+    queryKey: [...bookingConfigurationKeys.all, "enabled-picker", "target", globalId] as const,
+    queryFn: !globalId ? skipToken : ({ signal }) => loadBookableItems({ target: globalId }, token, signal),
+    retry: false,
+  });
+
+export const bookingCatalogueQuery = (
+  scope: unknown,
+  search: Parameters<typeof fetchBookingCatalogue>[0],
+  token: string,
+) =>
+  queryOptions({
+    queryKey: [
+      ...bookingCatalogueKeys.allItemsPrefix(scope),
+      search.q,
+      search.types,
+      search.mine,
+      search.where,
+      search.page,
+      search.pageSize,
+      ...(search.availability
+        ? [
+            search.availability,
+            search.availabilityWindow?.start,
+            search.availabilityWindow?.end,
+            search.availabilityWindow?.now,
+          ]
+        : []),
+    ] as const,
+    queryFn: ({ signal }) => fetchBookingCatalogue(search, token, signal),
+    staleTime: 30_000,
+  });
+
+export const bookingCatalogueAvailabilityCountsQuery = (
+  scope: unknown,
+  search: Parameters<typeof fetchBookingCatalogueAvailabilityCounts>[0],
+  today: Parameters<typeof fetchBookingCatalogueAvailabilityCounts>[1],
+  token: string,
+) =>
+  queryOptions({
+    queryKey: [
+      ...bookingCatalogueKeys.availabilityCountsPrefix(scope),
+      search.q,
+      search.types,
+      search.mine,
+      search.where,
+      today.start,
+      today.end,
+      today.now,
+    ] as const,
+    queryFn: ({ signal }) => fetchBookingCatalogueAvailabilityCounts(search, today, token, signal),
+    staleTime: 30_000,
+  });
+
+export const calendarBookingCatalogueQuery = (
+  scope: unknown,
+  parameters: unknown,
+  search: Parameters<typeof fetchBookingCatalogue>[0],
+  token: string,
+) => {
+  const queryFn = async ({ signal }: { signal: AbortSignal }) => {
+    const result = await fetchBookingCatalogue(search, token, signal);
+    return { rows: result.items.map(catalogueItemAsConfiguration), rowCount: result.total };
+  };
+  return {
+    ...queryOptions({ queryKey: [...bookingKeys.catalogue(), "calendar", scope, parameters] as const, queryFn }),
+    queryFn,
+  };
+};
+
+export const bookableItemsPickerQuery = (term: string, page: number, eventKind: BookingEventKind, token: string) =>
+  queryOptions({
+    queryKey: [...bookingCatalogueKeys.pickers(), term.trim(), page, eventKind] as const,
+    queryFn: ({ signal }) => loadBookableItems({ term, page, eventKind }, token, signal),
+  });

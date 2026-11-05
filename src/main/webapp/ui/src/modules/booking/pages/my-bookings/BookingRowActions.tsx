@@ -66,7 +66,7 @@ export function BookingRowActions({
   const moreActionsLabel = t("myBookings.actions.more");
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex w-max flex-nowrap gap-1">
       {row.canViewConfiguration && row.target ? (
         <TooltipIconLink label={itemCalendarLabel} icon={<CalendarClockIcon aria-hidden="true" />}>
           <Link
@@ -151,7 +151,6 @@ export function BookingRowActions({
               undo: {
                 run: async () => {
                   await restoreBooking(row.id, cancelled.version ?? 0, token);
-                  await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
                   await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
                 },
                 focusRowId: String(row.id),

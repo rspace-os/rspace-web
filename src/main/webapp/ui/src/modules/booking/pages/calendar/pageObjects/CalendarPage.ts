@@ -18,7 +18,7 @@ export class CalendarPage {
   readonly reset: Locator = this.toolbar.getByRole("button", {
     name: "Reset filters, sorting, and columns to defaults",
   });
-  readonly filters: Locator = this.toolbar.getByRole("button", { name: /^Filters(?:,| )/ });
+  readonly filters: Locator = this.toolbar.getByRole("button", { name: /^Filters(?:$|[ ,])/ });
   readonly dateControls: Locator = page.getByRole("group", { name: "Calendar date controls" });
   readonly viewMenu: Locator = this.toolbar.getByRole("button", { name: /^View: / });
   readonly search: Locator = page.getByRole("textbox", { name: "Search Calendar" });

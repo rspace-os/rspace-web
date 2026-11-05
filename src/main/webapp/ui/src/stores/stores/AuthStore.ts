@@ -99,6 +99,8 @@ export default class AuthStore {
           this.scheduleRefresh(Math.min(backoffMs, millisecondsToExpiry));
         } else {
           this.isAuthenticated = false;
+          JwtService.destroyToken();
+          window.location.href = "/login";
         }
         throw error;
       });

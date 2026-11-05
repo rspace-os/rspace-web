@@ -3,15 +3,15 @@ import { faGoogle } from "@fortawesome/free-brands-svg-icons/faGoogle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, CheckIcon, CopyIcon } from "lucide-react";
-import { useState } from "react";
+import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   calendarApplicationUrls,
   createUserCalendarSubscription,
-  fetchUserCalendarSubscriptionStatus,
   revokeUserCalendarSubscription,
   rotateUserCalendarSubscription,
+  userCalendarSubscriptionQuery,
   userCalendarSubscriptionQueryKey,
 } from "@/modules/booking/pages/bookable-items/bookableItemCalendarSubscription";
 import {
@@ -31,27 +31,59 @@ import { Skeleton } from "@/modules/common/ui/skeleton";
 export function UserCalendarSubscription({ token }: { token: string }) {
   const { t } = useTranslation("booking");
   const queryClient = useQueryClient();
-  const [copied, setCopied] = useState(false);
   const [clipboardError, setClipboardError] = useState(false);
-  const [confirmingReplace, setConfirmingReplace] = useState(false);
-  const status = useQuery({
-    queryKey: userCalendarSubscriptionQueryKey,
-    queryFn: ({ signal }) => fetchUserCalendarSubscriptionStatus(token, signal),
-    retry: false,
-  });
-  const resetCopy = () => {
-    setCopied(false);
-    setClipboardError(false);
+  const [linkFeedback, setLinkFeedback] = useState<"ready" | "replaced" | "disconnected" | "copied" | null>(null);
+  const linkFeedbackMessages = {
+    ready: t("preferences.calendarSubscription.ready"),
+    replaced: t("preferences.calendarSubscription.replaced"),
+    disconnected: t("preferences.calendarSubscription.disconnected"),
+    copied: t("preferences.calendarSubscription.copied"),
   };
+  const [confirmingReplace, setConfirmingReplace] = useState(false);
+  const focusTarget = useRef<"calendar" | "create" | "retry" | null>(null);
+  const focusOrigin = useRef<Element | null>(null);
+  const dialogRestoresFocus = useRef(false);
+  const googleLinkRef = useRef<HTMLAnchorElement>(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const retryButtonRef = useRef<HTMLButtonElement>(null);
+  const status = useQuery({
+    ...userCalendarSubscriptionQuery(token),
+  });
+  const subscriptionUrl = status.data?.subscriptionUrl ?? null;
+  const beginChange = () => {
+    setClipboardError(false);
+    setLinkFeedback(null);
+    focusTarget.current = null;
+    focusOrigin.current = document.activeElement;
+  };
+  const resolveCreateButton = useCallback(
+    () => (status.isSuccess && subscriptionUrl === null ? createButtonRef.current : null),
+    [status.isSuccess, subscriptionUrl],
+  );
+  const focusTargetAfterRefetch = (refreshed: Awaited<ReturnType<typeof status.refetch>>) => {
+    if (refreshed.isSuccess && refreshed.data.subscriptionUrl === null) return "create" as const;
+    if (refreshed.isError) return "retry" as const;
+    return "calendar" as const;
+  };
+  const restoreFocusIfUnmoved = useCallback((target: HTMLElement | null) => {
+    if (target) {
+      const active = document.activeElement;
+      if (!focusOrigin.current || active === focusOrigin.current || active === document.body) target.focus();
+    }
+    focusTarget.current = null;
+    focusOrigin.current = null;
+  }, []);
   const create = useMutation({
     mutationFn: () => createUserCalendarSubscription(token),
     retry: false,
     onMutate: () => {
-      resetCopy();
+      beginChange();
       // A fresh link supersedes any earlier replace conflict.
       rotate.reset();
     },
     onSuccess: async (created) => {
+      focusTarget.current = "calendar";
+      setLinkFeedback("ready");
       await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
       queryClient.setQueryData(userCalendarSubscriptionQueryKey, created);
     },
@@ -62,40 +94,87 @@ export function UserCalendarSubscription({ token }: { token: string }) {
       return rotateUserCalendarSubscription(token, status.data.etag);
     },
     retry: false,
-    onMutate: resetCopy,
+    onMutate: () => {
+      beginChange();
+      dialogRestoresFocus.current = true;
+    },
     onSuccess: async (rotated) => {
+      focusTarget.current = "calendar";
+      setLinkFeedback("replaced");
       await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
       queryClient.setQueryData(userCalendarSubscriptionQueryKey, rotated);
     },
-    onError: (error) => {
+    onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
-        void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
+        const refreshed = await status.refetch();
+        const nextFocus = focusTargetAfterRefetch(refreshed);
+        if (nextFocus === "create") setLinkFeedback("disconnected");
+        focusTarget.current = nextFocus;
+        return;
       }
+      focusTarget.current = "calendar";
     },
     onSettled: () => setConfirmingReplace(false),
   });
   const revoke = useMutation({
     mutationFn: () => revokeUserCalendarSubscription(token),
     retry: false,
+    onMutate: beginChange,
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
-      resetCopy();
+      setClipboardError(false);
       rotate.reset();
-      void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
+      if (status.data) {
+        queryClient.setQueryData(userCalendarSubscriptionQueryKey, {
+          active: false,
+          updatedAt: null,
+          subscriptionUrl: null,
+          etag: status.data.etag,
+        });
+      }
+      const refreshed = await status.refetch();
+      const nextFocus = focusTargetAfterRefetch(refreshed);
+      focusTarget.current = nextFocus;
+      if (nextFocus === "create") setLinkFeedback("disconnected");
     },
   });
-  const subscriptionUrl = status.data?.subscriptionUrl ?? null;
   const pending = create.isPending || rotate.isPending || revoke.isPending;
   const rotateConflict = rotate.error instanceof ApiV2ProblemError && rotate.error.status === 412;
 
+  useEffect(() => {
+    if (confirmingReplace || pending || dialogRestoresFocus.current) return;
+    const createButton = resolveCreateButton();
+    const target =
+      focusTarget.current === "calendar" && subscriptionUrl !== null
+        ? googleLinkRef.current
+        : (focusTarget.current === "calendar" || focusTarget.current === "create") && createButton !== null
+          ? createButton
+          : focusTarget.current === "retry" && status.isError
+            ? retryButtonRef.current
+            : null;
+    if (target) restoreFocusIfUnmoved(target);
+  }, [
+    confirmingReplace,
+    linkFeedback,
+    pending,
+    resolveCreateButton,
+    restoreFocusIfUnmoved,
+    status.data,
+    status.isError,
+    status.isSuccess,
+    subscriptionUrl,
+  ]);
+
   const copyLink = async () => {
     if (subscriptionUrl === null) return;
-    resetCopy();
+    setClipboardError(false);
+    setLinkFeedback(null);
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
-      setCopied(true);
+      setLinkFeedback("copied");
     } catch {
       setClipboardError(true);
+      setLinkFeedback(null);
     }
   };
 
@@ -107,6 +186,9 @@ export function UserCalendarSubscription({ token }: { token: string }) {
         </h2>
         <p className="text-sm text-muted-foreground">{t("preferences.calendarSubscription.description")}</p>
       </div>
+      <p role="status" className="sr-only">
+        {linkFeedback ? linkFeedbackMessages[linkFeedback] : null}
+      </p>
       {status.isPending ? (
         <div aria-busy="true">
           <p role="status" className="sr-only">
@@ -120,19 +202,25 @@ export function UserCalendarSubscription({ token }: { token: string }) {
           <p role="alert" className="text-sm text-destructive">
             {t("preferences.calendarSubscription.statusError")}
           </p>
-          <Button type="button" variant="outline" onClick={() => void status.refetch()}>
+          <Button ref={retryButtonRef} type="button" variant="outline" onClick={() => void status.refetch()}>
             {t("preferences.calendarSubscription.retry")}
           </Button>
         </div>
       ) : null}
       {status.isSuccess && subscriptionUrl === null ? (
-        <Button type="button" disabled={pending} aria-busy={create.isPending} onClick={() => create.mutate()}>
+        <Button
+          ref={createButtonRef}
+          type="button"
+          disabled={pending}
+          aria-busy={create.isPending}
+          onClick={() => create.mutate()}
+        >
           {t("preferences.calendarSubscription.create")}
         </Button>
       ) : null}
       {subscriptionUrl !== null ? (
         <div className="space-y-4">
-          <CalendarApplicationLinks subscriptionUrl={subscriptionUrl} />
+          <CalendarApplicationLinks subscriptionUrl={subscriptionUrl} googleLinkRef={googleLinkRef} />
           <div className="space-y-2">
             <label htmlFor="user-booking-calendar-url" className="text-sm font-medium">
               {t("preferences.calendarSubscription.copyPrompt")}
@@ -150,26 +238,11 @@ export function UserCalendarSubscription({ token }: { token: string }) {
                   aria-label={t("preferences.calendarSubscription.copy")}
                   onClick={() => void copyLink()}
                 >
-                  {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
+                  {linkFeedback === "copied" ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
                 </InputGroupButton>
               </InputGroupAddon>
             </InputGroup>
-            {copied ? <p role="status">{t("preferences.calendarSubscription.copied")}</p> : null}
-            {clipboardError ? (
-              <p role="alert" className="text-sm text-destructive">
-                {t("preferences.calendarSubscription.copyError")}
-              </p>
-            ) : null}
           </div>
-          {rotateConflict ? (
-            <p role="alert" className="text-sm">
-              {t("preferences.calendarSubscription.replaceConflict")}
-            </p>
-          ) : rotate.isError || revoke.isError ? (
-            <p role="alert" className="text-sm text-destructive">
-              {t("preferences.calendarSubscription.changeError")}
-            </p>
-          ) : null}
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -193,8 +266,20 @@ export function UserCalendarSubscription({ token }: { token: string }) {
               {t("preferences.calendarSubscription.revoke")}
             </Button>
           </div>
+          {rotateConflict ? (
+            <p role="alert" className="text-sm">
+              {t("preferences.calendarSubscription.replaceConflict")}
+            </p>
+          ) : rotate.isError || revoke.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("preferences.calendarSubscription.changeError")}
+            </p>
+          ) : null}
         </div>
       ) : null}
+      <p role="alert" className={clipboardError ? "text-sm text-destructive" : "sr-only"}>
+        {clipboardError ? t("preferences.calendarSubscription.copyError") : null}
+      </p>
       {create.isError ? (
         <p role="alert" className="text-sm text-destructive">
           {t("preferences.calendarSubscription.createError")}
@@ -204,7 +289,22 @@ export function UserCalendarSubscription({ token }: { token: string }) {
         open={confirmingReplace}
         onOpenChange={(open) => !open && !rotate.isPending && setConfirmingReplace(false)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          finalFocus={() => {
+            dialogRestoresFocus.current = false;
+            const target =
+              focusTarget.current === "calendar" && subscriptionUrl !== null
+                ? googleLinkRef.current
+                : focusTarget.current === "create"
+                  ? resolveCreateButton()
+                  : focusTarget.current === "retry" && status.isError
+                    ? retryButtonRef.current
+                    : null;
+            focusTarget.current = null;
+            focusOrigin.current = null;
+            return target ?? true;
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>{t("preferences.calendarSubscription.replaceDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -230,7 +330,13 @@ export function UserCalendarSubscription({ token }: { token: string }) {
   );
 }
 
-function CalendarApplicationLinks({ subscriptionUrl }: { subscriptionUrl: string }) {
+function CalendarApplicationLinks({
+  subscriptionUrl,
+  googleLinkRef,
+}: {
+  subscriptionUrl: string;
+  googleLinkRef: Ref<HTMLAnchorElement>;
+}) {
   const { t } = useTranslation("booking");
   const apps = calendarApplicationUrls(subscriptionUrl);
   const className = buttonVariants({ variant: "outline" });
@@ -240,7 +346,7 @@ function CalendarApplicationLinks({ subscriptionUrl }: { subscriptionUrl: string
         <FontAwesomeIcon icon={faApple} className="size-4" />
         {t("preferences.calendarSubscription.apple")}
       </a>
-      <a className={className} href={apps.google} target="_blank" rel="noreferrer">
+      <a ref={googleLinkRef} className={className} href={apps.google} target="_blank" rel="noreferrer">
         <FontAwesomeIcon icon={faGoogle} className="size-4" />
         {t("preferences.calendarSubscription.google")}
       </a>
