@@ -13,6 +13,19 @@ public final class CiTestShard {
   /** Returns the classes assigned to a one-based shard, including every unknown class. */
   public static List<String> select(
       Collection<String> classes, Map<String, Double> durations, int index, int count) {
+    return select(classes, durations, index, count, 0.0);
+  }
+
+  /** Reserves work that runs only on shard one before assigning the remaining classes. */
+  public static List<String> select(
+      Collection<String> classes,
+      Map<String, Double> durations,
+      int index,
+      int count,
+      double firstShardSeconds) {
+    if (!Double.isFinite(firstShardSeconds) || firstShardSeconds < 0) {
+      throw new IllegalArgumentException("Reserved shard duration must be finite and nonnegative");
+    }
     if (index < 1 || count < 1 || index > count) {
       throw new IllegalArgumentException("Shard index must be between 1 and count");
     }
@@ -22,6 +35,7 @@ public final class CiTestShard {
             .reversed()
             .thenComparing(Comparator.naturalOrder()));
     double[] loads = new double[count];
+    loads[0] = firstShardSeconds;
     List<String> selected = new ArrayList<>();
     for (String name : ordered) {
       int lightest = 0;

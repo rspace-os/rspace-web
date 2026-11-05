@@ -52,6 +52,7 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       java: ${{ steps.filter.outputs.java }}
+      compilation-artifact: ${{ steps.upload-compilation.outcome == 'success' && steps.compilation.outputs.artifact || '' }}
     steps:
       - uses: actions/checkout@v7.0.0
         with:
@@ -74,6 +75,7 @@ jobs:
               - 'src/test/resources/**'
               - 'src/main/webapp/WEB-INF/**'
               - 'scripts/run-chemistry-tests.sh'
+              - 'scripts/gradle/**'
               - 'build.gradle'
               - 'settings.gradle'
               - 'gradle.properties'
@@ -84,6 +86,48 @@ jobs:
               - 'src/jetty/**'
               - '.github/actions/**'
               - '.github/workflows/**'
+
+      # Reuse the existing filter runner to compile once, before sibling Java
+      # jobs start. No additional job or runner is needed.
+      - name: Set up JDK and Gradle for compilation
+        id: compilation-setup
+        continue-on-error: true
+        if: |
+          steps.filter.outputs.java == 'true' || inputs.fast_java_tests || inputs.full_java_tests ||
+          (github.event_name == 'push' && github.ref_name == 'main')
+        uses: ./.github/actions/setup-gradle-cached
+        with:
+          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ inputs.java_version || '17' }}
+          cache-key: tests
+          save-cache: 'false'
+
+      - name: Compile shared Java classes
+        id: compilation
+        continue-on-error: true
+        if: steps.compilation-setup.outcome == 'success'
+        env:
+          COMPILATION_ARTIFACT: java-compilation-${{ github.sha }}-${{ inputs.java_vendor || 'temurin' }}-${{ inputs.java_version || '17' }}
+        run: |
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+          python3 scripts/gradle/share-ci-compilation.py \
+            --output "$RUNNER_TEMP/compilation-cache.tar" -- \
+            -Djava-version=${{ inputs.java_version || '17' }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          echo "artifact=$COMPILATION_ARTIFACT" >> "$GITHUB_OUTPUT"
+
+      - name: Upload shared compilation
+        id: upload-compilation
+        continue-on-error: true
+        if: steps.compilation.outputs.artifact != ''
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ${{ steps.compilation.outputs.artifact }}
+          path: ${{ runner.temp }}/compilation-cache.tar
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
 
   fast-junit-tests:
     runs-on: ubuntu-latest
@@ -111,6 +155,7 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
+          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Setup filestore
         run: |
@@ -497,7 +542,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
 
       # The base branch may predate the pnpm migration (no root pnpm-lock.yaml or
@@ -515,14 +560,22 @@ jobs:
             echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
           fi
 
-      - name: Setup pnpm
+      - name: Restore base bundle statistics
+        id: base-stats
         if: steps.base-support.outputs.supported == 'true'
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: src/main/webapp/ui/dist/stats.json
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.event.pull_request.base.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+
+      - name: Setup pnpm
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         uses: pnpm/action-setup@v6.1.0
         with:
           run_install: false
 
       - name: Setup Node.js
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         uses: actions/setup-node@v7.1.0
         with:
           node-version-file: package.json
@@ -530,11 +583,11 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build with bundle stats
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         run: pnpm run build:stats
 
       - name: Upload base bundle stats
@@ -634,6 +687,7 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
+          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Configure MariaDB
         run: |
@@ -739,6 +793,7 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
+          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Configure MariaDB
         run: |
@@ -839,6 +894,7 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ inputs.java_version || '17' }}
           cache-key: tests
+          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Configure MariaDB
         run: |
@@ -906,6 +962,7 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: war
+          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.1.0
@@ -930,8 +987,17 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Build project
+        env:
+          FRONTEND_BUILD_STATS: ${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}
         run: |
           ./gradlew testClasses war -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
             -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
+
+      - name: Cache main bundle statistics
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: src/main/webapp/ui/dist/stats.json
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
