@@ -894,7 +894,7 @@ function _updateChemImageThumbnailWithInfo($chemImg, info) {
   let chemFileId = $chemImg.data('chemfileid');
   if (chemFileId === info.id) {
     var src = $chemImg.attr('src');
-    var newSrc = src.replace(/&time=\d+$/, '&time=' + info.modificationDate);
+    var newSrc = src.replace(/([?&]time=|\/chemical\/getImageChem\/\d+\/)\d+(?=[?&#]|$)/, '$1' + info.modificationDate);
     $chemImg.attr('alt', info.name);
     if (newSrc != src) {
       console.log('found chemical image to refresh with new date');

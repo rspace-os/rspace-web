@@ -145,6 +145,13 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
       }),
     );
 
+    await page.route("**/chemical/getImageChem/991002/*", (route) =>
+      route.fulfill({
+        contentType: "image/svg+xml",
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+      }),
+    );
+
     await pageWorkspace.open();
     const editor = await pageWorkspace.createBasicDocument();
     await editor.saveAndView();
@@ -156,7 +163,7 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
         .map(
           (id) => `<p id="replacement-${id}"><span><img id="${id}" class="chem"
             data-chemfileid="${id === 991003 ? 991003 : 991001}" alt="methane.mol"
-            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7#&time=1"></span></p>`,
+            src="${id === 991002 ? "/chemical/getImageChem/991002/1" : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7#&time=1"}"></span></p>`,
         )
         .join("");
       document.body.append(fixture);
@@ -179,7 +186,10 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
         const preview = page.locator(`#replacement-${id}`);
         await expect(preview.getByRole("cell", { name: replaced ? "Water" : "Methane", exact: true })).toHaveCount(1);
         await expect(preview.getByRole("cell", { name: replaced ? "18.015" : "16.043", exact: true })).toBeVisible();
-        await expect(preview.locator("img.chem")).toHaveAttribute("src", new RegExp(`&time=${version}$`));
+        await expect(preview.locator("img.chem")).toHaveAttribute(
+          "src",
+          id === 991002 ? `/chemical/getImageChem/991002/${version}` : new RegExp(`&time=${version}$`),
+        );
       }
       await expect(unrelated.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(1);
       await expect(unrelated.getByRole("table")).toHaveCount(1);
