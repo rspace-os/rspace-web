@@ -459,13 +459,11 @@ public class WorkspaceController extends BaseController {
    * Copies one or more records, all with the same parent.
    *
    * @param idToCopy A Long [] of record ids of records to copy
-   * @param newName A String of new names for the records
    * @return A {@link ModelAndView}
    */
   @PostMapping("/ajax/copy")
   public ModelAndView copy(
       @RequestParam("idToCopy[]") Long[] idToCopy,
-      @RequestParam("newName[]") String[] newName,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
       WorkspaceSettings workspaceSettings,
       Model model,
@@ -476,6 +474,11 @@ public class WorkspaceController extends BaseController {
       throws IOException {
 
     User subject = getUserByUsername(principal.getName());
+    // Read repeated values directly: binding a single String to String[] splits names on commas.
+    String[] newName = request.getParameterValues("newName[]");
+    if (newName == null || newName.length != idToCopy.length) {
+      throw new IllegalArgumentException(getText("errors.invalid", "newName[]"));
+    }
 
     RecordCopyResult result = null;
     Long currentIdToCopy = null;

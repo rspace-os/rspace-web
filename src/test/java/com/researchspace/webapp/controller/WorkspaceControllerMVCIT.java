@@ -8,6 +8,7 @@ import static com.researchspace.testutils.SearchTestUtils.createSimpleNameSearch
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,7 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -73,6 +76,7 @@ import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentTagManager;
+import com.researchspace.service.FolderManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.PostLoginHandler;
 import com.researchspace.service.RecordFavoritesManager;
@@ -105,6 +109,8 @@ import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1958,8 +1964,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(1, getSearchResultsFromMvcResult(deleteResult).getTotalHits().intValue());
   }
 
-  @Test
-  public void testCopySuccessfully() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"copied_record", "alpha,beta_Copy"})
+  public void testCopySuccessfully(String newName) throws Exception {
     User u2 = createAndSaveUser(getRandomAlphabeticString("any"));
     initUser(u2);
     logoutAndLoginAs(u2);
@@ -1974,14 +1981,86 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                 post("/workspace/ajax/copy")
                     .param("parentFolderId", root.getId() + "")
                     .param("idToCopy[]", doc.getId() + "")
-                    .param("newName[]", doc.getId() + "")
+                    .param("newName[]", newName)
                     .principal(mockPrincipal))
             .andReturn();
     ISearchResults<BaseRecord> results = getSearchResultsFromMvcResult(copyResult);
-    // after copy we now have 1 more results.
     assertEquals(initialRecordCount + 1, results.getTotalHits().intValue());
+    assertThat(results.getResults()).extracting(BaseRecord::getName).contains(newName);
     verify(auditService).notify(any(DuplicateAuditEvent.class));
     verify(auditService).notify(any(CreateAuditEvent.class));
+  }
+
+  @Test
+  public void testCopyRepeatedNamesIncludingComma() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("copy"));
+    initUser(user);
+    logoutAndLoginAs(user);
+    mockPrincipal = user::getUsername;
+    Folder root = folderMgr.getRootRecordForUser(user, user);
+    StructuredDocument first = createBasicDocumentInRootFolderWithText(user, "first");
+    StructuredDocument second = createBasicDocumentInRootFolderWithText(user, "second");
+    int initialRecordCount = (int) getNumberOfRecordsInRootFolder(new WorkspaceSettings());
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/workspace/ajax/copy")
+                    .param("parentFolderId", root.getId().toString())
+                    .param("idToCopy[]", first.getId().toString(), second.getId().toString())
+                    .param("newName[]", "alpha,beta_Copy", "gamma_Copy")
+                    .principal(user::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ISearchResults<BaseRecord> results = getSearchResultsFromMvcResult(result);
+    assertEquals(initialRecordCount + 2, results.getTotalHits().intValue());
+    assertThat(results.getResults())
+        .extracting(BaseRecord::getName)
+        .contains("alpha,beta_Copy", "gamma_Copy");
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 3})
+  public void testCopyRejectsMismatchedNameCountsBeforeMutation(int nameCount) throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("copy"));
+    initUser(user);
+    logoutAndLoginAs(user);
+    mockPrincipal = user::getUsername;
+    Folder root = folderMgr.getRootRecordForUser(user, user);
+    StructuredDocument first = createBasicDocumentInRootFolderWithText(user, "first");
+    StructuredDocument second = createBasicDocumentInRootFolderWithText(user, "second");
+    int initialRecordCount = (int) getNumberOfRecordsInRootFolder(new WorkspaceSettings());
+    String[] names = new String[nameCount];
+    java.util.Arrays.fill(names, "copy");
+    var copyRequest =
+        post("/workspace/ajax/copy")
+            .header("X-Requested-With", "XMLHttpRequest")
+            .param("parentFolderId", root.getId().toString())
+            .param("idToCopy[]", first.getId().toString(), second.getId().toString())
+            .principal(user::getUsername);
+    if (nameCount > 0) {
+      copyRequest.param("newName[]", names);
+    }
+
+    RecordManager copyRecordManager = mock(RecordManager.class);
+    FolderManager copyFolderManager = mock(FolderManager.class);
+    workspaceController.setRecordManager(copyRecordManager);
+    workspaceController.setFolderManager(copyFolderManager);
+    MvcResult result;
+    try {
+      result = mockMvc.perform(copyRequest).andExpect(status().isInternalServerError()).andReturn();
+      verifyNoInteractions(copyRecordManager, copyFolderManager, auditService);
+    } finally {
+      workspaceController.setRecordManager(recordManager);
+      workspaceController.setFolderManager(folderMgr);
+    }
+
+    IllegalArgumentException exception =
+        assertInstanceOf(IllegalArgumentException.class, result.getResolvedException());
+    assertEquals(
+        workspaceController.getText("errors.invalid", "newName[]"), exception.getMessage());
+    assertEquals(initialRecordCount, getNumberOfRecordsInRootFolder(new WorkspaceSettings()));
   }
 
   /** Reference RSPAC-639 */
