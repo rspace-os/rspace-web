@@ -18,7 +18,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
   const { isViewportVerySmall } = useViewportDimensions();
   const { removeAlert } = useContext(AlertContext);
 
-  const handleClose = (_event?: Event | React.SyntheticEvent, reason?: SnackbarCloseReason): void => {
+  const handleClose = (_event?: Event | React.SyntheticEvent | null, reason?: SnackbarCloseReason): void => {
     if (reason !== "clickaway") removeAlert(alert);
   };
 

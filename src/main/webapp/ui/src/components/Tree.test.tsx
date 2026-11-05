@@ -57,7 +57,7 @@ describe("Tree Component", () => {
 
       await user.click(getTreeItemContent("Item 1"));
 
-      expect(getTreeItem("Item 1")).toHaveAttribute("aria-checked", "true");
+      expect(getTreeItem("Item 1")).toHaveAttribute("aria-selected", "true");
       expect(selectionSpy.getSelectionEvents().length).toBeGreaterThan(0);
     });
 
@@ -68,8 +68,8 @@ describe("Tree Component", () => {
       await user.click(getTreeItemContent("Item 1"));
       await user.click(getTreeItemContent("Item 2"));
 
-      expect(getTreeItem("Item 1")).toHaveAttribute("aria-checked", "false");
-      expect(getTreeItem("Item 2")).toHaveAttribute("aria-checked", "true");
+      expect(getTreeItem("Item 1")).toHaveAttribute("aria-selected", "false");
+      expect(getTreeItem("Item 2")).toHaveAttribute("aria-selected", "true");
     });
   });
 
@@ -83,8 +83,8 @@ describe("Tree Component", () => {
       await user.click(getTreeItemContent("Item 2"));
       await user.keyboard("{/Control}");
 
-      expect(getTreeItem("Item 1")).toHaveAttribute("aria-checked", "true");
-      expect(getTreeItem("Item 2")).toHaveAttribute("aria-checked", "true");
+      expect(getTreeItem("Item 1")).toHaveAttribute("aria-selected", "true");
+      expect(getTreeItem("Item 2")).toHaveAttribute("aria-selected", "true");
     });
 
     test("Should clear all selections", async () => {
@@ -97,7 +97,7 @@ describe("Tree Component", () => {
       await user.keyboard("{/Control}");
       await user.click(screen.getByRole("button", { name: "Clear Selection" }));
 
-      expect(document.querySelectorAll('[role="treeitem"][aria-checked="true"]')).toHaveLength(0);
+      expect(document.querySelectorAll('[role="treeitem"][aria-selected="true"]')).toHaveLength(0);
     });
   });
 
@@ -156,7 +156,7 @@ describe("Tree Component", () => {
       await user.click(getTreeItemContent("Child Item 1"));
 
       expect(parent).toHaveAttribute("aria-expanded", "true");
-      expect(getTreeItem("Child Item 1")).toHaveAttribute("aria-checked", "true");
+      expect(getTreeItem("Child Item 1")).toHaveAttribute("aria-selected", "true");
     });
   });
 
@@ -173,7 +173,7 @@ describe("Tree Component", () => {
 
       await user.click(getTreeItemContent("Item 1"));
 
-      expect(getTreeItem("Item 1")).toHaveAttribute("aria-checked", "true");
+      expect(getTreeItem("Item 1")).toHaveAttribute("aria-selected", "true");
     });
 
     test("Should maintain focus management", async () => {
@@ -206,7 +206,7 @@ describe("Tree Component", () => {
       item1.focus();
       await user.keyboard(" ");
 
-      expect(getTreeItem("Item 1")).toHaveAttribute("aria-checked", "true");
+      expect(getTreeItem("Item 1")).toHaveAttribute("aria-selected", "true");
     });
   });
 });
