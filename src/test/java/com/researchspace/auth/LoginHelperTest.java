@@ -22,9 +22,11 @@ import com.researchspace.service.impl.MessageAndNotificationTracker;
 import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpSession;
 import java.util.Calendar;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -100,6 +102,7 @@ public class LoginHelperTest {
     Mockito.when(user.getCreationDate()).thenReturn(cal.getTime());
 
     HttpSession recentUserSession = loginHelper.postLogin(user, req);
+    assertPostLoginAssertions(user, req, recentUserSession);
     assertEquals(Boolean.TRUE, recentUserSession.getAttribute(SessionAttributeUtils.FIRST_LOGIN));
     assertEquals(
         Boolean.TRUE, recentUserSession.getAttribute(BaseLoginHelperImpl.RECENT_SIGNUP_ATTR));
@@ -149,7 +152,9 @@ public class LoginHelperTest {
 
     verify(analMgr).userLoggedIn(any, req);
     verify(timezoneAdjuster).setUserTimezoneInSession(req, session);
-    verify(tracker).initCount(Mockito.anyLong(), Mockito.any(NotificationStatus.class));
+    ArgumentCaptor<Supplier<NotificationStatus>> statusQuery = ArgumentCaptor.captor();
+    verify(tracker).initCount(Mockito.eq(any.getId()), statusQuery.capture());
+    assertNotNull(statusQuery.getValue().get());
     verify(userMgr).saveUserAccountEvent(Mockito.any(UserAccountEvent.class));
   }
 }

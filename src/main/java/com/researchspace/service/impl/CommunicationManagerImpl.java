@@ -168,7 +168,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       // just save if status was really updated
       if (altered > 0) {
         commDao.save(notificn);
-        notificnTracker.changeUserNotificationCount(user.getId(), altered * -1);
+        refreshNotificationCountAfterCommit(user, altered * -1);
       }
     }
   }
@@ -177,9 +177,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   public void markAllNotificationsAsRead(String username, Date since) {
     int removed = commDao.markAllNotificationsAsRead(username, since);
     User user = userDao.getUserByUsername(username);
-    // this may not be strictly true, if new notifications have been generated
-    // after the 'since' date, but will be pic
-    notificnTracker.changeUserNotificationCount(user.getId(), removed * -1);
+    refreshNotificationCountAfterCommit(user, removed * -1);
   }
 
   @Override
@@ -413,27 +411,56 @@ public class CommunicationManagerImpl implements CommunicationManager {
 
     boolean shouldBroadcast = config.isBroadcast();
     Set<CommunicationTarget> notificationTargets = Set.copyOf(targets);
-    Runnable notifyRecipients =
-        () -> {
-          if (shouldBroadcast) {
-            broadcast(notificn, notificationTargets);
-          }
-          for (CommunicationTarget ct : notificationTargets) {
-            notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
-          }
-        };
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      TransactionSynchronizationManager.registerSynchronization(
-          new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-              notificationPostCommitExecutor.execute(notifyRecipients);
+      afterCommit(
+          () -> {
+            if (shouldBroadcast) {
+              notificationPostCommitExecutor.execute(
+                  () -> broadcast(notificn, notificationTargets));
+            }
+            for (CommunicationTarget ct : notificationTargets) {
+              refreshCommittedNotificationCount(ct.getRecipient());
             }
           });
     } else {
-      notifyRecipients.run();
+      if (shouldBroadcast) {
+        broadcast(notificn, notificationTargets);
+      }
+      for (CommunicationTarget ct : notificationTargets) {
+        notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
+      }
     }
     return notificn;
+  }
+
+  private void refreshNotificationCountAfterCommit(User user, int fallbackDelta) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      afterCommit(() -> refreshCommittedNotificationCount(user));
+    } else {
+      notificnTracker.changeUserNotificationCount(user.getId(), fallbackDelta);
+    }
+  }
+
+  private void refreshCommittedNotificationCount(User user) {
+    notificnTracker.refreshNotificationCount(
+        user.getId(),
+        () -> {
+          int[] count = new int[1];
+          // Start the query transaction only after acquiring the tracker's update lock.
+          notificationPostCommitExecutor.execute(
+              () -> count[0] = commDao.getNotificationStatus(user).getNotificationCount());
+          return count[0];
+        });
+  }
+
+  private void afterCommit(Runnable action) {
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            action.run();
+          }
+        });
   }
 
   public int deleteReadNotificationsOlderThanDate(Date olderThan) {

@@ -6,6 +6,8 @@ import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.webapp.messaging.NotificationMessage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -23,7 +25,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
 
-  public void sendNotificationUpdate(Long userId) {
+  public synchronized void sendNotificationUpdate(Long userId) {
     NotificationMessage notification =
         new NotificationMessage(
             getNotificationCountFor(userId),
@@ -32,13 +34,19 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
     sendNotificationUpdate(userId, notification);
   }
 
-  public int changeUserNotificationCount(Long userId, Integer incrementAmount) {
+  public synchronized int changeUserNotificationCount(Long userId, Integer incrementAmount) {
     int newCount = doChangeCount(userId, incrementAmount, userToNotification);
     sendNotificationUpdate(userId);
     return newCount;
   }
 
-  public void clearUserNotificationCount(Long userId) {
+  @Override
+  public synchronized void refreshNotificationCount(Long userId, IntSupplier committedCount) {
+    userToNotification.put(userId, committedCount.getAsInt());
+    sendNotificationUpdate(userId);
+  }
+
+  public synchronized void clearUserNotificationCount(Long userId) {
     userToNotification.put(userId, 0);
     sendNotificationUpdate(userId);
   }
@@ -120,7 +128,8 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   }
 
   @Override
-  public void initCount(Long userId, NotificationStatus notificationStatus) {
+  public synchronized void initCount(Long userId, Supplier<NotificationStatus> statusQuery) {
+    NotificationStatus notificationStatus = statusQuery.get();
     userToNotification.put(userId, notificationStatus.getNotificationCount());
     userToMessage.put(userId, notificationStatus.getMessageCount());
     userToSpecialMessage.put(userId, notificationStatus.getSpecialMessageCount());

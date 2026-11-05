@@ -1,16 +1,19 @@
 # Transactions
 
-This document describes how database transactions are he handled in
-RSpace.
+This document describes how RSpace defines database transaction boundaries.
 
 ## Transaction declarations
 
-Transactions are normally declared using Spring AOP configuration to wrap all
-service classes matching the pointcut
+Spring AOP configuration wraps service methods in transactions. The main
+manager pointcut is:
+
+```xml
+pointcut="execution(* *..service.*Manager.*(..))"
 ```
-pointcut="execution(* *..service.**Manager.**(..))" '
-```
-with a TransactionManager.
+
+Separate pointcuts cover managers in the archive, inventory, and fieldmark
+packages, as well as selected validators and adapters. See
+`src/main/resources/applicationContext-service.xml` for the complete rules.
 
 When writing a new service interface in `com.researchspace.service`, prefer the
 `Manager` suffix so it is covered by this pointcut automatically.
@@ -53,8 +56,8 @@ Older programmatic uses exist in `AbstractCustomLiquibaseUpdater` and
 
 ### Transaction behaviour
 
-Uses Spring defaults which is `Transaction.REQUIRED`. This enables service
-methods to call each other without generating new transactions.
+The default propagation is `REQUIRED`. Service methods join the caller's
+transaction when one exists.
 
 ## Creating transactions
 
@@ -116,9 +119,15 @@ through the helper.
 
 `CommunicationManager.notify` saves notifications in the caller's transaction.
 With transaction synchronization active, broadcasts and unread-count updates run
-only after commit, through `NotificationPostCommitExecutor` in a `REQUIRES_NEW`
-transaction. Rollback suppresses both effects. Without synchronization, delivery
-remains immediate. `NotificationAfterCommitIT` exercises commit, rollback, and
+only after commit. Broadcasts run through `NotificationPostCommitExecutor` in a
+`REQUIRES_NEW` transaction. Each recipient's unread count is then refreshed from
+committed data in another new transaction, serialized with tracker updates.
+Marking notifications read also refreshes the count after commit. These refreshes
+avoid applying a delayed increment after a recipient reads the notification or
+initializes their count at login. Login also queries its initial counts while
+tracker updates are serialized, so an older query cannot overwrite a refresh.
+Rollback suppresses both effects. Without synchronization, delivery remains
+immediate. `NotificationAfterCommitIT` exercises commit, rollback, and
 persistence of a failure notification when a broadcaster throws.
 
 Because the unread-count update now runs after commit, a notification tracker

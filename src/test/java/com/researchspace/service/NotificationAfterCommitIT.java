@@ -16,6 +16,7 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class NotificationAfterCommitIT extends RealTransactionSpringTestBase {
@@ -55,7 +57,35 @@ public class NotificationAfterCommitIT extends RealTransactionSpringTestBase {
     checkDelivery(false, true);
   }
 
+  @Test
+  void readDuringDeliveryDoesNotResurrectUnreadCount() throws Exception {
+    checkDelivery(false, false, InterveningAction.READ);
+  }
+
+  @Test
+  void readAllDuringDeliveryDoesNotResurrectUnreadCount() throws Exception {
+    checkDelivery(false, false, InterveningAction.READ_ALL);
+  }
+
+  @Test
+  void loginDuringDeliveryDoesNotDoubleCountCommittedNotification() throws Exception {
+    checkDelivery(false, false, InterveningAction.LOGIN);
+  }
+
+  private enum InterveningAction {
+    NONE,
+    READ,
+    READ_ALL,
+    LOGIN
+  }
+
   private void checkDelivery(boolean rollback, boolean failBroadcast) throws Exception {
+    checkDelivery(rollback, failBroadcast, InterveningAction.NONE);
+  }
+
+  private void checkDelivery(
+      boolean rollback, boolean failBroadcast, InterveningAction interveningAction)
+      throws Exception {
     var record = setUpLoginAsPIUserAndCreateADocument();
     User recipient = createAndSaveUser("notify" + System.nanoTime());
     userMgr.setPreference(
@@ -77,6 +107,29 @@ public class NotificationAfterCommitIT extends RealTransactionSpringTestBase {
                 assertFalse(sessionFactory.getCurrentSession().contains(notification));
                 assertNotNull(notification.getOriginator().getUsername());
                 assertEquals(1, notification.getRecipients().size());
+                if (interveningAction != InterveningAction.NONE) {
+                  // Complete a separate request while post-commit delivery is paused here.
+                  TransactionTemplate interveningRequest = new TransactionTemplate(getTxMger());
+                  interveningRequest.setPropagationBehavior(
+                      TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                  interveningRequest.executeWithoutResult(
+                      status -> {
+                        switch (interveningAction) {
+                          case READ ->
+                              communicationMgr.markNotificationsAsRead(
+                                  Set.of(notification.getId()), recipient.getUsername());
+                          case READ_ALL ->
+                              communicationMgr.markAllNotificationsAsRead(
+                                  recipient.getUsername(),
+                                  new Date(System.currentTimeMillis() + 1000));
+                          case LOGIN ->
+                              tracker.initCount(
+                                  recipient.getId(),
+                                  () -> communicationMgr.getNotificationStatus(recipient));
+                          default -> throw new IllegalStateException("Unexpected action");
+                        }
+                      });
+                }
                 return null;
               })
           .when(broadcaster)
@@ -102,8 +155,14 @@ public class NotificationAfterCommitIT extends RealTransactionSpringTestBase {
               });
       if (rollback) verifyNoInteractions(broadcaster);
       else verify(broadcaster).broadcast(any(Communication.class));
-      assertEquals(rollback ? 0 : 1, tracker.getNotificationCountFor(recipient.getId()));
-      assertEquals(rollback ? 0 : 1, getNewNotificationCount(recipient));
+      int expectedCount =
+          rollback
+                  || interveningAction == InterveningAction.READ
+                  || interveningAction == InterveningAction.READ_ALL
+              ? 0
+              : 1;
+      assertEquals(expectedCount, tracker.getNotificationCountFor(recipient.getId()));
+      assertEquals(expectedCount, getNewNotificationCount(recipient));
       if (failBroadcast) {
         assertEquals(originatorCount + 1, tracker.getNotificationCountFor(piUser.getId()));
         assertEquals(1, getNewNotificationCount(piUser));
