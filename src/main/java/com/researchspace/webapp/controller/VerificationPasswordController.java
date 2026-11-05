@@ -196,6 +196,7 @@ public class VerificationPasswordController extends BaseController {
 
   /** Submits a token to access the password change dialog */
   @GetMapping("/verificationPasswordResetReply")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public ModelAndView getPasswordResetPage(@RequestParam("token") String token) {
     return passwordResetEmailHandler
         .getResetPage(token)
@@ -203,7 +204,7 @@ public class VerificationPasswordController extends BaseController {
   }
 
   @PostMapping("/verificationPasswordResetReply")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"pwd", "confirmPwd"})
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public ModelAndView submitPasswordResetPage(
       @ModelAttribute PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) {
     return passwordResetEmailHandler
