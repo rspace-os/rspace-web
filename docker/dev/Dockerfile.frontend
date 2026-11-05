@@ -1,9 +1,9 @@
-# Frontend dev image: Node 24 + standalone pnpm.
+# Frontend dev image: Node 26 + standalone pnpm.
 #
 # Like the app image, this holds no source — the worktree is bind-mounted at
 # /rspace at runtime. The entrypoint installs dependencies into a named volume
 # and starts the Vite dev server with HMR.
-ARG NODE_IMAGE=node:24-bookworm-slim
+ARG NODE_IMAGE=node:26-bookworm-slim
 FROM ${NODE_IMAGE}
 
 # The standalone install survives Node changes; pnpm follows packageManager at runtime.
