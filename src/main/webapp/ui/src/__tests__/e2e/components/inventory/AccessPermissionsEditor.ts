@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export type SharingMode = "Owner's groups" | "Explicit access list" | "Only the Owner";
 
@@ -19,7 +19,8 @@ export class AccessPermissionsEditor {
   }
 
   async setSharingMode(mode: SharingMode): Promise<void> {
-    await this.radio(mode).click();
+    await this.radio(mode).check();
+    await expect(this.radio(mode)).toBeChecked();
   }
 
   async addGroup(groupName: string): Promise<void> {

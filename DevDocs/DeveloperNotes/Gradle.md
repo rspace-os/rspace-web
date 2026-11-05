@@ -447,16 +447,10 @@ walk `node_modules`. Jenkins runs the same `./gradlew` commands; see the `Jenkin
 
 ### Reusing work without additional runners
 
-The existing change-detection job compiles main and test Java once when Java jobs are selected.
-`scripts/gradle/share-ci-compilation.py` exports newly written compilation entries, with all
-non-compilation caching disabled by its init script. Existing entries restored from main stay
-in the global archive; the artifact contains only the new entries. Java jobs restore the
-artifact from this same workflow run, named by checkout SHA and JDK, before invoking Gradle.
-Filtered resources are generated per job and database test results are never shared. Failed
-preparation or a missing artifact falls back to ordinary per-job compilation. This adds
-compilation to the initial gate, including the wait before frontend jobs on mixed changes,
-but removes repeated compilation from the existing Java runners. Check both elapsed time and
-runner minutes when measuring the next CI run.
+Change detection only selects jobs. Compilation runs independently on each Java runner,
+using the main-only task cache where available. The experimental within-run compilation
+producer was removed after CI showed that its position in change detection delayed frontend
+jobs and increased elapsed time. No additional runners are used.
 
 The existing main WAR build enables bundle statistics and saves `stats.json` under its exact
 commit and pinned frontend toolchain inputs. Base bundle comparisons check out the PR event's
@@ -548,3 +542,30 @@ Why the results differ:
   `test`, and its build cache restores outputs after `clean` or a branch switch.
 - **Clean builds and single-fork test runs:** these are close, because javac and JUnit do the
   same work in both. Without a warm daemon, as on CI, Gradle's clean build matches Maven's.
+
+### CI regression follow-up
+
+The compilation producer was removed from change detection, so frontend checks no longer
+wait for Java compilation. A controlled local alternating comparison with three workers and
+Istanbul coverage retained the Node/jsdom split: the split runs took 28.01 and 34.52 seconds,
+versus 37.05 and 36.09 for a single jsdom project. These scoped local measurements do not
+establish the cause of the broad slowdown on one GitHub runner. Vitest CI logs now record CPU,
+available parallelism, cgroup CPU/memory limits and Node version. The test invocation also
+records CPU usage and peak resident memory for subsequent comparisons.
+
+The Bench account override renews its saved session before use. Authentication waits for the
+workspace UI before returning. Link-field error helpers wait for React's invalid-input state,
+not merely the HTTP response. Sharing-mode changes verify the selected radio and permission
+scenarios verify server-persisted sharing before switching actors. Publication navigation
+waits for its destination URL. Late menu configuration responses preserve focused links and
+active carousel navigation; initial menu positioning is instant so its animation cannot
+move a target between pointer-down and click. No permission assertion or timeout has been relaxed.
+
+The regression fixes passed focused TypeScript, Biome, workflow and script syntax checks.
+Combined WebKit verification covered all six affected scenarios twice with retries disabled;
+the corrected transitive-access and publication scenarios were rerun in fresh workers. A
+separate run invalidated the Bench account's saved session and confirmed automatic renewal.
+Playwright MCP verified focused/unfocused menu positioning against the served script; Chrome
+DevTools verified publication navigation and inspected console/network results. The stack was
+left running. The broad CI-specific Vitest slowdown remains unconfirmed by the local comparison
+and needs the next instrumented CI run; no timing improvement is claimed for that issue yet.

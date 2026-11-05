@@ -52,7 +52,6 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       java: ${{ steps.filter.outputs.java }}
-      compilation-artifact: ${{ steps.upload-compilation.outcome == 'success' && steps.compilation.outputs.artifact || '' }}
     steps:
       - uses: actions/checkout@v7.0.0
         with:
@@ -87,48 +86,6 @@ jobs:
               - '.github/actions/**'
               - '.github/workflows/**'
 
-      # Reuse the existing filter runner to compile once, before sibling Java
-      # jobs start. No additional job or runner is needed.
-      - name: Set up JDK and Gradle for compilation
-        id: compilation-setup
-        continue-on-error: true
-        if: |
-          steps.filter.outputs.java == 'true' || inputs.fast_java_tests || inputs.full_java_tests ||
-          (github.event_name == 'push' && github.ref_name == 'main')
-        uses: ./.github/actions/setup-gradle-cached
-        with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ inputs.java_version || '17' }}
-          cache-key: tests
-          save-cache: 'false'
-
-      - name: Compile shared Java classes
-        id: compilation
-        continue-on-error: true
-        if: steps.compilation-setup.outcome == 'success'
-        env:
-          COMPILATION_ARTIFACT: java-compilation-${{ github.sha }}-${{ inputs.java_vendor || 'temurin' }}-${{ inputs.java_version || '17' }}
-        run: |
-          cp -f src/main/resources/deployments/dev/deployment.properties.example \
-            src/main/resources/deployments/dev/deployment.properties
-          python3 scripts/gradle/share-ci-compilation.py \
-            --output "$RUNNER_TEMP/compilation-cache.tar" -- \
-            -Djava-version=${{ inputs.java_version || '17' }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
-          echo "artifact=$COMPILATION_ARTIFACT" >> "$GITHUB_OUTPUT"
-
-      - name: Upload shared compilation
-        id: upload-compilation
-        continue-on-error: true
-        if: steps.compilation.outputs.artifact != ''
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: ${{ steps.compilation.outputs.artifact }}
-          path: ${{ runner.temp }}/compilation-cache.tar
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 1
-
   fast-junit-tests:
     runs-on: ubuntu-latest
     needs: changed-files
@@ -155,7 +112,6 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
-          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Setup filestore
         run: |
@@ -326,6 +282,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Record Vitest runner resources
+        run: |
+          pnpm exec node -e 'const os = require("node:os"); const fs = require("node:fs"); const limit = name => { const path = "/sys/fs/cgroup/" + name; return fs.existsSync(path) ? fs.readFileSync(path, "utf8").trim() : null; }; console.log(JSON.stringify({node:process.version, cpu:os.cpus()[0]?.model, parallelism:os.availableParallelism(), hostMemoryBytes:os.totalmem(), cpuLimit:limit("cpu.max"), memoryLimit:limit("memory.max")}, null, 2))'
+
       # Two CLI gotchas: (1) --reporter replaces (not extends) the reporters
       # configured in vite.config.ts, so default/junit/blob must all be listed
       # explicitly — default for readable CI logs, junit for the per-shard
@@ -335,7 +295,7 @@ jobs:
       # silently discard everything after it and fall back to an unsharded run.
       - name: Run Vitest tests
         run: |
-          pnpm run test --shard=${{ matrix.shard }}/${{ env.VITEST_SHARD_COUNT }} \
+          /usr/bin/time -v pnpm run test --shard=${{ matrix.shard }}/${{ env.VITEST_SHARD_COUNT }} \
             --reporter=default --reporter=junit --reporter=blob --coverage
 
       - name: Upload blob report
@@ -687,7 +647,6 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
-          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Configure MariaDB
         run: |
@@ -793,7 +752,6 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
-          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Configure MariaDB
         run: |
@@ -894,7 +852,6 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ inputs.java_version || '17' }}
           cache-key: tests
-          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Configure MariaDB
         run: |
@@ -962,7 +919,6 @@ jobs:
           java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: war
-          compilation-artifact: ${{ needs.changed-files.outputs.compilation-artifact }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.1.0

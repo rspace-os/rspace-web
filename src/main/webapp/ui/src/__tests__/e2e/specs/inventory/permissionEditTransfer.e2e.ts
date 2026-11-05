@@ -38,6 +38,7 @@ test.describe(`Inventory permissions: edit and transfer rights`, { tag: [tags.IN
     await charlieSample.expandSection("Access Permissions");
     await charlieSample.accessPermissions().setSharingMode("Only the Owner");
     await charlieSample.saveEdit();
+    expect((await charlie.client.getSample(charlie.sample.id)).sharingMode).toBe("OWNER_ONLY");
 
     const bobSample = await openRecordAs(bob, "sample", charlie.sample.id, charlie.sample.name);
     await expectFullAccess(bobSample);
