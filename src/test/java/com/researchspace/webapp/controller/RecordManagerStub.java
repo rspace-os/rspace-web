@@ -32,8 +32,10 @@ import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -302,8 +304,9 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public boolean canMove(BaseRecord original, Folder targetParent, User user) {
-    return false;
+  public Map<Long, Boolean> canMove(
+      Collection<? extends BaseRecord> originals, Folder targetParent, User user) {
+    return Collections.emptyMap();
   }
 
   @Override

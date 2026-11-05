@@ -8,6 +8,9 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSPath;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /*
@@ -31,43 +34,97 @@ public class MovePermissionChecker {
   }
 
   public boolean checkMovePermissions(User user, Folder newparent, BaseRecord original) {
-    boolean canCreateInTarget =
-        permissionUtils.isPermitted(newparent, PermissionType.FOLDER_RECEIVE, user);
-    if (!canCreateInTarget) {
+    return checkRecordAgainstTarget(new TargetContext(user, newparent), original);
+  }
+
+  /**
+   * Page-level variant of {@link #checkMovePermissions(User, Folder, BaseRecord)}: returns, per
+   * record id, the same answer the single-record check gives, with the checks that only depend on
+   * the target folder (target permission, target path within the shared-folder tree) computed once
+   * for the whole page.
+   */
+  public Map<Long, Boolean> checkMovePermissions(
+      User user, Folder newparent, Collection<? extends BaseRecord> originals) {
+    TargetContext target = new TargetContext(user, newparent);
+    Map<Long, Boolean> movableByRecordId = new LinkedHashMap<>();
+    for (BaseRecord original : originals) {
+      movableByRecordId.put(original.getId(), checkRecordAgainstTarget(target, original));
+    }
+    return movableByRecordId;
+  }
+
+  /**
+   * The record-independent part of the move check: the subject, the target folder, and everything
+   * derived from them, computed at most once however many records are checked against it.
+   */
+  private class TargetContext {
+    private final User user;
+    private final Folder newparent;
+    private final boolean canCreateInTarget;
+    // if the permissions are OK and we're not in a group folder, then we can move
+    private final boolean outsideGroupFolderContext;
+    private boolean pathsResolved;
+    private Folder userSharedFolder;
+    private RSPath newParentPath;
+    private Folder groupFolder;
+
+    private TargetContext(User user, Folder newparent) {
+      this.user = user;
+      this.newparent = newparent;
+      canCreateInTarget =
+          permissionUtils.isPermitted(newparent, PermissionType.FOLDER_RECEIVE, user);
+      outsideGroupFolderContext =
+          !newparent.isSystemFolder() || newparent.isRootFolderForUser(user);
+    }
+
+    // resolved only when a record passes both permission gates, so a denied check costs no
+    // database work; still at most one query however many records share this target
+    private void resolvePaths() {
+      if (!pathsResolved) {
+        pathsResolved = true;
+        userSharedFolder = folderDao.getUserSharedFolder(user);
+        newParentPath = newparent.getShortestPathToParent(userSharedFolder);
+      }
+    }
+
+    // resolved only when a record actually reaches the path comparison, so a target path
+    // with no group-folder root fails only where it always did
+    private Folder groupFolder() {
+      if (groupFolder == null) {
+        groupFolder =
+            (Folder) newParentPath.findFirstByType(RecordType.SHARED_GROUP_FOLDER_ROOT).get();
+      }
+      return groupFolder;
+    }
+  }
+
+  private boolean checkRecordAgainstTarget(TargetContext target, BaseRecord original) {
+    if (!target.canCreateInTarget) {
       return false;
     }
     // need to be able to move from src, and create in target folder.
-    boolean canMoveSrc = permissionUtils.isPermitted(original, PermissionType.SEND, user);
+    boolean canMoveSrc = permissionUtils.isPermitted(original, PermissionType.SEND, target.user);
     if (!canMoveSrc) {
       return false;
     }
-    // short circuit if target isn't a group folder( which has system type)
-    // i.e., if the permission are OK, and we're not in  group folder, then we we can move
-    if (!newparent.isSystemFolder() || newparent.isRootFolderForUser(user)) {
+    if (target.outsideGroupFolderContext) {
       return true;
     }
-    Folder userSharedFlder = folderDao.getUserSharedFolder(user);
-    // now, check if we're sharing within a group folder:
-    RSPath newParentPath = newparent.getShortestPathToParent(userSharedFlder);
-
-    // target is in a shared folder.
-    if (!newParentPath.isEmpty()) {
-      Folder grpFolder =
-          (Folder) newParentPath.findFirstByType(RecordType.SHARED_GROUP_FOLDER_ROOT).get();
-      RSPath originalPath = original.getShortestPathToParentVia(userSharedFlder, null, grpFolder);
-      if (!originalPath.isEmpty()) {
-        int index = DEPTH_FROM_SHAREDROOT_WHERE_SHARINGALLOWED;
-        // can only move within a group folder.
-        if (originalPath.get(index) == null
-            || newParentPath.get(index) == null
-            || !originalPath.get(index).equals(newParentPath.get(index))) {
-          return false;
-        } // else we're in the same group folder
-
-      } else {
+    target.resolvePaths();
+    // target is in a shared folder: can only move within the same group folder.
+    if (!target.newParentPath.isEmpty()) {
+      RSPath originalPath =
+          original.getShortestPathToParentVia(target.userSharedFolder, null, target.groupFolder());
+      if (originalPath.isEmpty()) {
         // can't move from outside group folders into a group folder
         return false;
       }
+      int index = DEPTH_FROM_SHAREDROOT_WHERE_SHARINGALLOWED;
+      if (originalPath.get(index) == null
+          || target.newParentPath.get(index) == null
+          || !originalPath.get(index).equals(target.newParentPath.get(index))) {
+        return false;
+      } // else we're in the same group folder
     }
     return true;
   }
