@@ -67,6 +67,9 @@ test.describe("System account creation", { tag: tags.SYSTEM }, () => {
     await expect(toast).toBeAttached();
     await page.clock.runFor(1_000);
     await expect(toast).toBeVisible();
+    await page.clock.resume();
+    await expect(page.locator(".blockUI.blockOverlay")).toHaveCount(0);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
     const usernameAfterSuccess = await createAccount.usernameField.inputValue();
 
     await createAccount.fillBasicFields({
