@@ -878,12 +878,17 @@ function _updateImageFilename($imgDiv, name) {
 }
 
 function _updateChemImgsWithLastestInfo(info) {
-  $('img.chem').each(function () {
-    if ($(this).data('chemfileid') === info.id) {
-      _updateChemImageThumbnailWithInfo($(this), info);
-      _updateChemImagePanelWithInfo($(this), info);
-    }
+  var $chemImgs = $('img.chem').filter(function () {
+    return $(this).data('chemfileid') === info.id;
   });
+  $chemImgs.each(function () {
+    _updateChemImageThumbnailWithInfo($(this), info);
+    _updateChemImagePanelWithInfo($(this), info);
+  });
+  // Refresh together: document-placed replaces the image nodes synchronously.
+  if ($chemImgs.length) {
+    _updateChemInfoPanelWithInfo($chemImgs, info);
+  }
 }
 
 function _updateChemImageThumbnailWithInfo($chemImg, info) {

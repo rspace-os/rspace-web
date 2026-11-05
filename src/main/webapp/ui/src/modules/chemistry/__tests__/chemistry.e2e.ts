@@ -107,6 +107,69 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     await pageApps.setEnabled("Chemistry", true);
   });
 
+  test("As a user, replacing methane with water refreshes every displayed properties card without reloading", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    let replaced = false;
+    await page.route("**/chemical/ajax/getInfo?chemId=*", async (route) => {
+      const water = replaced;
+      await route.fulfill({
+        json: {
+          data: {
+            reactants: [],
+            products: [],
+            molecules: [
+              { name: water ? "Water" : "Methane", formula: water ? "H2O" : "CH4", mass: water ? 18.015 : 16.043 },
+            ],
+          },
+        },
+      });
+    });
+    await page.route("**/gallery/getMediaFileSummaryInfo?*", (route) =>
+      route.fulfill({
+        json: {
+          data: { "991001-null": { id: 991001, type: "Chemistry", name: "water.mol", modificationDate: 2 } },
+        },
+      }),
+    );
+
+    await pageWorkspace.open();
+    const editor = await pageWorkspace.createBasicDocument();
+    await editor.saveAndView();
+    // Isolate the replacement callback and real preview lifecycle from chemistry conversion.
+    await page.evaluate(() => {
+      const fixture = document.createElement("div");
+      fixture.id = "replacement-previews";
+      fixture.innerHTML = [991001, 991002]
+        .map(
+          (id) => `<p id="replacement-${id}"><span><img id="${id}" class="chem"
+            data-chemfileid="991001" alt="methane.mol"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7#&time=1"></span></p>`,
+        )
+        .join("");
+      document.body.append(fixture);
+      document.dispatchEvent(new CustomEvent("document-placed"));
+    });
+    // Legacy document-rendered wrappers have no semantic role or accessible name.
+    const previews = page.locator("#replacement-previews");
+    await expect(previews.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(2);
+    replaced = true;
+    await page.evaluate(() => {
+      const refresh = Reflect.get(window, "_updateAttachedMediaFileWithLastestVersionDetails");
+      refresh("991001");
+    });
+
+    for (const id of [991001, 991002]) {
+      const preview = page.locator(`#replacement-${id}`);
+      await expect(preview.getByRole("cell", { name: "Water", exact: true })).toHaveCount(1);
+      await expect(preview.getByRole("cell", { name: "18.015", exact: true })).toBeVisible();
+      await expect(preview.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(0);
+      await expect(preview.locator("img.chem")).toHaveAttribute("src", /&time=2$/);
+    }
+    await expect(previews.getByRole("table")).toHaveCount(2);
+  });
+
   test("As a user, converting a SMILES structure returns a real MOL block from the chemistry service", async ({
     page,
   }) => {
