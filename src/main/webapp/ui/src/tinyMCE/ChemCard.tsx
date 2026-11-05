@@ -162,7 +162,7 @@ export default function ChemCard(props: ChemCardProps) {
       .catch((error: unknown): void => {
         console.warn(error);
       });
-  }, [chemId]);
+  }, [chemId, props.item.src]);
 
   const chemInfoTable = (chemical: ChemicalInfo): React.ReactElement => {
     const chemicalMetadata = getAdditionalMetadata(chemical.additionalMetadata);

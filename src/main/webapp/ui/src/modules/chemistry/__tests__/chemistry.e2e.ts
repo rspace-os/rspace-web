@@ -112,8 +112,12 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     pageWorkspace,
   }) => {
     let replaced = false;
+    let version = 1;
+    const infoRequests = new Map<string, number>();
     await page.route("**/chemical/ajax/getInfo?chemId=*", async (route) => {
-      const water = replaced;
+      const chemId = new URL(route.request().url()).searchParams.get("chemId") ?? "";
+      infoRequests.set(chemId, (infoRequests.get(chemId) ?? 0) + 1);
+      const water = replaced && chemId !== "991003";
       await route.fulfill({
         json: {
           data: {
@@ -129,7 +133,14 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     await page.route("**/gallery/getMediaFileSummaryInfo?*", (route) =>
       route.fulfill({
         json: {
-          data: { "991001-null": { id: 991001, type: "Chemistry", name: "water.mol", modificationDate: 2 } },
+          data: {
+            "991001-null": {
+              id: 991001,
+              type: "Chemistry",
+              name: replaced ? "water.mol" : "methane.mol",
+              modificationDate: version,
+            },
+          },
         },
       }),
     );
@@ -141,10 +152,10 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     await page.evaluate(() => {
       const fixture = document.createElement("div");
       fixture.id = "replacement-previews";
-      fixture.innerHTML = [991001, 991002]
+      fixture.innerHTML = [991001, 991002, 991003]
         .map(
           (id) => `<p id="replacement-${id}"><span><img id="${id}" class="chem"
-            data-chemfileid="991001" alt="methane.mol"
+            data-chemfileid="${id === 991003 ? 991003 : 991001}" alt="methane.mol"
             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7#&time=1"></span></p>`,
         )
         .join("");
@@ -153,21 +164,29 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     });
     // Legacy document-rendered wrappers have no semantic role or accessible name.
     const previews = page.locator("#replacement-previews");
-    await expect(previews.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(2);
-    replaced = true;
-    await page.evaluate(() => {
-      const refresh = Reflect.get(window, "_updateAttachedMediaFileWithLastestVersionDetails");
-      refresh("991001");
-    });
+    await expect(previews.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(3);
+    const unrelated = page.locator("#replacement-991003");
 
-    for (const id of [991001, 991002]) {
-      const preview = page.locator(`#replacement-${id}`);
-      await expect(preview.getByRole("cell", { name: "Water", exact: true })).toHaveCount(1);
-      await expect(preview.getByRole("cell", { name: "18.015", exact: true })).toBeVisible();
-      await expect(preview.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(0);
-      await expect(preview.locator("img.chem")).toHaveAttribute("src", /&time=2$/);
+    for (const nextVersion of [2, 3, 4]) {
+      version = nextVersion;
+      replaced = version % 2 === 0;
+      await page.evaluate(() => {
+        const refresh = Reflect.get(window, "_updateAttachedMediaFileWithLastestVersionDetails");
+        refresh("991001");
+      });
+
+      for (const id of [991001, 991002]) {
+        const preview = page.locator(`#replacement-${id}`);
+        await expect(preview.getByRole("cell", { name: replaced ? "Water" : "Methane", exact: true })).toHaveCount(1);
+        await expect(preview.getByRole("cell", { name: replaced ? "18.015" : "16.043", exact: true })).toBeVisible();
+        await expect(preview.locator("img.chem")).toHaveAttribute("src", new RegExp(`&time=${version}$`));
+      }
+      await expect(unrelated.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(1);
+      await expect(unrelated.getByRole("table")).toHaveCount(1);
+      await expect(unrelated.locator("img.chem")).toHaveAttribute("src", /&time=1$/);
+      await expect(previews.getByRole("table")).toHaveCount(3);
+      expect(infoRequests.get("991003")).toBe(1);
     }
-    await expect(previews.getByRole("table")).toHaveCount(2);
   });
 
   test("As a user, converting a SMILES structure returns a real MOL block from the chemistry service", async ({

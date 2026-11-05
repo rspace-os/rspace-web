@@ -885,9 +885,8 @@ function _updateChemImgsWithLastestInfo(info) {
     _updateChemImageThumbnailWithInfo($(this), info);
     _updateChemImagePanelWithInfo($(this), info);
   });
-  // Refresh together: document-placed replaces the image nodes synchronously.
   if ($chemImgs.length) {
-    _updateChemInfoPanelWithInfo($chemImgs, info);
+    document.dispatchEvent(new CustomEvent('document-placed'));
   }
 }
 
@@ -905,12 +904,6 @@ function _updateChemImageThumbnailWithInfo($chemImg, info) {
       return false;
     }
   }
-}
-
-function _updateChemInfoPanelWithInfo($chemImg, info) {
-  let closestP = $chemImg.closest("p");
-  closestP.find("div.MuiPaper-root").remove();
-  document.dispatchEvent(new CustomEvent('document-placed'));
 }
 
 function _updateChemImagePanelWithInfo($chemImage, info) {
