@@ -330,7 +330,7 @@ describe("CreateDialog", () => {
           columnHeading: "inventory:contextMenu.createDialog.columns.defaultValue",
           rowIndex,
         });
-      expect(await defaultValueCell(0)).toHaveTextContent("14:30");
+      expect(within(await defaultValueCell(0)).getByText("14:30", { exact: true })).toBeInTheDocument();
       expect(await defaultValueCell(1)).toHaveTextContent("2026-11-05");
       expect(await defaultValueCell(2)).toBeEmptyDOMElement();
       expect(await defaultValueCell(3)).toHaveTextContent("Broth");
