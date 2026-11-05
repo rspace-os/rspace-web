@@ -79,8 +79,8 @@ test.describe("System account creation", { tag: tags.SYSTEM }, () => {
       email: "rsdev1457next@example.com",
       password: DYNAMIC_USER_PASSWORD,
     });
+    await page.clock.resume();
     await toast.locator(".toast-item-close").click();
-    await page.clock.runFor(1_000);
     await expect(toast).toHaveCount(0);
     await expect(createAccount.usernameField).toHaveValue("rsdev1457next");
     await expect(createAccount.firstNameField).toHaveValue("Next");
