@@ -1,23 +1,21 @@
 package com.researchspace.build;
 
-import com.vladsch.flexmark.html.HtmlRenderer;
-import com.vladsch.flexmark.parser.Parser;
-import com.vladsch.flexmark.profile.pegdown.Extensions;
-import com.vladsch.flexmark.profile.pegdown.PegdownOptionsAdapter;
-import com.vladsch.flexmark.util.data.DataHolder;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.workers.WorkQueue;
+import org.gradle.workers.WorkerExecutor;
 
 /**
  * Renders each {@code *.md} file at the top of a directory to an HTML fragment of the same name,
@@ -33,26 +31,30 @@ public abstract class MarkdownToHtml extends DefaultTask {
   @OutputDirectory
   public abstract DirectoryProperty getOutputDir();
 
+  @Classpath
+  public abstract ConfigurableFileCollection getRendererClasspath();
+
   @javax.inject.Inject
   protected abstract FileSystemOperations getFs();
+
+  @javax.inject.Inject
+  protected abstract WorkerExecutor getWorkerExecutor();
 
   @TaskAction
   public void render() throws IOException {
     File out = getOutputDir().get().getAsFile();
     getFs().delete(spec -> spec.delete(out));
     Files.createDirectories(out.toPath());
-    DataHolder options = PegdownOptionsAdapter.flexmarkOptions(Extensions.TABLES);
-    Parser parser = Parser.builder(options).build();
-    HtmlRenderer renderer = HtmlRenderer.builder(options).build();
-    File[] files = getSource().get().getAsFile().listFiles((dir, name) -> name.endsWith(".md"));
-    if (files == null) {
-      return;
-    }
-    for (File md : files) {
-      String html =
-          renderer.render(parser.parse(Files.readString(md.toPath(), StandardCharsets.UTF_8)));
-      String name = md.getName().substring(0, md.getName().length() - ".md".length()) + ".html";
-      Files.writeString(new File(out, name).toPath(), html, StandardCharsets.UTF_8);
-    }
+
+    WorkQueue queue =
+        getWorkerExecutor()
+            .classLoaderIsolation(spec -> spec.getClasspath().from(getRendererClasspath()));
+    queue.submit(
+        MarkdownRendererWorkAction.class,
+        parameters -> {
+          parameters.getSource().set(getSource());
+          parameters.getOutputDir().set(getOutputDir());
+        });
+    queue.await();
   }
 }

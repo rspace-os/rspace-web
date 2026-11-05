@@ -68,7 +68,8 @@ public abstract class RecreateDatabase extends DefaultTask {
     }
     String script =
         getBaselineScript().isPresent()
-            ? Files.readString(getBaselineScript().get().getAsFile().toPath(), StandardCharsets.UTF_8)
+            ? Files.readString(
+                getBaselineScript().get().getAsFile().toPath(), StandardCharsets.UTF_8)
             : null;
     URL[] urls = new URL[getDriverClasspath().getFiles().size()];
     int i = 0;

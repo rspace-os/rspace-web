@@ -10,15 +10,23 @@ import org.junit.jupiter.api.Test;
 class HibernateTestDatabaseNameTest {
 
   private String savedProperty;
+  private String savedServer;
 
   @BeforeEach
   void saveProperty() {
     savedProperty = System.getProperty(HibernateTest.DB_NAME_PROPERTY);
+    savedServer = System.getProperty("jdbc.url.maven");
+    System.clearProperty("jdbc.url.maven");
     System.clearProperty(HibernateTest.DB_NAME_PROPERTY);
   }
 
   @AfterEach
   void restoreProperty() {
+    if (savedServer == null) {
+      System.clearProperty("jdbc.url.maven");
+    } else {
+      System.setProperty("jdbc.url.maven", savedServer);
+    }
     if (savedProperty == null) {
       System.clearProperty(HibernateTest.DB_NAME_PROPERTY);
     } else {
@@ -66,5 +74,18 @@ class HibernateTestDatabaseNameTest {
     String name = "hibtest" + "h".repeat(57);
     System.setProperty(HibernateTest.DB_NAME_PROPERTY, name);
     assertEquals(name, HibernateTest.scratchDatabaseName());
+  }
+
+  @Test
+  void scratchUrlDefaultsToLocalTestServer() {
+    assertEquals("jdbc:mysql://localhost:3306/hibtest", HibernateUtils.jdbcUrl("hibtest"));
+  }
+
+  @Test
+  void scratchUrlUsesConfiguredServerAndRemovesTrailingSlash() {
+    System.setProperty("jdbc.url.maven", "jdbc:mysql://localhost:3377/");
+    assertEquals(
+        "jdbc:mysql://localhost:3377/hibtest_feature_branch",
+        HibernateUtils.jdbcUrl("hibtest_feature_branch"));
   }
 }
