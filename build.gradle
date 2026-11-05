@@ -900,7 +900,7 @@ if (prodRelease) {
 
 tasks.named('war') {
   archiveFileName = "researchspace-${project.version}.war"
-  exclude 'ui/node/**', 'ui/node_modules/**', 'ui/dist/stats.json', 'ui/storybook-static/**'
+  exclude 'ui/node/**', 'ui/node_modules/**', 'ui/dist/stats.json', 'ui/dist/stats.html', 'ui/stats.html', 'ui/storybook-static/**'
   inputs.properties(filterProperties)
   def filterArgs = [properties: new HashMap(filterProperties)]
   filesMatching(['META-INF/**', 'WEB-INF/security.xml']) {
