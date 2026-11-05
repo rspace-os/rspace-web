@@ -1979,6 +1979,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(
                 post("/workspace/ajax/copy")
+                    .header("Origin", "http://localhost:8080")
                     .param("parentFolderId", root.getId() + "")
                     .param("idToCopy[]", doc.getId() + "")
                     .param("newName[]", newName)
@@ -2006,6 +2007,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(
                 post("/workspace/ajax/copy")
+                    .header("Origin", "http://localhost:8080")
                     .param("parentFolderId", root.getId().toString())
                     .param("idToCopy[]", first.getId().toString(), second.getId().toString())
                     .param("newName[]", "alpha,beta_Copy", "gamma_Copy")
@@ -2035,6 +2037,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     java.util.Arrays.fill(names, "copy");
     var copyRequest =
         post("/workspace/ajax/copy")
+            .header("Origin", "http://localhost:8080")
             .header("X-Requested-With", "XMLHttpRequest")
             .param("parentFolderId", root.getId().toString())
             .param("idToCopy[]", first.getId().toString(), second.getId().toString())
