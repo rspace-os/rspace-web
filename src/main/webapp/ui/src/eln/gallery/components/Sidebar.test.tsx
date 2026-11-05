@@ -85,7 +85,7 @@ describe("Sidebar", () => {
     vi.clearAllMocks();
   });
 
-  test("Reopening the create menu reuses the cached integration states", async () => {
+  test("Reopening the create menu refreshes integration states", async () => {
     const user = userEvent.setup();
     render(<DefaultSidebar />);
 
@@ -104,7 +104,9 @@ describe("Sidebar", () => {
 
     await user.click(screen.getByRole("button", { name: "common:actions.create" }));
     await screen.findByRole("menuitem", { name: /dmpIntegrations.dmponline/ });
-    expect(allIntegrationsCalls()).toHaveLength(1);
+    await waitFor(() => {
+      expect(allIntegrationsCalls()).toHaveLength(2);
+    });
     expect(integrationInfoCalls()).toHaveLength(0);
   });
 
