@@ -16,7 +16,8 @@ import org.gradle.api.provider.ValueSourceParameters;
 public abstract class CurrentUtcTimestamp
     implements ValueSource<String, ValueSourceParameters.None> {
 
-  public static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
+  public static final DateTimeFormatter FORMAT =
+      DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
 
   @Override
   public String obtain() {

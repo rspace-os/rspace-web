@@ -21,8 +21,8 @@ import org.xml.sax.SAXException;
  *
  * <p>With {@code mergeReruns}, Gradle writes such a test as one test case holding a {@code
  * flakyFailure}, as Surefire does, but still counts the failed attempt in the suite's {@code
- * failures} attribute. Report publishers read that attribute (GitHub's test-results check fails
- * the run, Jenkins marks it unstable), so rewrite it the way Surefire did: only test cases with a
+ * failures} attribute. Report publishers read that attribute (GitHub's test-results check fails the
+ * run, Jenkins marks it unstable), so rewrite it the way Surefire did: only test cases with a
  * {@code failure}, {@code error} or {@code skipped} child count.
  */
 public final class JUnitXmlSuiteCounts {
@@ -55,7 +55,8 @@ public final class JUnitXmlSuiteCounts {
       int skipped = 0;
       NodeList children = suite.getChildNodes();
       for (int i = 0; i < children.getLength(); i++) {
-        if (children.item(i) instanceof Element testcase && "testcase".equals(testcase.getTagName())) {
+        if (children.item(i) instanceof Element testcase
+            && "testcase".equals(testcase.getTagName())) {
           tests++;
           failures += hasChild(testcase, "failure") ? 1 : 0;
           errors += hasChild(testcase, "error") ? 1 : 0;

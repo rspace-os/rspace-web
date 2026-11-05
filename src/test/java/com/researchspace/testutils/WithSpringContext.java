@@ -5,6 +5,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -14,6 +15,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * <p>Combine with {@link DefaultTestContext} or {@code @ContextConfiguration}. Do not declare
  * {@code @TestExecutionListeners} here because that replaces Spring's default listeners.
  */
+@Tag("slow")
 @ExtendWith(SpringExtension.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
