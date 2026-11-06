@@ -121,6 +121,7 @@ describe("CallableImagePreview", () => {
       render(<CallableImagePreviewStory />);
       await preview.clickOpenImageWithCaption();
       await expect.element(preview.caption).toBeVisible();
+      expect(preview.caption.element().textContent).toBe("Test Image Caption: cells & <media>\n\ntest image.png");
       const lines = (preview.caption.element() as HTMLElement).innerText.split("\n").filter((line) => line !== "");
       expect(lines).toEqual(["Test Image Caption: cells & <media>", "test image.png"]);
     });
