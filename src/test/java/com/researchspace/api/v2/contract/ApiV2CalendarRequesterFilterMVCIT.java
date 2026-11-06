@@ -147,6 +147,7 @@ class ApiV2CalendarRequesterFilterMVCIT {
 
     // The Calendar event filters, its booked-by facet and its Search follow the same rule.
     assertCalendarEvents(start, end, "requester.value==me", null, Set.of(ownBooking));
+    assertCalendarEvents(start, end, "targetOwner==me", null, Set.of(ownBooking));
     assertCalendarEvents(start, end, "requester.value==" + owner.getId(), null, Set.of(ownBooking));
     assertCalendarEvents(start, end, "requester.value==" + stranger.getId(), null, Set.of());
     assertCalendarEvents(

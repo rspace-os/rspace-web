@@ -64,6 +64,48 @@ class BookingCatalogueControllerMVCIT {
   }
 
   @Test
+  void currentViewerOwnerPresetFiltersCatalogueAndConfigurations() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), fixture.marker());
+    long configuration = fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    for (String resource : List.of("booking-catalogue", "booking-configurations")) {
+      mockMvc
+          .perform(
+              get("/api/v2/" + resource)
+                  .header("apiKey", fixture.userKey())
+                  .queryParam("totals", "true")
+                  .queryParam("where", "id==" + configuration + ";targetOwner==me"))
+          .andExpect(status().isOk())
+          .andExpect(
+              jsonPath(resource.equals("booking-catalogue") ? "$.total" : "$.totalDocs").value(1));
+      for (String invalid : List.of("targetOwner==12", "targetOwner==me,id==0")) {
+        mockMvc
+            .perform(
+                get("/api/v2/" + resource)
+                    .header("apiKey", fixture.userKey())
+                    .queryParam("where", invalid))
+            .andExpect(status().isBadRequest());
+      }
+    }
+  }
+
+  @Test
+  void configurationsExcludeDeletedTargetsWithAndWithoutOwnerPreset() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), fixture.marker());
+    long configuration = fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    instrumentManager.markInstrumentAsDeleted(instrument, fixture.user());
+    for (String suffix : List.of("", ";targetOwner==me")) {
+      mockMvc
+          .perform(
+              get("/api/v2/booking-configurations")
+                  .header("apiKey", fixture.userKey())
+                  .queryParam("totals", "true")
+                  .queryParam("where", "id==" + configuration + suffix))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(0));
+    }
+  }
+
+  @Test
   void requiresAuthentication() throws Exception {
     mockMvc.perform(get("/api/v2/booking-catalogue")).andExpect(status().isUnauthorized());
     mockMvc

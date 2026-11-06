@@ -118,6 +118,16 @@ public final class CollectionDescription<T> {
                 throw new IllegalArgumentException("Duplicate filter selector " + selector.name());
               }
             });
+    fields.stream()
+        .filter(member -> member instanceof FilterOnly<?>)
+        .forEach(
+            member -> {
+              @SuppressWarnings("unchecked")
+              FilterOnly<T> filter = (FilterOnly<T>) member;
+              if (selectors.putIfAbsent(filter.name(), filter.selector()) != null) {
+                throw new IllegalArgumentException("Duplicate filter selector " + filter.name());
+              }
+            });
     publicFilterSelectors = Collections.unmodifiableMap(selectors);
 
     Map<String, FilterSelector<T>> internal = new LinkedHashMap<>();
@@ -227,6 +237,22 @@ public final class CollectionDescription<T> {
         accessPolicy,
         internalFilters,
         Objects.requireNonNull(fieldTypes, "Field type registry"));
+  }
+
+  /** Adds a filter-only member while retaining the existing server-only selectors. */
+  public CollectionDescription<T> withFilter(FilterSelector<T> selector) {
+    List<ResourceMember<T>> members = new java.util.ArrayList<>(fields.values());
+    members.add(new FilterOnly<>(selector));
+    List<InternalFilter> internal =
+        compilableSelectors.entrySet().stream()
+            .filter(entry -> !publicFilterSelectors.containsKey(entry.getKey()))
+            .map(entry -> (FilterSelector.Property<T>) entry.getValue())
+            .map(
+                property ->
+                    new InternalFilter(property.name(), property.property(), property.type()))
+            .toList();
+    return new CollectionDescription<>(
+        resourceName, entityType, members, idField, defaultSort, accessPolicy, internal);
   }
 
   public String resourceName() {

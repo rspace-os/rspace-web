@@ -34,6 +34,67 @@ public class BookingItemQuery {
     return buildRestriction(user, false, true, targetPath, "ownedBookingItem");
   }
 
+  /** Compiles a parsed owner preset against the registered Inventory read constraint. */
+  public static Predicate ownedBy(
+      User user,
+      String targetPath,
+      com.researchspace.model.collection.RelationshipReadAccess targets) {
+    if (user == null
+        || !user.isEnabled()
+        || user.isAccountLocked()
+        || targets.description("instruments") == null
+        || targets.result("instruments").isDenied()) {
+      return new Predicate(RsqlCollectionQuery.FALSE_EXPRESSION, Map.of());
+    }
+    String name = targetPath.replace('.', '_') + "Owner";
+    String instrument = name + "Instrument";
+    var constraint = targets.result("instruments").constraintOrEmpty().orElse(null);
+    Predicate access =
+        new RsqlCollectionQuery(targets.description("instruments"), instrument, name)
+            .translateTrusted(constraint, targets);
+    Predicate body =
+        Predicate.and(
+            access,
+            new Predicate(
+                instrument
+                    + ".id = "
+                    + targetPath
+                    + ".id AND "
+                    + targetPath
+                    + ".type = :"
+                    + name
+                    + "Type AND "
+                    + instrument
+                    + ".owner.username = :"
+                    + name
+                    + "Username",
+                Map.of(
+                    name + "Type",
+                    BookableTargetType.INSTRUMENT,
+                    name + "Username",
+                    user.getUsername())));
+    return new Predicate(
+        "EXISTS " + name + "Capability",
+        body.parameters(),
+        Map.of(
+            name + "Capability",
+            new Subquery(Instrument.class, instrument, body.expression(), body.subqueries())));
+  }
+
+  /** Default list scope without changing configuration or Inventory authorization. */
+  public static Predicate undeletedTarget(String targetPath) {
+    String name = "undeletedBookingTarget";
+    return new Predicate(
+        "EXISTS " + name,
+        Map.of(),
+        Map.of(
+            name,
+            new Subquery(
+                Instrument.class,
+                name,
+                name + ".id = " + targetPath + ".id AND " + name + ".deleted = false")));
+  }
+
   private Predicate buildRestriction(
       User user, boolean edit, boolean owner, String targetPath, String name) {
     if (user == null || !user.isEnabled() || user.isAccountLocked()) {

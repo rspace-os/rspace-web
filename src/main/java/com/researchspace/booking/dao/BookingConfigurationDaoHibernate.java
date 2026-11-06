@@ -69,14 +69,20 @@ public class BookingConfigurationDaoHibernate
         criteriaBuilderFactory,
         getSession(),
         request,
-        restriction,
+        com.researchspace.dao.query.RsqlCollectionQuery.Predicate.and(
+            restriction, BookingItemQuery.undeletedTarget("bookingConfiguration.target")),
         targetAccess,
         List.of("createdBy", "updatedBy"));
   }
 
   @Override
   public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
-    return collectionQuery.count(criteriaBuilderFactory, getSession(), request, null, targetAccess);
+    return collectionQuery.count(
+        criteriaBuilderFactory,
+        getSession(),
+        request,
+        BookingItemQuery.undeletedTarget("bookingConfiguration.target"),
+        targetAccess);
   }
 
   @Override
