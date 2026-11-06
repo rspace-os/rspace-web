@@ -163,8 +163,8 @@
 				<label><spring:message code="form.fieldEditor.multiple"/></label>
 			</td>
 			<td>
-				<input type="radio" name="fieldMultipleAllowed" value="yes" <c:if test="${ true eq multipleChoice}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedYes"/> <br/>
-				<input type="radio" name="fieldMultipleAllowed" value="no" <c:if test="${ false eq multipleChoice}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedNo"/>
+				<input type="radio" name="fieldMultipleAllowed" value="yes" <c:if test="${fieldTemplate.multipleChoice eq true}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedYes"/> <br/>
+				<input type="radio" name="fieldMultipleAllowed" value="no" <c:if test="${fieldTemplate.multipleChoice eq false}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedNo"/>
 			</td>
 		</tr>
 		<tr>
@@ -299,7 +299,7 @@
   <tr>
     <td>
       <label><spring:message code="form.fieldEditor.required"/></label>
-      <input  ${fieldTemplate.mandatory == true ?"checked":""} type="checkbox" id="mandatoryCheckbox" name="mandatoryCheckbox" value="${fieldTemplate.mandatory}"/></td>
+      <input  ${fieldTemplate.mandatory == true ?"checked":""} type="checkbox" id="mandatoryCheckbox" name="mandatoryCheckbox" value="${fieldTemplate.mandatory}"/>
     </td>
   </tr>
 
