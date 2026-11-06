@@ -325,7 +325,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       } else if (item.type === "dataset") {
         images = await getImages(item.id, false);
         rows = Math.ceil(images.length / 10);
-        columns = images.length < 10 ? images.length : 10;
+        columns = Math.min(images.length, 10);
       }
       if (!item.imageGridDetails) {
         item.imageGridDetails = [];
