@@ -93,14 +93,11 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
     if (!StringUtils.isEmpty(expCfg.getDescription())) {
       name = "[" + StringEscapeUtils.escapeHtml4(expCfg.getDescription()) + "]";
     }
-    String link = ArchiveUtils.getExportDownloadLink(serverURLPrefix, result);
-    String linkText = link;
-
-    link = handlePresignedS3Url(result, file);
+    String link = handlePresignedS3Url(result, file);
 
     Map<String, Object> config = new HashMap<>();
     config.put("link", link);
-    config.put("linkText", linkText);
+    config.put("archiveFileName", StringEscapeUtils.escapeHtml4(file.getName()));
     config.put("name", name);
     config.put("size", fileSize);
     config.put("exportedRecordsSummary", getExportedRecordsSummary(expCfg, result));

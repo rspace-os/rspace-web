@@ -134,6 +134,16 @@ public interface GroupManager {
    */
   void setRoleForUser(long groupId, Long userId, String role, User subject);
 
+  /**
+   * Gives the user the PI role in every collaboration group they belong to, when an admin promotes
+   * them to PI on Community. Self-service promotion does not use this.
+   *
+   * @param toPromote the user being promoted to PI
+   * @param subject the user requesting the promotion; must be an admin
+   * @throws AuthorizationException if <code>subject</code> is not an admin
+   */
+  void setPiRoleInCollaborationGroups(User toPromote, User subject);
+
   /** Gets paginated listing of groups */
   ISearchResults<Group> list(User subject, PaginationCriteria<Group> pagCrit);
 

@@ -1,4 +1,8 @@
+#if($doiNotFound)
+$msg.format("email.notification.raidUpdateCompleteNotification.doiNotFound", [$repo, $doi, $url, $identifier])
+#else
 $msg.format("email.notification.raidUpdateCompleteNotification.response", [$succeed, $repo, $doi, $url, $identifier])
+#end
 <br/>
 <p>
 $msg.getMessage("email.common.dontReply")

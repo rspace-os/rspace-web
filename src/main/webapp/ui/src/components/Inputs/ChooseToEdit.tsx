@@ -34,8 +34,6 @@ export default function ChooseToEdit({ checked, onChange, ariaControls, label }:
         borderRadius: theme.spacing(0.5),
         letterSpacing: theme.typography.letterSpacing.spaced,
         ml: "auto",
-        position: "absolute",
-        right: 0,
       })}
     >
       {label ?? t("inputs.chooseToEdit.label")}

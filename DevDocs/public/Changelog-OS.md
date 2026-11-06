@@ -4,36 +4,56 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
-# Unreleased
+# 2.28.0 2026-11-06
 
 ### Server
 
-- RSDEV-1348 archive import now stops, and removes what it extracted, when an uploaded archive expands past `archive.maxExpandedSizeMB` (default 10000 MB), would leave less than `archive.minSpaceRequiredToStartMB` free on the temp partition, contains more than `archive.import.maxEntries` files and folders (default 500000), or expands more than `archive.import.maxCompressionRatio` times its compressed size once past 10 MB (default 100). 0 disables each limit. The default for `archive.minSpaceRequiredToStartMB` rises from 1000 to 2000 MB, so exports now also need 2 GB free to start; sites that lowered `archive.maxExpandedSizeMB` to limit exports now limit imports too.
-- RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct. With a valid client, the grant now answers a username with the ordinary invalid-credentials response, at the cost of one password check, after `oauth.passwordGrant.maxFailures` wrong passwords (default 5) within `oauth.passwordGrant.failureWindowSeconds` (default 600), until the window passes. Administrators see a block in the security log. The count is held in memory and does not touch the account's login-page lockout. Unknown usernames are answered after one password check, so for ordinary accounts their response time is close to that of a wrong password.
-- RSDEV-1588 importing an archive from a path on the server now needs the new `importArchiveFromServer.folder` property as well as `importArchiveFromServer.enabled=true`. Only archives inside that folder can be imported. Deployments that already enable this import must set the folder when upgrading, or the import is refused. The import endpoint is also now refused when `importArchiveFromServer.enabled` is false; before, only the form was hidden.
-- RSDEV-894 login passwords and SSO/Community verification passwords are now hashed with Argon2id
-  - On first startup after the upgrade a Liquibase change wraps every existing password hash in Argon2id, so no fast SHA-256 hash stays in the database. The wrapped hash stays as it is until the user next changes their password; new and changed passwords are stored as plain Argon2id.
-  - **This change is irreversible.** Older RSpace versions cannot read the new login or verification password hashes, so nobody could log in, and SSO/Community users could not sign or witness documents, after a downgrade. Downgrading past this version requires restoring the database backup taken before the upgrade.
-  - Backups and binary logs taken before the upgrade still contain the previous SHA-256 hashes. Rotate or expire them under your normal retention policy.
-  - First startup takes about one minute longer per 1,200 users (roughly 50 to 150 ms per user, depending on CPU); raise startup and health-check timeouts above that before upgrading. Progress is saved every 100 users. If the process is killed during this step, release Liquibase's lock (`UPDATE DATABASECHANGELOGLOCK SET LOCKED=0`) and restart; the migration continues with the users it had not reached. The change logs the row count and the time it took.
-  - Rows whose password is not a SHA-256 hex hash with a Base64 salt are left unchanged and logged at ERROR with the username. Those users cannot log in until an administrator resets their password.
-  - On first startup a second Liquibase change prefixes every existing BCrypt verification password with `{bcrypt}` so the new encoder can read it; this takes negligible time and is logged. Prefixed values stay as they are until the user next changes their verification password. New verification passwords are Argon2id from the start.
-  - A verification password that is neither BCrypt nor already in the new format could never be verified. It is cleared and logged at ERROR with the username, and that user must set a new verification password.
-  - New optional `deployment.properties` keys limit how many login, reauthentication and verification password checks run at once, since each check holds about 19 MiB of heap:
-    - `login.passwordVerification.maxConcurrent`, default `8`
-    - `login.passwordVerification.waitSeconds`, the seconds a check waits for a free slot, default `5`. A check that times out tells the user the server is busy and does not count toward account lockout. It is also the `Retry-After` value of the OAuth password grant's busy answer.
-    - `login.passwordVerification.maxQueued`, default `32`, how many checks may wait for a slot; further attempts are refused as busy at once. At most one check per account may wait, so a burst for one username cannot fill the queue.
-  - When the server is too busy to check a password, the login page, the SSO admin login and every password prompt (signing, witnessing, API key, email and password changes, sysadmin prompts) now say the server is busy instead of showing the wrong-password message. Every username gets the same busy answer, real or not, so it does not reveal which accounts exist. The OAuth password grant answers HTTP 503 with a `Retry-After` header, and a busy attempt does not count toward `oauth.passwordGrant.maxFailures`.
-  - Published documents and notebooks sign their visitors in as the anonymous guest without a password check, so public traffic does not count toward `login.passwordVerification.maxConcurrent`. `publishing.anonymousGuest.password` is no longer used to open public pages; leave it in place. Disabling the `rspace anonymous guest` account now turns public pages off.
-  - Sign-up, Google sign-up on Community, LDAP first-login auto-signup, and password-reset replies share a limit of `password.anonymousEncode.maxConcurrent` new-password hashes in flight at once (default `4`), because each one hashes the new password with Argon2id. A submission that finds no free slot is refused at once with a message asking the user to try again, and a reset link stays usable. A password-reset link that has already been used or has expired is now refused when the new password is submitted, not only when the form is opened. If the server is too busy to sign a new user in right after sign-up, the account is still created and the login page says so.
-- RSDEV-1335 Spring LDAP is upgraded from 2.3.4 to 3.3.8, which fixes CVE-2026-41720. LDAP sites that set `ldap.anonymousBind=false` and `ldap.bindQuery.dn` must also set a non-empty `ldap.bindQuery.password`; with an empty one, RSpace still starts but every LDAP user lookup and LDAP login now fails.
-- ISSUE-1135 the minimum length of a search term is now configurable: `search.minTermLength.sysadmin` (default 5) and `search.minTermLength.user` (default 2) apply to Workspace and Inventory searches, in RSpace and through the API; 0 or less disables the check. Lower them on CJK installations, where two-character terms are common.
+Some changes in this release affect existing deployments:
+
+- RSDEV-894 passwords are now hashed with Argon2id; on first startup after the upgrade all stored password hashes are re-hashed
+- RSDEV-1577 verification passwords (used in SSO setups) are cleared on upgrade; users will be asked to set new ones
+- RSDEV-1588 importing archives from a server path now also requires the new `importArchiveFromServer.folder` property
 
 ### ELN Features
 
-- RSDEV-894 the maximum length of login and verification passwords is raised from 50 to 128 characters
-  - API: `POST /api/v1/users` (sysadmin user creation, `ApiUserPost`) now accepts passwords up to 128 characters
-  - Passwords longer than 128 characters are refused at login without being checked; the only way to hold one is a historic CSV import, and such a user needs an administrator password reset.
+- RSDEV-1525 integration credentials are now stored encrypted, and masked in the UI
+- RSDEV-1553 option to update a document through 'Import from Word' is restored
+- RSDEV-1348 archive import now has configurable limits on extracted size and number of files
+- ISSUE-1135 minimum search term length is now configurable (e.g. for CJK languages)
+
+### ELN Bugfix
+
+- RSDEV-1333, RSDEV-1617 hardening of user search and autocomplete inputs
+- RSDEV-1607 fix Project Group deletion by group owners other than the creator
+- RSDEV-1345 self-service group creation is blocked when disabled in settings
+- RSDEV-1411 collaboration group members can no longer change group roles
+- RSDEV-1172 top navigation bar is no longer printed with documents
+- RSDEV-1469 fix S3 download link in export-complete notification
+- RSDEV-913 fix long folder trees overlapping in Share dialog
+- RSDEV-1375 fix Auditing page errors for non-admin users
+- RSDEV-1618 fix List of Materials button hidden behind editor toolbar
+- RSDEV-1646 fix DOI shown in failed RAiD update notification
+- RSDEV-1619 speed up System -> Users listing and its CSV export
+
+### Inventory Features
+
+- RSDEV-1231, RSDEV-1259 new Operations wizard (aliquot, passage, pool, derive, cryopreserve, revive, destroy)
+- RSDEV-1309, RSDEV-1310 new Sample Requests workflow
+- RSDEV-1520 changing item access permissions now requires ownership control
+- RSDEV-1604 descriptions no longer display embedded forms or external images
+- RSDEV-1236 descriptions can now hold up to 2000 characters
+- RSDEV-1530 links pinned to a non-existent version are refused, and existing ones flagged
+- RSDEV-1518 PIDINST import now searches both DataCite and B2INST registries
+- RSDEV-1555 keyboard selection of non-adjacent grid locations
+- ISSUE-1214 Access Permissions section is now visible in Instrument details view
+
+### Inventory Bugfix
+
+- RSDEV-1540 instrument owner's email is no longer published on B2INST
+- RSDEV-1603, RSDEV-1537, RSDEV-1538 fixes around CSV import of Instruments and Subsamples
+- RSDEV-1542, RSDEV-1556, RSDEV-1576 fixes around PIDINST registry search
+- RSDEV-1621, RSDEV-1479 fixes for search results and batch edit layout
+- RSDEV-1539 fix screen reader labels in search results
 
 # 2.27.0 2026-10-02
 

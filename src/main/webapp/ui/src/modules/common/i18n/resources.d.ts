@@ -6721,6 +6721,7 @@ export default interface Resources {
           "notificationFromRSpace": "Notification from RSpace"
         },
         "raidUpdateCompleteNotification": {
+          "doiNotFound": "Your research output recently deposited on \"{0}\" with the DOI <a href=\"{1}\">{1}</a> could not be added to your RAiD record <a href=\"{2}\">{3}</a>.<br/>RAiD refused the DOI because it could not find it. This RAiD instance only accepts DOIs that are already published.",
           "response": "{0, select, true {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> has been added to your RAiD record <a href=\"{3}\">{4}</a>.} other {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> could not be added to your RAiD record <a href=\"{3}\">{4}</a>.}}"
         },
         "repoDepositCompleteNotification": {
@@ -10953,6 +10954,7 @@ export default interface Resources {
       "deleteDialog": {
         "confirmUsername": "To delete <strong>{fullName}</strong>'s account please enter their username.",
         "disabledByDeployment": "The deployment property \"sysadmin.delete.user\" is false.",
+        "formsAndTemplatesCheckFailed": "Could not check whether this user's forms or templates are used by other users. Any that are will be transferred to you.",
         "formsAndTemplatesNotice": "The user you are trying to delete is <strong>the owner of Forms and/or Templates that are used by other users.</strong> To ensure continued access to these Forms/Templates, the system<strong> will transfer ownership</strong> of those files to<strong> this System Administrator</strong> account. Forms and Templates that are not used by others will be deleted.",
         "formsNotice": "The user you are trying to delete is <strong>the owner of Forms that are used by other users.</strong> To ensure continued access to these Forms, the system<strong> will transfer ownership</strong> of the Forms to<strong> this System Administrator</strong> account. Forms that are not used by others will be deleted.",
         "irreversible": "User deletion is irreversible, and all documents will be deleted.",
@@ -10970,6 +10972,8 @@ export default interface Resources {
       },
       "export": {
         "allRows": "Export all rows to CSV",
+        "allRowsFailed": "Could not export all rows",
+        "allRowsInProgress": "Exporting all rows",
         "onlyOneUser": "Only one user's work can be exported at a time.",
         "visibleRows": "{scope, select, selected {Export selected rows to CSV} other {Export this page of rows to CSV}}",
         "work": "Export Work"
