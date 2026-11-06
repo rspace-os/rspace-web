@@ -124,6 +124,17 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void entryOpenedFromNotebookFolderViewReturnsToNotebook() throws AuthorizationException {
+    when(permissionUtils.isPermitted(
+            any(BaseRecord.class), any(PermissionType.class), any(User.class)))
+        .thenReturn(true);
+
+    ModelAndView resp =
+        notebookEditorController.openNotebook(1L, 2L, null, "1", model, mockPrincipal);
+    assertThat(resp.getModel()).containsEntry("workspaceFolderId", 1L);
+  }
+
+  @Test
   public void handleRequest() throws Exception {
     // when you have permission to edit record
     when(permissionUtils.isPermitted(
