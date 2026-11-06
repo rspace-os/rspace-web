@@ -27,6 +27,7 @@ export function ImportDialogStory(): React.ReactNode {
               }}
               editor={{
                 id: "rtf_1",
+                on: () => {},
                 ui: {
                   registry: {
                     addMenuItem: (_menuItemIdentifier, _options) => {},

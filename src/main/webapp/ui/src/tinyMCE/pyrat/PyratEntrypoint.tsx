@@ -1,10 +1,10 @@
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { createRoot } from "react-dom/client";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { createPluginDialog } from "../pluginDialogRoot";
 import type { TinyMcePluginEditor } from "../types";
 import PyratDialog, { type PyratDialogProps } from "./PyratDialog";
 
@@ -18,73 +18,40 @@ declare const tinymce: {
 
 class PyratPlugin {
   constructor(editor: TinyMcePluginEditor) {
-    function* renderPyrat(domContainer: HTMLElement): Generator<void, void, PyratDialogUpdates> {
-      const root = createRoot(domContainer);
-      while (true) {
-        const newProps = yield;
-        root.render(
-          <I18nRoot namespaces={["apps", "common", "workspace"]}>
-            <StyledEngineProvider injectFirst enableCssLayer>
-              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                <PyratDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-              </ThemeProvider>
-            </StyledEngineProvider>
-          </I18nRoot>,
-        );
-      }
-    }
+    const dialog = createPluginDialog("tinymce-pyrat");
+    editor.on("remove", () => dialog.release());
+    const renderDialog = (props: PyratDialogUpdates, { claim = false } = {}) => {
+      (claim ? dialog.open : dialog.update)(
+        <I18nRoot namespaces={["apps", "common", "workspace"]}>
+          <StyledEngineProvider injectFirst enableCssLayer>
+            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+              <PyratDialog editor={editor} open={false} onClose={() => {}} {...props} />
+            </ThemeProvider>
+          </StyledEngineProvider>
+        </I18nRoot>,
+      );
+    };
+    const openDialog = () => {
+      renderDialog({ open: true, onClose: () => renderDialog({ open: false }) }, { claim: true });
+    };
 
-    let domContainer = document.getElementById("tinymce-pyrat");
-    if (!domContainer) {
-      const div = document.createElement("div");
-      div.id = "tinymce-pyrat";
-      document.body.appendChild(div);
-      domContainer = div;
-    }
-    const pyratRenderer = renderPyrat(domContainer);
-    pyratRenderer.next({ open: false });
-
-    // Add a button to the toolbar
     editor.ui.registry.addButton("pyrat", {
       tooltip: i18n.t("workspace:tinymce.pyrat.linkTooltip"),
       icon: "pyrat",
-      onAction() {
-        pyratRenderer.next({
-          open: true,
-          onClose: () => {
-            pyratRenderer.next({ open: false });
-          },
-        });
-      },
+      onAction: openDialog,
     });
 
-    // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPyrat", {
       text: i18n.t("workspace:tinymce.pyrat.fromPyrat"),
       icon: "pyrat",
-      onAction() {
-        pyratRenderer.next({
-          open: true,
-          onClose: () => {
-            pyratRenderer.next({ open: false });
-          },
-        });
-      },
+      onAction: openDialog,
     });
 
-    // Adds an option to the slash-menu
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optPyrat", {
       text: i18n.t("workspace:tinymce.pyrat.fromPyrat"),
       icon: "pyrat",
-      action: () => {
-        pyratRenderer.next({
-          open: true,
-          onClose: () => {
-            pyratRenderer.next({ open: false });
-          },
-        });
-      },
+      action: openDialog,
     });
   }
 }
