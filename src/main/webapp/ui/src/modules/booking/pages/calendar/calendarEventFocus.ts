@@ -158,8 +158,6 @@ export function useCalendarEventFocusResolution({
   calendarSearch,
   itemWhere,
   eventWhere,
-  mineOnly,
-  myItemsOnly,
   setView,
   setLayout,
 }: {
@@ -176,8 +174,6 @@ export function useCalendarEventFocusResolution({
   calendarSearch: string;
   itemWhere: string | null;
   eventWhere: string | null;
-  mineOnly: boolean;
-  myItemsOnly: boolean;
   setView: (view: CalendarView) => Promise<unknown>;
   setLayout: (layout: CalendarLayout) => Promise<unknown>;
 }) {
@@ -218,7 +214,7 @@ export function useCalendarEventFocusResolution({
   ]);
   React.useEffect(() => {
     setFocusUnavailableRequest(undefined);
-  }, [selectedDate, view, layout, target, calendarSearch, itemWhere, eventWhere, mineOnly, myItemsOnly]);
+  }, [selectedDate, view, layout, target, calendarSearch, itemWhere, eventWhere]);
   React.useEffect(() => {
     const request = focusRequest;
     const lifecycleState = request && focusLifecycleRef.current;
@@ -316,13 +312,7 @@ export function calendarEventFocusHref({
   search.set("focus", String(id));
   search.set("focusRequest", `${Date.now().toString(36)}-${(++focusRequestSequence).toString(36)}`);
 
-  for (const key of [
-    "calendar-resources.where",
-    "calendar-resources.q",
-    "calendar-events.where",
-    "mineOnly",
-    "myItemsOnly",
-  ]) {
+  for (const key of ["calendar-resources.where", "calendar-resources.q", "calendar-events.where"]) {
     search.delete(key);
   }
 

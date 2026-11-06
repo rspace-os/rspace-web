@@ -5,6 +5,7 @@ import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
+import { DroppedFilterNotice } from "../DroppedFilterNotice";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
 import { type AllBookableItem, hasAvailabilityFilter, withAvailability } from "./availabilityQuickFilters";
 import { useAllBookableItemsData } from "./useAllBookableItemsData";
@@ -37,7 +38,6 @@ function AllBookableItemsContentForUser({
     date,
     availability: routeAvailability,
     target,
-    mine = false,
     where,
     q,
     types,
@@ -62,7 +62,6 @@ function AllBookableItemsContentForUser({
     date,
     routeAvailability,
     target,
-    mine,
     subjectId,
     where,
     q,
@@ -70,7 +69,7 @@ function AllBookableItemsContentForUser({
     page,
     pageSize,
   });
-  const { filters, setSelectedRowIds, clearSelection, userToday } = data;
+  const { droppedFilterFields, filters, setSelectedRowIds, clearSelection, userToday } = data;
 
   const setDate = (nextDate: string) => {
     clearSelection();
@@ -95,7 +94,6 @@ function AllBookableItemsContentForUser({
         date: undefined,
         availability: undefined,
         target: undefined,
-        mine: undefined,
         where: undefined,
         q: undefined,
         types: undefined,
@@ -212,15 +210,17 @@ function AllBookableItemsContentForUser({
   };
 
   return (
-    <AllBookableItemsTable
-      {...data}
-      types={types}
-      mine={mine}
-      directSysadmin={directSysadmin}
-      tableProps={tableProps}
-      setDate={setDate}
-      resetView={resetView}
-      setFilters={setFilters}
-    />
+    <>
+      <DroppedFilterNotice fields={droppedFilterFields} />
+      <AllBookableItemsTable
+        {...data}
+        types={types}
+        directSysadmin={directSysadmin}
+        tableProps={tableProps}
+        setDate={setDate}
+        resetView={resetView}
+        setFilters={setFilters}
+      />
+    </>
   );
 }
