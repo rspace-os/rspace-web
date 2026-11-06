@@ -32,6 +32,7 @@ import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
+import com.researchspace.service.NotificationPostCommitExecutor;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -47,6 +48,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service("communicationManager")
 @Profile(value = {"dev,run,prod"})
@@ -59,6 +62,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   private @Autowired UserDao userDao;
   private @Autowired IMessageAndNotificationTracker notificnTracker;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired NotificationPostCommitExecutor notificationPostCommitExecutor;
 
   private List<Broadcaster> broadcasters = new ArrayList<>();
 
@@ -164,7 +168,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       // just save if status was really updated
       if (altered > 0) {
         commDao.save(notificn);
-        notificnTracker.changeUserNotificationCount(user.getId(), altered * -1);
+        refreshNotificationCountAfterCommit(user, altered * -1);
       }
     }
   }
@@ -173,9 +177,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   public void markAllNotificationsAsRead(String username, Date since) {
     int removed = commDao.markAllNotificationsAsRead(username, since);
     User user = userDao.getUserByUsername(username);
-    // this may not be strictly true, if new notifications have been generated
-    // after the 'since' date, but will be pic
-    notificnTracker.changeUserNotificationCount(user.getId(), removed * -1);
+    refreshNotificationCountAfterCommit(user, removed * -1);
   }
 
   @Override
@@ -406,13 +408,59 @@ public class CommunicationManagerImpl implements CommunicationManager {
     Set<CommunicationTarget> targets = createCommunicationTargetsForUsers(toNotify, notificn);
     notificn.setRecipients(targets);
     commDao.save(notificn);
-    if (config.isBroadcast()) {
-      broadcast(notificn, targets);
-    }
-    for (CommunicationTarget ct : targets) {
-      notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
+
+    boolean shouldBroadcast = config.isBroadcast();
+    Set<CommunicationTarget> notificationTargets = Set.copyOf(targets);
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      afterCommit(
+          () -> {
+            if (shouldBroadcast) {
+              notificationPostCommitExecutor.execute(
+                  () -> broadcast(notificn, notificationTargets));
+            }
+            for (CommunicationTarget ct : notificationTargets) {
+              refreshCommittedNotificationCount(ct.getRecipient());
+            }
+          });
+    } else {
+      if (shouldBroadcast) {
+        broadcast(notificn, notificationTargets);
+      }
+      for (CommunicationTarget ct : notificationTargets) {
+        notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
+      }
     }
     return notificn;
+  }
+
+  private void refreshNotificationCountAfterCommit(User user, int fallbackDelta) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      afterCommit(() -> refreshCommittedNotificationCount(user));
+    } else {
+      notificnTracker.changeUserNotificationCount(user.getId(), fallbackDelta);
+    }
+  }
+
+  private void refreshCommittedNotificationCount(User user) {
+    notificnTracker.refreshNotificationCount(
+        user.getId(),
+        () -> {
+          int[] count = new int[1];
+          // Start the query transaction only after acquiring the tracker's update lock.
+          notificationPostCommitExecutor.execute(
+              () -> count[0] = commDao.getNotificationStatus(user).getNotificationCount());
+          return count[0];
+        });
+  }
+
+  private void afterCommit(Runnable action) {
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            action.run();
+          }
+        });
   }
 
   public int deleteReadNotificationsOlderThanDate(Date olderThan) {

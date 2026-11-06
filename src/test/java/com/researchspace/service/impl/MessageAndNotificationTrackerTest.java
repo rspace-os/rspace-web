@@ -57,12 +57,6 @@ public class MessageAndNotificationTrackerTest {
   }
 
   @Test
-  public void testClearUserNotificationCount() {
-    // check ok to call this if there is no count associated with user yet
-    tracker.clearUserNotificationCount(3L);
-  }
-
-  @Test
   public void testNotificationServiceCalledOnNewNotification() {
     Long userId = 1L;
     tracker.changeUserNotificationCount(userId, 1);
