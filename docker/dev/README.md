@@ -2,8 +2,7 @@
 
 > **Experimental.** A newer convenience workflow, not yet the officially
 > supported way to run RSpace from source. If you hit problems, fall back to the
-> manual Maven/Jetty workflow in the
-> [Getting Started guide](/DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
+> manual [Gradle/Jetty workflow](/DevDocs/DeveloperNotes/Gradle.md#jetty).
 
 Boot a **complete** RSpace instance — database, Java/Jetty backend, and Vite
 frontend — for the git worktree you are currently in, with one command. Your
@@ -22,15 +21,18 @@ fully isolated RSpace at the same time:
 
 - a Compose **project name** derived from the worktree directory, so containers,
   networks, and volumes never collide;
-- its **own database and build artifacts** (separate volumes);
+- its **own database, build artifacts and Gradle caches** in named volumes;
 - its **own host ports**, auto-allocated to be free and recorded in
   `docker/dev/.env` (git-ignored);
 - its **own session cookie** (`JSESSIONID_<app port>`), so logging into one
   instance does not log you out of the others — browsers scope cookies by host
   only, and every instance lives on `localhost`.
 
-Heavy, safe-to-share caches (the Maven `~/.m2` repository and the pnpm store)
-are reused across worktrees so you only download dependencies once.
+Only the content-addressed pnpm store is shared. Each stack has its own Gradle
+user home, project cache and outputs. Writable Gradle homes cannot be shared
+across container network namespaces because Gradle coordinates cache locks over
+loopback UDP. Each new stack downloads Gradle and Java dependencies on first boot;
+later boots reuse its volumes. Host and container Gradle builds can run together.
 
 On first run `rspace-dev` also creates the git-ignored
 `src/main/resources/deployments/dev/deployment.properties` from the checked-in
@@ -40,8 +42,10 @@ local credentials.
 ## Prerequisites
 
 - Docker Engine + Docker Compose v2 (Docker Desktop on macOS/Windows works).
-- ~6 GB free RAM for the stack and a few GB of disk for caches.
-- No local Java, Maven, Node, or MariaDB needed — it all runs in containers.
+- Allow 8 GB free RAM per stack during compilation and several GB of disk per
+  stack for Gradle dependencies and outputs. Steady-state usage is lower because
+  Gradle exits before Jetty starts; reload temporarily adds a build JVM.
+- No local Java, Gradle, Node, or MariaDB needed — it all runs in containers.
 - **Windows: run this inside WSL2** — see [Windows (WSL2)](#windows-wsl2) below.
   The launcher is a bash script and will not run from PowerShell or `cmd`.
 
@@ -61,7 +65,7 @@ PowerShell or `cmd`.
    create any git worktrees) under your WSL2 home, e.g. `~/code/rspace-web` —
    reachable from Windows as `\\wsl$\Ubuntu\home\<you>\code`. Working from a
    `/mnt/c/...` path is the most common WSL2 mistake: bind-mount file I/O there
-   is very slow and filesystem change events are not delivered, so Maven, the
+   is very slow and filesystem change events are not delivered, so Gradle, the
    database, and Vite hot reload will all crawl or silently stop updating.
 4. **Run everything from the WSL2 shell:**
 
@@ -100,7 +104,7 @@ The first boot:
 3. creates the schema and sample data (`drop-recreate-db`),
 4. compiles and starts the backend, and installs frontend deps + starts Vite.
 
-This takes several minutes the first time (Maven and pnpm download
+This takes several minutes the first time (Gradle and pnpm download
 dependencies). Watch progress with:
 
 ```bash
@@ -127,6 +131,19 @@ mock port is unique per worktree and published on host loopback, so the Java
 backend and host Playwright process both use `http://localhost:<mock-port>`.
 The choice persists in `docker/dev/.env`; use `up --no-e2e` to return to real
 integration endpoints.
+
+To run the API project inside the stack, install Chromium for its admin-page
+fixtures and create the ignored auth-state directory. No host Node is needed:
+
+```bash
+./docker/dev/rspace-dev compose exec -T frontend pnpm exec playwright install --with-deps --only-shell chromium
+./docker/dev/rspace-dev compose exec -T frontend mkdir -p /rspace/src/main/webapp/ui/playwright/.auth
+./docker/dev/rspace-dev compose exec -T -e RSPACE_BASE_URL=http://localhost:8080 -e E2E_BROWSER=api frontend pnpm run test-e2e:api --reporter=list
+```
+
+The container uses port 8080 in the shared network namespace and inherits this
+worktree's mock port. Browser installation lasts until the frontend container is
+recreated.
 
 E2E mode also supplies the local MinIO credentials. To run the filestore tests, start
 their containers on this worktree's Docker network using the
@@ -212,19 +229,25 @@ another worktree's instance):
 
 ```bash
 # Stop it (reversible): remove the containers, KEEP this worktree's database,
-# node_modules, build output, and the shared caches. `up` later resumes fast.
+# node_modules, Gradle caches and build outputs.
+# `up` later resumes fast.
 ./docker/dev/rspace-dev down
 
 # Destroy it: remove the containers AND this worktree's volumes — database (all
-# local data), node_modules, build output, search indices, and filestore. The
-# next `up` re-initialises the database from scratch.
+# local data), node_modules, search indices, filestore, Gradle home and outputs.
+# The next `up` downloads dependencies and re-initialises the database.
 ./docker/dev/rspace-dev nuke
 ```
 
-`nuke` is `docker compose down --volumes` under the hood. It removes only the
-per-worktree volumes (named `rspace-<worktree>_*`). The **shared** Maven (`.m2`)
-and pnpm caches (`rspace-dev-m2-repo`, `rspace-dev-pnpm-store`) are declared
-`external`, so `nuke` never deletes them and other worktrees are unaffected.
+`nuke` runs `docker compose down --volumes` and removes the legacy
+`<project>_app-target` volume if present. It only removes this project's volumes.
+The shared pnpm store survives. Host build directories are never deleted.
+
+The launcher reports an existing Maven-era `rspace-dev-m2-repo` volume but never
+deletes it. Older branches may still need it. Once those stacks are retired,
+remove it with `docker volume rm rspace-dev-m2-repo`. The old shared
+`rspace-dev-gradle-cache` is also unused by this stack; only remove it once no
+older Gradle stacks need it.
 
 Verify it is gone:
 
@@ -239,9 +262,8 @@ Going further (rarely needed):
 # Remove the locally-built dev images too (next up rebuilds them):
 docker image rm rspace-dev-app:local rspace-dev-frontend:local
 
-# Remove the SHARED caches — affects EVERY worktree (they will re-download
-# Maven/npm deps on next up). Only do this to reclaim disk or force a clean cache:
-docker volume rm rspace-dev-m2-repo rspace-dev-pnpm-store
+# Remove the SHARED pnpm store only when no stacks need it:
+docker volume rm rspace-dev-pnpm-store
 ```
 
 > After `nuke`, the generated `docker/dev/.env` (ports for this worktree) is
@@ -252,8 +274,22 @@ docker volume rm rspace-dev-m2-repo rspace-dev-pnpm-store
 
 The whole worktree is bind-mounted at `/rspace` in the `app` and `frontend`
 containers. To keep host (often macOS/arm64) and Linux-container artifacts from
-mixing, these paths are masked with named volumes instead of the bind mount:
-`target/`, `node_modules/`, the search-index dirs, and the filestore.
+mixing for frontend dependencies, `node_modules/` uses a named volume. Search
+indices and the filestore also use volumes. All Gradle state lives in named volumes outside `/rspace`, under
+`/var/rspace-build`. The entrypoint creates a project view there with links to
+live source and copies of the Gradle settings and build scripts. This keeps
+buildSrc's default `.gradle` directory outside the host worktree too.
+The Gradle user home is also per-stack. Container builds leave host outputs and
+locks alone, so host/IDE builds can run concurrently. HotswapAgent watches the
+container's volume-backed class and resource directories. Only the build's own inputs
+(`src`, `gradle`, `jetty`, the wrapper and the build scripts) are linked into the project
+view, so the app's log files (`RSLogs.txt` and friends) and export `archive/`, which it
+writes relative to its working directory, stay in the `app-project` volume, in
+`/var/rspace-build/project` in the app container: open them with `rspace-dev shell`, not
+from the worktree (`rspace-dev logs` follows the console output). The frontend
+container still writes `ui/dist` and `node_modules` through the bind mount, as before; a
+host `git clean -fdX` removes its `node_modules` mount too, so run `rspace-dev down` and
+`rspace-dev up` afterwards if Vite stops serving (`restart` recreates only the app).
 
 | You change…                | What to do                                              |
 | -------------------------- | ------------------------------------------------------- |
@@ -270,7 +306,7 @@ mixing, these paths are masked with named volumes instead of the bind mount:
 > file changes are picked up via polling over the bind mount, giving true hot
 > reload inside the container.
 
-`reload` works because the backend runs `mvn jetty:run` with Jetty's manual
+`reload` works because the backend runs Jetty directly with manual
 redeploy mode; the entrypoint feeds Jetty's stdin from a FIFO, and `reload`
 writes to it to trigger a webapp redeploy after recompiling.
 
@@ -294,8 +330,7 @@ worktree's port for `5005` everywhere below.
 
 #### IntelliJ IDEA
 
-1. Open the repo as a project and let it import the Maven model (this is the
-   `rspace-web` Maven module).
+1. Open the repo as a project and let it import the Gradle model from `build.gradle`.
 2. **Run → Edit Configurations… → `+` → Remote JVM Debug.**
 3. Fill in:
    - **Name:** `RSpace (Docker)`
@@ -316,7 +351,7 @@ attach quickly after `restart` — the JVM waits for you before initialising.
 
 1. Install the **Extension Pack for Java** (includes *Language Support for Java*
    and *Debugger for Java*).
-2. Open the repo folder; let the Java extension import the Maven project (the
+2. Open the repo folder; let the Java extension import the Gradle project (the
    status bar shows progress the first time).
 3. Create `.vscode/launch.json` at the repo root (this path is git-ignored, so
    it stays a personal setting) with:
@@ -376,8 +411,7 @@ Spring Framework (not Spring Boot), so this replaces what Boot devtools would do
 
 **Drive it from your IDE's debugger (hot code replace).** This is the supported
 path: the IDE compiles the single class you changed and pushes the new bytecode
-into the running JVM over the debug connection (JDWP) — it never touches the
-container filesystem, so it sidesteps the Maven/bind-mount issue below.
+into the running JVM over the debug connection (JDWP).
 
 1. Attach the debugger (see "Backend (Java remote debug)" above).
 2. Enable reload-on-compile:
@@ -397,9 +431,20 @@ HotSpot HotSwap). The existing bean runs the new code; it is not re-created.
 >   the Hibernate plugin breaks transaction binding at startup, the Spring plugin
 >   throws mid-reload, and the Proxy plugin hits a Java 17 module error. So
 >   **code** in existing beans reloads, but **bean definitions/wiring** do not.
-> - There is **no in-container "recompile" command**: Maven's incremental build
->   does not work over the bind mount (a one-line edit recompiles ~2000 classes),
->   so file-watch auto-reload is off. Use the IDE path above, or `reload`.
+> - File-watch auto-reload is off. A clean build or cache restore can replace
+>   many class files at once. Use IDE hot code replace for individual classes,
+>   or `reload` to compile and rebuild the context.
+
+`reload` runs `classes` with the same container settings as startup, using a
+single-use Gradle daemon and the same project cache as startup. Gradle has
+already exited, so no build locks remain held while Jetty runs. Incremental
+compilation reuses the startup state and preserves the startup environment,
+including `drop-recreate-db`, and all resource-filter flags. `classes` does not
+depend on `recreateDatabase`, so reload never resets the database. Unchanged
+resources and classes stay present; incremental compilation may briefly remove
+changed classes. Changed resource inputs can still cause `processResources` to
+replace its outputs.
+Dependency resolution stays online so newly added dependencies can be fetched.
 
 ### What still requires a full restart
 
@@ -424,11 +469,11 @@ the Spring context in the same JVM) or `rspace-dev restart` (new JVM):
 - **`web.xml`, Jetty config, servlets/filters/listeners** (e.g. the MIME and
   decorator setup). → `restart`.
 - **Liquibase changesets / DB schema.** → `rspace-dev reset-db`.
-- **`pom.xml` / dependency changes** (new jars on the classpath). → `restart`.
+- **`build.gradle` / `gradle/` / dependency changes** (new jars on the classpath). → `restart`.
 - **Compile-time constants and enums** used in `switch` (the value is inlined at
   call sites), and **`static` initialisers** / already-run `@PostConstruct` side
   effects on existing singletons. → `restart` if behaviour looks stale.
-- **JVM / agent args** (`MAVEN_OPTS`, `RSPACE_*` env, `hotswap-agent.properties`).
+- **JVM / agent args** (`ORG_GRADLE_PROJECT_jettyJvmArgs`, `RSPACE_*` env, `hotswap-agent.properties`).
   → `restart` (a container recreate, since those are set at JVM launch).
 
 Rule of thumb: Java *code* changes reload live; **configuration, schema, and
@@ -448,9 +493,9 @@ is the quick lookup.
 
 | Symptom | Likely cause | Fix |
 | --- | --- | --- |
-| First `up` takes several minutes | Maven + pnpm downloading all deps into cold caches | Normal — watch `rspace-dev logs app`; later boots reuse the caches and are fast. |
+| First `up` takes several minutes | Gradle + pnpm downloading all deps into cold caches | Normal — watch `rspace-dev logs app`; later boots reuse the caches and are fast. |
 | `java.net.BindException: Address already in use` | A stale process or another tool holds this worktree's port | Ports auto-allocate to free `127.0.0.1` ports stored in `docker/dev/.env`; delete `.env` to re-allocate, then `rspace-dev up`. Confirm with `rspace-dev ps`. |
-| Backend OOMs / `OutOfMemoryError` in the app log | JVM heap too small for your workload | Raise `MAVEN_OPTS` (default `-Xmx2g`) in `.env` and `rspace-dev restart`; give Docker Desktop a generous memory limit. |
+| Backend OOMs / `OutOfMemoryError` in the app log | JVM heap too small for your workload | Raise `ORG_GRADLE_PROJECT_jettyJvmArgs` (default `-Xmx2g`) in `.env` and `rspace-dev restart`; give Docker Desktop a generous memory limit. |
 | App won't start after a schema change; DB looks corrupted or out of sync | Old data/schema left from a previous migration | `rspace-dev reset-db` (or `up --fresh`) to rebuild the DB from scratch. |
 | The `db` container keeps restarting | Corrupt data volume or interrupted init | `rspace-dev reset-db`; if it persists, `rspace-dev nuke` (destroys this worktree's volumes) then `up`. |
 | Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env`, then recreate the frontend container so it re-reads the var: `rspace-dev compose up -d --force-recreate frontend` (`rspace-dev restart` only recreates the backend `app`). On WSL2 keep the repo on the Linux filesystem. |
@@ -470,30 +515,31 @@ is the quick lookup.
 - **Mailpit**: `up --mailpit` starts it and persists `RSPACE_MAILPIT=true`.
   `up --no-mailpit` disables it. `rspace-dev ps` prints the per-worktree
   Mailpit URL.
-- **Spotless**: `jetty:run` runs `spotless:apply` during compile, exactly as a
-  local Maven run does. If you have unformatted Java, it may reformat files in
-  your worktree.
-- **First concurrent boots**: if you `up` two brand-new worktrees at the exact
-  same time they briefly contend on the shared Maven cache while it warms. Boot
-  one first, or just retry — it is harmless.
-- **Memory**: the backend defaults to `-Xmx2g` (`MAVEN_OPTS` in `.env`), and
+- **Formatting**: `jettyRun` and `classes` do not run Spotless. Run
+  `./gradlew spotlessApply` explicitly when needed.
+- **Locale and JVM**: Gradle and Jetty run on the image's JBR under `C.UTF-8`.
+  Do not set `LC_ALL=C` or select another Java toolchain for this stack.
+- **JVM arguments**: `ORG_GRADLE_PROJECT_jettyJvmArgs` configures the separate
+  Jetty JVM, including heap, JDWP and HotswapAgent. Arguments are separated by
+  whitespace. Gradle's own heap is configured by `org.gradle.jvmargs`.
+- **Memory**: the backend defaults to `-Xmx2g` (`ORG_GRADLE_PROJECT_jettyJvmArgs` in `.env`), and
   MariaDB uses a smaller InnoDB buffer pool than `rspace-docker` for local use
   (see `db/db-config.cnf`). Vite uses a large Node heap; give Docker Desktop a
   generous memory limit.
-- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
-  `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
+- **Image/tool overrides**: `DB_IMAGE`, `APP_BASE_IMAGE`, `NODE_IMAGE`, and
+  `ORG_GRADLE_PROJECT_jettyJvmArgs` can be set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie
   `JSESSIONID_<app port>` (via the `rs.session.cookie.name` system property),
   so concurrent localhost logins don't evict each other. Override with
   `RSPACE_SESSION_COOKIE_NAME` in `.env`. The same property works for a
-  plain (non-Docker) `mvn jetty:run` if you run several checkouts at once:
+  plain (non-Docker) `./gradlew jettyRun` if you run several checkouts at once:
   `-Drs.session.cookie.name=JSESSIONID_8081`.
 
 ## What this maps to
 
 The stack reproduces the documented local workflow, just containerized:
 
-- backend: `mvn jetty:run -Dspring.profiles.active=run -DreactDevMode=true`
+- backend: `./gradlew --no-daemon jettyLaunchArgs` then `exec java @/var/rspace-build/app/jetty/launch.args`
   with the DB pointed at the `db` service and the Vite dev-server proxy pointed
   at `localhost:5173`. The app container shares the `frontend` container's
   network namespace, so "localhost" reaches Vite; this is also why Vite accepts
@@ -504,3 +550,18 @@ The stack reproduces the documented local workflow, just containerized:
   MariaDB 10.11. Set `DB_IMAGE=mariadb:10.11` in `docker/dev/.env` before the
   first `up` to run the dev stack against that version. Use a separate worktree
   for each version; do not reuse a database volume across MariaDB major versions.
+
+The launch argfile uses the same options, properties, launcher classpath and
+program arguments as `jettyRun`. Jetty is PID 1 and receives SIGTERM directly;
+its shutdown hook stops Jetty and the Spring context. Compose allows 120 seconds
+before forcing termination. No Gradle daemon remains resident after startup.
+
+An existing `MAVEN_OPTS` entry in `.env` triggers a warning. Move its heap flags
+and application `-D` properties, including PyRAT configuration, to
+`ORG_GRADLE_PROJECT_jettyJvmArgs`. Gradle's build heap uses `org.gradle.jvmargs`.
+The launcher never prints the old variable's value.
+
+SIGTERM during an in-flight redeploy waits for Spring to finish starting before
+Jetty stops it. The 120-second grace period allows slower shared machines to
+finish; Docker kills the process if it exceeds that limit. Manual redeploy
+invalidates logged-in sessions, matching Maven's redirect to login.

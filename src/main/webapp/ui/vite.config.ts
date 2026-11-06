@@ -8,7 +8,7 @@ import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
 import { normalizePath } from "vite";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
 import { flattenMessages } from "./src/modules/common/i18n/flattenMessages";
 
@@ -277,6 +277,11 @@ const vitestAliases: Alias[] = [
   },
 ];
 
+// Audited pure utility suites. DOM-dependent utilities retain the jsdom setup.
+const nodeTestFiles = [
+  "src/util/__tests__/{iterators,set,optional,result,ArrayUtils,Util,StringUtils,parsers}/*.test.ts",
+];
+
 const resolvedBundleEntries = Object.fromEntries(
   Object.entries(bundleEntries).map(([name, relativePath]) => [name, resolveFromRoot(relativePath)]),
 ) satisfies Record<string, string>;
@@ -291,17 +296,20 @@ export default defineConfig(async ({ mode }) => {
   }
 
   if (shouldGenerateBuildStats) {
-    const { visualizer } = await import("rollup-plugin-visualizer");
     const { analyzer } = await import("vite-bundle-analyzer");
-
+    // CI consumes stats.json; the interactive HTML report is for local analysis.
+    if (process.env.CI !== "true") {
+      const { visualizer } = await import("rollup-plugin-visualizer");
+      plugins.push(
+        visualizer({
+          filename: "stats.html",
+          gzipSize: true,
+          brotliSize: true,
+          sourcemap: true,
+        }),
+      );
+    }
     plugins.push(
-      visualizer({
-        filename: "stats.html",
-        gzipSize: true,
-        brotliSize: true,
-        sourcemap: true,
-      }),
-      // Emits stats.json consumed by wojtekmaj/vite-compare-bundle-size in CI.
       analyzer({
         analyzerMode: "json",
         fileName: "stats",
@@ -377,9 +385,22 @@ export default defineConfig(async ({ mode }) => {
       },
     },
     test: {
-      environment: "jsdom",
-      setupFiles: ["./src/__tests__/setup.ts"],
-      include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
+      projects: [
+        {
+          extends: true,
+          test: { name: "node", environment: "node", setupFiles: [], include: nodeTestFiles },
+        },
+        {
+          extends: true,
+          test: {
+            name: "jsdom",
+            environment: "jsdom",
+            setupFiles: ["./src/__tests__/setup.ts"],
+            include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
+            exclude: [...configDefaults.exclude, ...nodeTestFiles],
+          },
+        },
+      ],
       testTimeout: 20000,
       reporters: ["default", "junit"],
       outputFile: {

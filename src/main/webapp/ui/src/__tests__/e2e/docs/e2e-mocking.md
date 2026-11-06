@@ -113,7 +113,7 @@ fixture change is always intentional and reviewable in a diff.
    const handlers = [healthHandler, ...pubchemHandlers, ...myHandlers];
    ```
 4. Override the integration's base URL so the JVM points at the mock server:
-   in the CI `jetty:run-war` command (the mock block of `.github/workflows/e2e.yml`),
+   in the CI `jettyRunWar` command (the mock block of `.github/workflows/e2e.yml`),
    in `E2E_MOCK_ARGS` in `docker/dev/entrypoint-app.sh` (same order, for
    `rspace-dev up --e2e`), and in the local runbook below.
 
@@ -136,7 +136,7 @@ fixture change is always intentional and reviewable in a diff.
 
 The `e2e-mocked.yml` workflow calls the reusable `e2e.yml` with `mode: mock`.
 The e2e job passes `-Dpubchem.base.url=http://localhost:9099 -Dfieldmark.api.url=http://localhost:9099 -Dzenodo.url=http://localhost:9099 -Dgalaxy.server.config=[{"alias":"mock","url":"http://localhost:9099"}] -Dpyrat.server.config={"mock":{"url":"http://localhost:9099","token":"mock-server-token"}} -Domero.api.url=http://localhost:9099`
-(and any future integration URL overrides) to `jetty:run-war`. Playwright starts
+(and any future integration URL overrides) to `jettyRunWar`. Playwright starts
 the mock server via its `webServer` block before the test run begins.
 
 A separate `e2e-real.yml` runs nightly with `mode: real` to catch API drift.
@@ -243,17 +243,17 @@ Playwright reuses the already-running mock server. DataCite URLs configured by
 the tests also use `localhost:<mock-port>`, which is reachable from the backend
 because the mock and backend share a Docker network namespace.
 
-### Manual Maven/Jetty
+### Manual Gradle/Jetty
 
 ```bash
 export E2E_MOCK_PORT="${E2E_MOCK_PORT:-9099}"
 
 # 1. Build WAR with React bundles (once)
-./mvnw clean package -DgenerateReactDist -DskipTests=true -Dtimestamp=e2e-local
+./gradlew clean war -DgenerateReactDist -Dtimestamp=e2e-local
 
 # 2. Start RSpace pointing at the mock server
-./mvnw jetty:run-war \
-  -DskipTests=true -Dmaven.war.skip=true -Dtimestamp=e2e-local \
+./gradlew jettyRunWar -PwarFile="$(ls "$PWD"/build/libs/researchspace-*-e2e-local.war)" \
+  -Dtimestamp=e2e-local \
   -Denvironment=drop-recreate-db -Dspring.profiles.active=run \
   -DreactDevMode=false \
   -Djdbc.url=jdbc:mysql://localhost:3306/rspace -Djdbc.db.maven=rspace \

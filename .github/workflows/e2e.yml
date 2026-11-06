@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       java_vendor:
-        description: "Java vendor Maven toolchain"
+        description: "Java vendor (setup-java distribution and Gradle toolchain)"
         type: string
         default: "temurin"
       java_version:
-        description: "Java version Maven toolchain"
+        description: "Java version (setup-java and Gradle toolchain)"
         type: string
         default: "17"
 
@@ -38,12 +38,12 @@ jobs:
       - uses: actions/checkout@v7.0.0
         with:
           persist-credentials: false
-      - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          distribution: ${{ inputs.java_vendor }}
+          java-distribution: ${{ inputs.java_vendor }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: war
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
         with:
@@ -58,12 +58,13 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR (frontend + backend)
-        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
+        run: ./gradlew war -DgenerateReactDist -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR
         uses: actions/upload-artifact@v7.0.1
         with:
           name: rspace-war-java${{ matrix.java-version }}
-          path: target/*.war
+          path: build/libs/*.war
+          if-no-files-found: error
           retention-days: 1
 
   e2e:
@@ -129,12 +130,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+      # jettyRunWar resolves Jetty, which the WAR build never downloads, so this
+      # job keeps its own cache family.
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          distribution: ${{ inputs.java_vendor }}
+          java-distribution: ${{ inputs.java_vendor }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: jetty
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
@@ -149,7 +152,7 @@ jobs:
         uses: actions/download-artifact@v8.0.1
         with:
           name: rspace-war-java${{ matrix.java-version }}
-          path: target
+          path: prebuilt-war
 
       - name: Configure MariaDB
         run: |
@@ -275,8 +278,8 @@ jobs:
               "-Dpidinst.lookup.b2inst.url=https://b2inst-test.gwdg.de"
             )
           fi
-          nohup ./mvnw jetty:run-war \
-            -DskipTests=true -Dmaven.war.skip=true \
+          war=(prebuilt-war/*.war)
+          nohup ./gradlew jettyRunWar -PwarFile="$PWD/${war[0]}" \
             -Dtimestamp=${{ github.run_id }} \
             -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
             -Denvironment=drop-recreate-db \
@@ -399,3 +402,11 @@ jobs:
           name: e2e-report-${{ inputs.mode }}-${{ matrix.suite.cloud && 'cloud' || 'standard' }}-${{ matrix.suite.project }}-${{ matrix.suite.shard }}-java${{ matrix.java-version }}
           path: src/main/webapp/ui/e2e-junit.xml
           retention-days: 14
+
+      # actions/cache saves ~/.gradle in its post step, after this one; stop Jetty and the Gradle
+      # daemon first so it doesn't archive caches a running build still holds open.
+      - name: Stop RSpace and Gradle
+        if: always()
+        run: |
+          pkill -f 'com[.]researchspace[.]jetty[.]JettyLauncher' || true
+          ./gradlew --stop || true

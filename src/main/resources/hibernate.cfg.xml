@@ -20,7 +20,7 @@
         <property name="hibernate.connection.characterEncoding">utf8</property>
         
         
-        <!-- Echo all executed SQL to stdout - these values are set at build time by maven. -->
+        <!-- Echo all executed SQL to stdout - these values are set at build time by Gradle resource filtering. -->
         <property name = "show_sql">${hibernate.showSQL}</property>
         <property name = "hibernate.format_sql">${hibernate.formatSql}</property>
     <!--      <property name = "show_sql">true</property>

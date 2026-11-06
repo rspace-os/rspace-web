@@ -1,0 +1,9 @@
+// Command-line init scripts also apply to buildSrc in Gradle 9.8.
+// The external project directory keeps buildSrc's default .gradle off the host.
+gradle.beforeProject { project ->
+  if (project.projectDir == new File('/var/rspace-build/project')) {
+    project.layout.buildDirectory.set(new File('/var/rspace-build/app'))
+  } else if (project.projectDir == new File('/var/rspace-build/project/buildSrc')) {
+    project.layout.buildDirectory.set(new File('/var/rspace-build/buildsrc'))
+  }
+}

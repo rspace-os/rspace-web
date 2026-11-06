@@ -31,7 +31,7 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
 
   /**
    * These values are from deployment.properties files. Which one is used is specified at build time
-   * by a Maven build property, -Ddeployment
+   * by a Gradle build property, -Ddeployment
    */
   @Value("${rs.postsignon.emailtoadmin.template}")
   private String emailTemplateResource;

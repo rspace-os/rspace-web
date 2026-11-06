@@ -90,23 +90,25 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 
 /**
  * Common class for hibernate-based tests.
  *
  * <p>These tests need a scratch database on the same MariaDB server the main test suite uses
- * (localhost:3306, RSpace credentials); Hibernate creates and drops its schema on each run. The
- * database is called hibtest unless the hibtest.db system property names another, which Jenkins
- * sets per branch so concurrent builds on its shared server do not drop each other's tables. A name
- * that does not start with hibtest, or is not a plain identifier of at most 64 characters, fails
- * the tests before the database is touched: create-drop would otherwise wipe any database it is
- * pointed at (rspace included), and the name goes unquoted into SQL and names the search index
- * folder, which .gitignore covers as hibtest*. If the database is missing the test tries to create
- * it, which succeeds with the standard test-DB setup where rspacedbuser can create databases (as
- * drop-recreate-db already relies on). Only when the database can neither be opened nor created are
- * the tests skipped, so they still run on developer machines and provisioned CI shards but not
- * elsewhere.
+ * (localhost:3306 by default, or {@code jdbc.url.maven}, with RSpace credentials); Hibernate
+ * creates and drops its schema on each run. The database is called hibtest unless the hibtest.db
+ * system property names another, which Jenkins sets per branch so concurrent builds on its shared
+ * server do not drop each other's tables. A name that does not start with hibtest, or is not a
+ * plain identifier of at most 64 characters, fails the tests before the database is touched:
+ * create-drop would otherwise wipe any database it is pointed at (rspace included), and the name
+ * goes unquoted into SQL and names the search index folder, which .gitignore covers as hibtest*. If
+ * the database is missing the test tries to create it, which succeeds with the standard test-DB
+ * setup where rspacedbuser can create databases (as drop-recreate-db already relies on). Only when
+ * the database can neither be opened nor created are the tests skipped, so they still run on
+ * developer machines and provisioned CI shards but not elsewhere.
  */
+@Tag("slow")
 public abstract class HibernateTest {
 
   static final String DB_NAME_PROPERTY = "hibtest.db";
@@ -134,7 +136,7 @@ public abstract class HibernateTest {
         hibtestDatabaseUsable(),
         "no usable "
             + testDbName
-            + " database on localhost:3306 and cannot create one;"
+            + " database on the configured test server and cannot create one;"
             + " skipping hibernate model tests");
     sf = HibernateUtils.getSessionFactory(testDbName, recordClasses());
   }
@@ -162,7 +164,7 @@ public abstract class HibernateTest {
 
   private static Connection openConnection(String dbName) throws SQLException {
     return DriverManager.getConnection(
-        "jdbc:mysql://localhost:3306/" + dbName + "?useSSL=false&connectTimeout=2000",
+        HibernateUtils.jdbcUrl(dbName) + "?useSSL=false&connectTimeout=2000",
         "rspacedbuser",
         "rspacedbpwd");
   }

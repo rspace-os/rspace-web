@@ -37,11 +37,10 @@
 #   db             Open a MariaDB client against this worktree's database.
 #   build          Rebuild the app + frontend images.
 #   nuke           Stop and remove containers AND this worktree's volumes
-#                  (database, node_modules, build output, filestore).
+#                  (database, node_modules, filestore, indices).
 #   compose ...    Run an arbitrary `docker compose` subcommand for this stack.
 #
-# Shared Maven (.m2) and pnpm caches are reused across worktrees to save
-# bandwidth; databases and node_modules are per-worktree.
+# Only the pnpm store is shared; Gradle caches and outputs are per-worktree.
 set -euo pipefail
 
 # --- locate things ----------------------------------------------------------
@@ -215,12 +214,18 @@ print_urls() {
 EOF
 }
 
-# The Maven (.m2) and pnpm caches are shared across worktrees and declared
-# `external` in the compose file (so `nuke` can't delete them). external volumes
-# are not auto-created, so create them here (idempotent).
+# Only pnpm's content-addressed store is safe to share between containers.
 ensure_shared_volumes() {
-  docker volume create rspace-dev-m2-repo >/dev/null
   docker volume create rspace-dev-pnpm-store >/dev/null
+}
+
+legacy_notices() {
+  if [ -f "${ENV_FILE}" ] && grep -qE '^[[:space:]]*(export[[:space:]]+)?MAVEN_OPTS[[:space:]]*=' "${ENV_FILE}"; then
+    echo 'rspace-dev: MAVEN_OPTS is ignored; move Jetty heap flags and -D properties to ORG_GRADLE_PROJECT_jettyJvmArgs in docker/dev/.env.' >&2
+  fi
+  if docker volume inspect rspace-dev-m2-repo >/dev/null 2>&1; then
+    echo 'rspace-dev: rspace-dev-m2-repo is unused by Gradle; when no older worktrees need it, remove with: docker volume rm rspace-dev-m2-repo' >&2
+  fi
 }
 
 cmd_up() {
@@ -295,18 +300,7 @@ cmd_restart() {
 
 cmd_reload() {
   echo "rspace-dev: recompiling changed Java ..."
-  # Compile offline first (fast). Retry online ONLY when the failure looks like
-  # a missing dependency — a genuine compile error would otherwise be shown
-  # twice (offline, then again online) before failing.
-  compose exec -T app sh -c '
-    mvn -B -q -o compile > /tmp/rspace-compile.log 2>&1 && exit 0
-    if grep -qiE "offline mode|Cannot access .* in offline|dependencies could not be resolved" /tmp/rspace-compile.log; then
-      mvn -B -q compile
-    else
-      cat /tmp/rspace-compile.log
-      exit 1
-    fi
-  '
+  compose exec -T app /usr/local/bin/entrypoint-app.sh --compile
   echo "rspace-dev: triggering Jetty hot redeploy (full Spring context rebuild) ..."
   compose exec -T app sh -c 'printf "\n" > /tmp/jetty.in'
   echo "rspace-dev: redeploy signalled — watch '${0##*/} logs app'."
@@ -337,9 +331,14 @@ cmd_db() {
 cmd_nuke() {
   echo "rspace-dev: removing containers AND volumes for this worktree ..." >&2
   compose down -v
+  local legacy="$(env_get COMPOSE_PROJECT_NAME)_app-target"
+  if docker volume inspect "${legacy}" >/dev/null 2>&1; then
+    docker volume rm "${legacy}"
+  fi
 }
 
 main() {
+  legacy_notices
   local command="${1:-}"
   [ $# -gt 0 ] && shift || true
   case "${command}" in

@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
 # Entrypoint for the RSpace backend dev container.
 #
-# Launches `mvn jetty:run` against the bind-mounted worktree at /rspace.
+# Builds with Gradle, then runs Jetty directly as PID 1.
 #
-# Jetty's Maven plugin is configured (in pom.xml) with <scan>0</scan>, which
-# means "redeploy the webapp when a line is read on stdin". We keep a FIFO open
-# as Jetty's stdin so that:
-#   * Jetty never sees EOF (which would otherwise spin or disable redeploys), and
-#   * `rspace-dev reload` can trigger a fast webapp redeploy by writing a line
-#     to the FIFO, without a full JVM/container restart.
+# Jetty redeploys the webapp for each line on stdin. A FIFO keeps stdin open
+# and lets `rspace-dev reload` request a redeploy without restarting the JVM.
 set -euo pipefail
 
 RS_FILE_BASE="${RS_FILE_BASE:-/var/rspace/filestore}"
 DB_MODE="${RSPACE_DB_MODE:-keepdbintact}"
 JDBC_URL="${JDBC_URL:-jdbc:mysql://db:3306/rspace}"
-JDBC_URL_MAVEN="${JDBC_URL_MAVEN:-jdbc:mysql://db:3306}"
+JDBC_SERVER_URL="${JDBC_SERVER_URL:-jdbc:mysql://db:3306}"
 VITE_ORIGIN="${VITE_ORIGIN:-http://localhost:5173}"
 APP_PUBLIC_PORT="${APP_PUBLIC_PORT:-8080}"
 # Add the ?v= cache-busting token to legacy /scripts & /styles asset URLs even in
@@ -29,53 +25,77 @@ INDEX_ON_STARTUP="${RSPACE_INDEX_ON_STARTUP:-false}"
 # each other out. Each instance therefore gets a session cookie named after
 # its (worktree-unique) host port.
 SESSION_COOKIE_NAME="${RSPACE_SESSION_COOKIE_NAME:-JSESSIONID_${APP_PUBLIC_PORT}}"
-# Volume-backed search index dirs (outside the bind mount). Under jetty:run the
+# Volume-backed search index dirs (outside the bind mount). Under jettyRun the
 # default index base is unset, so without these Lucene scatters per-entity index
 # directories into the worktree root.
 SEARCH_INDEX_DIR="${SEARCH_INDEX_DIR:-/var/rspace/search/hibernate}"
 LUCENE_INDEX_DIR="${LUCENE_INDEX_DIR:-/var/rspace/search/lucene}"
 FIFO=/tmp/jetty.in
 
+# Refuse both startup and --compile without the isolated volumes. Never fall back
+# to root-owned build outputs or caches in the source bind mount.
+for dir in /var/rspace-build/{app,buildsrc,gradle-home,project}; do
+  if ! awk -v path="${dir}" '$5 == path { found=1 } END { exit !found }' /proc/self/mountinfo; then
+    echo "[entrypoint] Refusing to build: ${dir} is not mounted. Run via docker/dev/rspace-dev with its build volumes." >&2
+    exit 1
+  fi
+done
+for dir in /var/rspace-build/project/.gradle /var/rspace-build/project/buildSrc/.gradle; do
+  if ! awk -v path="${dir}" '$5 == path { found=1 } END { exit !found }' /proc/self/mountinfo; then
+    echo "[entrypoint] Refusing to build: ${dir} cache volume is not mounted." >&2
+    exit 1
+  fi
+done
+export GRADLE_USER_HOME=/var/rspace-build/gradle-home
+# Gradle 9.8 creates buildSrc's cache service before init scripts can change its
+# StartParameter. Give it an external project directory, with links to live source.
+# No mountpoint or symlink is created inside the host worktree.
+#
+# Only what the build reads is linked in. Anything else, such as RSLogs.txt or archive/,
+# which the app writes relative to its working directory, then stays in this volume
+# rather than reaching the worktree as root-owned files. Build scripts are copied, not
+# linked, and every sync removes links and copies whose source has gone.
+PROJECT=/var/rspace-build/project
+PROJECT_LINKS=(src gradle gradlew gradle.properties jetty)
+PROJECT_COPIES=(build.gradle settings.gradle)
+sync_entry() { # source target copy|link
+  if [ ! -e "$1" ]; then
+    rm -rf "$2"
+  elif [ "$3" = copy ]; then
+    rm -rf "$2"
+    cp -p "$1" "$2"
+  else
+    # rm first: ln -sfn onto a real directory would create the link inside it
+    [ -L "$2" ] || rm -rf "$2"
+    ln -sfn "$1" "$2"
+  fi
+}
+for entry in "${PROJECT}"/* "${PROJECT}"/.[!.]*; do
+  [ -L "${entry}" ] || continue
+  name="${entry##*/}"
+  case " ${PROJECT_LINKS[*]} " in *" ${name} "*) ;; *) rm -f "${entry}" ;; esac
+done
+for name in "${PROJECT_LINKS[@]}"; do sync_entry "/rspace/${name}" "${PROJECT}/${name}" link; done
+for name in "${PROJECT_COPIES[@]}"; do sync_entry "/rspace/${name}" "${PROJECT}/${name}" copy; done
+mkdir -p "${PROJECT}/buildSrc"
+for entry in "${PROJECT}"/buildSrc/*; do
+  name="${entry##*/}"
+  [ -e "/rspace/buildSrc/${name}" ] || rm -rf "${entry}"
+done
+for source in /rspace/buildSrc/*; do
+  name="${source##*/}"
+  case "${name}" in
+    build) continue ;;
+    *.gradle) sync_entry "${source}" "${PROJECT}/buildSrc/${name}" copy ;;
+    *) sync_entry "${source}" "${PROJECT}/buildSrc/${name}" link ;;
+  esac
+done
+cd "${PROJECT}"
+GRADLE_BUILD_ARGS=(--project-dir "${PROJECT}" --no-daemon --console=plain
+  --init-script /rspace/docker/dev/gradle-state.init.gradle)
+
 # RSpace fails to start if these directories do not exist.
 mkdir -p "${RS_FILE_BASE}" "${SEARCH_INDEX_DIR}" "${LUCENE_INDEX_DIR}"
-
-# Put the HotswapAgent config on the webapp classpath (target/classes), so the
-# agent reads it for the application's class loader. Copied on every start so it
-# survives a fresh target volume.
-if [ "${RSPACE_HOTSWAP:-true}" != "false" ] && [ -f /rspace/docker/dev/hotswap-agent.properties ]; then
-  mkdir -p /rspace/target/classes
-  cp /rspace/docker/dev/hotswap-agent.properties /rspace/target/classes/hotswap-agent.properties
-fi
-
-# Set up the redeploy FIFO and hold it open for writing so the reader (Jetty)
-# never receives EOF. The background writer blocks until the `exec` below opens
-# the read end, at which point both rendezvous and the script continues.
-rm -f "${FIFO}"
-mkfifo "${FIFO}"
-# (A plain loop rather than `sleep infinity`, which is GNU-coreutils-only and
-# would break if MAVEN_IMAGE is overridden to a BusyBox/Alpine-based image.)
-( exec > "${FIFO}"; while :; do sleep 3600; done ) &
-
-# Remote JVM debugging (JDWP) for IDEs such as IntelliJ's "Remote JVM Debug".
-# jetty:run runs in this Maven JVM, so putting the agent on MAVEN_OPTS debugs the
-# app. Enabled by default; set RSPACE_DEBUG=false to disable. suspend=n so the
-# app starts without waiting for a debugger (set RSPACE_DEBUG_SUSPEND=y to pause
-# startup until the IDE attaches). It listens on 5005 in the container, published
-# on the host as this worktree's debug port.
-if [ "${RSPACE_DEBUG:-true}" != "false" ]; then
-  export MAVEN_OPTS="${MAVEN_OPTS:-} -agentlib:jdwp=transport=dt_socket,server=y,suspend=${RSPACE_DEBUG_SUSPEND:-n},address=*:5005"
-  echo "[entrypoint] JDWP debug listening on container port 5005 (suspend=${RSPACE_DEBUG_SUSPEND:-n})"
-fi
-
-# Enhanced class redefinition via JetBrains Runtime (DCEVM) + HotswapAgent. The
-# app runs in this Maven JVM (JBR), so the flags go on MAVEN_OPTS. This lets the
-# IDE's hot code replace redefine changed classes (incl. structural changes) in
-# the running JVM over JDWP. See hotswap-agent.properties for which plugins are
-# disabled, and README "Hot reloading Java". Set RSPACE_HOTSWAP=false to disable.
-if [ "${RSPACE_HOTSWAP:-true}" != "false" ]; then
-  export MAVEN_OPTS="${MAVEN_OPTS:-} -XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=external -javaagent:/opt/hotswap/hotswap-agent.jar"
-  echo "[entrypoint] HotswapAgent enabled (JBR enhanced class redefinition)"
-fi
 
 # Optional chemistry microservice (rspace-dev up --chemistry). Points the app's
 # chemistry features at the in-network service; with the flag off the chemistry.*
@@ -167,29 +187,56 @@ if [ "${RSPACE_MAILPIT:-false}" = "true" ]; then
   echo "[entrypoint] Mailpit enabled — SMTP at mailpit:1025, UI/API on the published host port"
 fi
 
-echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
-echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
+if [ "${1:-}" = "--compile" ]; then
+  # DB_MODE only selects the startup's resource-filter settings here: compiling never
+  # touches the database.
+  echo "[entrypoint] Compiling RSpace with the ${DB_MODE} startup's build settings (no database changes) ..."
+else
+  echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
+  echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
+fi
 
-# jetty:run executes the Maven lifecycle up to test-compile in this same JVM, so
-# the -D system properties below reach Spring at runtime and the Maven build
-# plugins (e.g. the drop-recreate-db SQL step) at build time.
-exec mvn -B jetty:run \
-  "${CHEMISTRY_ARGS[@]}" \
-  "${E2E_MOCK_ARGS[@]}" \
-  "${MAILPIT_ARGS[@]}" \
-  -Denvironment="${DB_MODE}" \
-  -Dspring.profiles.active=run \
-  -DreactDevMode=true \
-  -DviteDevServerOrigin="${VITE_ORIGIN}" \
-  -Djdbc.url="${JDBC_URL}" \
-  -Djdbc.url.maven="${JDBC_URL_MAVEN}" \
-  -DRS_FILE_BASE="${RS_FILE_BASE}" \
-  -Drs.hibernate.searchIndex.folder="${SEARCH_INDEX_DIR}" \
-  -Drs.attachment.lucene.index.dir="${LUCENE_INDEX_DIR}" \
-  -DlegacyAssetCacheBustingInDevMode="${LEGACY_ASSET_CACHE_BUSTING}" \
-  -Drs.indexOnstartup="${INDEX_ON_STARTUP}" \
-  -Dserver.urls.prefix="http://localhost:${APP_PUBLIC_PORT}" \
-  -Drs.session.cookie.name="${SESSION_COOKIE_NAME}" \
-  -DRS.devlogLevel=INFO \
-  -Dlog4j2.configurationFile=log4j2-dev.xml \
-  < "${FIFO}"
+# The same build settings must reach resource filtering during reload, otherwise
+# `classes` would replace the running app's resources with non-container defaults.
+GRADLE_ARGS=(
+  "${CHEMISTRY_ARGS[@]}"
+  "${E2E_MOCK_ARGS[@]}"
+  "${MAILPIT_ARGS[@]}"
+  -Denvironment="${DB_MODE}"
+  -Dspring.profiles.active=run
+  -DreactDevMode=true
+  -DviteDevServerOrigin="${VITE_ORIGIN}"
+  -Djdbc.url="${JDBC_URL}"
+  -Djdbc.url.maven="${JDBC_SERVER_URL}"
+  -DRS_FILE_BASE="${RS_FILE_BASE}"
+  -Drs.hibernate.searchIndex.folder="${SEARCH_INDEX_DIR}"
+  -Drs.attachment.lucene.index.dir="${LUCENE_INDEX_DIR}"
+  -DlegacyAssetCacheBustingInDevMode="${LEGACY_ASSET_CACHE_BUSTING}"
+  -Drs.indexOnstartup="${INDEX_ON_STARTUP}"
+  -Dserver.urls.prefix="http://localhost:${APP_PUBLIC_PORT}"
+  -Drs.session.cookie.name="${SESSION_COOKIE_NAME}"
+  -DRS.devlogLevel=INFO
+  -Dlog4j2.configurationFile=log4j2-dev.xml
+)
+
+if [ "${1:-}" = "--compile" ]; then
+  exec ./gradlew "${GRADLE_BUILD_ARGS[@]}" classes "${GRADLE_ARGS[@]}"
+fi
+
+export ORG_GRADLE_PROJECT_jettyJvmArgs="${ORG_GRADLE_PROJECT_jettyJvmArgs:--Xmx2g}"
+if [ "${RSPACE_DEBUG:-true}" != "false" ]; then
+  ORG_GRADLE_PROJECT_jettyJvmArgs+=" -agentlib:jdwp=transport=dt_socket,server=y,suspend=${RSPACE_DEBUG_SUSPEND:-n},address=*:5005"
+  echo "[entrypoint] JDWP debug listening on container port 5005 (suspend=${RSPACE_DEBUG_SUSPEND:-n})"
+fi
+if [ "${RSPACE_HOTSWAP:-true}" != "false" ]; then
+  ORG_GRADLE_PROJECT_jettyJvmArgs+=" -XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=external -javaagent:/opt/hotswap/hotswap-agent.jar=propertiesFilePath=/rspace/docker/dev/hotswap-agent.properties"
+  echo "[entrypoint] HotswapAgent enabled (JBR enhanced class redefinition)"
+fi
+
+# Gradle exits, including its single-use daemon, before the long-lived JVM starts.
+./gradlew "${GRADLE_BUILD_ARGS[@]}" jettyLaunchArgs "${GRADLE_ARGS[@]}"
+rm -f "${FIFO}"
+mkfifo "${FIFO}"
+# Open read/write so startup never blocks and stdin stays open between reloads.
+exec 3<> "${FIFO}"
+exec java @/var/rspace-build/app/jetty/launch.args <&3
