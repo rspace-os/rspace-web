@@ -229,7 +229,8 @@ test.describe(`Inventory Containers`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
   });
 
   for (const cType of ["GRID", "IMAGE"] as const) {
-    test(`As a user, I can filter an empty ${cType} container without an invalid page size`, async ({
+    const containerType = cType === "GRID" ? "grid" : "visual";
+    test(`As a user, I can search an empty ${containerType} container and still see its available locations`, async ({
       pageInventory,
       clientInventory,
       componentToasts,
