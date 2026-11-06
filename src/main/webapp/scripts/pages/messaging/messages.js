@@ -142,6 +142,7 @@
     		var curStatus=tr$.find('.currentStatus').val();
     	
     		var status =tr$.find('.messageStatusChooser').find(":selected").val();
+    		var isYesNo = tr$.find('.messageStatusChooser').data('yesNo') === true;
     		if (curStatus == status){
 			tr$.find('.updateDetails').append("<p class='temp'>" + RS.msg("legacyjs.messaging.noChangeInStatus"));
     			return;
@@ -165,6 +166,11 @@
     						msgChooser$.html("");// clear options
     						msgChooser$.append("<option selected=selected value='"+status+"'>"+status+"</option>");
     						tr$.find('.updateDetails').hide();
+    					}
+    					if (isYesNo && status=='COMPLETED') {
+    						RS.defaultConfirm(RS.msg("legacyjs.messaging.requestAccepted"));
+    					} else if (isYesNo && status=='REJECTED') {
+    						RS.defaultConfirm(RS.msg("legacyjs.messaging.requestDeclined"));
     					}
 				    }
 				}
