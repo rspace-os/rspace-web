@@ -117,6 +117,21 @@ describe("CallableImagePreview", () => {
       await expect.element(preview.caption).toMatchTextContent("Test Image Caption");
     });
 
+    test("Should show each caption entry on its own line, as plain text", async () => {
+      render(<CallableImagePreviewStory />);
+      await preview.clickOpenImageWithCaption();
+      await expect.element(preview.caption).toBeVisible();
+      const lines = (preview.caption.element() as HTMLElement).innerText.split("\n").filter((line) => line !== "");
+      expect(lines).toEqual(["Test Image Caption: cells & <media>", "test image.png"]);
+    });
+
+    test("Should skip empty caption entries", async () => {
+      render(<CallableImagePreviewStory />);
+      await preview.clickOpenImageWithoutDescription();
+      await expect.element(preview.caption).toBeVisible();
+      expect((preview.caption.element() as HTMLElement).innerText).toBe("no description.png");
+    });
+
     test("Should handle empty captions", async () => {
       render(<CallableImagePreviewWithEmptyCaption />);
       await expect.element(preview.openImageWithEmptyCaptionButton).toBeVisible();

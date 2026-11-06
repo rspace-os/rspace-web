@@ -13,11 +13,20 @@ function TestComponent() {
       <Button
         onClick={() =>
           openImagePreview("https://via.placeholder.com/1200x800/cc6600/ffffff?text=Image+with+Caption", {
-            caption: ["Test Image Caption", "This is a test image with multiple lines"],
+            caption: ["Test Image Caption: cells & <media>", "test image.png"],
           })
         }
       >
         {"Open Image with Caption"}
+      </Button>
+      <Button
+        onClick={() =>
+          openImagePreview("https://via.placeholder.com/800x600/006666/ffffff?text=No+Description", {
+            caption: ["", "no description.png"],
+          })
+        }
+      >
+        {"Open Image without Description"}
       </Button>
       <Button onClick={() => openImagePreview("https://via.placeholder.com/400x300/cc0066/ffffff?text=Small+Image")}>
         {"Open Small Image"}
