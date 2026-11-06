@@ -333,11 +333,17 @@ describe("RemoteFile.canBeMoved", () => {
   });
 });
 
-function makeLocalGalleryFile({ type = "image" }: { type?: string } = {}): LocalGalleryFile {
+function makeLocalGalleryFile({
+  type = "image",
+  name = "test.jpg",
+}: {
+  type?: string;
+  name?: string;
+} = {}): LocalGalleryFile {
   return new LocalGalleryFile({
     id: dummyId(),
     globalId: "GF_LOCAL",
-    name: "test.jpg",
+    name,
     extension: "jpg",
     creationDate: new Date(),
     modificationDate: new Date(),
@@ -358,6 +364,23 @@ function makeLocalGalleryFile({ type = "image" }: { type?: string } = {}): Local
     token: "",
   });
 }
+
+describe("LocalGalleryFile.transformFilename", () => {
+  test("preserves the extension of a regular file", () => {
+    const file = makeLocalGalleryFile();
+    expect(file.transformFilename(() => "renamed")).toBe("renamed.jpg");
+  });
+
+  test("does not treat part of a snippet name as an extension", () => {
+    const file = makeLocalGalleryFile({ type: "Snippet", name: "Protocol v1.2" });
+    expect(file.transformFilename(() => "renamed")).toBe("renamed");
+  });
+
+  test("does not append the name of a file without an extension", () => {
+    const file = makeLocalGalleryFile({ name: "README" });
+    expect(file.transformFilename(() => "renamed")).toBe("renamed");
+  });
+});
 
 describe("LocalGalleryFile.canMoveToIrods", () => {
   test("returns Ok for a non-folder file", () => {
