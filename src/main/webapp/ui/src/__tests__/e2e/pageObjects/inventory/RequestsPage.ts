@@ -69,6 +69,26 @@ export class RequestsPage extends BasePage {
     return this.root.getByRole("group", { name: label });
   }
 
+  /**
+   * The Request History table's row for a given status (e.g. "Pending", "Rejected"). An owner's
+   * view also has a Sample Locations table further up the page, but its rows never contain a
+   * status word, so filtering on that text alone is enough to land on the History table without
+   * needing to scope to it explicitly.
+   */
+  private historyRow(status: string): Locator {
+    return this.root.getByRole("row").filter({ has: this.page.getByText(status, { exact: true }) });
+  }
+
+  /**
+   * The Request History table's "Additional Notes" cell for the row with the given status - the
+   * requester's own note for the Pending row (RequestHistoryTable.tsx reads it from the request
+   * itself, not that row's own reason), or the approver's comment (e.g. a rejection reason) for
+   * every row after it. Additional Notes is always this row's last cell.
+   */
+  historyAdditionalNotes(status: string): Locator {
+    return this.historyRow(status).getByRole("cell").last();
+  }
+
   /** Requester-only: cancels the currently open (PENDING) request from its own Actions section. */
   async cancelRequest(): Promise<void> {
     await this.root.getByRole("button", { name: "Cancel", exact: true }).click();
