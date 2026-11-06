@@ -5,11 +5,7 @@ import Breadcrumbs from "../Breadcrumbs";
 
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 describe("Breadcrumbs", () => {
   describe("When the passed record is deleted", () => {

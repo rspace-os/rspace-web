@@ -11,9 +11,9 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberField from "../../../components/Inputs/NumberField";
 import {
-  ABSOLUTE_ZERO,
   CELSIUS,
   FAHRENHEIT,
+  isBelowAbsoluteZero,
   KELVIN,
   LIQUID_NITROGEN,
   type Temperature,
@@ -37,8 +37,7 @@ const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
     unitId === CELSIUS ? `${x}°C` : unitId === KELVIN ? `${x}K` : /* else FAHRENHEIT */ `${x}°F`;
 
   if (Number.isNaN(min) || Number.isNaN(max)) return <>{t("sample.fields.storageTemperature.invalidValues")}</>;
-  const absoluteZeroInUnitId = temperatureFromTo(CELSIUS, unitId, ABSOLUTE_ZERO);
-  if (min < absoluteZeroInUnitId || max < absoluteZeroInUnitId)
+  if (isBelowAbsoluteZero(min, unitId) || isBelowAbsoluteZero(max, unitId))
     return <>{t("sample.fields.storageTemperature.belowAbsoluteZero")}</>;
   if (min === max) return render(min);
   return <>{t("sample.fields.storageTemperature.between", { max: render(max), min: render(min) })}</>;

@@ -4,11 +4,11 @@ import Paper from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { getUnit, type UnitCategory, unitsOfCategory } from "@/stores/definitions/Units";
 import FormControl from "../../../components/Inputs/FormControl";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import TemplateModel from "../../../stores/models/TemplateModel";
-import type { UnitCategory } from "../../../stores/stores/UnitStore";
 import useStores from "../../../stores/use-stores";
 import type { UseState } from "../../../util/types";
 
@@ -43,20 +43,19 @@ function QuantityUnits(): React.ReactNode {
   const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
-    unitStore,
   } = useStores();
   if (!activeResult || !(activeResult instanceof TemplateModel)) throw new Error("ActiveResult must be a Template");
-  const initialCategory = unitStore.getUnit(activeResult.defaultUnitId)?.category;
+  const initialCategory = getUnit(activeResult.defaultUnitId)?.category;
   if (initialCategory !== "mass" && initialCategory !== "volume" && initialCategory !== "dimensionless")
     throw new Error("Unknown category");
   const [category, setCategory]: UseState<"mass" | "volume" | "dimensionless"> = React.useState(initialCategory);
 
   useEffect(() => {
-    const unit = unitStore.getUnit(activeResult.defaultUnitId);
+    const unit = getUnit(activeResult.defaultUnitId);
     if (unit?.category !== "mass" && unit?.category !== "volume" && unit?.category !== "dimensionless")
       throw new Error("Unknown category");
     if (unit) setCategory(unit.category);
-  }, [activeResult.defaultUnitId, unitStore]);
+  }, [activeResult.defaultUnitId]);
 
   const quantityCategories: Array<RadioOption<"mass" | "volume" | "dimensionless">> = [
     {
@@ -85,7 +84,7 @@ function QuantityUnits(): React.ReactNode {
     if (value === "mass" || value === "volume" || value === "dimensionless") {
       setCategory(value);
       activeResult.setAttributesDirty({
-        defaultUnitId: unitStore.unitsOfCategory([value])[0].id,
+        defaultUnitId: unitsOfCategory([value])[0].id,
       });
     }
   };
@@ -123,7 +122,7 @@ function QuantityUnits(): React.ReactNode {
                 name="defaultscale"
                 disabled={!editable}
                 onChange={handleChange}
-                options={unitStore.unitsOfCategory([category]).map((x) => ({ label: x.label, value: `${x.id}` }))}
+                options={unitsOfCategory([category]).map((x) => ({ label: x.label, value: `${x.id}` }))}
               />
             </FormBoxWithLabel>
           </Grid>

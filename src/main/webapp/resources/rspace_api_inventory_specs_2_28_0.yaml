@@ -4788,6 +4788,96 @@ components:
           scopes:
             all: Grants access to all API
   schemas:
+    UnitId:
+      type: integer
+      description: |
+        The id of a unit of measure. RSpace supports this fixed set of units. Ids never change and
+        are never reused. Units of one category measure the same thing, so the server can convert
+        between them; units of different categories cannot be mixed. `GET /api/v1/units` returns
+        the same list with each unit's label and category.
+
+        | Id | Name | Unit | Symbol | Category |
+        |---|---|---|---|---|
+        | 1 | `DIMENSIONLESS` | items | items | dimensionless |
+        | 2 | `MICRO_LITRE` | microlitre | µL | volume |
+        | 3 | `MILLI_LITRE` | millilitre | mL | volume |
+        | 4 | `LITRE` | litre | L | volume |
+        | 5 | `MICRO_GRAM` | microgram | µg | mass |
+        | 6 | `MILLI_GRAM` | milligram | mg | mass |
+        | 7 | `GRAM` | gram | g | mass |
+        | 8 | `CELSIUS` | degree Celsius | °C | temperature |
+        | 9 | `KELVIN` | kelvin | K | temperature |
+        | 10 | `FAHRENHEIT` | degree Fahrenheit | °F | temperature |
+        | 11 | `NANOMOLAR` | nanomolar | nmol/L | molarity |
+        | 12 | `MICROMOLAR` | micromolar | µmol/L | molarity |
+        | 13 | `MILLIMOLAR` | millimolar | mmol/L | molarity |
+        | 14 | `MOLAR` | molar | mol/L | molarity |
+        | 15 | `MICROGM_PER_MICROLITRE` | microgram per microlitre | µg/µL | concentration |
+        | 16 | `MGMS_PER_ML` | milligram per millilitre | mg/mL | concentration |
+        | 17 | `GMS_PER_L` | gram per litre | g/L | concentration |
+        | 18 | `PICO_LITRE` | picolitre | pL | volume |
+        | 19 | `NANO_LITRE` | nanolitre | nL | volume |
+        | 20 | `PICO_GRAM` | picogram | pg | mass |
+        | 21 | `NANO_GRAM` | nanogram | ng | mass |
+        | 22 | `KILO` | kilogram | kg | mass |
+        | 23 | `CUBIC_MILLIMETRE` | cubic millimetre | mm³ | volume |
+        | 24 | `CUBIC_CENTIMETRE` | cubic centimetre | cm³ | volume |
+        | 25 | `CUBIC_DECIMETRE` | cubic decimetre | dm³ | volume |
+        | 26 | `CUBIC_METRE` | cubic metre | m³ | volume |
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+        - 21
+        - 22
+        - 23
+        - 24
+        - 25
+        - 26
+      x-enum-varnames:
+        - DIMENSIONLESS
+        - MICRO_LITRE
+        - MILLI_LITRE
+        - LITRE
+        - MICRO_GRAM
+        - MILLI_GRAM
+        - GRAM
+        - CELSIUS
+        - KELVIN
+        - FAHRENHEIT
+        - NANOMOLAR
+        - MICROMOLAR
+        - MILLIMOLAR
+        - MOLAR
+        - MICROGM_PER_MICROLITRE
+        - MGMS_PER_ML
+        - GMS_PER_L
+        - PICO_LITRE
+        - NANO_LITRE
+        - PICO_GRAM
+        - NANO_GRAM
+        - KILO
+        - CUBIC_MILLIMETRE
+        - CUBIC_CENTIMETRE
+        - CUBIC_DECIMETRE
+        - CUBIC_METRE
     BasicObject:
       type: object
     InstrumentInfo:
@@ -5800,8 +5890,9 @@ components:
             type:
               example: SAMPLE_TEMPLATE
             defaultUnitId:
-              type: integer
-              description: The id of a template unit, from the /units endpoint
+              allOf:
+                - $ref: "#/components/schemas/UnitId"
+              description: The unit the template's samples measure their amount in.
     SampleTemplateList:
       description: List of Sample Template summary objects
       type: array
@@ -5822,9 +5913,10 @@ components:
           description: A required display name for the template/
           minLength: 1
         defaultUnitId:
-          type: integer
-          description: The id of a unit to measure the amount of the sample. (A mass,
-            volume or dimensionless unit from /units )
+          allOf:
+            - $ref: "#/components/schemas/UnitId"
+          description: The unit to measure the amount of the sample in. It must be a mass, volume
+            or dimensionless unit.
         subSampleAlias:
           description: Alias to use for describing a single or multiple subsamples of this
             sample
@@ -5887,8 +5979,7 @@ components:
           type: number
           description: decimal number of any precision
         unitId:
-          type: integer
-          description: id of a quantity unit
+          $ref: "#/components/schemas/UnitId"
     InventoryEntityField:
       description: |
         A field in an Inventory entity (Sample, SampleTemplate, SubSample, Instrument or InstrumentTemplate).
@@ -6203,12 +6294,12 @@ components:
         field that uses this schema says which of those categories the unit must belong to.
 
         Units of one category are interchangeable: the server converts between them. The units
-        amounts accept, by id, as `GET /api/v1/units` lists them:
+        amounts accept, by id (see `UnitId`):
 
         | Category | Units (id) |
         |---|---|
         | Count | items (1) |
-        | Volume | pl (18), nl (19), µl (2), ml (3), l (4), mm³ (23), cm³ (24), dm³ (25), m³ (26) |
+        | Volume | pL (18), nL (19), µL (2), mL (3), L (4), mm³ (23), cm³ (24), dm³ (25), m³ (26) |
         | Mass | pg (20), ng (21), µg (5), mg (6), g (7), kg (22) |
       properties:
         numericValue:
@@ -6223,9 +6314,9 @@ components:
             valid amounts such as 1.001.
           example: 5
         unitId:
-          type: integer
-          minimum: 1
-          description: Id of the unit the amount is in, as listed by `GET /api/v1/units`.
+          allOf:
+            - $ref: "#/components/schemas/UnitId"
+          description: The unit the amount is in.
           example: 3
       required:
         - numericValue
@@ -6244,7 +6335,8 @@ components:
             Degrees to at most three decimal places, in the unit `unitId` names. See
             `OperationAmount.numericValue` for the `multipleOf` precision note.
         unitId:
-          type: integer
+          allOf:
+            - $ref: "#/components/schemas/UnitId"
           description: Celsius (8), Kelvin (9) or Fahrenheit (10).
       required:
         - numericValue
@@ -6294,7 +6386,8 @@ components:
             Degrees to at most three decimal places, in the unit `unitId` names. See
             `OperationAmount.numericValue` for the `multipleOf` precision note.
         unitId:
-          type: integer
+          allOf:
+            - $ref: "#/components/schemas/UnitId"
           description: Celsius (8), Kelvin (9) or Fahrenheit (10).
       required:
         - numericValue
@@ -6803,10 +6896,10 @@ components:
               type: object
               description: >
                 The columns that could become a Quantity field, with the id of the suggested unit
-                (see `/units`): the dimensionless unit for a column suggested as Number, otherwise
+                (see `UnitId`): the dimensionless unit for a column suggested as Number, otherwise
                 the unit of the first value, when every value is a quantity in a comparable unit.
               additionalProperties:
-                type: integer
+                $ref: "#/components/schemas/UnitId"
       example:
         columnNames: ["Name", "Vendor", "Amount"]
         columnsWithoutBlankValue: ["Name", "Vendor", "Amount"]

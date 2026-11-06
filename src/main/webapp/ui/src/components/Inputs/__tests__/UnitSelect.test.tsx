@@ -4,23 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import UnitSelect from "../UnitSelect";
 
-vi.mock("@/stores/use-stores", () => ({
-  default: () => ({
-    unitStore: {
-      unitsOfCategory: (categories: Array<string>) =>
-        [
-          { id: 1, label: "common:units.items", category: "dimensionless" },
-          { id: 3, label: "ml", category: "volume" },
-          { id: 4, label: "l", category: "volume" },
-        ].filter((unit) => categories.includes(unit.category)),
-    },
-  }),
-}));
-
 describe("UnitSelect", () => {
   it("shows the chosen unit's label", () => {
     render(<UnitSelect categories={["volume"]} value={3} handleChange={() => undefined} />);
-    expect(screen.getByRole("combobox")).toHaveTextContent("ml");
+    expect(screen.getByRole("combobox")).toHaveTextContent("mL");
   });
 
   it("renders empty for the unset-unit marker instead of an out-of-range value", () => {

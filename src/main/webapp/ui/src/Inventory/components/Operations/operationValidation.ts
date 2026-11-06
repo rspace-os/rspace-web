@@ -1,8 +1,8 @@
 import Decimal from "decimal.js";
 import type { Quantity } from "@/stores/definitions/HasQuantity";
-import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
+import type { UnitCategory } from "@/stores/definitions/Units";
+import { ABSOLUTE_ZERO, CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
-import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { InventoryKey, InventoryOperation, OperationInput } from "./operations";
 import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { UNSET_UNIT } from "./types";
@@ -41,7 +41,7 @@ export type FieldProblem = { key: InventoryKey; args?: Record<string, unknown> }
 export function temperatureProblem(input: OperationInput, value: OperationQuantity | undefined): FieldProblem | null {
   if (!value || !Number.isFinite(value.numericValue)) return { key: "operations.fields.storageTempRequired" };
   const t = value.numericValue;
-  if (t < -273.15 || !amountIsStorable(t)) return { key: "operations.fields.storageTempInvalid" };
+  if (t < ABSOLUTE_ZERO || !amountIsStorable(t)) return { key: "operations.fields.storageTempInvalid" };
   if (!Number.isInteger(t)) return { key: "operations.fields.storageTempWhole" };
   if (input.maxCelsius !== undefined && t > input.maxCelsius)
     return { key: "operations.fields.storageTempMax", args: { max: input.maxCelsius } };

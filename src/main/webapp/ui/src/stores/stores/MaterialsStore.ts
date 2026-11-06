@@ -73,7 +73,6 @@ export default class MaterialsStore {
     if (this.setupPromise) return this.setupPromise;
     this.setupPromise = this.rootStore.authStore.synchronizeWithSessionStorage().then(() => {
       void this.rootStore.peopleStore.fetchCurrentUser();
-      void this.rootStore.unitStore.fetchUnits();
     });
     return this.setupPromise;
   }
