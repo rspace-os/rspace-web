@@ -1104,7 +1104,10 @@ public class RecordManagerImpl implements RecordManager {
         GlobalIdentifier identifier = new GlobalIdentifier(searchTerm);
         BaseRecord galleryItem = getSafeNull(identifier.getDbId()).orElse(null);
         boolean permitted = permissnUtils.isPermitted(galleryItem, PermissionType.READ, user);
-        if (galleryItem == null || !permitted) {
+        if (galleryItem == null
+            || !permitted
+            || !recordDao.isActiveChildWithFilter(
+                galleryItem.getId(), parentId, recordTypefilter)) {
           return new SearchResultsImpl<>(Collections.emptyList(), pgCrit, 0L);
         }
         return new SearchResultsImpl<>(TransformerUtils.toList(galleryItem), pgCrit, 1L);
