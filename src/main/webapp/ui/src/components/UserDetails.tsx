@@ -26,6 +26,12 @@ type UserDetailsArgs = {
   variant?: ChipProps["variant"];
   allowMessaging?: boolean;
   onOpen?: () => void;
+  /**
+   * Caps the chip's width, truncating an overly long name with an ellipsis (MUI's Chip already
+   * has the overflow/textOverflow/whiteSpace CSS wired in internally - it just never engages
+   * without a width constraint like this one).
+   */
+  maxWidth?: number | string;
 };
 
 type RoleInGroup = "PI" | "DEFAULT" | "RS_LAB_ADMIN" | "GROUP_OWNER";
@@ -164,6 +170,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
           mb: 0.5,
           height: theme.spacing(3),
           cursor: "default",
+          ...(props.maxWidth !== undefined ? { maxWidth: props.maxWidth } : {}),
           ...(variant === "filled"
             ? {
                 backgroundColor: theme.palette.grey[300],

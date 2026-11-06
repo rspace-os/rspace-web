@@ -12,10 +12,11 @@ vi.unmock("react-i18next");
 
 const { Trans } = await import("react-i18next");
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
-const { default: TransRichTextComponent } = await import("@/modules/common/i18n/TransRichText");
+const { default: TransRichTextComponent, richText } = await import("@/modules/common/i18n/TransRichText");
 const TransRichText = TransRichTextComponent as React.ComponentType<{
   i18nKey: string;
   values?: Record<string, string>;
+  components?: Record<string, React.ReactElement>;
 }>;
 const TestTrans = Trans as React.ComponentType<{
   i18nKey: string;
@@ -39,6 +40,7 @@ const richTextResources = {
     richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
     richTextDefaultUnorderedListProbe: "<ul><li>Bullet item</li></ul>",
     richTextExternalLinkProbe: 'Visit <externalLink href="https://example.com">the example site</externalLink>.',
+    richTextFreeTextValueProbe: "Hello <bold></bold>!",
     richTextHelpDocsDocLinkProbe: 'See <helpDocs docLink="centralArticle">the central help article</helpDocs>.',
     richTextInterpolatedHelpDocsDocLinkProbe:
       'See <helpDocs docLink="{docLink}">the dynamic central help article</helpDocs>.',
@@ -195,5 +197,25 @@ describe("TransRichText default vocabulary", () => {
     await user.click(screen.getByRole("link", { name: "Apps page" }));
 
     expect(screen.getByRole("status", { name: "current path" })).toHaveTextContent("/apps");
+  });
+});
+
+describe("richText", () => {
+  it("renders a free-text value as literal text, never parsed for markup", async () => {
+    const dangerousValue = 'Evil <externalLink href="https://evil.example">click me</externalLink> & <1>x</1>';
+
+    await renderWithRealI18n(
+      <ThemeProvider theme={materialTheme}>
+        <TransRichText
+          i18nKey="richTextFreeTextValueProbe"
+          components={{ bold: <strong>{richText(dangerousValue)}</strong> }}
+        />
+      </ThemeProvider>,
+      { resources: richTextResources, defaultNS: "common" },
+    );
+
+    const bold = screen.getByText(dangerousValue);
+    expect(bold.tagName).toBe("STRONG");
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });

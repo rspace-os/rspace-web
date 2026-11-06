@@ -279,6 +279,7 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await expect(session.requestsPage.statusChip("Pending")).toBeVisible();
       await expect(session.requestsPage.detailField("Requested by")).toContainText("Bob Requests");
       await expect(session.requestsPage.detailField("Notes from requester")).toContainText(reasonText);
+      await expect(session.requestsPage.historyAdditionalNotes("Pending")).toContainText(reasonText);
       await session.close();
     });
 
@@ -448,6 +449,8 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await expect(session.requestsPage.statusChip("Pending")).toBeVisible();
       await session.requestsPage.rejectRequest("Rejected for test");
       await expect(session.requestsPage.statusChip("Rejected")).toBeVisible();
+      await expect(session.requestsPage.detailField("Additional notes")).toContainText("Rejected for test");
+      await expect(session.requestsPage.historyAdditionalNotes("Rejected")).toContainText("Rejected for test");
       await session.close();
     });
 

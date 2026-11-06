@@ -1,7 +1,7 @@
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { createContext, useContext } from "react";
+import { createContext, Fragment, useContext } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link as RouterLink, useInRouterContext } from "react-router";
 import i18n from "@/modules/common/i18n";
@@ -73,6 +73,31 @@ const muiRichTextComponents: RichTextComponents = {
   sub: <sub />,
   ul: <ul />,
 };
+
+/**
+ * Wraps a free-text value (e.g. a sample or person's name) for use as a `components` entry's own
+ * child, so it renders as literal text no matter what it contains - never parsed for markup.
+ *
+ * Trans/TransRichText build their output by parsing the *translated string* into a tree and only
+ * then filling in `components`/`values`. Passing a value through `values` (e.g. `t(key, { name })`
+ * with the catalog string `<strong>{name}</strong>`) substitutes the raw value into that string
+ * *before* parsing, so markup-like characters in the value (`<a>`, `<strong>`, an indexed `<1>`, …)
+ * get parsed as real elements rather than shown as literal text - this app disables HTML-escaping
+ * app-wide (`interpolation: { escapeValue: false }` in modules/common/i18n/index.ts) specifically
+ * so *translators'* own markup in a catalog string renders as real elements, so it can't be turned
+ * on just for one value.
+ *
+ * The safe alternative is to keep the value out of the translated string entirely: give it an
+ * empty placeholder tag in the catalog (e.g. `<name></name>`) and supply the real value through
+ * `components`, wrapped with this function, e.g. `components={{ name: <strong>{richText(fullName)}
+ * </strong> }}`. Trans only keeps a `components` entry's own children - instead of the (empty)
+ * parsed result - when those children pass its own `hasValidReactChildren` check: an array of
+ * valid React elements. A bare string or number fails that check, so it's wrapped in a one-item
+ * Fragment array here.
+ */
+export function richText(value: React.ReactNode): Array<React.ReactElement> {
+  return [<Fragment key="richText">{value}</Fragment>];
+}
 
 export const RichTextComponentsContext = createContext<RichTextComponents>(muiRichTextComponents);
 

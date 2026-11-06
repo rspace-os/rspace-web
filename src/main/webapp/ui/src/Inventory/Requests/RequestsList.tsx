@@ -128,7 +128,12 @@ function RequesterCell({ requester }: { requester: ApiSampleRequestListItem["req
   return requester.firstName === null && requester.lastName === null ? (
     userDisplayName(requester, t)
   ) : (
-    <UserDetails userId={requester.id} fullName={userDisplayName(requester, t)} position={["bottom", "right"]} />
+    <UserDetails
+      userId={requester.id}
+      fullName={userDisplayName(requester, t)}
+      position={["bottom", "right"]}
+      maxWidth={160}
+    />
   );
 }
 

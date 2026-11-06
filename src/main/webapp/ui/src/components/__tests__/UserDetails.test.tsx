@@ -85,6 +85,30 @@ describe("UserDetails", () => {
     expect(dialogRecipient).toBe("ada<Ada Lovelace>,");
   });
 
+  test("maxWidth caps the chip's width, letting MUI's own ellipsis CSS truncate a long name", () => {
+    render(
+      <UserDetails
+        userId={42}
+        fullName="A Very Long Name That Should Be Truncated"
+        position={["bottom", "right"]}
+        maxWidth={160}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "A Very Long Name That Should Be Truncated" })).toHaveStyle({
+      maxWidth: "160px",
+    });
+  });
+
+  test("omitting maxWidth leaves the chip unconstrained, as every other caller relies on", () => {
+    render(<UserDetails userId={42} fullName="Ada Lovelace" position={["bottom", "right"]} />);
+
+    // MUI's Chip sets its own default max-width: 100% regardless of our prop - this confirms
+    // our sx override isn't applied, rather than just checking it doesn't happen to equal 160px.
+    const chip = screen.getByRole("button", { name: "Ada Lovelace" });
+    expect(getComputedStyle(chip).maxWidth).toBe("100%");
+  });
+
   // Real i18n rather than the suite's cimode, which drops the interpolated role.
   test("labels each group role, not just PI and member", async () => {
     const user = userEvent.setup();

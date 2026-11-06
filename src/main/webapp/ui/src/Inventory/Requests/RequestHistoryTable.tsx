@@ -1,7 +1,3 @@
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import Grid from "@mui/material/Grid";
-import ListItemText from "@mui/material/ListItemText";
-import MenuItem from "@mui/material/MenuItem";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -9,11 +5,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
 import NoValue from "@/components/NoValue";
-import StyledMenu from "@/components/StyledMenu";
 import UserDetails from "@/components/UserDetails";
 import { isoToLocale } from "@/util/Util";
 import RequestsStatusChip from "./RequestsStatusChip";
@@ -28,80 +21,49 @@ export type ApiSampleRequestStatusChangeItem = {
   transferredSample: { id: number; globalId: string; name: string } | null;
 };
 
-type HistoryColumn = "date" | "additionalNotes";
-
-const HISTORY_COLUMN_OPTIONS: ReadonlyArray<HistoryColumn> = ["date", "additionalNotes"];
+/** The PENDING row has no reason of its own - only the requester's note explains it. */
+function additionalNotes(change: ApiSampleRequestStatusChangeItem, requesterNote: string | null): string | null {
+  return change.status === "PENDING" ? requesterNote : change.reason;
+}
 
 /**
  * A record of every status change for a SampleRequest, in the same plain-table
  * format as the "Sample Locations" table. Not sortable by the user (always
- * shown newest-first); the rightmost column has a cog to swap between "Date"
- * (the default) and "Additional Notes" (the reason supplied for that change).
+ * shown newest-first). Both "Date" and "Additional Notes" (the reason supplied
+ * for that change, or - for the PENDING row - the requester's own note) are
+ * always shown.
  */
 export default function RequestHistoryTable({
   statusChanges,
+  requesterNote,
 }: {
   statusChanges: Array<ApiSampleRequestStatusChangeItem>;
+  /** The request's own note (SampleRequest.note) - see additionalNotes() above. */
+  requesterNote: string | null;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const [column, setColumn] = useState<HistoryColumn>("date");
-  const [columnMenuAnchor, setColumnMenuAnchor] = useState<HTMLElement | null>(null);
 
   const sortedChanges = [...statusChanges].sort(
     (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
   );
-
-  const columnLabel = (option: HistoryColumn): string =>
-    option === "date"
-      ? t("requestsManagement.detail.history.columns.date")
-      : t("requestsManagement.detail.history.columns.additionalNotes");
 
   return (
     <TableContainer>
       <Table size="small" stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell>{t("requestsManagement.detail.history.columns.status")}</TableCell>
-            <TableCell>{t("requestsManagement.detail.history.columns.user")}</TableCell>
-            <TableCell>
-              <Grid container sx={{ alignItems: "center", flexWrap: "nowrap" }}>
-                <Grid>{columnLabel(column)}</Grid>
-                <Grid>
-                  <IconButtonWithTooltip
-                    title={t("tables.adjustableHeadCell.columnOptions")}
-                    onClick={({ currentTarget }) => setColumnMenuAnchor(currentTarget)}
-                    icon={<SettingsOutlinedIcon sx={{ fontSize: "1.1em" }} />}
-                    color="standardIcon"
-                    aria-haspopup="menu"
-                    size="small"
-                  />
-                </Grid>
-              </Grid>
-              <StyledMenu
-                anchorEl={columnMenuAnchor}
-                open={Boolean(columnMenuAnchor)}
-                onClose={() => setColumnMenuAnchor(null)}
-              >
-                {HISTORY_COLUMN_OPTIONS.map((option) => (
-                  <MenuItem
-                    key={option}
-                    selected={option === column}
-                    onClick={() => {
-                      setColumn(option);
-                      setColumnMenuAnchor(null);
-                    }}
-                  >
-                    <ListItemText primary={columnLabel(option)} />
-                  </MenuItem>
-                ))}
-              </StyledMenu>
+            <TableCell sx={{ width: 120, whiteSpace: "nowrap" }}>
+              {t("requestsManagement.detail.history.columns.status")}
             </TableCell>
+            <TableCell>{t("requestsManagement.detail.history.columns.user")}</TableCell>
+            <TableCell>{t("requestsManagement.detail.history.columns.date")}</TableCell>
+            <TableCell>{t("requestsManagement.detail.history.columns.additionalNotes")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {sortedChanges.map((change) => (
             <TableRow key={change.id}>
-              <TableCell>
+              <TableCell sx={{ width: 120, whiteSpace: "nowrap" }}>
                 <RequestsStatusChip status={change.status} />
               </TableCell>
               <TableCell>
@@ -112,15 +74,13 @@ export default function RequestHistoryTable({
                     userId={change.createdBy.id}
                     fullName={userDisplayName(change.createdBy, t)}
                     position={["bottom", "right"]}
+                    maxWidth={160}
                   />
                 )}
               </TableCell>
+              <TableCell>{isoToLocale(change.created)}</TableCell>
               <TableCell>
-                {column === "date" ? (
-                  isoToLocale(change.created)
-                ) : change.reason ? (
-                  change.reason
-                ) : (
+                {additionalNotes(change, requesterNote) || (
                   <NoValue label={t("requestsManagement.detail.fields.noComment")} />
                 )}
               </TableCell>
