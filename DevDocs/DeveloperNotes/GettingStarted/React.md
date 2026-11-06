@@ -44,9 +44,6 @@ with legacy `Roboto` and system fonts as fallbacks.
 through `content_style`, using the shared font family. Iframes cannot inherit
 font-face definitions from the parent document.
 
-CSS asset URLs are relative to the emitted stylesheet so they also work under a
-servlet context prefix.
-
 ## Editor set up
 
 ### VSCode
