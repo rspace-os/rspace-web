@@ -21,7 +21,7 @@ type ImagePreviewArgs = {
 
   /*
    * A list of strings, shown as plain text from top to bottom with a blank
-   * line between each, placed at the bottom of the viewport. Empty strings
+   * line between each, placed at the bottom of the viewport. Blank strings
    * are skipped.
    */
   caption?: null | ReadonlyArray<string>;
@@ -37,7 +37,7 @@ export default function ImagePreview({
   setSize,
   caption,
 }: ImagePreviewArgs): React.ReactNode {
-  const captionLines = (caption ?? []).filter((line) => line !== "");
+  const captionLines = (caption ?? []).filter((line) => line.trim() !== "");
   return (
     <>
       <Global

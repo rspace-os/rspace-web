@@ -125,7 +125,7 @@ describe("CallableImagePreview", () => {
       expect(lines).toEqual(["Test Image Caption: cells & <media>", "test image.png"]);
     });
 
-    test("Should skip empty caption entries", async () => {
+    test("Should skip blank caption entries", async () => {
       render(<CallableImagePreviewStory />);
       await preview.clickOpenImageWithoutDescription();
       await expect.element(preview.caption).toBeVisible();

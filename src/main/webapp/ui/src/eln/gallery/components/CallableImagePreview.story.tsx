@@ -22,7 +22,7 @@ function TestComponent() {
       <Button
         onClick={() =>
           openImagePreview("https://via.placeholder.com/800x600/006666/ffffff?text=No+Description", {
-            caption: ["", "no description.png"],
+            caption: ["   ", "no description.png"],
           })
         }
       >

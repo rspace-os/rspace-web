@@ -32,7 +32,7 @@ export function useImagePreview(): {
     opts?: {
       /*
        * A list of strings, shown as plain text from top to bottom with a
-       * blank line between each, placed at the bottom of the viewport. Empty
+       * blank line between each, placed at the bottom of the viewport. Blank
        * strings are skipped.
        */
       caption?: ReadonlyArray<string>;
