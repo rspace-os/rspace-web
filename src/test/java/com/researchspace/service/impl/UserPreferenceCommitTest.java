@@ -46,7 +46,7 @@ class UserPreferenceCommitTest {
 
   @Test
   void evictsBothCachesOnlyAfterCommit() {
-    when(caches.getCache("com.researchspace.model.UserPreference")).thenReturn(preferences);
+    when(caches.getCache(CacheNames.USER_PREFERENCE)).thenReturn(preferences);
     when(caches.getCache(CacheNames.INTEGRATION_INFO)).thenReturn(integrations);
     assertSame(saved, manager.setPreference(preference, "false", "alice"));
     verifyNoInteractions(caches);

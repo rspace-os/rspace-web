@@ -2,11 +2,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
     <changeSet id="2026-11-03-user-preference-unique" author="rspace" context="run">
-        <comment>Keep the highest id (newest inserted row; preferences have no timestamp) for each user and preference, then prevent duplicate preferences.</comment>
+        <comment>Keep the lowest id for each user and preference, preserving the row loaded and updated by the existing preference collection, then prevent duplicates.</comment>
         <sql>
-            DELETE older FROM UserPreference older
-            JOIN UserPreference newer ON older.user_id = newer.user_id
-                AND older.preference = newer.preference AND older.id &lt; newer.id
+            DELETE duplicate FROM UserPreference duplicate
+            JOIN UserPreference retained ON duplicate.user_id = retained.user_id
+                AND duplicate.preference = retained.preference AND duplicate.id &gt; retained.id
         </sql>
         <addUniqueConstraint tableName="UserPreference" columnNames="user_id, preference"
             constraintName="uk_user_preference"/>

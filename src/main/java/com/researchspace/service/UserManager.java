@@ -314,7 +314,8 @@ public interface UserManager extends GenericManager<User, Long> {
 
   /**
    * Inserts or updates a user preference atomically. Preference and integration caches are
-   * invalidated after the transaction commits.
+   * invalidated after the transaction commits. Cached reads within the same transaction can
+   * therefore retain their previous value until commit.
    *
    * @param preference
    * @param value - must be a valid value for preference type

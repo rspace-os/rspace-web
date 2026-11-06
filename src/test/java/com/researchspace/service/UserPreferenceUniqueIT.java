@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.sql.Connection;
@@ -31,10 +34,18 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
-  @Autowired private PlatformTransactionManager transactionManager;
+  private final PlatformTransactionManager transactionManager;
+  private final IntegrationsHandler integrationsHandler;
+
+  @Autowired
+  UserPreferenceUniqueIT(
+      PlatformTransactionManager transactionManager, IntegrationsHandler integrationsHandler) {
+    this.transactionManager = transactionManager;
+    this.integrationsHandler = integrationsHandler;
+  }
 
   @Test
-  void migrationKeepsHighestIdAndCreatesUniqueKey() throws Exception {
+  void migrationKeepsLowestIdAndCreatesUniqueKey() throws Exception {
     // Run the production changes against an isolated fixture table in the same throwaway schema.
     try (Connection connection = dataSource.getConnection();
         var resources = new ClassLoaderResourceAccessor()) {
@@ -44,9 +55,9 @@ class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
               "CREATE TABLE UserPreferenceMigrationFixture (id BIGINT PRIMARY KEY, user_id BIGINT,"
                   + " preference INT, value VARCHAR(255))");
           statement.execute(
-              "INSERT INTO UserPreferenceMigrationFixture VALUES (9, 1, 1, 'newest'), (2, 1, 1,"
-                  + " 'old'), (6, 1, 1, 'middle'), (5, 2, 1, 'other user'), (3, 1, 2, 'other"
-                  + " preference')");
+              "INSERT INTO UserPreferenceMigrationFixture VALUES (9, 1, 1, 'stale duplicate'), (2,"
+                  + " 1, 1, 'current setting'), (6, 1, 1, 'another stale duplicate'), (5, 2, 1,"
+                  + " 'other user'), (3, 1, 2, 'other preference')");
         }
         String file = "sqlUpdates/changeLog-user-preference-unique.xml";
         var changelog =
@@ -71,8 +82,8 @@ class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
                   "SELECT id, value FROM UserPreferenceMigrationFixture WHERE user_id=1 AND"
                       + " preference=1")) {
             assertTrue(rows.next());
-            assertEquals(9L, rows.getLong(1));
-            assertEquals("newest", rows.getString(2));
+            assertEquals(2L, rows.getLong(1));
+            assertEquals("current setting", rows.getString(2));
             assertFalse(rows.next());
           }
           try (var rows =
@@ -98,13 +109,41 @@ class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  void committedUpdateInvalidatesPreviouslyCachedValue() {
-    User user = createAndSaveUser(getRandomAlphabeticString("prefupdate"));
-    UserPreference original = userMgr.setPreference(Preference.BOX, "true", user.getUsername());
-    assertTrue(userMgr.getPreferenceForUser(user, Preference.BOX).getValueAsBoolean());
-    UserPreference updated = userMgr.setPreference(Preference.BOX, "false", user.getUsername());
-    assertEquals(original.getId(), updated.getId());
-    assertFalse(userMgr.getPreferenceForUser(user, Preference.BOX).getValueAsBoolean());
+  void committedPreferenceUpdateEvictsOnlyMatchingUserAndIntegration() {
+    User user = createAndSaveUser(getRandomAlphabeticString("prefcache"));
+    User otherUser = createAndSaveUser(getRandomAlphabeticString("otherprefcache"));
+    UserPreference originalPreference =
+        userMgr.setPreference(Preference.DROPBOX, "true", user.getUsername());
+    IntegrationInfo original = integrationsHandler.getIntegration(user, Preference.DROPBOX.name());
+    IntegrationInfo otherPreference =
+        integrationsHandler.getIntegration(user, Preference.GOOGLEDRIVE.name());
+    IntegrationInfo otherUserInfo =
+        integrationsHandler.getIntegration(otherUser, Preference.DROPBOX.name());
+    UserPreference cachedPreference = userMgr.getPreferenceForUser(user, Preference.DROPBOX);
+    assertTrue(original.isEnabled());
+    assertTrue(cachedPreference.getValueAsBoolean());
+
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            status -> {
+              userMgr.setPreference(Preference.DROPBOX, "false", user.getUsername());
+              assertSame(
+                  original, integrationsHandler.getIntegration(user, Preference.DROPBOX.name()));
+              assertSame(cachedPreference, userMgr.getPreferenceForUser(user, Preference.DROPBOX));
+              assertTrue(cachedPreference.getValueAsBoolean());
+            });
+
+    IntegrationInfo updated = integrationsHandler.getIntegration(user, Preference.DROPBOX.name());
+    assertNotSame(original, updated);
+    assertFalse(updated.isEnabled());
+    UserPreference updatedPreference = userMgr.getPreferenceForUser(user, Preference.DROPBOX);
+    assertEquals(originalPreference.getId(), updatedPreference.getId());
+    assertFalse(updatedPreference.getValueAsBoolean());
+    assertSame(updated, integrationsHandler.getIntegration(user, Preference.DROPBOX.name()));
+    assertSame(
+        otherPreference, integrationsHandler.getIntegration(user, Preference.GOOGLEDRIVE.name()));
+    assertSame(
+        otherUserInfo, integrationsHandler.getIntegration(otherUser, Preference.DROPBOX.name()));
   }
 
   @Test

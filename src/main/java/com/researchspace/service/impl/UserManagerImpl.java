@@ -347,7 +347,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            cacheManager.getCache("com.researchspace.model.UserPreference").evict(key);
+            cacheManager.getCache(CacheNames.USER_PREFERENCE).evict(key);
             cacheManager.getCache(CacheNames.INTEGRATION_INFO).evict(key);
           }
         });
@@ -355,9 +355,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  @Cacheable(
-      value = "com.researchspace.model.UserPreference",
-      key = "#user.username + #preference.name()")
+  @Cacheable(value = CacheNames.USER_PREFERENCE, key = "#user.username + #preference.name()")
   public UserPreference getPreferenceForUser(User user, Preference preference) {
     user = get(user.getId());
     return user.getValueForPreference(preference);
