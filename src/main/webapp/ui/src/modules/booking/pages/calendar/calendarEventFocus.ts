@@ -220,6 +220,10 @@ export function useCalendarEventFocusResolution({
     const lifecycleState = request && focusLifecycleRef.current;
     if (!request || lifecycleState?.request !== request.request || lifecycleState.settled) return;
     if (!displayReady || !target) return;
+    if (layout === "availability") {
+      void setLayout("resources");
+      return;
+    }
     if (layout === "resources") {
       if (resourceStatus === "loading" || resourceStatus === "refreshing" || resourceStatus === "error") return;
       if (!resourceTargetIds.includes(target)) {

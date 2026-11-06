@@ -7,8 +7,8 @@ import type { FilterExpression } from "@/modules/common/table-list/types";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
+import type { AllBookableItem } from "../calendar/availability/availabilityQuickFilters";
 import { ownerPresetField } from "../ownerPreset";
-import type { AllBookableItem, AvailabilityQuickFilter } from "./availabilityQuickFilters";
 
 /** The instrument's Inventory location; the tooltip explains a bare container name such as "WB user1a". */
 function InstrumentLocation({ name, globalId }: { name?: string | null; globalId?: string | null }) {
@@ -27,11 +27,7 @@ function InstrumentLocation({ name, globalId }: { name?: string | null; globalId
   );
 }
 
-function createAllBookableItemsConfig(
-  availableNow: string,
-  freeLaterToday: string,
-  openRecordLabel: (globalId: string) => string,
-) {
+function createAllBookableItemsConfig(openRecordLabel: (globalId: string) => string) {
   return resolveCollectionConfig({
     slug: "all-bookable-items",
     idField: "id",
@@ -81,32 +77,12 @@ function createAllBookableItemsConfig(
             ),
         },
       },
-      {
-        name: "availability",
-        type: "select",
-        labelKey: "booking:calendar.availability" satisfies CollectionTranslationKey,
-        options: [
-          { label: availableNow, value: "available-now" },
-          { label: freeLaterToday, value: "free-later-today" },
-        ],
-        capabilities: { sortable: false, filterOperators: ["equals"], supportsWildcards: false },
-        list: false,
-        form: false,
-      },
     ],
   } as const satisfies CollectionConfig<AllBookableItem>);
 }
 
-function filterExpression(
-  target: string | undefined,
-  availability: AvailabilityQuickFilter | undefined,
-): FilterExpression<AllBookableItem> | null {
-  const values: FilterExpression<AllBookableItem>[] = [];
-  if (target) values.push({ kind: "comparison", field: "target", operator: "equals", value: target });
-  if (availability) {
-    values.push({ kind: "comparison", field: "availability", operator: "equals", value: availability });
-  }
-  return values.length === 0 ? null : values.length === 1 ? values[0] : { kind: "and", children: values };
+function filterExpression(target: string | undefined): FilterExpression<AllBookableItem> | null {
+  return target ? { kind: "comparison", field: "target", operator: "equals", value: target } : null;
 }
 
 export { createAllBookableItemsConfig, filterExpression };

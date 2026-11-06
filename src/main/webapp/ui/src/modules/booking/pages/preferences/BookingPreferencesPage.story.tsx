@@ -23,7 +23,7 @@ import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/
 import AllBookableItemsPage from "../all-bookable-items/AllBookableItemsPage";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
 
-const storyClock = () => new Date("2026-08-28T16:00:00Z");
+const _storyClock = () => new Date("2026-08-28T16:00:00Z");
 
 /** A multi-route story that deliberately fetches preferences so reload persistence is observable. */
 export function BookingPreferencesPageStory({
@@ -63,7 +63,7 @@ export function BookingPreferencesPageStory({
           getParentRoute: () => booking,
           path: "/all-items/",
           validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage clock={storyClock} />,
+          component: () => <AllBookableItemsPage />,
         }),
       ]),
     ]),

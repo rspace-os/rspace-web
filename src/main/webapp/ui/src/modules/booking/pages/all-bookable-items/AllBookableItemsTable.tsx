@@ -1,20 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import {
-  CalendarClockIcon,
-  CalendarPlusIcon,
-  Clock3Icon,
-  EyeIcon,
-  PackageCheckIcon,
-  PlusIcon,
-  SettingsIcon,
-} from "lucide-react";
+import { CalendarPlusIcon, EyeIcon, PackageCheckIcon, PlusIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
-import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
-import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
-import { addCalendarDays } from "@/modules/booking/domain/bookingTime";
 import { hasPreset, togglePreset } from "@/modules/common/table-list/presets";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import {
   TableList,
   type TableListFilterButtons,
@@ -22,8 +11,7 @@ import {
   type TableListRowActions,
 } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { Skeleton } from "@/modules/common/ui/skeleton";
+import { buttonVariants } from "@/modules/common/ui/button";
 import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
@@ -34,11 +22,9 @@ import {
   permanentlyDeleteBookingConfiguration,
 } from "../bookable-items/bookingConfiguration";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
+import type { AllBookableItem } from "../calendar/availability/availabilityQuickFilters";
 import { ownerPreset } from "../ownerPreset";
-import { type AllBookableItem, withAvailability } from "./availabilityQuickFilters";
 import type { useAllBookableItemsData } from "./useAllBookableItemsData";
-
-const emptyIntervals: readonly SourcedAvailabilityInterval[] = [];
 
 type AllBookableItemsTableProps = Omit<
   ReturnType<typeof useAllBookableItemsData>,
@@ -56,34 +42,22 @@ type AllBookableItemsTableProps = Omit<
   types?: readonly string[];
   directSysadmin: boolean;
   tableProps: TableListProps<AllBookableItem>;
-  setDate: (nextDate: string) => void;
   resetView: () => void;
   setFilters: (next: FilterState<AllBookableItem>) => void;
 };
 
 export function AllBookableItemsTable({
-  preferences,
-  userToday,
-  selectedDate,
   filters,
-  quickMode,
   hasNoBookableItems,
   clearSelection,
-  availability,
   types,
   directSysadmin,
   tableProps,
-  setDate,
   resetView,
   setFilters,
   canAdd,
-  counts,
-  minute,
   onLifecycleChanged,
-  rowsBounds,
-  rowsDate,
   token,
-  quickFilterText,
   alertsRef,
   attachAlerts,
 }: AllBookableItemsTableProps) {
@@ -114,7 +88,7 @@ export function AllBookableItemsTable({
                   className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                   data-slot="button"
                   to="/booking/calendar/bookings/add"
-                  search={{ date: rowsDate, target: row.target.globalId }}
+                  search={{ target: row.target.globalId }}
                 />
               </TooltipIconLink>
             ) : null}
@@ -167,35 +141,17 @@ export function AllBookableItemsTable({
           />
         ) : null,
     }),
-    [directSysadmin, onLifecycleChanged, rowsDate, t, token],
+    [directSysadmin, onLifecycleChanged, t, token],
   );
 
-  const availabilityFilters: TableListFilterButtons = {
-    legend: t("allBookableItems.quickFilters.legend"),
+  const quickFilters: TableListFilterButtons = {
+    legend: t("allBookableItems.legend"),
+    hasChanges: Boolean(types?.length),
     align: "end",
-    controlsOnSeparateRow: true,
-    controls: (
-      <BookingDateControls
-        className="mr-auto"
-        date={selectedDate}
-        today={userToday}
-        timeZone={preferences.timeZone}
-        controlsLabel={t("allBookableItems.dateControls")}
-        navigationLabel={t("allBookableItems.dateNavigation")}
-        previousLabel={t("allBookableItems.actions.previousDay")}
-        todayLabel={t("allBookableItems.actions.today")}
-        nextLabel={t("allBookableItems.actions.nextDay")}
-        jumpToDateLabel={t("allBookableItems.jumpToDate")}
-        onPrevious={() => setDate(addCalendarDays(selectedDate, -1))}
-        onNext={() => setDate(addCalendarDays(selectedDate, 1))}
-        onDateChange={setDate}
-      />
-    ),
-    hasChanges: selectedDate !== userToday || Boolean(types?.length),
     buttons: [
       {
         id: "mine",
-        label: t("allBookableItems.quickFilters.myItems"),
+        label: t("allBookableItems.ownerPreset"),
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: hasPreset(filters.expression, ownerPreset),
         inExpression: true,
@@ -204,42 +160,6 @@ export function AllBookableItemsTable({
           setFilters({ ...filters, expression: togglePreset(filters.expression, ownerPreset) });
         },
       },
-      ...(["available-now", "free-later-today"] as const).map((mode) => {
-        // The two categories are mutually exclusive, so each chip explains which items it counts.
-        const text = quickFilterText[mode];
-        return {
-          id: mode,
-          label: (
-            <>
-              {text.label}
-              <span
-                aria-hidden="true"
-                className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
-              >
-                {counts.isError ? (
-                  "—"
-                ) : counts.data ? (
-                  mode === "available-now" ? (
-                    counts.data.availableNow
-                  ) : (
-                    counts.data.freeLaterToday
-                  )
-                ) : (
-                  <Skeleton className="h-3 w-3" />
-                )}
-              </span>
-            </>
-          ),
-          description: text.description,
-          icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
-          pressed: quickMode === mode,
-          onClick: () =>
-            setFilters({
-              ...filters,
-              expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
-            }),
-        };
-      }),
     ],
     onReset: resetView,
   };
@@ -248,16 +168,8 @@ export function AllBookableItemsTable({
     <main className="space-y-5 p-4 sm:p-8">
       {tableProps.status === "loading" ? (
         <p role="status" className="sr-only">
-          {t("allBookableItems.quickFilters.loading")}
+          {t("allBookableItems.loading")}
         </p>
-      ) : null}
-      {counts.isError ? (
-        <div role="alert" className="flex items-center gap-3">
-          <span>{t("allBookableItems.quickFilters.error")}</span>
-          <Button type="button" variant="outline" onClick={() => void counts.refetch()}>
-            {t("allBookableItems.quickFilters.retry")}
-          </Button>
-        </div>
       ) : null}
       <TableList
         {...tableProps}
@@ -265,53 +177,8 @@ export function AllBookableItemsTable({
         stickyActions="when-fitted"
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
-        filterButtons={availabilityFilters}
+        filterButtons={quickFilters}
         presentations={{ table: "wide", cards: "narrow" }}
-        uiColumns={[
-          {
-            id: "availability",
-            label: t("calendar.availability"),
-            minWidth: 320,
-            widthMode: "fill",
-            card: { fullWidth: true },
-            renderCell: (row) => {
-              const target = row.target;
-              if (!target || !row.timezone) return t("calendar.availabilityUnavailable");
-              const item = {
-                name: target.value.name,
-                globalId: target.globalId,
-                ...(target.location ? { location: target.location } : {}),
-              };
-              if (availability.isPending)
-                return (
-                  <div aria-busy="true">
-                    <span role="status" className="sr-only">
-                      {t("calendar.availabilityLoading")}
-                    </span>
-                    <Skeleton aria-hidden="true" className="h-16 w-full" />
-                  </div>
-                );
-              if (availability.isError || !availability.data) {
-                return <span role="status">{t("calendar.availabilityUnavailable")}</span>;
-              }
-              return (
-                <AvailabilityBar
-                  className="min-w-0 px-1 in-[td]:min-w-72"
-                  intervals={availability.data.get(target.globalId) ?? emptyIntervals}
-                  periodStart={new Date(rowsBounds.start)}
-                  periodEnd={new Date(rowsBounds.end)}
-                  now={rowsDate === userToday ? new Date(minute) : undefined}
-                  showBookingContextDetails={false}
-                  showCurrentAvailability
-                  showPeriodLabels
-                  timeZone={preferences.timeZone}
-                  instrumentTimeZone={row.timezone}
-                  item={item}
-                />
-              );
-            },
-          },
-        ]}
         rowActions={rowActions}
         emptyDescription={
           hasNoBookableItems ? (
@@ -327,12 +194,27 @@ export function AllBookableItemsTable({
           ) : undefined
         }
         createAction={
-          canAdd ? (
-            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-              <PlusIcon aria-hidden="true" data-icon="inline-start" />
-              {t("bookableItems.actions.add")}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/booking/calendar"
+              search={{
+                layout: "availability",
+                "calendar-resources.q": filters.search || undefined,
+                "calendar-resources.where": filters.expression
+                  ? serializeRsqlExpression(filters.expression)
+                  : undefined,
+              }}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              {t("allBookableItems.actions.viewAvailability")}
             </Link>
-          ) : undefined
+            {canAdd ? (
+              <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+                <PlusIcon aria-hidden="true" data-icon="inline-start" />
+                {t("bookableItems.actions.add")}
+              </Link>
+            ) : undefined}
+          </div>
         }
       />
     </main>
