@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
 
 /**
@@ -51,6 +52,22 @@ public class MaintenanceManagerImpl implements MaintenanceManager {
       ScheduledMaintenance maintenance, User user) {
     verifySysadminUser(user);
     return maintenanceDao.save(maintenance);
+  }
+
+  @Override
+  @CacheEvict(allEntries = true)
+  public ScheduledMaintenance updateScheduledMaintenance(
+      ScheduledMaintenance maintenance, User user) {
+    verifySysadminUser(user);
+    if (maintenance.getId() == null) {
+      throw new ObjectRetrievalFailureException(ScheduledMaintenance.class, null);
+    }
+    ScheduledMaintenance existing = maintenanceDao.get(maintenance.getId());
+    existing.setStartDate(maintenance.getStartDate());
+    existing.setEndDate(maintenance.getEndDate());
+    existing.setStopUserLoginDate(maintenance.getStopUserLoginDate());
+    existing.setMessage(maintenance.getMessage());
+    return existing;
   }
 
   @Override

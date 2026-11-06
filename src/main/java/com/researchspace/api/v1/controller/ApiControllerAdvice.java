@@ -302,8 +302,15 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   @ExceptionHandler({ExportFailureException.class})
   public ResponseEntity<Object> handleUnsupported(
       final ExportFailureException ex, final WebRequest request) {
-    return handle500Error(
-        ex, ApiErrorCodes.BATCH_LAUNCH, messages.getMessage("export.errors.batchLaunchFailure"));
+    logException(ex);
+    log.error("error", ex);
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ApiErrorCodes.BATCH_LAUNCH.getCode(),
+            messages.getMessage("export.errors.batchLaunchFailure"),
+            messages.getMessage("errors.page.genericServerError"));
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -363,5 +370,17 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             errors,
             errorList);
     return apiError;
+  }
+
+  @Override
+  protected ResponseEntity<Object> handle500Error(
+      final Exception ex, ApiErrorCodes code, String msg) {
+    logException(ex);
+    log.error("error", ex);
+    String genericMessage = messages.getMessage("errors.page.genericServerError");
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR, code.getCode(), genericMessage, genericMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 }

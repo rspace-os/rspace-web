@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
@@ -16,6 +17,7 @@ import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
@@ -24,6 +26,7 @@ import java.sql.SQLException;
 import java.util.List;
 import org.hibernate.exception.GenericJDBCException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -333,5 +336,38 @@ class ApiControllerAdviceTest {
   private static HibernateJdbcException jdbcFailure(int errorCode) {
     return new HibernateJdbcException(
         new GenericJDBCException("failed", new SQLException("failed", "HY000", errorCode)));
+  }
+
+  @Test
+  void unexpectedPersistenceErrorsDoNotExposeDatabaseDetails() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    String internalDetails = "Deadlock executing update Container set schema = 'private'";
+
+    ResponseEntity<Object> response =
+        advice.handleAll(new DataAccessResourceFailureException(internalDetails), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertEquals("An error occurred on the server.", error.getMessage());
+    assertEquals(List.of("An error occurred on the server."), error.getErrors());
+    assertFalse(error.toString().contains(internalDetails));
+  }
+
+  @Test
+  void exportFailureKeepsLocalizedBatchMessageWithoutInternalDetails() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleUnsupported(new ExportFailureException("private export path"), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertEquals(ApiErrorCodes.BATCH_LAUNCH.getCode(), error.getInternalCode());
+    assertEquals(
+        advice.messages.getMessage("export.errors.batchLaunchFailure"), error.getMessage());
+    assertEquals(List.of("An error occurred on the server."), error.getErrors());
+    assertFalse(error.toString().contains("private export path"));
   }
 }
