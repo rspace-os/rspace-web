@@ -5,6 +5,8 @@ public class CacheNames {
 
   public static final String APIFILE = "com.researchspace.api.v1.file";
 
+  public static final String USER_PREFERENCE = "com.researchspace.model.UserPreference";
+
   public static final String INTEGRATION_INFO = "com.researchspace.model.dto.IntegrationInfo";
 
   public static final String MATHELEMENT = "com.researchspace.model.RSMath";

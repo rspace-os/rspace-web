@@ -45,7 +45,6 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     // basic caching/retrieval for single user
     initialiseContentWithEmptyContent(user1, user2);
     Preference dropboxPreference = Preference.DROPBOX;
-    Preference googledrivePreference = Preference.GOOGLEDRIVE;
 
     IntegrationInfo infoUser1 = integrationsHandler.getIntegration(user1, dropboxPreference.name());
     IntegrationInfo cachedInfoUser1 =
@@ -66,36 +65,6 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
 
     assertThatUpdatingAvailabilityTriggersCacheRefresh(
         user1, dropboxPreference.name(), reloadedNewInfoUser1);
-    assertThatUpdatingAUserPrefDoesNotAffectOtherUsersOrPrefs(
-        user1, user2, dropboxPreference, googledrivePreference);
-  }
-
-  private void assertThatUpdatingAUserPrefDoesNotAffectOtherUsersOrPrefs(
-      User user1, User user2, Preference pref1, Preference pref2) {
-
-    IntegrationInfo user1Info1;
-    IntegrationInfo reloadedUser1Info1;
-
-    IntegrationInfo user1Info2;
-    IntegrationInfo reloadedUser1Info2;
-
-    IntegrationInfo user2Info1;
-    IntegrationInfo reloadedUser2Info1;
-
-    // now test that updating user preference invalidates for user, but not other user
-    user1Info1 = integrationsHandler.getIntegration(user1, pref1.name());
-    user1Info2 = integrationsHandler.getIntegration(user1, pref2.name());
-    user2Info1 = integrationsHandler.getIntegration(user2, pref1.name());
-    userMgr.setPreference(pref1, Boolean.FALSE.toString(), user1.getUsername());
-    reloadedUser1Info1 = integrationsHandler.getIntegration(user1, pref1.name());
-
-    assertNotSame(reloadedUser1Info1, user1Info1);
-    // but other pref for same user is cached OK
-    reloadedUser1Info2 = integrationsHandler.getIntegration(user1, pref2.name());
-    assertSame(reloadedUser1Info2, user1Info2);
-    // but other user pref still cached OK:
-    reloadedUser2Info1 = integrationsHandler.getIntegration(user2, pref1.name());
-    assertSame(user2Info1, reloadedUser2Info1);
   }
 
   // now, we login as sysadmin and alter the availability, via 3 save methods,

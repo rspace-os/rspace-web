@@ -20,6 +20,17 @@ Spring cache is used for:
 - when we want more control over caching behaviour.
 Objects to be cached are also configured in `ehcache.xml`.
 
+### User preferences
+
+`UserManager.setPreference` uses a database upsert against the unique
+`UserPreference(user_id, preference)` key. It evicts the preference and integration
+cache entries after commit; rolled-back writes leave the caches unchanged. Do not
+publish the returned entity to the cache before commit. The migration keeps the
+lowest ID when removing old duplicates: the existing user preference collection
+retains that row, and subsequent setting changes update it. Higher-ID duplicates
+can contain values left over from the original race. Cached reads in a writing
+transaction can retain the previous value until commit.
+
 ## Http Request caching
 
 Caching of static resources can also be achieved by setting the cache headers,

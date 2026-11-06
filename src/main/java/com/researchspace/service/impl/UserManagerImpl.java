@@ -48,12 +48,13 @@ import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** Implementation of UserManager interface. */
 @Service("userManager")
@@ -63,7 +64,10 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private UserDao userDao;
 
-  public UserManagerImpl(@Autowired UserDao userDao) {
+  private final CacheManager cacheManager;
+
+  public UserManagerImpl(@Autowired UserDao userDao, CacheManager cacheManager) {
+    this.cacheManager = cacheManager;
     this.dao = userDao;
     this.userDao = userDao;
   }
@@ -329,10 +333,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  @CachePut(
-      value = "com.researchspace.model.UserPreference",
-      key = "#username + #preference.name()")
-  @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#username + #preference.name()")
   public UserPreference setPreference(Preference preference, String value, String username) {
     User subject = getUserByUsername(username, true);
     Validate.notNull(preference, "preference can't be null");
@@ -341,16 +341,21 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     if (validationException != null) {
       throw validationException;
     }
-    UserPreference userPreference = new UserPreference(preference, subject, value);
-    subject.setPreference(userPreference);
-    save(subject);
-    return userPreference;
+    UserPreference stored = userDao.upsertPreference(subject, preference, value);
+    String key = username + preference.name();
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            cacheManager.getCache(CacheNames.USER_PREFERENCE).evict(key);
+            cacheManager.getCache(CacheNames.INTEGRATION_INFO).evict(key);
+          }
+        });
+    return stored;
   }
 
   @Override
-  @Cacheable(
-      value = "com.researchspace.model.UserPreference",
-      key = "#user.username + #preference.name()")
+  @Cacheable(value = CacheNames.USER_PREFERENCE, key = "#user.username + #preference.name()")
   public UserPreference getPreferenceForUser(User user, Preference preference) {
     user = get(user.getId());
     return user.getValueForPreference(preference);
