@@ -18,11 +18,20 @@ function TestComponent() {
       <Button
         onClick={() =>
           openImagePreview(imageFixture(1200, 800, "#cc6600"), {
-            caption: ["Test Image Caption", "This is a test image with multiple lines"],
+            caption: ["Test Image Caption: cells & <media>", "test image.png"],
           })
         }
       >
         {"Open Image with Caption"}
+      </Button>
+      <Button
+        onClick={() =>
+          openImagePreview(imageFixture(800, 600, "#006666"), {
+            caption: ["   ", "no description.png"],
+          })
+        }
+      >
+        {"Open Image without Description"}
       </Button>
       <Button onClick={() => openImagePreview(imageFixture(400, 300, "#cc0066"))}>{"Open Small Image"}</Button>
     </Stack>
