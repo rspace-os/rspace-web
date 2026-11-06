@@ -632,6 +632,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
         chemistryProvider.exportToImage(
             chemFile.getChemString(), chemFile.getExtension(), outputFormat);
     rsChemElement.setDataImage(image);
+    rsChemElement = rsChemElementDao.save(rsChemElement); // assign id before naming the preview
     saveChemImagePng(
         rsChemElement, new ByteArrayInputStream(rsChemElement.getDataImage()), subject);
   }
