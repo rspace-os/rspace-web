@@ -142,7 +142,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+        NODE_IMAGE: ${NODE_IMAGE:-node:26-bookworm-slim}
     image: rspace-dev-frontend:local
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-frontend
     working_dir: /rspace

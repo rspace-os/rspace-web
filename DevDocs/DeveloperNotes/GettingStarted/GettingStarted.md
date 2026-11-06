@@ -37,7 +37,7 @@ if you don't have it already.
 ### Install pnpm
 
 Maven's frontend build requires standalone pnpm on `PATH`. Maven invokes pnpm
-from `PATH`; it does not install pnpm. The root `package.json` pins Node.js in
+from `PATH`; it does not install pnpm. The root `package.json` pins Node.js 26 in
 `devEngines.runtime`, and pnpm downloads that Node.js version for installs,
 scripts and Maven builds, checking it against the lockfile.
 
