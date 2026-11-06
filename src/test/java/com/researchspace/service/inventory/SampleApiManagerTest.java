@@ -1241,6 +1241,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertNull(sampleAsSeenByOtherUser.getExtraFields());
     assertNull(sampleAsSeenByOtherUser.getSubSamples());
 
+    Long sampleId = createdSample.getId();
+    assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(sampleId, otherUser));
+
     // compare with sample as seen by the owner
     ApiSample sampleAsSeenByTestUser =
         sampleApiMgr.getApiSampleById(createdSample.getId(), testUser);

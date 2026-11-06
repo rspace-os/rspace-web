@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,6 +38,7 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -219,6 +221,10 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), otherUser);
     assertFalse(templateRetrievedByOtherUser.isClearedForPublicView());
     assertTrue(templateRetrievedByOtherUser.isClearedForLimitedView());
+
+    Long templateId = createdTemplate.getId();
+    assertThrows(
+        NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(templateId, otherUser));
   }
 
   @Test
@@ -1051,5 +1057,21 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () -> sampleApiMgr.updateSampleToLatestTemplateVersion(sampleId, testUser));
     assertEquals("Sample is not based on any template", iae.getMessage());
+  }
+
+  @Test
+  public void nonOwnerCanDuplicateDefaultSampleTemplate() {
+    User nonOwner = createInitAndLoginAnyUser();
+    SampleTemplate defaultTemplate =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery("from SampleTemplate order by id asc", SampleTemplate.class)
+            .setMaxResults(1)
+            .getSingleResult();
+    assertNotEquals(nonOwner.getUsername(), defaultTemplate.getOwner().getUsername());
+
+    ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(defaultTemplate.getId(), nonOwner);
+
+    assertEquals(nonOwner.getUsername(), duplicate.getOwner().getUsername());
   }
 }

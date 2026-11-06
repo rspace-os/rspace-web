@@ -1589,6 +1589,10 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNull(subContainerAsSeenByOtherUser.getExtraFields());
     assertNull(subContainerAsSeenByOtherUser.getLocations());
 
+    Long subContainerId = apiSubContainer.getId();
+    assertThrows(
+        NotFoundException.class, () -> containerApiMgr.duplicate(subContainerId, otherUser));
+
     // compare with subcontainer as seen by the owner
     ApiContainer subContainerAsSeenByTestUser =
         containerApiMgr.getApiContainerById(apiSubContainer.getId(), testUser);
