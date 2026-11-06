@@ -116,12 +116,12 @@
       },
       "containerNotEmpty": {
         "help": "Delete the contents first.",
-        "title": "The container '{name}' is not empty."
+        "title": "The container ''{name}'' is not empty."
       },
       "refreshAndTryAgain": "Please refresh and try again.",
       "sampleSubsamplesInContainers": {
         "help": "Delete these subsamples first or remove them from their container.",
-        "title": "The sample '{name}' includes subsamples that are in containers."
+        "title": "The sample ''{name}'' includes subsamples that are in containers."
       }
     },
     "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
