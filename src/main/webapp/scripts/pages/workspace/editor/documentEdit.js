@@ -244,6 +244,7 @@ function _scrollBrowserWindowToField(fieldId) {
 }
 
 function updateMenuUponEditStart(fieldId) {
+  renderToolbar({ conditionalRender: { print: false } });
   $("." + fieldId).attr("disabled", false);
   $("#saveandclose_" + fieldId).show();
   $("#view_" + fieldId).show();
@@ -257,6 +258,7 @@ function updateMenuUponEditStart(fieldId) {
 }
 
 function _updateMenuUponEditStop() {
+  renderToolbar({ conditionalRender: { print: true } });
   $(".editMode").hide();
   $("#signDocument, #delete, .templateActionDiv").show();
   RS.checkToolbarDividers(".toolbar-divider");

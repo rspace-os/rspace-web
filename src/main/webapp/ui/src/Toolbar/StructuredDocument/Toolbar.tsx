@@ -213,12 +213,14 @@ class StructuredDocumentToolbar extends React.Component<
                   <FontAwesomeIcon icon={faCloudDownloadAlt} />
                 </IconButton>
               </Tooltip>
-              <PrintButton
-                onClick={() => {
-                  this.context.trackEvent("user:print:document:document_editor");
-                }}
-                data-test-id="notebooktoolbar-print"
-              />
+              {this.props.conditionalRender.print !== false && (
+                <PrintButton
+                  onClick={() => {
+                    this.context.trackEvent("user:print:document:document_editor");
+                  }}
+                  data-test-id="notebooktoolbar-print"
+                />
+              )}
               <Box
                 component="span"
                 sx={{
