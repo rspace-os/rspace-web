@@ -147,12 +147,14 @@ export default function ChemCard(props: ChemCardProps) {
       return;
     }
 
+    let active = true;
     const publicView = document.getElementById("public_document_view");
     const publicUrlPrepend = publicView ? "/public/publicView" : "";
     const url = `${publicUrlPrepend}/chemical/ajax/getInfo?chemId=${chemId}`;
     axios
       .get<ChemInfoResponse>(url)
       .then((response): void => {
+        if (!active) return;
         if (response.data.data) {
           setChem(response.data.data);
         } else {
@@ -162,7 +164,10 @@ export default function ChemCard(props: ChemCardProps) {
       .catch((error: unknown): void => {
         console.warn(error);
       });
-  }, [chemId]);
+    return () => {
+      active = false;
+    };
+  }, [chemId, props.item.src]);
 
   const chemInfoTable = (chemical: ChemicalInfo): React.ReactElement => {
     const chemicalMetadata = getAdditionalMetadata(chemical.additionalMetadata);
