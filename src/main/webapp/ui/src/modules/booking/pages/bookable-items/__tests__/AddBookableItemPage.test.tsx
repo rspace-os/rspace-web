@@ -72,7 +72,7 @@ function DestinationPage() {
   useBookingNoticeHost("bookable-items", notices.notify);
   return (
     <>
-      <h1>{t("bookableItems.plural")}</h1>
+      <h1>{t("allBookableItems.plural")}</h1>
       <BookingLocalNotices alerts={notices.alerts} onDismiss={notices.dismiss} />
     </>
   );
@@ -98,7 +98,7 @@ function renderPage(initialEntry = "/booking/bookable-items/add", defaults: obje
   });
   const destinationRoute = createRoute({
     getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items",
+    path: "/all-items",
     component: DestinationPage,
   });
   const existingConfigurationRoute = createRoute({
@@ -208,7 +208,7 @@ describe("AddBookableItemPage", () => {
       );
       response.resolve();
       await refresh;
-      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     } finally {
       response.resolve();
       await refresh;
@@ -237,7 +237,7 @@ describe("AddBookableItemPage", () => {
     await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
     await user.click(await screen.findByRole("option", { name: "Spare microscope IN456" }));
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(saved).toMatchObject({ target: { relationTo: "instruments", value: 456 } });
   });
 
@@ -312,22 +312,24 @@ describe("AddBookableItemPage", () => {
       queryClient.setQueryData(catalogueQueryKey, []);
 
       expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
-      expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("combobox", { name: "booking:allBookableItems.fields.timezone" }),
+      ).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
       await completeForm(user);
 
       await expectAccessible(container);
 
-      const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
+      const timezone = screen.getByRole("combobox", { name: "booking:allBookableItems.fields.timezone" });
       expect(timezone).toHaveValue("Etc/UTC");
       await user.clear(timezone);
       await user.type(timezone, "Europe/Berl");
       await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
-      if (!enabled) await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
+      if (!enabled) await user.click(screen.getByRole("checkbox", { name: "booking:allBookableItems.fields.enabled" }));
 
       await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
       expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
       expect(await screen.findByText("booking:bookableItems.feedback.added")).toBeVisible();
       expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewDetails" })).toHaveAttribute(
@@ -391,7 +393,7 @@ describe("AddBookableItemPage", () => {
     await user.type(increment, value);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(requestBody).toMatchObject({ slotGranularityMinutes: minutes, incrementUnit });
   });
 
@@ -438,7 +440,7 @@ describe("AddBookableItemPage", () => {
     await user.click(openAllDay);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(requestBody).toMatchObject({
       openingHours: settings.openingHours.map((entry) => ({
         ...entry,
@@ -556,7 +558,7 @@ describe("AddBookableItemPage", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(attempts).toBe(2);
     expect(requestBodies[1]).toMatchObject({
       target: { relationTo: "instruments", value: 123 },

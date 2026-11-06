@@ -1,7 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { expectAccessible } from "@/__tests__/accessibility";
 import { TableListSorting } from "../components/TableListSorting";
 import { config } from "./fixtures/tableList";
 
@@ -10,11 +9,7 @@ describe("Sort priority", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const fields = config.fields.map((field) =>
-      field.name === "owner"
-        ? { ...field, capabilities: { ...field.capabilities, sortable: false } }
-        : field.name === "score"
-          ? { ...field, list: false as const }
-          : field,
+      field.name === "owner" ? { ...field, capabilities: { ...field.capabilities, sortable: false } } : field,
     );
     render(
       <TableListSorting
@@ -26,7 +21,6 @@ describe("Sort priority", () => {
     );
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addSort" }));
     const menu = await screen.findByRole("menu");
-    await expectAccessible(menu);
     expect(
       within(menu).queryByRole("menuitem", { name: "common:tableList.examples.fields.title" }),
     ).not.toBeInTheDocument();

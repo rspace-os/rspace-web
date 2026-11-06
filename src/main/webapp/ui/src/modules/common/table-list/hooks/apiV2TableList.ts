@@ -40,6 +40,8 @@ export type UseApiV2TableListOptions<
   documentSchema: ApiV2DocumentSchema<TDocument>;
   request?: ApiV2CollectionFetchOptions<TDocument>;
   metadata?: ApiV2CollectionMetadata<TDocument>;
+  /** Recover page-owned presets after parsing, before queries or saved-view validation. */
+  normalizeFilterExpression?: (expression: FilterExpression<TDocument> | null) => FilterExpression<TDocument> | null;
   table?: TableOptions<CollectionRow<TDocument, TId | TTitle>>;
   query?: {
     staleTime?: number;
@@ -68,6 +70,7 @@ export function useApiV2TableList<
   documentSchema,
   request,
   metadata: suppliedMetadata,
+  normalizeFilterExpression,
   table,
   query,
 }: UseApiV2TableListOptions<TDocument, TId, TTitle>): UseApiV2TableListResult<
@@ -104,7 +107,10 @@ export function useApiV2TableList<
     [config, documentSchema, metadata, runtimeFields],
   );
   const rowConfig = adapter.config as unknown as ResolvedCollectionConfig<Row>;
-  const restoredExpression = saved.raw.where === null ? null : parseRsqlExpression(saved.raw.where, rowConfig);
+  const parsedExpression = saved.raw.where === null ? null : parseRsqlExpression(saved.raw.where, adapter.config);
+  const restoredExpression = (
+    normalizeFilterExpression ? normalizeFilterExpression(parsedExpression) : parsedExpression
+  ) as FilterExpression<Row> | null;
   const restoredFilters = { search: saved.raw.search ?? "", expression: restoredExpression };
   const restoredColumns =
     saved.raw.columns === null ? rowConfig.defaultColumns : parseColumns(saved.raw.columns, rowConfig);
@@ -117,7 +123,7 @@ export function useApiV2TableList<
     saved.malformed ||
     !restoredPickerValuesValid ||
     fields.missing.length > 0 ||
-    (saved.raw.where !== null && restoredExpression === null) ||
+    (saved.raw.where !== null && parsedExpression === null) ||
     restoredColumns === null ||
     restoredSorting === null;
   const blocked = (persistenceEnabled && savedState === null) || fields.pending || fields.error !== null || invalid;
@@ -126,12 +132,25 @@ export function useApiV2TableList<
     visibleFields: restoredColumns ?? rowConfig.defaultColumns,
     sorting: restoredSorting ?? rowConfig.defaultSort ?? [],
   };
+  const normalizeState = (state: CollectionQueryState<Row>): CollectionQueryState<Row> =>
+    normalizeFilterExpression
+      ? {
+          ...state,
+          filters: {
+            ...state.filters,
+            expression: normalizeFilterExpression(
+              state.filters.expression as FilterExpression<TDocument> | null,
+            ) as FilterExpression<Row> | null,
+          },
+        }
+      : state;
   const fetchCollection = createApiV2CollectionFetcher(adapter, { ...request, totals: false });
   // Acknowledge each restored signature so later edits may diverge and fetch.
   // A new signature must match its saved state before it is acknowledged.
   const [restoredSignature, setRestoredSignature] = useState<string | null>(null);
   const matchesSaved = (state: CollectionQueryState<Row>) =>
-    (table?.features?.filtering === false || serializeFilters(state.filters) === serializeFilters(restoredFilters)) &&
+    (table?.features?.filtering === false ||
+      serializeFilters(normalizeState(state).filters) === serializeFilters(restoredFilters)) &&
     (table?.features?.columns === false ||
       serializeColumns<Row>(state.visibleFields) === serializeColumns<Row>(restoredState.visibleFields)) &&
     (table?.features?.sorting === false || serializeSorting(state.sorting) === serializeSorting(restoredState.sorting));
@@ -155,10 +174,13 @@ export function useApiV2TableList<
           authScope,
           ready(state)
             ? {
-                state: projectedState(adapter, state, request?.projection ?? "visible"),
+                state: projectedState(adapter, normalizeState(state), request?.projection ?? "visible"),
                 depth: request?.depth,
                 projection: request?.projection,
-                baseFilter: request?.baseFilter,
+                baseFilter:
+                  typeof request?.baseFilter === "function"
+                    ? request.baseFilter(normalizeState(state).filters.expression as FilterExpression<TDocument> | null)
+                    : request?.baseFilter,
                 metadata,
                 runtimeFields,
                 config: {
@@ -176,11 +198,17 @@ export function useApiV2TableList<
               }
             : ["pending-saved-view", saved.signature],
         ),
-      fetch: fetchCollection as unknown as CollectionFetcher<Row>,
+      fetch: ((state, context) =>
+        fetchCollection(normalizeState(state) as CollectionQueryState<TDocument>, context)) as CollectionFetcher<Row>,
       ...query,
       enabled: ready,
     },
   });
+  useEffect(() => {
+    const normalized = normalizeState(result.state);
+    if (serializeFilters(normalized.filters) !== serializeFilters(result.state.filters))
+      result.setFilters(normalized.filters);
+  }, [result.state]);
   // Count identity excludes paging and projection. Prefix invalidation after writes
   // refreshes this active query along with the current page.
   const totals = useQuery({
@@ -190,9 +218,12 @@ export function useApiV2TableList<
       authScope,
       "totals",
       {
-        filters: result.state.filters,
+        filters: normalizeState(result.state).filters,
         sorting: result.state.sorting,
-        baseFilter: request?.baseFilter,
+        baseFilter:
+          typeof request?.baseFilter === "function"
+            ? request.baseFilter(normalizeState(result.state).filters.expression as FilterExpression<TDocument> | null)
+            : request?.baseFilter,
       },
     ],
     enabled: ready(result.state),
@@ -201,7 +232,10 @@ export function useApiV2TableList<
     retry: query?.retry,
     queryFn: async ({ signal }) => {
       const fetchTotals = createApiV2CollectionFetcher(adapter, { ...request, totals: true });
-      const page = await fetchTotals({ ...result.state, page: { pageIndex: 0, pageSize: 1 } }, { signal });
+      const page = await fetchTotals(
+        { ...normalizeState(result.state), page: { pageIndex: 0, pageSize: 1 } },
+        { signal },
+      );
       if (page.rowCount === undefined) throw new Error("API V2 totals response omitted totalDocs");
       return page.rowCount;
     },

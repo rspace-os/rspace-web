@@ -14,8 +14,8 @@ import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { BookingNoticesProvider } from "@/modules/booking/feedback/BookingNotices";
+import BookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import { type CurrentUser, currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
@@ -84,7 +84,7 @@ export function BookableItemPageStory({
         }),
         createRoute({
           getParentRoute: () => bookingRoute,
-          path: "/config/bookable-items/",
+          path: "/all-items/",
           component: BookableItemsPage,
         }),
       ]),
