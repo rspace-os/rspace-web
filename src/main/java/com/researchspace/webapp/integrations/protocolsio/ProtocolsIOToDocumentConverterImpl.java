@@ -96,12 +96,7 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
     Long importFolderId =
         parentFolderId != null ? parentFolderId : folderMgr.getImportsFolder(subject).getId();
     return recordMgr.createNewStructuredDocument(
-        importFolderId,
-        form.getId(),
-        toImport.getTitle(),
-        subject,
-        new DefaultRecordContext(),
-        false);
+        importFolderId, form.getId(), toImport.getTitle(), subject, new DefaultRecordContext());
   }
 
   StructuredDocument processHtml(String html, StructuredDocument rspaceDocument, User subject) {

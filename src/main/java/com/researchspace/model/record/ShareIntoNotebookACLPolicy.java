@@ -36,7 +36,4 @@ public class ShareIntoNotebookACLPolicy implements ACLPropagationPolicy {
       removedACL.removeACLElement(el);
     }
   }
-
-  @Override
-  public void propagate(BaseRecord propagationRoot) {}
 }

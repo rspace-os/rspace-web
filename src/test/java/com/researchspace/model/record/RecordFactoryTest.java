@@ -81,7 +81,6 @@ public class RecordFactoryTest {
   public void testCreateSsytemCreatedFolder() {
     Folder folder = factoryAPI.createSystemCreatedFolder("notroot", user);
     assertTrue(folder.isSystemFolder());
-    assertThat(folder.getChildren()).isEmpty();
     assertCoreDataNotNull(folder);
   }
 
@@ -89,7 +88,6 @@ public class RecordFactoryTest {
   public void testCreateFolder() {
     Folder folder = factoryAPI.createFolder("notroot", user);
     assertFalse(folder.hasType(RecordType.ROOT));
-    assertThat(folder.getChildren()).isEmpty();
     assertCoreDataNotNull(folder);
   }
 
@@ -105,7 +103,6 @@ public class RecordFactoryTest {
     assertTrue(folder.hasType(RecordType.ROOT));
     assertTrue(folder.isRootFolder());
     assertTrue(folder.isRootFolderForUser(user));
-    assertThat(folder.getChildren()).isEmpty();
     assertCoreDataNotNull(folder);
   }
 

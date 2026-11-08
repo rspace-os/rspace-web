@@ -7,13 +7,14 @@ import com.researchspace.model.permissions.RecordSharingACL;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Propagates copies of an ACL from the parent to all descendants in tree hierarchy */
+/**
+ * The child inherits the parent's ACL; onAddDescendant passes each parent's ACL on to its content.
+ */
 public class InheritACLFromParentsPropagationPolicy implements ACLPropagationPolicy {
 
   @Override
   public void onAdd(BaseRecord propagationRoot, BaseRecord child) {
     child.unionACL(removeAnonymousFromAcl(propagationRoot.getSharingACL()));
-    recursiveOnAdd(child);
   }
 
   // do not propagate the published state of a notebook to entries (for example -  when they are
@@ -29,18 +30,19 @@ public class InheritACLFromParentsPropagationPolicy implements ACLPropagationPol
     return copy;
   }
 
-  private void recursiveOnAdd(BaseRecord parent) {
+  @Override
+  public boolean propagatesToDescendants() {
+    return true;
+  }
+
+  @Override
+  public void onAddDescendant(BaseRecord parent, BaseRecord descendant) {
     RecordSharingACL parentACL = parent.getSharingACL().copy();
     if (parent.isNotebook()) {
-      // PI/Lab Admins don't get any extra permissions to entries in
-      // shared notebook (RSPAC-993)
+      // PI/Lab Admins don't get any extra permissions to entries in shared notebook
       parentACL.removeACLsforRolesInGroup(RoleInGroup.PI, RoleInGroup.RS_LAB_ADMIN);
     }
-
-    for (BaseRecord child : parent.getChildrens()) {
-      child.unionACL(parentACL);
-      recursiveOnAdd(child);
-    }
+    descendant.unionACL(parentACL);
   }
 
   /**
@@ -60,29 +62,16 @@ public class InheritACLFromParentsPropagationPolicy implements ACLPropagationPol
    */
   @Override
   public void onRemove(BaseRecord propagationRoot, BaseRecord removed) {
-    RecordSharingACL parentACL = propagationRoot.getSharingACL();
-    RecordSharingACL removedACL = removed.getSharingACL();
-    List<ACLElement> aclsInCommonToParentAndChild = parentACL.intersectionWith(removedACL);
-    // DO NOT REMOVE SHARING WITH ANONYMOUS USER
-    aclsInCommonToParentAndChild =
-        aclsInCommonToParentAndChild.stream()
-            .filter(el -> !el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER))
-            .collect(Collectors.toList());
-    recursivelyRemoveACLs(removed, aclsInCommonToParentAndChild);
-  }
-
-  void recursivelyRemoveACLs(
-      BaseRecord removed, final List<ACLElement> aclsInCommonToParentAndChild) {
-    removed.removeACLs(aclsInCommonToParentAndChild);
-    for (BaseRecord child : removed.getChildrens()) {
-      recursivelyRemoveACLs(child, aclsInCommonToParentAndChild);
-    }
+    removed.removeACLs(aclsRemovedFromDescendants(propagationRoot, removed));
   }
 
   @Override
-  public void propagate(BaseRecord propagationRoot) {
-    for (BaseRecord child : propagationRoot.getChildrens()) {
-      onAdd(propagationRoot, child);
-    }
+  public List<ACLElement> aclsRemovedFromDescendants(
+      BaseRecord propagationRoot, BaseRecord removed) {
+    List<ACLElement> aclsInCommonToParentAndChild =
+        propagationRoot.getSharingACL().intersectionWith(removed.getSharingACL());
+    return aclsInCommonToParentAndChild.stream()
+        .filter(el -> !el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER))
+        .collect(Collectors.toList());
   }
 }

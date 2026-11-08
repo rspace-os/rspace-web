@@ -10116,7 +10116,6 @@ export default interface Resources {
       "navigation": {
         "errors": {
           "notAParent": "Folder {0} is not a parent of {1}",
-          "pathNotAccessible": "The record named ''{0}'' does not exist in the path, or cannot be accessed. {1}",
           "sharedContextUndetermined": "Cannot infer shared context for Notebook with ID=[{0}], as \"grandParentId\" param is not set"
         }
       }

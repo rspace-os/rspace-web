@@ -276,10 +276,6 @@ public class RecordManagerImpl implements RecordManager {
         moved = toMove.move(currparent, newparent, user);
       }
       if (moved) {
-        if (currparent.isFolder()) {
-          folderDao.save(currparent);
-        }
-        folderDao.save(newparent);
         recordDao.save(toMove);
         return new ServiceOperationResult<>(toMove, true);
       }
@@ -305,35 +301,21 @@ public class RecordManagerImpl implements RecordManager {
   @RequiresActiveLicense
   @Override
   public StructuredDocument createNewStructuredDocument(Long parentId, Long formID, User user) {
-    return createNewStructuredDocument(
-        parentId, formID, "", user, new DefaultRecordContext(), false);
-  }
-
-  @RequiresActiveLicense
-  @Override
-  public StructuredDocument createNewStructuredDocument(
-      Long parentId, Long formID, User user, boolean skipAddingToChildren) {
-    return createNewStructuredDocument(
-        parentId, formID, "", user, new DefaultRecordContext(), skipAddingToChildren);
+    return createNewStructuredDocument(parentId, formID, "", user, new DefaultRecordContext());
   }
 
   @RequiresActiveLicense
   @Override
   public StructuredDocument createNewStructuredDocument(
       Long parentId, Long formID, User user, RecordContext context, ImportOverride override) {
-    return doCreateDocument(parentId, formID, "", user, context, override, false);
+    return doCreateDocument(parentId, formID, "", user, context, override);
   }
 
   @RequiresActiveLicense
   @Override
   public StructuredDocument createNewStructuredDocument(
-      Long parentId,
-      Long formID,
-      String name,
-      User user,
-      RecordContext context,
-      boolean skipAddingToChildren) {
-    return doCreateDocument(parentId, formID, name, user, context, null, skipAddingToChildren);
+      Long parentId, Long formID, String name, User user, RecordContext context) {
+    return doCreateDocument(parentId, formID, name, user, context, null);
   }
 
   private StructuredDocument doCreateDocument(
@@ -342,8 +324,7 @@ public class RecordManagerImpl implements RecordManager {
       String name,
       User user,
       RecordContext context,
-      ImportOverride override,
-      boolean skipAddingToChildren) {
+      ImportOverride override) {
     Validate.notNull(formID, "FormId can't be null!");
     Validate.notNull(user, "User can't be null!");
 
@@ -391,13 +372,7 @@ public class RecordManagerImpl implements RecordManager {
 
     if (parentFolder != null) {
       recordDao.save(rc);
-      parentFolder.addChild(rc, user, skipAddingToChildren);
-      if (!skipAddingToChildren) {
-        folderDao.save(parentFolder);
-      } else {
-        recordDao.save(rc);
-        parentFolder = folderDao.get(parentId);
-      }
+      parentFolder.addChild(rc, user);
     }
     recordDao.save(rc);
     formDao.save(rc.getForm());
@@ -432,7 +407,6 @@ public class RecordManagerImpl implements RecordManager {
 
     Folder snippetGaleryFolder = getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, user);
     snippetGaleryFolder.addChild(snippet, user);
-    folderDao.save(snippetGaleryFolder);
 
     String updatedContent = copyMgr.copyElementsInContent(null, snippet, content, user);
     snippet.setContent(updatedContent);
@@ -941,7 +915,6 @@ public class RecordManagerImpl implements RecordManager {
             galleryRoot.getName());
         return null;
       }
-      folderDao.save(galleryRoot);
       folderDao.save(newFolder);
 
       return newFolder;

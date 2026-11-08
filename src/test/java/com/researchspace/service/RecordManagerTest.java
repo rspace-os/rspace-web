@@ -159,11 +159,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
     final int galleryFolders = 8;
     Folder mediaRecord = folderDao.getGalleryRootFolderForUser(user);
     assertTrue(mediaRecord.isSystemFolder());
-    assertThat(mediaRecord.getChildren()).hasSize(galleryFolders);
-    assertThat(mediaRecord.getSubfolders()).allMatch(subF -> subF.isSystemFolder());
+    assertThat(folderDao.getChildren(mediaRecord)).hasSize(galleryFolders);
+    assertThat(folderDao.getSubFolders(mediaRecord)).allMatch(subF -> subF.isSystemFolder());
 
     Folder imges = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
-    Set<BaseRecord> imgGalleryContent = imges.getChildrens();
+    List<BaseRecord> imgGalleryContent = folderDao.getChildren(imges);
     assertThat(imgGalleryContent).hasSize(2); // 'examples' folder + apifolder only
 
     Folder examplesGallery =
@@ -172,13 +172,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
                 .filter(f -> f.getName().equals(MediaUtils.IMAGES_EXAMPLES_MEDIA_FLDER_NAME))
                 .findFirst()
                 .get();
-    assertTrue(examplesGallery.getChildrens().size() > 1);
+    assertThat(folderDao.getChildren(examplesGallery)).hasSizeGreaterThan(1);
   }
 
   @Test
   public void testAllGallerySubfoldersHaveSystemType() {
     Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
-    for (BaseRecord child : galleryRoot.getChildrens()) {
+    for (BaseRecord child : folderDao.getChildren(galleryRoot)) {
       assertTrue(child.hasType(RecordType.SYSTEM));
       if (child.isFolder()) {
         assertTrue(((Folder) child).isSystemFolder());
@@ -285,7 +285,6 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertColumnIndicesAreTheSameForFieldsAndFormss(child);
     assertNotNull(recordMgr.get(child.getId()));
     assertNotNull(child.getId());
-    // assertEquals(numb4InDB + 1, root.getChildren().size());
     flushDatabaseState();
     ISearchResults<BaseRecord> results =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION);
@@ -327,21 +326,21 @@ public class RecordManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(user);
 
     Folder root = folderDao.getRootRecordForUser(user);
-    int numberb4 = root.getChildren().size();
+    int numberb4 = folderDao.getChildren(root).size();
     flushDatabaseState();
     long numb4InDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     anyForm = formDao.getAll().get(0);
-    Folder cf1 = root.getSystemSubFolderByName(Folder.SHARED_FOLDER_NAME);
+    Folder cf1 = folderDao.getSystemSubFolderByName(root, Folder.SHARED_FOLDER_NAME);
     String newName = "newname";
     Folder copied = folderMgr.copy(cf1.getId(), user, newName).getParentCopy();
     flushDatabaseState();
-    assertThat(copied.getChildren()).hasSize(cf1.getChildren().size());
+    assertThat(folderDao.getChildren(copied)).hasSize(folderDao.getChildren(cf1).size());
     assertEquals(newName, copied.getName());
 
     Folder f = folderDao.getRootRecordForUser(user);
     // original + copy
-    assertThat(f.getChildren()).hasSize(numberb4 + 1);
+    assertThat(folderDao.getChildren(f)).hasSize(numberb4 + 1);
     assertEquals(
         numb4InDB + 1,
         recordMgr
@@ -606,7 +605,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long numAfterInDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     long numFormsB4Delete = formDao.getAll().size();
-    folderMgr.setRecordFromFolderDeleted(child.getId(), root.getId(), user);
+    child.getParents().iterator().next().markRecordInFolderDeleted(true);
+    recordDao.save(child);
     flushDatabaseState();
     // search is unaffected, does not find deleted records
     long numAfterDelete =
@@ -772,11 +772,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
     ISearchResults<BaseRecord> res2 =
         recordMgr.listFolderRecords(copied2.getId(), DEFAULT_RECORD_PAGINATION);
     assertEquals(5, res2.getHits().intValue());
-    assertEquals("doc6", res.getResults().get(0).asStrucDoc().getFields().get(0).getFieldData());
-    assertEquals("doc5", res.getResults().get(1).asStrucDoc().getFields().get(0).getFieldData());
-    assertEquals("doc4", res.getResults().get(2).asStrucDoc().getFields().get(0).getFieldData());
-    assertEquals("doc3", res.getResults().get(3).asStrucDoc().getFields().get(0).getFieldData());
-    assertEquals("doc2", res.getResults().get(4).asStrucDoc().getFields().get(0).getFieldData());
+    assertEquals("doc6", res2.getResults().get(0).asStrucDoc().getFields().get(0).getFieldData());
+    assertEquals("doc5", res2.getResults().get(1).asStrucDoc().getFields().get(0).getFieldData());
+    assertEquals("doc4", res2.getResults().get(2).asStrucDoc().getFields().get(0).getFieldData());
+    assertEquals("doc3", res2.getResults().get(3).asStrucDoc().getFields().get(0).getFieldData());
+    assertEquals("doc2", res2.getResults().get(4).asStrucDoc().getFields().get(0).getFieldData());
   }
 
   @Test
@@ -794,9 +794,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     // assert the copied record exists in the nested folder
     Folder copied = (Folder) folderMgr.copy(t1.getId(), user, "newname").getParentCopy();
-    Folder t3Copy =
-        (Folder)
-            (((Folder) copied.getChildrens().iterator().next()).getChildrens().iterator().next());
+    Folder t3Copy = folderDao.getSubFolders(folderDao.getSubFolders(copied).get(0)).get(0);
     ISearchResults<BaseRecord> res =
         recordMgr.listFolderRecords(t3Copy.getId(), DEFAULT_RECORD_PAGINATION);
     assertEquals(1, res.getHits().intValue());
@@ -807,9 +805,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     // do the copy
     Folder copied2 = (Folder) folderMgr.copy(t1.getId(), user, "newname").getParentCopy();
-    Folder t3Copy2 =
-        (Folder)
-            (((Folder) copied2.getChildrens().iterator().next()).getChildrens().iterator().next());
+    Folder t3Copy2 = folderDao.getSubFolders(folderDao.getSubFolders(copied2).get(0)).get(0);
     StructuredDocument copiedDoc =
         (StructuredDocument)
             recordMgr
@@ -841,7 +837,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   @Test
   public void addFolder() {
     Folder root = user.getRootFolder();
-    int numberb4 = root.getChildren().size();
+    int numberb4 = folderDao.getChildren(root).size();
     Folder child = folderMgr.createNewFolder(root.getId(), "", user);
     assertNotNull(folderMgr.getFolder(child.getId(), user));
     assertNotNull(child.getId());
@@ -852,7 +848,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Folder child2 = folderMgr.createNewFolder(root.getId(), "xxx", user);
     assertEquals("xxx", child2.getName());
 
-    assertThat(root.getChildren()).hasSize(numberb4 + 2);
+    assertThat(folderDao.getChildren(root)).hasSize(numberb4 + 2);
 
     ISearchResults<BaseRecord> noChildrens =
         recordMgr.listFolderRecords(child.getId(), DEFAULT_RECORD_PAGINATION);
@@ -996,7 +992,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   private int getFolderAndRecordCount(Folder f) {
-    return f.getChildren().size();
+    return folderDao.getChildren(f).size();
   }
 
   @Test
@@ -1145,7 +1141,6 @@ public class RecordManagerTest extends SpringTransactionalTest {
     target = folderMgr.save(target, user);
     root.addChild(target, user);
     folderDao.save(target);
-    // int numberb4= root.getChildren().size();
     root = folderMgr.save(root, user);
     recordDao.save(child);
     flushDatabaseState();
@@ -1170,7 +1165,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   public void cannotMoveEntryOutOfNotebook() throws Exception {
     Folder root = folderMgr.getRootFolderForUser(user);
     Notebook nbook = createNotebookWithNEntries(root.getId(), "nbook", 1, user);
-    BaseRecord entry = (BaseRecord) nbook.getChildrens().toArray()[0];
+    BaseRecord entry = (BaseRecord) folderDao.getChildren(nbook).toArray()[0];
 
     ServiceOperationResult<BaseRecord> moveResult =
         recordMgr.move(entry.getId(), root.getId(), nbook.getId(), user);
@@ -1430,22 +1425,17 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
   @Test
   public void folderMgerCopySetsOwners() throws Exception {
-    Folder root = user.getRootFolder();
-    Set<BaseRecord> children = root.getChildrens();
-    for (BaseRecord subbF : children) {
-      if (subbF.isFolder()
-          && subbF.getName().equals(ContentInitializerForDevRunManager.OTHER_DATA_FOLDER_NAME)) {
-        Folder subbF2 = folderMgr.getFolder(subbF.getId(), user);
-        // int numFoldersOrig = subbF2.getChildrens().size();
-        Folder copy = folderMgr.copy(subbF.getId(), user, "newname").getParentCopy();
-        // assertEquals(numFoldersOrig, copy.getChildren().size());
+    BaseRecord otherData =
+        folderDao.getChildren(user.getRootFolder()).stream()
+            .filter(
+                r -> r.getName().equals(ContentInitializerForDevRunManager.OTHER_DATA_FOLDER_NAME))
+            .findFirst()
+            .orElseThrow();
+    Folder copy = folderMgr.copy(otherData.getId(), user, "newname").getParentCopy();
 
-        for (RecordToFolder r : copy.getChildren()) {
-          assertNotNull(r.getRecord().getOwner());
-          assertEquals(user, r.getRecord().getOwner());
-        }
-      }
-    }
+    List<BaseRecord> copied = folderDao.getChildren(copy);
+    assertThat(copied).isNotEmpty();
+    assertThat(copied).allMatch(record -> user.equals(record.getOwner()));
   }
 
   private void checkPermissions(StructuredDocument child2) {
@@ -1857,7 +1847,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
     assertNotNull(recordMgr.get(newCreatedDocument.getId()));
     assertNotNull(newCreatedDocument.getId());
-    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+    assertEquals(initialCountRootFolder + 1, folderDao.getChildren(rootFolder).size());
   }
 
   @Test
@@ -1888,7 +1878,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
     assertTrue(sharedNotebook.isShared());
-    assertThat(sharedNotebook.getChildrens()).isEmpty();
+    assertThat(folderDao.getChildren(sharedNotebook)).isEmpty();
 
     StructuredDocument newCreatedDocument =
         recordMgr.createNewStructuredDocument(notebookId, anyForm.getId(), user);
@@ -1896,7 +1886,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
     assertNotNull(recordMgr.get(newCreatedDocument.getId()));
     assertNotNull(newCreatedDocument.getId());
-    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+    assertEquals(initialCountRootFolder + 1, folderDao.getChildren(rootFolder).size());
   }
 
   @Test
@@ -1914,7 +1904,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Notebook sharedNotebook = createNotebookWithNEntries(piRootId, "shared nbook", 1, pi);
     assertEquals(1, sharedNotebook.getEntryCount());
     StructuredDocument entryInSharedNotebook =
-        sharedNotebook.getChildrens().iterator().next().asStrucDoc();
+        folderDao.getChildren(sharedNotebook).iterator().next().asStrucDoc();
     shareNotebookWithGroup(pi, sharedNotebook, labGroup, "write");
 
     // user creates a document and shares it into pi's notebook

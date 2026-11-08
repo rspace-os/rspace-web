@@ -127,13 +127,15 @@ public class ImageController extends BaseController {
       log.info("No document thumbnail for {}, creating new one", ecatDocId);
       // doc can't generate a thumbnail, don't try forever
       byte numAttempts = ecatDocumentFile.getNumThumbnailConversionAttemptsMade();
-      if (numAttempts < MAX_THUMBNAIL_ATTEMPTS
+      // saving a revision copy would delete the record's folder edges (orphanRemoval)
+      if (revisionId == null
+          && numAttempts < MAX_THUMBNAIL_ATTEMPTS
           && docConverter.supportsConversion(ecatDocumentFile, "png")) {
         File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
         File tempFile = File.createTempFile("input", ".png", secureTmpDir);
         ConversionResult result = docConverter.convert(ecatDocumentFile, "png", tempFile);
         ecatDocumentFile.setNumThumbnailConversionAttemptsMade(++numAttempts);
-        if (revisionId == null && result.isSuccessful()) {
+        if (result.isSuccessful()) {
           FileProperty fp =
               fileStore.createAndSaveFileProperty(
                   InternalFileStore.DOC_THUMBNAIL_CATEGORY,

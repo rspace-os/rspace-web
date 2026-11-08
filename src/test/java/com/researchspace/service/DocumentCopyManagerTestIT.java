@@ -76,7 +76,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument document =
-        recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user, true);
+        recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user);
 
     Field txtFld = document.getTextFields().get(0);
 
@@ -198,8 +198,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
       throws Exception {
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument document =
-        recordMgr.createNewStructuredDocument(
-            user.getRootFolder().getId(), anyForm.getId(), user, true);
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), anyForm.getId(), user);
     Field textField = document.getTextFields().get(0);
 
     InputStream molInput = getClass().getResourceAsStream("/TestResources/Amfetamine.mol");
@@ -238,8 +237,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   public void testCopyStructuredDocumentUpdatesStandaloneStoichiometryReference() throws Exception {
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument document =
-        recordMgr.createNewStructuredDocument(
-            user.getRootFolder().getId(), anyForm.getId(), user, true);
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), anyForm.getId(), user);
     Field textField = document.getTextFields().get(0);
 
     Stoichiometry originalStoichiometry = stoichiometryService.createEmpty(document.getId(), user);

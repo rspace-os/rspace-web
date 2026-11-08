@@ -57,6 +57,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class RecordSharingIT extends RealTransactionSpringTestBase {
 
+  private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired RecordGroupSharingDao groupShareDao;
   private @Autowired RecordSharingManager recordSharingManager;
   private @Autowired WorkspacePermissionsDTOBuilder permBuilder;
@@ -76,6 +77,32 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
   @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
+  }
+
+  @Test
+  public void detachedMetadataSaveDoesNotRemoveAConcurrentShare() {
+    StructuredDocument document = setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(piUser);
+    BaseRecord olderMetadata = baseRecordManager.get(document.getId(), piUser);
+    ShareConfigElement[] share = {new ShareConfigElement(group.getId(), "read")};
+
+    assertTrue(sharingMgr.shareRecord(reloadPiUser(), document.getId(), share).isSucceeded());
+    Folder sharedFolder = folderMgr.getFolder(group.getCommunalGroupFolderId(), piUser);
+    assertThat(folderMgr.getFolderChildrenIds(sharedFolder)).contains(document.getId());
+    assertThat(olderMetadata.getParentFolders())
+        .extracting(Folder::getId)
+        .doesNotContain(sharedFolder.getId());
+
+    olderMetadata.setDescription("Metadata from an earlier request");
+    baseRecordManager.save(olderMetadata, piUser);
+
+    assertEquals(
+        "Metadata from an earlier request",
+        baseRecordManager.get(document.getId(), piUser).getDescription());
+    assertThat(folderMgr.getFolderChildrenIds(sharedFolder)).contains(document.getId());
+
+    sharingMgr.unshareRecord(reloadPiUser(), document.getId(), share);
+    assertThat(folderMgr.getFolderChildrenIds(sharedFolder)).doesNotContain(document.getId());
   }
 
   @Test
@@ -104,12 +131,12 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     Folder sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
     // check that the shared folders are created and inserted
     assertNotNull(sharedIndivid);
-    assertThat(folderDao.getIndividualSharedItemsFolderForUser(piUser).getChildrens())
+    assertThat(folderDao.getChildren(folderDao.getIndividualSharedItemsFolderForUser(piUser)))
         .contains(sharedIndivid);
-    assertThat(folderDao.getIndividualSharedItemsFolderForUser(other).getChildrens())
+    assertThat(folderDao.getChildren(folderDao.getIndividualSharedItemsFolderForUser(other)))
         .contains(sharedIndivid);
-    assertThat(sharedIndivid.getChildrens()).contains(recordToShare);
-    assertThat(sharedIndivid.getChildrens()).hasSize(1);
+    assertThat(folderDao.getChildren(sharedIndivid)).contains(recordToShare);
+    assertThat(folderDao.getChildren(sharedIndivid)).hasSize(1);
     commitTransaction();
 
     // share again.. should be unsuccessful
@@ -120,7 +147,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
 
     openTransaction();
     sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
-    assertThat(sharedIndivid.getChildrens()).hasSize(1);
+    assertThat(folderDao.getChildren(sharedIndivid)).hasSize(1);
     shared = recordSharingManager.getSharedRecordsForUser(piUser);
     assertThat(shared).hasSize(1);
     commitTransaction();
@@ -140,14 +167,14 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     openTransaction();
     sharedIndivid = folderDao.get(sharedIndivid.getId());
     Set<BaseRecord> childrens = new HashSet();
-    childrens.addAll(sharedIndivid.getChildrens());
+    childrens.addAll(folderDao.getChildren(sharedIndivid));
     assertNotNull(sharedIndivid);
-    assertThat(folderDao.getIndividualSharedItemsFolderForUser(piUser).getChildrens())
+    assertThat(folderDao.getChildren(folderDao.getIndividualSharedItemsFolderForUser(piUser)))
         .contains(sharedIndivid);
-    assertThat(folderDao.getIndividualSharedItemsFolderForUser(other).getChildrens())
+    assertThat(folderDao.getChildren(folderDao.getIndividualSharedItemsFolderForUser(other)))
         .contains(sharedIndivid);
     // but shared record is removed.
-    assertThat(sharedIndivid.getChildrens()).doesNotContain(recordToShare);
+    assertThat(folderDao.getChildren(sharedIndivid)).doesNotContain(recordToShare);
     assertTrue(recordToShare.getShortestPathToParent(sharedIndivid).isEmpty());
     assertFalse(recordToShare.getShortestPathToParent(piUser.getRootFolder()).isEmpty());
     commitTransaction();
@@ -161,7 +188,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
 
     openTransaction();
     Folder labGrpShared = folderDao.getSharedFolderForGroup(group);
-    int b4 = labGrpShared.getChildren().size();
+    int b4 = folderDao.getChildren(labGrpShared).size();
     // group can't edit record before it's shared
     logoutAndLoginAs(other);
     assertFalse(groupCanEditRecord(group, recordToShare));
@@ -184,7 +211,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     openTransaction();
     sharingMgr.shareRecord(
         reloadPiUser(), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
-    assertThat(folderDao.get(labGrpShared.getId()).getChildren()).hasSize(b4 + 1);
+    assertThat(folderDao.getChildren(folderDao.get(labGrpShared.getId()))).hasSize(b4 + 1);
     assertThat(groupShareDao.getRecordsSharedByGroup(group.getId())).hasSize(1);
     assertThat(groupShareDao.getSharedRecordsForUser(piUser)).hasSize(1);
     commitTransaction();
@@ -198,11 +225,12 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
 
     // all these assertions should be the same as above
     openTransaction();
-    assertThat(folderDao.get(labGrpShared.getId()).getChildren()).hasSize(b4 + 1);
+    assertThat(folderDao.getChildren(folderDao.get(labGrpShared.getId()))).hasSize(b4 + 1);
     assertThat(groupShareDao.getRecordsSharedByGroup(group.getId())).hasSize(1);
     assertThat(groupShareDao.getSharedRecordsForUser(piUser)).hasSize(1);
     // but should be shared with user as well:
-    assertThat(folderDao.getIndividualSharedFolderForUsers(piUser, other, null).getChildren())
+    assertThat(
+            folderDao.getChildren(folderDao.getIndividualSharedFolderForUsers(piUser, other, null)))
         .hasSize(1);
     gsCommand.setGroupid(group.getId()); // reset for group
     commitTransaction();
@@ -218,7 +246,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
         reloadPiUser(), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
 
     openTransaction();
-    assertThat(folderDao.get(labGrpShared.getId()).getChildren()).hasSize(b4 + 1);
+    assertThat(folderDao.getChildren(folderDao.get(labGrpShared.getId()))).hasSize(b4 + 1);
     assertThat(groupShareDao.getRecordsSharedByGroup(group.getId())).hasSize(1);
     commitTransaction();
 
@@ -227,7 +255,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
         reloadPiUser(), recordToShare.getId(), new ShareConfigElement[] {gsCommand});
 
     openTransaction();
-    assertThat(folderDao.get(labGrpShared.getId()).getChildren()).hasSize(b4);
+    assertThat(folderDao.getChildren(folderDao.get(labGrpShared.getId()))).hasSize(b4);
     assertThat(groupShareDao.getRecordsSharedByGroup(group.getId())).isEmpty();
     commitTransaction();
 
@@ -297,7 +325,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     Folder labGrpShared = folderDao.getSharedFolderForGroup(oneMemberGroup);
     // document not shared, group folder empty
     assertThat(sharingMgr.getRecordSharingInfo(recordToShare.getId())).isEmpty();
-    assertThat(labGrpShared.getChildren()).isEmpty();
+    assertThat(folderDao.getChildren(labGrpShared)).isEmpty();
     permissionUtils.refreshCache();
     commitTransaction();
 
@@ -309,7 +337,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     assertThat(sharingMgr.getRecordSharingInfo(recordToShare.getId())).hasSize(1);
     openTransaction();
     labGrpShared = folderDao.get(labGrpShared.getId());
-    assertThat(labGrpShared.getChildren()).hasSize(1);
+    assertThat(folderDao.getChildren(labGrpShared)).hasSize(1);
     commitTransaction();
   }
 
@@ -333,7 +361,8 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
 
     openTransaction();
     Notebook sharedNotebook = createNotebookWithNEntries(userRootId, "shared nbook", 1, user);
-    StructuredDocument usersEntry = (StructuredDocument) sharedNotebook.getChildrens().toArray()[0];
+    StructuredDocument usersEntry =
+        (StructuredDocument) folderDao.getChildren(sharedNotebook).toArray()[0];
     commitTransaction();
 
     //    openTransaction();
@@ -420,9 +449,9 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     assertThat(groupShareDao.getRecordsSharedByGroup(other.getId())).hasSize(1);
     Folder sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
     // will be in idividual folder and in group folder
-    assertThat(sharedIndivid.getChildren()).hasSize(1);
+    assertThat(folderDao.getChildren(sharedIndivid)).hasSize(1);
     group = reloadGroup(group);
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildren()).hasSize(1);
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group))).hasSize(1);
     commitTransaction();
 
     sharingMgr.unshareRecord(reloadPiUser(), recordToShare.getId(), shringComands);
@@ -432,9 +461,9 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     assertThat(groupShareDao.getRecordsSharedByGroup(other.getId())).isEmpty();
     sharedIndivid = folderDao.getIndividualSharedFolderForUsers(piUser, other, null);
     // will be in idividual folder and in group folder
-    assertThat(sharedIndivid.getChildren()).isEmpty();
+    assertThat(folderDao.getChildren(sharedIndivid)).isEmpty();
     group = reloadGroup(group);
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildren()).isEmpty();
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group))).isEmpty();
     commitTransaction();
   }
 
@@ -566,14 +595,15 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     openTransaction();
     Notebook nb = createNotebookWithNEntries(owner.getRootFolder().getId(), "any", 2, owner);
     StructuredDocument notebookentry = getFirstEntryInNotebook(nb);
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildrens()).isEmpty();
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group))).isEmpty();
     commitTransaction();
 
     // share an entry
     shareRecordWithGroup(owner, group, notebookentry);
 
     openTransaction();
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildrens()).contains(notebookentry);
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group)))
+        .contains(notebookentry);
     commitTransaction();
 
     // check shared entry can be moved by pi.
@@ -593,23 +623,23 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     shareNotebookWithGroup(owner, nb, group, "write");
 
     openTransaction();
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildrens()).contains(notebookentry);
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildrens()).hasSize(2);
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group)))
+        .contains(notebookentry);
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group))).hasSize(2);
     commitTransaction();
 
     // now unshare the notebook.. should unshare the entry as well
     unshareRecordORNotebookWithGroup(owner, nb, group, "write");
 
     openTransaction();
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildrens()).isEmpty();
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group))).isEmpty();
     // neither are shared
     assertFalse(
         groupShareDao.isRecordAlreadySharedInGroup(
             group.getId(), nb.getId(), notebookentry.getId()));
     nb = folderMgr.getNotebook(nb.getId());
-    assertThat(nb.getChildren()).hasSize(2); // still has 2 entries in
+    assertThat(folderDao.getChildren(nb)).hasSize(2);
     commitTransaction();
-    // original notebook
   }
 
   @Test
@@ -634,7 +664,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     openTransaction();
     Notebook notebook = createNotebookWithNEntries(owner.getRootFolder().getId(), "any", 2, owner);
     StructuredDocument notebookentry =
-        (StructuredDocument) notebook.getChildren().iterator().next().getRecord();
+        (StructuredDocument) folderDao.getChildren(notebook).iterator().next();
     commitTransaction();
 
     // sharee can't see owner's notebook or entry because it's not shared
@@ -656,7 +686,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     openTransaction();
     sharee = reloadUser(sharee);
     notebook = folderMgr.getNotebook(notebook.getId());
-    notebookentry = (StructuredDocument) notebook.getChildren().iterator().next().getRecord();
+    notebookentry = (StructuredDocument) folderDao.getChildren(notebook).iterator().next();
     userCanViewNotebookAndEntry(sharee, notebook, notebookentry);
     commitTransaction();
 
@@ -668,7 +698,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     openTransaction();
     sharee = reloadUser(sharee);
     notebook = folderMgr.getNotebook(notebook.getId());
-    notebookentry = (StructuredDocument) notebook.getChildren().iterator().next().getRecord();
+    notebookentry = (StructuredDocument) folderDao.getChildren(notebook).iterator().next();
     userCannotViewNotebookOrEntry(sharee, notebook, notebookentry);
     commitTransaction();
   }
@@ -682,7 +712,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
   }
 
   private StructuredDocument getFirstEntryInNotebook(Notebook nb) {
-    return (StructuredDocument) nb.getChildren().iterator().next().getRecord();
+    return (StructuredDocument) folderDao.getChildren(nb).iterator().next();
   }
 
   private void userCanViewNotebookAndEntry(
@@ -710,7 +740,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
   private int getNumChildrenInRootFolder(User user) {
     openTransaction();
     Folder toCheck = user.getRootFolder();
-    int childrenSize = folderDao.get(toCheck.getId()).getChildren().size();
+    int childrenSize = folderDao.getChildren(folderDao.get(toCheck.getId())).size();
     commitTransaction();
     return childrenSize;
   }
@@ -720,11 +750,11 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     Folder toCheck = folderDao.getLabGroupFolderForUser(user);
 
     Long grpfFolderid = grp.getCommunalGroupFolderId();
-    if (toCheck.getChildren().isEmpty()) {
+    if (folderDao.getChildren(toCheck).isEmpty()) {
       commitTransaction();
       return false;
     }
-    for (BaseRecord grpFolder : toCheck.getChildrens()) {
+    for (BaseRecord grpFolder : folderDao.getChildren(toCheck)) {
       if (grpFolder.getId().equals(grpfFolderid)) {
         commitTransaction();
         return true;
@@ -751,7 +781,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     RSForm anyForm = formMgr.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            piUser.getRootFolder().getId(), anyForm.getId(), piUser, true);
+            piUser.getRootFolder().getId(), anyForm.getId(), piUser);
     other = createAndSaveRandomUser();
     initUserFolder(other);
     group = createGroup(getRandomAlphabeticString("grp1"), piUser);

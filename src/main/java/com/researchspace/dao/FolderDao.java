@@ -20,7 +20,23 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    */
   Folder getRootRecordForUser(User user);
 
+  /** One id per edge, so an item with duplicate edges appears twice. */
   List<Long> getFolderChildrenIds(Folder fd);
+
+  /**
+   * Gets the direct content of a folder or notebook, including deleted items (record or in-folder
+   * flag). Loads every item, so avoid it for folders that can be large (Workspace, shared folders).
+   */
+  List<BaseRecord> getChildren(Folder fd);
+
+  /** Whether the folder or notebook has any content, including deleted items. */
+  boolean hasChildren(Folder fd);
+
+  /**
+   * Gets a direct system subfolder by name, compared with the database collation; <code>null</code>
+   * if there is none.
+   */
+  Folder getSystemSubFolderByName(Folder parent, String name);
 
   /**
    * Get Gallery folder child of user's root folder.
@@ -107,10 +123,8 @@ public interface FolderDao extends GenericDao<Folder, Long> {
   Folder getSystemFolderForUserByName(User user, String folderName);
 
   /**
-   * Returns all sub-folders of the given folder
-   *
-   * @param rootFolder
-   * @return
+   * Returns the direct subfolders (notebooks included) of the given folder, excluding deleted
+   * folders (record flag; the in-folder flag is not checked).
    */
   List<Folder> getSubFolders(Folder rootFolder);
 

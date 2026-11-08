@@ -5,9 +5,7 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.RecordSharingACL;
 import jakarta.persistence.Transient;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.Validate;
@@ -37,11 +35,6 @@ public class DecoratedFolder extends BaseRecord {
   @Override
   protected GlobalIdPrefix getGlobalIdPrefix() {
     return GlobalIdPrefix.LF;
-  }
-
-  @Override
-  public Set<BaseRecord> getChildrens() {
-    return Collections.emptySet();
   }
 
   @Override

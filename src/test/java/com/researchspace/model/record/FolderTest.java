@@ -51,56 +51,21 @@ public class FolderTest {
   }
 
   @Test
-  public void addRecordToChildren() throws IllegalAddChildOperation {
-    assertThat(f.getChildren()).isEmpty();
-    sleep(1);
-    Folder c1 = new Folder();
-    f.addChild(c1, anyuser);
-    assertThat(f.getChildren()).hasSize(1);
-    assertEquals(f, c1.getParent());
-  }
-
-  @Test
   public void getGenerateCycleAttemptThrowsException() throws IllegalAddChildOperation {
     Folder f2 = TestFactory.createAFolder("1", anyuser);
     Folder f3 = TestFactory.createAFolder("1", anyuser);
-    f2.addChild(f3, anyuser, true);
-    assertThrows(IllegalAddChildOperation.class, () -> f3.addChild(f2, anyuser, true));
-  }
-
-  private void sleep(int i) {
-    try {
-      Thread.sleep(i);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
-
-  @Test
-  public void removeRecord() throws IllegalAddChildOperation {
-    assertThat(f.getChildren()).isEmpty();
-    sleep(1);
-    Folder c1 = new Folder();
-    f.addChild(c1, anyuser);
-    assertThat(f.getChildren()).hasSize(1);
-    f.removeChild(c1);
-    assertNull(c1.getParent());
-    assertThat(f.getChildren()).isEmpty();
+    f2.addChild(f3, anyuser);
+    assertThrows(IllegalAddChildOperation.class, () -> f3.addChild(f2, anyuser));
   }
 
   @Test
   public void copyFolder() throws InterruptedException, IllegalAddChildOperation {
     makeNestedFolders();
     t2.setDocTag("test t2 tags");
-    sleep(1);
-    Folder t1Copy = t1.copy(anyuser, true);
-    sleep(1);
-    Folder t2Copy = t1Copy.getSubfolders().iterator().next();
-    Folder t3Copy = t2Copy.getSubfolders().iterator().next();
-    assertNotNull(t2Copy);
+    Folder t2Copy = t2.copy();
     assertEquals(t2.getDocTag(), t2Copy.getDocTag());
-    assertNotNull(t3Copy);
-    assertThat(t3Copy.getChildrens()).hasSize(2);
+    assertEquals(t2.getName(), t2Copy.getName());
+    assertThat(t2Copy.getParents()).isEmpty();
   }
 
   @Test
@@ -218,7 +183,7 @@ public class FolderTest {
     Folder newRoot = new Folder();
     newRoot.setOwner(anyuser);
     f.setOwner(anyuser);
-    newRoot.addChild(f, anyuser, true);
+    newRoot.addChild(f, anyuser);
     newRoot.addType(RecordType.ROOT);
     assertTrue(f.isRootFolder()); // must can be root for a user
     assertTrue(newRoot.isRootFolderForUser(anyuser));
@@ -232,7 +197,7 @@ public class FolderTest {
 
     Folder mediaRoot = TestFactory.createAFolder("media", anyuser);
     mediaRoot.addType(RecordType.ROOT_MEDIA);
-    mediaRoot.addChild(anyFolder, anyuser, true);
+    mediaRoot.addChild(anyFolder, anyuser);
     assertEquals(GlobalIdPrefix.GF, anyFolder.getGlobalIdPrefix());
   }
 
@@ -277,8 +242,8 @@ public class FolderTest {
     User user = TestFactory.createAnyUser("us");
     Folder root = TestFactory.createAFolder("root", user);
     root.addType(RecordType.ROOT);
-    root.addChild(sharedFolder, user, true);
-    Folder added = sharedFolder.addChild(TestFactory.createAnySD(), user, true).getFolder();
+    root.addChild(sharedFolder, user);
+    Folder added = sharedFolder.addChild(TestFactory.createAnySD(), user).getFolder();
     assertEquals(added, sharedFolder);
   }
 
@@ -287,42 +252,29 @@ public class FolderTest {
     Folder templateFolder = TestFactory.createTemplateFolder(anyuser);
     Folder newFolder = TestFactory.createAFolder("any", anyuser);
     assertFalse(newFolder.getSharingACL().isPermitted(anyuser, PermissionType.DELETE));
-    templateFolder.addChild(newFolder, anyuser, true);
+    templateFolder.addChild(newFolder, anyuser);
     assertTrue(newFolder.getSharingACL().isPermitted(anyuser, PermissionType.DELETE));
-  }
-
-  @Test
-  public void processor() throws InterruptedException {
-    TestProcessor processor = new TestProcessor();
-    makeNestedFolders();
-    t1.process(processor);
-    assertEquals(3, processor.f_count);
-    assertEquals(1, processor.rec_count);
   }
 
   @Test
   public void defaultACLPRopagationPolicyDoesNotPropagatesAnonymousShareAcl()
       throws InterruptedException {
     makeNestedFolders();
-    Record record = TestFactory.createAnySD();
-    t3.addChild(record, anyuser, true);
     Folder newRoot = TestFactory.createAFolder("newParent", anyuser);
     ConstraintPermissionResolver parser = new ConstraintPermissionResolver();
     ACLElement anonymousSharedElement =
         new ACLElement(RecordGroupSharing.ANONYMOUS_USER, parser.resolvePermission("RECORD:READ:"));
     newRoot.getSharingACL().addACLElement(anonymousSharedElement);
-    newRoot.addChild(t1, anyuser, true);
+    newRoot.addChild(t1, anyuser);
     for (ACLElement el : t1.getSharingACL().getAclElements()) {
       assertFalse(el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER));
     }
   }
 
   @Test
-  public void defaultACLPRopagationPolicyPropagatesACLsToALlChildren()
+  public void defaultACLPropagationPolicyPropagatesACLsToDirectChild()
       throws InterruptedException, IllegalAddChildOperation {
     makeNestedFolders();
-    Record record = TestFactory.createAnySD();
-    t3.addChild(record, anyuser);
     Folder newRoot = TestFactory.createAFolder("newParent", anyuser);
 
     // test ADDITION
@@ -330,25 +282,20 @@ public class FolderTest {
         new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.WRITE);
     newRoot.getSharingACL().addACLElement(anyuser, perm);
     assertTrue(newRoot.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
-    // t3 does not have this permission yet..
-    assertFalse(t3.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
-    // until it is added to root - by default, inherit-from-parent policy
-    // isused.
     newRoot.addChild(t1, anyuser);
-    assertTrue(t3.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
-    assertTrue(t2.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
-    // check records as well as folders are set
-    assertTrue(record.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
+    assertTrue(t1.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
+    // FolderManager propagates to content; do it by hand so the removal below has an ACL to remove
+    assertFalse(t2.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
+    ACLPropagationPolicy.DEFAULT_POLICY.onAdd(t1, t2);
 
     // on REmoval - remove all ACLS inheriting from the old parent
     t1.removeChild(t2);
     assertTrue(t1.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
     assertFalse(t2.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
-    assertFalse(record.getSharingACL().isPermitted(anyuser, PermissionType.WRITE));
   }
 
   @Test
-  public void moreComplicatedDefaultACLPRopagationPolicyPropagatesACLsToALlChildren()
+  public void removingFromOneParentKeepsAclFromTheOther()
       throws InterruptedException, IllegalAddChildOperation {
     makeNestedFolders();
 
@@ -382,11 +329,11 @@ public class FolderTest {
     List<Folder> folders = sd.getAllAncestors();
     assertThat(folders).hasSize(3);
     Folder x = TestFactory.createAFolder("parent2", anyuser);
-    x.addChild(sd, anyuser, true);
+    x.addChild(sd, anyuser);
     assertThat(sd.getAllAncestors()).hasSize(4);
 
     // create artificial cycle in folder structure, ensure that getAllAncestors can handle it
-    folders.get(0).doAddToParentsOnly(root, anyuser);
+    folders.get(0).doAdd(root, anyuser);
     assertThat(sd.getAllAncestors()).hasSize(4);
   }
 
@@ -403,28 +350,6 @@ public class FolderTest {
     assertFalse(t2.hasAncestorOfType(RecordType.NOTEBOOK, false));
     // check top of hierarchy is handled OK
     assertFalse(root.hasAncestorOfType(RecordType.ROOT, false));
-  }
-
-  @Test
-  public void clearACLs() throws InterruptedException {
-    // setup
-    Folder root = TestFactory.createAFolder("root", anyuser);
-    ConstraintBasedPermission cbp =
-        new ConstraintBasedPermission(
-            PermissionDomain.RECORD, PermissionType.READ, PermissionType.COPY);
-    root.getSharingACL().addACLElement(new ACLElement(anyuser.getUsername(), cbp));
-    t1 = makeNestedFolders();
-    root.addChild(t1, anyuser);
-    // assert
-    assertTrue(t3.getSharingACL().isPermitted(anyuser, PermissionType.READ));
-    assertTrue(root.getSharingACL().isPermitted(anyuser, PermissionType.READ));
-    root.clearACL(false);
-    assertFalse(root.getSharingACL().isPermitted(anyuser, PermissionType.READ));
-    assertTrue(t3.getSharingACL().isPermitted(anyuser, PermissionType.READ));
-    assertTrue(sd.getSharingACL().isPermitted(anyuser, PermissionType.READ));
-    root.clearACL(true);
-    assertFalse(t3.getSharingACL().isPermitted(anyuser, PermissionType.READ));
-    assertFalse(sd.getSharingACL().isPermitted(anyuser, PermissionType.READ));
   }
 
   @Test
@@ -450,7 +375,7 @@ public class FolderTest {
     User subject = child.getOwner();
     Folder importsFlder = TestFactory.createAnImportsFolder(subject);
     new DefaultPermissionFactory().setUpAclForIndividualInboxFolder(importsFlder, subject);
-    importsFlder.addChild(child, subject, true);
+    importsFlder.addChild(child, subject);
     assertTrue(child.getSharingACL().isPermitted(subject, PermissionType.COPY));
     assertTrue(child.getSharingACL().isPermitted(subject, PermissionType.DELETE));
     assertTrue(child.getSharingACL().isPermitted(subject, PermissionType.RENAME));
@@ -474,54 +399,6 @@ public class FolderTest {
     assertNull(f.getDeletedDate());
   }
 
-  @Test
-  public void cleanPermissionsResetOnMove() {
-    Folder root1Src = TestFactory.createAFolder("rootSrc", anyuser);
-    Folder root2Dest = TestFactory.createAFolder("rootDest", anyuser);
-    Folder toMove = TestFactory.createAFolder("toMove", anyuser);
-    Folder toMoveChild = TestFactory.createAFolder("toMove", anyuser);
-    Folder toMoveGrandChild = TestFactory.createAFolder("toMove", anyuser);
-    addPermissionTo(root1Src, PermissionType.COPY, anyuser);
-    addPermissionTo(root2Dest, PermissionType.EXPORT, anyuser);
-    addPermissionTo(toMove, PermissionType.SHARE, anyuser);
-    root1Src.addChild(toMove, anyuser);
-    toMoveChild.addChild(toMoveGrandChild, anyuser);
-    toMove.addChild(toMoveChild, anyuser);
-
-    assertTrue(toMove.getSharingACL().isPermitted(anyuser, PermissionType.COPY));
-    assertTrue(toMove.getSharingACL().isPermitted(anyuser, PermissionType.SHARE));
-
-    toMove.move(root1Src, root2Dest, anyuser);
-    toMove.clearACL(true);
-    addPermissionTo(toMove, PermissionType.CREATE, anyuser);
-    ACLPropagationPolicy.DEFAULT_POLICY.onAdd(toMove, toMoveChild);
-
-    assertFalse(
-        toMove.getSharingACL().isPermitted(anyuser, PermissionType.COPY),
-        "Should lose permissions of src parent folder");
-    assertFalse(
-        toMove.getSharingACL().isPermitted(anyuser, PermissionType.EXPORT),
-        "Shouldn't acquire permissions of dest parent folder");
-    assertFalse(
-        toMove.getSharingACL().isPermitted(anyuser, PermissionType.SHARE),
-        "Should lose original perms");
-    assertTrue(
-        toMove.getSharingACL().isPermitted(anyuser, PermissionType.CREATE),
-        "Should have create permission");
-    assertTrue(
-        toMoveChild.getSharingACL().isPermitted(anyuser, PermissionType.CREATE),
-        "Child folder should inherit permission");
-    assertTrue(
-        toMoveGrandChild.getSharingACL().isPermitted(anyuser, PermissionType.CREATE),
-        "grandchild folder should inherit permission");
-  }
-
-  private void addPermissionTo(Folder folder, PermissionType permType, User user) {
-    ConstraintBasedPermission cbp =
-        new ConstraintBasedPermission(PermissionDomain.RECORD, permType);
-    folder.getSharingACL().addACLElement(new ACLElement(user.getUsername(), cbp));
-  }
-
   /** Makes a 3-deep nested folder structure with a record inside t1 /t2/t3/rtd */
   private Folder makeNestedFolders() throws InterruptedException {
     t1 = TestFactory.createAFolder("level1", anyuser);
@@ -541,21 +418,5 @@ public class FolderTest {
 
     Thread.sleep(1);
     return t1;
-  }
-}
-
-class TestProcessor implements RecordContainerProcessor {
-  int rec_count = 0;
-  int f_count = 0;
-
-  public boolean process(BaseRecord rc) {
-    System.err.println(rc.getName());
-    if (rc.isFolder()) {
-      f_count++;
-    }
-    if (rc.isStructuredDocument()) {
-      rec_count++;
-    }
-    return true;
   }
 }

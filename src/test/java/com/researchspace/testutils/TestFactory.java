@@ -245,7 +245,7 @@ public class TestFactory {
     IntStream.rangeClosed(1, numEnties)
         .forEach(
             (i) -> {
-              rtd.addChild(TestFactory.createAnySD(), owner, true);
+              rtd.addChild(TestFactory.createAnySD(), owner);
             });
     return rtd;
   }
@@ -567,7 +567,7 @@ public class TestFactory {
     Folder root = TestFactory.createAFolder("root", sd.getOwner());
     root.setId(2L);
     root.addType(RecordType.ROOT);
-    root.addChild(sd, sd.getOwner(), true);
+    root.addChild(sd, sd.getOwner());
     sd.getOwner().setRootFolder(root);
 
     sd.getFields().get(0).setFieldData("data");

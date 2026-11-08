@@ -6,6 +6,7 @@ import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,6 +16,9 @@ import com.researchspace.Constants;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.PermissionDomain;
+import com.researchspace.model.permissions.PermissionType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,9 +54,8 @@ public class NotebookTest {
   @Test
   public void addNotebookToFolder() throws IllegalAddChildOperation {
     Folder f = TestFactory.createAFolder("any", anyuser);
-    assertThat(f.getChildren()).isEmpty();
     sleep();
-    f.addChild(notebook, anyuser, true);
+    f.addChild(notebook, anyuser);
     assertEquals(f, notebook.getParent());
   }
 
@@ -69,25 +72,29 @@ public class NotebookTest {
 
     folder1 = TestFactory.createANotebook("any", anyuser);
     folder1.setDocTag("notebook tag");
-    StructuredDocument t1Doc = TestFactory.createAnySD(TestFactory.createAnyForm());
-    folder1.addChild(t1Doc, anyuser);
+    createAFolder("parent", anyuser).addChild(folder1, anyuser);
+    folder1
+        .getSharingACL()
+        .addACLElement(
+            anyuser, new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.READ));
 
-    Notebook t1Copy = (Notebook) folder1.copy(anyuser, true);
-    assertNotNull(folder1);
-    assertNotNull(t1Copy);
-    assertEquals("notebook tag", t1Copy.getDocTag());
-    assertThat(t1Copy.getChildren()).hasSize(1);
+    Folder copy = folder1.copy();
+    assertInstanceOf(Notebook.class, copy);
+    assertEquals("notebook tag", copy.getDocTag());
+    assertThat(copy.getSharingACL().getAclElements()).isEmpty();
+    assertThat(copy.getParents()).isEmpty();
+    assertThat(folder1.getParents()).hasSize(1);
+    assertTrue(folder1.getSharingACL().isPermitted(anyuser, PermissionType.READ));
   }
 
   @Test
   public void removeRecordFromNotebook() throws IllegalAddChildOperation {
-    assertThat(notebook.getChildren()).isEmpty();
     StructuredDocument c1 = TestFactory.createAnySD(TestFactory.createAnyForm());
     notebook.addChild(c1, anyuser);
-    assertThat(notebook.getChildren()).hasSize(1);
+    assertThat(c1.getParentFolders()).containsExactly(notebook);
     notebook.removeChild(c1);
     assertNull(c1.getParent());
-    assertThat(notebook.getChildren()).isEmpty();
+    assertThat(c1.getParentFolders()).isEmpty();
   }
 
   @Test
@@ -103,8 +110,7 @@ public class NotebookTest {
     notebook.addChild(sd, anyuser);
     folder1 = createAFolder("any", anyuser);
     assertTrue(sd.move(notebook, folder1, anyuser));
-    assertThat(notebook.getChildrens()).isEmpty();
-    assertThat(folder1.getChildrens()).hasSize(1);
+    assertThat(sd.getParentFolders()).containsExactly(folder1);
   }
 
   @Test
@@ -114,8 +120,7 @@ public class NotebookTest {
     // owner of notebook is not the same as document in owner
     sd.setOwner(TestFactory.createAnyUser("other"));
     assertFalse(sd.move(notebook, folder1, anyuser));
-    assertThat(notebook.getChildrens()).hasSize(1);
-    assertThat(folder1.getChildrens()).isEmpty();
+    assertThat(sd.getParentFolders()).containsExactly(notebook);
   }
 
   @Test
@@ -139,7 +144,7 @@ public class NotebookTest {
   @Test
   public void cantAddFolderToNotebook() {
     Folder f = TestFactory.createAFolder("any", anyuser);
-    assertThrows(IllegalAddChildOperation.class, () -> notebook.addChild(f, anyuser, true));
+    assertThrows(IllegalAddChildOperation.class, () -> notebook.addChild(f, anyuser));
   }
 
   /**

@@ -16,26 +16,14 @@ public class FolderTestUtils {
    * @return
    */
   public static UserFolderSetup createDefaultFolderStructure(User any) {
-    UserFolderSetup setup = new MockFolderStructure().create(any);
-    setup
-        .getUserRoot()
-        .process(
-            br -> {
-              br.setId(RandomUtils.nextLong());
-              return true;
-            });
-    return setup;
+    return createDefaultFolderStructure(new MockFolderStructure(), any, null);
   }
 
-  public static UserFolderSetup createDefaultFolderStructure(User any, FolderManager fm) {
-    UserFolderSetup setup = new MockFolderStructure().create(any, fm);
-    setup
-        .getUserRoot()
-        .process(
-            br -> {
-              br.setId(RandomUtils.nextLong());
-              return true;
-            });
+  /** As createDefaultFolderStructure, with the caller keeping hold of the created structure */
+  public static UserFolderSetup createDefaultFolderStructure(
+      MockFolderStructure structure, User any, FolderManager fm) {
+    UserFolderSetup setup = structure.create(any, fm);
+    structure.getSavedFolders().forEach(folder -> folder.setId(RandomUtils.nextLong()));
     return setup;
   }
 }

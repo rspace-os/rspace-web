@@ -240,6 +240,8 @@ public class AuditManagerImpl implements AuditManager {
     AuditedRecord asd = auditDao.getDocumentForRevision(currentDoc, revision);
 
     StructuredDocument toRestore = asd.getRecordAsDocument();
+    // parents aren't audited; merging the revision's empty set would orphan-delete every edge
+    toRestore.setParents(currentDoc.getParents());
     // clear previous delta - this must be BEFORE we notify a new delta.
     toRestore.clearDelta();
     // now, we create our own delta, since a restored document is a notifiable change.
@@ -351,10 +353,10 @@ public class AuditManagerImpl implements AuditManager {
     folder.setRecordDeleted(false);
     markRecordUndeleted(folder, user);
 
-    for (RecordToFolder rtf : folder.getChildren()) {
-      doRestoreRecord(rtf.getRecord(), user, result);
-      if (rtf.getRecord().isFolder()) {
-        doRestore((Folder) rtf.getRecord(), user, result);
+    for (BaseRecord child : folderDao.getChildren(folder)) {
+      doRestoreRecord(child, user, result);
+      if (child.isFolder()) {
+        doRestore((Folder) child, user, result);
       }
     }
 

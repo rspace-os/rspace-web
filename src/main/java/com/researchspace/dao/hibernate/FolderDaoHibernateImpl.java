@@ -116,6 +116,41 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
+  public List<BaseRecord> getChildren(Folder fd) {
+    return getSession()
+        .createQuery(
+            "SELECT rtf.record FROM RecordToFolder rtf WHERE rtf.folder.id = :parentId",
+            BaseRecord.class)
+        .setParameter("parentId", fd.getId())
+        .list();
+  }
+
+  @Override
+  public boolean hasChildren(Folder fd) {
+    return !getSession()
+        .createQuery(
+            "SELECT rtf.id FROM RecordToFolder rtf WHERE rtf.folder.id = :parentId", Long.class)
+        .setParameter("parentId", fd.getId())
+        .setMaxResults(1)
+        .list()
+        .isEmpty();
+  }
+
+  @Override
+  public Folder getSystemSubFolderByName(Folder parent, String name) {
+    Query<Folder> q =
+        getSession()
+            .createQuery(
+                "SELECT f FROM RecordToFolder rtf JOIN Folder f ON rtf.record.id = f.id WHERE"
+                    + " rtf.folder.id = :parentId AND f.systemFolder = true AND f.editInfo.name ="
+                    + " :name",
+                Folder.class)
+            .setParameter("parentId", parent.getId())
+            .setParameter("name", name);
+    return getFirstResultOrNull(q);
+  }
+
+  @Override
   public Folder getLabGroupFolderForUser(User u) {
     return getSystemFolder(Folder.LAB_GROUPS_FOLDER_NAME, u);
   }

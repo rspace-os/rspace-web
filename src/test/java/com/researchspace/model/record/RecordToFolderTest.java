@@ -20,7 +20,7 @@ class RecordToFolderTest {
     User user = TestFactory.createAnyUser("any");
     Folder f = TestFactory.createAFolder("f1", user);
     Folder f2 = TestFactory.createAFolder("f2", user);
-    f.addChild(f2, user, true);
+    f.addChild(f2, user);
     r2f = f2.getParents().iterator().next();
   }
 

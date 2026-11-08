@@ -50,7 +50,7 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     logoutAndLoginAs(u1);
     // a regular user can share a notebook, and individual entries will offer witnesses:
     Notebook nb = createNotebookWithNEntries(u1.getRootFolder().getId(), "u1nb", 2, u1);
-    StructuredDocument entry = nb.getChildrens().iterator().next().asStrucDoc();
+    StructuredDocument entry = folderDao.getChildren(nb).iterator().next().asStrucDoc();
     shareNotebookWithGroup(u1, nb, group1, "write");
 
     Set<User> recipients =
@@ -64,7 +64,7 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     logoutAndLoginAs(pi2);
     // a regular user can share a notebook, and individual entries will offer witnesses:
     Notebook nb2 = createNotebookWithNEntries(pi2.getRootFolder().getId(), "u1nb", 2, pi2);
-    StructuredDocument entry2 = nb2.getChildrens().iterator().next().asStrucDoc();
+    StructuredDocument entry2 = folderDao.getChildren(nb2).iterator().next().asStrucDoc();
     shareNotebookWithGroup(pi2, nb2, group1, "write");
 
     recipients =

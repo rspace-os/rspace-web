@@ -10,7 +10,7 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.service.DeletionPlan;
 import com.researchspace.service.FolderDeletionOrderPolicy;
 import com.researchspace.service.FolderNotSharedException;
-import java.util.Set;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DeleteFolderFromSharedFolderPolicy implements FolderDeletionOrderPolicy {
@@ -36,17 +36,17 @@ public class DeleteFolderFromSharedFolderPolicy implements FolderDeletionOrderPo
     }
     DeletionPlan plan = new DeletionPlan(subject, path, parent);
     plan.add(toDelete);
-    scanFolderForItems(plan, toDelete.getChildrens());
+    scanFolderForItems(plan, folderDao.getChildren(toDelete));
     return plan;
   }
 
-  private void scanFolderForItems(DeletionPlan plan, Set<BaseRecord> childrens) {
+  private void scanFolderForItems(DeletionPlan plan, List<BaseRecord> childrens) {
     for (BaseRecord br : childrens) {
       plan.add(br);
       // we don't want to add notebook items to be deleted - these would
       // be deleted from original notebook!
       if (br.isFolder() && !br.isNotebook()) {
-        scanFolderForItems(plan, br.getChildrens());
+        scanFolderForItems(plan, folderDao.getChildren((Folder) br));
       }
     }
   }

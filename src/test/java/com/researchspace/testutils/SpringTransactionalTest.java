@@ -22,6 +22,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
@@ -37,9 +38,13 @@ import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.stat.EntityStatistics;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
@@ -97,7 +102,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
    */
   protected int getNumChildrenInRootFolder(User user) {
     Folder toCheck = user.getRootFolder();
-    return folderDao.get(toCheck.getId()).getChildren().size();
+    return folderDao.getFolderChildrenIds(toCheck).size();
   }
 
   protected void setUpPermissionsForUser(User u) {
@@ -213,6 +218,33 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
     sessionFactory.getCurrentSession().flush();
   }
 
+  /** The record's ACL as stored in the database. */
+  protected List<ACLElement> storedAcl(Long recordId) {
+    flushDatabaseState();
+    clearSessionAndEvictAll();
+    return List.copyOf(recordMgr.get(recordId).getSharingACL().getAclElements());
+  }
+
+  /** Hibernate statistics of one entity class for the action, run on an empty session and cache. */
+  protected EntityStatistics entityStatisticsFor(Class<?> entity, Executable action) {
+    flushDatabaseState();
+    clearSessionAndEvictAll();
+    sessionFactory.getCache().evictAllRegions();
+    Statistics stats = sessionFactory.getStatistics();
+    stats.clear();
+    boolean wasEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    try {
+      action.execute();
+      flushDatabaseState();
+      return stats.getEntityStatistics(entity.getName());
+    } catch (Throwable e) {
+      return ExceptionUtils.rethrow(e);
+    } finally {
+      stats.setStatisticsEnabled(wasEnabled);
+    }
+  }
+
   /**
    * ADds n folders and m records to the specified folder. Folder names are an index suffixed by
    * 'f'. Record names are index suffixed by 'sd'
@@ -263,16 +295,6 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
     item.setLastUpdater(creator.getUsername());
     commentsDao.addCommentItem(comment, item);
     return comment;
-  }
-
-  /**
-   * Convenience method to count the numbr of child records in the root folder.
-   *
-   * @param user
-   * @return
-   */
-  protected int getNumChldrenInRootFolder(User user) {
-    return folderDao.getRootRecordForUser(user).getChildren().size();
   }
 
   protected int getTotalNumGroups() {

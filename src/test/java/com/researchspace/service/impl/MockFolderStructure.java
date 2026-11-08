@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.FolderDao;
@@ -14,6 +15,9 @@ import com.researchspace.model.record.RecordFactory;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IContentInitialiserUtils;
 import com.researchspace.service.UserFolderSetup;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.Getter;
 import org.mockito.Mockito;
 
 /**
@@ -29,9 +33,8 @@ public class MockFolderStructure {
   RecordDao recordDao = Mockito.mock(RecordDao.class);
   private FolderManager folderManagerMock = Mockito.mock(FolderManager.class);
 
-  public UserFolderSetup create(User subject) {
-    return create(subject, null);
-  }
+  /** Folders saved while creating the structure, root included */
+  @Getter private final List<Folder> savedFolders = new ArrayList<>();
 
   public UserFolderSetup create(User subject, FolderManager extfolderManagerMock) {
     if (extfolderManagerMock != null) {
@@ -53,11 +56,26 @@ public class MockFolderStructure {
     return folderCreator.initStandardFolderStructure(subject, root);
   }
 
+  /** Finds a direct system subfolder by name, as FolderDao.getSystemSubFolderByName does */
+  public Folder findSystemSubFolder(Folder parent, String name) {
+    return savedFolders.stream()
+        .filter(f -> f.isSystemFolder() && name.equals(f.getName()))
+        .filter(f -> f.getParentFolders().contains(parent))
+        .findFirst()
+        .orElse(null);
+  }
+
   private void setupMockDaos() {
+    when(folderDao.getSystemSubFolderByName(any(Folder.class), anyString()))
+        .thenAnswer(inv -> findSystemSubFolder(inv.getArgument(0), inv.getArgument(1)));
     when(folderDao.save(any(Folder.class)))
         .thenAnswer(
             invocation -> {
-              return invocation.getArgument(0);
+              Folder saved = invocation.getArgument(0);
+              if (!savedFolders.contains(saved)) {
+                savedFolders.add(saved);
+              }
+              return saved;
             });
     when(userDao.save(any(User.class)))
         .thenAnswer(

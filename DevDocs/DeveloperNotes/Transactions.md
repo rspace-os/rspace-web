@@ -112,6 +112,19 @@ unit test in `TransactionScopedVersionBumpGuardTest`.
 Never call `increaseVersion()` on an inventory record directly; route bumps
 through the helper.
 
+## Queries flush the session
+
+Before a query, Hibernate flushes pending changes to the tables it reads (auto-flush), so a
+content query inside a loop writes every record changed so far. A `StructuredDocument` usually
+counts as changed as soon as it is loaded, because `StructuredDocumentLoadListener` clears its
+delta. A document loaded before a query and changed after it is therefore written twice: once by
+the query's flush and again at commit.
+
+Load and change each record in one pass. Run lookups before the first change, and finish
+changing everything one query returned before running the next: `FolderManagerImpl`, for
+example, updates all children of a folder before descending into its subfolders. To check,
+count updates with `SpringTransactionalTest.entityStatisticsFor`.
+
 ## Transactions in tests
 
 This is covered in the 'Testing' section of

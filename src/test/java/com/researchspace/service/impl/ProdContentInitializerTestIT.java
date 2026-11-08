@@ -32,7 +32,7 @@ import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import java.util.Set;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +101,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
             });
     doInTransaction(
         () -> {
-          assertThat(folderDao.getRootRecordForUser(user).getChildrens())
+          assertThat(folderDao.getChildren(folderDao.getRootRecordForUser(user)))
               .hasSize(4); // shared + templates + examples + media
           // 3 + 4 in chem images
           assertThat(getRecordCountInFolderForUser(mediaImgExamplesId))
@@ -121,16 +121,17 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
               recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
           assertNotNull(imagesFolder);
 
-          Set<BaseRecord> subfolders = imagesFolder.getChildrens();
+          List<BaseRecord> subfolders = folderDao.getChildren(imagesFolder);
           assertEquals(1, subfolders.size()); /* just 'Examples' subfolder + 4 chem images */
           assertTrue(subfolders.stream().map(BaseRecord::getName).anyMatch("Examples"::equals));
 
-          Set<BaseRecord> exampleImages =
-              subfolders.stream()
-                  .filter(br -> br.getName().equals("Examples"))
-                  .findFirst()
-                  .get()
-                  .getChildrens();
+          List<BaseRecord> exampleImages =
+              folderDao.getChildren(
+                  (Folder)
+                      subfolders.stream()
+                          .filter(br -> br.getName().equals("Examples"))
+                          .findFirst()
+                          .get());
           assertEquals(EXPECTED_EXAMPLE_IMG_COUNT, exampleImages.size()); /* */
 
           for (BaseRecord img : exampleImages) {

@@ -1723,11 +1723,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     doInTransaction(
         () -> {
           Notebook copy = getNotebookNotById(createdNotebook, u1);
-          List<BaseRecord> copiedEntries = new ArrayList<>(copy.getChildrens());
+          List<BaseRecord> copiedEntries = new ArrayList<>(folderDao.getChildren(copy));
           copiedEntries.sort(creationDateSorter());
           Notebook original = getNotebookById(createdNotebook);
           assertFalse(original.getId().equals(copy.getId()));
-          List<BaseRecord> originalEntries = new ArrayList<>(original.getChildrens());
+          List<BaseRecord> originalEntries = new ArrayList<>(folderDao.getChildren(original));
           originalEntries.sort(creationDateSorter());
           String copies = join(copiedEntries.stream().map(r -> r.getName()).collect(toList()), ",");
           String originals =

@@ -1,6 +1,5 @@
 package com.researchspace.model.record;
 
-import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.core.GlobalIdPrefix;
@@ -29,16 +28,11 @@ public class Notebook extends Folder {
   /** Default name for new notebook */
   public static final String DEFAULT_NOTEBOOK_NAME = "Untitled Notebook";
 
-  /**
-   * Recursively copies this folder and all its subfolders and records to generate a complete copy.
-   *
-   * @return The newly copied Folder.
-   * @throws IllegalAddChildOperation
-   */
-  public Folder copy(User user, boolean recursiveCopyChildren) throws IllegalAddChildOperation {
+  @Override
+  public Notebook copy() {
     Notebook clone = new Notebook();
     copyBasicFolderFields(clone);
-    doCopy(user, recursiveCopyChildren, clone);
+    shallowCopyRecordInfo(clone);
     clone.setSharingACL(null);
     return clone;
   }
