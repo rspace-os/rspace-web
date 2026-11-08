@@ -315,7 +315,7 @@ public class StructuredDocumentController extends BaseController {
     StructuredDocument newRecord = null;
     List<RecordGroupSharing> sharedWithGroup = null;
     try {
-      newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user, true);
+      newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user);
       if (newRecord == null) {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }

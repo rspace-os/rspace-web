@@ -47,7 +47,6 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.UserSessionTracker;
 import java.io.InvalidObjectException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -446,24 +445,17 @@ public class RecordDeletionManagerImpl implements RecordDeletionManager {
 
   private void iterateAndDelete(
       Folder folderToDelete, User userDeleting, CompositeRecordOperationResult result) {
-    List<RecordToFolder> toDeleteFrom = new ArrayList<>();
-    toDeleteFrom.addAll(folderToDelete.getChildren());
-    for (RecordToFolder r2f : toDeleteFrom) {
-
-      if (!r2f.getRecord().isFolder()) {
+    for (BaseRecord child : folderDao.getChildren(folderToDelete)) {
+      if (!child.isFolder()) {
         try {
           deleteRecordOrEntry(
-              null,
-              folderToDelete.getId(),
-              r2f.getRecord().getId(),
-              userDeleting,
-              DeletionContext.FOLDER);
-          result.addRecord(r2f.getRecord());
+              null, folderToDelete.getId(), child.getId(), userDeleting, DeletionContext.FOLDER);
+          result.addRecord(child);
         } catch (DocumentAlreadyEditedException | IllegalAddChildOperation e) {
-          log.warn("Could not delete document {}, skipping: ", r2f.getRecord().getId(), e);
+          log.warn("Could not delete document {}, skipping: ", child.getId(), e);
         }
       } else {
-        doDeleteFolder(folderToDelete, (Folder) r2f.getRecord(), userDeleting, result);
+        doDeleteFolder(folderToDelete, (Folder) child, userDeleting, result);
       }
     }
   }

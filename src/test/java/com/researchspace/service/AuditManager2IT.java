@@ -318,7 +318,10 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     for (Folder original : children) {
       Folder refreshed = folderDao.get(original.getId());
       assertFalse(refreshed.isDeleted());
-      assertThat(refreshed.getChildren()).noneMatch(RecordToFolder::isRecordInFolderDeleted);
+      assertThat(folderDao.getChildren(refreshed))
+          .flatExtracting(BaseRecord::getParents)
+          .filteredOn(rtf -> rtf.getFolder().equals(refreshed))
+          .noneMatch(RecordToFolder::isRecordInFolderDeleted);
     }
     commitTransaction();
   }
@@ -409,6 +412,11 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     StructuredDocument newCurrent = (StructuredDocument) recordMgr.get(DOC_ID);
     assertUserVersionIncremented(doc, newCurrent);
     assertFalse(newCurrent.isDeleted());
+    assertThat(doc.getParentFolders()).isNotEmpty();
+    assertThat(newCurrent.getParentFolders())
+        .extracting(Folder::getId)
+        .containsExactlyInAnyOrderElementsOf(
+            doc.getParentFolders().stream().map(Folder::getId).toList());
 
     // now check that cannot restore from signed document
     newCurrent.setSigned(true);
@@ -628,8 +636,9 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     User other2 = userMgr.get(other.getId());
     grp = grpMgr.getGroup(grp.getId()); // refresh grp with shared folder id
     Folder labGrpFlder = folderDao.getSharedFolderForGroup(grp);
-    assertThat(labGrpFlder.getChildren()).hasSize(1);
-    BaseRecord shared = (BaseRecord) labGrpFlder.getChildren().iterator().next().getRecord();
+    List<BaseRecord> children = folderDao.getChildren(labGrpFlder);
+    assertThat(children).hasSize(1);
+    BaseRecord shared = children.get(0);
     commitTransaction();
     assertEquals(1, getTotalSearchHitsInFolder(labGrpFlder));
 
@@ -690,7 +699,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     other = userMgr.getUserByUsername(other.getUsername());
     grp = grpMgr.getGroup(grp.getId()); // update group from DB
     Folder shared = folderDao.getSharedFolderForGroup(grp);
-    assertThat(shared.getChildren()).hasSize(1);
+    assertThat(folderDao.getChildren(shared)).hasSize(1);
     commitTransaction();
 
     // now the owner deletes the top-level child folder:

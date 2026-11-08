@@ -208,7 +208,6 @@ public class GroupManagerImpl implements GroupManager {
       Folder labFolder = getSharedGroupFolderParentForUser(group, userToAdd);
       labFolder.addChild(
           grpFolder, ChildAddPolicy.DEFAULT, userToAdd, ACLPropagationPolicy.NULL_POLICY);
-      folderDao.save(labFolder);
       folderDao.save(grpFolder);
 
       // now we add this new group member's home folder to group admin's folders
@@ -216,18 +215,12 @@ public class GroupManagerImpl implements GroupManager {
     }
     if (group.getSharedSnippetGroupFolderId() != null) {
       Folder sharedSnippetFolder = folderDao.get(group.getSharedSnippetGroupFolderId());
-      String groupFolderName =
-          group.isCollaborationGroup()
-              ? Folder.COLLABORATION_GROUPS_FLDER_NAME
-              : group.isProjectGroup()
-                  ? Folder.PROJECT_GROUPS_FOLDER_NAME
-                  : Folder.LAB_GROUPS_FOLDER_NAME;
-      String parentFolderName = SHARED_SNIPPETS_FOLDER_PREFIX + groupFolderName;
+      String parentFolderName = SHARED_SNIPPETS_FOLDER_PREFIX + groupsFolderName(group);
       Folder parentForSharedSnippetFolder =
           folderDao.getSystemFolderForUserByName(userToAdd, parentFolderName);
       parentForSharedSnippetFolder.addChild(
           sharedSnippetFolder, ChildAddPolicy.DEFAULT, userToAdd, ACLPropagationPolicy.NULL_POLICY);
-      folderDao.save(parentForSharedSnippetFolder);
+      folderDao.save(sharedSnippetFolder);
     }
 
     notifyUserAddedToGroup(group, userToAdd);
@@ -311,15 +304,23 @@ public class GroupManagerImpl implements GroupManager {
     return grp;
   }
 
+  private static String groupsFolderName(Group grp) {
+    if (grp.isCollaborationGroup()) {
+      return Folder.COLLABORATION_GROUPS_FLDER_NAME;
+    }
+    if (grp.isProjectGroup()) {
+      return Folder.PROJECT_GROUPS_FOLDER_NAME;
+    }
+    return Folder.LAB_GROUPS_FOLDER_NAME;
+  }
+
   private void removeCommunalFolderFromParent(Folder communalGrp, String uname) {
     for (RecordToFolder r2f : communalGrp.getParents()) {
       if (r2f.getUserName().equals(uname)) {
-        r2f.getFolder().removeChild(communalGrp);
-        folderDao.save(r2f.getFolder());
+        folderMgr.removeBaseRecordFromFolder(communalGrp, r2f.getFolder().getId());
         break;
       }
     }
-    folderDao.save(communalGrp);
   }
 
   private void removeUserFoldersAndLabAdminPermissions(
@@ -495,23 +496,12 @@ public class GroupManagerImpl implements GroupManager {
         // If it has then this group shared folder is added as a child to the user's folder
         // 'SNIPPETS/SHARED/LAbGroup or CollaborationGroup
         Folder snippetSharedFolder =
-            snippetFolder.getSystemSubFolderByName(
-                SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+            folderDao.getSystemSubFolderByName(
+                snippetFolder, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
         if (snippetSharedFolder != null) {
-          Folder parentForSharedSnippets = null;
-          if (grp.isCollaborationGroup()) {
-            parentForSharedSnippets =
-                snippetSharedFolder.getSystemSubFolderByName(
-                    SHARED_SNIPPETS_FOLDER_PREFIX + Folder.COLLABORATION_GROUPS_FLDER_NAME);
-          } else if (grp.isProjectGroup()) {
-            parentForSharedSnippets =
-                snippetSharedFolder.getSystemSubFolderByName(
-                    SHARED_SNIPPETS_FOLDER_PREFIX + Folder.PROJECT_GROUPS_FOLDER_NAME);
-          } else {
-            parentForSharedSnippets =
-                snippetSharedFolder.getSystemSubFolderByName(
-                    SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
-          }
+          Folder parentForSharedSnippets =
+              folderDao.getSystemSubFolderByName(
+                  snippetSharedFolder, SHARED_SNIPPETS_FOLDER_PREFIX + groupsFolderName(grp));
           folderMgr.addChild(
               parentForSharedSnippets.getId(),
               grpSharedSnippetFolder,
@@ -560,17 +550,13 @@ public class GroupManagerImpl implements GroupManager {
     contentUtils.addChild(sharedFolder, projectGroupsShared, u);
 
     Folder snippetFolder = recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, u);
-    Folder snippetSharedFolder;
-    if (snippetFolder.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
-        == null) {
+    Folder snippetSharedFolder =
+        folderDao.getSystemSubFolderByName(
+            snippetFolder, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+    if (snippetSharedFolder == null) {
       snippetSharedFolder =
           recordFactory.createSystemCreatedFolder(
               SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME, u);
-    } else {
-      snippetSharedFolder =
-          snippetFolder.getSystemSubFolderByName(
-              UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     }
     Folder projectGroupsSnippets =
         recordFactory.createSystemCreatedFolder(
@@ -612,10 +598,7 @@ public class GroupManagerImpl implements GroupManager {
         Folder groupMemberRoot = folderDao.getRootRecordForUser(addedMember);
         groupMemberRoot = daoUtils.initializeAndUnproxy(groupMemberRoot);
 
-        groupMemberRoot.getId();
-        groupMemberRoot.getParents().size();
-
-        if (!adminLabGroupsFolder.getChildrens().contains(groupMemberRoot)) {
+        if (!groupMemberRoot.getParentFolders().contains(adminLabGroupsFolder)) {
 
           ServiceOperationResult<Folder> result =
               folderMgr.addChild(

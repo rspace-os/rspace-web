@@ -50,34 +50,34 @@ public class CycleSafeIteratorTest {
     assertThat(it).isExhausted();
     assertThrows(NoSuchElementException.class, it::next);
     // f1->f2->f3,f1->f4
-    f1.doAddToParentsOnly(f2, u);
-    f1.doAddToParentsOnly(f4, u);
-    f2.doAddToParentsOnly(f3, u);
+    f1.doAdd(f2, u);
+    f1.doAdd(f4, u);
+    f2.doAdd(f3, u);
 
     it = new CycleSafeIterator(f3);
     assertNElementsIterated(2, it);
 
-    f4.doAddToParentsOnly(f3, u);
+    f4.doAdd(f3, u);
     it = new CycleSafeIterator(f3);
     assertNElementsIterated(3, it);
 
     // redundant edge, f3 already reachable to f1 via f2
-    f1.doAddToParentsOnly(f3, u);
+    f1.doAdd(f3, u);
     it = new CycleSafeIterator(f3);
     assertNElementsIterated(3, it);
 
-    f5.addChild(f1, u, true);
+    f5.addChild(f1, u);
     it = new CycleSafeIterator(f3);
     assertNElementsIterated(4, it);
     it = new CycleSafeIterator(f4);
     assertNElementsIterated(2, it);
 
     // forcibly create cycle by calling method which does not check for cycles.
-    f7.doAddToParentsOnly(f1, u);
-    f3.doAddToParentsOnly(f7, u);
+    f7.doAdd(f1, u);
+    f3.doAdd(f7, u);
     boolean addexception = false;
     try {
-      f1.addChild(f6, u, true);
+      f1.addChild(f6, u);
     } catch (IllegalAddChildOperation e) {
       addexception = true;
     }
@@ -100,7 +100,7 @@ public class CycleSafeIteratorTest {
     for (int i = 1; i < NUM_FOLDERS; i++) {
       flders[i] = TestFactory.createAFolder(i + "", u);
       flders[i].setId((long) i + 1);
-      flders[i - 1].addChild(flders[i], u, true);
+      flders[i - 1].addChild(flders[i], u);
     }
     CycleSafeIterator cycleIt = new CycleSafeIterator(flders[NUM_FOLDERS - 1]);
     Set<Long> visited = new HashSet<>();

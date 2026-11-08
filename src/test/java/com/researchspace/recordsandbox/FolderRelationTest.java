@@ -37,14 +37,10 @@ public class FolderRelationTest {
     Folder child = TestFactory.createAFolder("2", owner);
     parent.addChild(child, owner);
 
-    assertThat(parent.getChildrens()).hasSize(1);
-    assertEquals(child, parent.getChildrens().iterator().next());
-
     assertThat(child.getParentFolders()).hasSize(1);
     assertEquals(parent, child.getParentFolders().iterator().next());
 
     assertTrue(parent.removeChild(child));
-    assertThat(parent.getChildrens()).isEmpty();
     assertThat(child.getParentFolders()).isEmpty();
 
     assertFalse(parent.removeChild(TestFactory.createAFolder("3", owner)));
@@ -208,7 +204,6 @@ public class FolderRelationTest {
     ROOT_NODE = createComplexGraph();
     assertTrue(c.move(b, a, owner));
     assertThat(c.getParentFolders()).contains(a);
-    assertThat(a.getChildrens()).contains(c);
     assertThat(c.getParentFolders()).doesNotContain(b);
 
     // can't move into subfolder of oneself

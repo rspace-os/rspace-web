@@ -288,29 +288,28 @@ public class FileTreeController extends BaseController {
     dir = java.net.URLDecoder.decode(dir, "UTF-8");
 
     boolean isTopFolder = "/".equals(dir);
-    Folder targetFolder = null;
+    Folder targetFolder;
     if (isTopFolder) {
-      targetFolder = folderManager.getMediaFolderFromURLPath(dir, user);
+      targetFolder = folderManager.getGalleryRootFolderForUser(user);
+      if (targetFolder == null) {
+        throw new IllegalStateException(
+            String.format("No root folder for user %s", user.getUsername()));
+      }
     } else {
-      targetFolder = folderManager.getInitialisedFolder(getFolderIdFromDir(dir), user, null);
+      targetFolder = folderManager.getFolder(getFolderIdFromDir(dir), user);
     }
 
-    if (targetFolder != null) {
-      List<Folder> folders = new ArrayList<Folder>();
-      for (BaseRecord record : targetFolder.getChildrens()) {
-        // we only want to show regular active folders
-        if (record.isFolder() && !record.isDeleted()) {
-          if (!isTopFolder || record.getName().equals(mediatype)) {
-            folders.add((Folder) record);
-          }
-        }
+    List<Folder> folders = new ArrayList<Folder>();
+    for (Folder subfolder : folderManager.getSubFolders(targetFolder)) {
+      if (!isTopFolder || subfolder.getName().equals(mediatype)) {
+        folders.add(subfolder);
       }
-      SearchUtils.sortList(folders, DEFAULT_TREE_PAGINATION);
-      List<Folder> results =
-          new SearchResultsImpl<Folder>(folders, DEFAULT_TREE_PAGINATION, folders.size())
-              .getResults();
-      model.addAttribute("results", results);
     }
+    SearchUtils.sortList(folders, DEFAULT_TREE_PAGINATION);
+    List<Folder> results =
+        new SearchResultsImpl<Folder>(folders, DEFAULT_TREE_PAGINATION, folders.size())
+            .getResults();
+    model.addAttribute("results", results);
     return "moveDialogTreeView";
   }
 }

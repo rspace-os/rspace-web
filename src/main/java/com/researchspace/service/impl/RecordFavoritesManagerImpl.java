@@ -1,10 +1,12 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordUserFavoritesDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.FavoritesStatus;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordUserFavorites;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.RecordFavoritesManager;
@@ -24,6 +26,7 @@ public class RecordFavoritesManagerImpl implements RecordFavoritesManager {
   private @Autowired RecordUserFavoritesDao recordUserFavoritesDao;
   private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired UserDao userDao;
+  private @Autowired FolderDao folderDao;
 
   public RecordUserFavorites get(Long recordId, Long userId) {
     return recordUserFavoritesDao.get(recordId, userId);
@@ -71,8 +74,8 @@ public class RecordFavoritesManagerImpl implements RecordFavoritesManager {
     BaseRecord baseRecord = baseRecordManager.get(recordId, user, true);
     deleteFavoriteRecord(recordId, user.getId());
     if (baseRecord.isFolder() || baseRecord.isNotebook()) {
-      for (BaseRecord children : baseRecord.getChildrens()) {
-        deleteFavorites(children.getId(), user);
+      for (Long childId : folderDao.getFolderChildrenIds((Folder) baseRecord)) {
+        deleteFavorites(childId, user);
       }
     }
   }

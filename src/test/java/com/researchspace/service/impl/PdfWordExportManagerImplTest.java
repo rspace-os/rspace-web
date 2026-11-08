@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,13 +26,14 @@ import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.export.pdf.HTMLStringGenerator;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RecordContainerProcessor;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.CommunicationManager;
@@ -43,6 +45,7 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -163,7 +166,15 @@ public class PdfWordExportManagerImplTest {
     config.setExportScope(ExportScope.SELECTION);
     Folder folder = TestFactory.createAFolder("empty", anyUser);
     folder.setId(1L);
-    when(fMger.getFolder(1L, anyUser, SearchDepth.INFINITE)).thenReturn(folder);
+    when(fMger.getFolder(1L, anyUser, true)).thenReturn(folder);
+    List<BaseRecord> content = new ArrayList<>(List.of(folder));
+    doAnswer(
+            inv -> {
+              content.forEach(inv.<RecordContainerProcessor>getArgument(1)::process);
+              return null;
+            })
+        .when(fMger)
+        .process(same(folder), any());
     when(permissions.isPermitted(folder, PermissionType.READ, anyUser)).thenReturn(true);
     ReflectionTestUtils.setField(pdfExporter, "exportProcessors", List.of(processor));
     if (mergeFailure) {
@@ -171,6 +182,7 @@ public class PdfWordExportManagerImplTest {
       doc.setOwner(anyUser);
       doc.setId(2L);
       folder.addChild(doc, anyUser);
+      content.add(doc);
       when(recordManager.getRecordWithFields(2L, anyUser)).thenReturn(doc);
       when(permissions.isPermitted(doc, PermissionType.READ, anyUser)).thenReturn(true);
       when(htmlStringGenerator.extractHtmlStr(doc, config))

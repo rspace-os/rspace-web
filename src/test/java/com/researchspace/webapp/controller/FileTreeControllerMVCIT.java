@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -119,6 +120,34 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
     assertDocumentIncluded(records, f3, toTreeViewItem(d1), false, false);
   }
 
+  @Test
+  public void galleryMoveDialogListsActiveSubfolders() throws Exception {
+    User any = createInitAndLoginAnyUser();
+    Folder images = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, any);
+    Folder sub = createSubFolder(images, "sub", any);
+    Folder deletedSub = createSubFolder(images, "deletedSub", any);
+    recordDeletionMgr.deleteFolder(images.getId(), deletedSub.getId(), any);
+
+    assertThat(listGalleryMoveTargets("/", any)).containsExactly(images);
+    assertThat(listGalleryMoveTargets(images.getId() + "/", any))
+        .contains(sub)
+        .doesNotContain(deletedSub);
+  }
+
+  private List<Folder> listGalleryMoveTargets(String dir, User user) throws Exception {
+    ModelAndView m =
+        this.mockMvc
+            .perform(
+                post("/fileTree/ajax/gallery")
+                    .param("dir", dir)
+                    .param("mediatype", IMAGES_MEDIA_FLDER_NAME)
+                    .principal(new MockPrincipal(user.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getModelAndView();
+    return getListFromModel(m, "results", Folder.class);
+  }
+
   private TreeViewItem toTreeViewItem(StructuredDocument d1) {
     // we're only needing the ID here.
     return new TreeViewItem(d1.getId(), null, null, false, null, null, null);
@@ -229,8 +258,8 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
     assertThat(resPi).isEmpty();
 
     logoutAndLoginAs(user);
-    Folder folder = folderMgr.getInitialisedFolder(groupSharedFolderId, user, null);
-    assertThat(folder.getChildrens()).hasSize(2);
+    assertThat(folderMgr.getFolderChildrenIds(folderMgr.getFolder(groupSharedFolderId, user)))
+        .hasSize(2);
 
     // only notebook shared for write should be returned when other user lists directories
     ModelAndView viewUser =

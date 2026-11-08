@@ -304,13 +304,10 @@ public class OntologyDocManager {
   }
 
   private Folder getOntologiesFolder(User user, Folder folder) {
-    Set<BaseRecord> contents = folder.getChildrens();
     Folder ontologiesFolder = null;
-    for (BaseRecord item : contents) {
-      if (item instanceof Folder) {
-        if (item.getName().equals("Ontologies") && !item.isDeleted()) {
-          ontologiesFolder = (Folder) item;
-        }
+    for (Folder subfolder : folderManager.getSubFolders(folder)) {
+      if (subfolder.getName().equals("Ontologies")) {
+        ontologiesFolder = subfolder;
       }
     }
     if (ontologiesFolder == null) {

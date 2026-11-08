@@ -128,7 +128,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
           q.setParameter("name", Folder.TEMPLATE_MEDIA_FOLDER_NAME);
           q.setParameter("creator", user.getUsername());
           Folder f = q.uniqueResult();
-          assertThat(f.getChildrens().size()).isGreaterThan(0);
+          assertThat(folderDao.getChildren(f).size()).isGreaterThan(0);
         });
   }
 

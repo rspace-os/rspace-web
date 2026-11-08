@@ -3,7 +3,6 @@ package com.researchspace.model.record;
 import static com.researchspace.model.RecordGroupSharing.ANONYMOUS_USER;
 import static java.util.stream.Collectors.toCollection;
 
-import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.IDescribable;
 import com.researchspace.model.Group;
 import com.researchspace.model.IFieldLinkableElement;
@@ -124,9 +123,6 @@ public abstract class BaseRecord
 
   /** */
   public static final String LINEAGE_DELIMITER = "|";
-
-  /** Default filter does no filtering - always returns <code>true</code>. */
-  protected static final CollectionFilter<BaseRecord> DEFAULT_FILTER = baseRecord -> true;
 
   private static final FolderTraversalTerminator NULL_TERMINATOR = (current, child) -> false;
 
@@ -352,9 +348,6 @@ public abstract class BaseRecord
     return this instanceof TaggableElnRecord;
   }
 
-  @Transient
-  public abstract Set<BaseRecord> getChildrens();
-
   /**
    * Returns the single parent, if this folder does just have one parent. This is until we have
    * added support for shared folders
@@ -451,26 +444,22 @@ public abstract class BaseRecord
    * @return a possibly empty but non-null Set of RecordToFolder
    */
   @NotAudited
-  // CascadeType.PERSIST is required under Hibernate 6: Hibernate 5's saveOrUpdate() cascaded via
-  // the Hibernate-specific SAVE_UPDATE type, persisting new RecordToFolder entries reachable via
-  // this collection even without an explicit PERSIST cascade. Hibernate 6 is strict JPA and
-  // requires PERSIST to be declared. Without it, code paths that add a new RecordToFolder only to
-  // record.parents (via skipAddingToChildren=true) and then call save(record) would silently drop
-  // the relationship (DocumentCopyManagerImpl, RecordSharingManagerImpl).
+  // orphanRemoval: saving a copy whose parents set was never filled (an Envers revision)
+  // deletes all its edges.
+  // ALL, not PERSIST: native bootstrap cascades only SAVE_UPDATE at flush on Hibernate 6
   @OneToMany(
       mappedBy = "record",
       fetch = FetchType.EAGER,
-      cascade = {CascadeType.REFRESH, CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST})
+      orphanRemoval = true,
+      cascade = CascadeType.ALL)
   @BatchSize(size = 50)
   public Set<RecordToFolder> getParents() {
     return parents;
   }
 
   /**
-   * For internal use by hibernate, or to manipulate detached objects to avoid JSON cycles.
-   * Manipulating parent/child relations should be done through Folder add/remove operations.
-   *
-   * @param parents
+   * For Hibernate, or to give an unmanaged revision copy the current record's parents. Never
+   * replace the set of a managed record (orphanRemoval); use Folder add/remove operations.
    */
   public void setParents(Set<RecordToFolder> parents) {
     this.parents = parents;
@@ -1303,14 +1292,6 @@ public abstract class BaseRecord
    */
   public void setFavoriteStatus(FavoritesStatus status) {
     this.favoriteStatus = status;
-  }
-
-  /**
-   * Clears all ACLs from this Folder. If <code>recurse == true</code> then descendants will also
-   * have their ACLs removed. For non-folders, the value of recurse will have no effect.
-   */
-  public void clearACL(boolean recurse) {
-    this.getSharingACL().clear();
   }
 
   BaseRecord unionACL(RecordSharingACL other) {

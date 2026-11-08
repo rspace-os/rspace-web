@@ -8,7 +8,6 @@ import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
 import static com.researchspace.model.core.RecordType.TEMPLATE;
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 
-import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.TaggableElnRecord;
@@ -18,22 +17,16 @@ import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Lob;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Predicate;
-import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
-import org.hibernate.envers.NotAudited;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -90,9 +83,6 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
   @Setter private String docTag;
   @Setter private String tagMetaData;
 
-  @Setter(AccessLevel.PACKAGE)
-  private Set<RecordToFolder> children = new HashSet<>();
-
   public Folder(ImportOverride override) {
     super(override);
   }
@@ -116,12 +106,6 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
   @Lob
   public String getTagMetaData() {
     return tagMetaData;
-  }
-
-  @NotAudited
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "folder", orphanRemoval = true)
-  public Set<RecordToFolder> getChildren() {
-    return children;
   }
 
   /**
@@ -191,6 +175,8 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
   }
 
   /**
+   * Updates the ACL of the child only, not of its content; use FolderManager for that.
+   *
    * @param child
    * @param policy
    * @param owner
@@ -200,11 +186,7 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
    * @throws IllegalAddChildOperation if adding this child will create a cycle..
    */
   public RecordToFolder addChild(
-      BaseRecord child,
-      ChildAddPolicy policy,
-      User owner,
-      ACLPropagationPolicy aclPolicy,
-      boolean skipAddingToChildren)
+      BaseRecord child, ChildAddPolicy policy, User owner, ACLPropagationPolicy aclPolicy)
       throws IllegalAddChildOperation {
     // no self edges
     if (this.equals(child)) {
@@ -220,16 +202,11 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
           "folder.addChild.errors.cycle", child.getName(), this.getName());
     }
 
-    RecordToFolder newedge = doAdd(child, owner, skipAddingToChildren);
+    RecordToFolder newedge = doAdd(child, owner);
     if (newedge != null) {
       postProcess(child, aclPolicy);
     }
     return newedge;
-  }
-
-  public RecordToFolder addChild(
-      BaseRecord child, ChildAddPolicy policy, User owner, ACLPropagationPolicy aclPolicy) {
-    return addChild(child, policy, owner, aclPolicy, false);
   }
 
   /*
@@ -257,31 +234,10 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
     }
   }
 
-  RecordToFolder doAdd(BaseRecord child, User owner, boolean skipAddingToChildren) {
+  RecordToFolder doAdd(BaseRecord child, User owner) {
     RecordToFolder newedge = new RecordToFolder(child, this, owner.getUsername());
-
-    boolean addedP = child.parents.add(newedge);
-    if (!addedP) {
-      return null;
-    }
-    boolean addedC = true;
-    if (!skipAddingToChildren) {
-      /* it can be skipped without any functional disruption (since hibernate recognizes the
-      change just from the `child.parents` when we persist the child), otherwise needs
-      to load the children set, which is very inefficient for large folders */
-      addedC = children.add(newedge);
-    }
-    if (addedC) {
-      return newedge;
-    }
-    return null;
-  }
-
-  /*
-   * Package scoped for testing; do not use externally; use addChild
-   */
-  void doAddToParentsOnly(BaseRecord child, User owner) {
-    doAdd(child, owner, true);
+    // the getter, not the field: on a Hibernate proxy the field is an unmapped empty set
+    return child.getParents().add(newedge) ? newedge : null;
   }
 
   /**
@@ -303,20 +259,11 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
    * @return the RecordToFolder relationship, or <code>null</code> if it could not be created.
    * @throws IllegalAddChildOperation
    */
-  public RecordToFolder addChild(BaseRecord child, User owner, boolean skipAddingToChildren)
-      throws IllegalAddChildOperation {
-    return addChild(
-        child,
-        ChildAddPolicy.DEFAULT,
-        owner,
-        ACLPropagationPolicy.DEFAULT_POLICY,
-        skipAddingToChildren);
-  }
-
   public RecordToFolder addChild(BaseRecord child, User owner) throws IllegalAddChildOperation {
-    return addChild(child, owner, false);
+    return addChild(child, ChildAddPolicy.DEFAULT, owner, ACLPropagationPolicy.DEFAULT_POLICY);
   }
 
+  /** Updates the ACL of the child only, not of its content; use FolderManager for that. */
   public boolean removeChild(BaseRecord child, ACLPropagationPolicy aclPolicy) {
     RecordToFolder toRemove = null;
     // find record in child's parent relations
@@ -329,9 +276,6 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
 
     if (toRemove != null) {
       boolean removedOK = child.getParents().remove(toRemove);
-      /* try removing from children, but continue if recordToFolder is not there,
-      which can happen if addChild() method was called with 'skipAddingToChildren=true' */
-      children.remove(toRemove);
       if (removedOK) {
         aclPolicy.onRemove(this, child);
         return true;
@@ -340,134 +284,22 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
     return false;
   }
 
-  /**
-   * Standard way to remove a child from the object graph of this folder.
-   *
-   * @param child
-   * @return
-   */
   public boolean removeChild(BaseRecord child) {
     return removeChild(child, ACLPropagationPolicy.DEFAULT_POLICY);
   }
 
-  /**
-   * Visitor-pattern method that iterates over the folder tree, calling the <em>process()</em>
-   * method of the supplied {@link RecordContainerProcessor} on each record and folder.
-   *
-   * @param processor A non-null RecordContainerProcessor.
-   */
-  public void process(RecordContainerProcessor processor) {
-    if (processor == null) {
-      throw new IllegalArgumentException("processor was null!");
-    }
-    boolean toContinue = processor.process(this);
-    if (!toContinue) {
-      return;
-    }
-    for (RecordToFolder rtf : getChildren()) {
-      if (!rtf.getRecord().isFolder()) {
-        processor.process(rtf.getRecord());
-      }
-    }
-    for (BaseRecord child : getChildrens()) {
-      if (child.isFolder()) {
-        ((Folder) child).process(processor);
-      }
-    }
-  }
-
-  /**
-   * Gets children records / subfolders of this folder.
-   *
-   * @deprecated the method loads all children of the folder, which may be very inefficient; rethink
-   *     if you really need to operate on everything inside the folder, and even if you do, use
-   *     direct db query
-   */
-  @Deprecated
-  @Transient
-  public Set<BaseRecord> getChildrens() {
-    return getChildrens(DEFAULT_FILTER);
-  }
-
-  /**
-   * Gets child records filtered by a {@link CollectionFilter}
-   *
-   * @deprecated the method iterates over all children of the folder, which may be very inefficient;
-   *     you should rather use direct db query, with the requested filter
-   * @param rf
-   */
-  @Deprecated
-  @Transient
-  public Set<BaseRecord> getChildrens(CollectionFilter<BaseRecord> rf) {
-    Set<BaseRecord> rc = new HashSet<>();
-    for (RecordToFolder rel : children) {
-      if (rf != null && rf.filter(rel.getRecord())) {
-        rc.add(rel.getRecord());
-      } else if (rf == null) {
-        rc.add(rel.getRecord());
-      }
-    }
-    return rc;
-  }
-
-  /**
-   * Convenience method to return only subfolders of this folder, ignoring any records as children.
-   *
-   * @deprecated the method iterates over all children of the folder, which may be very inefficient;
-   *     you should rather retrieve subfolders with direct db query
-   * @return a non-null {@link Set} of subfolders
-   */
-  @Deprecated
-  @Transient
-  public Set<Folder> getSubfolders() {
-    Set<Folder> rc = new HashSet<>();
-    for (RecordToFolder rel : children) {
-      if (rel.getRecord().isFolder()) {
-        rc.add((Folder) rel.getRecord());
-      }
-    }
-    return rc;
-  }
-
-  /**
-   * Recursively copies this folder and all its subfolders and records to generate a complete copy.
-   *
-   * @param user the authenticated user performing the copy operation
-   * @param recursiveCopyChildren whether or not to recurse into subfolders
-   * @return The newly copied Folder.
-   * @throws IllegalAddChildOperation
-   */
-  public Folder copy(User user, boolean recursiveCopyChildren) throws IllegalAddChildOperation {
+  /** Copies the folder without its content; FolderManager copies a whole subtree. */
+  @Override
+  public Folder copy() {
     Folder clone = new Folder();
     copyBasicFolderFields(clone);
-    doCopy(user, recursiveCopyChildren, clone);
+    shallowCopyRecordInfo(clone);
     return clone;
   }
 
   protected void copyBasicFolderFields(Folder clone) {
     clone.setDocTag(getDocTag());
     clone.setTagMetaData(getTagMetaData());
-  }
-
-  protected void doCopy(User user, boolean recursiveCopyChildren, Folder clone)
-      throws IllegalAddChildOperation {
-    try {
-      Thread.sleep(1);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    this.shallowCopyRecordInfo(clone);
-    if (recursiveCopyChildren) {
-      for (RecordToFolder r : getChildren()) {
-        if (r.getRecord().isFolder()) {
-          Folder f = ((Folder) r.getRecord()).copy(user, true);
-          clone.addChild(f, user);
-        } else {
-          BaseRecord r2 = r.getRecord().copy();
-          clone.addChild(r2, user);
-        }
-      }
-    }
   }
 
   @Transient
@@ -511,34 +343,6 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
     return isSystemFolder() ? DOCUMENT_CATEGORIES.SYSTEM_FOLDER : DOCUMENT_CATEGORIES.FOLDER;
   }
 
-  /**
-   * Gets an immediate child system folder by name, or <code>null</code> if not found.
-   *
-   * @deprecated the method iterates over children of the folder, which may be very inefficient; you
-   *     should rather retrieve requested folder with direct db query
-   */
-  @Deprecated
-  @Transient
-  public Folder getSystemSubFolderByName(String name) {
-    for (BaseRecord child : getChildrens()) {
-      if (child.isFolder() && ((Folder) child).isSystemFolder() && child.getName().equals(name)) {
-        return (Folder) child;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Don't use this - use copy(User, IDGenerator) instead
-   *
-   * @deprecated use copy(User, IDGenerator) instead
-   */
-  @Override
-  @Deprecated
-  public BaseRecord copy() {
-    return null;
-  }
-
   @Override
   @Transient
   protected GlobalIdPrefix getGlobalIdPrefix() {
@@ -550,18 +354,5 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
     RecordInformation info = super.toRecordInfo();
     info.setType(getRecordInfoType());
     return info;
-  }
-
-  /**
-   * Clears all ACLs from this Folder. If <code>recurse == true</code> then descendants will also
-   * have their ACLs removed.
-   */
-  public void clearACL(boolean recurse) {
-    super.clearACL(recurse);
-    if (recurse) {
-      for (BaseRecord child : getChildrens()) {
-        child.clearACL(true);
-      }
-    }
   }
 }

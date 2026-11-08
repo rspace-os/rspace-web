@@ -28,7 +28,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.ShareRecordMessageOrRequest;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
@@ -44,11 +43,9 @@ import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
-import com.researchspace.model.record.ChildAddPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
@@ -702,14 +699,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
-      // Use skipAddingToChildren=false so the new RecordToFolder is added to
-      // selectedTargetFolder.children (a tracked PersistentSet). We then call
-      // folderDao.save() to cascade-persist the new RTF. The prior true relied on
-      // Hibernate 5's SAVE_UPDATE reachability which no longer exists in Hibernate 6 JPA.
-      selectedTargetFolder.addChild(
-          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, false);
-      folderDao.save(selectedTargetFolder);
-      selectedTargetFolder = folderDao.get(selectedTargetFolder.getId());
+      folderMgr.addChild(selectedTargetFolder.getId(), docOrNotebook, subject, aclPolicy);
       log.info(
           "Added RTF for doc [{}] and folder [{}]",
           docOrNotebook.getId(),
@@ -932,7 +922,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       RSPath path = toUnshare.getShortestPathToParent(sharedTopLevelFolder);
       Optional<Folder> sharedParent = path.getImmediateParentOf(toUnshare);
       if (sharedParent.isPresent()) {
-        removeUnsharedChild(sharedParent.get(), toUnshare);
+        folderMgr.removeBaseRecordFromFolder(toUnshare, sharedParent.get().getId());
         log.info(
             "Removed RTF for doc [{}] and folder [{}]",
             docOrNotebook.getId(),
@@ -940,12 +930,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       }
     }
     return unshared;
-  }
-
-  private void removeUnsharedChild(Folder sharedParent, BaseRecord toUnshare) {
-    sharedParent.removeChild(toUnshare);
-    folderDao.save(sharedParent);
-    saveRecordOrFolder(toUnshare);
   }
 
   /**
@@ -961,13 +945,10 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       return rc;
     }
     // now see if this notebook has entries shared with other people
-    Notebook n = (Notebook) documentOrNotebook;
-    if (n.getChildren().isEmpty()) {
-      // if notebook has no entries, short-circuit.
+    List<Long> entryIds = folderDao.getFolderChildrenIds((Folder) documentOrNotebook);
+    if (entryIds.isEmpty()) {
       return rc;
     }
-    List<Long> entryIds =
-        TransformerUtils.transform(n.getChildrens(), UniquelyIdentifiable.OBJECT_TO_ID_TRANSFORMER);
 
     List<BaseRecord> sharedEntries =
         groupshareRecordDao.findRecordsSharedWithUserOrGroup(toShareWith.getId(), entryIds);
@@ -1169,8 +1150,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private void propagateACLRemoval(BaseRecord documentOrNotebook, ACLElement el) {
     documentOrNotebook.getSharingACL().removeACLElement(el);
     saveRecordOrFolder(documentOrNotebook);
-    if (!el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER)) {
-      for (BaseRecord child : documentOrNotebook.getChildrens()) {
+    if (!el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER)
+        && documentOrNotebook.isFolder()) {
+      for (BaseRecord child : folderDao.getChildren((Folder) documentOrNotebook)) {
         propagateACLRemoval(child, el);
       }
     }
@@ -1183,8 +1165,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private void propagateACLAddition(BaseRecord recordOrFolder, ACLElement el) {
     recordOrFolder.getSharingACL().addACLElement(el);
     saveRecordOrFolder(recordOrFolder);
-    if (!el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER)) {
-      for (BaseRecord child : recordOrFolder.getChildrens()) {
+    if (!el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER)
+        && recordOrFolder.isFolder()) {
+      for (BaseRecord child : folderDao.getChildren((Folder) recordOrFolder)) {
         propagateACLAddition(child, el);
       }
     }
