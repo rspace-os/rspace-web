@@ -317,7 +317,6 @@
                 <exclude>**/SysAdminSupportControllerMVCIT.java</exclude>
                 <!-- other problematic tests -->
                 <exclude>**/ExportApiControllerMVCIT.java</exclude>
-                <exclude>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</exclude>
               </excludes>
             </configuration>
           </execution>
@@ -344,7 +343,6 @@
             <configuration>
               <includes>
                 <include>**/ExportApiControllerMVCIT.java</include>
-                <include>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</include>
               </includes>
             </configuration>
           </execution>

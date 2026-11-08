@@ -59,7 +59,6 @@ have a special execution for the run and prod profile tests):
 								<exclude>**/SysAdminSupportControllerMVCIT.java</exclude>
 								<!-- other problematic tests -->
 								<exclude>**/ExportApiControllerMVCIT.java</exclude>
-								<exclude>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</exclude>
 							</excludes>
 						</configuration>
 					</execution>
