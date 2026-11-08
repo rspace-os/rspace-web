@@ -14,6 +14,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.LocalizedUnsupportedOperationException;
+import com.researchspace.model.inventory.field.FieldValueInvalidForLatestTemplateException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -328,6 +329,22 @@ class ApiControllerAdviceTest {
     ApiError error = (ApiError) response.getBody();
     assertEquals(
         "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
+        error.getMessage());
+    assertEquals(List.of(error.getMessage()), error.getErrors());
+  }
+
+  @Test
+  void rejectedLatestTemplateValueMapsTo422() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    ResponseEntity<Object> response =
+        advice.handleFieldValueInvalidForLatestTemplate(
+            new FieldValueInvalidForLatestTemplateException("choice", "old value"), null);
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+    assertEquals(
+        "Field 'choice' has the value 'old value', which the latest template no longer allows."
+            + " Change the value before updating to the latest template.",
         error.getMessage());
     assertEquals(List.of(error.getMessage()), error.getErrors());
   }
