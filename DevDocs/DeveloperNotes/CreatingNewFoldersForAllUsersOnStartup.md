@@ -75,7 +75,6 @@ dev profile, and runs it in integration-tests-run. The executions look like this
 								<exclude>**/SysAdminSupportControllerMVCIT.java</exclude>
 								<!-- other problematic tests -->
 								<exclude>**/ExportApiControllerMVCIT.java</exclude>
-								<exclude>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</exclude>
 							</excludes>
 						</configuration>
 					</execution>
