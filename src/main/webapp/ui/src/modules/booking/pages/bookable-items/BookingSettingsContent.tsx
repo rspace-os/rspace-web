@@ -1,6 +1,6 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { SaveIcon } from "lucide-react";
+import { CheckIcon, SaveIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -84,6 +84,8 @@ export function BookingSettingsContent() {
         customTimezone: settings.customTimezone,
       });
 
+  const saved = mutation.isSuccess && !dirty;
+
   return (
     <main className="p-4 sm:p-8">
       <DirtyNavigationGuard dirty={dirty} />
@@ -95,6 +97,7 @@ export function BookingSettingsContent() {
       <Form
         of={form}
         className="max-w-2xl space-y-8"
+        onChange={() => mutation.reset()}
         onSubmit={(input) => {
           if (!displaySettingsValid) return;
           return mutation.mutateAsync(input);
@@ -117,7 +120,6 @@ export function BookingSettingsContent() {
             disabled={mutation.isPending}
           />
         </section>
-        {!displaySettingsValid ? <FieldError>{t("preferences.errors.invalid")}</FieldError> : null}
         {mutation.isError ? (
           <FieldError>
             {t(
@@ -127,14 +129,18 @@ export function BookingSettingsContent() {
             )}
           </FieldError>
         ) : null}
-        {mutation.isSuccess && !dirty ? <p role="status">{t("settings.saved")}</p> : null}
         <Button
           type="submit"
           disabled={mutation.isPending || !dirty || !displaySettingsValid}
           aria-busy={mutation.isPending}
+          className={
+            saved
+              ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              : undefined
+          }
         >
-          <SaveIcon aria-hidden="true" />
-          {t("settings.actions.save")}
+          {saved ? <CheckIcon aria-hidden="true" /> : <SaveIcon aria-hidden="true" />}
+          {t(saved ? "preferences.actions.saved" : "settings.actions.save")}
         </Button>
       </Form>
     </main>

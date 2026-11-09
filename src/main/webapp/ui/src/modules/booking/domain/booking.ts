@@ -42,8 +42,7 @@ function mapParentContainer(input: InstrumentsRead["parentContainer"]) {
     },
   };
 }
-type MappedInstrument = Omit<Partial<InstrumentsRead>, "id" | "name" | "deleted" | "parentContainer"> & {
-  id: number;
+type MappedInstrument = Omit<InstrumentsRead, "name" | "deleted" | "parentContainer"> & {
   name: string;
   deleted: boolean;
   parentContainer?: ReturnType<typeof mapParentContainer>;
@@ -64,11 +63,12 @@ export function mapBookingTarget(target: BookingsRead["target"]) {
 }
 
 function mapIdentity<TTarget>(input: BookingsRead, target: TTarget) {
+  if (input.timezone === undefined) throw new BookingUnavailableError("Booking timezone is unavailable");
   const identity = {
     id: input.id,
     version: required(input.version, "version"),
     target,
-    timezone: required(input.timezone, "timezone"),
+    timezone: input.timezone,
     start: required(input.start, "start"),
     end: required(input.end, "end"),
     state: required(input.state, "state"),
@@ -79,10 +79,11 @@ function mapIdentity<TTarget>(input: BookingsRead, target: TTarget) {
 }
 
 export function mapBookingSummary(input: BookingsRead) {
+  if (input.timezone === undefined) throw new BookingUnavailableError("Booking timezone is unavailable");
   const summary = {
     id: input.id,
-    target: mapBookingTarget(input.target),
-    timezone: required(input.timezone, "timezone"),
+    target: input.target === null ? null : mapBookingTarget(input.target),
+    timezone: input.timezone,
     start: required(input.start, "start"),
     end: required(input.end, "end"),
     state: required(input.state, "state"),
@@ -147,13 +148,18 @@ function mapReadIdentity(input: BookingsRead) {
   return identity;
 }
 export function mapBookingDetails(input: BookingsRead) {
-  const privacy = mapPrivacy(input);
-  if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
-  return {
-    ...mapReadIdentity(input),
-    ...privacy,
-    canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration"),
-  };
+  try {
+    const privacy = mapPrivacy(input);
+    if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
+    return {
+      ...mapReadIdentity(input),
+      ...privacy,
+      canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration"),
+    };
+  } catch (error) {
+    if (error instanceof BookingUnavailableError) throw error;
+    throw new BookingUnavailableError("Booking details are unavailable", { cause: error });
+  }
 }
 export function mapBookingListDocument(input: BookingsRead) {
   if (input.requester === undefined) throw new BookingUnavailableError("Booking requester is unavailable");
@@ -205,13 +211,21 @@ const readParameters = {
   },
 };
 
+async function requestBookingDetails(id: number, signal?: AbortSignal): Promise<BookingsRead> {
+  try {
+    return await getBooking(id, readParameters, { signal });
+  } catch (error) {
+    if (error instanceof ApiV2ProblemError || error instanceof TypeError || error instanceof DOMException) throw error;
+    throw new BookingUnavailableError("Booking details are unavailable", { cause: error });
+  }
+}
 export async function fetchBooking(id: number, signal?: AbortSignal): Promise<BookingDetails> {
-  return mapBookingDetails(await getBooking(id, readParameters, { signal }));
+  return mapBookingDetails(await requestBookingDetails(id, signal));
 }
 export function bookingQueryOptions(id: number | undefined) {
   return getGetBookingQueryOptions<BookingDetails>(id ?? 0, readParameters, {
     query: {
-      queryFn: id === undefined ? skipToken : ({ signal }) => getBooking(id, readParameters, { signal }),
+      queryFn: id === undefined ? skipToken : ({ signal }) => requestBookingDetails(id, signal),
       enabled: id !== undefined,
       select: mapBookingDetails,
       retry: (failureCount, error) =>

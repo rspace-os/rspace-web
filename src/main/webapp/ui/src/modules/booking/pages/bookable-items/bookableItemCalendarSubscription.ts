@@ -51,14 +51,14 @@ function mapStatusResponse(
 ): UserCalendarSubscriptionStatus {
   return withEtag({ ...response, body: checkSubscriptionStatus(response.body) });
 }
-export function calendarSubscriptionQuery(configurationId: number) {
+export function bookableItemCalendarSubscriptionQuery(configurationId: number) {
   return getGetBookingCalendarSubscriptionQueryOptions<UserCalendarSubscriptionStatus>(configurationId, {
-    query: { select: mapStatusResponse },
+    query: { select: mapStatusResponse, retry: false },
   });
 }
 export function userCalendarSubscriptionQuery() {
   return getGetUserBookingCalendarSubscriptionQueryOptions<UserCalendarSubscriptionStatus>({
-    query: { select: mapStatusResponse },
+    query: { select: mapStatusResponse, retry: false },
   });
 }
 export async function fetchCalendarSubscriptionStatus(

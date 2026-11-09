@@ -29,7 +29,7 @@ export function CalendarAgenda({
   const eventsByDate = dates.map((day) => ({ day, events: eventsOn(events, day, timezone, editorPositions) }));
   const dateRailRef = useScrollToToday(date, view, today);
   return (
-    <section aria-label={t("calendar.layout.agenda")} className="p-3" aria-busy={isLoading}>
+    <section aria-label={t("calendar.layout.agenda")} className="py-3" aria-busy={isLoading}>
       <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside
           ref={dateRailRef}

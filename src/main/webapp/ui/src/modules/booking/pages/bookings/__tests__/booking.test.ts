@@ -129,6 +129,27 @@ describe("booking API", () => {
     await expect(fetchBooking(41)).rejects.toThrow();
   });
 
+  it("accepts a redacted own booking with no target or timezone", async () => {
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          target: null,
+          timezone: null,
+          canViewConfiguration: false,
+          canEdit: false,
+          canCancel: false,
+        }),
+      ),
+    );
+
+    await expect(fetchBooking(41)).resolves.toMatchObject({
+      target: null,
+      timezone: null,
+      canViewConfiguration: false,
+    });
+  });
+
   it.each([
     ["an invalid start timestamp", { start: "tomorrow" }],
     ["an invalid end timestamp", { end: "later" }],

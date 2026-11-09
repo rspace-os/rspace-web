@@ -6,12 +6,11 @@ import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
-import { BOOKING_READ_FIELDS, BookingUnavailableError, mapBookingDetails } from "@/modules/booking/domain/booking";
+import { BookingUnavailableError, bookingQueryOptions } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
-  getGetBookingQueryOptions,
   invalidateCountBookings,
   invalidateGetBooking,
   invalidateListBookings,
@@ -43,18 +42,7 @@ export function BookingEventContent() {
   const formId = `booking-event-${useId()}`;
   // Plain useQuery: an invalid ID skips the read, and the page's error states own Retry and Return.
   const booking = useQuery({
-    ...getGetBookingQueryOptions(
-      bookingId,
-      {
-        depth: 2,
-        fields: {
-          bookings: BOOKING_READ_FIELDS,
-          instruments: "id,globalId,name,deleted,parentContainer",
-          containers: "id,globalId,name",
-        },
-      },
-      { query: { select: mapBookingDetails } },
-    ),
+    ...bookingQueryOptions(bookingId),
     enabled: validBookingId,
     retry: (failureCount, error) => {
       if (error instanceof BookingUnavailableError) return false;
