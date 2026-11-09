@@ -79,8 +79,8 @@ function BookableItemsListObserver() {
   return null;
 }
 
-function renderPage(initialEntry = "/booking/bookable-items/add", observeList = false) {
-  server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)));
+function renderPage(initialEntry = "/booking/bookable-items/add", defaults: object = settings, observeList = false) {
+  server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(defaults)));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({
@@ -259,7 +259,7 @@ describe("AddBookableItemPage", () => {
       }),
     );
     const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
-    const { container, queryClient } = renderPage(undefined, true);
+    const { container, queryClient } = renderPage(undefined, undefined, true);
     queryClient.setQueryData(catalogueQueryKey, []);
 
     expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
@@ -293,6 +293,43 @@ describe("AddBookableItemPage", () => {
       maxBookingDurationMinutes: 0,
       allowDoubleBooking: false,
     });
+  });
+
+  it("copies independent default intervals and changes only the edited weekday", async () => {
+    const user = userEvent.setup();
+    const requestBodies: unknown[] = [];
+    const openingHours = [
+      { dayOfWeek: 1, start: "09:00", end: "17:00" },
+      { dayOfWeek: 2, start: "10:00", end: "16:00" },
+      { dayOfWeek: 5, start: "09:00", end: "14:00" },
+      { dayOfWeek: 6, start: "10:00", end: "16:00" },
+    ];
+    server.use(
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBodies.push(await request.json());
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage(undefined, { ...settings, openingHours });
+    await completeForm(user);
+
+    const monday = screen.getByRole("group", { name: "Monday" });
+    const start = within(monday).getByLabelText("booking:settings.fields.openingStart");
+    await user.clear(start);
+    await user.type(start, "11:00");
+    expect(
+      within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
+    ).toHaveValue("10:00");
+    await user.click(screen.getByRole("checkbox", { name: "Friday" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    await waitFor(() => expect(requestBodies).toHaveLength(1));
+    expect(requestBodies[0]).toMatchObject({
+      openingHours: [{ ...openingHours[0], start: "11:00" }, openingHours[1], openingHours[3]],
+    });
+    expect(openingHours[0].start).toBe("09:00");
   });
 
   it("keeps the completed form available when creation fails", async () => {

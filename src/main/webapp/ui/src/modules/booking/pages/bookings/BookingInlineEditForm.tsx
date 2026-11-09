@@ -8,8 +8,12 @@ import { BookingDayTimelineAside } from "@/modules/booking/creation/BookingDayTi
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import { useBookingDraftAvailability } from "@/modules/booking/creation/useBookingDraftAvailability";
 import { useBookingTimelineDraft } from "@/modules/booking/creation/useBookingTimelineDraft";
-import { isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
-import { type BookingDetails, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
+import {
+  bookingProblemFeedback,
+  isBookingConflictError,
+  isBookingOutcomeUncertain,
+} from "@/modules/booking/creation/useCreateBooking";
+import { type BookingDetails, updateBooking } from "@/modules/booking/domain/booking";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -21,6 +25,7 @@ import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bo
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Panel, useBookingEvent } from "./BookingEventContext";
+import { bookingFormFeedback } from "./bookingFormFeedback";
 
 function editable(booking: BookingDetails): booking is BookingDetails & {
   canEdit: true;
@@ -31,38 +36,9 @@ function editable(booking: BookingDetails): booking is BookingDetails & {
   return booking.canEdit && booking.state === "CONFIRMED" && booking.target !== null && booking.timezone !== null;
 }
 
-function errorKey(
-  error: unknown,
-):
-  | "bookings.errors.generic"
-  | "bookings.errors.window"
-  | "bookings.errors.outcomeUncertain"
-  | "bookings.errors.startInPast"
-  | "bookings.errors.duration"
-  | "bookings.errors.maximumDuration"
-  | "bookings.errors.overlap"
-  | "bookings.errors.granularity"
-  | "bookings.errors.openingHours"
-  | "bookings.errors.targetUnavailable"
-  | "bookings.errors.forbidden"
-  | "bookings.errors.noLongerEditable" {
-  if (isBookingOutcomeUncertain(error)) return "bookings.errors.outcomeUncertain";
-  if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
-  if (error.code === "errors.api.v2.booking.window") return "bookings.errors.window";
-  if (error.code === "errors.api.v2.booking.startInPast") return "bookings.errors.startInPast";
-  if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
-  if (error.code === "errors.api.v2.booking.maximumDuration") return "bookings.errors.maximumDuration";
-  if (error.code === "errors.api.v2.booking.overlap") return "bookings.errors.overlap";
-  if (error.code === "errors.api.v2.booking.granularity") return "bookings.errors.granularity";
-  if (error.code === "errors.api.v2.booking.openingHours") return "bookings.errors.openingHours";
-  if (error.code === "errors.api.v2.booking.target.unavailable") return "bookings.errors.targetUnavailable";
-  if (error.code === "errors.api.v2.forbidden") return "bookings.errors.forbidden";
-  if (error.code === "errors.api.v2.booking.state.transition") return "bookings.errors.noLongerEditable";
-  return "bookings.errors.generic";
-}
-
 export default function BookingInlineEditForm() {
   const { t } = useTranslation(["booking", "common"]);
+  const { t: bookingT } = useTranslation("booking");
   const { booking, displayTimeZone, formId, editButtonRef, announce, setDirty, refreshBooking } = useBookingEvent();
   const [base] = useState(booking);
   const [conflict, setConflict] = useState(false);
@@ -146,7 +122,7 @@ export default function BookingInlineEditForm() {
     if (conflict) {
       alertRef.current?.focus();
     } else if (mutation.isError && !mutation.isPending) {
-      if (isBookingOverlapError(mutation.error)) {
+      if (isBookingConflictError(mutation.error)) {
         const alert = panelRef.current?.querySelector<HTMLElement>("[role='alert']");
         alert?.setAttribute("tabindex", "-1");
         alert?.focus();
@@ -176,9 +152,24 @@ export default function BookingInlineEditForm() {
   });
   if (!editable(booking) || !editable(base)) return null;
 
+  const saveError = conflict ? undefined : mutation.error;
+  const problem = bookingProblemFeedback(saveError, bookingT, {
+    displayTimezone: displayTimeZone,
+    target: configuration.data ?? undefined,
+  });
+  const feedback = bookingFormFeedback({
+    problem,
+    availability,
+    interactionActive: draftBridge.interactionActive,
+    fallbackError:
+      !saveError && !draftBridge.interactionActive && availability.violation && availability.conflicts.length === 0
+        ? bookingT("bookings.errors.overlap")
+        : undefined,
+    t: bookingT,
+  });
   const blocked =
     conflict ||
-    isBookingOverlapError(mutation.error) ||
+    isBookingConflictError(mutation.error) ||
     draftBridge.adjustmentPending ||
     draftBridge.interactionActive ||
     availability.checking ||
@@ -255,20 +246,8 @@ export default function BookingInlineEditForm() {
               booking={base}
               configuration={configuration.data}
               pending={mutation.isPending || conflict}
-              error={
-                mutation.error && !conflict
-                  ? t(errorKey(mutation.error))
-                  : !draftBridge.interactionActive && availability.violation && availability.conflicts.length === 0
-                    ? t("bookings.errors.overlap")
-                    : undefined
-              }
-              warning={
-                !draftBridge.interactionActive && availability.failed
-                  ? t("bookings.warnings.availabilityUnknown")
-                  : undefined
-              }
-              conflicts={draftBridge.interactionActive ? [] : availability.conflicts}
-              conflictSeverity={availability.conflictSeverity}
+              {...feedback}
+              error={isBookingOutcomeUncertain(saveError) ? t("bookings.errors.outcomeUncertain") : feedback.error}
               submissionBlocked={blocked}
               windowAdjustment={draftBridge.windowAdjustment}
               windowAdjustmentTarget={draftBridge.windowAdjustmentTarget}

@@ -23,8 +23,8 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { requesterValueField } from "../ownerPreset";
-import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
+import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 

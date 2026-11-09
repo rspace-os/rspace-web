@@ -123,11 +123,13 @@
     },
     "audit": {
       "actions": {
+        "archivedOrDeleted": "Archived or deleted",
         "cancelled": "Cancelled",
         "changed": "Changed",
         "changedOrCancelled": "Changed or cancelled",
         "created": "Created",
-        "deleted": "Deleted",
+        "deleted": "Archived",
+        "permanentlyDeleted": "Permanently deleted",
         "restored": "Restored"
       },
       "allActions": "All actions",
@@ -213,11 +215,7 @@
         "targetName": "Bookable item name",
         "timeFormat": "Time format",
         "timezone": "Scheduling time zone",
-        "timezoneMode": "Time zone mode",
-        "openDays": "Open days",
-        "openingEnd": "Closing time",
-        "openingExceptions": "Different hours by day",
-        "openingStart": "Opening time"
+        "timezoneMode": "Time zone mode"
       }
     },
     "backgroundError": "Couldn't refresh this item. You can retry without losing your unsaved changes.",
@@ -587,7 +585,9 @@
       "notesCount": "{count, number}/1,000 characters",
       "occurrence": "Repeated local time",
       "openAllDay": "Open all day",
+      "openAllDayOnDate": "Open all day on this date",
       "openingHours": "Open: {start} - {end}",
+      "openingWindowsOnDate": "Open on this date: {hours}",
       "openItem": "Open {globalId}",
       "policyMismatchNotes": "This booking does not meet the current booking rules. You can update its maintenance notes without changing its reserved times. Changing those times requires following the current rules.",
       "policyMismatchPurpose": "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
@@ -609,22 +609,20 @@
       "type": "Booking type",
       "typeBlockout": "Maintenance",
       "typeBooking": "Booking",
-      "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
-      "openingHoursOnDate": "Open on this date: {hours}",
-      "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
-      "timezone": "Times shown in {timezone}."
+      "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment."
     },
     "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
     "itemInformation": {
       "closedDay": "{day}: closed",
-      "day": "{day}:",
+      "day": "{day}: {hours}",
       "doubleBookingAllowed": "Double booking allowed",
       "everyDay": "Every day: {hours}",
       "open": "Open",
+      "timeWithInstrumentTime": "{time}, Instrument time: {itemTime} ({timezone})",
       "title": "Item information",
       "buffer": "Buffer",
-      "bufferAfter": "{count}m after",
-      "bufferBefore": "{count}m before"
+      "bufferAfter": "{count, number}m after",
+      "bufferBefore": "{count, number}m before"
     },
     "loading": "Loading booking.",
     "loadingConfiguration": "Loading bookable item settings.",

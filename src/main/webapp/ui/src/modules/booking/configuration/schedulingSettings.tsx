@@ -8,7 +8,6 @@ export {
   type BookingAdminSettings,
   type BookingSettings,
   DEFAULT_SCHEDULING_SETTINGS,
-  MAX_BOOKING_DURATION_MINUTES,
   MAX_BUFFER_MINUTES,
   type SchedulingSettings,
   SchedulingSettingsSchema,

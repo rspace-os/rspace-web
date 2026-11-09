@@ -17,30 +17,6 @@ import { currentWallClock } from "@/modules/booking/domain/bookingTime";
 import { BookingForm, type BookingFormSubmission } from "../BookingForm";
 import { cataloguePage, editableBooking, confocalTarget as target } from "./creationTestFixtures";
 
-it("shows every independently configured weekday and the scheduling timezone", async () => {
-  server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
-  renderForm(
-    <BookingForm
-      mode="add"
-      pending={false}
-      eventKind="BOOKING"
-      initialTarget={{
-        ...target,
-        openingHours: [
-          { dayOfWeek: 1, start: "08:00", end: "17:00" },
-          { dayOfWeek: 2, start: "10:00", end: "16:00" },
-        ],
-      }}
-      initialDate="2026-08-17"
-      onSubmit={vi.fn(async () => undefined)}
-    />,
-  );
-  expect(await screen.findByText("08:00–17:00")).toBeVisible();
-  expect(screen.getByText("10:00–16:00")).toBeVisible();
-  expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
-  expect(screen.getByText(target.timezone)).toBeVisible();
-});
-
 function renderForm(node: ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const root = createRootRoute();
@@ -109,9 +85,7 @@ describe("BookingForm", () => {
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-    expect(screen.getByText("booking:bookings.form.openingHours")).toBeVisible();
-    expect(screen.queryByText("booking:bookings.form.openingHoursDifferentTimezone")).not.toBeInTheDocument();
-    expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(screen.getByText("booking:bookings.form.openAllDay")).toBeVisible();
     expect(screen.getByRole("radio", { name: "booking:bookings.form.laterOccurrence" })).toBeChecked();
     expect(screen.getByText("booking:bookings.form.purposeCount")).toBeVisible();
 
@@ -166,15 +140,17 @@ describe("BookingForm", () => {
         mode="edit"
         displayTimezone="America/New_York"
         booking={editableBooking}
-        configuration={target}
+        configuration={{
+          ...target,
+          openingHours: target.openingHours.map((entry) => ({ ...entry, start: "08:00", end: "18:00" })),
+        }}
         pending={false}
         onSubmit={submit}
       />,
     );
 
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
-    expect(screen.getByText("booking:bookings.form.openingHoursDifferentTimezone")).toBeVisible();
-    expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(screen.getByText("booking:bookings.form.openingWindowsOnDate")).toBeVisible();
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-10-24");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("21:30");
     expect(screen.getByRole("note")).toHaveTextContent("booking:bookings.form.instrumentTimes");
@@ -808,6 +784,60 @@ describe("BookingForm", () => {
     );
     await screen.findByRole("textbox", { name: "booking:bookings.form.notes" });
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["MAINTENANCE", "booking:bookings.form.submitMaintenance", true],
+    ["BOOKING", "booking:bookings.form.submit", false],
+  ] as const)("applies closed weekdays to a %s", async (eventKind, submitName, accepted) => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        displayTimezone="UTC"
+        eventKind={eventKind}
+        // 2026-08-22 is a Saturday.
+        initialTarget={{
+          ...target,
+          timezone: "UTC",
+          openingHours: target.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+        }}
+        initialWindow={{ startDate: "2026-08-22", startTime: "10:00", endDate: "2026-08-22", endTime: "11:00" }}
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: submitName }));
+    if (accepted) {
+      expect(submit).toHaveBeenCalledOnce();
+      expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
+    } else {
+      expect(submit).not.toHaveBeenCalled();
+      expect(screen.getByText("booking:bookings.errors.openingHours")).toBeVisible();
+      expect(screen.getByText("booking:bookings.form.closedOnDate")).toBeVisible();
+    }
+  });
+
+  it("reads an all-day item as open all day from another timezone", async () => {
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        displayTimezone="America/New_York"
+        initialTarget={target}
+        initialDate="2026-08-17"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("booking:bookings.form.openAllDay")).toBeVisible();
+    expect(screen.queryByText("booking:bookings.form.openingWindowsOnDate")).not.toBeInTheDocument();
   });
 
   it("allows an unchanged over-limit interval on a purpose-only edit", async () => {

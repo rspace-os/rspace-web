@@ -1,5 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as v from "valibot";
+import { bookingDateTimeLocale, bookingLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import type { BookingOpeningHoursEntry } from "@/modules/common/api/v2/generated/models/bookingOpeningHoursEntry";
 import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { requireBookingValue } from "./bookingMapping";
@@ -48,11 +49,21 @@ export const ALWAYS_OPEN: OpeningSchedule = {
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
 };
 
-/** A localized weekday name for an ISO weekday; 2024-01-01 is a Monday. */
-export function formatIsoWeekday(dayOfWeek: number, width: "long" | "short" = "long", locale = "en-US"): string {
+/** A localized weekday name; 2024-01-01 is a Monday. */
+export function formatIsoWeekday(
+  dayOfWeek: number,
+  width: "long" | "short" = "long",
+  locale = bookingLocale(),
+): string {
   return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" }).format(
     new Date(Date.UTC(2024, 0, dayOfWeek)),
   );
+}
+
+/** A scheduling-zone opening range as `HH:mm–HH:mm`, printing a closing midnight as `00:00`. */
+/** Each end in the locale's clock; a 24:00 end reads as midnight. */
+export function formatOpeningRange({ start, end }: OpeningInterval, locale = bookingDateTimeLocale()): string {
+  return `${formatWallClockTime(start, locale)}\u2013${formatWallClockTime(end, locale)}`;
 }
 
 /** Whether `start`-`end` is one opening interval. A `24:00` end closes at midnight, so it follows any valid start. */

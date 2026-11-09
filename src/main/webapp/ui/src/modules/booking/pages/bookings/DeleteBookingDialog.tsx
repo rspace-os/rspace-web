@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarX2Icon } from "lucide-react";
-import { useRef, useState } from "react";
+import { type ComponentProps, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cancelBooking } from "@/modules/booking/domain/booking";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
@@ -27,12 +27,20 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/too
 type DeleteBookingDialogProps = {
   bookingId: number;
   bookingVersion: number;
-  itemName: string;
-  period: string;
+  /** Named in the booking confirmation together with `period`; generic text is used when either is empty. */
+  itemName?: string;
+  period?: string;
 
   eventKind?: BookingsReadKind;
   iconOnly?: boolean;
   triggerVariant?: "outline" | "destructive";
+  /**
+   * Opens the dialog from outside, for example from a menu item that unmounts when its menu
+   * closes. No trigger is rendered in this mode, so pass `finalFocus` to say where focus returns.
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  finalFocus?: ComponentProps<typeof AlertDialogContent>["finalFocus"];
   onDeleted: () => void | Promise<void>;
 };
 
@@ -58,15 +66,26 @@ function deleteErrorKey(error: unknown): DeleteErrorKey {
 export function DeleteBookingDialog({
   bookingId,
   bookingVersion,
+  itemName,
+  period,
   eventKind = "BOOKING",
   iconOnly = false,
   triggerVariant = "destructive",
+  open: controlledOpen,
+  onOpenChange,
+  finalFocus,
   onDeleted,
 }: DeleteBookingDialogProps) {
   const { t } = useTranslation(["booking", "common"]);
   const queryClient = useQueryClient();
   const activeRequest = useRef(false);
-  const [open, setOpen] = useState(false);
+  const controlled = controlledOpen !== undefined;
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (nextOpen: boolean) => {
+    if (!controlled) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorKey, setErrorKey] = useState<DeleteErrorKey | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -110,7 +129,7 @@ export function DeleteBookingDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={(nextOpen) => !activeRequest.current && setOpen(nextOpen)}>
-      {iconOnly ? (
+      {controlled ? null : iconOnly ? (
         <Tooltip>
           <TooltipTrigger render={<span className="inline-flex" tabIndex={-1} />}>
             <AlertDialogTrigger
@@ -127,13 +146,17 @@ export function DeleteBookingDialog({
           {cancelLabel}
         </AlertDialogTrigger>
       )}
-      <AlertDialogContent>
+      <AlertDialogContent finalFocus={finalFocus}>
         <AlertDialogHeader>
           <AlertDialogTitle>
             {maintenance ? t("bookings.details.cancelMaintenanceTitle") : t("bookings.cancelDialog.title")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {maintenance ? t("bookings.details.cancelMaintenanceDescription") : t("bookings.details.cancelDescription")}
+            {maintenance
+              ? t("bookings.details.cancelMaintenanceDescription")
+              : itemName && period
+                ? t("bookings.cancelDialog.description", { itemName, period })
+                : t("bookings.details.cancelDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {errorKey && (
@@ -142,7 +165,9 @@ export function DeleteBookingDialog({
           </p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>
+            {maintenance ? t("bookings.cancelDialog.keepMaintenance") : t("bookings.cancelDialog.keep")}
+          </AlertDialogCancel>
           <AlertDialogAction
             type="button"
             variant="destructive"
@@ -150,7 +175,7 @@ export function DeleteBookingDialog({
             aria-busy={isDeleting}
             onClick={() => void handleDelete()}
           >
-            {t("bookings.actions.cancel")}
+            {cancelLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
