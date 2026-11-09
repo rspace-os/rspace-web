@@ -433,13 +433,13 @@ order from easiest to use to the requiring the most work.
 Biome's built-in `a11y` rule group catches a variety of issues with HTML written
 using JSX notation, including missing alt attributes and invalid aria- attributes.
 
-#### Pros
+#### Pros of Biome (a11y rules)
 
 * It requires no work to use, it just runs as part of our existing Biome
   workflow (`pnpm run lint`).
 * It can catch issues like missing alt attributes and invalid aria- attributes
 
-#### Cons
+#### Cons of Biome (a11y rules)
 
 * The build does not fail on issues, so errors could be introduced without us
   noticing.
@@ -475,14 +475,14 @@ describe("some tests", () => {
 });
 ```
 
-#### Pros
+#### Pros of Jest
 
 * Pretty easy to write and run; just follow template above.
 * Will fail the build if a violation is introduced.
 * Can assert there are no violations after some code execution, such as after a
   user interaction.
 
-#### Cons
+#### Cons of Jest
 
 * Doesn't render anything, so can't assert behaviour like keyboard controls or
   colour contrast.
@@ -492,12 +492,12 @@ describe("some tests", () => {
 
 [Playwright Component Tests][pwct] allow for one react component to be tested in an isolated environment that still runs in a browser. Given accessibility is inherently tied to the browser this will pretty much always trump Jest. In most instances, this is the best tool to assert accessibility.
 
-#### Pros
+#### Pros of Playwright Component Tests
 
 * Renders code, so can assert behaviour like keyboard controls and colour contrast.
 * Runs as part of the Jenkins build so any failure will be alerted before merging.
 
-#### Cons
+#### Cons of Playwright Component Tests
 
 * Slower to run than Jest, so its not really feasible to run these tests for every possible input value/state.
 * Some of the inviolations are simply a result of rendering a component in isolation rather than as a full page
@@ -508,13 +508,13 @@ describe("some tests", () => {
 Cypress runs the tests in an actual browser so can assert even more dynamic
 behaviour.
 
-#### Pros
+#### Pros of Cypress
 
 * Renders code, so can assert behaviour like keyboard controls.
 * Renders the complete page so any failures will be exactly as the user experiences it.
 * Is also run by jenkins so we'll be alerted to any breakage.
 
-#### Cons
+#### Cons of Cypress
 
 * Takes some time to run, and the feedback cycle is quite long.
 * Jenkins build only runs nightly, so feedback is delayed.
@@ -526,12 +526,12 @@ Built into Chrome is a tool for audit webpages, with an option for looking for
 accessibility issues. For more information on how to use, see
 [the Chrome developer docs on Lighthouse][lighthouse].
 
-#### Pros
+#### Pros of Lighthouse
 
 * Requires no effort, just run it
 * Runs in browser so can check things like colour contrast
 
-#### Cons
+#### Cons of Lighthouse
 
 * Only looks at page load, so can't check other states of the system
 * Can't be directly to check specific parts of the codebase
@@ -544,12 +544,12 @@ but it may be the best approach in some circumstances. In
 [this episode of a11ycast][a11ycast-audit], Rob Dobson goes through the steps
 he goes through to manually evaluate the accessibility of a website.
 
-#### Pros
+#### Pros of Manual audit
 
 * Some human judgement is just required with this kind of thing.
   [Automated testing tools just can't catch everything][wai-cannot].
 
-#### Cons
+#### Cons of Manual audit
 
 * Requires a good amount of knowledge about what to check and what is correct
 * Is time consuming to do thoroughly
@@ -605,6 +605,26 @@ To accompany this high contrast mode, we have an
 the top right corner of an app bar. It informs the user of the configuration
 options that the page/dialog supports as without it it is not apparent that
 this capability is provided. The app bar also provides a consistent place to access the help functionality, a key part of basic compliance with WCAG 2.2.
+
+
+### High contrast in the new design system
+
+The new design system responds to both `prefers-contrast: more` and
+`forced-colors: active`. The first setting increases the contrast of the RSpace
+palette. The second setting lets the browser replace that palette with the
+user's system colours.
+
+When you add or change a design-system component:
+
+* Do not use `ring-*` as the only focus indicator. Forced colours remove the
+  box shadow that implements a ring.
+* Do not communicate state through `background-color` alone. In forced colours,
+  different backgrounds can become the same system colour.
+* Use a real border for a floating panel. `MenuContent` is the reference
+  implementation.
+* Give virtual focus, such as focus managed with `aria-activedescendant`, its own
+  visible cue. The focused DOM element's outline cannot identify the active
+  descendant.
 
 
 ### DialogBoundary
