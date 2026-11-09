@@ -1,0 +1,56 @@
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
+import { TableListSorting } from "../components/TableListSorting";
+import { config } from "./fixtures/tableList";
+
+describe("Sort priority", () => {
+  it("offers only unused sortable fields and appends an ascending rule", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const fields = config.fields.map((field) =>
+      field.name === "owner"
+        ? { ...field, capabilities: { ...field.capabilities, sortable: false } }
+        : field.name === "score"
+          ? { ...field, list: false as const }
+          : field,
+    );
+    render(
+      <TableListSorting
+        config={{ ...config, fields }}
+        sorting={[{ field: "title", direction: "desc" }]}
+        onChange={onChange}
+        onClose={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.addSort" }));
+    const menu = await screen.findByRole("menu");
+    await expectAccessible(menu);
+    expect(
+      within(menu).queryByRole("menuitem", { name: "common:tableList.examples.fields.title" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menu).queryByRole("menuitem", { name: "common:tableList.examples.fields.owner" }),
+    ).not.toBeInTheDocument();
+    await user.click(within(menu).getByRole("menuitem", { name: "common:tableList.examples.fields.score" }));
+    expect(onChange).toHaveBeenCalledWith([
+      { field: "title", direction: "desc" },
+      { field: "score", direction: "asc" },
+    ]);
+  });
+
+  it("disables Add sort when every sortable field is used", () => {
+    render(
+      <TableListSorting
+        config={config}
+        sorting={config.fields
+          .filter((field) => field.capabilities.sortable)
+          .map((field) => ({ field: field.name, direction: "asc" }))}
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "common:tableList.actions.addSort" })).toBeDisabled();
+  });
+});

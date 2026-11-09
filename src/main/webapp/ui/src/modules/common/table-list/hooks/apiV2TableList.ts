@@ -1,0 +1,273 @@
+import { useQuery } from "@tanstack/react-query";
+import { createElement, useEffect, useMemo, useState } from "react";
+import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
+import type {
+  CollectionConfig,
+  CollectionRow,
+  FieldName,
+  ResolvedCollectionConfig,
+} from "@/modules/common/collection/config";
+import type { ApiV2DocumentMapping } from "../api-v2/adapter";
+import { type ApiV2CollectionAdapter, type ApiV2DocumentSchema, createApiV2CollectionAdapter } from "../api-v2/adapter";
+import {
+  type ApiV2CollectionFetchOptions,
+  apiV2CollectionParameters,
+  apiV2CollectionRequestParams,
+  createApiV2CollectionFetcher,
+  projectedState,
+} from "../api-v2/fetcher";
+import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
+import { useApiV2RuntimeFields } from "../api-v2/queries";
+import { isPickerExpressionValid } from "../api-v2/queryParams";
+import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import { parseRsqlExpression } from "../rsql";
+import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../types";
+import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";
+import { emptySavedTableView, type SavedTableView, SavedTableViewReader } from "./savedView";
+import { type UseTableListOptions, type UseTableListResult, useTableList } from "./state";
+
+type TableOptions<TRow extends Record<string, unknown>> = Omit<UseTableListOptions<TRow>, "config" | "dataSource">;
+
+function collectFilterFields<TDocument>(expression: FilterExpression<TDocument> | null, into: Set<string>): void {
+  if (expression === null) return;
+  if (expression.kind === "comparison") {
+    into.add(expression.field);
+    return;
+  }
+  for (const child of expression.children) collectFilterFields(child, into);
+}
+
+export type UseApiV2TableListOptions<
+  TDocument extends Record<string, unknown>,
+  TEntry extends ApiV2ResourceEntry<string, { list: ApiV2ReadOperation }>,
+  TId extends FieldName<TDocument> = FieldName<TDocument>,
+  TTitle extends FieldName<TDocument> = FieldName<TDocument>,
+  TSchema extends ApiV2DocumentSchema<TDocument> = ApiV2DocumentSchema<TDocument>,
+> = {
+  resource: TEntry;
+  config: CollectionConfig<TDocument, TId, TTitle>;
+  request?: ApiV2CollectionFetchOptions<TDocument>;
+  metadata?: ApiV2CollectionMetadata<TDocument>;
+  table?: TableOptions<CollectionRow<TDocument, TId | TTitle>>;
+  query?: {
+    staleTime?: number;
+    gcTime?: number;
+    retry?: boolean | number;
+    refetchInterval?: number | false;
+    keepPreviousData?: boolean;
+  };
+} & ApiV2DocumentMapping<TDocument, TSchema>;
+
+export type UseApiV2TableListResult<
+  TDocument extends Record<string, unknown>,
+  TRow extends Record<string, unknown>,
+> = UseTableListResult<TRow> & {
+  adapter: ApiV2CollectionAdapter<TDocument>;
+  selectRuntimeField: (namespace: string, definition: RuntimeFieldDefinition) => void;
+};
+
+export function useApiV2TableList<
+  TDocument extends Record<string, unknown>,
+  TEntry extends ApiV2ResourceEntry<string, { list: ApiV2ReadOperation; runtimeFields?: ApiV2ReadOperation }>,
+  const TId extends FieldName<TDocument> = FieldName<TDocument>,
+  const TTitle extends FieldName<TDocument> = FieldName<TDocument>,
+  TSchema extends ApiV2DocumentSchema<TDocument> = ApiV2DocumentSchema<TDocument>,
+>(
+  options: UseApiV2TableListOptions<TDocument, TEntry, TId, TTitle, TSchema>,
+): UseApiV2TableListResult<TDocument, CollectionRow<TDocument, TId | TTitle>> {
+  const { resource, config, documentSchema, request, metadata: suppliedMetadata, table, query } = options;
+  type Row = CollectionRow<TDocument, TId | TTitle>;
+
+  const [savedState, setSavedState] = useState<SavedTableView | null>(null);
+  const persistenceEnabled = table?.queryString !== false;
+  const saved = persistenceEnabled ? (savedState ?? emptySavedTableView) : emptySavedTableView;
+  const selectors = new Set(saved.selectors);
+  for (const name of table?.initialState?.visibleFields ?? []) selectors.add(String(name));
+  collectFilterFields(table?.initialState?.filters?.expression ?? null, selectors);
+  const fields = useApiV2RuntimeFields({
+    resource,
+    selectors: [...selectors],
+    request,
+    metadata: suppliedMetadata,
+  });
+  const { runtimeFields, selectRuntimeField } = fields;
+  const metadata = fields.metadata;
+  const authScope = fields.scope;
+  const dataScope = JSON.stringify([resource.name, authScope]);
+  const adapter = useMemo(
+    () =>
+      createApiV2CollectionAdapter<TDocument, TSchema>({
+        ...options,
+        metadata,
+        runtimeFields,
+      }),
+    [config, documentSchema, options.mapDocument, metadata, runtimeFields],
+  );
+  const rowConfig = adapter.config as unknown as ResolvedCollectionConfig<Row>;
+  const parsedExpression = saved.raw.where === null ? null : parseRsqlExpression(saved.raw.where, rowConfig);
+  const restoredExpression = parsedExpression;
+  const restoredFilters = { search: saved.raw.search ?? "", expression: restoredExpression };
+  const restoredColumns =
+    saved.raw.columns === null ? rowConfig.defaultColumns : parseColumns(saved.raw.columns, rowConfig);
+  const restoredSorting =
+    saved.raw.sort === null ? (rowConfig.defaultSort ?? []) : parseSorting(saved.raw.sort, rowConfig);
+  const restoredPickerValuesValid =
+    restoredFilters.expression === null ||
+    isPickerExpressionValid(restoredFilters.expression, rowConfig, fields.metadata);
+  const invalid =
+    saved.malformed ||
+    !restoredPickerValuesValid ||
+    fields.missing.length > 0 ||
+    (saved.raw.where !== null && parsedExpression === null) ||
+    restoredColumns === null ||
+    restoredSorting === null;
+  const blocked = (persistenceEnabled && savedState === null) || fields.pending || fields.error !== null || invalid;
+  const restoredState = {
+    filters: restoredFilters,
+    visibleFields: restoredColumns ?? rowConfig.defaultColumns,
+    sorting: restoredSorting ?? rowConfig.defaultSort ?? [],
+  };
+  const normalizeState = (state: CollectionQueryState<Row>) => state;
+  const fetchCollection = createApiV2CollectionFetcher(adapter, resource, { ...request, totals: false });
+  // Acknowledge each restored signature so later edits may diverge and fetch.
+  // A new signature must match its saved state before it is acknowledged.
+  const [restoredSignature, setRestoredSignature] = useState<string | null>(null);
+  const matchesSaved = (state: CollectionQueryState<Row>) =>
+    (table?.features?.filtering === false ||
+      serializeFilters(normalizeState(state).filters) === serializeFilters(restoredFilters)) &&
+    (table?.features?.columns === false ||
+      serializeColumns<Row>(state.visibleFields) === serializeColumns<Row>(restoredState.visibleFields)) &&
+    (table?.features?.sorting === false || serializeSorting(state.sorting) === serializeSorting(restoredState.sorting));
+  const ready = (state: CollectionQueryState<Row>) =>
+    !blocked && (table?.queryString === false || restoredSignature === saved.signature || matchesSaved(state));
+  const totalState = (state: CollectionQueryState<Row>) => ({
+    ...state,
+    visibleFields: [],
+    page: { pageIndex: 0, pageSize: 1 },
+  });
+  const parametersFor = (state: CollectionQueryState<Row>, totals = false) => ({
+    ...apiV2CollectionParameters(
+      apiV2CollectionRequestParams(
+        adapter,
+        normalizeState(state) as CollectionQueryState<TDocument>,
+        request?.depth,
+        request?.projection,
+        request?.baseFilter,
+      ),
+    ),
+    ...(totals ? { totals: true } : {}),
+  });
+  const result = useTableList<Row>({
+    ...table,
+    // The configuration keeps the strict document type, and a row carries the projection. A field
+    // renderer reads its own field only, and it declares each other field it reads in
+    // `list.dependencies`, which the request then selects. A renderer therefore never reads a field
+    // that the response omitted.
+    config: rowConfig,
+    initialState: { ...table?.initialState, ...(saved.active ? restoredState : {}) },
+    dataSource: {
+      type: "remote",
+      dataScope,
+      queryKey: (state) =>
+        ready(state) ? resource.list.queryKey(...([parametersFor(state)] as never[])) : resource.list.queryKey(),
+      fetch: ((state, context) =>
+        fetchCollection(normalizeState(state) as CollectionQueryState<TDocument>, context)) as CollectionFetcher<Row>,
+      wire: {
+        request: (state, { signal }) => resource.list.request(...([parametersFor(state), { signal }] as never[])),
+        select: (body, state) => {
+          const selected = adapter.selectedFields(
+            projectedState(adapter, normalizeState(state), request?.projection ?? "visible"),
+          );
+          const page = adapter.parseResponse(body, selected);
+          request?.validateRows?.(page.rows);
+          return page;
+        },
+      },
+      ...query,
+      enabled: ready,
+    },
+  });
+  // Count identity excludes paging and projection. Prefix invalidation after writes
+  // refreshes this active query along with the current page.
+  const totals = useQuery({
+    queryKey: ready(result.state)
+      ? resource.list.queryKey(...([parametersFor(totalState(result.state), true)] as never[]))
+      : resource.list.queryKey(),
+    enabled: ready(result.state),
+    staleTime: Infinity,
+    gcTime: query?.gcTime,
+    retry: query?.retry,
+    queryFn: ({ signal }) =>
+      resource.list.request(...([parametersFor(totalState(result.state), true), { signal }] as never[])),
+    select: (body) => {
+      const page = adapter.parseResponse(
+        body,
+        adapter.selectedFields(
+          projectedState(adapter, normalizeState(totalState(result.state)), request?.projection ?? "visible"),
+        ),
+      );
+      request?.validateRows?.(page.rows);
+      if (page.rowCount === undefined) throw new Error("API V2 totals response omitted totalDocs");
+      return page.rowCount;
+    },
+  });
+  useEffect(() => {
+    if (!blocked && matchesSaved(result.state) && restoredSignature !== saved.signature) {
+      setRestoredSignature(saved.signature);
+    }
+  }, [blocked, restoredSignature, result.state, saved.signature]);
+  return {
+    ...result,
+    tableProps: {
+      ...result.tableProps,
+      features: {
+        ...result.tableProps.features,
+        pagination:
+          result.tableProps.features.pagination === false
+            ? false
+            : {
+                ...result.tableProps.features.pagination,
+                rowCount: totals.data,
+              },
+      },
+      stateSync: persistenceEnabled
+        ? createElement(SavedTableViewReader, {
+            key: config.slug,
+            slug: config.slug,
+            options: table?.queryString || true,
+            onChange: setSavedState,
+          })
+        : undefined,
+      queryString: blocked ? false : result.tableProps.queryString,
+      ...(fields.pending || (persistenceEnabled && savedState === null)
+        ? {
+            status: "loading" as const,
+            features: {
+              filtering: false as const,
+              columns: false as const,
+              sorting: false as const,
+              pagination: false as const,
+            },
+          }
+        : {}),
+      ...(!fields.pending && (invalid || fields.error)
+        ? {
+            status: "error" as const,
+            restoredViewIssue: {
+              kind: fields.error ? ("network" as const) : ("invalid" as const),
+              encoded: saved.raw.where ?? saved.raw.columns ?? "",
+              retry: () => {
+                void fields.retry();
+              },
+              remove: saved.remove,
+            },
+          }
+        : {}),
+      onSelectRuntimeField: selectRuntimeField,
+      runtimeFieldDefinitions: runtimeFields,
+      runtimeFieldAuthScope: fields.scope,
+    },
+    adapter,
+    selectRuntimeField,
+  };
+}
