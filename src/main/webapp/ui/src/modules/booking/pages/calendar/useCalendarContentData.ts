@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
@@ -12,24 +13,27 @@ import { resolveCollectionConfig } from "@/modules/common/collection/resolveConf
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
-import type { CalendarLayout, CalendarView } from "./BookingEventsCalendar";
+import { type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
 import { useCalendarEvents } from "./calendarEvents";
-import { calendarDates } from "./calendarLayoutUtils";
 
-export const calendarResourceConfig = resolveCollectionConfig({
+const calendarResourceConfig = resolveCollectionConfig({
   ...bookingConfigurationConfig,
   slug: "calendar-resources",
   defaultColumns: ["target"],
   pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
 } as const);
 
+const calendarSearchParser = parseAsString.withDefault("").withOptions({ history: "replace", clearOnDefault: true });
+
 export function useCalendarContentData() {
   const { date } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
+  const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const { data: currentUser } = useCurrentUserQuery();
   const [view, setView] = React.useState<CalendarView>("day");
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
+  const [eventScopeIsFiltered, setEventScopeIsFiltered] = React.useState(() => calendarSearch.trim() !== "");
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -64,14 +68,18 @@ export function useCalendarContentData() {
         };
       },
     },
-    initialState: { visibleFields: ["target"] },
+    initialState: { filters: { search: calendarSearch, expression: null }, visibleFields: ["target"] },
     features: { sorting: false, columns: false },
-    queryString: { parameterPrefix: "calendar-resources", tableId: "booking-calendar-resources" },
+    queryString: false,
   });
+  React.useEffect(() => {
+    if (resourceTable.state.filters.search === calendarSearch) return;
+    resourceTable.setFilters({ ...resourceTable.state.filters, search: calendarSearch });
+  }, [calendarSearch, resourceTable.setFilters, resourceTable.state.filters]);
   const resourceConfigurations = React.useMemo(
     () =>
       resourceTable.tableProps.rows.flatMap((row) => {
-        if (!row.capabilities.canCreateBooking) return [];
+        if (!row.capabilities.canCreateBooking && !row.capabilities.canEditConfiguration) return [];
         const option = bookableItemOption(row);
         return option ? [option] : [];
       }),
@@ -86,27 +94,31 @@ export function useCalendarContentData() {
     dates.at(-1) ?? dates[0],
     preferences.timeZone,
 
-    layout === "resources" ? resourceTargetIds : undefined,
+    layout === "resources" && !eventScopeIsFiltered ? resourceTargetIds : undefined,
     !resettingControls &&
       (layout !== "resources" ||
         (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing")),
   );
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
+
   return {
-    beginCreation,
-    creationActive,
-    currentUser,
-    events,
-    layout,
     navigate,
-    preferences,
-    resourceConfigurations,
-    resourceTable,
-    resourceTargets,
-    selectedDate,
+    calendarSearch,
+    setCalendarSearch,
+    currentUser,
+    view,
+    setView,
+    layout,
     setLayout,
     setResettingControls,
-    setView,
-    view,
+    setEventScopeIsFiltered,
+    preferences,
+    beginCreation,
+    creationActive,
+    selectedDate,
+    resourceTable,
+    resourceConfigurations,
+    events,
+    resourceTargets,
   };
 }

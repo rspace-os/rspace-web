@@ -11,8 +11,8 @@ import {
 import { Suspense } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
-import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import {

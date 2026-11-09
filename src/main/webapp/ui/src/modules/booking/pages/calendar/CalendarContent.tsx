@@ -6,21 +6,24 @@ import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
   const {
-    beginCreation,
-    creationActive,
-    currentUser,
-    events,
-    layout,
     navigate,
-    preferences,
-    resourceConfigurations,
-    resourceTable,
-    resourceTargets,
-    selectedDate,
+    calendarSearch,
+    setCalendarSearch,
+    currentUser,
+    view,
+    setView,
+    layout,
     setLayout,
     setResettingControls,
-    setView,
-    view,
+    setEventScopeIsFiltered,
+    preferences,
+    beginCreation,
+    creationActive,
+    selectedDate,
+    resourceTable,
+    resourceConfigurations,
+    events,
+    resourceTargets,
   } = useCalendarContentData();
 
   return (
@@ -35,6 +38,11 @@ export function CalendarContent() {
       resources={resourceTargets}
       resourceConfigurations={resourceConfigurations}
       resourceTableProps={resourceTable.tableProps}
+      searchControl={{
+        value: calendarSearch,
+        onChange: (search) => void setCalendarSearch(search || null),
+      }}
+      onEventScopeChange={setEventScopeIsFiltered}
       currentUserId={currentUser.id}
       isLoading={events.isPending && resourceTable.tableProps.status !== "error"}
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
@@ -84,6 +92,7 @@ export function CalendarContent() {
           initialDate: selectedDate,
           window,
           lockTarget: true,
+          timelineAdjustable: trigger.matches('[data-testid="day-timeline-scroller"]'),
         });
       }}
     />
