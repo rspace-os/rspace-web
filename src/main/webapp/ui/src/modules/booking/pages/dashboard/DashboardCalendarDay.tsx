@@ -129,7 +129,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
         <ul className="min-h-[15.5rem] space-y-1">
           {visibleBookings.map((booking) =>
             (() => {
-              const itemName = booking.target?.value.name ?? t("common:values.unknownItem");
+              const itemName = booking.target?.value.name ?? t("calendar.feed.unknownItem");
               const period = formatAgendaPeriod(booking.start, booking.end, timeZone, locale);
               return booking.privacy === "busy" ? (
                 <RestrictedBookingRow key={booking.id} heading={itemName} period={period} label={t("calendar.busy")} />

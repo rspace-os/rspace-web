@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
 import { tableViewDescriptor } from "@/modules/common/table-list/persistence";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
-import { instrumentRelationshipSources } from "@/modules/inventory/instrumentRelationshipSource";
 import type { BookingListDocument } from "../../domain/booking";
 
 function dateTime(value: BookingListDocument["start"], timeZone: string): ReactNode {
@@ -30,7 +30,7 @@ export const myBookingsTable = tableViewDescriptor({ slug, defaultColumns }, "is
 export function bookingListConfig(timeZone: string): CollectionConfig<BookingListDocument> {
   return {
     slug,
-    relationshipSources: instrumentRelationshipSources,
+    relationshipSources: bookingRelationshipSources,
     idField: "id",
     useAsTitle: "target",
     labels: {

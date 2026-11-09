@@ -1,13 +1,24 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
+import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
-import { loadCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
+import { loadCalendarAvailability, useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
+import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
+import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
+import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 
-const booking = (id: number, target: string, start: string, end: string) => ({
+const bookingResponse = (
+  docs: readonly BookingsRead[],
+  options?: Parameters<typeof collectionResponse>[1],
+): ListBookings200 => ({ ...collectionResponse(docs, options), docs: [...docs] });
+
+const booking = (id: number, target: string, start: string, end: string): BookingsRead => ({
   id,
   version: 0,
   target: {
@@ -75,11 +86,34 @@ const closureId = (globalId: string, startsAt: string, endsAt: string) =>
   `opening-hours:${globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`;
 
 describe("calendar availability", () => {
+  it("refreshes aggregate availability when the generated booking list prefix is invalidated", async () => {
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/bookings", () => {
+        requests += 1;
+        return HttpResponse.json(
+          bookingResponse(requests === 1 ? [booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")] : []),
+        );
+      }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(
+      () => useCalendarAvailability([{ globalId: "IN1", timezone: "UTC", ...schedule }], "2026-08-17"),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.get("IN1")?.some((entry) => entry.kind === "booking")).toBe(true);
+    await invalidateListBookings(client);
+    await waitFor(() => expect(result.current.data?.get("IN1")?.some((entry) => entry.kind === "booking")).toBe(false));
+    expect(requests).toBe(2);
+  });
+
   it("classifies maintenance as a blockout while retaining its details and buffers", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
         HttpResponse.json(
-          collectionResponse([
+          bookingResponse([
             { ...booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"), kind: "MAINTENANCE" },
           ]),
         ),
@@ -107,7 +141,7 @@ describe("calendar availability", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         requests.push(new URL(request.url));
         return HttpResponse.json(
-          collectionResponse([
+          bookingResponse([
             booking(1, "IN1", "2026-03-28T22:00:00Z", "2026-03-29T01:00:00Z"),
             booking(2, "IN2", "2026-03-29T03:00:00Z", "2026-03-29T05:00:00Z"),
           ]),
@@ -126,7 +160,12 @@ describe("calendar availability", () => {
     );
 
     expect(requests).toHaveLength(1);
-    expect(requests[0].searchParams.get("where")).toContain("target=in=(IN1,IN2)");
+    const where = requests[0].searchParams.get("where") ?? "";
+    expect(where).toContain("target=in=(IN1,IN2)");
+    expect(where).toContain("start=lt=2026-03-29T22:00:00Z");
+    expect(where).toContain("end=gt=2026-03-28T23:00:00Z");
+    expect(where).not.toContain("start<");
+    expect(where).not.toContain("end>");
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(apiV2Fields(BOOKING_READ_FIELDS));
     expect(requests[0].searchParams.get("totals")).toBe("true");
     expect(result.get("IN1")).toEqual([
@@ -141,7 +180,7 @@ describe("calendar availability", () => {
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
         requests.push(new URL(request.url));
-        return HttpResponse.json(collectionResponse([]));
+        return HttpResponse.json(bookingResponse([]));
       }),
     );
     const rows = Array.from({ length: 1000 }, (_, index) => ({
@@ -169,14 +208,14 @@ describe("calendar availability", () => {
         pages.push(page);
         return HttpResponse.json(
           page === "1"
-            ? collectionResponse(
+            ? bookingResponse(
                 [
                   booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
                   booking(2, "IN2", "2026-08-17T11:00:00Z", "2026-08-17T12:00:00Z"),
                 ],
                 { page: 1, limit: 2, totalDocs: 4 },
               )
-            : collectionResponse(
+            : bookingResponse(
                 [
                   booking(3, "IN2", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z"),
                   booking(4, "IN1", "2026-08-17T13:00:00Z", "2026-08-17T14:00:00Z"),
@@ -197,7 +236,7 @@ describe("calendar availability", () => {
 
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json(collectionResponse([], { page: 1, limit: 100, totalDocs: 1001 })),
+        HttpResponse.json(bookingResponse([], { page: 1, limit: 100, totalDocs: 1001 })),
       ),
     );
     await expect(loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal)).rejects.toThrow(
@@ -215,7 +254,7 @@ describe("calendar availability", () => {
         const docs = Array.from({ length: Math.min(100, 1000 - start) }, (_, index) =>
           booking(start + index + 1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
         );
-        return HttpResponse.json(collectionResponse(docs, { page: page, limit: 100, totalDocs: 1000 }));
+        return HttpResponse.json(bookingResponse(docs, { page: page, limit: 100, totalDocs: 1000 }));
       }),
     );
 
@@ -243,7 +282,7 @@ describe("calendar availability", () => {
         const docs = Array.from({ length: 100 }, (_, index) =>
           booking(start + index + 1, targetId, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
         );
-        return HttpResponse.json(collectionResponse(docs, { page: page, limit: 100, totalDocs: 1000 }));
+        return HttpResponse.json(bookingResponse(docs, { page: page, limit: 100, totalDocs: 1000 }));
       }),
     );
     const rows = Array.from({ length: 1000 }, (_, index) => ({
@@ -265,7 +304,7 @@ describe("calendar availability", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         requestUrl = new URL(request.url);
         return HttpResponse.json(
-          collectionResponse([
+          bookingResponse([
             booking(1, "IN1", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
             booking(2, "IN2", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
           ]),
@@ -296,7 +335,7 @@ describe("calendar availability", () => {
   });
 
   it("generates and clips closures for every scheduling date overlapped by the display interval", async () => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookingResponse([]))));
     const interval = displayInterval("2026-08-18", "Pacific/Auckland", "00:00", "24:00");
 
     const result = await loadCalendarAvailability(
@@ -335,7 +374,7 @@ describe("calendar availability", () => {
   it("marks closed and buffered periods unavailable while double-bookable events stay available", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json(collectionResponse([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")])),
+        HttpResponse.json(bookingResponse([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")])),
       ),
     );
     const restricted = {
@@ -391,7 +430,7 @@ describe("calendar availability", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         requests.push(new URL(request.url));
         return HttpResponse.json(
-          collectionResponse([
+          bookingResponse([
             booking(1, "IN1", "2026-08-17T09:00:00Z", "2026-08-17T09:40:00Z"),
             booking(2, "IN1", "2026-08-17T09:00:00Z", "2026-08-17T09:41:00Z"),
             booking(3, "IN1", "2026-08-17T11:19:00Z", "2026-08-17T12:00:00Z"),
@@ -454,7 +493,7 @@ describe("calendar availability", () => {
         if (url.searchParams.get("where")?.includes("IN0500")) {
           return HttpResponse.json({ message: "later batch failed" }, { status: 500 });
         }
-        return HttpResponse.json(collectionResponse([]));
+        return HttpResponse.json(bookingResponse([]));
       }),
     );
     const rows = Array.from({ length: 501 }, (_, index) => ({
@@ -477,7 +516,7 @@ describe("calendar availability", () => {
         requests.push(url);
         const targetList = (url.searchParams.get("where") ?? "").split("target=in=(")[1]?.split(")")[0] ?? "";
         if (targetList.split(",").length > 1) return new HttpResponse(null, { status });
-        return HttpResponse.json(collectionResponse([]));
+        return HttpResponse.json(bookingResponse([]));
       }),
     );
     const rows = ["IN1", "IN2"].map((globalId) => ({ globalId, timezone: "UTC", ...schedule }));
@@ -499,7 +538,7 @@ describe("calendar availability", () => {
         const url = new URL(request.url);
         requests.push(url);
         if (requests.length === 2) controller.abort();
-        return HttpResponse.json(collectionResponse([]));
+        return HttpResponse.json(bookingResponse([]));
       }),
     );
     const rows = Array.from({ length: 501 }, (_, index) => ({
@@ -523,7 +562,7 @@ describe("calendar availability", () => {
     { date: "2026-08-18", closures: [["2026-08-18T00:00:00Z", "2026-08-18T10:00:00Z"]] },
     { date: "2026-08-19", closures: [["2026-08-19T00:00:00Z", "2026-08-20T00:00:00Z"]] },
   ])("uses the independent weekday schedule on $date", async ({ date, closures }) => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookingResponse([]))));
     const result = await loadCalendarAvailability(
       [
         {

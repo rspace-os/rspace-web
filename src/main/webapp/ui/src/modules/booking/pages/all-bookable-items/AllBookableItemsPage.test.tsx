@@ -1,3 +1,4 @@
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { getGetBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingConfigurationsBulkResult } from "@/modules/common/api/v2/generated/models/bookingConfigurationsBulkResult";
@@ -337,7 +338,9 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json<BookingConfigurationsRead>({ id: bookingConfiguration.id });
       }),
     );
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
     const { queryClient } = renderBookableItemsPage();
+    queryClient.setQueryData(catalogueQueryKey, collectionPage([]));
     queryClient.setQueryData(getGetBookingCalendarSubscriptionQueryKey(7), {
       body: { active: false, updatedAt: null, subscriptionUrl: null },
       headers: new Headers({ ETag: '"1"' }),
@@ -360,6 +363,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() =>
       expect(queryClient.getQueryState(getGetBookingCalendarSubscriptionQueryKey(7))?.isInvalidated).toBe(true),
     );
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("restores a configuration and refreshes dependent queries", async () => {
@@ -379,7 +383,9 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json<BookingConfigurationsRead>({ id: current.id });
       }),
     );
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
     const { queryClient } = renderBookableItemsPage();
+    queryClient.setQueryData(catalogueQueryKey, collectionPage([]));
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
 
     await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.menu" }));
@@ -397,6 +403,7 @@ describe("BookableItemsPage", () => {
         queryKey: getGetBookingCalendarSubscriptionQueryKey(7),
       }),
     );
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("debounces search and searches the target name", async () => {
@@ -498,7 +505,9 @@ describe("BookableItemsPage", () => {
         });
       }),
     );
-    renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
+    const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    queryClient.setQueryData(catalogueQueryKey, collectionPage([]));
 
     await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
     await user.click(screen.getByRole("button", { name: "Next page" }));
@@ -518,6 +527,7 @@ describe("BookableItemsPage", () => {
     );
     await waitFor(() => expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "false"));
     expect(postSaveListGets).toBe(1);
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("disables selected rows with one bulk patch", async () => {
@@ -537,7 +547,9 @@ describe("BookableItemsPage", () => {
         });
       }),
     );
-    renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
+    const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    queryClient.setQueryData(catalogueQueryKey, collectionPage([]));
 
     await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
     await user.click(screen.getByRole("checkbox", { name: "Select Electron microscope" }));
@@ -552,6 +564,7 @@ describe("BookableItemsPage", () => {
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Disable" }));
     await waitFor(() => expect(requests).toHaveLength(1));
     expect(requests[0]).toEqual({ where: "id=in=(7,8)", body: { enabled: false } });
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("confirms the multi-page count and archives all selected rows with one request", async () => {
@@ -580,7 +593,9 @@ describe("BookableItemsPage", () => {
         });
       }),
     );
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
     const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    queryClient.setQueryData(catalogueQueryKey, collectionPage([]));
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
 
     await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
@@ -613,6 +628,7 @@ describe("BookableItemsPage", () => {
       }),
     );
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: getGetBookingCalendarSubscriptionQueryKey(8) });
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it.each(["Enable", "Disable"] as const)("keeps selection after a failed bulk %s request", async (action) => {

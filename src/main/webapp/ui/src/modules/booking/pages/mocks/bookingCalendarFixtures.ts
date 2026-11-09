@@ -86,6 +86,7 @@ export function collectionResponse(
   return {
     docs,
     totalDocs,
+    totalIsLowerBound: false,
     limit,
     page,
     hasNextPage: page < totalPages,

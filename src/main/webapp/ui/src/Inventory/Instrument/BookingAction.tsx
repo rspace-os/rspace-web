@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
-import { findBookingConfigurationQueryOptions } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
+import { inventoryBookingConfigurationQuery } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
 
 type BookingActionProps = {
   globalId: string | null;
@@ -17,7 +17,7 @@ type BookingActionProps = {
 
 function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner: boolean }) {
   const { t } = useTranslation("inventory");
-  const configuration = useQuery(findBookingConfigurationQueryOptions(globalId));
+  const configuration = useQuery(inventoryBookingConfigurationQuery(globalId));
 
   if (!configuration.isSuccess) return null;
 
