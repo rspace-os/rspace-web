@@ -1,4 +1,3 @@
-import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import {
   type QueryClient,
   skipToken,
@@ -9,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { chunk } from "es-toolkit";
 import { useMemo } from "react";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import type {
   RelationshipOption,
   RelationshipOptionAvailabilitySource,
@@ -111,7 +111,11 @@ export function canonicalValue(source: RelationshipSource, value: string): strin
   return source.normalizeValue === undefined ? value : source.normalizeValue(value);
 }
 
-export function optionBatchCacheKey(source: RelationshipSource, values: readonly string[], scope: string | number | null) {
+export function optionBatchCacheKey(
+  source: RelationshipSource,
+  values: readonly string[],
+  scope: string | number | null,
+) {
   return ["relationship-option-batch", source.id, scope, ...values] as const;
 }
 
@@ -192,7 +196,9 @@ export function useSelectedRelationshipOptions({
             const forceRefresh = state?.isInvalidated === true && state.dataUpdatedAt > 0;
             const valuesToResolve = forceRefresh
               ? batch
-              : batch.filter((canonical) => !cacheEntryIsFresh(queryClient, optionCacheKey(candidate, canonical, scope)));
+              : batch.filter(
+                  (canonical) => !cacheEntryIsFresh(queryClient, optionCacheKey(candidate, canonical, scope)),
+                );
             if (valuesToResolve.length > 0) {
               const documents = await resolveMany(valuesToResolve, signal);
               for (const canonical of valuesToResolve) {

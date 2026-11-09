@@ -12,7 +12,9 @@ export type ApiV2CollectionFetchOptions<TDocument> = {
   /** Identity used for selection resets, never query keys. */
   authScope?: string | number;
   projection?: ApiV2CollectionProjection<TDocument>;
-  baseFilter?: FilterExpression<TDocument>;
+  baseFilter?:
+    | FilterExpression<TDocument>
+    | ((expression: FilterExpression<TDocument> | null) => FilterExpression<TDocument> | undefined);
   validateRows?: (rows: readonly TDocument[]) => void;
 };
 
@@ -31,12 +33,13 @@ export function apiV2CollectionRequestParams<TDocument>(
   state: CollectionQueryState<TDocument>,
   depth?: number,
   projection: ApiV2CollectionProjection<TDocument> = "visible",
-  baseFilter?: FilterExpression<TDocument>,
+  baseFilter?: ApiV2CollectionFetchOptions<TDocument>["baseFilter"],
 ): URLSearchParams {
+  const filter = typeof baseFilter === "function" ? baseFilter(state.filters.expression) : baseFilter;
   const expression =
-    baseFilter && state.filters.expression
-      ? ({ kind: "and", children: [baseFilter, state.filters.expression] } satisfies FilterExpression<TDocument>)
-      : (baseFilter ?? state.filters.expression);
+    filter && state.filters.expression
+      ? ({ kind: "and", children: [filter, state.filters.expression] } satisfies FilterExpression<TDocument>)
+      : (filter ?? state.filters.expression);
   const filteredState = { ...state, filters: { ...state.filters, expression } };
   const requestState = projectedState(adapter, filteredState, projection);
   const parameters = adapter.toSearchParams(requestState);

@@ -12,8 +12,8 @@ import { Suspense } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { BookingNoticesProvider } from "@/modules/booking/feedback/BookingNotices";
+import BookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import {
@@ -85,7 +85,7 @@ export function BookableItemPageStory({
         }),
         createRoute({
           getParentRoute: () => bookingRoute,
-          path: "/config/bookable-items/",
+          path: "/all-items/",
           component: BookableItemsPage,
         }),
       ]),

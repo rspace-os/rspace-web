@@ -4,7 +4,7 @@ export class AllBookableItemsPage {
   readonly instrumentName = page.getByRole("link", { name: "Confocal microscope", exact: true }).first();
   readonly bookableItemDetailsHeading = bookableItemHeading("Confocal microscope");
   readonly bookableItemDetailsTarget = bookableItemTarget("IN123");
-  readonly heading = page.getByRole("heading", { name: "All Bookable Items" });
+  readonly heading = page.getByRole("heading", { name: "All items" });
   readonly table = page.getByRole("table");
   get detailsButton(): Locator {
     return this.table

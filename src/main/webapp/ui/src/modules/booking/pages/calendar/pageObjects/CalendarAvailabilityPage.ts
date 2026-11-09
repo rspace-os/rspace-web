@@ -26,11 +26,11 @@ export class CalendarAvailabilityPage {
   }
 
   get tableElement(): Locator {
-    return css('[data-slot="table"][aria-label="All Bookable Items table"]');
+    return css('[data-slot="table"][aria-label="All items table"]');
   }
 
   get cards(): Locator {
-    return css('[data-slot="table-list-card-view"][aria-label="All Bookable Items cards"]');
+    return css('[data-slot="table-list-card-view"][aria-label="All items cards"]');
   }
 
   get search(): Locator {

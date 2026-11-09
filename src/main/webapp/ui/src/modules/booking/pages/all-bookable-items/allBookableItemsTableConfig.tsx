@@ -3,11 +3,11 @@ import { BookableItemName } from "@/modules/booking/components/BookableItemName"
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import type { FilterExpression } from "@/modules/common/table-list/types";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
-import type { AllBookableItem } from "../calendar/availability/availabilityQuickFilters";
+import type { BookingConfiguration as AllBookableItem } from "../bookable-items/bookingConfiguration";
+import { bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { ownerPresetField } from "../ownerPreset";
 
 /** The instrument's Inventory location; the tooltip explains a bare container name such as "WB user1a". */
@@ -36,15 +36,17 @@ function createAllBookableItemsConfig(openRecordLabel: (globalId: string) => str
       singularKey: "booking:allBookableItems.singular" satisfies CollectionTranslationKey,
       pluralKey: "booking:allBookableItems.plural" satisfies CollectionTranslationKey,
     },
-    defaultColumns: ["target"],
+    defaultColumns: ["target", "state"],
     listSearchableFields: ["target.name"],
     relationshipSources: bookingRelationshipSources,
     fields: [
       ownerPresetField,
+      ...bookingConfigurationConfig.fields.filter((field) => !["id", "target", "enabled"].includes(field.name)),
+      { name: "enabled", type: "boolean", labelKey: "booking:allBookableItems.fields.enabled", list: {}, form: false },
       {
         name: "id",
         type: "number",
-        labelKey: "booking:bookableItems.fields.id" satisfies CollectionTranslationKey,
+        labelKey: "booking:allBookableItems.fields.id" satisfies CollectionTranslationKey,
         list: false,
         form: false,
       },
@@ -53,7 +55,7 @@ function createAllBookableItemsConfig(openRecordLabel: (globalId: string) => str
         type: "relationship",
         relationTo: "instruments",
         hasMany: false,
-        labelKey: "booking:bookableItems.fields.target" satisfies CollectionTranslationKey,
+        labelKey: "booking:allBookableItems.fields.target" satisfies CollectionTranslationKey,
         capabilities: { sortable: false, filterOperators: ["equals"], supportsWildcards: false },
         list: {
           width: 280,
@@ -69,7 +71,14 @@ function createAllBookableItemsConfig(openRecordLabel: (globalId: string) => str
                   idLinkLabel={openRecordLabel(row.target.globalId)}
                   size="xs"
                 >
-                  <InstrumentLocation name={row.target.location?.name} globalId={row.target.location?.globalId} />
+                  <InstrumentLocation
+                    name={
+                      typeof row.target.value.parentContainer?.value === "object"
+                        ? row.target.value.parentContainer.value.name
+                        : undefined
+                    }
+                    globalId={row.target.value.parentContainer?.globalId}
+                  />
                 </InventoryItem>
               </div>
             ) : (
@@ -81,8 +90,4 @@ function createAllBookableItemsConfig(openRecordLabel: (globalId: string) => str
   } as const satisfies CollectionConfig<AllBookableItem>);
 }
 
-function filterExpression(target: string | undefined): FilterExpression<AllBookableItem> | null {
-  return target ? { kind: "comparison", field: "target", operator: "equals", value: target } : null;
-}
-
-export { createAllBookableItemsConfig, filterExpression };
+export { createAllBookableItemsConfig };

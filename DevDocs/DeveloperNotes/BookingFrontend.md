@@ -414,6 +414,12 @@ Generated success invalidation starts refetches without awaiting them. Flows tha
 need refreshed data before continuing await generated invalidation helpers.
 Calendar-link mutations keep their explicit cache and ETag handling.
 
+`invalidateBookableItemRecords(queryClient, action, docs, options?)` refreshes
+returned records and companion lists, including when `docs` is empty. Callers
+joining a refetch already started by generated mutation options pass
+`{ cancelRefetch: false }` as the fourth argument to await the
+existing request without cancelling and restarting it.
+
 See [the REST API v2 frontend client guide](RestApiV2FrontendClient.md).
 
 ## Route prefetching
@@ -471,6 +477,30 @@ The Calendar's Availability layout uses the item expression in `calendar-resourc
 Leaving Availability removes its top-level preset rules in the same URL write as the layout change. A saved availability rule opened in another layout is dropped through the stale-field policy with a non-blocking notice. Availability disables the Resources catalogue, display events and blocking events queries. Its bars still load the bookings needed for availability shading.
 
 The inline buttons retain the former All items presentation. Availability's outer TableList edits the item expression and its nested row table hides its header and filter panel. Other layouts retain the existing event panel and owner projection. The requester rule stays stored while Availability hides its control. All items links to this layout with its search and item expression.
+
+### All items configuration list
+
+All items uses `booking-configurations` through `useApiV2TableList`, with slug
+`all-bookable-items`. Its URL search, filter, sorting and column state use the
+standard table persistence. The default scope is active, enabled configurations
+on undeleted Inventory targets. The server excludes deleted targets.
+
+A parsed top-level AND rule for `state` or `enabled` replaces the entire default
+status scope. OR-nested status rules do not replace it. This behavior applies to
+every reader, with no manager detection or status quick filters. Reset restores
+the default scope. Status is visible initially; Updated is available in Columns.
+
+All items owns lifecycle and personal notification selection, capped at 100.
+Lifecycle bulk actions require a direct sysadmin; notification actions use only
+selected rows with the subscription capability and preserve subscription
+versions. Add and permanent deletion return to All items. The former
+Administration list route is retired; Settings is a top-level sysadmin entry.
+Calendar Availability retains its catalogue data source and item query helpers.
+
+The list drops invalid Owner preset values through a page-owned expression
+normalizer. The shared table hook applies it to restored and live URL state
+before constructing page and total requests or cache keys. This keeps `me`
+recovery from sending a rejected value during URL synchronization.
 
 Configuration saves submit fields changed from the opening baseline. After a 412, the form waits for the refreshed configuration version, reapplies user-only changes, and requires a choice for fields changed by both editors. Unchanged `enabled` is omitted.
 

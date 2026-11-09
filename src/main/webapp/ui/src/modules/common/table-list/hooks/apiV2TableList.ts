@@ -48,6 +48,8 @@ export type UseApiV2TableListOptions<
   config: CollectionConfig<TDocument, TId, TTitle>;
   request?: ApiV2CollectionFetchOptions<TDocument>;
   metadata?: ApiV2CollectionMetadata<TDocument>;
+  /** Recover page-owned presets after parsing, before queries or saved-view validation. */
+  normalizeFilterExpression?: (expression: FilterExpression<TDocument> | null) => FilterExpression<TDocument> | null;
   table?: TableOptions<CollectionRow<TDocument, TId | TTitle>>;
   query?: {
     staleTime?: number;
@@ -75,7 +77,16 @@ export function useApiV2TableList<
 >(
   options: UseApiV2TableListOptions<TDocument, TEntry, TId, TTitle, TSchema>,
 ): UseApiV2TableListResult<TDocument, CollectionRow<TDocument, TId | TTitle>> {
-  const { resource, config, documentSchema, request, metadata: suppliedMetadata, table, query } = options;
+  const {
+    resource,
+    config,
+    documentSchema,
+    request,
+    metadata: suppliedMetadata,
+    normalizeFilterExpression,
+    table,
+    query,
+  } = options;
   type Row = CollectionRow<TDocument, TId | TTitle>;
 
   const [savedState, setSavedState] = useState<SavedTableView | null>(null);
@@ -104,8 +115,10 @@ export function useApiV2TableList<
     [config, documentSchema, options.mapDocument, metadata, runtimeFields],
   );
   const rowConfig = adapter.config as unknown as ResolvedCollectionConfig<Row>;
-  const parsedExpression = saved.raw.where === null ? null : parseRsqlExpression(saved.raw.where, rowConfig);
-  const restoredExpression = parsedExpression;
+  const parsedExpression = saved.raw.where === null ? null : parseRsqlExpression(saved.raw.where, adapter.config);
+  const restoredExpression = (
+    normalizeFilterExpression ? normalizeFilterExpression(parsedExpression) : parsedExpression
+  ) as FilterExpression<Row> | null;
   const restoredFilters = { search: saved.raw.search ?? "", expression: restoredExpression };
   const restoredColumns =
     saved.raw.columns === null ? rowConfig.defaultColumns : parseColumns(saved.raw.columns, rowConfig);
@@ -127,7 +140,18 @@ export function useApiV2TableList<
     visibleFields: restoredColumns ?? rowConfig.defaultColumns,
     sorting: restoredSorting ?? rowConfig.defaultSort ?? [],
   };
-  const normalizeState = (state: CollectionQueryState<Row>) => state;
+  const normalizeState = (state: CollectionQueryState<Row>): CollectionQueryState<Row> =>
+    normalizeFilterExpression
+      ? {
+          ...state,
+          filters: {
+            ...state.filters,
+            expression: normalizeFilterExpression(
+              state.filters.expression as FilterExpression<TDocument> | null,
+            ) as FilterExpression<Row> | null,
+          },
+        }
+      : state;
   const fetchCollection = createApiV2CollectionFetcher(adapter, resource, { ...request, totals: false });
   // Acknowledge each restored signature so later edits may diverge and fetch.
   // A new signature must match its saved state before it is acknowledged.
@@ -187,6 +211,11 @@ export function useApiV2TableList<
       enabled: ready,
     },
   });
+  useEffect(() => {
+    const normalized = normalizeState(result.state);
+    if (serializeFilters(normalized.filters) !== serializeFilters(result.state.filters))
+      result.setFilters(normalized.filters);
+  }, [result.state]);
   // Count identity excludes paging and projection. Prefix invalidation after writes
   // refreshes this active query along with the current page.
   const totals = useQuery({

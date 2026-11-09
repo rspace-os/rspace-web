@@ -307,6 +307,9 @@ export function createApiV2FilterFields<TDocument>({
   }
   const runtimeSelectors = new Set(runtimeDerivedFields.map(({ field }) => field.name));
   const virtualFields = new Set<FieldName<TDocument>>([
+    ...sourceConfig.fields
+      .filter((field) => !metadata.fields.includes(field.name) && metadata.filtering.selectors[field.name])
+      .map((field) => field.name),
     ...identityFields.map((field) => field.name),
     ...relationshipFields.map(({ field }) => field.name),
     ...runtimeSelectors.keys(),

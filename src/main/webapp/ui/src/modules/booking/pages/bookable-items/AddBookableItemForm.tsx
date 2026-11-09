@@ -182,7 +182,7 @@ export function AddBookableItemForm({
         joinBookingCatalogueRefresh(queryClient),
         queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() }),
       ]);
-      await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+      await navigate({ to: "/booking/all-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {

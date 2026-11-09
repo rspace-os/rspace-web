@@ -20,8 +20,8 @@ export const bookingConfigurationConfig = {
   relationshipSources: bookingRelationshipSources,
   idField: "id",
   labels: {
-    singularKey: "booking:bookableItems.singular" satisfies CollectionTranslationKey,
-    pluralKey: "booking:bookableItems.plural" satisfies CollectionTranslationKey,
+    singularKey: "booking:allBookableItems.singular" satisfies CollectionTranslationKey,
+    pluralKey: "booking:allBookableItems.plural" satisfies CollectionTranslationKey,
   },
   useAsTitle: "target",
   defaultColumns: ["target", "state", "updatedAt"],
@@ -30,7 +30,7 @@ export const bookingConfigurationConfig = {
     {
       name: "id",
       type: "number",
-      labelKey: "booking:bookableItems.fields.id" satisfies CollectionTranslationKey,
+      labelKey: "booking:allBookableItems.fields.id" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },
@@ -39,7 +39,7 @@ export const bookingConfigurationConfig = {
       type: "relationship",
       relationTo: "instruments",
       hasMany: false,
-      labelKey: "booking:bookableItems.fields.target" satisfies CollectionTranslationKey,
+      labelKey: "booking:allBookableItems.fields.target" satisfies CollectionTranslationKey,
       list: {
         renderCell: ({ row }) => {
           if (row.target === null) return createElement(UnknownItem, { size: "xs" });
@@ -59,7 +59,7 @@ export const bookingConfigurationConfig = {
     {
       name: "enabled",
       type: "boolean",
-      labelKey: "booking:bookableItems.fields.enabled" satisfies CollectionTranslationKey,
+      labelKey: "booking:allBookableItems.fields.enabled" satisfies CollectionTranslationKey,
       // Shown through the combined Status column; still filterable on its own.
       list: false,
     },
@@ -70,7 +70,7 @@ export const bookingConfigurationConfig = {
         {
           value: "ACTIVE",
           get label() {
-            return i18n.t("booking:bookableItems.states.active");
+            return i18n.t("booking:allBookableItems.states.active");
           },
         },
         {
@@ -81,7 +81,7 @@ export const bookingConfigurationConfig = {
         },
       ],
       // The column header and the columns panel both read this label.
-      labelKey: "booking:bookableItems.fields.status" satisfies CollectionTranslationKey,
+      labelKey: "booking:allBookableItems.fields.status" satisfies CollectionTranslationKey,
       form: false,
       list: {
         dependencies: ["enabled"],
@@ -98,16 +98,18 @@ export const bookingConfigurationConfig = {
       name: "timezone",
       type: "select",
       options: bookingTimeZoneOptions(),
-      labelKey: "booking:bookableItems.fields.timezone" satisfies CollectionTranslationKey,
+      labelKey: "booking:allBookableItems.fields.timezone" satisfies CollectionTranslationKey,
       required: true,
       list: false,
       // Create-only: the API rejects timezone changes, so edit forms filter this field out.
-      form: { descriptionKey: "booking:bookableItems.fields.timezoneDescription" satisfies CollectionTranslationKey },
+      form: {
+        descriptionKey: "booking:allBookableItems.fields.timezoneDescription" satisfies CollectionTranslationKey,
+      },
     },
     {
       name: "updatedAt",
       type: "dateTime",
-      labelKey: "booking:bookableItems.fields.updatedAt" satisfies CollectionTranslationKey,
+      labelKey: "booking:allBookableItems.fields.updatedAt" satisfies CollectionTranslationKey,
       form: false,
       list: {
         renderCell: ({ row }) => createElement(ConfigurationUpdatedAt, { value: row.updatedAt }),

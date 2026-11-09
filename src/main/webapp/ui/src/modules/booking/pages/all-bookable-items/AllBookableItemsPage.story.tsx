@@ -10,7 +10,6 @@ import {
 } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
-import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import { getGetApiV2OpenApiDocumentQueryKey } from "@/modules/common/api/v2/generated/openapi-json/openapi-json";
@@ -44,7 +43,6 @@ export function AllBookableItemsStory({
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
-          validateSearch: allBookableItemsSearch,
           component: () => <AllBookableItemsPage />,
         }),
         createRoute({

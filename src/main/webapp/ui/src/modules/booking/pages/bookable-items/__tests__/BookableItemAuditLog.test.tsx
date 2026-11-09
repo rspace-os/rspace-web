@@ -141,7 +141,7 @@ describe("BookableItemAuditLog", () => {
 
     const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
     expect(within(item).getByText("booking:bookableItemDetails.audit.fields.actor")).toBeVisible();
-    expect(within(item).getByText("booking:bookableItems.fields.id")).toBeVisible();
+    expect(within(item).getByText("booking:allBookableItems.fields.id")).toBeVisible();
     expect(within(item).queryByText("booking:bookableItemDetails.audit.fields.values")).not.toBeInTheDocument();
 
     const expand = within(item).getByRole("button", { name: "common:actions.expand" });

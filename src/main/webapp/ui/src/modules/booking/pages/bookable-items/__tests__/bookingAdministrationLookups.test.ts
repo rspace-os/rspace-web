@@ -2,7 +2,6 @@ import { QueryClient } from "@tanstack/react-query";
 import { HttpResponse, http } from "msw";
 import { expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { getCountBookingConfigurationsQueryOptions } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import type { TargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/targetDirectoryDocument";
 import { eligibleBookingTargetsQuery } from "../bookingConfigurationTargets";
@@ -20,15 +19,9 @@ it("shares completed and in-flight administration lookups for the same user", as
     }),
   );
   const client = new QueryClient();
-  const load = () =>
-    Promise.all([
-      client.fetchQuery(
-        getCountBookingConfigurationsQueryOptions({ max: 1 }, { query: { staleTime: 10 * 60 * 1000 } }),
-      ),
-      client.fetchQuery(eligibleBookingTargetsQuery(42)),
-    ]);
+  const load = () => Promise.all([client.fetchQuery(eligibleBookingTargetsQuery(42))]);
   await Promise.all([load(), load()]);
   await load();
-  expect(requests).toEqual({ count: 1, targets: 1 });
+  expect(requests).toEqual({ count: 0, targets: 1 });
   client.clear();
 });

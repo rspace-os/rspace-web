@@ -7,7 +7,11 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import { optionBatchCacheKey, optionCacheKey, useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
+import {
+  optionBatchCacheKey,
+  optionCacheKey,
+  useSelectedRelationshipOptions,
+} from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
 import {
   databaseIdFromGlobalId,
@@ -257,10 +261,13 @@ describe("relationship picker restore", () => {
 
     expect(await screen.findByText("Target 42")).toBeVisible();
     act(() => {
-      queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", JSON.stringify([["caller-one", null], "caller-one"])), {
-        globalId: "FX42",
-        name: "Updated target 42",
-      });
+      queryClient.setQueryData(
+        optionCacheKey(fixtureSource, "FX42", JSON.stringify([["caller-one", null], "caller-one"])),
+        {
+          globalId: "FX42",
+          name: "Updated target 42",
+        },
+      );
     });
     expect(await screen.findByText("Updated target 42")).toBeVisible();
 
@@ -277,10 +284,13 @@ describe("relationship picker restore", () => {
     const request = vi.fn();
     const source = fixtureSource;
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", JSON.stringify([["caller-one", null], "caller-one"])), {
-      globalId: "FX42",
-      name: "Cached target 42",
-    });
+    queryClient.setQueryData(
+      optionCacheKey(fixtureSource, "FX42", JSON.stringify([["caller-one", null], "caller-one"])),
+      {
+        globalId: "FX42",
+        name: "Cached target 42",
+      },
+    );
     server.use(
       http.get("/api/v2/relationship-fixtures", () => {
         request();

@@ -128,7 +128,7 @@ export function BookableItemPicker({
       </Combobox>
       {eventKind === "BOOKING" && query.isSuccess && query.data.options.length === 0 && !term ? (
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p>{t("bookableItems.primer.description")}</p>
+          <p>{t("allBookableItems.primer.description")}</p>
           <p>{t("bookings.form.itemAccess")}</p>
           <Link className="underline" to="/booking/all-items">
             {t("sidebar.allItems")}
