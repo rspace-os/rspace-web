@@ -5,8 +5,13 @@ import {
   bookingTimeZoneOptions,
   isValidTimeZone,
   minuteOfDay,
+  useBookingTimeFormat,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingDateTimeLocale,
+  formatWallClockTime,
+} from "@/modules/booking/domain/bookingTime";
 import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
 import type { BookingDisplayPreferencesTimezoneMode } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesTimezoneMode";
 import { BookingDisplayPreferencesControllerReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
@@ -40,6 +45,11 @@ function RadioList<Value extends string>({
   ));
 }
 
+/** An afternoon time written with `format`'s clock, so each Time format option shows what it looks like. */
+function timeFormatExample(format: BookingTimeFormat): string {
+  return formatWallClockTime("14:30", bookingDateTimeLocale(format));
+}
+
 export function BookingDisplaySettingsFields({
   value,
   onChange,
@@ -54,9 +64,11 @@ export function BookingDisplaySettingsFields({
   disabled?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const id = useId();
   const timezoneListId = `${id}-timezones`;
   const endTimeDescriptionId = `${id}-end-description`;
+  const timeFormatDescriptionId = `${id}-time-format-description`;
   const errorId = `${id}-error`;
   const validation = v.safeParse(
     v.pipe(
@@ -122,7 +134,9 @@ export function BookingDisplaySettingsFields({
               }
             />
             <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
-              {t("preferences.availabilityWindow.endOfDay", { midnight: formatWallClockTime("00:00") })}
+              {t("preferences.availabilityWindow.endOfDay", {
+                midnight: formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat)),
+              })}
             </p>
           </div>
         </div>
@@ -160,6 +174,23 @@ export function BookingDisplaySettingsFields({
             ))}
           </datalist>
         </div>
+      </fieldset>
+
+      <fieldset className="space-y-3" disabled={disabled} aria-describedby={timeFormatDescriptionId}>
+        <legend className="font-medium">{t("preferences.timeFormat.legend")}</legend>
+        <p id={timeFormatDescriptionId} className="text-sm text-muted-foreground">
+          {t("preferences.timeFormat.description")}
+        </p>
+        <RadioList
+          name={`${id}-time-format`}
+          selectedValue={value.timeFormat ?? "AUTOMATIC"}
+          options={[
+            ["AUTOMATIC", t("preferences.timeFormat.automatic", { example: timeFormatExample("AUTOMATIC") })],
+            ["H12", t("preferences.timeFormat.twelveHour", { example: timeFormatExample("H12") })],
+            ["H24", t("preferences.timeFormat.twentyFourHour", { example: timeFormatExample("H24") })],
+          ]}
+          onChange={(format) => patch({ timeFormat: format })}
+        />
       </fieldset>
       {!validation.success ? (
         <p id={errorId} role="alert" className="text-sm text-destructive">

@@ -1,5 +1,6 @@
 package com.researchspace.model.comms.data;
 
+import com.researchspace.model.booking.BookingTimeFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -8,6 +9,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class BookingNotificationData extends NotificationData {
   private String emailDisplayTimezone;
+  private BookingTimeFormat emailTimeFormat;
 
   private String bookingId;
   private String instrumentName;

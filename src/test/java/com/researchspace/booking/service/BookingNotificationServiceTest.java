@@ -18,6 +18,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
@@ -86,7 +87,8 @@ class BookingNotificationServiceTest {
             INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
         .thenReturn(
             List.of(
-                new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"), false)));
+                new BookingNotificationRecipient(
+                    recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, false)));
 
     service.notify(booking, actor, notificationType);
 
@@ -109,6 +111,7 @@ class BookingNotificationServiceTest {
     assertEquals("<Mic & scope>", data.getInstrumentName());
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
     assertEquals("Europe/Berlin", data.getEmailDisplayTimezone());
+    assertEquals(BookingTimeFormat.AUTOMATIC, data.getEmailTimeFormat());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
     // The saved message is also the email body, so it links with absolute URLs.
@@ -162,7 +165,8 @@ class BookingNotificationServiceTest {
             INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
         .thenReturn(
             List.of(
-                new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"), false)));
+                new BookingNotificationRecipient(
+                    recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.H12, false)));
 
     service.notify(booking, actor, notificationType);
 
@@ -180,7 +184,7 @@ class BookingNotificationServiceTest {
   }
 
   @Test
-  void sendsSeparateMessagesUsingEachSelectedRecipientsZone() {
+  void sendsSeparateMessagesUsingEachSelectedRecipientsZoneAndClock() {
     User actor = user(1L, "actor");
     User berlinRecipient = user(2L, "berlinRecipient");
     User losAngelesRecipient = user(3L, "losAngelesRecipient");
@@ -194,9 +198,15 @@ class BookingNotificationServiceTest {
         .thenReturn(
             List.of(
                 new BookingNotificationRecipient(
-                    berlinRecipient, ZoneId.of("Europe/Berlin"), false),
+                    berlinRecipient,
+                    ZoneId.of("Europe/Berlin"),
+                    BookingTimeFormat.AUTOMATIC,
+                    false),
                 new BookingNotificationRecipient(
-                    losAngelesRecipient, ZoneId.of("America/Los_Angeles"), false)));
+                    losAngelesRecipient,
+                    ZoneId.of("America/Los_Angeles"),
+                    BookingTimeFormat.H24,
+                    false)));
 
     service.notify(
         booking(BOOKING_ID, BookingEventKind.BOOKING, actor),
@@ -220,9 +230,18 @@ class BookingNotificationServiceTest {
                     ((BookingNotificationData) config.getNotificationData())
                         .getEmailDisplayTimezone())
             .toList());
+    assertEquals(
+        List.of(BookingTimeFormat.AUTOMATIC, BookingTimeFormat.H24),
+        configs.getAllValues().stream()
+            .map(
+                config ->
+                    ((BookingNotificationData) config.getNotificationData()).getEmailTimeFormat())
+            .toList());
     assertTrue(messages.getAllValues().get(0).contains("Jan 2, 2026, 4:04 AM"));
     assertTrue(messages.getAllValues().get(0).contains("Europe/Berlin, UTC+01:00"));
-    assertTrue(messages.getAllValues().get(1).contains("Jan 1, 2026, 7:04 PM"));
+    assertTrue(
+        messages.getAllValues().get(1).contains("Jan 1, 2026, 19:04"),
+        messages.getAllValues().get(1));
     assertTrue(messages.getAllValues().get(1).contains("America/Los_Angeles, UTC-08:00"));
   }
 
@@ -238,7 +257,9 @@ class BookingNotificationServiceTest {
             actor.getId(),
             requester.getId()))
         .thenReturn(
-            List.of(new BookingNotificationRecipient(requester, ZoneId.of("Europe/Berlin"), true)));
+            List.of(
+                new BookingNotificationRecipient(
+                    requester, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, true)));
 
     service.notify(
         booking(BOOKING_ID, BookingEventKind.BOOKING, requester),

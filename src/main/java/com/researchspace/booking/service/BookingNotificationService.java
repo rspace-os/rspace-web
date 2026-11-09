@@ -64,6 +64,7 @@ public class BookingNotificationService {
             targetInstrument.getId(), notificationType, actor.getId(), requesterId)) {
       BookingNotificationData data = notificationData(booking, targetInstrument);
       data.setEmailDisplayTimezone(recipient.displayZone().getId());
+      data.setEmailTimeFormat(recipient.timeFormat());
       NotificationConfig config = new NotificationConfig();
       config.setNotificationType(notificationType);
       config.setBroadcast(true);
@@ -81,7 +82,11 @@ public class BookingNotificationService {
           null,
           config,
           messageFormatter.formatForEmail(
-              notificationType, data, recipient.displayZone(), LocaleContextHolder.getLocale()));
+              notificationType,
+              data,
+              recipient.displayZone(),
+              LocaleContextHolder.getLocale(),
+              recipient.timeFormat()));
     }
   }
 

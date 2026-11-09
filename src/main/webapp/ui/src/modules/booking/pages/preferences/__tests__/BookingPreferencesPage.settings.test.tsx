@@ -66,7 +66,7 @@ describe("BookingPreferencesPage", () => {
   });
 
   it("saves one complete preference and replaces the shared query cache", async () => {
-    let body: unknown;
+    let body: BookingDisplayPreferencesControllerReplacement | undefined;
     let writes = 0;
     server.use(
       oauthTokenHandler(true),
@@ -80,7 +80,8 @@ describe("BookingPreferencesPage", () => {
           body = await request.json();
           return HttpResponse.json({
             ...inheritedBrowserBookingPreferences,
-            ...(body as BookingDisplayPreferencesControllerReplacement),
+            ...body,
+            timeFormat: body.timeFormat ?? "AUTOMATIC",
             overridden: true,
           });
         },
@@ -108,6 +109,7 @@ describe("BookingPreferencesPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
     await waitFor(() =>
       expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toMatchObject({
@@ -119,8 +121,56 @@ describe("BookingPreferencesPage", () => {
     await expectAccessible(container);
   });
 
+  it("saves an explicit time format, keeping the other preferences", async () => {
+    let body: BookingDisplayPreferencesControllerReplacement | undefined;
+    server.use(
+      oauthTokenHandler(true),
+      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
+        HttpResponse.json(customNewYorkBookingPreferences),
+      ),
+      http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-preferences",
+        async ({ request }) => {
+          body = await request.json();
+          return HttpResponse.json({
+            ...customNewYorkBookingPreferences,
+            ...body,
+            timeFormat: body.timeFormat ?? "AUTOMATIC",
+            overridden: true,
+          });
+        },
+      ),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = renderPage();
+
+    // A document without timeFormat, as older servers and saved overrides return, reads as Automatic.
+    const automatic = await screen.findByRole("radio", { name: "booking:preferences.timeFormat.automatic" });
+    expect(automatic).toBeChecked();
+    expect(screen.getByRole("group", { name: "booking:preferences.timeFormat.legend" })).toHaveAccessibleDescription(
+      "booking:preferences.timeFormat.description",
+    );
+    const twentyFourHour = screen.getByRole("radio", { name: "booking:preferences.timeFormat.twentyFourHour" });
+    await user.click(twentyFourHour);
+    expect(twentyFourHour).toBeChecked();
+    expect(automatic).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    await waitFor(() =>
+      expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toMatchObject({ timeFormat: "H24" }),
+    );
+    expect(body).toEqual({
+      availabilityWindowStart: "09:00",
+      availabilityWindowEnd: "17:00",
+      timezoneMode: "CUSTOM",
+      customTimezone: "America/New_York",
+      timeFormat: "H24",
+    });
+    expect(screen.getByRole("radio", { name: "booking:preferences.timeFormat.twentyFourHour" })).toBeChecked();
+  });
+
   it("uses 00:00 for end of day while storing 24:00", async () => {
-    let body: unknown;
+    let body: BookingDisplayPreferencesControllerReplacement | undefined;
     server.use(
       oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
@@ -132,7 +182,8 @@ describe("BookingPreferencesPage", () => {
           body = await request.json();
           return HttpResponse.json({
             ...inheritedBrowserBookingPreferences,
-            ...(body as BookingDisplayPreferencesControllerReplacement),
+            ...body,
+            timeFormat: body.timeFormat ?? "AUTOMATIC",
             overridden: true,
           });
         },
@@ -184,7 +235,10 @@ describe("BookingPreferencesPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
-    expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toEqual(inheritedBrowserBookingPreferences);
+    expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toEqual({
+      ...inheritedBrowserBookingPreferences,
+      timeFormat: "AUTOMATIC",
+    });
     expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
   });
 
@@ -321,11 +375,15 @@ describe("BookingPreferencesPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
     expect(start).toHaveValue("09:00");
     expect(end).toHaveValue("18:00");
     expect(save).toBeDisabled();
-    expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toEqual(matchingPreferences);
+    expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toEqual({
+      ...matchingPreferences,
+      timeFormat: "AUTOMATIC",
+    });
 
     await user.click(screen.getByRole("link", { name: destinationLinkLabel }));
     expect(await screen.findByText(destinationPageLabel)).toBeInTheDocument();

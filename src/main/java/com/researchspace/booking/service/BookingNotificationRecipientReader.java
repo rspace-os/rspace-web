@@ -126,7 +126,8 @@ public class BookingNotificationRecipientReader {
     recipient.getValueForPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL).getValue();
     ZoneId displayZone =
         BookingNotificationMessageFormatter.zoneFor(display, null, institutionClock.getZone());
-    return new BookingNotificationRecipient(recipient, displayZone, requester);
+    return new BookingNotificationRecipient(
+        recipient, displayZone, display.timeFormat(), requester);
   }
 
   private static boolean active(User user) {

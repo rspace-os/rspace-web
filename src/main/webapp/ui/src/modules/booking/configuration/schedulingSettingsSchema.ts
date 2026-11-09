@@ -62,11 +62,11 @@ export const SchedulingSettingsSchema = v.pipe(
 );
 
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
-export type BookingSettings = Required<Omit<BookingSettingsControllerSettingsDocument, "slotGranularityMinutes">> &
+export type BookingSettings = Pick<BookingSettingsControllerSettingsDocument, "timeFormat"> &
+  Required<Omit<BookingSettingsControllerSettingsDocument, "slotGranularityMinutes" | "timeFormat">> &
   Pick<SchedulingSettings, "slotGranularityMinutes">;
-export type BookingAdminSettings = Required<
-  Omit<BookingSettingsControllerAdminSettingsDocument, "slotGranularityMinutes">
-> &
+export type BookingAdminSettings = Pick<BookingSettingsControllerAdminSettingsDocument, "timeFormat"> &
+  Required<Omit<BookingSettingsControllerAdminSettingsDocument, "slotGranularityMinutes" | "timeFormat">> &
   Pick<SchedulingSettings, "slotGranularityMinutes">;
 
 export function mapBookingSettings(input: BookingSettingsControllerSettingsDocument): BookingSettings {
