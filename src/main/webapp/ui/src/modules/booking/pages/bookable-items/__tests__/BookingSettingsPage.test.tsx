@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { getGetAdminBookingSettingsQueryKey } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import { bookingSettingsFixture, renderBookingSettingsPage } from "./bookingSettingsTestHarness";
 
 const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
@@ -12,21 +13,20 @@ const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
 describe("BookingSettingsPage", () => {
   it("keeps the draft's ETag after a background settings refresh", async () => {
     const user = userEvent.setup();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let current = settings;
     let submitted: unknown;
     server.use(
       http.get("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json(current, {
-          headers: { ETag: `"${current.configurationVersion}"` },
-        }),
+        HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
       ),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         expect(request.headers.get("If-Match")).toBe('"0"');
         submitted = await request.json();
-        return HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 });
+        return HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", status: 412, code: "errors.api.v2.bookingConfiguration.stale" },
+          { status: 412 },
+        );
       }),
     );
     renderBookingSettingsPage(queryClient);
@@ -37,16 +37,9 @@ describe("BookingSettingsPage", () => {
     current = {
       ...settings,
       configurationVersion: 1,
-      openingHours: settings.openingHours.map((entry) => ({
-        ...entry,
-        end: "20:00",
-      })),
+      openingHours: settings.openingHours.map((entry) => ({ ...entry, end: "20:00" })),
     };
-    await act(() =>
-      queryClient.refetchQueries({
-        queryKey: getGetAdminBookingSettingsQueryKey(),
-      }),
-    );
+    await act(() => queryClient.refetchQueries({ queryKey: getGetAdminBookingSettingsQueryKey() }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
@@ -161,12 +154,8 @@ describe("BookingSettingsPage", () => {
     server.use(
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json(
-          {
-            status: 412,
-            code: "errors.api.v2.bookingConfiguration.stale",
-            detail: "stale",
-          },
+        HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", status: 412, code: "errors.api.v2.bookingConfiguration.stale", detail: "stale" },
           { status: 412 },
         ),
       ),

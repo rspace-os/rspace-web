@@ -1,6 +1,6 @@
 import type { ApiV2CollectionParams } from "@/modules/common/api/v2/apiV2Resources";
 import type { ApiV2FilterResource, RsqlWhere } from "@/modules/common/api/v2/apiV2Where";
-import type { FieldName, ResolvedCollectionConfig } from "@/modules/common/collection/config";
+import type { FieldName, ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/config";
 import type { RelationshipFilterPicker } from "@/modules/common/collection/relationshipFilterPicker";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { type RelationshipSource, relationshipSourceForPicker } from "@/modules/common/relationship-picker/sources";
@@ -11,6 +11,15 @@ import { allOf } from "../utils/expressions";
 import { serializeSorting } from "../utils/queryString";
 import type { ApiV2CollectionMetadata } from "./metadata";
 import { serializeRsql } from "./serializeRsql";
+
+// Global-ID search values use the IN prefix.
+const GLOBAL_ID_PATTERN = /^IN(\d+)$/i;
+const MAX_GLOBAL_ID = 9223372036854775807n;
+
+function supportedGlobalId(value: string): string | null {
+  const match = GLOBAL_ID_PATTERN.exec(value);
+  return match && BigInt(match[1]) <= MAX_GLOBAL_ID ? value.toUpperCase() : null;
+}
 
 function compatiblePickerSource<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
@@ -80,10 +89,20 @@ function searchExpression<TDocument>(
   const value = search.trim();
   const fields = config.listSearchableFields ?? [];
   if (value === "" || fields.length === 0) return null;
-  return {
-    kind: "or",
-    children: fields.map((field) => ({ kind: "comparison", field, operator: "contains", value })),
-  };
+  const children: FilterExpression<TDocument>[] = [];
+  for (const field of fields) {
+    const selector = String(field);
+    if (!selector.endsWith(".globalId")) {
+      children.push({ kind: "comparison", field, operator: "contains", value });
+      continue;
+    }
+    const globalId = supportedGlobalId(value);
+    if (globalId === null) continue;
+    const relationship = selector.slice(0, selector.lastIndexOf(".")) as SearchSelector<TDocument>;
+    children.push({ kind: "comparison", field: relationship, operator: "equals", value: globalId });
+  }
+  if (children.length === 0) return null;
+  return children.length === 1 ? children[0] : { kind: "or", children };
 }
 
 /**

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { tableListMetadata } from "./tableMetadata.ts";
 
@@ -126,6 +129,24 @@ describe("tableListMetadata", () => {
         pagination: { defaultLimit: 20, maximumLimit: 100 },
       },
     });
+  });
+
+  it("reads every generated list contract", () => {
+    const committed: { paths: Record<string, { get?: Json }> } = JSON.parse(
+      readFileSync(
+        resolve(dirname(fileURLToPath(import.meta.url)), "../../src/modules/common/api/v2/openapi.generated.json"),
+        "utf8",
+      ),
+    );
+    const resources = Object.entries(committed.paths).flatMap(([path, item]) =>
+      /^\/api\/v2\/[^/]+$/.test(path) && item.get?.["x-rspace-operation"] === "LIST"
+        ? [path.slice("/api/v2/".length)]
+        : [],
+    );
+    const metadata = tableListMetadata(committed);
+    expect(resources.length).toBeGreaterThan(0);
+    expect(new Set(Object.keys(metadata))).toEqual(new Set(resources));
+    for (const resource of resources) expect(metadata[resource]?.fields.length).toBeGreaterThan(0);
   });
 
   it.each<[string, (document: Fixture) => void, string]>([
