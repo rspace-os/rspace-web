@@ -260,6 +260,7 @@ public final class ApiV2OpenApiGenerator {
                                   .DEFAULT_LIMIT),
                           "Page size.")))));
     }
+    addResourceAccessPaths(paths, resource, component);
   }
 
   private static void addResourceAccessSchemas(Map<String, Object> schemas) {
@@ -313,12 +314,13 @@ public final class ApiV2OpenApiGenerator {
             resourceSchemas,
             resource.registry(),
             runtimeFieldsExtension(resource));
-    if (requiresIfMatch(resource, operation)) {
+    if (resource.isVersioned()
+        && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
       parameters.add(
           parameter(
               "If-Match",
               "header",
-              true,
+              requiresIfMatch(resource, operation),
               ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
               "Strong entity tag containing the current resource version."));
     }
@@ -485,8 +487,17 @@ public final class ApiV2OpenApiGenerator {
                   .ifMatchRequiredCode()
                   .orElse(ApiV2ErrorCodes.messageKeyFor(HttpStatus.PRECONDITION_REQUIRED))));
     }
+    if (resource.isVersioned()
+        && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
+      responses.put(
+          "412", problemResponse("The resource version changed.", 412, "errors.concurrentChange"));
+    }
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
+    if (operation == ResourceOperation.DELETE && documentation.responses().containsKey(204)) {
+      responses.remove("200");
+      responses.put("204", Map.of("description", documentation.responses().get(204).description()));
+    }
     documentation.responses().entrySet().stream()
         .filter(entry -> !entry.getValue().errors().isEmpty())
         .forEach(

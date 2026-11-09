@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.node.*;
 import com.researchspace.api.v2.openapi.*;
 import com.researchspace.api.v2.resource.*;
 import com.researchspace.dao.ExtraFieldDao;
+import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
+import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.service.*;
 import com.researchspace.service.inventory.*;
 import java.nio.file.*;
@@ -25,6 +27,7 @@ class ApiV2OpenApiDocumentExportTest {
         var handlers = ApiV2TestHandlerMappings.newContext()) {
       context.registerBean(ResourceMutationManager.class, ResourceMutationManager::new);
       context.registerBean(UserManager.class, () -> mock(UserManager.class));
+      context.registerBean(MaintenanceManager.class, () -> mock(MaintenanceManager.class));
       context.registerBean(
           InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
       context.registerBean(ExtraFieldDao.class, () -> mock(ExtraFieldDao.class));
@@ -41,6 +44,7 @@ class ApiV2OpenApiDocumentExportTest {
           () -> new ContainerReadAccess(mock(InventoryPermissionUtils.class)));
       context.register(
           ApiV2ResourceConfig.class,
+          MaintenanceResourceOperations.class,
           com.researchspace.api.v2.user.UserResourceOperations.class,
           com.researchspace.inventory.api.v2.InstrumentResourceOperations.class,
           com.researchspace.inventory.api.v2.ContainerResourceOperations.class);
@@ -70,6 +74,7 @@ class ApiV2OpenApiDocumentExportTest {
             json, Files.readString(path), "OpenAPI drift: run regen");
       }
       assertTrue(document.containsKey("paths"));
+      assertTrue(MAPPER.valueToTree(document).path("paths").has("/api/v2/maintenances"));
     }
   }
 
