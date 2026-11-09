@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
+import type { SettingsPatchTimeFormat } from './settingsPatchTimeFormat.ts';
 import type { SettingsPatchTimezoneMode } from './settingsPatchTimezoneMode.ts';
 
 export interface SettingsPatch {
@@ -59,6 +60,8 @@ export interface SettingsPatch {
      * @nullable
      */
   slotGranularityMinutes?: number | null;
+  /** @nullable */
+  timeFormat?: SettingsPatchTimeFormat;
   /** @nullable */
   timezoneMode?: SettingsPatchTimezoneMode;
 }

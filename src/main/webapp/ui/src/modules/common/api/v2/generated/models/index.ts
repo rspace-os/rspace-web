@@ -7,6 +7,7 @@
  */
 
 export * from './adminSettingsDocument.ts';
+export * from './adminSettingsDocumentTimeFormat.ts';
 export * from './adminSettingsDocumentTimezoneMode.ts';
 export * from './apiV2AuditEvent.ts';
 export * from './apiV2AuditEventAction.ts';
@@ -42,6 +43,7 @@ export * from './bookingConfigurationsUpdateOpeningHoursItem.ts';
 export * from './bookingConfigurationsUpdateState.ts';
 export * from './bookingConfigurationTarget.ts';
 export * from './bookingDisplayPreferences.ts';
+export * from './bookingDisplayPreferencesTimeFormat.ts';
 export * from './bookingDisplayPreferencesTimezoneMode.ts';
 export * from './bookingOpeningHoursEntry.ts';
 export * from './bookingOwnerHealth.ts';
@@ -172,6 +174,7 @@ export * from './preferenceReplacement.ts';
 export * from './preferences.ts';
 export * from './replaceBookingConfigurationAccessHeaders.ts';
 export * from './replacement.ts';
+export * from './replacementTimeFormat.ts';
 export * from './replacementTimezoneMode.ts';
 export * from './resourceAccessAssignmentDocument.ts';
 export * from './resourceAccessCallerCapabilities.ts';
@@ -198,8 +201,10 @@ export * from './searchCalendarCatalogueParams.ts';
 export * from './searchCalendarEventsParams.ts';
 export * from './session.ts';
 export * from './settingsDocument.ts';
+export * from './settingsDocumentTimeFormat.ts';
 export * from './settingsDocumentTimezoneMode.ts';
 export * from './settingsPatch.ts';
+export * from './settingsPatchTimeFormat.ts';
 export * from './settingsPatchTimezoneMode.ts';
 export * from './source.ts';
 export * from './status.ts';

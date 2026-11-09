@@ -142,6 +142,7 @@ class EmailContentGeneratorTest {
     var data = new com.researchspace.model.comms.data.BookingNotificationData();
     data.setInstrumentName("Microscope <script>");
     data.setEmailDisplayTimezone("Asia/Tokyo");
+    data.setEmailTimeFormat(com.researchspace.model.booking.BookingTimeFormat.H24);
     data.setBookingId("42");
     data.setInstrumentGlobalIdentifier("IN12");
     data.setStartTime("2026-01-02T03:04:05Z");
@@ -149,7 +150,12 @@ class EmailContentGeneratorTest {
     notification.setNotificationMessage(
         new com.researchspace.booking.service.BookingNotificationMessageFormatter(
                 new JsonMessageSource(), "https://rspace.example/")
-            .formatForEmail(type, data, java.time.ZoneId.of("Asia/Tokyo"), Locale.US));
+            .formatForEmail(
+                type,
+                data,
+                java.time.ZoneId.of("Asia/Tokyo"),
+                Locale.US,
+                com.researchspace.model.booking.BookingTimeFormat.H24));
     notification.setNotificationDataObject(data);
     var fixedNow = java.time.Instant.parse("2026-01-15T21:17:00Z");
     EmailContent content;
@@ -163,7 +169,9 @@ class EmailContentGeneratorTest {
     }
     String header =
         content.htmlContent().split("https://rspace.example/booking/calendar/bookings/42", 2)[0];
-    assertThat(header).contains("Jan 16, 2026", "6:17 AM", "Asia/Tokyo, UTC+09:00");
+    assertThat(header)
+        .contains("Jan 16, 2026", "06:17", "Asia/Tokyo, UTC+09:00")
+        .doesNotContain(" AM", " PM");
     assertEquals(subject, content.subject());
     assertThat(content.htmlContent())
         .contains("Asia/Tokyo", "Actor &lt;script&gt;", "Microscope &lt;script&gt;")

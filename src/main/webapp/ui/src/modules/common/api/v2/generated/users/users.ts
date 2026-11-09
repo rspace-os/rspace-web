@@ -2044,7 +2044,7 @@ export const getReplaceMyBookingPreferencesUrl = () => {
 }
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
  * @summary Replace Booking display preferences
  */
 export const replaceMyBookingPreferences = async (replacement: Replacement, options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<BookingDisplayPreferences> => {
@@ -2117,7 +2117,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReplaceMyBookingPreferencesMutationVariables = {data: BodyType<Replacement>}
 
     /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
  * @summary Replace Booking display preferences
  */
 export const useReplaceMyBookingPreferences = <TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse>,

@@ -268,6 +268,10 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "timeFormat" : {
+            "enum" : [ "AUTOMATIC", "H12", "H24" ],
+            "type" : "string"
+          },
           "timezoneMode" : {
             "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
             "type" : "string"
@@ -2036,6 +2040,10 @@
             "readOnly" : true,
             "type" : "boolean"
           },
+          "timeFormat" : {
+            "enum" : [ "AUTOMATIC", "H12", "H24" ],
+            "type" : "string"
+          },
           "timezoneMode" : {
             "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
             "type" : "string"
@@ -3641,6 +3649,11 @@
             "minLength" : 0,
             "type" : [ "string", "null" ]
           },
+          "timeFormat" : {
+            "description" : "AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
+            "enum" : [ "AUTOMATIC", "H12", "H24", null ],
+            "type" : [ "string", "null" ]
+          },
           "timezoneMode" : {
             "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
             "type" : "string"
@@ -3890,6 +3903,10 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "timeFormat" : {
+            "enum" : [ "AUTOMATIC", "H12", "H24" ],
+            "type" : "string"
+          },
           "timezoneMode" : {
             "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
             "type" : "string"
@@ -3950,6 +3967,10 @@
             "maximum" : 15,
             "minimum" : 1,
             "type" : [ "integer", "null" ]
+          },
+          "timeFormat" : {
+            "enum" : [ "AUTOMATIC", "H12", "H24", null ],
+            "type" : [ "string", "null" ]
           },
           "timezoneMode" : {
             "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM", null ],
@@ -16985,7 +17006,7 @@
         "x-rspace-operation" : "CUSTOM"
       },
       "put" : {
-        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.",
+        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.",
         "operationId" : "replaceMyBookingPreferences",
         "requestBody" : {
           "content" : {
