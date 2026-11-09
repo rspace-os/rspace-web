@@ -18,11 +18,21 @@ export function useDefaultBookingPreferencesHandlers() {
     http.get<never, never, ApiV2CurrentUser>("/api/v2/users/me", () => HttpResponse.json(currentUser)),
     http.get<never, never, BookingNotificationPreferences | ApiV2Problem>(
       "/api/v2/users/me/booking-notification-preferences",
-      () => HttpResponse.json({ notifyOwnActions: true, autoSubscribeOwnedItems: false }),
+      () =>
+        HttpResponse.json({
+          autoSubscribeOwnedItems: false,
+          notifyOwnActions: true,
+          notifyOnCreated: true,
+          notifyOnCancelled: true,
+          emailDelivery: false,
+        }),
     ),
-    http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
-      "/api/v2/users/me/booking-notification-preferences",
-      async ({ request }) => HttpResponse.json(await request.json()),
+    http.put<
+      never,
+      BookingNotificationPreferenceReplacement,
+      BookingNotificationPreferences | ApiV2Problem
+    >("/api/v2/users/me/booking-notification-preferences", async ({ request }) =>
+      HttpResponse.json({ ...(await request.json()), emailDelivery: false }),
     ),
     http.delete<never, never, BookingNotificationUnsubscribeResult | ApiV2Problem>(
       "/api/v2/users/me/booking-notification-subscriptions",
