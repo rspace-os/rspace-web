@@ -1,6 +1,7 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -9,14 +10,20 @@ import {
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
+import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import {
+  getSearchBookingConfigurationTargetsQueryKey,
+  searchBookingConfigurationTargets,
+} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
   useCreateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
+import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
 import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
@@ -32,7 +39,12 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
-import { searchBookingTargets } from "./bookingConfigurationTargets";
+
+async function searchBookingTargets(query: string, signal?: AbortSignal) {
+  return (await searchBookingConfigurationTargets({ q: query.trim(), limit: 20 }, { signal })).docs.map(
+    requireEligibleBookingTarget,
+  );
+}
 
 const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
@@ -41,6 +53,15 @@ const createBookableItemFormSchema = v.intersect([
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+
+// The JVM institution zone may be an alias (e.g. Etc/UTC) missing from Intl's canonical list.
+function withInstitutionTimeZone(institutionTimezone: string) {
+  return detailFields.map((field) =>
+    field.name === "timezone" && field.type === "select"
+      ? { ...field, options: bookingTimeZoneOptions(institutionTimezone) }
+      : field,
+  );
+}
 
 type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
 
@@ -119,6 +140,7 @@ export function AddBookableItemForm({
     initialInput: {
       ...(initialTargetId === undefined ? {} : { target: { relationTo: "instruments", value: initialTargetId } }),
       enabled: true,
+      timezone: defaults.institutionTimezone,
       slotGranularityMinutes: defaults.slotGranularityMinutes,
       incrementUnit: defaults.incrementUnit,
       openingHours: defaults.openingHours.map((entry) => ({ ...entry })),
@@ -128,6 +150,7 @@ export function AddBookableItemForm({
       allowDoubleBooking: defaults.allowDoubleBooking,
     },
   });
+  const fields = useMemo(() => withInstitutionTimeZone(defaults.institutionTimezone), [defaults.institutionTimezone]);
   const targetField = useField(form, { path: ["target"] });
   const target = targetSelection(targetField.input);
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
@@ -204,7 +227,7 @@ export function AddBookableItemForm({
         ) : null}
         {canComplete ? (
           <>
-            <RenderFields fields={detailFields} form={form} disabled={createMutation.isPending} />
+            <RenderFields fields={fields} form={form} disabled={createMutation.isPending} />
             <SchedulingSettingsFields form={form} disabled={createMutation.isPending} />
             {createFailed ? (
               <p role="alert" className="text-sm text-destructive">
@@ -224,4 +247,14 @@ export function AddBookableItemForm({
       </Form>
     </main>
   );
+}
+
+function requireEligibleBookingTarget(target: BookingConfigurationTarget) {
+  if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
+  return {
+    ...target,
+    id: requireBookingValue(target.id, "id"),
+    globalId: requireBookingValue(target.globalId, "globalId"),
+    name: requireBookingValue(target.name, "name"),
+  };
 }

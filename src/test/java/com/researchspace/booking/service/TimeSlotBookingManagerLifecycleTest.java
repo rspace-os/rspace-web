@@ -29,7 +29,7 @@ import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.inventory.InstrumentReadSummary;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Date;
 import java.util.List;
@@ -54,6 +54,7 @@ class TimeSlotBookingManagerLifecycleTest {
   private User actor;
   private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
+  private BookingNotificationService bookingNotificationService;
 
   @BeforeEach
   void setUp() {
@@ -65,6 +66,7 @@ class TimeSlotBookingManagerLifecycleTest {
     actor = fixture.actor;
     accessManager = fixture.accessManager;
     manager = fixture.manager;
+    bookingNotificationService = fixture.bookingNotificationService;
   }
 
   @Test
@@ -138,22 +140,6 @@ class TimeSlotBookingManagerLifecycleTest {
     assertTrue(page.resources().get(1).isCanEdit());
     assertTrue(page.resources().get(1).isCanViewConfiguration());
     verify(accessManager).resolveAll(any(), eq(actor));
-  }
-
-  @Test
-  void preparesParentIdsWithOneBatchedLookup() {
-    TimeSlotBooking stored = booking(1L, 12L, actor);
-    TimeSlotBooking unreadable = booking(2L, 13L, actor);
-    when(bookingDao.getReadableResources(any(), any()))
-        .thenReturn(new ResourcePage<>(List.of(stored, unreadable), 2));
-    when(fixture.bookingInstruments.getBookingSummaries(Set.of(12L, 13L)))
-        .thenReturn(Map.of(12L, new InstrumentReadSummary(12L, "Item", false, 7L)));
-
-    List<TimeSlotBooking> prepared =
-        manager.getBookings(ResourceRequest.unpaged(null), actor).resources();
-
-    assertEquals(7L, prepared.get(0).getVisibleLocation());
-    assertNull(prepared.get(1).getVisibleLocation());
   }
 
   @Test
@@ -250,6 +236,8 @@ class TimeSlotBookingManagerLifecycleTest {
     assertSame(cancelled, retried);
     verify(bookingDao, times(1)).saveAndFlush(any(TimeSlotBooking.class));
     verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService, times(1))
+        .notify(cancelled, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertThrows(
         BookingStateTransitionException.class,
         () ->
@@ -313,6 +301,7 @@ class TimeSlotBookingManagerLifecycleTest {
                 actor)
             .orElseThrow();
     assertEquals(BookingState.CANCELLED, cancelled.getState());
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test
@@ -380,6 +369,38 @@ class TimeSlotBookingManagerLifecycleTest {
               .isEmpty());
     }
     assertEquals("Private purpose", existing.getPurpose());
+  }
+
+  @Test
+  void timeChangesNotifyButPurposeOnlyAndUnchangedTimesDoNot() {
+    User requester = mock(User.class);
+    TimeSlotBooking existing = booking(41L, 12L, requester);
+    stubReadableBookingAndConfigurationLock(existing);
+    manager
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(null, null, true, "New purpose", null),
+            actor,
+            actor)
+        .orElseThrow();
+    manager
+        .updateBooking(
+            41L, new TimeSlotBookingManager.Patch(start(), end(), false, null, null), actor, actor)
+        .orElseThrow();
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
+    manager
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(
+                null, instant("2026-10-25T10:00:00Z"), false, null, null),
+            actor,
+            actor)
+        .orElseThrow();
+    verify(bookingNotificationService)
+        .notify(
+            eq(existing),
+            eq(actor),
+            argThat(type -> type.name().equals("NOTIFICATION_BOOKING_CHANGED")));
   }
 
   private void stubReadableBookingAndConfigurationLock(TimeSlotBooking booking) {

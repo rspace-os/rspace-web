@@ -1040,6 +1040,9 @@ public class User extends AbstractUserOrGroupImpl
     if (NotificationType.ARCHIVE_EXPORT_COMPLETED.equals(notificationType)) {
       return true;
     }
+    if (NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(notificationType)) {
+      notificationType = NotificationType.NOTIFICATION_BOOKING_CREATED;
+    }
     String type = notificationType.toString();
     type += "_PREF";
     Preference pref = Preference.valueOf(type);
