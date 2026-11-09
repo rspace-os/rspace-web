@@ -63,8 +63,6 @@ function AccessibilityTipsPopup({
   const { t } = useTranslation("common");
   const highContrastModeIsEnabled = window.matchMedia("(prefers-contrast: more)").matches;
   const reducedMotionModeIsEnabled = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const elementTypeLabel =
-    elementType === "dialog" ? t("accessibilityTips.elementTypes.dialog") : t("accessibilityTips.elementTypes.page");
   return (
     <Popover
       open={Boolean(anchorEl)}
@@ -99,7 +97,7 @@ function AccessibilityTipsPopup({
             <AlertTitle>
               {highContrastModeIsEnabled
                 ? t("accessibilityTips.highContrast.enabled")
-                : t("accessibilityTips.highContrast.supported", { elementType: elementTypeLabel })}
+                : t("accessibilityTips.highContrast.supported", { elementType })}
             </AlertTitle>
             <TransRichText
               i18nKey={
@@ -119,7 +117,7 @@ function AccessibilityTipsPopup({
             <AlertTitle>
               {reducedMotionModeIsEnabled
                 ? t("accessibilityTips.reducedMotion.enabled")
-                : t("accessibilityTips.reducedMotion.supported", { elementType: elementTypeLabel })}
+                : t("accessibilityTips.reducedMotion.supported", { elementType })}
             </AlertTitle>
             <TransRichText
               i18nKey={
@@ -132,13 +130,13 @@ function AccessibilityTipsPopup({
         )}
         {supports2xZoom && (
           <Alert severity="info" elevation={0} aria-label={t("accessibilityTips.tip")}>
-            <AlertTitle>{t("accessibilityTips.zoom.supported", { elementType: elementTypeLabel })}</AlertTitle>
+            <AlertTitle>{t("accessibilityTips.zoom.supported", { elementType })}</AlertTitle>
             <TransRichText i18nKey="common:accessibilityTips.zoom.body" />
           </Alert>
         )}
         {supportsSkipToContent && (
           <Alert severity="info" elevation={0} aria-label={t("accessibilityTips.tip")}>
-            <AlertTitle>{t("accessibilityTips.skipToContent.supported", { elementType: elementTypeLabel })}</AlertTitle>
+            <AlertTitle>{t("accessibilityTips.skipToContent.supported", { elementType })}</AlertTitle>
             {t("accessibilityTips.skipToContent.instructions")}
           </Alert>
         )}

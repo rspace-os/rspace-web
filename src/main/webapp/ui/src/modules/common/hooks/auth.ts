@@ -9,7 +9,7 @@ import {
 } from "@/modules/common/utils/auth";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
-const queryKeys = {
+export const queryKeys = {
   all: ["rspace.common.auth"] as const,
   oauthToken: () => [...queryKeys.all, "oauthToken"] as const,
   whoami: () => [...queryKeys.all, "whoami"] as const,

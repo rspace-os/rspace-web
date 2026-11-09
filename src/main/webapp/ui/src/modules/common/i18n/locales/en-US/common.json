@@ -1,17 +1,13 @@
 {
   "accessibilityTips": {
     "buttonLabel": "Accessibility tips",
-    "elementTypes": {
-      "dialog": "dialog",
-      "page": "page"
-    },
     "highContrast": {
       "body": {
         "disable": "To disable, turn off your device's high contrast setting:<br/><externalLink href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-us/111773\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>",
         "enable": "To enable, turn on your device's high contrast setting:<br/><externalLink href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-us/111773\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>"
       },
       "enabled": "High contrast mode is enabled.",
-      "supported": "This {elementType} supports a high contrast mode."
+      "supported": "This {elementType, select, dialog {dialog} other {page}} supports a high contrast mode."
     },
     "menuLabel": "Accessibility Tips",
     "reducedMotion": {
@@ -20,18 +16,18 @@
         "enable": "To enable, turn on your device's reduced motion setting:<br/><externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>"
       },
       "enabled": "Reduced motion mode is enabled.",
-      "supported": "This {elementType} supports a reduced motion mode."
+      "supported": "This {elementType, select, dialog {dialog} other {page}} supports a reduced motion mode."
     },
     "skipToContent": {
       "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
       "navigation": "Skip to content navigation",
       "skipToLandmark": "Skip to {landmark}",
-      "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
+      "supported": "This {elementType, select, dialog {dialog} other {page}} supports a skip-to-content menu for easier navigation."
     },
     "tip": "Tip",
     "zoom": {
       "body": "To enable, adjust your browser's settings:<br/><externalLink href=\"https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop\">Chrome</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/safari/ibrw1068/mac\">Safari</externalLink>, <externalLink href=\"https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a\">Edge</externalLink>, <externalLink href=\"https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages\">Firefox</externalLink>",
-      "supported": "This {elementType} supports up to 200% zoom magnification."
+      "supported": "This {elementType, select, dialog {dialog} other {page}} supports up to 200% zoom magnification."
     }
   },
   "actions": {
@@ -147,11 +143,13 @@
   "appBar": {
     "aboutRSpace": "About RSpace",
     "accountMenu": "Account Menu",
+    "accountMenuAccessible": "Account Menu {name} ({initials})",
     "apps": "Apps",
     "brandingAlt": "branding",
     "closeSidebar": "close sidebar",
     "dialogHeader": "dialog header",
     "errorLoadingDetails": "Error loading your details",
+    "fullName": "{firstName} {lastName}",
     "goTo": "Go to...",
     "logIn": "Log In",
     "logOut": "Log Out",
@@ -997,7 +995,8 @@
     "none": "None",
     "noValue": "No Value",
     "unknown": "Unknown",
-    "unknownItem": "Unknown item"
+    "unknownItem": "Unknown item",
+    "userWithUsername": "{name} ({username})"
   },
   "versionLockPicker": {
     "columns": {
