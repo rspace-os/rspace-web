@@ -10,7 +10,7 @@ import {
   type SourcedAvailabilityInterval,
   timestamp,
 } from "@/modules/booking/domain/availability";
-import { bookingLocale } from "@/modules/booking/domain/bookingTime";
+import { bookingLocale, formatInstantRange } from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
@@ -133,7 +133,7 @@ export function AvailabilityBar({
     return clockChanges ? `${startLabel} ${first.offset}–${endLabel} ${last.offset}` : `${startLabel}–${endLabel}`;
   };
   const formatTimeRange = ({ startsAt, endsAt }: TimestampInterval) =>
-    `${timeFormatter.format(startsAt)}–${timeFormatter.format(endsAt)}`;
+    formatInstantRange(timeFormatter, startsAt, endsAt);
   const period = formatRange({ startsAt: start, endsAt: end });
   const nowLabel =
     nowTimestamp === null
@@ -188,12 +188,12 @@ export function AvailabilityBar({
   const gapDescription = gapRanges.length
     ? t("availabilityBar.ranges.gap", { ranges: formatList(gapRanges, locale) })
     : "";
-  const description = [
-    t("availabilityBar.summary", { period, states: [states, gapDescription].filter(Boolean).join(" ") }),
-    nowLabel,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const description = t("availabilityBar.description", {
+    period,
+    states: [states, gapDescription].filter(Boolean).join(" "),
+    now: nowLabel ?? "",
+    hasNow: nowLabel ? "yes" : "no",
+  });
   const currentSegmentIndex =
     nowTimestamp === null
       ? -1

@@ -1,5 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createContext, createElement, type ReactNode, useContext } from "react";
 import { uniq } from "es-toolkit";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
@@ -13,15 +14,34 @@ import {
   resetMyBookingPreferences,
 } from "@/modules/common/api/v2/generated/users/users";
 import { validOpeningHours } from "./bookingOpeningHours";
+import type { BookingTimeFormat } from "./bookingTime";
 
 export type BookingDisplayPreferencesDocument = BookingDisplayPreferences;
 export type ResolvedBookingDisplayPreferences = {
   availabilityWindow: { start: string; end: string; startMinute: number; endMinute: number };
   timeZone: string;
   timezoneMode: BookingTimezoneMode;
+  timeFormat: BookingTimeFormat;
   institutionTimezone: string;
   overridden: boolean;
 };
+
+const BookingTimeFormatContext = createContext<BookingTimeFormat>("AUTOMATIC");
+
+/** The current route's display choice; standalone components use Automatic when no provider is present. */
+export function useBookingTimeFormat(): BookingTimeFormat {
+  return useContext(BookingTimeFormatContext);
+}
+
+export function BookingTimeFormatProvider({
+  timeFormat,
+  children,
+}: {
+  timeFormat: BookingTimeFormat;
+  children: ReactNode;
+}) {
+  return createElement(BookingTimeFormatContext.Provider, { value: timeFormat }, children);
+}
 
 export function hasValidAvailabilityWindow({
   availabilityWindowStart,
@@ -59,6 +79,7 @@ export function mapBookingDisplayPreferences({
   availabilityWindowEnd,
   timezoneMode,
   customTimezone,
+  timeFormat,
   institutionTimezone,
   overridden,
 }: BookingDisplayPreferences): BookingDisplayPreferencesDocument {
@@ -67,6 +88,7 @@ export function mapBookingDisplayPreferences({
     availabilityWindowEnd,
     timezoneMode,
     customTimezone,
+    timeFormat,
     institutionTimezone,
     overridden,
   };
@@ -136,13 +158,20 @@ export function resolveBookingDisplayPreferences(
     },
     timeZone,
     timezoneMode: document.timezoneMode,
+    timeFormat: document.timeFormat ?? "AUTOMATIC",
     institutionTimezone: document.institutionTimezone,
     overridden: document.overridden,
   };
 }
 
 export function useBookingDisplayPreferences(): ResolvedBookingDisplayPreferences {
-  return resolveBookingDisplayPreferences(useSuspenseQuery(bookingDisplayPreferencesQueryOptions()).data);
+  return resolveBookingDisplayPreferences(
+    useSuspenseQuery(
+      getGetMyBookingPreferencesSuspenseQueryOptions<BookingDisplayPreferencesDocument>({
+        query: { select: mapBookingDisplayPreferences, staleTime: Infinity },
+      }),
+    ).data,
+  );
 }
 
 export function useReplaceBookingDisplayPreferences() {

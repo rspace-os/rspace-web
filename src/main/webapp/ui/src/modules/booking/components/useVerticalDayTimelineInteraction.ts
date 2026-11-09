@@ -1,13 +1,18 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { timelineAdjuster } from "@/modules/booking/creation/timelineRange";
+import {
+  adjustVerticalTimelineRange,
+  canAdjustVerticalTimelineRange,
+  stepVerticalTimelineRange,
+  verticalTimelineRangeToDraft,
+} from "@/modules/booking/creation/verticalTimelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import {
+  type BookingTimeFormat,
   type BookingWindowDraft,
   dayMinuteToZonedTime,
   instantToDayMinute,
-  wallClockDraftFromInstants,
 } from "@/modules/booking/domain/bookingTime";
 import { period } from "./DayTimelineEvent";
 import type { VerticalDayTimelineEditing, VerticalDayTimelineSchedule } from "./VerticalDayTimeline";
@@ -30,7 +35,12 @@ function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): 
   return resolveBookingWindow(draft, timezone).window;
 }
 
-export function timeRange(range: IsoRange, date: string, timezone: string): string {
+export function timeRange(
+  range: IsoRange,
+  date: string,
+  timezone: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
   return period(
     {
       startMinute: instantToDayMinute(range.start, date, timezone),
@@ -38,6 +48,8 @@ export function timeRange(range: IsoRange, date: string, timezone: string): stri
     },
     date,
     timezone,
+    "–",
+    timeFormat,
   );
 }
 
@@ -49,6 +61,7 @@ export function useVerticalDayTimelineInteraction({
   date,
   timezone,
   dayMinutes,
+  timeFormat,
   editing,
   schedule,
   setExpandedEventId,
@@ -56,6 +69,7 @@ export function useVerticalDayTimelineInteraction({
   date: string;
   timezone: string;
   dayMinutes: number;
+  timeFormat: BookingTimeFormat;
   editing: VerticalDayTimelineEditing | undefined;
   schedule: Pick<VerticalDayTimelineSchedule, "status">;
   setExpandedEventId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -71,23 +85,34 @@ export function useVerticalDayTimelineInteraction({
   const interactionRef = React.useRef<TimelineInteraction | null>(null);
   const editingRange = React.useMemo(() => resolveRange(editing?.draft, timezone), [editing?.draft, timezone]);
   const activeRange = preview ?? editingRange;
-  const activePeriod = activeRange ? timeRange(activeRange, date, timezone) : undefined;
-  const policyKey = editing ? JSON.stringify(editing.policy) : "";
-  const adjuster = React.useMemo(
+  const activePeriod = activeRange ? timeRange(activeRange, date, timezone, timeFormat) : undefined;
+  const context = React.useMemo(
     () =>
-      editing && editingRange && !editing.disabledReason
-        ? timelineAdjuster(editingRange, { date, displayTimezone: timezone, policy: editing.policy })
+      editing
+        ? {
+            date,
+            displayTimezone: timezone,
+            schedulingTimezone: editing.schedulingTimeZone,
+            slotGranularityMinutes: editing.slotGranularityMinutes,
+          }
         : undefined,
-    [editingRange, date, timezone, policyKey, editing?.disabledReason],
+    [date, timezone, editing?.schedulingTimeZone, editing?.slotGranularityMinutes],
   );
-  const directAdjustmentAllowed = Boolean(adjuster);
+  const directAdjustmentAllowed = Boolean(
+    editing &&
+      editingRange &&
+      context &&
+      !editing.disabledReason &&
+      canAdjustVerticalTimelineRange(editingRange, context),
+  );
   const gestureContextKey = [
     date,
     timezone,
     editing?.targetKey ?? "",
     editingRange?.start ?? "",
     editingRange?.end ?? "",
-    policyKey,
+    editing?.schedulingTimeZone ?? "",
+    editing?.slotGranularityMinutes ?? "",
     editing?.disabledReason ?? "",
   ].join("|");
 
@@ -103,15 +128,14 @@ export function useVerticalDayTimelineInteraction({
     (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString(),
     [date, timezone],
   );
-  const adjustInteractionRange = (
-    active: TimelineInteraction,
-    clientY: number,
-    activeAdjuster: NonNullable<typeof adjuster>,
-  ) => {
-    const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
-    const target = rangeAtMinute(minute);
-    return activeAdjuster.adjust(active.edge, target);
-  };
+  const adjustInteractionRange = React.useCallback(
+    (active: TimelineInteraction, clientY: number, adjustmentContext: NonNullable<typeof context>) => {
+      const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
+      const target = rangeAtMinute(minute);
+      return adjustVerticalTimelineRange(active.originalRange, active.edge, target, adjustmentContext);
+    },
+    [minuteAt, rangeAtMinute],
+  );
 
   const cancelInteraction = React.useCallback(() => {
     const active = interactionRef.current;
@@ -123,31 +147,28 @@ export function useVerticalDayTimelineInteraction({
       if (active.handle.hasPointerCapture(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     }
   }, []);
-  const abortInteraction = React.useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>) => {
-      if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
-    },
-    [cancelInteraction],
-  );
 
   const commitRange = React.useCallback(
     (next: IsoRange) => {
       if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
-      editing.onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
+      editing.onChange(verticalTimelineRangeToDraft(next, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
-          period: timeRange(next, date, timezone),
+          period: timeRange(next, date, timezone, timeFormat),
         }),
       );
     },
     [date, editing, editingRange, t, timezone],
   );
 
-  const changeByStep = (edge: AdjustmentEdge, direction: Direction) => {
-    if (!editing || !adjuster || interactionRef.current) return;
-    const next = adjuster.step(edge, direction);
-    if (next) commitRange(next);
-  };
+  const changeByStep = React.useCallback(
+    (edge: AdjustmentEdge, direction: Direction) => {
+      if (!editing || !context || !activeRange || !directAdjustmentAllowed || interactionRef.current) return;
+      const next = stepVerticalTimelineRange(activeRange, edge, direction, context);
+      if (next) commitRange(next);
+    },
+    [activeRange, commitRange, context, directAdjustmentAllowed, editing],
+  );
 
   const onDraftHandleKeyDown = (edge: AdjustmentEdge, event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "Escape" && interactionRef.current) {
@@ -161,8 +182,7 @@ export function useVerticalDayTimelineInteraction({
   };
 
   const startInteraction = (edge: AdjustmentEdge, event: React.PointerEvent<HTMLButtonElement>) => {
-    if (interactionRef.current || !adjuster || !editingRange || !event.isPrimary) return;
-    if (edge !== "move" && !adjuster.canResize(edge)) return;
+    if (interactionRef.current || !directAdjustmentAllowed || !editingRange || !context || !event.isPrimary) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect || rect.height === 0) return;
@@ -189,25 +209,29 @@ export function useVerticalDayTimelineInteraction({
 
   const updateInteraction = (event: React.PointerEvent<HTMLButtonElement>) => {
     const active = interactionRef.current;
-    if (!active || active.pointerId !== event.pointerId || !adjuster) return;
+    if (!active || active.pointerId !== event.pointerId || !context) return;
     event.preventDefault();
     event.stopPropagation();
-    const next = adjustInteractionRange(active, event.clientY, adjuster);
+    const next = adjustInteractionRange(active, event.clientY, context);
     setPreview(next ?? active.originalRange);
   };
 
   const finishInteraction = (event: React.PointerEvent<HTMLButtonElement>) => {
     const active = interactionRef.current;
-    if (!active || active.pointerId !== event.pointerId || !adjuster) return;
+    if (!active || active.pointerId !== event.pointerId || !context) return;
     event.preventDefault();
     event.stopPropagation();
-    const next = adjustInteractionRange(active, event.clientY, adjuster);
+    const next = adjustInteractionRange(active, event.clientY, context);
     interactionRef.current = null;
     setGestureActive(false);
     setPreview(null);
     interactionCallbackRef.current?.(false);
     if (active.handle.hasPointerCapture(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     if (next) commitRange(next);
+  };
+
+  const cancelCapturedPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
   };
 
   React.useEffect(() => {
@@ -269,9 +293,7 @@ export function useVerticalDayTimelineInteraction({
     startInteraction,
     updateInteraction,
     finishInteraction,
+    cancelCapturedPointer,
     onDraftHandleKeyDown,
-    abortInteraction,
-    adjuster,
-    commitRange,
   };
 }
