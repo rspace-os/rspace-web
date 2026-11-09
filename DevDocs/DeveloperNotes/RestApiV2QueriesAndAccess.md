@@ -83,9 +83,9 @@ same way.
 
 ### Per-actor fields
 
-A collection can publish caller-specific fields that cannot appear in OpenAPI. Each field kind
-has a namespace, provider, identity scheme, and catalog route:
-`/api/v2/{resource}/fields/{namespace}`. Use `q` for free-text catalog search. The document publishes these namespaces and routes in
+A collection can publish caller-specific fields that cannot appear in OpenAPI. Each field kind has a
+namespace, provider, identity scheme, and catalog route: `/api/v2/{resource}/fields/{namespace}`.
+Use `q` for free-text catalog search. The document publishes these namespaces and routes in
 `x-rspace-runtime-fields`. Clients must use the published routes instead of constructing them.
 
 Instruments publish two:
@@ -131,16 +131,16 @@ Declaring a relationship publishes every field of every destination it can reach
 }
 ```
 
-Declaring a relationship once makes its target fields available as optional table columns. Fields
-with operators are also available as filters.
+A relationship declaration makes its target fields available as optional table columns. Fields with
+operators are also available as filters.
 
 Keep wildcard equality and `=like=` as separate operations. Wildcard equality anchors the complete
 value. `=like=` finds words anywhere in the value. Client labels must show this difference.
 
-`operators` is empty for a field with no backing column, such as a global ID derived from an ID.
-The API publishes the field so clients can display it, but `where` rejects it as unsupported.
-`x-rspace-relationship-fields` lists fields available through a relationship.
-`x-rspace-filter` lists fields that a filter expression can use.
+`operators` is empty for a field with no backing column, such as a global ID derived from an ID. The
+API publishes the field so clients can display it, but `where` rejects it as unsupported.
+`x-rspace-relationship-fields` lists fields available through a relationship. `x-rspace-filter`
+lists fields that a filter expression can use.
 
 A polymorphic relationship publishes only fields shared by every destination with the same schema
 and the intersection of their operators. This avoids columns empty for half the rows and filters
@@ -168,9 +168,9 @@ hydration of the Inventory aggregate. Entity reads remain available to internal 
 write-side relationship resolution.
 
 OpenAPI read schemas declare optional object maps for projected runtime namespaces, including
-eligible relationship prefixes. The document root stays closed;
-the maps accept caller-specific field IDs without publishing those IDs in the cached schema.
-Runtime projection properties are excluded from create and update schemas.
+eligible relationship prefixes. The document root stays closed. The maps accept caller-specific
+field IDs without publishing them in the cached schema. Runtime projection properties are excluded
+from create and update schemas.
 
 ## Access control
 
@@ -236,22 +236,21 @@ constraints. Single writes select `id AND scope` inside the mutation transaction
 
 ### Resource-role protected collections
 
-The [resource-role permission model](SecurityAndPermissions.md#resource-role-permissions) owns
-role ordering, persisted Owners, live identity resolution, and transactional mutation authority.
-Register a `ResourceAccessSpec` in the resource's `ApiV2ResourceSpec` after its service-layer
-scheme and `ProtectedResourceAccess` adapter are registered. Resource adapters supply the
-capability and Owner-health read fields they support. Use the trusted
-`ResourceRoleMembershipConstraint` for collection selection; resolve page capability fields in
-batches. A missing or unreadable protected resource returns the same `404`.
+The [resource-role permission model](SecurityAndPermissions.md#resource-role-permissions) defines
+role ordering, persisted Owners, live identity resolution, and authority for transactional
+mutations. Register a `ResourceAccessSpec` in the resource's `ApiV2ResourceSpec` after its
+service-layer scheme and `ProtectedResourceAccess` adapter are registered. Resource adapters supply
+the capability and Owner-health read fields they support. Use the trusted
+`ResourceRoleMembershipConstraint` for collection selection; resolve capability fields for the page
+in batches. A missing or unreadable protected resource returns the same `404`.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
-`AccessDocumentation` stating its authentication rule and denial codes.
+`AccessDocumentation` with its authentication rule and denial codes.
 
 A custom `createAccess` function runs after structural parsing and before relationship resolution
-and persistence. For one create document, `context.requireInput()` returns the complete
-immutable `ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input
-order.
+and persistence. For one create document, `context.requireInput()` returns the complete immutable
+`ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input order.
 
 ```java
 AccessFunction documentedCreateAccess =
@@ -276,26 +275,27 @@ receives one document through `requireInput()`.
 ### Stateless requests
 
 The servlet filter removes cookie headers before Shiro processes ordinary REST API v2 requests. It
-also prevents servlet-session reads and writes. It preserves the existing session for
-`POST /api/v2/oauth/tokens` and for bearer JWTs that declare the dedicated REST API v2 UI audience.
-The audience declaration is only a routing hint. Authentication still verifies the JWT signature,
-token row, subject, actor, and session binding before any controller runs. API keys and
-external OAuth tokens remain stateless and cannot inherit run-as.
+also prevents servlet-session reads and writes. It preserves the existing session for `POST
+/api/v2/oauth/tokens` and for bearer JWTs that declare the dedicated REST API v2 UI audience. The
+audience declaration is only a routing hint. Authentication still verifies the JWT signature, token
+row, subject, actor, and session binding before any controller runs. API keys and external OAuth
+tokens remain stateless and cannot inherit run-as.
 
-The authentication interceptor neither logs in to nor logs out of Shiro. Endpoint metadata selects
-browser-session authentication only for the token route. A session-bound UI token authorizes as its subject and records both actor and subject for delegated
-security events. Other credentials never consult the browser identity.
+The authentication interceptor does not log in to or log out of Shiro. Endpoint metadata selects
+browser-session authentication only for the token route. A session-bound UI token authorizes as its
+subject and records both actor and subject for delegated security events. Other credentials never
+consult the browser identity.
 
-Browser authentication reloads the subject and originating actor on every request
-and rejects either identity if its account is disabled or locked. This applies to
-UI token creation and to each use of a session-bound UI token, including run-as.
+Browser authentication reloads the subject and originating actor on every request and rejects either
+identity if its account is disabled or locked. This applies to UI token creation and to each use of
+a session-bound UI token, including run-as.
 
 Starting and ending legacy Shiro run-as rotates the opaque browser authentication context. Tokens
 from before either transition therefore fail immediately, even if their JWT expiry has not passed.
 The UI mints a fresh v2 token after each page load. It does not trust a token retained in session
-storage across a run-as redirect. Authenticated responses default to
-`Cache-Control: no-store, private, no-transform`.
-Public configuration and OpenAPI responses keep their explicit cache policies.
+storage across a run-as redirect. Authenticated responses default to `Cache-Control: no-store,
+private, no-transform`. Public configuration and OpenAPI responses keep their explicit cache
+policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 validates
 session-bound REST API v2 UI tokens against the matching live browser session. AuthStore keeps the
@@ -469,14 +469,14 @@ separate validation, limits, and pagination contracts.
 The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
 and its schemas. Relationships refer to registered resources and their schemas.
 
-The document service merges Swagger annotations from concrete controllers and validates the
-complete document before returning it.
+The document service merges Swagger annotations from concrete controllers. It validates the complete
+document before returning it.
 
-Production creates the document after a context refresh, caches it privately
-for one hour, and supplies an `ETag`. A matching `If-None-Match` request returns 304.
+Production creates the document after a context refresh, caches it privately for one hour, and
+supplies an `ETag`. A matching `If-None-Match` request returns 304.
 
-Development creates and validates the document for each request. Responses use
-`Cache-Control: no-store`.
+Development creates and validates the document for each request. Responses use `Cache-Control:
+no-store`.
 
 Use `OpenApiOperationDocumentation` for resource-specific descriptions and examples:
 
@@ -497,19 +497,19 @@ Declare each non-standard error in the resource spec. Each mapping:
 | 2. | Resolves the response detail from the stable message key. |
 | 3. | Adds the error response to OpenAPI. |
 
-Use `ApiV2ErrorMapping.of` with an argument extractor when a localized detail needs values from
-the exception. Keep runtime translation and the documented response on the same mapping.
+Use `ApiV2ErrorMapping.of` with an argument extractor when a localized detail needs values from the
+exception. Keep runtime translation and the documented response on the same mapping.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
 continues through the normal controller-advice chain. Startup fails if a mapping refers to an
 operation that the resource does not expose.
 
 For a concrete controller, use the standard Swagger annotations. These include `@Operation`,
-`@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`. Every `/api/v2/**` handler
-must declare `@Operation` or be explicitly `@Hidden` on its method or controller. The merger
-rejects undocumented handlers. The generic CRUD controller is hidden because the resource catalog
-generates its concrete paths. `ApiV2OperationCoverageTest` checks the production handler map
-without loading service or database dependencies.
+`@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`. Every `/api/v2/**` handler must declare
+`@Operation` or be explicitly `@Hidden` on its method or controller. The merger rejects undocumented
+handlers. The generic CRUD controller is hidden because the resource catalog generates its concrete
+paths. `ApiV2OperationCoverageTest` checks the production handler map without loading service or
+database dependencies.
 
 The public OpenAPI endpoint uses the same problem format for invalid supplied credentials and
 exceeded request limits.

@@ -1,12 +1,12 @@
 # Add a REST API v2 collection
 
-REST API v2 resource definitions specify the public fields, access rules, relationships, and default
+REST API v2 resource definitions list the public fields, access rules, relationships, and default
 sort. A resource operations class connects the definition to a domain manager. An
 `ApiV2ResourceSpec` bean registers its HTTP operations and schemas in OpenAPI.
 
-Use a concrete controller for an operation outside collection CRUD, such as `/api/v2/users/me`.
-For query compilation, authentication and request limits, see
-[REST API v2 queries and access](RestApiV2QueriesAndAccess.md).
+Use a concrete controller for an operation outside collection CRUD, such as `/api/v2/users/me`. For
+query compilation, authentication and request limits, see [REST API v2 queries and
+access](RestApiV2QueriesAndAccess.md).
 
 ## Add a field type
 
@@ -194,18 +194,19 @@ validates this text against the public resource definition.
 ## Add a read-only collection
 
 Use `AccessPolicy.readOnly(...)` for a collection that clients only read, such as a relationship
-target that a picker searches. The policy rejects mutations before dispatch, so the operations
-class implements only `find`, `count`, and `findById`. Limit
-`exposedOperations` to `LIST`, `COUNT`, and `READ` so OpenAPI documents only the routes the collection serves.
+target that a picker searches. The policy rejects mutations before dispatch, so the operations class
+implements only `find`, `count`, and `findById`. Limit `exposedOperations` to `LIST`, `COUNT`, and
+`READ` so OpenAPI documents only the routes the collection serves.
 
-Each resource name has one catalog entry. Registration also makes it a relationship target, so
-adding an `ApiV2RelationshipTargetSpec` for an existing resource-spec name causes a duplicate-target
-startup error.
+Each resource name has one catalog entry. Registration also makes the resource a relationship
+target. Adding an `ApiV2RelationshipTargetSpec` with an existing resource-spec name therefore causes
+a duplicate-target startup error.
 
 Describe a collection programmatically when a public field maps to a nested property. The annotated
 record derives the query property from a bean property name, so it cannot describe a value such as
 `editInfo.name`. `ApiV2InstrumentResource` is the example: it also declares `globalId` with
-`withQueryCapabilities(false, false)`, because a derived value has no column to filter or sort.
+`withQueryCapabilities(false, false)`, because a derived value has no database column for filtering
+or sorting.
 
 Declare fields and relationships in one `List<? extends ResourceMember<T>>` passed to
 `CollectionDescription`. Member names must be unique across both kinds. Each kind retains its
@@ -410,39 +411,39 @@ var labels = CollectionFieldTypes.array(
 ```
 
 Each supplied array replaces the entire value. Unknown and non-writable child keys, null/scalar
-rows, and direct array rows fail with indexed paths such as `labels[2].text`. Required
-children apply on CREATE and UPDATE. Child defaults fill omitted keys only, without inventing rows.
-Child write access runs after the complete parent input enters the caller context.
-Required embedded children must support both write operations. Combining `required()` with
-`writeOnlyOn(CREATE)` fails when the field is declared because no complete replacement UPDATE could
-satisfy that child. Optional create-only children and read-only parent arrays remain supported.
+rows, and direct array rows fail with indexed paths such as `labels[2].text`. Required children
+apply on CREATE and UPDATE. Child defaults fill only omitted keys. They do not create rows. Child
+write access runs after the complete parent input enters the caller context. Required embedded
+children must support both write operations. Combining `required()` with `writeOnlyOn(CREATE)` fails
+when the field is declared because no complete replacement UPDATE could satisfy that child. Optional
+create-only children and read-only parent arrays remain supported.
 
-Only declared readable properties are serialized, including DTO rows, caller-specific overrides,
-and pre-rendered included documents. The parent gates the whole value and child restrictions narrow
-that access. Entity values, overrides, defaults, examples, and fresh custom serializer results must
-contain required children before access filtering. A custom serializer returns the complete declared
-value; the shared field renderer applies child read access afterward.
+Only declared readable properties are serialized, including DTO rows, caller-specific overrides, and
+pre-rendered included documents. The parent controls access to the whole value. Child restrictions
+can narrow that access. Entity values, overrides, defaults, examples, and fresh custom serializer
+results must contain required children before access filtering. A custom serializer returns the
+complete declared value; the shared field renderer applies child read access afterward.
 
 Pre-rendered included documents have already passed validation and caller projection. They may omit
-unreadable required children. Reprojection validates every supplied child and every required readable
-child, plus row-count bounds. Row and whole-array rules run when all values needed to reconstruct the
-rows remain available; those rules cannot be rerun after projection removes their input. Producers
-must validate complete values before creating such an included document. This exception does not
-apply to readOverrides or fresh serializer output.
+unreadable required children. Reprojection validates every supplied child and every required
+readable child, plus row-count bounds. Row and whole-array rules run when all values needed to
+reconstruct the rows remain available; those rules cannot be rerun after projection removes their
+input. Producers must validate complete values before creating such an included document. This
+exception does not apply to readOverrides or fresh serializer output.
 
 Defaults and published examples pass declared-child validation, including scalar child constraints.
-OpenAPI publishes object and array examples as JSON values, including additional examples.
-STRING examples retain their raw text, even when that text looks like JSON.
-Recursive `fields` metadata and OpenAPI object `items` come from those definitions. The declared
-child list controls the public object shape; child constraints, documentation, nullability, and
-operation-specific access shape recursive `properties` and `items`, with `additionalProperties: false`
-on each object. The array factory's inclusive row bounds publish as `minItems` and `maxItems`. Request
-schemas describe a supplied array as a complete replacement: required children and child defaults
-apply to every supplied row on CREATE and UPDATE, while the outer field remains optional on update.
-These schemas do not enable HTTP write routes for read-only collections. Read properties may be
-omitted by child access, so read item schemas do not require those keys. Each declared property also
-publishes `x-rspace-fields` for custom frontend renderers. Scalar to-many fields and generic array row
-editors remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are
+OpenAPI publishes object and array examples as JSON values, including additional examples. STRING
+examples retain their raw text, even when that text looks like JSON. Recursive `fields` metadata and
+OpenAPI object `items` come from those definitions. The declared child list controls the public
+object shape; child constraints, documentation, nullability, and operation-specific access shape
+recursive `properties` and `items`, with `additionalProperties: false` on each object. The array
+factory's inclusive row bounds publish as `minItems` and `maxItems`. Request schemas describe a
+supplied array as a complete replacement: required children and child defaults apply to every
+supplied row on CREATE and UPDATE, while the outer field remains optional on update. These schemas
+do not enable HTTP write routes for read-only collections. Read properties may be omitted by child
+access, so read item schemas do not require those keys. Each declared property also publishes
+`x-rspace-fields` for custom frontend renderers. Scalar to-many fields and generic array row editors
+remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are
 unchanged.
 
 `CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
@@ -450,15 +451,15 @@ structured values can still use `structured(...)`; ARRAY values always use decla
 
 A writable field can default to a fixed value when omitted on create: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
-including an allowed `null`, takes precedence. The framework applies it only on create and
-publishes it in the create schema. The default must pass the field's own rules, and a required
-field cannot have one. Dynamic defaults are not supported yet. Apply contextual values in the create
-operation.
+including an allowed `null`, takes precedence. The framework applies it only on create and publishes
+it in the create schema. The default must pass the field's own rules, and a required field cannot
+have one. Dynamic defaults are not supported yet. Apply contextual values in the create operation.
 
 ### Field constraints
 
 The framework enforces `maxLength`, `minLength`, `pattern`, `minimum`, `maximum` and `enumValues`
-when a client writes a value. Violations return `INVALID_VALUE`. OpenAPI publishes each rule only where the server checks it:
+when a client writes a value. Violations return `INVALID_VALUE`. OpenAPI publishes each rule only
+where the server checks it:
 
 | Rule | Checked on writes | Checked in `where` | Published on |
 | --- | --- | --- | --- |
