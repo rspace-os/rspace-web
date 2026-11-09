@@ -7,10 +7,15 @@ import { fetchBookingCatalogue } from "./bookingCatalogue";
 import { requireBookingValue as required } from "./bookingMapping";
 
 const validId = (value: string) => databaseIdFromGlobalId(value, "IN") !== null;
+const canonicalId = (value: string) => {
+  const id = databaseIdFromGlobalId(value, "IN");
+  return id === null ? null : `IN${id}`;
+};
 /** Booking access owns discovery and reference resolution through configurations. */
 export const bookingInstrumentSource: RelationshipSource = {
   id: "items",
   globalIdPrefix: "IN",
+  normalizeValue: canonicalId,
   ownsValue: validId,
   batchSize: 100,
   search: async (term, signal) => {
@@ -22,7 +27,7 @@ export const bookingInstrumentSource: RelationshipSource = {
     return page.items.map((item) => ({ id: item.targetId, name: item.name, globalId: item.globalId }));
   },
   resolveMany: async (values, signal) => {
-    const targets = [...new Set(values.filter(validId).map((value) => value.toUpperCase()))];
+    const targets = [...new Set(values.map(canonicalId).filter((value): value is string => value !== null))];
     if (targets.length === 0) return {};
     const result = await listBookingConfigurations(
       {
@@ -36,14 +41,10 @@ export const bookingInstrumentSource: RelationshipSource = {
     const requested = new Set(targets);
     return Object.fromEntries(
       result.docs.flatMap(({ target }) => {
-        if (!target || !requested.has(target.globalId)) return [];
+        const key = target ? canonicalId(target.globalId) : null;
+        if (!target || key === null || !requested.has(key)) return [];
         if (typeof target.value === "number") throw new Error("Booking reference is not expanded");
-        return [
-          [
-            target.globalId,
-            { ...target.value, name: required(target.value.name, "target.name"), globalId: target.globalId },
-          ],
-        ];
+        return [[key, { ...target.value, name: required(target.value.name, "target.name"), globalId: key }]];
       }),
     );
   },
