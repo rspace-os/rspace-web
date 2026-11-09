@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw/http";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { worker } from "@/__tests__/browserMocks";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import StoichiometryDialogRoot from "../StoichiometryDialogRoot";
@@ -11,21 +11,6 @@ import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
 } from "./StoichiometryDialog.story";
-
-type CalledSpy = {
-  handler: () => void;
-  hasBeenCalled: () => boolean;
-};
-
-const createCalledSpy = (): CalledSpy => {
-  let called = false;
-  return {
-    handler: () => {
-      called = true;
-    },
-    hasBeenCalled: () => called,
-  };
-};
 
 type NetworkRequest = { method: string; pathname: string };
 
@@ -45,6 +30,13 @@ const dialogStoichiometryHandlers = () => {
 };
 
 const dialog = new StoichiometryDialogPage();
+
+async function expectTableReady() {
+  await expect.element(dialog.table).toBeVisible();
+  // Cached rows render before the background GET settles. Busy actions stay
+  // disabled until it completes, so teardown cannot race that request.
+  await expect.element(dialog.deleteButton).toBeEnabled();
+}
 
 beforeEach(() => {
   networkRequests.length = 0;
@@ -76,34 +68,34 @@ describe("Stoichiometry Dialog", () => {
 
   test("displays stoichiometry table when data is available", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
   });
 
   test("Has no accessibility violations", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await expectNoAxeViolations();
   });
 
   test("supports high-contrast mode", async () => {
     await emulateHighContrast();
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await expectNoAxeViolations();
   });
 
   test("invokes callback when table is successfully created", async () => {
-    const onTableCreatedSpy = createCalledSpy();
-    render(<StoichiometryDialogWithCalculateButtonStory onTableCreated={onTableCreatedSpy.handler} />);
+    const onTableCreatedSpy = vi.fn();
+    render(<StoichiometryDialogWithCalculateButtonStory onTableCreated={onTableCreatedSpy} />);
     await dialog.clickCalculate();
-    await expect.element(dialog.table).toBeVisible();
-    expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
+    await expectTableReady();
+    expect(onTableCreatedSpy).toHaveBeenCalled();
   });
 
   test("makes a POST API call when creating a new table", async () => {
     render(<StoichiometryDialogWithCalculateButtonStory />);
     await dialog.clickCalculate();
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await expect.poll(() => hasStoichiometryRequest("POST")).toBe(true);
   });
 
@@ -135,49 +127,55 @@ describe("Stoichiometry Dialog", () => {
 
   test("does not show save button when table has not been modified", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await expect.element(dialog.saveButton).not.toBeInTheDocument();
   });
 
   test("shows save button when table data is modified by editing a cell", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await dialog.editFirstMassCell();
     await expect.element(dialog.saveButton).toBeVisible();
   });
 
   test("shows save button when limiting reagent is changed", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await dialog.selectLimitingReagent("Cyclopentadiene");
     await expect.element(dialog.saveButton).toBeVisible();
   });
 
   test("hides save button after saving changes", async () => {
-    render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    const onSaveSpy = vi.fn();
+    render(<StoichiometryDialogWithTableStory onSave={onSaveSpy} />);
+    await expectTableReady();
     await dialog.editFirstMassCell();
     await dialog.saveChanges();
+    await expect.poll(() => onSaveSpy.mock.calls.length).toBeGreaterThan(0);
+    await expectTableReady();
     await expect.element(dialog.saveButton).not.toBeInTheDocument();
   });
 
   test("makes a PUT API call when saving changes to the table", async () => {
-    render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    const onSaveSpy = vi.fn();
+    render(<StoichiometryDialogWithTableStory onSave={onSaveSpy} />);
+    await expectTableReady();
     await dialog.editFirstMassCell();
     await dialog.saveChanges();
+    await expect.poll(() => onSaveSpy.mock.calls.length).toBeGreaterThan(0);
+    await expectTableReady();
     await expect.poll(() => hasStoichiometryRequest("PUT")).toBe(true);
   });
 
   test("shows delete button when table is present", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await expect.element(dialog.deleteButton).toBeVisible();
   });
 
   test("shows confirmation dialog when delete button is clicked", async () => {
     render(<StoichiometryDialogWithTableStory />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await dialog.clickDelete();
     await expect.element(dialog.deleteConfirmationDialog).toBeVisible();
   });
@@ -202,10 +200,12 @@ describe("Stoichiometry Dialog", () => {
     };
 
     render(<DeletableDialog />);
-    await expect.element(dialog.table).toBeVisible();
+    await expectTableReady();
     await dialog.clickDelete();
     await dialog.confirmDeletion();
     await expect.poll(() => hasStoichiometryRequest("DELETE")).toBe(true);
+    // The grid can disappear during Suspense while deletion is still pending.
+    await expect.element(dialog.calculateButton).toBeVisible();
     await expect.element(dialog.table).not.toBeInTheDocument();
   });
 });
