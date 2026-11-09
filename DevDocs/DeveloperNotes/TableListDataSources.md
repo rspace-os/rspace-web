@@ -123,6 +123,12 @@ Test any other fetcher with MSW. Assert its parameters, credentials, cancellatio
 
 Use semantic queries in component tests. Do not test private adapter functions.
 
+Booking tests serve `src/modules/common/api/v2/openapi.generated.json`, the document the backend generates.
+`ApiV2OpenApiDocumentExportTest` fails when it falls behind the REST API v2 resources; regenerate it with
+`mvn test -Dfast=true -Dtest=ApiV2OpenApiDocumentExportTest -DupdateApiV2OpenApiFixture=true`. Answer list
+requests with `apiV2CollectionResponse`, which rejects the filters, sorts and fields the backend
+would reject.
+
 ## Common errors
 
 | # | Symptom | Guidance |
