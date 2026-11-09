@@ -877,34 +877,34 @@ empty results, emit an audit `SEARCH` event only after snapshot validation succe
 
 ## Adding a feature to v2
 
-Shared `api/v2` code never names a feature; features register errors, endpoint specs,
-JSON body types and docs through the v2 hooks. `WebConfig` follows the same rule.
-`ApiV2FeatureIsolationTest` enforces it against source identifiers and string literals.
+Shared `api/v2` code never names a feature. Features register errors, endpoint specs, JSON body
+types and docs through the v2 hooks. `WebConfig` follows the same rule. `ApiV2FeatureIsolationTest`
+enforces it against source identifiers and string literals.
 
-Feature controllers live in their feature package. Add that package to the dispatcher
-context's component scan in `dispatcher-servlet.xml`; the root context scan alone does
-not register MVC request mappings.
+Feature controllers live in their feature package. Add that package to the dispatcher context's
+component scan in `dispatcher-servlet.xml`; the root context scan alone does not register MVC
+request mappings.
 
-H1 (errors): scope feature advice with `@ControllerAdvice(basePackages = "<feature package>")`
-and order it ahead of the shared advice. Inherit the shared transport handlers so generic
-binding, authentication and unexpected failures keep the v2 problem contract. For resource
-operations served by the generic CRUD controller, contribute `ApiV2ErrorMapping` entries
-through `ApiV2ResourceSpec`; package-scoped advice cannot handle those operations.
+H1 (errors): scope feature advice with `@ControllerAdvice(basePackages = "<feature package>")` and
+order it ahead of the shared advice. Inherit the shared transport handlers so generic binding,
+authentication and unexpected failures keep the v2 problem contract. For resource operations served
+by the generic CRUD controller, contribute `ApiV2ErrorMapping` entries through `ApiV2ResourceSpec`;
+package-scoped advice cannot handle those operations.
 
-H2 (problem extensions): supply a map of RFC 9457 extension members through error mappings.
-The shared problem serializes these at the top level with `@JsonAnyGetter`. Keep extension
-records in the feature package. Document specialized schemas with `@Schema(allOf = ApiV2Problem.class)`
-and select them per status using `OpenApiOperationDocumentation.Builder.problemSchema`
-for generated resource operations, or `@ApiResponse` for feature controllers.
+H2 (problem extensions): supply a map of RFC 9457 extension members through error mappings. The
+shared problem uses `@JsonAnyGetter` to serialize these at the top level. Keep extension records in
+the feature package. Document specialized schemas with `@Schema(allOf = ApiV2Problem.class)` and
+select them per status using `OpenApiOperationDocumentation.Builder.problemSchema` for generated
+resource operations, or `@ApiResponse` for feature controllers.
 
-H4 (JSON bodies): expose an `ApiV2JsonBodyTypes` bean containing the feature's strict
-request records. `WebConfig` accepts these beans through Spring injection and registers
-all contributed types on each JSON converter. Do not add feature imports to `WebConfig`.
+H4 (JSON bodies): expose an `ApiV2JsonBodyTypes` bean containing the feature's strict request
+records. `WebConfig` accepts these beans through Spring injection and registers all contributed
+types on each JSON converter. Do not add feature imports to `WebConfig`.
 
-H5 (docs): document feature routes with `@Operation` and `@ApiResponse` on their
-controllers. The merged `/api/v2/openapi.json` includes those declarations; do not add
-feature paths, error keys or tags to `ApiV2OpenApiGenerator`. Verify the merged document
-and compare its routes and responses when moving controllers or documentation.
+H5 (docs): document feature routes with `@Operation` and `@ApiResponse` on their controllers. The
+merged `/api/v2/openapi.json` includes those declarations; do not add feature paths, error keys or
+tags to `ApiV2OpenApiGenerator`. Verify the merged document and compare its routes and responses
+when moving controllers or documentation.
 
-Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are
-introduced in the layers that first require them.
+Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are introduced in the
+layers that first require them.
