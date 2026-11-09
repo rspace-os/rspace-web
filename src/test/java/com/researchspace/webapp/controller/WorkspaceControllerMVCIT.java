@@ -53,6 +53,7 @@ import com.researchspace.model.dtos.RecordTagData;
 import com.researchspace.model.dtos.SearchOperator;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
+import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.dtos.WorkspaceSettings.WorkspaceViewMode;
 import com.researchspace.model.field.Field;
@@ -2287,6 +2288,104 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     pref = userMgr.getPreferenceForUser(piUser, Preference.WORKSPACE_RESULTS_PER_PAGE);
     assertEquals(25, pref.getValueAsNumber().intValue());
+  }
+
+  @Test
+  public void testSearchSurvivesRepeatedWorkspaceSettingsSaves() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    MockPrincipal principal = new MockPrincipal(user.getUsername());
+    String searchTerm = getRandomName(25);
+    StructuredDocument matching = createBasicDocumentInRootFolderWithText(user, searchTerm);
+    matching.setName(searchTerm);
+    recordMgr.save(matching, user);
+    StructuredDocument unrelated = createBasicDocumentInRootFolderWithText(user, "Unrelated");
+    MvcResult search =
+        mockMvc
+            .perform(
+                get("/workspace/ajax/search")
+                    .session(session)
+                    .principal(principal)
+                    .param("currentViewMode", WorkspaceViewMode.LIST_VIEW.toString())
+                    .param("options[]", SearchConstants.NAME_SEARCH_OPTION)
+                    .param("terms[]", searchTerm))
+            .andExpect(status().isOk())
+            .andReturn();
+    String settingsKey = (String) search.getModelAndView().getModel().get("settingsKey");
+
+    for (int returnNumber = 1; returnNumber <= 2; returnNumber++) {
+      MvcResult restored =
+          mockMvc
+              .perform(
+                  get("/workspace")
+                      .session(session)
+                      .principal(principal)
+                      .param("settingsKey", settingsKey))
+              .andExpect(status().isOk())
+              .andReturn();
+      assertThat(getSearchResultsFromMvcResult(restored).getResults())
+          .extracting(BaseRecord::getId)
+          .contains(matching.getId())
+          .doesNotContain(unrelated.getId());
+      var configJson =
+          mapper.readTree(
+              (String) restored.getModelAndView().getModel().get("workspaceConfigJson"));
+      assertEquals(searchTerm, configJson.get("terms").get(0).asText());
+      mockMvc
+          .perform(
+              post("/workspace/ajax/saveWorkspaceSettings")
+                  .session(session)
+                  .principal(principal)
+                  .param("settingsKey", settingsKey)
+                  .param("parentFolderId", configJson.get("parentFolderId").asText())
+                  .param("currentViewMode", configJson.get("currentViewMode").asText())
+                  .param("options[]", SearchConstants.NAME_SEARCH_OPTION)
+                  .param("terms[]", searchTerm))
+          .andExpect(status().isOk())
+          .andExpect(result -> assertNull(result.getResolvedException()));
+      WorkspaceListingConfig saved = (WorkspaceListingConfig) session.getAttribute(settingsKey);
+      assertThat(saved.getSrchOptions()).containsExactly(SearchConstants.NAME_SEARCH_OPTION);
+      assertThat(saved.getSrchTerms()).containsExactly(searchTerm);
+    }
+
+    // jQuery omits both arrays when the search is cleared.
+    mockMvc
+        .perform(
+            post("/workspace/ajax/saveWorkspaceSettings")
+                .session(session)
+                .principal(principal)
+                .param("settingsKey", settingsKey)
+                .param("parentFolderId", matching.getParent().getId().toString())
+                .param("currentViewMode", WorkspaceViewMode.LIST_VIEW.toString())
+                .param("resultsPerPage", "25"))
+        .andExpect(status().isOk())
+        .andExpect(result -> assertNull(result.getResolvedException()));
+    WorkspaceListingConfig cleared = (WorkspaceListingConfig) session.getAttribute(settingsKey);
+    assertThat(cleared.getSrchOptions()).isEmpty();
+    assertThat(cleared.getSrchTerms()).isEmpty();
+    assertEquals(
+        25,
+        userMgr
+            .getPreferenceForUser(user, Preference.WORKSPACE_RESULTS_PER_PAGE)
+            .getValueAsNumber()
+            .intValue());
+    MvcResult listing =
+        mockMvc
+            .perform(
+                get("/workspace")
+                    .session(session)
+                    .principal(principal)
+                    .param("settingsKey", settingsKey))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertThat(getSearchResultsFromMvcResult(listing).getResults())
+        .extracting(BaseRecord::getId)
+        .contains(matching.getId(), unrelated.getId());
+    assertEquals(
+        0,
+        mapper
+            .readTree((String) listing.getModelAndView().getModel().get("workspaceConfigJson"))
+            .get("terms")
+            .size());
   }
 
   @Test

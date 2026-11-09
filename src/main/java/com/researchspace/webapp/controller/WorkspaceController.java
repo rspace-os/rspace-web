@@ -1243,6 +1243,8 @@ public class WorkspaceController extends BaseController {
   @PostMapping("/ajax/saveWorkspaceSettings")
   public ResponseEntity<Object> saveWorkspaceSettings(
       @RequestParam(value = "settingsKey") String settingsKey,
+      @RequestParam(value = "options[]", required = false) String[] options,
+      @RequestParam(value = "terms[]", required = false) String[] terms,
       WorkspaceSettings settings,
       Principal principal,
       HttpSession session) {
@@ -1255,7 +1257,11 @@ public class WorkspaceController extends BaseController {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .body(getText("workspace.settings.errors.missingSessionListing"));
     } else {
-      WorkspaceListingConfig cfg = new WorkspaceListingConfig(settings);
+      WorkspaceListingConfig cfg =
+          new WorkspaceListingConfig(
+              settings,
+              options == null ? new String[] {} : options,
+              terms == null ? new String[] {} : terms);
       session.setAttribute(settingsKey, cfg);
     }
 
