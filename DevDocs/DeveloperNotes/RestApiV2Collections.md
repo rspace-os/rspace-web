@@ -945,6 +945,12 @@ authentication and unexpected failures keep the v2 problem contract. For resourc
 by the generic CRUD controller, contribute `ApiV2ErrorMapping` entries through `ApiV2ResourceSpec`;
 package-scoped advice cannot handle those operations.
 
+H2 (problem extensions): supply a map of RFC 9457 extension members through error mappings. The
+shared problem uses `@JsonAnyGetter` to serialize these at the top level. Keep extension records in
+the feature package. Document specialized schemas with `@Schema(allOf = ApiV2Problem.class)` and
+select them per status using `OpenApiOperationDocumentation.Builder.problemSchema` for generated
+resource operations, or `@ApiResponse` for feature controllers.
+
 H4 (JSON bodies): expose an `ApiV2JsonBodyTypes` bean containing the feature's strict request
 records. `WebConfig` accepts these beans through Spring injection and registers all contributed
 types on each JSON converter. Do not add feature imports to `WebConfig`.

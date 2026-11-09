@@ -336,7 +336,18 @@ class ApiV2CrudControllerTest {
 
     @Override
     public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
-      return RuntimeFieldCatalogPage.empty();
+      return new RuntimeFieldCatalogPage(
+          List.of(
+              new RuntimeFieldDefinition(
+                  "SF1",
+                  "customFields.SF1",
+                  "Owner",
+                  RuntimeFieldValueType.TEXT,
+                  "maintenance",
+                  "Maintenance",
+                  List.of())),
+          1L,
+          false);
     }
 
     @Override
@@ -771,18 +782,7 @@ class ApiV2CrudControllerTest {
 
     @Override
     public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
-      return new RuntimeFieldCatalogPage(
-          List.of(
-              new RuntimeFieldDefinition(
-                  "SF1",
-                  "customFields.SF1",
-                  "Owner",
-                  RuntimeFieldValueType.TEXT,
-                  "maintenance",
-                  "Maintenance",
-                  List.of())),
-          1L,
-          false);
+      return RuntimeFieldCatalogPage.empty();
     }
 
     @Override

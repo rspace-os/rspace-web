@@ -302,7 +302,14 @@ class BookingConfigurationManagerTest {
                 "UTC",
                 target(12L),
                 new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null)),
-            InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION));
+            InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION),
+        Arguments.of(
+            new Create(
+                true,
+                "UTC",
+                target(12L),
+                new BookingSchedulingSettings.Patch(null, List.of(), null, null, null, null)),
+            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS));
   }
 
   @ParameterizedTest
@@ -653,5 +660,21 @@ class BookingConfigurationManagerTest {
 
   private BookingConfiguration configuration(long id, long targetId) {
     return fixture.configuration(id, targetId);
+  }
+
+  @Test
+  void rejectsAnEmptyReplacementBeforeSaving() {
+    Create invalid =
+        new Create(
+            true,
+            "UTC",
+            target(12L),
+            new BookingSchedulingSettings.Patch(null, List.of(), null, null, null, null));
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.createConfiguration(invalid, actor, actor));
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS, failure.reason());
+    verify(dao, never()).saveAndFlush(any(BookingConfiguration.class));
   }
 }

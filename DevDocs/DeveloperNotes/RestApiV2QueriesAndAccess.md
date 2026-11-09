@@ -677,8 +677,12 @@ Declare each non-standard error in the resource spec. Each mapping:
 | 3. | Adds the error response to OpenAPI. |
 
 `ApiV2ErrorMapping.forException(type).status(status).documentedError(code, description)` starts a
-typed builder. Optional `arguments` and `code` extractors customize the mapping before `build()`.
-Keep runtime translation and the documented response on the same mapping.
+typed builder. Optional `arguments`, `code`, and `extensions` extractors customize the mapping before
+`build()`. The `extensions` extractor supplies a `Map<String, Object>` of problem extension
+members from the exception. `ApiV2Problem` serializes the map at the top level with
+`@JsonAnyGetter`. Keep typed extension records in the feature package. Document them with a
+specialized schema and select it for the response, rather than adding feature components to
+`ApiV2Problem`.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
 continues through the normal controller-advice chain. Startup fails if a mapping refers to an

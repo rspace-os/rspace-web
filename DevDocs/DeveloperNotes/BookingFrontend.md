@@ -242,7 +242,8 @@ draft and saves it against the refreshed version, unless the user discards it.
 
 Booking clients call generated operations under `modules/common/api/v2/generated/`.
 Their `apiV2Fetch` mutator handles authentication and JSON validation; HTTP failures
-raise `ApiV2ProblemError` from `modules/common/api/v2/`. See [the API v2 frontend client guide](RestApiV2FrontendClient.md).
+raise `ApiV2ProblemError` from `modules/common/api/v2/`. Validate Booking-specific
+problem extensions in domain code. See [the API v2 frontend client guide](RestApiV2FrontendClient.md).
 
 The Booking API scheduling-timezone write behavior is described in
 [Booking](Booking.md#scheduling-timezone-writes).

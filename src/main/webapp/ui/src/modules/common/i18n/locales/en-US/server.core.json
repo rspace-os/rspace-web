@@ -140,6 +140,12 @@
           "openingHours": {
             "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
           },
+          "openDays": {
+            "invalid": "Open days must list one to seven different weekdays, numbered 1 (Monday) to 7 (Sunday)."
+          },
+          "openingExceptions": {
+            "invalid": "Each day with different hours must be a different open weekday, with HH:mm hours where start is before end, or 00:00–24:00 for the full day."
+          },
           "buffer": {
             "invalid": "Booking buffers must be between 0 and 10,080 minutes."
           },
@@ -195,7 +201,7 @@
           "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
           "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
           "dayEndMissingTitle": "The booking end time does not exist in the local time zone.",
-          "openingHours": "The booking must remain within this bookable item's opening hours.",
+          "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
           "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
           "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
           "purpose": {

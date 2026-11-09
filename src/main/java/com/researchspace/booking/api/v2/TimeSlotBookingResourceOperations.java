@@ -3,6 +3,7 @@ package com.researchspace.booking.api.v2;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -67,6 +68,13 @@ import org.springframework.http.HttpStatus;
 public final class TimeSlotBookingResourceOperations
     implements ResourceOperations<TimeSlotBooking, Long> {
 
+  private static final String BOOKING_PROBLEM_EXTENSIONS =
+      "Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer"
+          + " id, kind BOOKING or MAINTENANCE, and start/end date-time strings."
+          + " errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and"
+          + " bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer"
+          + " maximumDurationMinutes.";
+
   private static final EnumSet<ResourceOperation> OPERATIONS =
       EnumSet.of(
           ResourceOperation.LIST,
@@ -75,9 +83,9 @@ public final class TimeSlotBookingResourceOperations
           ResourceOperation.CREATE,
           ResourceOperation.UPDATE);
 
-  private final MessageSourceUtils messages;
   private final TimeSlotBookingManager manager;
   private final BookingCreateExecutor creates;
+  private final MessageSourceUtils messages;
   private final FeatureFlagManager featureFlags;
   private final CollectionDescription<TimeSlotBooking> description;
   private final BookingLocationFilterManager locations;
@@ -90,8 +98,8 @@ public final class TimeSlotBookingResourceOperations
       MessageSourceUtils messages,
       BookingLocationFilterManager locations,
       BookingCreateExecutor creates) {
-    this.messages = messages;
     this.creates = creates;
+    this.messages = messages;
     this.manager = manager;
     this.featureFlags = featureFlags;
     this.description = description;
@@ -138,26 +146,27 @@ public final class TimeSlotBookingResourceOperations
                             : BookingProblem.maximumDuration(
                                 exception.maximumDurationMinutes().getAsLong()))
                 .build(),
-            ApiV2ErrorMapping.of(
-                BookingStartInPastException.class,
-                HttpStatus.BAD_REQUEST,
-                "errors.api.v2.booking.startInPast",
-                "The booking start must be in the future."),
-            ApiV2ErrorMapping.of(
-                BookingWindowException.class,
-                HttpStatus.BAD_REQUEST,
-                "errors.api.v2.booking.window",
-                "The booking interval is invalid."),
-            ApiV2ErrorMapping.of(
-                BookingDurationException.class,
-                HttpStatus.BAD_REQUEST,
-                "errors.api.v2.booking.duration",
-                "The booking interval exceeds 527040 elapsed minutes."),
-            ApiV2ErrorMapping.of(
-                BookingTargetUnavailableException.class,
-                HttpStatus.CONFLICT,
-                "errors.api.v2.booking.target.unavailable",
-                "The selected target is unavailable."),
+            ApiV2ErrorMapping.forException(BookingStartInPastException.class)
+                .status(HttpStatus.BAD_REQUEST)
+                .documentedError(
+                    "errors.api.v2.booking.startInPast", "The booking start must be in the future.")
+                .build(),
+            ApiV2ErrorMapping.forException(BookingWindowException.class)
+                .status(HttpStatus.BAD_REQUEST)
+                .documentedError("errors.api.v2.booking.window", "The booking interval is invalid.")
+                .build(),
+            ApiV2ErrorMapping.forException(BookingDurationException.class)
+                .status(HttpStatus.BAD_REQUEST)
+                .documentedError(
+                    "errors.api.v2.booking.duration",
+                    "The booking interval exceeds 527040 elapsed minutes.")
+                .build(),
+            ApiV2ErrorMapping.forException(BookingTargetUnavailableException.class)
+                .status(HttpStatus.CONFLICT)
+                .documentedError(
+                    "errors.api.v2.booking.target.unavailable",
+                    "The selected target is unavailable.")
+                .build(),
             ApiV2ErrorMapping.forException(BookingOverlapException.class)
                 .status(HttpStatus.CONFLICT)
                 .documentedError(
@@ -187,31 +196,35 @@ public final class TimeSlotBookingResourceOperations
         Stream.concat(
                 commonErrors.stream(),
                 Stream.of(
-                    ApiV2ErrorMapping.of(
-                        BookingStateTransitionException.class,
-                        HttpStatus.CONFLICT,
-                        "errors.api.v2.booking.state.transition",
-                        "The requested state transition is invalid."),
-                    ApiV2ErrorMapping.of(
-                        BookingConcurrentModificationException.class,
-                        HttpStatus.PRECONDITION_FAILED,
-                        "errors.api.v2.booking.concurrentModification",
-                        "The event changed while it was being edited.")))
+                    ApiV2ErrorMapping.forException(BookingStateTransitionException.class)
+                        .status(HttpStatus.CONFLICT)
+                        .documentedError(
+                            "errors.api.v2.booking.state.transition",
+                            "The requested state transition is invalid.")
+                        .build(),
+                    ApiV2ErrorMapping.forException(BookingConcurrentModificationException.class)
+                        .status(HttpStatus.PRECONDITION_FAILED)
+                        .documentedError(
+                            "errors.api.v2.booking.concurrentModification",
+                            "The event changed while it was being edited.")
+                        .build()))
             .toList();
     List<ApiV2ErrorMapping> createErrors =
         Stream.concat(
                 commonErrors.stream(),
                 Stream.of(
-                    ApiV2ErrorMapping.of(
-                        BookingIdempotencyConflictException.class,
-                        HttpStatus.UNPROCESSABLE_ENTITY,
-                        "errors.api.v2.booking.idempotencyKey.conflict",
-                        "The Idempotency-Key was already used for a different booking request."),
-                    ApiV2ErrorMapping.of(
-                        BookingConcurrentModificationException.class,
-                        HttpStatus.CONFLICT,
-                        "errors.api.v2.booking.concurrentModification",
-                        "The schedule changed while the booking was being created.")))
+                    ApiV2ErrorMapping.forException(BookingIdempotencyConflictException.class)
+                        .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                        .documentedError(
+                            "errors.api.v2.booking.idempotencyKey.conflict",
+                            "The Idempotency-Key was already used for a different booking request.")
+                        .build(),
+                    ApiV2ErrorMapping.forException(BookingConcurrentModificationException.class)
+                        .status(HttpStatus.CONFLICT)
+                        .documentedError(
+                            "errors.api.v2.booking.concurrentModification",
+                            "The schedule changed while the booking was being created.")
+                        .build()))
             .toList();
     return ApiV2ResourceSpec.builder(description, this, Long::valueOf)
         .mutationPolicy(
@@ -225,6 +238,8 @@ public final class TimeSlotBookingResourceOperations
         .documentation(
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
+                .problemSchema(400, ApiV2Problem.class)
+                .problemSchema(409, ApiV2Problem.class)
                 .description(
                     "Creates one confirmed booking for an instrument. Intervals may not exceed the"
                         + " instrument's configured maximum or the 366-day system maximum. Optional"
@@ -232,7 +247,8 @@ public final class TimeSlotBookingResourceOperations
                         + " hyphen) is scoped to the creating actor. The normalized original"
                         + " request is retained for the booking row's lifetime. Identical retries"
                         + " return the current booking with 200, including after edits or"
-                        + " cancellation; a different request returns 422.")
+                        + " cancellation; a different request returns 422. "
+                        + BOOKING_PROBLEM_EXTENSIONS)
                 .responseDescription(200, "Current booking returned for an identical create retry.")
                 .requestExample(
                     Map.of(
@@ -244,6 +260,15 @@ public final class TimeSlotBookingResourceOperations
                         "2026-10-25T09:00:00Z",
                         "purpose",
                         "Image plate 4"))
+                .build())
+        .documentation(
+            ResourceOperation.UPDATE,
+            OpenApiOperationDocumentation.builder()
+                .problemSchema(400, ApiV2Problem.class)
+                .problemSchema(409, ApiV2Problem.class)
+                .description(
+                    "Partially updates one booking and returns the updated document. "
+                        + BOOKING_PROBLEM_EXTENSIONS)
                 .build())
         .errorMappings(ResourceOperation.CREATE, createErrors)
         .errorMappings(ResourceOperation.UPDATE, updateErrors)
@@ -300,14 +325,6 @@ public final class TimeSlotBookingResourceOperations
   @Override
   public Optional<TimeSlotBooking> findById(Long id, User subject) {
     return enabled(subject) ? manager.getBooking(id, subject) : Optional.empty();
-  }
-
-  public Optional<TimeSlotBooking> findByIdForAudit(Long id, User subject) {
-    return enabled(subject) ? manager.getBooking(id, subject) : Optional.empty();
-  }
-
-  public void requireAuditAccess(TimeSlotBooking booking, User subject) {
-    manager.requireCanViewAudit(booking, subject);
   }
 
   @Override

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -29,7 +30,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -104,6 +104,7 @@ class ApiV2OpenApiGeneratorTest {
         ApiV2ResourceSpec.builder(ApiV2UserResource.DESCRIPTION, userOperations, Long::valueOf)
             .mutationErrors("create-error", "update-error")
             .audit(ResourceAuditPolicy.standard(userOperations))
+            .audit(ResourceAuditPolicy.standard(userOperations))
             .build();
     ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurations =
         ApiV2ResourceSpec.builder(
@@ -117,16 +118,31 @@ class ApiV2OpenApiGeneratorTest {
                         ResourceOperation.DELETE),
                     DeletePolicy.SOFT.withPermanentOption(),
                     IdempotencyPolicy.NONE))
+            .mutationPolicy(
+                new MutationPolicy(
+                    VersionPolicy.required(
+                        "configurationVersion",
+                        "errors.api.v2.bookingConfiguration.ifMatchRequired",
+                        ResourceOperation.UPDATE,
+                        ResourceOperation.DELETE),
+                    DeletePolicy.SOFT.withPermanentOption(),
+                    IdempotencyPolicy.NONE))
             .mutationErrors("create-error", "update-error")
             .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
-            .resourceAccess(
-                new ResourceAccessSpec<>(protectedAccess()))
+            .resourceAccess(new ResourceAccessSpec<>(protectedAccess()))
             .build();
     ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookings =
         ApiV2ResourceSpec.builder(
                 ApiV2TimeSlotBookingResource.DESCRIPTION, timeSlotBookingOperations, Long::valueOf)
             .mutationErrors("create-error", "update-error")
             .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
+            .documentation(
+                ResourceOperation.CREATE,
+                OpenApiOperationDocumentation.builder()
+                    .problemSchema(400, ApiV2Problem.class)
+                    .problemSchema(409, ApiV2Problem.class)
+                    .errorResponse(409, "errors.api.v2.booking.overlap", "Conflict.")
+                    .build())
             .build();
     ApiV2ResourceSpec<FeatureFlagResource, String> featureFlags =
         ApiV2ResourceSpec.builder(
@@ -154,7 +170,8 @@ class ApiV2OpenApiGeneratorTest {
                             ApiV2ContainerResource.DESCRIPTION, operationsMock(), Long::valueOf)
                         .mutationErrors("create-error", "update-error")
                         .expose(Set.of())
-                        .build())), com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                        .build())),
+            com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
             "Test API",
             "2.0.0");
   }
@@ -226,6 +243,21 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/DeclaredResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+    Map<String, Object> openingHours = objectMap(readProperties.get("openingHours"));
+    assertEquals("array", openingHours.get("type"));
+    Map<String, Object> updateProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
+    Map<String, Object> hours = objectMap(updateProperties.get("openingHours"));
+    assertEquals(1, hours.get("minItems"));
+    assertEquals(7, hours.get("maxItems"));
+    Map<String, Object> item = objectMap(hours.get("items"));
+    assertEquals(false, item.get("additionalProperties"));
+    assertEquals(Set.of("dayOfWeek", "start", "end"), Set.copyOf((List<?>) item.get("required")));
+    assertTrue(objectMap(item.get("properties")).containsKey("dayOfWeek"));
+    for (String legacy : List.of("openingStart", "openingEnd", "openDays", "openingExceptions")) {
+      assertFalse(readProperties.containsKey(legacy));
+      assertFalse(updateProperties.containsKey(legacy));
+    }
   }
 
   @Test
@@ -606,6 +638,28 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void problemResponsesUseTheExtensibleSharedProblemSchema() {
+    Map<String, Object> document = document();
+    Map<String, Object> components = schemas(document);
+    Map<String, Object> responses =
+        objectMap(
+            objectMap(
+                    objectMap(objectMap(document.get("paths")).get("/api/v2/bookings")).get("post"))
+                .get("responses"));
+    for (String status : List.of("400", "409")) {
+      assertEquals(
+          Map.of("$ref", "#/components/schemas/ApiV2Problem"),
+          objectMap(
+                  objectMap(objectMap(responses.get(status)).get("content"))
+                      .get("application/problem+json"))
+              .get("schema"));
+    }
+    assertTrue(
+        Boolean.TRUE.equals(objectMap(components.get("ApiV2Problem")).get("additionalProperties")));
+    assertFalse(components.containsKey("BookingProblem"));
+  }
+
+  @Test
   void documentsDailyAuditSnapshotContract() {
     Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
@@ -703,19 +757,21 @@ class ApiV2OpenApiGeneratorTest {
             List.of(new Sort("id", true)));
     ResourceOperations<Widget, Long> widgetOperations = operationsMock();
     Map<String, Object> document =
-        documentMap(new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(
-                            List.of(
-                                ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
-                                    .mutationErrors("create-error", "update-error")
-                                    .build(),
-                                ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
-                                    .mutationErrors("create-error", "update-error")
-                                    .expose(Set.of())
-                                    .build())), com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
-                        "Test API",
-                        "2.0.0")
-                    .generate());
+        documentMap(
+            new ApiV2OpenApiGenerator(
+                    new ApiV2ResourceCatalog(
+                        List.of(
+                            ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .build(),
+                            ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .expose(Set.of())
+                                .build())),
+                    com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                    "Test API",
+                    "2.0.0")
+                .generate());
     Map<String, Object> schemas = schemas(document);
 
     for (String variant : List.of("Read", "Create", "Update")) {
@@ -843,8 +899,9 @@ class ApiV2OpenApiGeneratorTest {
                         ApiV2ContainerResource.DESCRIPTION, operationsMock(), Long::valueOf)
                     .mutationErrors("create-error", "update-error")
                     .build()));
-    return documentMap(new ApiV2OpenApiGenerator(
-                    catalog, ApiV2OpenApiTestText.english(), "Test API", "2.0.0").generate());
+    return documentMap(
+        new ApiV2OpenApiGenerator(catalog, ApiV2OpenApiTestText.english(), "Test API", "2.0.0")
+            .generate());
   }
 
   private static Map<String, Object> objectMap(Object value) {
@@ -869,12 +926,13 @@ class ApiV2OpenApiGeneratorTest {
     return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
   }
 
-  /** The generated document as a map, with its component references (other than schemas) resolved. */
+  /**
+   * The generated document as a map, with its component references (other than schemas) resolved.
+   */
   private static Map<String, Object> documentMap(OpenAPI openApi) {
     return Json31.mapper()
         .convertValue(
             ApiV2OpenApiTestRefs.dereferenced(Json31.mapper().valueToTree(openApi)),
             new TypeReference<LinkedHashMap<String, Object>>() {});
   }
-
 }
