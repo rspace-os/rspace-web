@@ -22,6 +22,7 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
+import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
@@ -81,7 +82,7 @@ export async function fetchUpcomingBookingCount(
 ): Promise<ApiV2CountResult & { totalDocs: number }> {
   const result = await countBookings(
     {
-      where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf.toISOString()}`,
+      where: upcomingBookingWhere(requesterId, asOf.toISOString()),
       max: 100,
     },
     { signal },
@@ -155,7 +156,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const upcomingCount = useQuery(
     getCountBookingsQueryOptions(
       {
-        where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOfDate.toISOString()}`,
+        where: upcomingBookingWhere(requesterId, asOfDate.toISOString()),
         max: 100,
       },
       {
