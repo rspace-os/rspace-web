@@ -8,6 +8,7 @@ import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
@@ -32,7 +33,6 @@ import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -57,6 +57,7 @@ public final class BookingSettingsController {
 
   public record SettingsDocument(
       long slotGranularityMinutes,
+      BookingIncrementUnit incrementUnit,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
@@ -71,6 +72,7 @@ public final class BookingSettingsController {
     static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
       return new SettingsDocument(
           defaults.getSlotGranularityMinutes(),
+          defaults.getIncrementUnit(),
           defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
@@ -86,6 +88,7 @@ public final class BookingSettingsController {
 
   public record AdminSettingsDocument(
       long slotGranularityMinutes,
+      BookingIncrementUnit incrementUnit,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
@@ -102,6 +105,7 @@ public final class BookingSettingsController {
         BookingConfigurationDefaults defaults, Clock institutionClock) {
       return new AdminSettingsDocument(
           defaults.getSlotGranularityMinutes(),
+          defaults.getIncrementUnit(),
           defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
@@ -118,11 +122,18 @@ public final class BookingSettingsController {
 
   public record SettingsPatch(
       @Min(value = 1, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
-          @Max(value = 15, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
+          @Max(value = 527040, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
           @Schema(
               types = {"integer", "null"},
               nullable = true)
           Long slotGranularityMinutes,
+      @Schema(
+              types = {"string", "null"},
+              nullable = true,
+              description =
+                  "Unit of the time increment. DAYS counts calendar days in the item's timezone"
+                      + " and needs slotGranularityMinutes to be a whole number of days.")
+          BookingIncrementUnit incrementUnit,
       @Schema(
               implementation = BookingOpeningHoursEntry[].class,
               types = {"array", "null"},
@@ -202,34 +213,26 @@ public final class BookingSettingsController {
       }
     }
 
-    /**
-     * Decodes the complete schedule strictly, without Jackson's scalar coercion. Omitted and null
-     * both leave the stored schedule unchanged.
-     */
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
-          decode(
-              openingHours,
-              BookingOpeningHoursCodec::openingHours,
-              InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS),
+          incrementUnit,
+          decodeOpeningHours(openingHours),
           bufferBeforeMinutes,
           bufferAfterMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
     }
 
-    private static <V> V decode(
-        JsonNode node,
-        Function<JsonNode, V> decoder,
-        InvalidBookingSchedulingSettingsException.Reason reason) {
+    private static List<BookingOpeningHoursEntry> decodeOpeningHours(JsonNode node) {
       if (node == null || node.isNull()) {
         return null;
       }
       try {
-        return decoder.apply(node);
+        return BookingOpeningHoursCodec.openingHours(node);
       } catch (IllegalArgumentException ex) {
-        throw new InvalidBookingSchedulingSettingsException(reason);
+        throw new InvalidBookingSchedulingSettingsException(
+            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS);
       }
     }
 
