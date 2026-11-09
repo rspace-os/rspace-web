@@ -30,6 +30,10 @@ export const crossResourceInvalidation: ReadonlyArray<{
     invalidates: [{ query: "searchBookingCatalogue" }, { query: "searchBookingCatalogueLocations" }],
   },
   {
+    onMutations: ["deleteBookingConfiguration", "updateBookingConfiguration"],
+    invalidates: [{ query: "listBookings" }, { query: "countBookings" }],
+  },
+  {
     onMutations: [
       "createBookingConfiguration",
       "updateBookingConfiguration",

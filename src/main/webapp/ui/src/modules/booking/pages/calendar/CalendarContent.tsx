@@ -1,14 +1,19 @@
 import * as React from "react";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { dayMinuteToZonedTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { BookingEventsCalendar } from "./BookingEventsCalendar";
 import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
   const {
+    beginCreation,
+    creationActive,
     currentUser,
     events,
     layout,
     navigate,
     preferences,
+    resourceConfigurations,
     resourceTable,
     resourceTargets,
     selectedDate,
@@ -28,6 +33,7 @@ export function CalendarContent() {
       availabilityEndMinute={preferences.availabilityWindow.endMinute}
       events={events.data ?? []}
       resources={resourceTargets}
+      resourceConfigurations={resourceConfigurations}
       resourceTableProps={resourceTable.tableProps}
       currentUserId={currentUser.id}
       isLoading={events.isPending && resourceTable.tableProps.status !== "error"}
@@ -57,6 +63,29 @@ export function CalendarContent() {
       }}
       onViewChange={setView}
       onLayoutChange={setLayout}
+      creationAction={
+        <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
+      }
+      creationDisabled={creationActive}
+      onResourceRangeSelect={(resource, range, trigger) => {
+        const window = wallClockDraftFromInstants(
+          dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.startMinute).toInstant().toString(),
+          dayMinuteToZonedTime(selectedDate, preferences.timeZone, range.endMinute).toInstant().toString(),
+          preferences.timeZone,
+        );
+        const ownerId = `calendar-resource-${resource.configurationId}`;
+        const triggerId = `${ownerId}-${selectedDate}`;
+        trigger.id = triggerId;
+        beginCreation({
+          ownerId,
+          triggerId,
+          eventKind: "BOOKING",
+          target: resource,
+          initialDate: selectedDate,
+          window,
+          lockTarget: true,
+        });
+      }}
     />
   );
 }
