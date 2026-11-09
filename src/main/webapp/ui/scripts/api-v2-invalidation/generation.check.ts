@@ -66,7 +66,17 @@ it("retains operation IDs over a complete scratch generation", () => {
 
       operationCount += [...source.matchAll(/operationId:\s*["']/g)].length;
     }
-    expect(operationCount).toBe(getOperations(JSON.parse(readFileSync(spec, "utf8"))).length);
+    const operations = getOperations(JSON.parse(readFileSync(spec, "utf8")));
+    expect(operationCount).toBe(operations.length);
+    for (const operation of operations.filter(({ operationId }) =>
+      /^(get|create|createOrReplace|rotate)(User)?BookingCalendarSubscription$/.test(operationId),
+    )) {
+      const declaration = `export const ${operation.operationId} =`;
+      const source = files.map((file) => readFileSync(file, "utf8")).find((source) => source.includes(declaration));
+      expect(source, operation.operationId).toBeDefined();
+      const body = source?.split(declaration)[1].split("export const")[0];
+      expect(body, operation.operationId).toContain("return apiV2HeadersFetch");
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

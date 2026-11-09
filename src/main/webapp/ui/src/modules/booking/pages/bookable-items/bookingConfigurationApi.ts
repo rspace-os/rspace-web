@@ -1,4 +1,3 @@
-import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteManyBookingConfigurations,
   getListBookingConfigurationsQueryOptions,
@@ -7,10 +6,9 @@ import {
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
-import { bulkParameters } from "../all-bookable-items/AllBookableItemsContent";
+import { bulkParameters } from "./BookableItemsContent";
 import { type BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function mutateBookableItems(
   action: BookableItemsBulkAction,
@@ -101,9 +99,22 @@ export function findBookingConfigurationQueryOptions(globalId: string) {
   });
 }
 
-export function bookingRouteTargetQuery(globalId: string | undefined) {
-  return getSearchBookingConfigurationTargetsQueryOptions(
-    { q: globalId ?? "", limit: 20 },
-    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
-  );
+export async function fetchBookingOwnershipCandidates(
+  globalIds: readonly string[],
+
+  signal?: AbortSignal,
+): Promise<readonly BookingConfiguration[]> {
+  if (globalIds.length === 0) return [];
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "in",
+    value: globalIds,
+  });
+  return (
+    await listBookingConfigurations(
+      { ...parameters(globalIds[0]), where, limit: Math.min(globalIds.length, 100) },
+      { signal },
+    )
+  ).docs.map(mapBookingConfiguration);
 }

@@ -1,0 +1,108 @@
+package com.researchspace.webapp.controller;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.researchspace.booking.service.BookingCalendarManager;
+import com.researchspace.model.User;
+import com.researchspace.testutils.ApiV2Fixture;
+import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.context.WebApplicationContext;
+
+@ApiV2WebIntegrationTest
+class BookingCalendarFeedControllerMVCIT {
+
+  private final WebApplicationContext context;
+  private final BookingCalendarManager calendarManager;
+
+  @Autowired
+  BookingCalendarFeedControllerMVCIT(
+      WebApplicationContext context, BookingCalendarManager calendarManager) {
+    this.context = context;
+    this.calendarManager = calendarManager;
+  }
+
+  private ApiV2Fixture fixture;
+  private MockMvc mockMvc;
+
+  @BeforeEach
+  void setUp() {
+    fixture = ApiV2Fixture.in(context);
+    mockMvc = fixture.mockMvc();
+  }
+
+  @AfterEach
+  void tearDown() {
+    fixture.cleanUp();
+  }
+
+  @Test
+  void anonymousFeedDeliveryTracksReplacementAndRevocation() throws Exception {
+    User owner = fixture.user();
+    long instrumentId = fixture.instrument(owner, "Calendar " + fixture.marker());
+    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC");
+    Instant candidate = Instant.now().plus(2, ChronoUnit.DAYS);
+    Instant start = candidate.truncatedTo(ChronoUnit.HOURS).plus(1, ChronoUnit.HOURS);
+    String firstToken =
+        token(calendarManager.createOrRotate(configurationId, owner, owner, "\"inactive\""));
+    assertAvailable(firstToken);
+
+    fixture.booking(instrumentId, start, start.plus(1, ChronoUnit.HOURS));
+    assertAvailable(firstToken);
+
+    String replacementToken =
+        token(
+            calendarManager.createOrRotate(
+                configurationId,
+                owner,
+                owner,
+                calendarManager.status(configurationId, owner, owner).etag()));
+    assertNotEquals(firstToken, replacementToken);
+    assertMissing(firstToken);
+    assertAvailable(replacementToken);
+
+    calendarManager.revoke(configurationId, owner, owner);
+    assertMissing(replacementToken);
+  }
+
+  private void assertAvailable(String token) throws Exception {
+    mockMvc
+        .perform(get(BookingCalendarFeedController.PATH).queryParam("token", token))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("text/calendar;charset=UTF-8"))
+        .andExpect(header().string("Cache-Control", "private, no-store"))
+        .andExpect(header().string("Referrer-Policy", "no-referrer"))
+        .andExpect(content().string(startsWith("BEGIN:VCALENDAR")))
+        .andExpect(content().string(containsString(fixture.marker())))
+        .andExpect(content().string(endsWith("END:VCALENDAR\r\n")))
+        .andExpect(content().string(not(containsString("<html"))));
+  }
+
+  private void assertMissing(String token) throws Exception {
+    mockMvc
+        .perform(get(BookingCalendarFeedController.PATH).queryParam("token", token))
+        .andExpect(status().isNotFound())
+        .andExpect(header().string("Cache-Control", "private, no-store"))
+        .andExpect(content().bytes(new byte[0]));
+  }
+
+  private static String token(BookingCalendarManager.Created created) {
+    String query = URI.create(created.subscriptionUrl()).getRawQuery();
+    return query.substring("token=".length());
+  }
+}

@@ -3,6 +3,7 @@ import { Link, Outlet, useParams, useRouterState } from "@tanstack/react-router"
 import { ArrowLeftIcon } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { BOOKING_READ_FIELDS, BookingUnavailableError, mapBookingDetails } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
@@ -156,6 +157,9 @@ export function BookingEventContent() {
           <Badge ref={stateBadgeRef} tabIndex={-1} variant={document.state === "CANCELLED" ? "destructive" : "default"}>
             {document.state === "CANCELLED" ? t("bookings.details.cancelled") : t("bookings.details.confirmed")}
           </Badge>
+          {document.canViewConfiguration && document.state === "CONFIRMED" ? (
+            <BookingCalendarFileButton bookingId={document.id} itemName={eventName} period={period} />
+          ) : null}
           {!editing && document.canCancel && document.state === "CONFIRMED" ? (
             <DeleteBookingDialog
               bookingId={document.id}

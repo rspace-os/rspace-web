@@ -113,7 +113,17 @@ type SearchArgs = {
 };
 
 const DEFAULT_UI_CONFIG: UiConfig = {
-  allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
+  allowedSearchModules: new Set([
+    "BENCHES",
+    "TYPE",
+    "STATUS",
+    "OWNER",
+    "SCAN",
+    "TAG",
+    "SAVEDSEARCHES",
+    "SAVEDBASKETS",
+    "BOOKABLE",
+  ]),
   allowedTypeFilters: new Set([
     "ALL",
     "CONTAINER",
@@ -243,6 +253,7 @@ export default class Search implements SearchInterface {
       setOwner: action,
       setBench: action,
       setTypeFilter: action,
+      performSearch: action,
       setupAndPerformInitialSearch: action,
       setProcessingContextActions: action,
       enableBatchEditing: action,
@@ -261,6 +272,7 @@ export default class Search implements SearchInterface {
       showBenchFilter: computed,
       showTypeFilter: computed,
       showStatusFilter: computed,
+      showBookableFilter: computed,
       showOwnershipFilter: computed,
       showBarcodeScan: computed,
       showTagsFilter: computed,
@@ -915,13 +927,19 @@ export default class Search implements SearchInterface {
     this.fetcher.replaceResult(result);
   }
 
-  async transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void> {
+  async transferRecords(
+    username: Username,
+    records: Array<InventoryRecord>,
+    transferBookingConfigurationOwnership = false,
+  ): Promise<void> {
     const { peopleStore } = getRootStore();
     this.setProcessingContextActions(true);
 
     const newOwner = await peopleStore.getUser(username);
-    records.forEach((r) => {
-      if (newOwner) r.owner = newOwner;
+    runInAction(() => {
+      records.forEach((r) => {
+        if (newOwner) r.owner = newOwner;
+      });
     });
 
     try {
@@ -933,7 +951,7 @@ export default class Search implements SearchInterface {
             record: Record<string, unknown> & { globalId: GlobalId };
           }>;
           errorCount: number;
-        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true),
+        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true, transferBookingConfigurationOwnership),
       );
 
       const factory = this.factory.newFactory();
@@ -958,7 +976,7 @@ export default class Search implements SearchInterface {
           record: r,
         })),
         "transfer",
-        (erroredRecords) => this.transferRecords(username, erroredRecords),
+        (erroredRecords) => this.transferRecords(username, erroredRecords, transferBookingConfigurationOwnership),
       );
       handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", translatedHelpMessage);
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
@@ -1344,6 +1362,10 @@ export default class Search implements SearchInterface {
     return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("STATUS"));
   }
 
+  get showBookableFilter(): boolean {
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("BOOKABLE"));
+  }
+
   get showOwnershipFilter(): boolean {
     return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("OWNER"));
   }
@@ -1450,6 +1472,21 @@ export default class Search implements SearchInterface {
     if (doSearch) this.performSearch();
   }
 
+  /*
+   * Bookable and Requestable are mutually exclusive: instruments are not
+   * requestable and samples are not bookable. Either bookable value also moves
+   * the search to the "search" endpoint, which ignores `requestable` (see
+   * CoreFetcher.setEndpoint), so keeping both would leave the "Requestable"
+   * chip showing while that filter silently stopped applying.
+   */
+  setBookable(bookable: boolean | null, doSearch: boolean = true) {
+    this.staticFetcher.setBookable(bookable);
+    this.dynamicFetcher.setBookable(bookable);
+    this.cacheFetcher.setBookable(bookable);
+    if (bookable !== null) this.setRequestable(null, false);
+    if (doSearch) this.performSearch();
+  }
+
   setParentGlobalId(parentGlobalId: GlobalId | null, doSearch: boolean = true) {
     this.staticFetcher.setParentGlobalId(parentGlobalId);
     this.dynamicFetcher.setParentGlobalId(parentGlobalId);
@@ -1463,10 +1500,13 @@ export default class Search implements SearchInterface {
    * regardless of owner or group, so enabling it clears any owner/bench/
    * container/free-text-query scoping that may currently be applied. Clearing
    * the query also ensures the search always hits the simple "samples" listing
-   * endpoint, which is the only one that currently supports this filter.
+   * endpoint, which is the only one that currently supports this filter. It
+   * clears the Bookable filter too, which is mutually exclusive with it (see
+   * setBookable).
    */
   setRequestable(value: boolean | null, doSearch: boolean = true) {
     if (value) {
+      this.setBookable(null, false);
       this.setTypeFilter("SAMPLE", false);
       this.setParentGlobalId(null, false);
       this.setOwner(null, false);
