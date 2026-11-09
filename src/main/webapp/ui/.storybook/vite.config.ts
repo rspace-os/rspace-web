@@ -5,7 +5,12 @@ import { defineConfig, type Plugin } from "vite";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const bookingPageOptimizeDeps = ["@base-ui/react/tabs"];
+const bookingPageOptimizeDeps = [
+  "@base-ui/react/tabs",
+  "@fortawesome/free-brands-svg-icons/faApple",
+  "@fortawesome/free-brands-svg-icons/faGoogle",
+  "@fortawesome/react-fontawesome",
+];
 
 /**
  * `@storybook/tanstack-react` forces `@tanstack/react-store` and
