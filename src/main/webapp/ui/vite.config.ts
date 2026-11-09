@@ -2,9 +2,11 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
+import { cn as cnTables } from "cn/vite";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
 import { normalizePath } from "vite";
@@ -284,7 +286,19 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages()];
+  const plugins: PluginOption[] = [
+    react(),
+    legacyI18n(),
+    legacyMessages(),
+    tailwindcss(),
+    // Keep in step with the cn:build script, which writes the same file on install. Full tables,
+    // because cn 0.4.0's subsetting stops merging utilities used only with negative values (-mr-1).
+    cnTables({
+      full: true,
+      css: "src/modules/common/styles/index.css",
+      out: "src/modules/common/utils/cn-tables.ts",
+    }),
+  ];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
@@ -323,6 +337,12 @@ export default defineConfig(async ({ mode }) => {
 
   const config: UserConfig = {
     base: "/ui/dist/",
+    experimental: {
+      // CSS-relative font URLs also work when the WAR has a servlet context prefix.
+      renderBuiltUrl(filename) {
+        if (filename.endsWith(".woff2")) return { relative: true };
+      },
+    },
     define: {
       global: "globalThis",
       process: processShim,
