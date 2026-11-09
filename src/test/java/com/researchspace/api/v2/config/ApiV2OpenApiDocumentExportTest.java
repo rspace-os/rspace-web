@@ -241,8 +241,8 @@ class ApiV2OpenApiDocumentExportTest {
       Set.of("parameters", "responses", "examples", "x-rspace-filters", "x-rspace-access-policies");
 
   /**
-   * The generated document as its readers see it: references into the shared component sections are
-   * resolved, while schema and header references stay.
+   * The generated document as its readers see it: references into the shared component sections
+   * are resolved, while schema and header references stay.
    */
   private static String generatedDocument() throws IOException {
     JsonNode document = MAPPER.readTree(publishedDocument());
@@ -262,9 +262,8 @@ class ApiV2OpenApiDocumentExportTest {
         return resolveShared(document, target);
       }
       ObjectNode result = MAPPER.createObjectNode();
-      node.fields()
-          .forEachRemaining(
-              field -> result.set(field.getKey(), resolveShared(document, field.getValue())));
+      node.fields().forEachRemaining(
+          field -> result.set(field.getKey(), resolveShared(document, field.getValue())));
       return result;
     }
     if (node.isArray()) {
@@ -286,11 +285,7 @@ class ApiV2OpenApiDocumentExportTest {
           Json31.mapper()
               .valueToTree(
                   new ApiV2OpenApiDocumentService(
-                          new ApiV2OpenApiGenerator(
-                              catalog,
-                              com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
-                              "RSpace REST API v2",
-                              "2.0.0"),
+                          new ApiV2OpenApiGenerator(catalog, com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(), "RSpace REST API v2", "2.0.0"),
                           context.getBean(ApiV2EndpointCatalog.class),
                           () -> Stream.of(ApiV2TestHandlerMappings.mapping(handlers)))
                       .generate());

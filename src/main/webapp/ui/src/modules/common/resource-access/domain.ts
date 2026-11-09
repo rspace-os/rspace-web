@@ -1,7 +1,6 @@
 import type { ResourceAccessAssignmentDocument } from "@/modules/common/api/v2/generated/models/resourceAccessAssignmentDocument";
 import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
 import type { ResourceGranteeDirectoryEntry } from "@/modules/common/api/v2/generated/models/resourceGranteeDirectoryEntry";
-import type { ResourceGranteeKind } from "@/modules/common/api/v2/generated/models/resourceGranteeKind";
 
 function required<T>(value: T | undefined, field: string): T {
   if (value === undefined) throw new Error(`Incomplete resource access document: ${field}`);
@@ -65,4 +64,3 @@ export type AccessDocument = ReturnType<typeof accessDocument>;
 export type ResourceAccessAssignment = AccessDocument["assignments"][number];
 export type ResourceGrantee = ResourceAccessAssignment["grantee"];
 export type DirectoryEntry = ReturnType<typeof directoryEntry>;
-export type GranteeKind = ResourceGranteeKind;

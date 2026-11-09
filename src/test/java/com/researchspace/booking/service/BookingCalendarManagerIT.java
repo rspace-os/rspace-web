@@ -102,16 +102,15 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void concurrentCreatesLeaveOneSubscriptionAndReturnItToBoth() throws Exception {
+  public void concurrentInactiveCreatesLeaveOneSubscriptionAndOneConflict() throws Exception {
     User user = createInitAndLoginAnyUser();
 
-    List<Object> results = raceFromLockedUser(user, () -> calendarManager.createUser(user, user));
+    List<Object> results = raceFromLockedUser(user, "\"inactive\"");
 
-    List<BookingCalendarManager.Created> created =
-        results.stream().map(BookingCalendarManager.Created.class::cast).toList();
-    assertEquals(1, created.stream().filter(BookingCalendarManager.Created::newlyIssued).count());
-    assertEquals(created.get(0).subscriptionUrl(), created.get(1).subscriptionUrl());
-    assertEquals(created.get(0).status().etag(), created.get(1).status().etag());
+    assertEquals(
+        1, results.stream().filter(BookingCalendarManager.Created.class::isInstance).count());
+    assertEquals(
+        1, results.stream().filter(UserSubscriptionConflictException.class::isInstance).count());
     assertEquals(
         Integer.valueOf(1),
         jdbcTemplate.queryForObject(
@@ -119,19 +118,24 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
             Integer.class,
             user.getId()));
     BookingCalendarManager.Status current = calendarManager.userStatus(user, user);
-    assertEquals(created.get(0).status().etag(), current.etag());
-    assertEquals(created.get(0).subscriptionUrl(), current.subscriptionUrl());
+    BookingCalendarManager.Created winner =
+        (BookingCalendarManager.Created)
+            results.stream()
+                .filter(BookingCalendarManager.Created.class::isInstance)
+                .findFirst()
+                .orElseThrow();
+    assertEquals(winner.status().etag(), current.etag());
+    assertEquals(winner.subscriptionUrl(), current.subscriptionUrl());
   }
 
   @Test
   public void concurrentRotationsFromOneVersionReturnOneNewVersionAndOneConflict()
       throws Exception {
     User user = createInitAndLoginAnyUser();
-    BookingCalendarManager.Created initial = calendarManager.createUser(user, user);
+    BookingCalendarManager.Created initial =
+        calendarManager.createOrRotateUser(user, user, "\"inactive\"");
 
-    List<Object> results =
-        raceFromLockedUser(
-            user, () -> calendarManager.rotateUser(user, user, initial.status().etag()));
+    List<Object> results = raceFromLockedUser(user, initial.status().etag());
 
     assertEquals(
         1, results.stream().filter(BookingCalendarManager.Created.class::isInstance).count());
@@ -153,13 +157,14 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     User user = createInitAndLoginAnyUser();
     BookingConfiguration configuration = createConfiguration(user);
     BookingCalendarManager.Created initial =
-        calendarManager.create(configuration.getId(), user, user);
+        calendarManager.createOrRotate(configuration.getId(), user, user, "\"inactive\"");
 
     List<Object> results =
         raceWithHeldLock(
             () -> configurationDao.lockById(configuration.getId()).orElseThrow(),
             () ->
-                calendarManager.rotate(configuration.getId(), user, user, initial.status().etag()));
+                calendarManager.createOrRotate(
+                    configuration.getId(), user, user, initial.status().etag()));
 
     assertEquals(
         1, results.stream().filter(BookingCalendarManager.Created.class::isInstance).count());
@@ -179,7 +184,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     User user = createInitAndLoginAnyUser();
     BookingConfiguration configuration = createConfiguration(user);
     BookingCalendarManager.Created initial =
-        calendarManager.create(configuration.getId(), user, user);
+        calendarManager.createOrRotate(configuration.getId(), user, user, "\"inactive\"");
     CountDownLatch snapshotRead = new CountDownLatch(1);
     CountDownLatch winnerCommitted = new CountDownLatch(1);
     ExecutorService pool = Executors.newSingleThreadExecutor();
@@ -202,7 +207,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                                 user.getId()));
                         snapshotRead.countDown();
                         await(winnerCommitted);
-                        return calendarManager.rotate(
+                        return calendarManager.createOrRotate(
                             configuration.getId(), user, user, initial.status().etag());
                       });
                 } catch (UserSubscriptionConflictException conflict) {
@@ -212,7 +217,8 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
       assertTrue(snapshotRead.await(10, TimeUnit.SECONDS));
 
       BookingCalendarManager.Created winner =
-          calendarManager.rotate(configuration.getId(), user, user, initial.status().etag());
+          calendarManager.createOrRotate(
+              configuration.getId(), user, user, initial.status().etag());
       winnerCommitted.countDown();
 
       assertInstanceOf(
@@ -248,11 +254,12 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                           committed[0] =
                               competing.execute(
                                   other ->
-                                      calendarManager.create(
-                                          setup.configurationId(), owner, owner));
+                                      calendarManager.createOrRotate(
+                                          setup.configurationId(), owner, owner, "\"inactive\""));
                           permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
                           instrumentApiMgr.updateApiInstrument(permissionSource, owner);
-                          return calendarManager.create(setup.configurationId(), owner, owner);
+                          return calendarManager.createOrRotate(
+                              setup.configurationId(), owner, owner, "\"inactive\"");
                         }));
 
     assertMariaDbConcurrentReadRestart(failure);
@@ -270,7 +277,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     ItemSetup setup = itemConfiguration(owner, "Post-snapshot token rotation");
     BookingCalendarManager.Created original =
-        calendarManager.create(setup.configurationId(), owner, owner);
+        calendarManager.createOrRotate(setup.configurationId(), owner, owner, "\"inactive\"");
     TransactionTemplate competing = requiresNew();
 
     BookingCalendarManager.Created[] rotated = new BookingCalendarManager.Created[1];
@@ -290,14 +297,14 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                           rotated[0] =
                               competing.execute(
                                   other ->
-                                      calendarManager.rotate(
+                                      calendarManager.createOrRotate(
                                           setup.configurationId(),
                                           owner,
                                           owner,
                                           original.status().etag()));
                           permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
                           instrumentApiMgr.updateApiInstrument(permissionSource, owner);
-                          return calendarManager.rotate(
+                          return calendarManager.createOrRotate(
                               setup.configurationId(), owner, owner, original.status().etag());
                         }));
 
@@ -325,7 +332,8 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                       instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
                   permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
                   instrumentApiMgr.updateApiInstrument(permissionSource, owner);
-                  return calendarManager.create(setup.configurationId(), owner, owner);
+                  return calendarManager.createOrRotate(
+                      setup.configurationId(), owner, owner, "\"inactive\"");
                 });
 
     assertItemWinner(setup.configurationId(), created);
@@ -336,7 +344,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     ItemSetup setup = itemConfiguration(owner, "Mixed source rotate");
     BookingCalendarManager.Created original =
-        calendarManager.create(setup.configurationId(), owner, owner);
+        calendarManager.createOrRotate(setup.configurationId(), owner, owner, "\"inactive\"");
 
     BookingCalendarManager.Created rotated =
         new TransactionTemplate(getTxMger())
@@ -346,7 +354,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                       instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
                   permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
                   instrumentApiMgr.updateApiInstrument(permissionSource, owner);
-                  return calendarManager.rotate(
+                  return calendarManager.createOrRotate(
                       setup.configurationId(), owner, owner, original.status().etag());
                 });
 
@@ -360,7 +368,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
     User owner = createInitAndLoginAnyUser();
     ItemSetup setup = itemConfiguration(owner, "Mixed current refresh");
     BookingCalendarManager.Created original =
-        calendarManager.create(setup.configurationId(), owner, owner);
+        calendarManager.createOrRotate(setup.configurationId(), owner, owner, "\"inactive\"");
     TransactionTemplate competing = requiresNew();
     BookingCalendarManager.Created[] competingWinner = new BookingCalendarManager.Created[1];
     TransactionTemplate outer = new TransactionTemplate(getTxMger());
@@ -377,12 +385,12 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
               competingWinner[0] =
                   competing.execute(
                       other ->
-                          calendarManager.rotate(
+                          calendarManager.createOrRotate(
                               setup.configurationId(), owner, owner, original.status().etag()));
               permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
               instrumentApiMgr.updateApiInstrument(permissionSource, owner);
               BookingCalendarManager.Created current =
-                  calendarManager.rotate(
+                  calendarManager.createOrRotate(
                       setup.configurationId(), owner, owner, competingWinner[0].status().etag());
               assertEquals(
                   current.status().etag(),
@@ -398,20 +406,23 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
   @Test
   public void recreatingUserSubscriptionInvalidatesTheOldEtag() {
     User user = createInitAndLoginAnyUser();
-    BookingCalendarManager.Created initial = calendarManager.createUser(user, user);
+    BookingCalendarManager.Created initial =
+        calendarManager.createOrRotateUser(user, user, "\"inactive\"");
 
     calendarManager.revokeUser(user, user);
-    BookingCalendarManager.Created replacement = calendarManager.createUser(user, user);
+    BookingCalendarManager.Created replacement =
+        calendarManager.createOrRotateUser(user, user, "\"inactive\"");
 
     assertNotEquals(initial.status().etag(), replacement.status().etag());
     assertThrows(
         UserSubscriptionConflictException.class,
-        () -> calendarManager.rotateUser(user, user, initial.status().etag()));
+        () -> calendarManager.createOrRotateUser(user, user, initial.status().etag()));
   }
 
-  private List<Object> raceFromLockedUser(
-      User user, Supplier<BookingCalendarManager.Created> operation) throws Exception {
-    return raceWithHeldLock(() -> subscriptionDao.lockUser(user.getId()), operation);
+  private List<Object> raceFromLockedUser(User user, String expectedEtag) throws Exception {
+    return raceWithHeldLock(
+        () -> subscriptionDao.lockUser(user.getId()),
+        () -> calendarManager.createOrRotateUser(user, user, expectedEtag));
   }
 
   private List<Object> raceWithHeldLock(
