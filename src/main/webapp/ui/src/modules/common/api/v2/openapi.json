@@ -251,10 +251,6 @@
           "customTimezone" : {
             "type" : [ "string", "null" ]
           },
-          "defaultSharedWith" : {
-            "enum" : [ "ALL_USERS", "SELECTED", "ONLY_ME" ],
-            "type" : "string"
-          },
           "institutionTimezone" : {
             "type" : "string"
           },
@@ -265,12 +261,6 @@
           "openingHours" : {
             "items" : {
               "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
-            },
-            "type" : "array"
-          },
-          "selectedAccessGrantees" : {
-            "items" : {
-              "$ref" : "#/components/schemas/SelectedAccessGrantee"
             },
             "type" : "array"
           },
@@ -452,6 +442,58 @@
           }
         },
         "required" : [ "capabilities", "email", "firstName", "hasPiRole", "hasSysAdminRole", "homeFolderId", "id", "lastName", "livechat", "orcid", "profileImageApiUrl", "profileImageUrl", "session", "username", "workbenchId" ],
+        "type" : "object"
+      },
+      "ApiV2ListResultMapStringObject" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "additionalProperties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "hasNextPage" : {
+            "type" : "boolean"
+          },
+          "hasPrevPage" : {
+            "type" : "boolean"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "nextPage" : {
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pagingCounter" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "prevPage" : {
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
+          },
+          "totalDocs" : {
+            "description" : "Present only when totals=true.",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalIsLowerBound" : {
+            "description" : "True when the requested total exceeds max.",
+            "type" : "boolean"
+          },
+          "totalPages" : {
+            "description" : "Present only when totals=true.",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
         "type" : "object"
       },
       "ApiV2Problem" : {
@@ -2225,7 +2267,7 @@
           "timezone" : {
             "maxLength" : 255,
             "readOnly" : true,
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -3577,30 +3619,6 @@
         },
         "type" : "object"
       },
-      "SelectedAccessGrantee" : {
-        "properties" : {
-          "available" : {
-            "type" : "boolean"
-          },
-          "detail" : {
-            "type" : "string"
-          },
-          "id" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "key" : {
-            "type" : "string"
-          },
-          "kind" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "Session" : {
         "properties" : {
           "canChangeFeatureFlagBaselines" : {
@@ -3708,10 +3726,6 @@
           "customTimezoneValid" : {
             "type" : "boolean"
           },
-          "defaultSharedWith" : {
-            "enum" : [ "ALL_USERS", "SELECTED", "ONLY_ME", null ],
-            "type" : [ "string", "null" ]
-          },
           "maxBookingDurationMinutes" : {
             "format" : "int64",
             "maximum" : 527040,
@@ -3725,12 +3739,6 @@
             },
             "maxItems" : 7,
             "minItems" : 1,
-            "type" : [ "array", "null" ]
-          },
-          "selectedGranteeKeys" : {
-            "items" : {
-              "type" : "string"
-            },
             "type" : [ "array", "null" ]
           },
           "slotGranularityMinutes" : {
@@ -3906,6 +3914,125 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/v2/booking-calendar/events" : {
+      "get" : {
+        "operationId" : "searchCalendarEvents",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "fields",
+          "required" : false,
+          "schema" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "style" : "deepObject",
+          "x-rspace-comma-separated-values" : true,
+          "x-rspace-mutually-exclusive-with" : "exclude"
+        }, {
+          "description" : "Comma-separated nested field paths by resource type, using square-bracket keys such as exclude[resource]=id,name.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "exclude",
+          "required" : false,
+          "schema" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "style" : "deepObject",
+          "x-rspace-comma-separated-values" : true,
+          "x-rspace-mutually-exclusive-with" : "fields"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2ListResultMapStringObject"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search visible calendar events",
+        "tags" : [ "booking-calendar" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/booking-catalogue" : {
       "get" : {
         "operationId" : "searchBookingCatalogue",
@@ -4010,6 +4137,102 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Search the Booking catalogue",
+        "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-catalogue/calendar" : {
+      "get" : {
+        "operationId" : "searchCalendarCatalogue",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "eventWhere",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Page"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search bookable instruments in a calendar interval",
         "tags" : [ "booking-catalogue" ],
         "x-rspace-operation" : "CUSTOM"
       }
@@ -7876,71 +8099,6 @@
         "x-rspace-operation" : "CUSTOM"
       }
     },
-    "/api/v2/booking-settings/access-grantees" : {
-      "get" : {
-        "operationId" : "searchBookingSettingsAccessGrantees",
-        "parameters" : [ {
-          "description" : "Case-insensitive search text.",
-          "in" : "query",
-          "name" : "q",
-          "required" : true,
-          "schema" : {
-            "minLength" : 2,
-            "type" : "string"
-          }
-        }, {
-          "description" : "Maximum results to return.",
-          "in" : "query",
-          "name" : "limit",
-          "required" : true,
-          "schema" : {
-            "default" : 20,
-            "format" : "int32",
-            "maximum" : 50,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ResourceGranteeDirectoryDocument"
-                }
-              }
-            },
-            "description" : "Eligible users and groups in docs, without paging metadata."
-          },
-          "400" : {
-            "$ref" : "#/components/responses/BadRequest"
-          },
-          "401" : {
-            "$ref" : "#/components/responses/Unauthenticated"
-          },
-          "403" : {
-            "$ref" : "#/components/responses/Forbidden"
-          },
-          "404" : {
-            "$ref" : "#/components/responses/NotFound"
-          },
-          "429" : {
-            "$ref" : "#/components/responses/TooManyRequests"
-          },
-          "500" : {
-            "$ref" : "#/components/responses/UnexpectedError"
-          }
-        },
-        "security" : [ {
-          "apiKey" : [ ]
-        }, {
-          "bearerAuth" : [ ]
-        } ],
-        "summary" : "Search eligible default-access grantees",
-        "tags" : [ "booking-settings" ],
-        "x-rspace-operation" : "CUSTOM"
-      }
-    },
     "/api/v2/booking-settings/admin" : {
       "get" : {
         "operationId" : "getAdminBookingSettings",
@@ -8111,6 +8269,14 @@
                   "type" : "string"
                 },
                 "wildcards" : false
+              },
+              "purpose" : {
+                "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+                "schema" : {
+                  "maxLength" : 1000,
+                  "type" : [ "string", "null" ]
+                },
+                "wildcards" : true
               },
               "requester.createdAt" : {
                 "operators" : [ "==", "=in=" ],
@@ -8873,6 +9039,14 @@
                   "type" : "string"
                 },
                 "wildcards" : false
+              },
+              "purpose" : {
+                "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+                "schema" : {
+                  "maxLength" : 1000,
+                  "type" : [ "string", "null" ]
+                },
+                "wildcards" : true
               },
               "requester.createdAt" : {
                 "operators" : [ "==", "=in=" ],
@@ -16057,6 +16231,9 @@
   }, {
     "description" : "Operations documented by booking-calendar-subscriptions.",
     "name" : "booking-calendar-subscriptions"
+  }, {
+    "description" : "Operations documented by booking-calendar.",
+    "name" : "booking-calendar"
   }, {
     "description" : "Operations documented by booking-catalogue.",
     "name" : "booking-catalogue"

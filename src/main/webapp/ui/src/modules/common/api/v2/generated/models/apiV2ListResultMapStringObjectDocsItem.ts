@@ -6,11 +6,4 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export interface SelectedAccessGrantee {
-  available?: boolean;
-  detail?: string;
-  id?: number;
-  key?: string;
-  kind?: string;
-  name?: string;
-}
+export type ApiV2ListResultMapStringObjectDocsItem = {[key: string]: unknown};

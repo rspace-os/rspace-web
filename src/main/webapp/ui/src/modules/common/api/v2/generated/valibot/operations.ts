@@ -2,7 +2,9 @@
 import type * as v from "valibot";
 import * as native from "./native";
 export const apiV2Operations: Record<string, { public?: true; session?: true; request?: v.GenericSchema; responses: Record<string, Record<string, v.GenericSchema>> }> = {
+["searchCalendarEvents"]: {responses: {["200"]: {["application/json"]: native.SearchCalendarEventsResponse}}},
 ["searchBookingCatalogue"]: {responses: {["200"]: {["application/json"]: native.SearchBookingCatalogueResponse}}},
+["searchCalendarCatalogue"]: {responses: {["200"]: {["application/json"]: native.SearchCalendarCatalogueResponse}}},
 ["searchBookingCatalogueLocations"]: {responses: {["200"]: {["application/json"]: native.SearchBookingCatalogueLocationsResponse}}},
 ["searchBookingConfigurationTargets"]: {responses: {["200"]: {["application/json"]: native.SearchBookingConfigurationTargetsResponse}}},
 ["deleteManyBookingConfigurations"]: {responses: {["200"]: {["application/json"]: native.DeleteManyBookingConfigurationsResponse}}},
@@ -23,7 +25,6 @@ export const apiV2Operations: Record<string, { public?: true; session?: true; re
 ["leaveBookingConfigurationAccess"]: {responses: {}},
 ["listBookingConfigurationAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListBookingConfigurationAuditEventsResponse}}},
 ["getBookingSettings"]: {responses: {["200"]: {["application/json"]: native.GetBookingSettingsResponse}}},
-["searchBookingSettingsAccessGrantees"]: {responses: {["200"]: {["application/json"]: native.SearchBookingSettingsAccessGranteesResponse}}},
 ["getAdminBookingSettings"]: {responses: {["200"]: {["application/json"]: native.GetAdminBookingSettingsResponse}}},
 ["patchAdminBookingSettings"]: {request: native.PatchAdminBookingSettingsBody, responses: {["200"]: {["application/json"]: native.PatchAdminBookingSettingsResponse}}},
 ["listBookings"]: {responses: {["200"]: {["application/json"]: native.ListBookingsResponse}}},

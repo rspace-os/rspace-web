@@ -51,17 +51,8 @@ export const SchedulingSettingsSchema = v.pipe(
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
 export type BookingSettings = Required<Omit<SettingsDocument, "slotGranularityMinutes">> &
   Pick<SchedulingSettings, "slotGranularityMinutes">;
-export type BookingAdminSettings = BookingSettings &
-  Required<Pick<AdminSettingsDocument, "configurationVersion" | "defaultSharedWith">> & {
-    selectedAccessGrantees: {
-      kind: "USER" | "GROUP";
-      id: number;
-      key: string;
-      name: string;
-      detail?: string | null;
-      available: boolean;
-    }[];
-  };
+export type BookingAdminSettings = Required<Omit<AdminSettingsDocument, "slotGranularityMinutes">> &
+  Pick<SchedulingSettings, "slotGranularityMinutes">;
 
 export function mapBookingSettings(input: SettingsDocument): BookingSettings {
   const scheduling = {
@@ -81,18 +72,6 @@ export function mapBookingAdminSettings(input: AdminSettingsDocument): BookingAd
   return {
     ...mapBookingSettings(input),
     configurationVersion: required(input.configurationVersion, "configurationVersion"),
-    defaultSharedWith: v.parse(
-      v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
-      required(input.defaultSharedWith, "defaultSharedWith"),
-    ),
-    selectedAccessGrantees: required(input.selectedAccessGrantees, "selectedAccessGrantees").map((grantee) => ({
-      ...grantee,
-      kind: v.parse(v.picklist(["USER", "GROUP"]), required(grantee.kind, "selectedAccessGrantees.kind")),
-      id: required(grantee.id, "selectedAccessGrantees.id"),
-      key: required(grantee.key, "selectedAccessGrantees.key"),
-      name: required(grantee.name, "selectedAccessGrantees.name"),
-      available: required(grantee.available, "selectedAccessGrantees.available"),
-    })),
   };
 }
 

@@ -6,16 +6,14 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type SearchBookingSettingsAccessGranteesParams = {
-  /**
-   * Case-insensitive search text.
-   * @minLength 2
-   */
-  q: string;
-  /**
-   * Maximum results to return.
-   * @minimum 1
-   * @maximum 50
-   */
-  limit?: number;
+export type SearchCalendarCatalogueParams = {
+  /** Inclusive interval start. */
+  start: string;
+  /** Exclusive interval end. */
+  end: string;
+  where?: string;
+  eventWhere?: string;
+  q?: string;
+  page: number;
+  limit: number;
 };

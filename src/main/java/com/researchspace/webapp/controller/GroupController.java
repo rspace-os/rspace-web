@@ -1106,13 +1106,10 @@ public class GroupController extends BaseController {
 
   private AjaxReturnObject<String> setGroupPublication(Long groupId, boolean publicationAllowed) {
     User subject = userManager.getAuthenticatedUserInSession();
-    Group group = groupManager.getGroupWithCommunities(groupId);
-    if (!subject.hasRoleInGroup(group, RoleInGroup.PI)) {
+    if (!groupManager.setPublicationAllowed(groupId, publicationAllowed, subject)) {
       return new AjaxReturnObject<>(
           null, ErrorList.of(getText("groups.edit.errors.piRequiredForPublication")));
     }
-    group.setPublicationAllowed(publicationAllowed);
-    groupManager.saveGroup(group, false, subject);
     return new AjaxReturnObject<>("", null);
   }
 

@@ -7,7 +7,6 @@
  */
 
 export * from './adminSettingsDocument.ts';
-export * from './adminSettingsDocumentDefaultSharedWith.ts';
 export * from './adminSettingsDocumentTimezoneMode.ts';
 export * from './apiV2AuditEvent.ts';
 export * from './apiV2AuditEventAction.ts';
@@ -16,6 +15,8 @@ export * from './apiV2AuditEventPayload.ts';
 export * from './apiV2Config.ts';
 export * from './apiV2CountResult.ts';
 export * from './apiV2CurrentUser.ts';
+export * from './apiV2ListResultMapStringObject.ts';
+export * from './apiV2ListResultMapStringObjectDocsItem.ts';
 export * from './apiV2Problem.ts';
 export * from './apiV2RuntimeFieldCatalog.ts';
 export * from './apiV2UiToken.ts';
@@ -183,13 +184,12 @@ export * from './searchBookingCatalogueLocationsParams.ts';
 export * from './searchBookingCatalogueParams.ts';
 export * from './searchBookingConfigurationAccessGranteesParams.ts';
 export * from './searchBookingConfigurationTargetsParams.ts';
-export * from './searchBookingSettingsAccessGranteesParams.ts';
-export * from './selectedAccessGrantee.ts';
+export * from './searchCalendarCatalogueParams.ts';
+export * from './searchCalendarEventsParams.ts';
 export * from './session.ts';
 export * from './settingsDocument.ts';
 export * from './settingsDocumentTimezoneMode.ts';
 export * from './settingsPatch.ts';
-export * from './settingsPatchDefaultSharedWith.ts';
 export * from './settingsPatchTimezoneMode.ts';
 export * from './source.ts';
 export * from './targetDirectoryDocument.ts';

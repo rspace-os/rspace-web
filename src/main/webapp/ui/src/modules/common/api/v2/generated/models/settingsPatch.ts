@@ -6,7 +6,6 @@
  * OpenAPI spec version: 2.0.0
  */
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
-import type { SettingsPatchDefaultSharedWith } from './settingsPatchDefaultSharedWith.ts';
 import type { SettingsPatchTimezoneMode } from './settingsPatchTimezoneMode.ts';
 
 export interface SettingsPatch {
@@ -41,8 +40,6 @@ export interface SettingsPatch {
      */
   customTimezone?: string | null;
   customTimezoneValid?: boolean;
-  /** @nullable */
-  defaultSharedWith?: SettingsPatchDefaultSharedWith;
   /**
      * @minimum 0
      * @maximum 527040
@@ -56,8 +53,6 @@ export interface SettingsPatch {
      * @nullable
      */
   openingHours?: BookingOpeningHoursEntry[] | null;
-  /** @nullable */
-  selectedGranteeKeys?: string[] | null;
   /**
      * @minimum 1
      * @maximum 15

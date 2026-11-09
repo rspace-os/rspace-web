@@ -35,8 +35,11 @@ export interface BookingsRead {
   state?: BookingsReadState;
   target?: BookingsReadTarget;
   'target.customFields'?: BookingsReadTargetCustomFields;
-  /** @maxLength 255 */
-  readonly timezone?: string;
+  /**
+     * @maxLength 255
+     * @nullable
+     */
+  readonly timezone?: string | null;
   readonly updatedAt?: string;
   readonly version?: number;
 }

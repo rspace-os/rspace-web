@@ -1,23 +1,13 @@
 package com.researchspace.api.v2.contract;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
-import com.researchspace.model.User;
-import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
-import com.researchspace.model.booking.BookingDisplaySettings;
-import com.researchspace.model.booking.BookingSchedulingSettings;
-import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
-import java.util.List;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.util.ThreadContext;
@@ -25,27 +15,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 /** Inventory's filter-only search retains caller-relative Booking and Inventory visibility. */
 @ApiV2WebIntegrationTest
 class InventoryBookableSearchMVCIT {
   private final WebApplicationContext context;
-  private final BookingConfigurationDefaultsManager settingsManager;
-  private final UserManager userManager;
-  private final JdbcTemplate jdbcTemplate;
 
   @Autowired
-  InventoryBookableSearchMVCIT(
-      WebApplicationContext context,
-      BookingConfigurationDefaultsManager settingsManager,
-      UserManager userManager,
-      JdbcTemplate jdbcTemplate) {
+  InventoryBookableSearchMVCIT(WebApplicationContext context) {
     this.context = context;
-    this.settingsManager = settingsManager;
-    this.userManager = userManager;
-    this.jdbcTemplate = jdbcTemplate;
   }
 
   private ApiV2Fixture fixture;
@@ -156,70 +135,32 @@ class InventoryBookableSearchMVCIT {
   }
 
   @Test
-  void sysadminBookableFilterIncludesOnlyMeConfigurationWithoutPersistedAssignment()
-      throws Exception {
-    User sysadmin = userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
-    BookingConfigurationDefaults original = settingsManager.getAdminDefaults(sysadmin);
-    BookingDefaultSharedWith originalSharing = original.getDefaultSharedWith();
-    List<String> originalGrantees =
-        original.getSelectedAccessGrantees().stream()
-            .map(BookingDefaultAccessGrantee::getGranteeKey)
-            .toList();
-    settingsManager.updateDefaults(
-        BookingSchedulingSettings.Patch.empty(),
-        BookingDisplaySettings.Patch.empty(),
-        BookingDefaultSharedWith.ONLY_ME,
-        List.of(),
-        original.getConfigurationVersion(),
-        sysadmin,
-        sysadmin);
-    try {
-      long bookable = fixture.instrument(fixture.otherUser(), fixture.marker() + " bookable");
-      long ordinary = fixture.instrument(fixture.otherUser(), fixture.marker() + " ordinary");
-      long configuration = fixture.bookingConfiguration(bookable, "UTC", fixture.otherUserKey());
-      assertEquals(
-          0,
-          jdbcTemplate.queryForObject(
-              "SELECT COUNT(*) FROM ResourceRoleAssignment assignment "
-                  + "JOIN BookingConfiguration configuration "
-                  + "ON configuration.resourceAccess_id = assignment.resourceAccess_id "
-                  + "WHERE configuration.id = ? AND assignment.user_id = ?",
-              Integer.class,
-              configuration,
-              sysadmin.getId()));
+  void sysadminBookableFilterIncludesInheritedConfiguration() throws Exception {
+    long bookable = fixture.instrument(fixture.otherUser(), fixture.marker() + " bookable");
+    long ordinary = fixture.instrument(fixture.otherUser(), fixture.marker() + " ordinary");
+    fixture.bookingConfiguration(bookable, "UTC", fixture.otherUserKey());
 
-      fixture
-          .mockMvc()
-          .perform(
-              get("/api/inventory/v1/search")
-                  .header("apiKey", fixture.sysadminKey())
-                  .principal(() -> sysadmin.getUsername())
-                  .param("resultType", "INSTRUMENT")
-                  .param("query", "\"" + fixture.marker() + "\"")
-                  .param("bookable", "true"))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.records[*].id", containsInAnyOrder((int) bookable)));
-      fixture
-          .mockMvc()
-          .perform(
-              get("/api/inventory/v1/search")
-                  .header("apiKey", fixture.sysadminKey())
-                  .principal(() -> sysadmin.getUsername())
-                  .param("resultType", "INSTRUMENT")
-                  .param("query", "\"" + fixture.marker() + "\"")
-                  .param("bookable", "false"))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.records[*].id", containsInAnyOrder((int) ordinary)));
-    } finally {
-      BookingConfigurationDefaults current = settingsManager.getAdminDefaults(sysadmin);
-      settingsManager.updateDefaults(
-          BookingSchedulingSettings.Patch.empty(),
-          BookingDisplaySettings.Patch.empty(),
-          originalSharing,
-          originalGrantees,
-          current.getConfigurationVersion(),
-          sysadmin,
-          sysadmin);
-    }
+    fixture
+        .mockMvc()
+        .perform(
+            get("/api/inventory/v1/search")
+                .header("apiKey", fixture.sysadminKey())
+                .principal(() -> AbstractAppInitializor.SYSADMIN_UNAME)
+                .param("resultType", "INSTRUMENT")
+                .param("query", "\"" + fixture.marker() + "\"")
+                .param("bookable", "true"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.records[*].id", containsInAnyOrder((int) bookable)));
+    fixture
+        .mockMvc()
+        .perform(
+            get("/api/inventory/v1/search")
+                .header("apiKey", fixture.sysadminKey())
+                .principal(() -> AbstractAppInitializor.SYSADMIN_UNAME)
+                .param("resultType", "INSTRUMENT")
+                .param("query", "\"" + fixture.marker() + "\"")
+                .param("bookable", "false"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.records[*].id", containsInAnyOrder((int) ordinary)));
   }
 }

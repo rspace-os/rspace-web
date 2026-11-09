@@ -5,6 +5,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import io.swagger.v3.core.util.AnnotationsUtils;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -237,6 +239,13 @@ final class ApiV2OpenApiAnnotationMerger {
     }
     for (var parameter : handler.getMethod().getParameters()) {
       Parameter documented = AnnotatedElementUtils.findMergedAnnotation(parameter, Parameter.class);
+      if (ApiV2FieldsetQuery.class.isAssignableFrom(parameter.getType())
+          && parameter.isAnnotationPresent(ModelAttribute.class)
+          && (documented == null || !documented.hidden())) {
+        replaceParameter(result, ApiV2OpenApiQueryParameters.fieldset("fields"));
+        replaceParameter(result, ApiV2OpenApiQueryParameters.fieldset("exclude"));
+        continue;
+      }
       ParameterLocation location = parameterLocation(parameter, parameter.getName(), documented);
       if (location == null || (documented != null && documented.hidden())) {
         continue;

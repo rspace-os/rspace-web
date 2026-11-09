@@ -24,6 +24,9 @@ import org.apache.shiro.authz.AuthorizationException;
  */
 public interface GroupManager {
 
+  /** Updates only publication permission, after checking that the subject is the group's PI. */
+  boolean setPublicationAllowed(Long groupId, boolean allowed, User subject);
+
   /**
    * Persists or updates a group. Equivalent to <code> saveGroup(group, true)</code>. Establishes
    * association with a community if a community id is set into the group.

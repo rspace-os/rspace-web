@@ -1,4 +1,5 @@
 import type { QueryKey } from "@tanstack/react-query";
+import * as bookingcalendar from "./generated/booking-calendar/booking-calendar.ts";
 import * as bookingcatalogue from "./generated/booking-catalogue/booking-catalogue.ts";
 import * as bookingconfigurationtargets from "./generated/booking-configuration-targets/booking-configuration-targets.ts";
 import * as bookingconfigurations from "./generated/booking-configurations/booking-configurations.ts";
@@ -160,6 +161,10 @@ export const apiV2Resources = {
       queryKey: bookingconfigurationtargets.getSearchBookingConfigurationTargetsQueryKey,
     },
   } satisfies ApiV2ResourceEntry<"booking-configuration-targets", ApiV2OperationSet>,
+  "booking-calendar": {
+    name: "booking-calendar",
+    list: { request: bookingcalendar.searchCalendarEvents, queryKey: bookingcalendar.getSearchCalendarEventsQueryKey },
+  } satisfies ApiV2ResourceEntry<"booking-calendar", ApiV2OperationSet>,
   "booking-settings": {
     name: "booking-settings",
     get: { request: bookingsettings.getBookingSettings, queryKey: bookingsettings.getGetBookingSettingsQueryKey },

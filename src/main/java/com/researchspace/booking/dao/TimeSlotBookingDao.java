@@ -17,6 +17,12 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
   /** Finds an original create identity, including later cancelled or lifecycle-hidden rows. */
   Optional<TimeSlotBooking> findByCreatorAndKey(Long creatorId, String key);
 
+  /** Applies Calendar text scope before event paging and counts. */
+  ResourcePage<TimeSlotBooking> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess access,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+
   /** Returns a page after target read rules and soft deletion are applied in SQL. */
   ResourcePage<TimeSlotBooking> getReadableResources(
       ResourceRequest request, RelationshipReadAccess targetAccess);

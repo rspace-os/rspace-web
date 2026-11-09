@@ -505,10 +505,8 @@ final class ApiV2OpenApiQueryParameters {
           properties.put(resourceName, ordered("type", "string"));
         });
     Map<String, Object> parameter =
-        parameter(
+        fieldsetParameter(
             name,
-            "query",
-            false,
             ordered("type", "object", "additionalProperties", false, "properties", properties),
             description
                 + " Uses square-bracket keys and comma-separated nested field paths, for example "
@@ -516,10 +514,25 @@ final class ApiV2OpenApiQueryParameters {
                 + "["
                 + resource.name()
                 + "]=id,name.");
+    parameter.put("x-rspace-allowed-fields", allowedFields);
+    return parameter;
+  }
+
+  static Map<String, Object> fieldset(String name) {
+    return fieldsetParameter(
+        name,
+        ordered("type", "object", "additionalProperties", ordered("type", "string")),
+        "Comma-separated nested field paths by resource type, using square-bracket keys such as "
+            + name
+            + "[resource]=id,name.");
+  }
+
+  private static Map<String, Object> fieldsetParameter(
+      String name, Map<String, Object> schema, String description) {
+    Map<String, Object> parameter = parameter(name, "query", false, schema, description);
     parameter.put("style", "deepObject");
     parameter.put("explode", true);
     parameter.put("x-rspace-comma-separated-values", true);
-    parameter.put("x-rspace-allowed-fields", allowedFields);
     parameter.put("x-rspace-mutually-exclusive-with", name.equals("fields") ? "exclude" : "fields");
     return parameter;
   }

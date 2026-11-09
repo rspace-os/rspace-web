@@ -6,6 +6,7 @@ import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.CommunityDao;
@@ -83,6 +84,23 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
   private @Autowired RSpacePasswordEncoder passwordEncoder;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
+
+  @Autowired private LoginBookkeeping loginBookkeeping;
+
+  @Override
+  public void recordLoginSuccess(User subject) {
+    User state = loginBookkeeping.recordSuccess(subject.getUsername());
+    subject.setLastLogin(state.getLastLogin());
+    subject.setLoginFailure(state.getLoginFailure());
+    subject.setNumConsecutiveLoginFailures(state.getNumConsecutiveLoginFailures());
+    subject.setAccountLocked(state.isAccountLocked());
+  }
+
+  @Override
+  public void recordLoginFailure(String usernameOrAlias) {
+    loginBookkeeping.recordFailure(usernameOrAlias);
+  }
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -96,6 +114,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   @Override
   public User saveUser(User toChange) {
+    calendarRevocations.affectUser(toChange.getId());
     encryptPasswordIfRequired(toChange);
     try {
       return doSave(toChange);
@@ -104,6 +123,12 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       log.error(msg);
       throw new IllegalStateException(msg);
     }
+  }
+
+  @Override
+  public User save(User user) {
+    calendarRevocations.affectUser(user.getId());
+    return super.save(user);
   }
 
   @Override

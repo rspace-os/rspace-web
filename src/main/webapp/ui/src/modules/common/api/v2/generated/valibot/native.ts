@@ -9,9 +9,7 @@ import * as v from 'valibot';
 
 export const BookingOpeningHoursEntry = v.object({dayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7)), end: v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$'))), start: v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$')))});
 
-export const SelectedAccessGrantee = v.object({available: v.optional(v.boolean()), detail: v.optional(v.string()), id: v.optional(v.pipe(v.number(), v.integer())), key: v.optional(v.string()), kind: v.optional(v.string()), name: v.optional(v.string())});
-
-export const AdminSettingsDocument = v.object({allowDoubleBooking: v.optional(v.boolean()), availabilityWindowEnd: v.optional(v.string()), availabilityWindowStart: v.optional(v.string()), bufferAfterMinutes: v.optional(v.pipe(v.number(), v.integer())), bufferBeforeMinutes: v.optional(v.pipe(v.number(), v.integer())), configurationVersion: v.optional(v.pipe(v.number(), v.integer())), customTimezone: v.nullish(v.string()), defaultSharedWith: v.optional(v.picklist(['ALL_USERS', 'SELECTED', 'ONLY_ME'])), institutionTimezone: v.optional(v.string()), maxBookingDurationMinutes: v.optional(v.pipe(v.number(), v.integer())), openingHours: v.optional(v.array(BookingOpeningHoursEntry)), selectedAccessGrantees: v.optional(v.array(SelectedAccessGrantee)), slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer())), timezoneMode: v.optional(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))});
+export const AdminSettingsDocument = v.object({allowDoubleBooking: v.optional(v.boolean()), availabilityWindowEnd: v.optional(v.string()), availabilityWindowStart: v.optional(v.string()), bufferAfterMinutes: v.optional(v.pipe(v.number(), v.integer())), bufferBeforeMinutes: v.optional(v.pipe(v.number(), v.integer())), configurationVersion: v.optional(v.pipe(v.number(), v.integer())), customTimezone: v.nullish(v.string()), institutionTimezone: v.optional(v.string()), maxBookingDurationMinutes: v.optional(v.pipe(v.number(), v.integer())), openingHours: v.optional(v.array(BookingOpeningHoursEntry)), slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer())), timezoneMode: v.optional(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))});
 
 export const ApiV2AuditEvent = v.object({action: v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE']), description: v.nullish(v.string()), domain: v.picklist(['MESSAGING', 'RECORD', 'FOLDER', 'NOTEBOOK', 'MEDIA', 'USER', 'GROUP', 'COMMUNITY', 'FORM', 'AUDIT', 'INV_SAMPLE', 'INV_SUBSAMPLE', 'INV_CONTAINER', 'INV_INSTRUMENT', 'REQUEST', 'WORKSPACE', 'UNKNOWN']), eventId: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64')), fullName: v.nullish(v.string()), payload: v.record(v.string(), v.unknown()), target: v.nullish(v.pipe(v.string(), v.description('Stable audited resource identifier'))), timestamp: v.pipe(v.string(), v.isoTimestamp()), username: v.string()});
 
@@ -32,6 +30,8 @@ export const Orcid = v.object({available: v.pipe(v.boolean(), v.description('Whe
 export const Session = v.object({canChangeFeatureFlagBaselines: v.pipe(v.boolean(), v.description('Whether the user may change feature-flag baselines.')), canOverrideFeatureFlags: v.pipe(v.boolean(), v.description('Whether the user may override feature flags.')), canUseDevtools: v.pipe(v.boolean(), v.description('Whether the feature-flag developer tools are available.')), lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp(), v.description('Previous successful login instant.'))), operatedAs: v.pipe(v.boolean(), v.description('Whether a system administrator is operating as another user.'))});
 
 export const ApiV2CurrentUser = v.object({capabilities: v.pipe(Capabilities, v.description('Capabilities enabled for the current user.')), email: v.pipe(v.string(), v.description('Current user\'s email address.')), firstName: v.pipe(v.string(), v.description('Current user\'s given name.')), hasPiRole: v.pipe(v.boolean(), v.description('Whether the user has the principal-investigator role.')), hasSysAdminRole: v.pipe(v.boolean(), v.description('Whether the user has the system-administrator role.')), homeFolderId: v.nullable(v.pipe(v.number(), v.integer(), v.description('Root folder identifier.'))), id: v.pipe(v.number(), v.integer(), v.description('Stable user identifier.')), lastName: v.pipe(v.string(), v.description('Current user\'s family name.')), livechat: v.pipe(LiveChat, v.description('Live-chat configuration for the current user.')), orcid: v.pipe(Orcid, v.description('ORCID availability and connection state.')), profileImageApiUrl: v.nullable(v.pipe(v.string(), v.description('REST API v2 profile-image URL.'))), profileImageUrl: v.nullable(v.pipe(v.string(), v.description('Legacy profile-image URL.'))), session: v.pipe(Session, v.description('State of the current authenticated session.')), username: v.pipe(v.string(), v.description('RSpace login name.')), workbenchId: v.nullable(v.pipe(v.number(), v.integer(), v.description('Inventory workbench identifier.')))});
+
+export const ApiV2ListResultMapStringObject = v.object({docs: v.optional(v.array(v.record(v.string(), v.unknown()))), hasNextPage: v.optional(v.boolean()), hasPrevPage: v.optional(v.boolean()), limit: v.optional(v.pipe(v.number(), v.integer())), nextPage: v.nullish(v.pipe(v.number(), v.integer())), page: v.optional(v.pipe(v.number(), v.integer())), pagingCounter: v.optional(v.pipe(v.number(), v.integer())), prevPage: v.nullish(v.pipe(v.number(), v.integer())), totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))), totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))), totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.')))});
 
 export const InvalidParam = v.object({name: v.string(), reason: v.string()});
 
@@ -81,7 +81,7 @@ export const BookingDisplayPreferences = v.object({availabilityWindowEnd: v.opti
 
 export const BookingsCreate = v.object({end: v.pipe(v.string(), v.isoTimestamp()), kind: v.optional(v.picklist(['BOOKING', 'MAINTENANCE'])), purpose: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000), 'Invalid length: Expected <=1000'))), start: v.pipe(v.string(), v.isoTimestamp()), target: v.intersect([InstrumentsReference, v.object({globalId: v.optional(v.pipe(v.string(), v.regex(new RegExp('^IN\\d+$'))))})])});
 
-export const BookingsRead = v.object({bookedBy: v.nullish(v.string()), canCancel: v.optional(v.boolean()), canEdit: v.optional(v.boolean()), canViewConfiguration: v.optional(v.boolean()), createdAt: v.optional(v.pipe(v.string(), v.isoTimestamp())), createdBy: v.nullish(v.string()), end: v.optional(v.pipe(v.string(), v.isoTimestamp())), id: v.pipe(v.number(), v.integer()), kind: v.optional(v.picklist(['BOOKING', 'MAINTENANCE'])), privacy: v.optional(v.string()), purpose: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000), 'Invalid length: Expected <=1000'))), requester: v.optional(v.pipe(v.union([v.union([UsersReference, v.object({relationTo: v.literal('users'), value: UsersRead})]), v.null()]), v.description('The user who requested this event, when the event is visible in full detail.'))), start: v.optional(v.pipe(v.string(), v.isoTimestamp())), state: v.optional(v.picklist(['CONFIRMED', 'CANCELLED'])), target: v.optional(v.union([v.union([v.intersect([InstrumentsReference, v.object({globalId: v.pipe(v.string(), v.regex(new RegExp('^IN\\d+$')))})]), v.object({globalId: v.pipe(v.string(), v.regex(new RegExp('^IN\\d+$'))), relationTo: v.literal('instruments'), value: InstrumentsRead})]), v.null()])), 'target.customFields': v.optional(v.record(v.string(), v.unknown())), timezone: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'))), updatedAt: v.optional(v.pipe(v.string(), v.isoTimestamp())), version: v.optional(v.pipe(v.number(), v.integer()))});
+export const BookingsRead = v.object({bookedBy: v.nullish(v.string()), canCancel: v.optional(v.boolean()), canEdit: v.optional(v.boolean()), canViewConfiguration: v.optional(v.boolean()), createdAt: v.optional(v.pipe(v.string(), v.isoTimestamp())), createdBy: v.nullish(v.string()), end: v.optional(v.pipe(v.string(), v.isoTimestamp())), id: v.pipe(v.number(), v.integer()), kind: v.optional(v.picklist(['BOOKING', 'MAINTENANCE'])), privacy: v.optional(v.string()), purpose: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000), 'Invalid length: Expected <=1000'))), requester: v.optional(v.pipe(v.union([v.union([UsersReference, v.object({relationTo: v.literal('users'), value: UsersRead})]), v.null()]), v.description('The user who requested this event, when the event is visible in full detail.'))), start: v.optional(v.pipe(v.string(), v.isoTimestamp())), state: v.optional(v.picklist(['CONFIRMED', 'CANCELLED'])), target: v.optional(v.union([v.union([v.intersect([InstrumentsReference, v.object({globalId: v.pipe(v.string(), v.regex(new RegExp('^IN\\d+$')))})]), v.object({globalId: v.pipe(v.string(), v.regex(new RegExp('^IN\\d+$'))), relationTo: v.literal('instruments'), value: InstrumentsRead})]), v.null()])), 'target.customFields': v.optional(v.record(v.string(), v.unknown())), timezone: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'))), updatedAt: v.optional(v.pipe(v.string(), v.isoTimestamp())), version: v.optional(v.pipe(v.number(), v.integer()))});
 
 export const BookingsReference = v.object({relationTo: v.literal('bookings'), value: v.pipe(v.number(), v.integer())});
 
@@ -145,13 +145,31 @@ export const ResourceGranteeDirectoryDocument = v.object({docs: v.array(Resource
 
 export const SettingsDocument = v.object({allowDoubleBooking: v.optional(v.boolean()), availabilityWindowEnd: v.optional(v.string()), availabilityWindowStart: v.optional(v.string()), bufferAfterMinutes: v.optional(v.pipe(v.number(), v.integer())), bufferBeforeMinutes: v.optional(v.pipe(v.number(), v.integer())), customTimezone: v.nullish(v.string()), institutionTimezone: v.optional(v.string()), maxBookingDurationMinutes: v.optional(v.pipe(v.number(), v.integer())), openingHours: v.optional(v.array(BookingOpeningHoursEntry)), slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer())), timezoneMode: v.optional(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))});
 
-export const SettingsPatch = v.object({allowDoubleBooking: v.nullish(v.boolean()), availabilityWindowEnd: v.nullish(v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$')))), availabilityWindowStart: v.nullish(v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$')))), bufferAfterMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))), bufferBeforeMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))), customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'))), customTimezoneValid: v.optional(v.boolean()), defaultSharedWith: v.nullish(v.picklist(['ALL_USERS', 'SELECTED', 'ONLY_ME'])), maxBookingDurationMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(527040))), openingHours: v.nullish(v.pipe(v.array(BookingOpeningHoursEntry), v.minLength(1), v.maxLength(7), v.description('Independent opening interval for each listed ISO weekday; omitted days are closed.'))), selectedGranteeKeys: v.nullish(v.array(v.string())), slotGranularityMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(15))), timezoneMode: v.nullish(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))});
+export const SettingsPatch = v.object({allowDoubleBooking: v.nullish(v.boolean()), availabilityWindowEnd: v.nullish(v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$')))), availabilityWindowStart: v.nullish(v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$')))), bufferAfterMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))), bufferBeforeMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))), customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'))), customTimezoneValid: v.optional(v.boolean()), maxBookingDurationMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(527040))), openingHours: v.nullish(v.pipe(v.array(BookingOpeningHoursEntry), v.minLength(1), v.maxLength(7), v.description('Independent opening interval for each listed ISO weekday; omitted days are closed.'))), slotGranularityMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(15))), timezoneMode: v.nullish(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))});
 
 export const TargetDirectoryDocument = v.object({docs: v.array(BookingConfigurationTarget)});
 
 export const UsersCreate = v.object({});
 
 export const UsersUpdate = v.object({})
+
+/**
+ * @summary Search visible calendar events
+ */;
+
+export const SearchCalendarEventsQueryParams = v.object({
+  start: v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.')),
+  end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
+  where: v.optional(v.string()),
+  q: v.optional(v.string()),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer()),
+  fields: v.optional(v.pipe(v.record(v.string(), v.string()), v.description('Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.'))),
+  exclude: v.optional(v.pipe(v.record(v.string(), v.string()), v.description('Comma-separated nested field paths by resource type, using square-bracket keys such as exclude[resource]=id,name.')))
+})
+
+export const SearchCalendarEventsResponse = ApiV2ListResultMapStringObject
+
 
 /**
  * @summary Search the Booking catalogue
@@ -169,6 +187,23 @@ export const SearchBookingCatalogueQueryParams = v.object({
 })
 
 export const SearchBookingCatalogueResponse = Page
+
+
+/**
+ * @summary Search bookable instruments in a calendar interval
+ */;
+
+export const SearchCalendarCatalogueQueryParams = v.object({
+  start: v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.')),
+  end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
+  where: v.optional(v.string()),
+  eventWhere: v.optional(v.string()),
+  q: v.optional(v.string()),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer())
+})
+
+export const SearchCalendarCatalogueResponse = Page
 
 
 /**
@@ -501,18 +536,6 @@ export const ListBookingConfigurationAuditEventsResponse = v.object({
  */;
 
 export const GetBookingSettingsResponse = SettingsDocument
-
-
-/**
- * @summary Search eligible default-access grantees
- */;
-
-export const SearchBookingSettingsAccessGranteesQueryParams = v.object({
-  q: v.pipe(v.string(), v.check((value) => value.length >= 4 || [...value].length >= 2, 'Invalid length: Expected >=2'), v.description('Case-insensitive search text.')),
-  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(50), v.description('Maximum results to return.')), 20)
-})
-
-export const SearchBookingSettingsAccessGranteesResponse = ResourceGranteeDirectoryDocument
 
 
 /**

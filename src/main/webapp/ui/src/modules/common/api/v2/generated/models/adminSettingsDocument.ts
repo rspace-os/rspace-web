@@ -5,10 +5,8 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { AdminSettingsDocumentDefaultSharedWith } from './adminSettingsDocumentDefaultSharedWith.ts';
 import type { AdminSettingsDocumentTimezoneMode } from './adminSettingsDocumentTimezoneMode.ts';
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
-import type { SelectedAccessGrantee } from './selectedAccessGrantee.ts';
 
 export interface AdminSettingsDocument {
   allowDoubleBooking?: boolean;
@@ -19,11 +17,9 @@ export interface AdminSettingsDocument {
   configurationVersion?: number;
   /** @nullable */
   customTimezone?: string | null;
-  defaultSharedWith?: AdminSettingsDocumentDefaultSharedWith;
   institutionTimezone?: string;
   maxBookingDurationMinutes?: number;
   openingHours?: BookingOpeningHoursEntry[];
-  selectedAccessGrantees?: SelectedAccessGrantee[];
   slotGranularityMinutes?: number;
   timezoneMode?: AdminSettingsDocumentTimezoneMode;
 }

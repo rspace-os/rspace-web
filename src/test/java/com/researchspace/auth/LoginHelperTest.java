@@ -65,6 +65,7 @@ public class LoginHelperTest {
     assertNull(any.getLastLogin());
     any.setId(1L);
     when(commGr.getNotificationStatus(any)).thenReturn(new NotificationStatus(1, 1, 1));
+    stubSuccess(any);
     when(properties.getVersionMessage()).thenReturn("1.69.3");
     // when
     HttpSession session = loginHelper.postLogin(any, req);
@@ -94,6 +95,7 @@ public class LoginHelperTest {
     User user = Mockito.spy(createAnyUser("any"));
     user.setId(1L);
     Mockito.when(commGr.getNotificationStatus(user)).thenReturn(new NotificationStatus(1, 1, 1));
+    stubSuccess(user);
 
     Calendar cal = Calendar.getInstance();
     cal.add(Calendar.DAY_OF_MONTH, -1);
@@ -126,6 +128,7 @@ public class LoginHelperTest {
     assertNull(any.getLastLogin());
     any.setId(1L);
     Mockito.when(commGr.getNotificationStatus(any)).thenReturn(new NotificationStatus(1, 1, 1));
+    stubSuccess(any);
     HttpSession session = loginHelper.login(any, any.getPassword(), req);
     assertTrue(loginHelperTSS.isLoggedIn);
     assertPostLoginAssertions(any, req, session);
@@ -141,10 +144,24 @@ public class LoginHelperTest {
     assertThrows(IllegalStateException.class, () -> loginHelper.login(any, password, req));
   }
 
+  private void stubSuccess(User any) {
+    Mockito.doAnswer(
+            invocation -> {
+              User subject = invocation.getArgument(0);
+              subject.setLastLogin(new java.util.Date());
+              subject.setLoginFailure(null);
+              subject.setNumConsecutiveLoginFailures((byte) 0);
+              return null;
+            })
+        .when(userMgr)
+        .recordLoginSuccess(any);
+  }
+
   private void assertPostLoginAssertions(
       User any, MockHttpServletRequest req, HttpSession session) {
     assertNotNull(session);
     assertNotNull(any.getLastLogin());
+    verify(userMgr, Mockito.atLeastOnce()).recordLoginSuccess(any);
     assertNull(any.getLoginFailure());
 
     verify(analMgr).userLoggedIn(any, req);
