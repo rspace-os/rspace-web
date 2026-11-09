@@ -30,7 +30,7 @@ export const CALENDAR_BOOKING_FIELDS = [
   "createdAt",
   "updatedAt",
 ] as const;
-export type CalendarEventFilterScope = Pick<SearchCalendarEventsParams, "where" | "q">;
+export type CalendarEventFilterScope = Partial<Pick<SearchCalendarEventsParams, "where" | "q" | "mine">>;
 type CalendarEventRequest = Pick<SearchCalendarEventsParams, "start" | "end"> & {
   signal: AbortSignal;
   targetGlobalIds?: readonly string[];
@@ -44,7 +44,7 @@ function parameters(input: Omit<CalendarEventRequest, "signal">, page = 1) {
     end: input.end,
     where: `start=lt=${input.end};end=gt=${input.start}${targetFilter}${input.scope?.where ? `;(${input.scope.where})` : ""}`,
     q: input.scope?.q?.trim() || undefined,
-    mine: false,
+    mine: input.scope?.mine ?? false,
     page,
     limit: 100,
     fields: {

@@ -31,19 +31,19 @@ export function CalendarContent() {
     eventIssue,
     eventRuntimeFields,
     filtersBlocked,
-    itemConfig,
     itemExpression,
     itemIssue,
     itemRuntimeFields,
-    myItemsOnly,
-    setMyItemsOnly,
     mineOnly,
     onEventFiltersChange,
-    onItemFiltersChange,
     onSearchChange,
     setEventWhere,
     setItemWhere,
     setMineOnly,
+    location,
+    myItemsOnly,
+    setMyItemsOnly,
+    targetItemExpression,
   } = useCalendarContentData();
 
   return (
@@ -65,31 +65,30 @@ export function CalendarContent() {
         resourceTableProps={
           filtersBlocked ? { ...resourceTable.tableProps, rows: [], status: "idle" } : resourceTable.tableProps
         }
-        itemFilterConfig={itemConfig}
         eventFilterConfig={eventConfig}
         itemFilterExpression={itemExpression}
         eventFilterExpression={eventExpression}
         itemFilterIssue={itemIssue}
         eventFilterIssue={eventIssue}
-        itemRuntimeFieldDefinitions={itemRuntimeFields.runtimeFields}
-        itemRuntimeFieldAuthScope={itemRuntimeFields.scope}
-        eventAuthScope={eventRuntimeFields.scope}
-        onSelectItemRuntimeField={itemRuntimeFields.selectRuntimeField}
+        hasTargetFilter={targetItemExpression !== null}
         eventRuntimeFields={{
           definitions: eventRuntimeFields.runtimeFields,
           onSelect: eventRuntimeFields.selectRuntimeField,
         }}
-        onItemFilterChange={onItemFiltersChange}
+        eventAuthScope={eventRuntimeFields.scope}
         onEventFilterChange={onEventFiltersChange}
         searchControl={{
           value: calendarSearch,
           onChange: onSearchChange,
         }}
-        myItemsOnly={myItemsOnly}
-        onMyItemsChange={setMyItemsOnly}
         mineOnly={mineOnly}
         onMineChange={(next) => {
           setMineOnly(next);
+          resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
+        }}
+        myItemsOnly={myItemsOnly}
+        onMyItemsChange={(next) => {
+          setMyItemsOnly(next);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
         }}
         isLoading={
@@ -105,14 +104,19 @@ export function CalendarContent() {
             void events.refetch();
           }
         }}
-        onDateChange={(nextDate) =>
-          void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true })
-        }
+        onDateChange={(nextDate) => {
+          const search = new URLSearchParams(location.searchStr);
+          search.set("date", nextDate);
+          void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true });
+        }}
         onControlsReset={async () => {
           // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
           setResettingControls(true);
           try {
-            await navigate({ search: (current) => ({ ...current, date: undefined }), replace: true });
+            await navigate({
+              search: (current) => ({ ...current, date: undefined, target: undefined }),
+              replace: true,
+            });
             await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
             resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
             React.startTransition(() => {

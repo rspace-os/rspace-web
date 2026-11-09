@@ -1106,6 +1106,7 @@ export const SearchCalendarEventsQueryParams = v.object({
     ),
   ),
   q: v.optional(v.string()),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer()),
   fields: v.optional(
@@ -1145,6 +1146,7 @@ export const SearchBookingCatalogueQueryParams = v.object({
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(BookingCatalogueCapability),
+  mine: v.boolean(),
   availability: v.optional(v.string()),
   start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Inclusive interval start."))),
   end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Exclusive interval end."))),
@@ -1172,6 +1174,7 @@ export const CountBookingCatalogueAvailabilityQueryParams = v.object({
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(BookingCatalogueCapability),
+  mine: v.boolean(),
   start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Inclusive interval start."))),
   end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Exclusive interval end."))),
   now: v.optional(v.pipe(v.string(), v.isoTimestamp())),
@@ -1202,6 +1205,7 @@ export const SearchCalendarCatalogueQueryParams = v.object({
     ),
   ),
   q: v.optional(v.string()),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer()),
 });
