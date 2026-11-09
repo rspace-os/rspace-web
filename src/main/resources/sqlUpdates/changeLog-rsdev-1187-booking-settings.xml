@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="rsdev-1187-booking-configuration-defaults" author="tchoi-rs" context="run">
+    <comment>Create BookingConfigurationDefaults</comment>
+    <createTable tableName="BookingConfigurationDefaults">
+      <column name="id" type="BIGINT">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="slotGranularityMinutes" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="bufferBeforeMinutes" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="bufferAfterMinutes" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="allowDoubleBooking" type="BIT(1)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="configurationVersion" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="maxBookingDurationMinutes" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="availabilityWindowStart" type="VARCHAR(5)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="availabilityWindowEnd" type="VARCHAR(5)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="timezoneMode" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="customTimezone" type="VARCHAR(255)"/>
+      <column name="timeFormat" type="VARCHAR(32)" defaultValue="AUTOMATIC">
+        <constraints nullable="false"/>
+      </column>
+      <column name="incrementUnit" type="VARCHAR(8)" defaultValue="MINUTES">
+        <constraints nullable="false"/>
+      </column>
+      <column name="openingHours" type="VARCHAR(1024)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <insert tableName="BookingConfigurationDefaults">
+      <column name="id" valueNumeric="1"/>
+      <column name="slotGranularityMinutes" valueNumeric="15"/>
+      <column name="bufferBeforeMinutes" valueNumeric="0"/>
+      <column name="bufferAfterMinutes" valueNumeric="0"/>
+      <column name="allowDoubleBooking" valueBoolean="false"/>
+      <column name="configurationVersion" valueNumeric="0"/>
+      <column name="openingHours" value="[{&quot;dayOfWeek&quot;:1,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;},{&quot;dayOfWeek&quot;:2,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;},{&quot;dayOfWeek&quot;:3,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;},{&quot;dayOfWeek&quot;:4,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;},{&quot;dayOfWeek&quot;:5,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;},{&quot;dayOfWeek&quot;:6,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;},{&quot;dayOfWeek&quot;:7,&quot;start&quot;:&quot;00:00&quot;,&quot;end&quot;:&quot;24:00&quot;}]"/>
+      <column name="maxBookingDurationMinutes" valueNumeric="0"/>
+      <column name="availabilityWindowStart" value="08:00"/>
+      <column name="availabilityWindowEnd" value="18:00"/>
+      <column name="timezoneMode" value="BROWSER"/>
+      <column name="timeFormat" value="AUTOMATIC"/>
+      <column name="incrementUnit" value="MINUTES"/>
+    </insert>
+    <sql>
+      ALTER TABLE BookingConfigurationDefaults ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+
+  <changeSet id="booking-configuration-defaults-audit" author="tchoi-rs" context="run">
+    <comment>Create BookingConfigurationDefaults_AUD</comment>
+    <createTable tableName="BookingConfigurationDefaults_AUD">
+      <column name="id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REV" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="slotGranularityMinutes" type="BIGINT"/>
+      <column name="bufferBeforeMinutes" type="BIGINT"/>
+      <column name="bufferAfterMinutes" type="BIGINT"/>
+      <column name="allowDoubleBooking" type="BIT(1)"/>
+      <column name="configurationVersion" type="BIGINT"/>
+      <column name="maxBookingDurationMinutes" type="BIGINT"/>
+      <column name="availabilityWindowStart" type="VARCHAR(5)"/>
+      <column name="availabilityWindowEnd" type="VARCHAR(5)"/>
+      <column name="timezoneMode" type="VARCHAR(32)"/>
+      <column name="customTimezone" type="VARCHAR(255)"/>
+      <column name="timeFormat" type="VARCHAR(32)"/>
+      <column name="incrementUnit" type="VARCHAR(8)"/>
+      <column name="openingHours" type="VARCHAR(1024)"/>
+    </createTable>
+    <addPrimaryKey
+        tableName="BookingConfigurationDefaults_AUD"
+        columnNames="id, REV"
+        constraintName="PK_BookingConfigurationDefaults_AUD"/>
+    <addForeignKeyConstraint
+        constraintName="FK_BookingConfigurationDefaults_AUD_REV"
+        baseTableName="BookingConfigurationDefaults_AUD"
+        baseColumnNames="REV"
+        referencedTableName="REVINFO"
+        referencedColumnNames="REV"/>
+    <sql>
+      ALTER TABLE BookingConfigurationDefaults_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+</databaseChangeLog>

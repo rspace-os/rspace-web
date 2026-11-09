@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+  <changeSet id="booking-create-idempotency" author="tchoi-rs" context="run">
+    <comment>Retain booking create request identities for creator-scoped safe retries.</comment>
+    <addColumn tableName="TimeSlotBooking">
+      <column name="idempotency_key" type="VARCHAR(64)"/>
+      <column name="idempotency_fingerprint" type="CHAR(64)"/>
+    </addColumn>
+    <sql>ALTER TABLE TimeSlotBooking MODIFY idempotency_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL</sql>
+    <addUniqueConstraint tableName="TimeSlotBooking" columnNames="createdBy_id,idempotency_key"
+        constraintName="UK_TimeSlotBooking_creator_key"/>
+  </changeSet>
+</databaseChangeLog>
