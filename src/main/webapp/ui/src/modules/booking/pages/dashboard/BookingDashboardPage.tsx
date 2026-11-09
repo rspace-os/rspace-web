@@ -45,7 +45,12 @@ function BookingDashboardContent() {
       <div className="space-y-8">
         <DashboardQuickActions today={today} />
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <UpcomingBookingsWidget requesterId={currentUser.id} timeZone={preferences.timeZone} asOf={asOf} />
+          <UpcomingBookingsWidget
+            key={currentUser.id}
+            requesterId={currentUser.id}
+            timeZone={preferences.timeZone}
+            asOf={asOf}
+          />
           <AtAGlanceWidget requesterId={currentUser.id} timeZone={preferences.timeZone} today={today} />
         </div>
       </div>
