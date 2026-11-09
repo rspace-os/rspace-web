@@ -167,6 +167,14 @@ in one route search state. That callback replaces the default per-feature resets
 including `filterButtons.onReset`; it must reset the complete view in one update.
 Independent state owners can omit the callback and keep the built-in reset behavior.
 
+Quick filters (`filterButtons.buttons`) render as toolbar toggles by default. Set
+`filterButtons.presentation: "menu"` to move them into the Filters button's popover as switches,
+next to an "Edit filters" action that opens the filter panel; the Filters badge then counts
+pressed quick filters as well as panel filters. The page must then show which quick filters are on,
+for example as removable chips, because the toolbar no longer does. Give
+each button a `description`; the popover shows it under the switch. Without a filter panel
+(`filtering: false` or `hideFilterPanel`), quick filters stay as toolbar toggles.
+
 ## Browser query and storage defaults
 
 `TableList` writes search text, RSQL filters, visible fields, and ordered sorting to the query string

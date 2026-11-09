@@ -47,7 +47,7 @@ export function FilterSelect({
 
   const byKey = new Map<string, OptionGroup & { items: FilterSelectOption[] }>();
   for (const option of options) {
-    const key = option.groupKey ?? option.groupLabelKey ?? "";
+    const key = option.groupKey ?? option.groupLabelKey ?? option.groupLabel ?? "";
     const group = byKey.get(key) ?? {
       key,
       heading: option.groupLabel ?? (option.groupLabelKey === null ? null : t(option.groupLabelKey)),
