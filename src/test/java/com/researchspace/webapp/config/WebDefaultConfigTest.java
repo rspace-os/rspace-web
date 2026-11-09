@@ -68,6 +68,8 @@ class WebDefaultConfigTest {
     assertNotSame(base, strict);
     assertNotSame(base.getFactory(), strict.getFactory());
     assertTrue(strict.isEnabled(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
+    assertFalse(strict.isEnabled(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES));
+    assertFalse(strict.isEnabled(DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES));
     assertFalse(base.isEnabled(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
 
     String valid = "{\"text\":\"x\",\"count\":15,\"ratio\":1.5,\"enabled\":true}";
@@ -109,13 +111,12 @@ class WebDefaultConfigTest {
   }
 
   @Test
-  void mapsCreatorAndUnknownPropertyReasonsFromStrictBinding() throws Exception {
+  void mapsTypedPropertyReasonsAndLeavesRequiredFieldsToBeanValidation() throws Exception {
     ObjectMapper strict = ApiV2JsonMappers.strict(new ObjectMapper());
 
-    assertViolation(strict, "{}", new Violation("name", Reason.REQUIRED), Detail.class);
-    assertViolation(strict, "{}", new Violation("name", Reason.REQUIRED), RequiredDetail.class);
-    assertViolation(
-        strict, "{\"name\":null}", new Violation("name", Reason.NULL_NOT_ALLOWED), Detail.class);
+    assertEquals(new Detail(null), strict.readValue("{}", Detail.class));
+    assertViolation(strict, "{}", new Violation("name", Reason.WRONG_TYPE), RequiredDetail.class);
+    assertEquals(new Detail(null), strict.readValue("{\"name\":null}", Detail.class));
     assertViolation(
         strict,
         "{\"name\":\"value\",\"extra\":true}",
@@ -131,14 +132,6 @@ class WebDefaultConfigTest {
         strict,
         "{\"items\":[{\"kind\":\"a\",\"detail\":{\"name\":\"b\",\"extra\":1}}]}",
         new Violation("items[0].detail.extra", Reason.UNKNOWN_FIELD));
-    assertViolation(
-        strict,
-        "{\"items\":[{\"kind\":\"a\",\"detail\":{}}]}",
-        new Violation("items[0].detail.name", Reason.REQUIRED));
-    assertViolation(
-        strict,
-        "{\"items\":[{\"kind\":\"a\",\"detail\":{\"name\":null}}]}",
-        new Violation("items[0].detail.name", Reason.NULL_NOT_ALLOWED));
     assertViolation(
         strict,
         "{\"items\":[{\"kind\":\"a\",\"detail\":{\"name\":1}}]}",

@@ -320,6 +320,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         .map(version -> '"' + Long.toString(version.longValue()) + '"');
   }
 
+  public boolean isVersioned() {
+    return spec.mutationPolicy().version().field().isPresent();
+  }
+
   public Optional<String> ifMatchRequiredCode() {
     return spec.mutationPolicy().version().missingCode();
   }
