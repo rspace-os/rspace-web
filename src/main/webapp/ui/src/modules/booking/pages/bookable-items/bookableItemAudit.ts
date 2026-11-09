@@ -3,12 +3,15 @@ import type { ListBookingConfigurationAuditEventsParams } from "@/modules/common
 
 const AUDIT_EVENT_ID = /^[0-9a-f]{64}$/;
 
+import * as v from "valibot";
 import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
+import { formatIsoWeekday, mapOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
 import { listBookingConfigurationAuditEvents } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { ApiV2AuditEvent } from "@/modules/common/api/v2/generated/models/apiV2AuditEvent";
+import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { formatList } from "@/modules/common/i18n/listFormat";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const SNAPSHOT_FINGERPRINT = /^[0-9a-f]{64}$/;
 const DAY_MILLISECONDS = 86_400_000;
 const MAX_AUDIT_DAYS = 183;
 
@@ -23,6 +26,27 @@ export type AuditDateError = "required" | "invalid" | "inverted" | "tooWide";
 type AuditDateValidation =
   | { valid: true; range: AuditDateRange; dates: { from: Date; to: Date } }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
+
+export const AUDIT_ACTIONS = [
+  "CREATE",
+  "DELETE",
+  "DOWNLOAD",
+  "DUPLICATE",
+  "EXPORT",
+  "MOVE",
+  "READ",
+  "RENAME",
+  "RESTORE",
+  "SEARCH",
+  "SHARE",
+  "SIGN",
+  "TRANSFER",
+  "UNSHARE",
+  "VIEW",
+  "WITNESSED",
+  "WRITE",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 const AUDIT_PAGE_SIZE = 20;
 
@@ -78,6 +102,7 @@ export async function fetchBookingConfigurationAudit(
   input: Pick<ListBookingConfigurationAuditEventsParams, "q" | "start" | "end"> &
     Required<Pick<ListBookingConfigurationAuditEventsParams, "page">> & {
       configurationId: number;
+      actions?: readonly AuditAction[];
       snapshot?: AuditSnapshot;
       signal?: AbortSignal;
     },
@@ -94,9 +119,10 @@ export async function fetchBookingConfigurationAudit(
     {
       page: input.page + 1,
       limit: AUDIT_PAGE_SIZE,
-      q: input.q,
+      q: input.q?.trim() || undefined,
       start: input.start,
       end: input.end,
+      actions: input.actions ? [...input.actions] : undefined,
       snapshotDate: input.snapshot?.snapshotDate,
       snapshotFingerprint: input.snapshot?.snapshotFingerprint,
     },
@@ -120,14 +146,58 @@ export async function fetchBookingConfigurationAudit(
   };
 }
 
-/** Recorded values for one event. Nested values are JSON-encoded, never dropped. */
-export function recordedValues(payload: ApiV2AuditEvent["payload"]): Array<[string, string]> {
-  return Object.entries(payload).map(([key, value]) => [
-    key,
-    value === null || value === undefined
-      ? "—"
-      : typeof value === "object"
-        ? JSON.stringify(value)
-        : String(value as string | number | boolean),
-  ]);
+/** The snapshot may hold the array itself or its JSON text. */
+function parsedArray(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
+function parseRecordedOpeningHours(value: unknown) {
+  const parsed = v.safeParse(v.array(BookingOpeningHoursEntrySchema), value);
+  if (!parsed.success) return undefined;
+  try {
+    return mapOpeningHours(parsed.output);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Recorded values for one event. Unknown nested values retain their JSON representation. */
+export function recordedValues(payload: ApiV2AuditEvent["payload"], locale: string): Array<[string, string]> {
+  const dateFormat = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "long",
+    timeZone: "UTC",
+  });
+  return Object.entries(payload).map(([key, value]) => {
+    if (key === "openingHours") {
+      const hours = parseRecordedOpeningHours(parsedArray(value));
+      if (hours !== undefined) {
+        return [
+          key,
+          formatList(
+            hours.map((entry) => `${formatIsoWeekday(entry.dayOfWeek, "long", locale)} ${entry.start}–${entry.end}`),
+            locale,
+            { type: "unit" },
+          ),
+        ];
+      }
+    }
+    if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
+      const date = new Date(value);
+      if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
+    }
+    return [
+      key,
+      value === null || value === undefined
+        ? "—"
+        : typeof value === "object"
+          ? JSON.stringify(value)
+          : String(value as string | number | boolean),
+    ];
+  });
 }

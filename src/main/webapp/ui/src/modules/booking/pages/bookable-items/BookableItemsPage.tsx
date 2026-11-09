@@ -20,6 +20,7 @@ import {
   getListBookingConfigurationAuditEventsQueryKey,
   getListBookingConfigurationsQueryKey,
   getSearchBookingConfigurationAccessGranteesQueryKey,
+  invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
   listBookingConfigurations,
   updateBookingConfiguration as patchBookingConfiguration,
@@ -27,7 +28,11 @@ import {
   useDeleteManyBookingConfigurations,
   useUpdateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { getCountBookingsQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import {
+  getCountBookingsQueryKey,
+  getListBookingsQueryKey,
+  invalidateListBookings,
+} from "@/modules/common/api/v2/generated/bookings/bookings";
 import { getGetUserBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -236,7 +241,7 @@ function ArchiveBookableItemDialog({
   configuration: BookingConfigurationRow;
   close: () => void;
   onArchive: (id: number, version: number) => Promise<void>;
-  onArchived: () => void;
+  onArchived: (configurationId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -249,7 +254,7 @@ function ArchiveBookableItemDialog({
     try {
       await onArchive(configuration.id, requiredVersion(configuration));
       close();
-      onArchived();
+      await onArchived(configuration.id);
     } catch (error) {
       setDeleteError(error);
     } finally {
@@ -296,7 +301,7 @@ function PermanentDeleteBookableItemDialog({
   configuration: BookingConfigurationRow;
   close: () => void;
   onDelete: (id: number, version: number) => Promise<void>;
-  onDeleted: () => void;
+  onDeleted: () => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [confirmation, setConfirmation] = useState("");
@@ -311,7 +316,7 @@ function PermanentDeleteBookableItemDialog({
     try {
       await onDelete(configuration.id, requiredVersion(configuration));
       close();
-      onDeleted();
+      await onDeleted();
     } catch (error) {
       setDeleteError(error);
     } finally {
@@ -539,11 +544,22 @@ function BookableItemsContent() {
     (id: number, version: number) => permanentlyDeleteBookingConfiguration(id, version),
     [],
   );
-  const onChanged = useCallback(() => void invalidateListBookingConfigurations(queryClient), [queryClient]);
+  const onChanged = useCallback(
+    async (configurationId?: number) => {
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient),
+        invalidateListBookings(queryClient),
+        ...(configurationId === undefined
+          ? []
+          : [invalidateGetBookingCalendarSubscription(queryClient, configurationId)]),
+      ]);
+    },
+    [queryClient],
+  );
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
-    onSuccess: onChanged,
+    onSuccess: (_data, configuration) => onChanged(configuration.id),
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -654,6 +670,7 @@ function BookableItemsContent() {
       ) : null}
       <TableList
         {...table.tableProps}
+        headingClassName="text-2xl font-semibold"
         status={
           table.tableProps.status === "error" || (ownerAttentionOnly && ownerAttention.isError)
             ? "error"

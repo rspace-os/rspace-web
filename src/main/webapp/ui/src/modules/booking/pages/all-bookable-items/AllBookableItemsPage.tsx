@@ -30,6 +30,7 @@ import { cn } from "@/modules/common/utils/cn";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
+  AvailabilityCandidateLimitError,
   type AvailabilityQuickFilter,
   fetchAvailabilityFilteredCatalogue,
   hasAvailabilityFilter,
@@ -186,6 +187,7 @@ function AllBookableItemsContent({
     target,
     where,
     q,
+    types,
     page = 1,
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items/" });
@@ -234,6 +236,7 @@ function AllBookableItemsContent({
     queryKey: [
       ...getSearchBookingCatalogueQueryKey({
         q,
+        type: types ? [...types] : undefined,
         where: filters.expression
           ? serializeRsqlExpression(
               resolveAvailabilityFilters(filters.expression, quickIndex.data) ?? filters.expression,
@@ -249,9 +252,14 @@ function AllBookableItemsContent({
         if (!filters.expression || !quickIndex.data) {
           throw new Error("Availability filter search requires the quick-filter index");
         }
-        return fetchAvailabilityFilteredCatalogue(filters.expression, quickIndex.data, { q, page, pageSize }, signal);
+        return fetchAvailabilityFilteredCatalogue(
+          filters.expression,
+          quickIndex.data,
+          { q, types, page, pageSize },
+          signal,
+        );
       }
-      return fetchBookingCatalogue({ q, where: serverWhere, page, pageSize }, signal);
+      return fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, signal);
     },
     enabled: !invalidFilter && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
@@ -287,6 +295,7 @@ function AllBookableItemsContent({
         target: undefined,
         where: undefined,
         q: undefined,
+        types: undefined,
         page: undefined,
       }),
       replace: true,
@@ -433,6 +442,7 @@ function AllBookableItemsContent({
 
   const availabilityFilters: TableListFilterButtons = {
     legend: t("allBookableItems.quickFilters.legend"),
+    controlsOnSeparateRow: true,
     controls: (
       <BookingDateControls
         date={selectedDate}
@@ -449,7 +459,7 @@ function AllBookableItemsContent({
         onDateChange={setDate}
       />
     ),
-    hasChanges: selectedDate !== userToday,
+    hasChanges: selectedDate !== userToday || Boolean(types?.length),
     buttons: (["available-now", "free-later-today"] as const).map((mode) => ({
       id: mode,
       label: (
@@ -470,6 +480,7 @@ function AllBookableItemsContent({
       ),
       icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
       pressed: quickMode === mode,
+      disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
       onClick: () =>
         setFilters({
           ...filters,
@@ -488,14 +499,23 @@ function AllBookableItemsContent({
       ) : null}
       {quickIndex.isError ? (
         <div role="alert" className="flex items-center gap-3">
-          <span>{t("allBookableItems.quickFilters.error")}</span>
-          <Button type="button" variant="outline" onClick={() => void quickIndex.refetch()}>
-            {t("allBookableItems.quickFilters.retry")}
-          </Button>
+          <span>
+            {t(
+              quickIndex.error instanceof AvailabilityCandidateLimitError
+                ? "allBookableItems.quickFilters.limit"
+                : "allBookableItems.quickFilters.error",
+            )}
+          </span>
+          {quickIndex.error instanceof AvailabilityCandidateLimitError ? null : (
+            <Button type="button" variant="outline" onClick={() => void quickIndex.refetch()}>
+              {t("allBookableItems.quickFilters.retry")}
+            </Button>
+          )}
         </div>
       ) : null}
       <TableList
         {...tableProps}
+        headingClassName="text-2xl font-semibold"
         onReset={resetView}
         rows={quickFilterPending || quickFilterError ? [] : rows}
         filterButtons={availabilityFilters}
@@ -525,6 +545,7 @@ function AllBookableItemsContent({
                     periodStart={new Date(quickEntry.bounds.start)}
                     periodEnd={new Date(quickEntry.bounds.end)}
                     now={quickIndex.now}
+                    showBookingContextDetails={false}
                     showCurrentAvailability
                     showPeriodLabels
                     timeZone={preferences.timeZone}
@@ -551,6 +572,8 @@ function AllBookableItemsContent({
                   periodStart={new Date(bounds.start)}
                   periodEnd={new Date(bounds.end)}
                   now={selectedDate === userToday ? quickIndex.now : undefined}
+                  showBookingContextDetails={false}
+                  showCurrentAvailability
                   showPeriodLabels
                   timeZone={preferences.timeZone}
                   item={item}

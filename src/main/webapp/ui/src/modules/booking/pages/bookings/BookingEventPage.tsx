@@ -15,6 +15,8 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import {
   BOOKING_READ_FIELDS,
   type BookingDetails,
@@ -30,6 +32,7 @@ import {
   invalidateGetBooking,
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -133,13 +136,12 @@ function BookingMetadataAside({ booking, displayTimeZone }: { booking: BookingDe
   );
 }
 
-const eventPageClassName = "@container mx-auto max-w-5xl space-y-6 p-4 sm:p-8";
-const eventColumnsClassName = "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_16rem]";
+const eventColumnsClassName = detailColumnsClassName;
 
 function BookingEventSkeleton() {
   const { t } = useTranslation("common");
   return (
-    <main className={eventPageClassName} aria-busy="true">
+    <main className={detailPageClassName} aria-busy="true">
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
@@ -206,6 +208,10 @@ function BookingEventContent() {
       return failureCount < 2;
     },
   });
+  const editing = pathname.endsWith("/edit");
+  const bookingItem = useBookableItemConfiguration(
+    editing && booking.data?.canEdit && booking.data.state === "CONFIRMED" ? booking.data.target.globalId : undefined,
+  );
 
   const returnToMyBookings = (
     <Link className={buttonVariants({ variant: "outline" })} to="/booking/my-bookings" search={{ period: "upcoming" }}>
@@ -249,7 +255,6 @@ function BookingEventContent() {
   }
 
   const document = booking.data;
-  const editing = pathname.endsWith("/edit");
   const refreshBooking = async () => {
     await Promise.all([
       invalidateListBookings(queryClient),
@@ -262,7 +267,7 @@ function BookingEventContent() {
   const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
 
   return (
-    <main className={eventPageClassName}>
+    <main className={detailPageClassName}>
       <DirtyNavigationGuard dirty={dirty} />
       {document.canViewConfiguration ? (
         <Link
@@ -281,6 +286,7 @@ function BookingEventContent() {
         <InventoryItem
           name={eventName}
           nameAs="h1"
+          nameClassName="text-2xl font-semibold"
           globalId={document.target.globalId}
           idPlacement="title"
           className="min-w-full flex-1 p-0 sm:min-w-0"
@@ -323,6 +329,12 @@ function BookingEventContent() {
         </div>
       </section>
 
+      {editing && bookingItem.data ? (
+        <div className="@2xl:hidden">
+          <BookingItemInformationCard as="section" item={bookingItem.data} displayTimezone={preferences.timeZone} />
+        </div>
+      ) : null}
+
       <BookingEventContext.Provider
         value={{
           booking: document,
@@ -334,9 +346,15 @@ function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={eventColumnsClassName}>
+        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : eventColumnsClassName}>
           <Outlet />
-          <BookingMetadataAside booking={document} displayTimeZone={preferences.timeZone} />
+          {editing && bookingItem.data ? (
+            <div className="hidden @2xl:block">
+              <BookingItemInformationCard item={bookingItem.data} displayTimezone={preferences.timeZone} />
+            </div>
+          ) : (
+            <BookingMetadataAside booking={document} displayTimeZone={preferences.timeZone} />
+          )}
         </div>
       </BookingEventContext.Provider>
 
@@ -350,6 +368,7 @@ function BookingEventContent() {
 export function BookingDetailsView() {
   const { t, i18n } = useTranslation("booking");
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
+  const durationMinutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
   const facts: Array<[string, ReactNode]> = [
     [
       t("bookings.details.when"),
@@ -357,6 +376,7 @@ export function BookingDetailsView() {
         <time dateTime={booking.start}>{formatDateTime(booking.start, displayTimeZone, i18n.language)}</time>
         {" – "}
         <time dateTime={booking.end}>{formatDateTime(booking.end, displayTimeZone, i18n.language)}</time>
+        <span className="text-muted-foreground">{` · ${t("bookableItemDetails.minutes", { count: durationMinutes })}`}</span>
       </span>,
     ],
     ...(booking.kind === "BOOKING" && booking.bookedBy
