@@ -1,7 +1,5 @@
 {
-  "about": "src/eln/about/AboutEntrypoint.tsx",
   "accountActivity": "src/my-rspace/profile/AccountActivityEntrypoint.tsx",
-  "apiDocs": "src/modules/api/ApiDocsEntrypoint.tsx",
   "appBar": "src/eln/AppBarEntrypoint.tsx",
   "apps": "src/eln/apps/AppsEntrypoint.tsx",
   "associatedInventoryRecords": "src/eln-inventory-integration/AssociatedInventoryRecords/AssociatedInventoryRecordsEntrypoint.tsx",
@@ -26,6 +24,7 @@
   "materialsListing": "src/eln-inventory-integration/MaterialsListing/MaterialsListingEntrypoint.tsx",
   "memberAutoshareStatusWrapper": "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapperEntrypoint.tsx",
   "myLabGroups": "src/my-rspace/directory/groups/MyLabGroupsEntrypoint.tsx",
+  "newApp": "src/modules/common/app/AppEntrypoint.tsx",
   "newLabGroup": "src/system-groups/NewLabGroupEntrypoint.tsx",
   "notebookToolbar": "src/Toolbar/Notebook/NotebookToolbarEntrypoint.tsx",
   "oAuth": "src/my-rspace/profile/OAuthTriggerEntrypoint.tsx",
