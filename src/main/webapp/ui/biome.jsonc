@@ -7,7 +7,14 @@
     "defaultBranch": "main"
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.css",
+      "scripts/api-v2-valibot/**/*.mjs",
+      "scripts/api-v2-invalidation/**/*.mjs",
+      "!!src/modules/common/api/v2/generated"
+    ]
   },
   "formatter": {
     "enabled": true,
