@@ -19,7 +19,6 @@
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
     "build:stats": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true vite build --config vite.config.ts",
     "serve": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite --config vite.config.ts",
-    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.mjs && node scripts/api-v2-valibot/resources.mjs",
     "tsc": "cd src/main/webapp/ui && tsc --noEmit",
     "test-browser": "cd src/main/webapp/ui && cross-env vitest run --config vitest.browser.config.ts",
     "test-browser:ui": "cd src/main/webapp/ui && cross-env vitest --config vitest.browser.config.ts --ui --standalone",
@@ -43,11 +42,13 @@
     "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts",
     "feature-flags:generate": "node scripts/generate-feature-flags.mjs",
     "feature-flags:check": "node scripts/generate-feature-flags.mjs --check",
-    "lint:routes": "ls-lint --config .ls-lint.yml --workdir src/main/webapp/ui/src/routes && cd src/main/webapp/ui && biome lint --only=style/useFilenamingConvention src/routes"
+    "build-storybook": "pnpm run storybook:build",
+    "test-storybook": "pnpm run storybook:test",
+    "lint:routes": "ls-lint --config .ls-lint.yml --workdir src/main/webapp/ui/src/routes && cd src/main/webapp/ui && biome lint --only=style/useFilenamingConvention src/routes",
+    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.mjs && node scripts/api-v2-valibot/resources.mjs"
   },
   "devDependencies": {
-    "orval": "8.47.0",
-    "@orval/valibot": "8.47.0",
+    "@storybook/tanstack-react": "10.6.2",
     "@biomejs/biome": "2.5.9",
     "@hono/node-server": "2.1.5",
     "@msw/serve": "0.11.0",
@@ -103,7 +104,9 @@
     "eta": "4.6.0",
     "jsonc-parser": "3.3.1",
     "@ls-lint/ls-lint": "2.3.1",
-    "@tanstack/router-plugin": "1.168.46"
+    "@tanstack/router-plugin": "1.168.46",
+    "orval": "8.47.0",
+    "@orval/valibot": "8.47.0"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
