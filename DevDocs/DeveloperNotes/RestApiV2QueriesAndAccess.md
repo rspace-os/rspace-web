@@ -37,7 +37,8 @@ registration controls its visibility and expansion.
 
 ## Query configuration
 
-Use the [Table List adapter guide](TableListAdapters.md) to connect a frontend table to a collection endpoint.
+Use the [Table List adapter guide](TableListAdapters.md) to connect a frontend table to a collection
+endpoint.
 
 The resource definition also sets the allowed queries. Clients can use:
 
@@ -257,33 +258,32 @@ Access routes are enabled by the resource's `ResourceAccessSpec`:
 
 The bounded grantee lookup returns `{docs: [...]}` without paging metadata.
 
-Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
-are private and must not be cached. OpenAPI includes the routes only for registered access support.
+Only opted-in resources expose these routes; ordinary collections return `404`. Access documents are
+private and must not be cached. OpenAPI includes the routes only for registered access support.
 
-The shared `ResourceAccessEditor` consumes the access document, capabilities, grantee search,
-and concurrency contract. Resource adapters supply translated role labels and notices.
+The shared `ResourceAccessEditor` uses the access document, capabilities, grantee search, and
+concurrency contract. Resource adapters supply translated role labels and notices.
 
-The editor requires `mutationOptions` with `replaceAccess` and `leaveAccess` factories from
-the resource's generated module. Callers inject these alongside the registry entry, keeping
-invalidation in the generated rules. The common access-operation types depend on the shared
-generated access models, so a collection can opt in at a later layer.
+The editor requires `mutationOptions` with `replaceAccess` and `leaveAccess` factories from the
+resource's generated module. Callers inject these alongside the registry entry, keeping invalidation
+in the generated rules. The common access-operation types depend on the shared generated access
+models, so a collection can opt in at a later layer.
 
-The React `ResourceAccessEditor` keeps its draft within one resource and bearer-token session.
-Changing either starts a fresh editor; access documents and grantee search results use the same
-session boundary in their query keys. A failed background or conflict refresh keeps the loaded
-document, unsaved draft and navigation guard mounted. After a stale replacement, Retry loading
-latest remains available and saving stays blocked until recovery succeeds. A successful Leave closes
-its confirmation even if the caller retains inherited access. Its optional navigation callback runs
-only while the editor session that initiated the request remains mounted.
+The React `ResourceAccessEditor` keeps its draft within one resource. Changing the resource starts a
+fresh editor. Access documents and grantee search results use generated operation query keys without
+bearer tokens or identity scopes. A failed background or conflict refresh keeps the loaded document,
+unsaved draft and navigation guard mounted. After a stale replacement, Retry loading latest remains
+available and saving stays blocked until recovery succeeds. A successful Leave closes its
+confirmation even if the caller retains inherited access. Its optional navigation callback runs only
+while the editor session that initiated the request remains mounted.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
-`AccessDocumentation` stating its authentication rule and denial codes.
+`AccessDocumentation` with its authentication rule and denial codes.
 
 A custom `createAccess` function runs after structural parsing and before relationship resolution
-and persistence. For one create document, `context.requireInput()` returns the complete
-immutable `ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input
-order.
+and persistence. For one create document, `context.requireInput()` returns the complete immutable
+`ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input order.
 
 ```java
 AccessFunction documentedCreateAccess =
