@@ -127,15 +127,16 @@ BSL-2` matches `Level BSL-2 lab`. See `InstrumentCustomFieldTextSearchIT` for ex
 
 ### Fields reached through a relationship
 
-Declaring a relationship publishes every field of every destination it can reach, under
-`x-rspace-relationship-fields` on the `where` parameter and keyed by `<relationship>.<field>`:
+Declaring a relationship publishes every field of every destination it can reach as a selector
+in `x-rspace-filter`, keyed by `<relationship>.<field>`. `viaTitle` carries the relationship's
+title:
 
 ```json
-"x-rspace-relationship-fields": {
+"selectors": {
   "target.name":     {"schema": {"type": "string"}, "operators": ["==", "=contains=", "=like="],
-                      "wildcards": true, "title": "Name"},
+                      "wildcards": true, "title": "Name", "viaTitle": "Booking target"},
   "target.globalId": {"schema": {"type": "string"}, "operators": [], "wildcards": false,
-                      "title": "Global ID"}
+                      "title": "Global ID", "viaTitle": "Booking target"}
 }
 ```
 
@@ -145,10 +146,8 @@ operators are also available as filters.
 Keep wildcard equality and `=like=` as separate operations. Wildcard equality anchors the complete
 value. `=like=` finds words anywhere in the value. Client labels must show this difference.
 
-`operators` is empty for a field with no backing column, such as a global ID derived from an ID. The
-API publishes the field so clients can display it, but `where` rejects it as unsupported.
-`x-rspace-relationship-fields` lists fields available through a relationship. `x-rspace-filter`
-lists fields that a filter expression can use.
+`operators` is empty for a field with no backing column, such as a global ID derived from an ID.
+The API publishes the field so clients can display it, but `where` rejects it as unsupported.
 
 A polymorphic relationship publishes only fields shared by every destination with the same schema
 and the intersection of their operators. This avoids columns empty for half the rows and filters
@@ -156,6 +155,46 @@ whose meaning depends on the destination.
 
 The API publishes only scalar fields from one relationship hop. It does not publish a target's own
 relationships because the query language compiles one hop and depth 1 expands one target level.
+
+### Relationship filter picker metadata
+
+A single-target relationship with a declared global-ID prefix publishes an optional
+`picker` on its root selector in `x-rspace-filter`. For example, a `calibrations` resource can declare a single-target `instrument`
+relationship to `instruments` with the existing `IN` prefix. The generated selector includes:
+
+```json
+"picker": {"resource": "instruments", "identity": "globalId", "globalIdPrefix": "IN"}
+```
+
+Public target fields such as `instrument.name` appear as selectors beside it.
+The shared instruments source supplies its picker through the application registry.
+
+The client uses `resource` to select an application-owned source. Metadata never
+supplies a search URL. A new collection opts in through its declared relationship
+and existing target prefix, without a collection-specific query compiler. Register
+its source in the client registry if users need search and selection controls.
+Unprefixed and multi-target relationships omit the picker descriptor and retain
+their existing typed identity and compatible target-property selectors.
+`target.value`, `target.relationTo`, and the exact `createdBy.value==me` spelling
+remain compatible. Older clients can ignore `picker`.
+
+Target-property and runtime traversal remain one hop. Runtime traversal requires
+one target; existing multi-target identity and common scalar queries remain valid.
+A missing or inaccessible identity matches `exists=false` but never a negative
+identity comparison. A runtime predicate through a relationship always requires a
+readable target, including `exists=false`; that operator then means the readable
+target has no nonempty value. Page and count queries share these predicates.
+Request copies made during access checks or projection narrowing must preserve
+`ResourceRequest.runtime()`, which contains the resolved runtime selectors needed
+by the query compiler.
+
+Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. For client catalog
+allowlisting and redirect rejection, see [Relationship filters](TableListInteractions.md#relationship-filters).
+Target-only aliases may delegate catalogs; never infer the catalog resource from `viaResource`.
+
+The 50-comparison budget covers direct, relationship, and runtime
+predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection
+limits continue to apply independently; adding picker metadata does not raise them.
 
 ### Scalar read documents
 
@@ -677,6 +716,7 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
 
 ## Generated frontend access and relationship clients
 
