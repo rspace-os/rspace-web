@@ -39,7 +39,27 @@ i18n.services.i18nFormat.options.parseErrorHandler = throwOnIcuFormatError;
 beforeAll(async () => {
   await worker.start({
     quiet: true,
-    onUnhandledFrame: "bypass",
+    onUnhandledFrame({ frame }) {
+      // MSW 3 calls this onUnhandledFrame, replacing onUnhandledRequest.
+      if (frame.protocol !== "http") return;
+      const data = frame.data;
+      if (!data || typeof data !== "object" || !("request" in data) || !(data.request instanceof Request)) return;
+      const request = data.request;
+      const url = new URL(request.url);
+      // Only Vite/Vitest infrastructure and package assets reach the server.
+      if (
+        /^\/(?:@vite|@fs|@id|__vitest|node_modules|src|tinymce)(?:\/|$)/.test(url.pathname) ||
+        url.pathname === "/mockServiceWorker.js" ||
+        url.protocol === "blob:" ||
+        url.protocol === "data:"
+      )
+        return;
+      const message = `Unhandled app request: ${request.method} ${request.url}`;
+      const error = new Error(message);
+      // Report even when application code catches the rejected fetch.
+      globalThis.reportError(error);
+      throw error;
+    },
     serviceWorker: { url: "/mockServiceWorker.js" },
   });
 });
