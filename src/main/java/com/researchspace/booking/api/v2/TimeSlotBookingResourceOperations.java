@@ -10,6 +10,7 @@ import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
+import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingCreateExecutor;
 import com.researchspace.booking.service.BookingDurationException;
@@ -20,6 +21,7 @@ import com.researchspace.booking.service.BookingStartInPastException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
 import com.researchspace.booking.service.BookingWindowException;
+import com.researchspace.booking.service.ConflictingEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.booking.service.TimeSlotBookingManager.Create;
 import com.researchspace.booking.service.TimeSlotBookingManager.Patch;
@@ -35,7 +37,9 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.MessageSourceUtils;
 import jakarta.ws.rs.NotFoundException;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -44,12 +48,20 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 
 /** Adapts REST API v2 booking documents to the booking domain manager. */
 @Configuration(proxyBeanMethods = false)
 public final class TimeSlotBookingResourceOperations
     implements ResourceOperations<TimeSlotBooking, Long> {
+
+  private static final String BOOKING_PROBLEM_EXTENSIONS =
+      "Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer"
+          + " id, kind BOOKING or MAINTENANCE, and start/end date-time strings."
+          + " errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and"
+          + " bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer"
+          + " maximumDurationMinutes.";
 
   private static final EnumSet<ResourceOperation> OPERATIONS =
       EnumSet.of(
@@ -61,6 +73,7 @@ public final class TimeSlotBookingResourceOperations
 
   private final TimeSlotBookingManager manager;
   private final BookingCreateExecutor creates;
+  private final MessageSourceUtils messages;
   private final FeatureFlagManager featureFlags;
   private final CollectionDescription<TimeSlotBooking> description;
 
@@ -69,8 +82,10 @@ public final class TimeSlotBookingResourceOperations
       FeatureFlagManager featureFlags,
       @Qualifier(BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION)
           CollectionDescription<TimeSlotBooking> description,
+      MessageSourceUtils messages,
       BookingCreateExecutor creates) {
     this.creates = creates;
+    this.messages = messages;
     this.manager = manager;
     this.featureFlags = featureFlags;
     this.description = description;
@@ -85,7 +100,21 @@ public final class TimeSlotBookingResourceOperations
                 HttpStatus.BAD_REQUEST,
                 "errors.api.v2.booking.granularity",
                 "The interval violates the scheduling policy.",
-                exception -> exception.reason().errorCode()),
+                exception -> exception.reason().errorCode(),
+                exception ->
+                    exception.maximumDurationMinutes().isEmpty()
+                        ? new Object[0]
+                        : new Object[] {
+                          BookingDurationWords.format(
+                              exception.maximumDurationMinutes().getAsLong(),
+                              messages,
+                              LocaleContextHolder.getLocale())
+                        },
+                exception ->
+                    exception.maximumDurationMinutes().isEmpty()
+                        ? Map.of()
+                        : BookingProblem.maximumDuration(
+                            exception.maximumDurationMinutes().getAsLong())),
             ApiV2ErrorMapping.of(
                 BookingStartInPastException.class,
                 HttpStatus.BAD_REQUEST,
@@ -110,7 +139,23 @@ public final class TimeSlotBookingResourceOperations
                 BookingOverlapException.class,
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.overlap",
-                "The interval overlaps another booking."));
+                "The interval overlaps another booking or maintenance event. The problem's"
+                    + " conflict member identifies the first such event.",
+                ignored -> new Object[0],
+                exception -> BookingProblem.bookingConflict(conflict(exception.conflict()))),
+            ApiV2ErrorMapping.of(
+                BookingBufferConflictException.class,
+                HttpStatus.CONFLICT,
+                "errors.api.v2.booking.buffer",
+                "The interval is free but falls inside the buffer around another booking or"
+                    + " maintenance event. The problem's conflict, bufferBeforeMinutes, and"
+                    + " bufferAfterMinutes members describe it.",
+                ignored -> new Object[0],
+                exception ->
+                    BookingProblem.bookingBuffer(
+                        conflict(exception.conflict()),
+                        exception.bufferBeforeMinutes(),
+                        exception.bufferAfterMinutes())));
     List<ApiV2ErrorMapping> updateErrors =
         java.util.stream.Stream.concat(
                 commonErrors.stream(),
@@ -151,6 +196,8 @@ public final class TimeSlotBookingResourceOperations
         Map.of(
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
+                .problemSchema(400, com.researchspace.api.v2.controller.ApiV2Problem.class)
+                .problemSchema(409, com.researchspace.api.v2.controller.ApiV2Problem.class)
                 .description(
                     "Creates one confirmed booking for an instrument. Intervals may not exceed the"
                         + " instrument's configured maximum or the 366-day system maximum. Optional"
@@ -158,7 +205,8 @@ public final class TimeSlotBookingResourceOperations
                         + " hyphen) is scoped to the creating actor. The normalized original"
                         + " request is retained for the booking row's lifetime. Identical retries"
                         + " return the current booking with 200, including after edits or"
-                        + " cancellation; a different request returns 422.")
+                        + " cancellation; a different request returns 422. "
+                        + BOOKING_PROBLEM_EXTENSIONS)
                 .responseDescription(200, "Current booking returned for an identical create retry.")
                 .requestExample(
                     Map.of(
@@ -174,6 +222,14 @@ public final class TimeSlotBookingResourceOperations
                         "2026-10-25T09:00:00Z",
                         "purpose",
                         "Image plate 4"))
+                .build(),
+            ResourceOperation.UPDATE,
+            OpenApiOperationDocumentation.builder()
+                .problemSchema(400, com.researchspace.api.v2.controller.ApiV2Problem.class)
+                .problemSchema(409, com.researchspace.api.v2.controller.ApiV2Problem.class)
+                .description(
+                    "Partially updates one booking and returns the updated document. "
+                        + BOOKING_PROBLEM_EXTENSIONS)
                 .build()),
         Map.of(ResourceOperation.CREATE, createErrors, ResourceOperation.UPDATE, updateErrors),
         CollectionMutationLimits.DEFAULT);
@@ -222,6 +278,16 @@ public final class TimeSlotBookingResourceOperations
   @Override
   public void requireAuditAccess(TimeSlotBooking booking, User subject) {
     manager.requireCanViewAudit(booking, subject);
+  }
+
+  /**
+   * The booking's audit capability is already checked by {@link #requireAuditAccess}. People who
+   * book an item often share no group with its managers, so the user-directory filter would hide
+   * events that the configuration audit shows.
+   */
+  @Override
+  public boolean auditBypassesActorDirectory() {
+    return true;
   }
 
   @Override
@@ -300,5 +366,13 @@ public final class TimeSlotBookingResourceOperations
     if (!enabled(subject)) {
       throw new NotFoundException();
     }
+  }
+
+  private static BookingProblem.BookingConflict conflict(ConflictingEvent event) {
+    return new BookingProblem.BookingConflict(
+        event.id(),
+        event.kind().name(),
+        DateTimeFormatter.ISO_INSTANT.format(event.start()),
+        DateTimeFormatter.ISO_INSTANT.format(event.end()));
   }
 }

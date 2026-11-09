@@ -137,7 +137,15 @@ class ApiV2OpenApiGeneratorTest {
             timeSlotBookingOperations,
             Long::valueOf,
             "create-error",
-            "update-error");
+            "update-error",
+            EnumSet.allOf(ResourceOperation.class),
+            Map.of(
+                ResourceOperation.CREATE,
+                OpenApiOperationDocumentation.builder()
+                    .problemSchema(400, com.researchspace.api.v2.controller.ApiV2Problem.class)
+                    .problemSchema(409, com.researchspace.api.v2.controller.ApiV2Problem.class)
+                    .errorResponse(409, "errors.api.v2.booking.overlap", "Conflict.")
+                    .build()));
     ApiV2ResourceSpec<FeatureFlagResource, String> featureFlags =
         new ApiV2ResourceSpec<>(
             ApiV2FeatureFlagResource.DESCRIPTION,
@@ -246,6 +254,23 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/DeclaredResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+    Map<String, Object> openingHours = objectMap(readProperties.get("openingHours"));
+    assertEquals("array", openingHours.get("type"));
+    Map<String, Object> updateProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
+    Map<String, Object> hours = objectMap(updateProperties.get("openingHours"));
+    assertEquals(1, hours.get("minItems"));
+    assertEquals(7, hours.get("maxItems"));
+    Map<String, Object> item = objectMap(hours.get("items"));
+    assertEquals(false, item.get("additionalProperties"));
+    assertEquals(
+        java.util.Set.of("dayOfWeek", "start", "end"),
+        java.util.Set.copyOf((List<?>) item.get("required")));
+    assertTrue(objectMap(item.get("properties")).containsKey("dayOfWeek"));
+    for (String legacy : List.of("openingStart", "openingEnd", "openDays", "openingExceptions")) {
+      assertFalse(readProperties.containsKey(legacy));
+      assertFalse(updateProperties.containsKey(legacy));
+    }
   }
 
   @Test
@@ -597,6 +622,28 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(
         objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"))
             .containsKey("target.name"));
+  }
+
+  @Test
+  void problemResponsesUseTheExtensibleSharedProblemSchema() {
+    Map<String, Object> document = document();
+    Map<String, Object> components = schemas(document);
+    Map<String, Object> responses =
+        objectMap(
+            objectMap(
+                    objectMap(objectMap(document.get("paths")).get("/api/v2/bookings")).get("post"))
+                .get("responses"));
+    for (String status : List.of("400", "409")) {
+      assertEquals(
+          Map.of("$ref", "#/components/schemas/ApiV2Problem"),
+          objectMap(
+                  objectMap(objectMap(responses.get(status)).get("content"))
+                      .get("application/problem+json"))
+              .get("schema"));
+    }
+    assertTrue(
+        Boolean.TRUE.equals(objectMap(components.get("ApiV2Problem")).get("additionalProperties")));
+    assertFalse(components.containsKey("BookingProblem"));
   }
 
   @Test

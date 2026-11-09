@@ -4446,14 +4446,13 @@
     },
     "/api/v2/booking-configuration-targets" : {
       "get" : {
+        "description" : "Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.",
         "operationId" : "searchBookingConfigurationTargets",
         "parameters" : [ {
-          "description" : "Case-insensitive search text.",
+          "description" : "Optional case-insensitive search text. Omit it or provide an empty or whitespace-only value to browse the first `limit` eligible targets by name. A nonblank value must have at least two characters after trimming.",
           "in" : "query",
           "name" : "q",
-          "required" : true,
           "schema" : {
-            "minLength" : 2,
             "type" : "string"
           }
         }, {
@@ -5994,6 +5993,26 @@
                   "dayOfWeek" : 1,
                   "end" : "18:00",
                   "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 2,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 3,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 4,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 5,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 6,
+                  "end" : "16:00",
+                  "start" : "10:00"
                 } ],
                 "slotGranularityMinutes" : 5,
                 "target" : {
@@ -8934,7 +8953,7 @@
         "x-rspace-operation" : "LIST"
       },
       "post" : {
-        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.",
+        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "createBooking",
         "parameters" : [ {
           "description" : "Creator-scoped request identity, retained for the resource lifetime.",
@@ -9131,6 +9150,15 @@
             "content" : {
               "application/problem+json" : {
                 "examples" : {
+                  "errors.api.v2.booking.buffer" : {
+                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.buffer",
+                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                      "status" : 409,
+                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
+                    }
+                  },
                   "errors.api.v2.booking.concurrentModification" : {
                     "summary" : "The schedule changed while the booking was being created.",
                     "value" : {
@@ -9141,12 +9169,12 @@
                     }
                   },
                   "errors.api.v2.booking.overlap" : {
-                    "summary" : "The interval overlaps another booking.",
+                    "summary" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                     "value" : {
                       "code" : "errors.api.v2.booking.overlap",
-                      "detail" : "The interval overlaps another booking.",
+                      "detail" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                       "status" : 409,
-                      "title" : "The interval overlaps another booking."
+                      "title" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event."
                     }
                   },
                   "errors.api.v2.booking.target.unavailable" : {
@@ -9164,7 +9192,7 @@
                 }
               }
             },
-            "description" : "The selected target is unavailable. The interval overlaps another booking. The schedule changed while the booking was being created."
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The schedule changed while the booking was being created."
           },
           "415" : {
             "$ref" : "#/components/responses/UnsupportedMediaType"
@@ -9783,7 +9811,7 @@
         "x-rspace-operation" : "READ"
       },
       "patch" : {
-        "description" : "Partially updates one bookings and returns the updated document.",
+        "description" : "Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "updateBooking",
         "parameters" : [ {
           "description" : "Resource identifier.",
@@ -9930,13 +9958,22 @@
             "content" : {
               "application/problem+json" : {
                 "examples" : {
+                  "errors.api.v2.booking.buffer" : {
+                    "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.buffer",
+                      "detail" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+                      "status" : 409,
+                      "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
+                    }
+                  },
                   "errors.api.v2.booking.overlap" : {
-                    "summary" : "The interval overlaps another booking.",
+                    "summary" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                     "value" : {
                       "code" : "errors.api.v2.booking.overlap",
-                      "detail" : "The interval overlaps another booking.",
+                      "detail" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
                       "status" : 409,
-                      "title" : "The interval overlaps another booking."
+                      "title" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event."
                     }
                   },
                   "errors.api.v2.booking.state.transition" : {
@@ -9963,7 +10000,7 @@
                 }
               }
             },
-            "description" : "The selected target is unavailable. The interval overlaps another booking. The requested state transition is invalid."
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The requested state transition is invalid."
           },
           "412" : {
             "content" : {

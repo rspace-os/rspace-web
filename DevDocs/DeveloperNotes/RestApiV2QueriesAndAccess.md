@@ -607,8 +607,9 @@ Declare each non-standard error in the resource spec. Each mapping:
 | 2. | Resolves the response detail from the stable message key. |
 | 3. | Adds the error response to OpenAPI. |
 
-Use `ApiV2ErrorMapping.of` with an argument extractor when a localized detail needs values from the
-exception. Keep runtime translation and the documented response on the same mapping.
+The six-argument `ApiV2ErrorMapping.of` also extracts `ApiV2Problem.Extensions` from the exception,
+for problems whose body carries typed extension members. Add a new member to `ApiV2Problem` as a
+nullable component so OpenAPI documents it.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
 continues through the normal controller-advice chain. Startup fails if a mapping refers to an
@@ -715,6 +716,7 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
 
 ## Generated frontend access and relationship clients
 
