@@ -21,7 +21,7 @@ class ApiV2OpenApiSecurityTest {
 
   @Test
   void controllerSecurityMatchesTheRuntimeEndpointCatalog() {
-    var endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog();
+    var endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog(List.of());
     try (var handlers = ApiV2TestHandlerMappings.newContext()) {
       var mapping = ApiV2TestHandlerMappings.mapping(handlers);
       var generator =

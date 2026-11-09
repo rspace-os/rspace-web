@@ -233,6 +233,154 @@ export const BookingAdminSettingsDocument = v.object({
   timezoneMode: BookingTimezoneMode,
 });
 
+export const BookingEventKind = v.picklist(["BOOKING", "MAINTENANCE"]);
+
+export const UsersReference = v.object({
+  relationTo: v.literal("users"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const UsersRead = v.object({
+  createdAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was created."))),
+  email: v.optional(v.pipe(v.string(), v.description("User's email address."))),
+  firstName: v.optional(v.pipe(v.string(), v.description("User's given name."))),
+  id: v.pipe(v.number(), v.integer(), v.description("Stable user identifier.")),
+  lastName: v.optional(v.pipe(v.string(), v.description("User's family name."))),
+  username: v.optional(v.pipe(v.string(), v.description("RSpace login name."))),
+});
+
+export const UsersRelationship = v.union([
+  UsersReference,
+  v.object({
+    relationTo: v.literal("users"),
+    value: UsersRead,
+  }),
+]);
+
+export const BookingState = v.picklist(["CONFIRMED", "CANCELLED"]);
+
+export const InstrumentsReference = v.object({
+  relationTo: v.literal("instruments"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const ContainersReference = v.object({
+  relationTo: v.literal("containers"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const ContainersRead = v.object({
+  containerType: v.optional(v.picklist(["LIST", "GRID", "IMAGE", "WORKBENCH"])),
+  deleted: v.optional(v.boolean()),
+  globalId: v.optional(v.string()),
+  id: v.pipe(v.number(), v.integer()),
+  name: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+    ),
+  ),
+});
+
+export const InstrumentsRead = v.object({
+  customFields: v.optional(v.record(v.string(), v.unknown())),
+  deleted: v.optional(v.pipe(v.boolean(), v.description("True when the instrument is in the trash."))),
+  extraFields: v.optional(v.record(v.string(), v.unknown())),
+  globalId: v.optional(v.pipe(v.string(), v.description("RSpace global identifier."))),
+  id: v.pipe(v.number(), v.integer(), v.description("Stable instrument identifier.")),
+  name: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description("Display name of the instrument."),
+    ),
+  ),
+  parentContainer: v.optional(
+    v.union([
+      v.union([
+        ContainersReference,
+        v.object({
+          relationTo: v.literal("containers"),
+          value: ContainersRead,
+        }),
+      ]),
+      v.null(),
+    ]),
+  ),
+});
+
+export const InstrumentsRelationship = v.union([
+  v.intersect([
+    InstrumentsReference,
+    v.object({
+      globalId: v.pipe(v.string(), v.regex(/^IN\d+$/)),
+    }),
+  ]),
+  v.object({
+    globalId: v.pipe(v.string(), v.regex(/^IN\d+$/)),
+    relationTo: v.literal("instruments"),
+    value: InstrumentsRead,
+  }),
+]);
+
+export const BookingsRead = v.object({
+  bookedBy: v.nullish(v.string()),
+  canCancel: v.optional(v.boolean()),
+  canEdit: v.optional(v.boolean()),
+  canViewConfiguration: v.optional(v.boolean()),
+  createdAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  createdBy: v.nullish(v.string()),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  id: v.pipe(v.number(), v.integer()),
+  kind: v.optional(BookingEventKind),
+  privacy: v.optional(v.string()),
+  purpose: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000),
+        "Invalid length: Expected <=1000",
+      ),
+    ),
+  ),
+  requester: v.optional(
+    v.pipe(
+      v.union([UsersRelationship, v.null()]),
+      v.description("The user who requested this event, when the event is visible in full detail."),
+    ),
+  ),
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  state: v.optional(BookingState),
+  target: v.optional(v.union([InstrumentsRelationship, v.null()])),
+  "target.customFields": v.optional(v.record(v.string(), v.unknown())),
+  timezone: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+    ),
+  ),
+  updatedAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  version: v.optional(v.pipe(v.number(), v.integer())),
+});
+
+export const BookingCalendarEventsPage = v.object({
+  docs: v.array(BookingsRead),
+  hasNextPage: v.boolean(),
+  limit: v.pipe(v.number(), v.integer()),
+  page: v.pipe(v.number(), v.integer()),
+  totalDocs: v.pipe(v.number(), v.integer()),
+  totalIsLowerBound: v.boolean(),
+});
+
 export const BookingCatalogueCapability = v.picklist(["CREATE_BOOKING", "CREATE_BLOCKOUT"]);
 
 export const BookingCatalogueFacets = v.object({
@@ -306,28 +454,6 @@ export const BookingConfigurationTargetDirectoryDocument = v.object({
   docs: v.array(BookingConfigurationTarget),
 });
 
-export const UsersReference = v.object({
-  relationTo: v.literal("users"),
-  value: v.pipe(v.number(), v.integer()),
-});
-
-export const UsersRead = v.object({
-  createdAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was created."))),
-  email: v.optional(v.pipe(v.string(), v.description("User's email address."))),
-  firstName: v.optional(v.pipe(v.string(), v.description("User's given name."))),
-  id: v.pipe(v.number(), v.integer(), v.description("Stable user identifier.")),
-  lastName: v.optional(v.pipe(v.string(), v.description("User's family name."))),
-  username: v.optional(v.pipe(v.string(), v.description("RSpace login name."))),
-});
-
-export const UsersRelationship = v.union([
-  UsersReference,
-  v.object({
-    relationTo: v.literal("users"),
-    value: UsersRead,
-  }),
-]);
-
 export const DeclaredBookingOpeningHoursEntry = v.object({
   dayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7), v.description("ISO weekday, Monday = 1.")),
   end: v.pipe(
@@ -368,76 +494,6 @@ export const DeclaredResourceRoleSource = v.object({
   kind: v.optional(ResourceRoleSourceKind),
   role: v.optional(v.string()),
 });
-
-export const InstrumentsReference = v.object({
-  relationTo: v.literal("instruments"),
-  value: v.pipe(v.number(), v.integer()),
-});
-
-export const ContainersReference = v.object({
-  relationTo: v.literal("containers"),
-  value: v.pipe(v.number(), v.integer()),
-});
-
-export const ContainersRead = v.object({
-  containerType: v.optional(v.picklist(["LIST", "GRID", "IMAGE", "WORKBENCH"])),
-  deleted: v.optional(v.boolean()),
-  globalId: v.optional(v.string()),
-  id: v.pipe(v.number(), v.integer()),
-  name: v.optional(
-    v.pipe(
-      v.string(),
-      v.check(
-        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
-        "Invalid length: Expected <=255",
-      ),
-    ),
-  ),
-});
-
-export const InstrumentsRead = v.object({
-  customFields: v.optional(v.record(v.string(), v.unknown())),
-  deleted: v.optional(v.pipe(v.boolean(), v.description("True when the instrument is in the trash."))),
-  extraFields: v.optional(v.record(v.string(), v.unknown())),
-  globalId: v.optional(v.pipe(v.string(), v.description("RSpace global identifier."))),
-  id: v.pipe(v.number(), v.integer(), v.description("Stable instrument identifier.")),
-  name: v.optional(
-    v.pipe(
-      v.string(),
-      v.check(
-        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
-        "Invalid length: Expected <=255",
-      ),
-      v.description("Display name of the instrument."),
-    ),
-  ),
-  parentContainer: v.optional(
-    v.union([
-      v.union([
-        ContainersReference,
-        v.object({
-          relationTo: v.literal("containers"),
-          value: ContainersRead,
-        }),
-      ]),
-      v.null(),
-    ]),
-  ),
-});
-
-export const InstrumentsRelationship = v.union([
-  v.intersect([
-    InstrumentsReference,
-    v.object({
-      globalId: v.pipe(v.string(), v.regex(/^IN\d+$/)),
-    }),
-  ]),
-  v.object({
-    globalId: v.pipe(v.string(), v.regex(/^IN\d+$/)),
-    relationTo: v.literal("instruments"),
-    value: InstrumentsRead,
-  }),
-]);
 
 export const BookingConfigurationsRead = v.object({
   allowDoubleBooking: v.optional(v.pipe(v.boolean(), v.description("Whether overlapping bookings are permitted."))),
@@ -676,8 +732,6 @@ export const BookingDisplayPreferencesReplacement = v.object({
   timezoneMode: BookingTimezoneMode,
 });
 
-export const BookingEventKind = v.picklist(["BOOKING", "MAINTENANCE"]);
-
 export const BookingSettingsDocument = v.object({
   allowDoubleBooking: v.boolean(),
   availabilityWindowEnd: v.string(),
@@ -731,8 +785,6 @@ export const BookingSettingsPatch = v.object({
   timezoneMode: v.optional(v.union([BookingTimezoneMode, v.null()])),
 });
 
-export const BookingState = v.picklist(["CONFIRMED", "CANCELLED"]);
-
 export const BookingsCreate = v.object({
   end: v.pipe(v.string(), v.isoTimestamp()),
   kind: v.optional(BookingEventKind),
@@ -747,49 +799,6 @@ export const BookingsCreate = v.object({
   ),
   start: v.pipe(v.string(), v.isoTimestamp()),
   target: InstrumentsRelationshipInput,
-});
-
-export const BookingsRead = v.object({
-  bookedBy: v.nullish(v.string()),
-  canCancel: v.optional(v.boolean()),
-  canEdit: v.optional(v.boolean()),
-  canViewConfiguration: v.optional(v.boolean()),
-  createdAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
-  createdBy: v.nullish(v.string()),
-  end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
-  id: v.pipe(v.number(), v.integer()),
-  kind: v.optional(BookingEventKind),
-  privacy: v.optional(v.string()),
-  purpose: v.nullish(
-    v.pipe(
-      v.string(),
-      v.check(
-        (value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000),
-        "Invalid length: Expected <=1000",
-      ),
-    ),
-  ),
-  requester: v.optional(
-    v.pipe(
-      v.union([UsersRelationship, v.null()]),
-      v.description("The user who requested this event, when the event is visible in full detail."),
-    ),
-  ),
-  start: v.optional(v.pipe(v.string(), v.isoTimestamp())),
-  state: v.optional(BookingState),
-  target: v.optional(v.union([InstrumentsRelationship, v.null()])),
-  "target.customFields": v.optional(v.record(v.string(), v.unknown())),
-  timezone: v.nullish(
-    v.pipe(
-      v.string(),
-      v.check(
-        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
-        "Invalid length: Expected <=255",
-      ),
-    ),
-  ),
-  updatedAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
-  version: v.optional(v.pipe(v.number(), v.integer())),
 });
 
 export const BookingsReference = v.object({
@@ -1024,6 +1033,43 @@ export const ResourceGranteeDirectoryDocument = v.object({
 });
 
 /**
+ * @summary Search visible calendar events
+ */
+export const SearchCalendarEventsQueryParams = v.object({
+  start: v.pipe(v.string(), v.isoTimestamp(), v.description("Inclusive interval start.")),
+  end: v.pipe(v.string(), v.isoTimestamp(), v.description("Exclusive interval end.")),
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        "RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.",
+      ),
+    ),
+  ),
+  q: v.optional(v.string()),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer()),
+  fields: v.optional(
+    v.pipe(
+      v.record(v.string(), v.string()),
+      v.description(
+        "Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.",
+      ),
+    ),
+  ),
+  exclude: v.optional(
+    v.pipe(
+      v.record(v.string(), v.string()),
+      v.description(
+        "Comma-separated nested field paths by resource type, using square-bracket keys such as exclude[resource]=id,name.",
+      ),
+    ),
+  ),
+});
+
+export const SearchCalendarEventsResponse = BookingCalendarEventsPage;
+
+/**
  * @summary Search the Booking catalogue
  */
 export const SearchBookingCatalogueQueryParams = v.object({
@@ -1045,6 +1091,35 @@ export const SearchBookingCatalogueQueryParams = v.object({
 });
 
 export const SearchBookingCatalogueResponse = BookingCataloguePageDocument;
+
+/**
+ * @summary Search bookable instruments in a calendar interval
+ */
+export const SearchCalendarCatalogueQueryParams = v.object({
+  start: v.pipe(v.string(), v.isoTimestamp(), v.description("Inclusive interval start.")),
+  end: v.pipe(v.string(), v.isoTimestamp(), v.description("Exclusive interval end.")),
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+      ),
+    ),
+  ),
+  eventWhere: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        "RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups.",
+      ),
+    ),
+  ),
+  q: v.optional(v.string()),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer()),
+});
+
+export const SearchCalendarCatalogueResponse = BookingCataloguePageDocument;
 
 /**
  * @summary Search Booking catalogue locations

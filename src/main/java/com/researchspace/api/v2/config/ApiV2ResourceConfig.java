@@ -18,6 +18,7 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.service.ResourceMutationManager;
 import jakarta.servlet.ServletContext;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.MessageSource;
@@ -49,20 +50,36 @@ public class ApiV2ResourceConfig {
     return catalog.registry();
   }
 
+  /**
+   * Sets who may call each REST API v2 controller.
+   *
+   * <p>The four rules below are for the API's own controllers, so they are written here. Do not
+   * move them into separate beans. Writing them here means they always exist when this catalog
+   * exists. A controller with no rule quietly gets the default rule: sign in with API credentials.
+   * Public endpoints would then ask for a login, and the token page, which uses the browser login,
+   * would stop working.
+   *
+   * <p>Features may add their own rules as {@link ApiV2EndpointSpec} beans. When the app starts,
+   * Spring puts every one of those beans into {@code contributions}. Shared API code must not name
+   * a feature, so feature rules arrive this way instead of being listed here.
+   */
   @Bean
-  ApiV2EndpointCatalog apiV2EndpointCatalog() {
-    return new ApiV2EndpointCatalog(
-        List.of(
-            // Reads may be public for resources such as maintenance notices. Every mutation
-            // requires authentication before Spring materializes its request body; the resource
-            // policy subsequently applies the more specific role/row authorization.
-            new ApiV2EndpointSpec(ApiV2CrudController.class, CRUD_ENDPOINT_ACCESS),
-            new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()),
-            new ApiV2EndpointSpec(
-                OAuthTokensV2Controller.class,
-                AccessFunction.authenticated(),
-                ApiV2AuthenticationMode.BROWSER_SESSION),
-            new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
+  ApiV2EndpointCatalog apiV2EndpointCatalog(List<ApiV2EndpointSpec> contributions) {
+    var specs =
+        new ArrayList<>(
+            List.of(
+                // Reads may be public for resources such as maintenance notices. Every mutation
+                // requires authentication before Spring materializes its request body; the resource
+                // policy subsequently applies the more specific role/row authorization.
+                new ApiV2EndpointSpec(ApiV2CrudController.class, CRUD_ENDPOINT_ACCESS),
+                new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()),
+                new ApiV2EndpointSpec(
+                    OAuthTokensV2Controller.class,
+                    AccessFunction.authenticated(),
+                    ApiV2AuthenticationMode.BROWSER_SESSION),
+                new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
+    specs.addAll(contributions);
+    return new ApiV2EndpointCatalog(specs);
   }
 
   @Bean

@@ -36,6 +36,10 @@ import {
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
+import {
+  getSearchBookingCatalogueLocationsQueryKey,
+  getSearchBookingCatalogueQueryKey,
+} from "../booking-catalogue/booking-catalogue.ts";
 import { getSearchBookingConfigurationTargetsQueryKey } from "../booking-configuration-targets/booking-configuration-targets.ts";
 import type {
   ApiV2Problem,
@@ -202,6 +206,8 @@ export const getDeleteManyBookingConfigurationsMutationOptions = <
           [
             getListBookingConfigurationsQueryKey(),
             getCountBookingConfigurationsQueryKey(),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -688,6 +694,8 @@ export const getUpdateManyBookingConfigurationsMutationOptions = <
           [
             getListBookingConfigurationsQueryKey(),
             getCountBookingConfigurationsQueryKey(),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -837,6 +845,8 @@ export const getCreateBookingConfigurationMutationOptions = <
           [
             getListBookingConfigurationsQueryKey(),
             getCountBookingConfigurationsQueryKey(),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -981,6 +991,8 @@ export const getCreateManyBookingConfigurationsMutationOptions = <
           [
             getListBookingConfigurationsQueryKey(),
             getCountBookingConfigurationsQueryKey(),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -1481,6 +1493,8 @@ export const getDeleteBookingConfigurationMutationOptions = <
             getGetBookingConfigurationQueryKey(variables.id),
             getGetBookingConfigurationAccessQueryKey(variables.id),
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -2024,6 +2038,8 @@ export const getUpdateBookingConfigurationMutationOptions = <
             getGetBookingConfigurationQueryKey(variables.id),
             getGetBookingConfigurationAccessQueryKey(variables.id),
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -2503,6 +2519,8 @@ export const getReplaceBookingConfigurationAccessMutationOptions = <
             getGetBookingConfigurationQueryKey(variables.id),
             getGetBookingConfigurationAccessQueryKey(variables.id),
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }
@@ -3026,6 +3044,8 @@ export const getLeaveBookingConfigurationAccessMutationOptions = <
             getGetBookingConfigurationQueryKey(variables.id),
             getGetBookingConfigurationAccessQueryKey(variables.id),
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }

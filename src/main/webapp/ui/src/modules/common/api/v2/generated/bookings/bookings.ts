@@ -34,9 +34,12 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
-
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
+import {
+  getSearchBookingCatalogueLocationsQueryKey,
+  getSearchBookingCatalogueQueryKey,
+} from "../booking-catalogue/booking-catalogue.ts";
 import type {
   ApiV2Problem,
   AuditEventsResponse,
@@ -512,7 +515,12 @@ export const getCreateBookingMutationOptions = <
     if (!options?.skipInvalidation) {
       queryClient.invalidateQueries({
         predicate: (query) =>
-          [getListBookingsQueryKey(), getCountBookingsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)),
+          [
+            getListBookingsQueryKey(),
+            getCountBookingsQueryKey(),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
+          ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }
     mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
@@ -1359,6 +1367,8 @@ export const getUpdateBookingMutationOptions = <
             getCountBookingsQueryKey(),
             getGetBookingQueryKey(variables.id),
             getListBookingAuditEventsQueryKey(variables.id),
+            getSearchBookingCatalogueQueryKey(),
+            getSearchBookingCatalogueLocationsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }
