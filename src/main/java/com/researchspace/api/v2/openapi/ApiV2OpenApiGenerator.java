@@ -127,15 +127,7 @@ public final class ApiV2OpenApiGenerator {
         .extensions(Map.of("x-rspace-rate-limits", rateLimitsExtension(text)));
   }
 
-  private Map<String, Object> privateNoStoreHeaders() {
-    return ordered(
-        "Cache-Control",
-        ordered(
-            "description",
-            text.get(Key.HEADER_PRIVATE_NO_STORE),
-            "schema",
-            ordered("type", "string", "const", "private, no-store")));
-  }
+
 
   private void addPaths(
       Map<String, Object> paths,
