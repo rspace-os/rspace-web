@@ -46,7 +46,7 @@ type MappedInstrument = Omit<InstrumentsRead, "name" | "deleted" | "parentContai
   parentContainer?: ReturnType<typeof mapParentContainer>;
 };
 
-function mapTarget(target: BookingsRead["target"]) {
+export function mapBookingTarget(target: BookingsRead["target"]) {
   const reference = required(target, "target");
   if (typeof reference.value === "number") throw new BookingUnavailableError("Booking target is not expanded");
   const item = reference.value;
@@ -78,7 +78,7 @@ function mapIdentity<TTarget>(input: BookingsRead, target: TTarget) {
 export function mapBookingSummary(input: BookingsRead) {
   const summary = {
     id: input.id,
-    target: mapTarget(input.target),
+    target: mapBookingTarget(input.target),
     timezone: required(input.timezone, "timezone"),
     start: required(input.start, "start"),
     end: required(input.end, "end"),
@@ -120,7 +120,7 @@ function mapPrivacy(input: BookingsRead) {
 }
 
 export function mapBooking(input: BookingsRead) {
-  return { ...mapIdentity(input, mapTarget(input.target)), ...mapPrivacy(input) };
+  return { ...mapIdentity(input, mapBookingTarget(input.target)), ...mapPrivacy(input) };
 }
 export function mapBookingDetails(input: BookingsRead) {
   const booking = mapBooking(input);
@@ -136,7 +136,10 @@ export function mapBookingListDocument(input: BookingsRead) {
 }
 export function mapBookingMutation(input: BookingsRead) {
   const target = required(input.target, "target");
-  return { ...mapIdentity(input, typeof target.value === "number" ? target : mapTarget(target)), ...mapPrivacy(input) };
+  return {
+    ...mapIdentity(input, typeof target.value === "number" ? target : mapBookingTarget(target)),
+    ...mapPrivacy(input),
+  };
 }
 
 export type Booking = ReturnType<typeof mapBooking>;
