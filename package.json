@@ -18,6 +18,7 @@
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
     "build:stats": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true vite build --config vite.config.ts",
     "serve": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite --config vite.config.ts",
+    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.mjs",
     "tsc": "cd src/main/webapp/ui && tsc --noEmit",
     "test-browser": "cd src/main/webapp/ui && cross-env vitest run --config vitest.browser.config.ts",
     "test-browser:ui": "cd src/main/webapp/ui && cross-env vitest --config vitest.browser.config.ts --ui --standalone",
@@ -41,6 +42,8 @@
     "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts"
   },
   "devDependencies": {
+    "orval": "8.47.0",
+    "@orval/valibot": "8.47.0",
     "@biomejs/biome": "2.5.9",
     "@hono/node-server": "2.1.5",
     "@msw/serve": "0.11.0",

@@ -162,6 +162,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check generated API v2 client
+        run: |
+          pnpm generate:api-v2
+          pnpm test --config scripts/api-v2-invalidation/vitest.config.ts
+          git diff --exit-code -- src/main/webapp/ui/src/modules/common/api/v2/generated src/main/webapp/ui/src/modules/common/api/v2/openapi.json
+
       # Biome lint + format check over the changed JS/TS/CSS frontend, run
       # before tsc. lint:ci uses --error-on-warnings --diagnostic-level=info, so
       # any Biome info/warning/error fails the run.
