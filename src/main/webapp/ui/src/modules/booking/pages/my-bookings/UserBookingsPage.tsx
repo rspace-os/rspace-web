@@ -17,6 +17,7 @@ import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/ap
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import type { CollectionRow } from "@/modules/common/collection/config";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/types";
@@ -25,6 +26,7 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
+import { cn } from "@/modules/common/utils/cn";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
@@ -99,6 +101,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
   const asOf = useAlignedMinute();
@@ -139,12 +142,13 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   );
   const request = useMemo(
     () => ({
+      authScope: currentUser.id,
       depth: 1,
       projection,
       baseFilter,
       validateRows: BookingListDocumentTableValidation.validateRows,
     }),
-    [baseFilter],
+    [baseFilter, currentUser.id],
   );
   const table = useApiV2TableList({
     resource: bookingListResource,
@@ -195,7 +199,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   render={
                     <Link
                       aria-label={itemCalendarLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/bookable-items/$globalId/{-$tab}"
                       params={{ globalId: row.target.globalId, tab: undefined }}
@@ -213,7 +217,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   render={
                     <Link
                       aria-label={viewDetailsLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/calendar/bookings/$id"
                       params={{ id: String(row.id) }}
@@ -231,7 +235,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   render={
                     <Link
                       aria-label={editLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
                       data-slot="button"
                       to="/booking/calendar/bookings/$id/edit"
                       params={{ id: String(row.id) }}
@@ -258,6 +262,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                 itemName={row.target?.value.name ?? commonT("values.unknownItem")}
                 period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
                 iconOnly
+                triggerVariant="outline"
                 onDeleted={async () => {
                   await table.refetch();
                 }}

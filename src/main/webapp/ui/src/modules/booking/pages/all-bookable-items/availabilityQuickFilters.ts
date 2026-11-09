@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import * as v from "valibot";
 import { type AvailabilityInterval, classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
 import {
   assertBookingCataloguePage,
@@ -8,18 +7,13 @@ import {
   BookingCatalogueRequestTooLargeError,
   type BookingCatalogueSearch,
   bookingCatalogueRequestFits,
+  catalogueItemAsConfiguration,
   fetchAllBookingCataloguePages,
+  fetchBookingCatalogue,
   fetchBookingCataloguePageWithinSafeBudget,
 } from "@/modules/booking/domain/bookingCatalogue";
-import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
-import { mapOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
-import {
-  getListBookingConfigurationsQueryKey,
-  listBookingConfigurations,
-} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
-import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterExpression, FilterValue } from "@/modules/common/table-list/types";
@@ -42,6 +36,29 @@ export function hasAvailabilityFilter(expression: FilterExpression<AllBookableIt
       ? expression.field === "availability"
       : expression.children.some(hasAvailabilityFilter))
   );
+}
+
+/**
+ * Derives the safe item-only predicate to use while loading availability candidates.
+ *
+ * Availability is computed locally, so its comparisons become `true`. A local
+ * comparison in an OR branch makes that branch unrestricted; a local comparison
+ * in an AND branch can simply be removed. Returning null means the candidate
+ * request must remain unrestricted.
+ */
+export function deriveAvailabilityCandidateFilter(
+  expression: FilterExpression<AllBookableItem> | null,
+): FilterExpression<AllBookableItem> | null {
+  if (!expression) return null;
+  if (expression.kind === "comparison") return expression.field === "availability" ? null : expression;
+
+  const children = expression.children.map(deriveAvailabilityCandidateFilter);
+  if (expression.kind === "or" && children.some((child) => child === null)) return null;
+
+  const remaining = children.filter((child): child is FilterExpression<AllBookableItem> => child !== null);
+  if (remaining.length === 0) return null;
+  if (remaining.length === 1) return remaining[0];
+  return { ...expression, children: remaining };
 }
 
 /** Replaces only availability predicates; other rules and their grouping remain intact. */
@@ -571,34 +588,18 @@ export async function fetchAvailabilityFilteredCatalogue(
   };
 }
 
-function mapAvailabilityCandidate(input: BookingConfigurationsRead) {
-  return {
-    target: input.target === null ? null : { globalId: required(input.target?.globalId, "target.globalId") },
-    timezone: required(input.timezone, "timezone"),
-    slotGranularityMinutes: required(input.slotGranularityMinutes, "slotGranularityMinutes"),
-    openingHours: mapOpeningHours(
-      v.parse(v.array(BookingOpeningHoursEntrySchema), required(input.openingHours, "openingHours")),
-    ),
-    bufferBeforeMinutes: required(input.bufferBeforeMinutes, "bufferBeforeMinutes"),
-    bufferAfterMinutes: required(input.bufferAfterMinutes, "bufferAfterMinutes"),
-    maxBookingDurationMinutes: required(input.maxBookingDurationMinutes, "maxBookingDurationMinutes"),
-    allowDoubleBooking: required(input.allowDoubleBooking, "allowDoubleBooking"),
-  };
-}
-type AvailabilityCandidate = ReturnType<typeof mapAvailabilityCandidate>;
-function candidateParameters(page: number) {
-  return {
-    where: "enabled==true;state==ACTIVE;target.deleted==false",
-    page,
-    limit: 100,
-    totals: true,
-    depth: 1,
-    fields: {
-      "booking-configurations":
-        "target,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
-    },
-  };
-}
+type AvailabilityCandidate = Pick<
+  BookingConfiguration,
+  | "target"
+  | "timezone"
+  | "slotGranularityMinutes"
+  | "openingHours"
+  | "bufferBeforeMinutes"
+  | "bufferAfterMinutes"
+  | "maxBookingDurationMinutes"
+  | "allowDoubleBooking"
+>;
+type CandidateSearch = { q?: string; types?: readonly string[] };
 
 export class AvailabilityCandidateLimitError extends Error {
   constructor() {
@@ -608,23 +609,21 @@ export class AvailabilityCandidateLimitError extends Error {
 }
 
 const now = () => new Date();
-async function fetchCandidatePage(page: number, signal: AbortSignal) {
-  const result = await listBookingConfigurations(candidateParameters(page), { signal });
-  return {
-    docs: result.docs.map(mapAvailabilityCandidate),
-    totalDocs: required(result.totalDocs, "totalDocs"),
-    totalPages: required(result.totalPages, "totalPages"),
-  };
-}
-
-export async function fetchAvailabilityCandidates(signal: AbortSignal): Promise<readonly AvailabilityCandidate[]> {
-  const first = await fetchCandidatePage(1, signal);
-  if (first.totalDocs > 1000) throw new AvailabilityCandidateLimitError();
-  const candidates = [...first.docs];
-  for (let page = 2; page <= first.totalPages; page += 1) {
-    candidates.push(...(await fetchCandidatePage(page, signal)).docs);
+export async function fetchAvailabilityCandidates(
+  signal: AbortSignal,
+  candidateWhere?: string,
+  search: CandidateSearch = {},
+): Promise<readonly AvailabilityCandidate[]> {
+  const fetchPage = (page: number) =>
+    fetchBookingCatalogue({ ...search, where: candidateWhere, page, pageSize: 100 }, signal);
+  const first = await fetchPage(1);
+  if (first.total > 1000) throw new AvailabilityCandidateLimitError();
+  const candidates = [...first.items];
+  for (let page = 2; page <= Math.ceil(first.total / first.pageSize); page += 1) {
+    candidates.push(...(await fetchPage(page)).items);
+    if (candidates.length > 1000) throw new AvailabilityCandidateLimitError();
   }
-  return candidates.filter((candidate) => candidate.target !== null);
+  return candidates.map(catalogueItemAsConfiguration);
 }
 
 export async function loadAvailabilityQuickIndex(
@@ -672,20 +671,36 @@ export function useAvailabilityQuickFilterIndex(
   availabilityWindowStart = "00:00",
   availabilityWindowEnd = "24:00",
   clock: () => Date = now,
+  candidateWhere?: string,
+  enabled = true,
+  _authScope?: string | number,
+  search: CandidateSearch = {},
 ) {
   const minute = useAlignedMinute(clock);
   const current = new Date(minute);
   const candidates = useQuery({
-    queryKey: [...getListBookingConfigurationsQueryKey(candidateParameters(1)), "availabilityCandidates"],
-    queryFn: ({ signal }) => fetchAvailabilityCandidates(signal),
+    queryKey: [
+      ...getSearchBookingCatalogueQueryKey({
+        q: search.q?.trim() || undefined,
+        type: search.types ? [...search.types] : undefined,
+        where: candidateWhere,
+        page: 1,
+        limit: 100,
+      }),
+      "availabilityCandidates",
+    ],
+    queryFn: ({ signal }) => fetchAvailabilityCandidates(signal, candidateWhere, search),
+    enabled,
     staleTime: 60_000,
     retry: (failureCount, error) => !(error instanceof AvailabilityCandidateLimitError) && failureCount < 3,
   });
   const date = currentWallClock(current.toISOString(), displayTimeZone).date;
   const bounds = displayInterval(date, displayTimeZone, availabilityWindowStart, availabilityWindowEnd);
-  const rows = (candidates.data ?? []).flatMap((candidate) =>
-    candidate.target ? [{ ...candidate, globalId: candidate.target.globalId }] : [],
-  );
+  const rows = enabled
+    ? (candidates.data ?? []).flatMap((candidate) =>
+        candidate.target ? [{ ...candidate, globalId: candidate.target.globalId }] : [],
+      )
+    : [];
   const availability = useCalendarAvailability(rows, bounds);
   const previousMinute = useRef(minute);
   useEffect(() => {
@@ -720,10 +735,10 @@ export function useAvailabilityQuickFilterIndex(
           )
         : undefined;
   return {
-    data,
+    data: enabled ? data : undefined,
     now: current,
-    isPending: !candidates.isError && (candidates.isPending || (rows.length > 0 && availability.isPending)),
-    isError: candidates.isError || availability.isError,
+    isPending: enabled && !candidates.isError && (candidates.isPending || (rows.length > 0 && availability.isPending)),
+    isError: enabled && (candidates.isError || availability.isError),
     error: candidates.error ?? availability.error,
     refetch: candidates.isError ? candidates.refetch : availability.refetch,
   };

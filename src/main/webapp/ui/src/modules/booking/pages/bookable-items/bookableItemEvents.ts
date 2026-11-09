@@ -46,7 +46,7 @@ function mapEvents(result: ListBookings200, input: BookableItemEventsInput) {
     docs: result.docs.map(mapBooking),
     hasNextPage: required(result.hasNextPage, "hasNextPage"),
   };
-  if (mapped.docs.some((booking) => booking.target.globalId !== input.globalId)) {
+  if (mapped.docs.some((booking) => booking.target !== null && booking.target.globalId !== input.globalId)) {
     throw new Error(`Booking response contained an event for another target`);
   }
   return mapped;

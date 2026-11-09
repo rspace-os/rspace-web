@@ -6,6 +6,9 @@ import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { getGetBookingConfigurationAccessQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import type { ResourceAccessAssignmentDocument } from "@/modules/common/api/v2/generated/models/resourceAccessAssignmentDocument";
+import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
 import { type ResourceAccessAdapter, ResourceAccessEditor } from "../ResourceAccessEditor";
 import { accessMutationOptions, accessResource } from "./fixtures/accessResource";
 
@@ -28,7 +31,7 @@ const adapter: ResourceAccessAdapter = {
 
 const owner = {
   grantee: {
-    kind: "USER",
+    kind: "USER" as const,
     id: 11,
     key: "user:11",
     name: "Ada Owner",
@@ -42,7 +45,7 @@ const owner = {
 
 const second = {
   grantee: {
-    kind: "USER",
+    kind: "USER" as const,
     id: 12,
     key: "user:12",
     name: "Bob Steward",
@@ -56,10 +59,10 @@ const second = {
 
 function document(
   version = 3,
-  assignments: unknown[] = [owner],
+  assignments: ResourceAccessAssignmentDocument[] = [owner],
   callerKey: string | null = "user:11",
   inherited = false,
-) {
+): ResourceAccessDocument {
   return {
     scheme: "test-collection",
     version,
@@ -68,7 +71,7 @@ function document(
     caller: {
       effectiveRole: "STEWARD",
       roleSources: [],
-      granteeKey: callerKey,
+      granteeKey: callerKey ?? undefined,
       capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
     },
   };
@@ -138,6 +141,57 @@ describe("ResourceAccessEditor", () => {
     }
     expect(await screen.findByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it.each([401, 403, 404])("hides cached assignments after a same-token %i denial", async (status) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const queryKey = getGetBookingConfigurationAccessQueryKey(9);
+    let accessRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations/9/access", () => {
+        accessRequests += 1;
+        if (accessRequests === 1 || accessRequests === 4) return HttpResponse.json(document(3, [owner, second]));
+        return new HttpResponse(null, { status: accessRequests === 2 ? status : 503 });
+      }),
+    );
+
+    render(
+      <QueryClientProvider client={client}>
+        <ResourceAccessEditor
+          resource={accessResource}
+          mutationOptions={accessMutationOptions}
+          resourceId={9}
+          adapter={adapter}
+        />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByRole("table");
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+
+    expect(accessRequests).toBe(2);
+    expect(await screen.findByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada Owner")).not.toBeInTheDocument();
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+    expect(accessRequests).toBe(3);
+    expect(screen.getByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada Owner")).not.toBeInTheDocument();
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+    expect(accessRequests).toBe(4);
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("renders assignments without any mutation controls in read-only mode", async () => {
@@ -234,8 +288,8 @@ describe("ResourceAccessEditor", () => {
       http.get("/api/v2/booking-configurations/9/access/grantees", () =>
         HttpResponse.json({
           docs: [
-            { kind: "USER", id: 11, key: "user:11", name: "Ada Owner", detail: "ada" },
-            { kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" },
+            { kind: "USER" as const, id: 11, key: "user:11", name: "Ada Owner", detail: "ada" },
+            { kind: "GROUP" as const, id: 41, key: "group:41", name: "Imaging group", detail: "imaging" },
           ],
         }),
       ),
@@ -316,7 +370,7 @@ describe("ResourceAccessEditor", () => {
     // A different person owns it; the caller only holds a contributor row of their own.
     const otherOwner = {
       grantee: {
-        kind: "USER",
+        kind: "USER" as const,
         id: 99,
         key: "user:99",
         name: "Cleo Owner",
@@ -329,7 +383,7 @@ describe("ResourceAccessEditor", () => {
     };
     const contributorSelf = {
       grantee: {
-        kind: "USER",
+        kind: "USER" as const,
         id: 11,
         key: "user:11",
         name: "Ada Contributor",
@@ -414,7 +468,7 @@ describe("ResourceAccessEditor", () => {
     await screen.findByRole("table");
     await user.click(row("Bob Steward").getByRole("button", { name: "common:resourceAccess.removeNamed" }));
     current = document(4, [owner, second, remote]);
-    await act(() => client.refetchQueries({ queryKey: ["api-v2", "test-collections", 9, "access"] }));
+    await act(() => client.refetchQueries({ queryKey: getGetBookingConfigurationAccessQueryKey(9) }));
     expect(row("Bob Steward").getByText("common:resourceAccess.staged.removed")).toBeInTheDocument();
     const save = screen.getByRole("button", { name: "common:resourceAccess.saveChanges" });
     await user.click(save);
@@ -423,7 +477,7 @@ describe("ResourceAccessEditor", () => {
     expect(table().getByText("Remote reader")).toBeInTheDocument();
 
     current = document(5, [owner, second, { ...remote, role: "CONTRIBUTOR" }]);
-    await act(() => client.refetchQueries({ queryKey: ["api-v2", "test-collections", 9, "access"] }));
+    await act(() => client.refetchQueries({ queryKey: getGetBookingConfigurationAccessQueryKey(9) }));
     await user.click(save);
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests[1].headers.get("If-Match")).toBe('"4"');
@@ -462,7 +516,7 @@ describe("ResourceAccessEditor", () => {
                 owner,
                 {
                   grantee: {
-                    kind: "GROUP",
+                    kind: "GROUP" as const,
                     id: 41,
                     key: "group:41",
                     name: "Imaging group",
@@ -478,7 +532,7 @@ describe("ResourceAccessEditor", () => {
       }),
       http.get("/api/v2/booking-configurations/9/access/grantees", () =>
         HttpResponse.json({
-          docs: [{ kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" }],
+          docs: [{ kind: "GROUP" as const, id: 41, key: "group:41", name: "Imaging group", detail: "imaging" }],
         }),
       ),
       http.put("/api/v2/booking-configurations/9/access", ({ request }) => {

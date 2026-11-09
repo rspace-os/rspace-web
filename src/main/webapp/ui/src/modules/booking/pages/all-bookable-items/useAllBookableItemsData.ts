@@ -4,14 +4,19 @@ import { useTranslation } from "react-i18next";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import { parseRsqlExpression, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
+import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
+import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import { availabilityMode, createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
 import {
   type AllBookableItem,
   type AvailabilityQuickFilter,
+  deriveAvailabilityCandidateFilter,
   fetchAvailabilityFilteredCatalogue,
   hasAvailabilityFilter,
   resolveAvailabilityFilters,
@@ -42,13 +47,32 @@ export function useAllBookableItemsData({
   pageSize,
 }: AllBookableItemsDataOptions) {
   const { t } = useTranslation("booking");
-  const config = useMemo(
+  const { t: commonT } = useTranslation("common");
+  const sourceConfig = useMemo(
     () =>
       createAllBookableItemsConfig(
         t("allBookableItems.quickFilters.availableNow"),
         t("allBookableItems.quickFilters.freeLaterToday"),
+        (globalId) => commonT("tableList.filters.openRecord", { globalId }),
       ),
-    [t],
+    [commonT, t],
+  );
+  const { data: currentUser } = useCurrentUserQuery();
+  const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
+  const runtimeFieldState = useApiV2RuntimeFields({
+    resource: apiV2Resources["booking-configurations"],
+    selectors: runtimeSelectors,
+    request: { authScope: currentUser.id },
+  });
+  const config = useMemo(
+    () =>
+      enrichApiV2FilterConfig({
+        config: sourceConfig,
+        metadata: runtimeFieldState.metadata,
+        runtimeFields: runtimeFieldState.runtimeFields,
+        localFields: ["availability"],
+      }),
+    [runtimeFieldState.metadata, runtimeFieldState.runtimeFields, sourceConfig],
   );
   const preferences = useBookingDisplayPreferences();
   const userToday = todayInTimeZone(preferences.timeZone, clock());
@@ -60,7 +84,15 @@ export function useAllBookableItemsData({
     }),
     [config, q, routeAvailability, target, where],
   );
-  const invalidFilter = Boolean(where && !filters.expression);
+  const invalidFilter =
+    !runtimeFieldState.pending && runtimeFieldState.error === null && Boolean(where && !filters.expression);
+  const runtimeFilterBlocked =
+    runtimeFieldState.pending ||
+    runtimeFieldState.error !== null ||
+    runtimeFieldState.missing.length > 0 ||
+    invalidFilter;
+  const candidateFilter = deriveAvailabilityCandidateFilter(filters.expression);
+  const candidateWhere = candidateFilter ? serializeRsqlExpression(candidateFilter) : undefined;
   const usesAvailability = hasAvailabilityFilter(filters.expression);
   const quickMode = availabilityMode(filters.expression);
   const quickFilterLabels = {
@@ -82,6 +114,10 @@ export function useAllBookableItemsData({
     preferences.availabilityWindow.start,
     preferences.availabilityWindow.end,
     clock,
+    candidateWhere,
+    !runtimeFilterBlocked,
+    currentUser.id,
+    { q, types },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
   const quickFilterError = usesAvailability && quickIndex.isError;
@@ -123,24 +159,36 @@ export function useAllBookableItemsData({
       }
       return fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, signal);
     },
-    enabled: !invalidFilter && (!usesAvailability || quickIndex.data !== undefined),
+    enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
   });
-  const rows = (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
     return availabilityRow ? [availabilityRow] : [];
   });
-  const availability = useCalendarAvailability(quickMode ? [] : availabilityRows, bounds);
+  const useQuickAvailability =
+    selectedDate === userToday &&
+    !quickIndex.isError &&
+    (quickIndex.isPending || availabilityRows.every((row) => quickIndex.data?.has(row.globalId)));
+  const availability = useCalendarAvailability(
+    quickMode || useQuickAvailability ? [] : availabilityRows,
+    bounds,
+
+    currentUser.id,
+  );
 
   return {
     config,
+    currentUser,
+    runtimeFieldState,
     preferences,
     userToday,
     selectedDate,
     filters,
     invalidFilter,
+    runtimeFilterBlocked,
     quickMode,
     quickFilterLabels,
     bounds,
@@ -149,6 +197,7 @@ export function useAllBookableItemsData({
     quickFilterError,
     catalogue,
     rows,
+    useQuickAvailability,
     availability,
   };
 }

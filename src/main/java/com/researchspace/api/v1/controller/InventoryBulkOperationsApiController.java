@@ -51,7 +51,6 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
     private boolean onErrorStopWithException = true;
     private User user;
     private User actor;
-    private boolean transferBookingConfigurationOwnership;
 
     public InventoryBulkOperationConfig(
         ApiInventoryBulkOperationPost apiRequest, User user, User actor) {
@@ -60,8 +59,7 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
           apiRequest.getRecords(),
           apiRequest.isRollbackOnError(),
           user,
-          actor,
-          apiRequest.isTransferBookingConfigurationOwnership());
+          actor);
     }
 
     public InventoryBulkOperationConfig(
@@ -69,7 +67,7 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
         List<ApiInventoryRecordInfo> records,
         boolean onErrorStopWithException,
         User user) {
-      this(operationType, records, onErrorStopWithException, user, user, false);
+      this(operationType, records, onErrorStopWithException, user, user);
     }
   }
 

@@ -30,6 +30,7 @@ function mapConfigurationFields(input: BookingConfigurationsRead) {
     throw new Error("Invalid booking configuration increment or maximum duration");
   return {
     ...input,
+    ...input,
     id: input.id,
     configurationVersion: required(input.configurationVersion, "configurationVersion"),
     target: input.target === null ? null : mapBookingTarget(input.target),

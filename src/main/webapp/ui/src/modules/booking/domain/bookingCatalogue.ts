@@ -5,8 +5,11 @@ import { ApiV2ProblemError } from "@/modules/common/api/v2";
 import {
   getSearchBookingCatalogueQueryOptions,
   getSearchBookingCatalogueUrl,
+  getSearchCalendarCatalogueQueryOptions,
+  getSearchCalendarCatalogueUrl,
   searchBookingCatalogue,
   searchBookingCatalogueLocations,
+  searchCalendarCatalogue,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import type { Item } from "@/modules/common/api/v2/generated/models/item";
 import type { Page } from "@/modules/common/api/v2/generated/models/page";
@@ -97,6 +100,9 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
 export type BookingCatalogueSearch = Partial<
   Pick<SearchBookingCatalogueParams, "q" | "where" | "target" | "capability" | "page">
 > & {
+  start?: string;
+  end?: string;
+  eventWhere?: string;
   types?: readonly string[];
   locations?: readonly string[];
   pageSize?: number;
@@ -118,8 +124,24 @@ function parameters(search: BookingCatalogueSearch) {
     limit: search.pageSize ?? 20,
   };
 }
+function calendarParameters(search: BookingCatalogueSearch) {
+  return {
+    start: required(search.start, "start"),
+    end: required(search.end, "end"),
+    eventWhere: search.eventWhere,
+    where: search.where,
+    q: search.q?.trim() || undefined,
+    mine: false,
+    page: search.page ?? 1,
+    limit: search.pageSize ?? 20,
+  };
+}
 function buildBookingCatalogueRequest(search: BookingCatalogueSearch) {
-  return { url: getSearchBookingCatalogueUrl(parameters(search)) };
+  return {
+    url: search.start
+      ? getSearchCalendarCatalogueUrl(calendarParameters(search))
+      : getSearchBookingCatalogueUrl(parameters(search)),
+  };
 }
 function serializedRequestBytes(url: string): number {
   const encoder = new TextEncoder();
@@ -151,7 +173,11 @@ async function requestBookingCatalogue(
   allowRequestSizeRetry = false,
 ): Promise<BookingCataloguePage> {
   try {
-    return mapBookingCataloguePage(await searchBookingCatalogue(parameters(search), { signal }));
+    return mapBookingCataloguePage(
+      await (search.start
+        ? searchCalendarCatalogue(calendarParameters(search), { signal })
+        : searchBookingCatalogue(parameters(search), { signal })),
+    );
   } catch (error) {
     if (allowRequestSizeRetry && error instanceof ApiV2ProblemError && (error.status === 414 || error.status === 431))
       throw new BookingCatalogueRequestTooLargeError();
@@ -244,11 +270,25 @@ export async function fetchBookingCatalogueLocations(
 
   signal?: AbortSignal,
 ) {
-  return searchBookingCatalogueLocations(parameters(search), { signal });
+  return searchBookingCatalogueLocations(
+    {
+      q: search.q?.trim() || undefined,
+      type: search.types ? [...search.types] : undefined,
+      page: search.page ?? 1,
+      limit: search.pageSize ?? 20,
+    },
+    { signal },
+  );
 }
 export function bookingCatalogueQuery(_scope: unknown, search: BookingCatalogueSearch) {
   return getSearchBookingCatalogueQueryOptions<BookingCataloguePage>(parameters(search), {
     query: { select: mapBookingCataloguePage, staleTime: 30_000 },
+  });
+}
+
+export function calendarBookingCatalogueQuery(_scope: unknown, _parameters: unknown, search: BookingCatalogueSearch) {
+  return getSearchCalendarCatalogueQueryOptions<BookingCataloguePage>(calendarParameters(search), {
+    query: { select: mapBookingCataloguePage },
   });
 }
 

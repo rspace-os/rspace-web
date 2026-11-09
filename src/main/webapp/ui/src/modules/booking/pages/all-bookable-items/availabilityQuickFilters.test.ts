@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
-import { getListBookingConfigurationsQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterExpression } from "@/modules/common/table-list/types";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
@@ -15,6 +15,7 @@ import {
   type AllBookableItem,
   AvailabilityCandidateLimitError,
   type AvailabilityQuickIndexEntry,
+  deriveAvailabilityCandidateFilter,
   fetchAvailabilityCandidates,
   fetchAvailabilityFilteredCatalogue,
   loadAvailabilityQuickIndex,
@@ -58,11 +59,19 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
 });
 
 const page = (docs: readonly BookingConfiguration[], pageNumber = 1, totalPages = 1, totalDocs = docs.length) => ({
-  docs: [...docs],
-  limit: 100,
-  totalDocs,
-  totalPages,
+  items: docs.map((doc) => ({
+    ...doc,
+    configurationId: doc.id,
+    targetId: doc.target?.value.id,
+    targetType: "INSTRUMENT",
+    globalId: doc.target?.globalId,
+    name: doc.target?.value.name,
+    location: null,
+  })),
+  total: totalDocs,
+  pageSize: totalPages > 1 && totalDocs < 100 ? 1 : 100,
   page: pageNumber,
+  facets: { types: ["INSTRUMENT"] },
 });
 
 function catalogueItem(configurationId: number, globalId: string): BookingCatalogueItem {
@@ -250,6 +259,40 @@ function boundaryFilter(extraDepth = 0) {
 }
 
 describe("availability quick filters", () => {
+  it("derives a safe candidate predicate while preserving item-only grouping", () => {
+    const itemA: FilterExpression<AllBookableItem> = {
+      kind: "comparison",
+      field: "target",
+      operator: "equals",
+      value: "IN1",
+    };
+    const itemB: FilterExpression<AllBookableItem> = {
+      kind: "comparison",
+      field: "target",
+      operator: "equals",
+      value: "IN2",
+    };
+    const availability: FilterExpression<AllBookableItem> = {
+      kind: "comparison",
+      field: "availability",
+      operator: "equals",
+      value: "available-now",
+    };
+
+    expect(deriveAvailabilityCandidateFilter({ kind: "and", children: [itemA, availability] })).toEqual(itemA);
+    expect(deriveAvailabilityCandidateFilter({ kind: "or", children: [itemA, itemB] })).toEqual({
+      kind: "or",
+      children: [itemA, itemB],
+    });
+    expect(deriveAvailabilityCandidateFilter({ kind: "or", children: [itemA, availability] })).toBeNull();
+    expect(
+      deriveAvailabilityCandidateFilter({
+        kind: "and",
+        children: [{ kind: "or", children: [availability, itemA] }, itemB],
+      }),
+    ).toEqual(itemB);
+  });
+
   it("retains duplicate item and ID rules when a quick filter is changed or removed", () => {
     const original: FilterExpression<AllBookableItem> = {
       kind: "and",
@@ -778,38 +821,83 @@ describe("availability quick filters", () => {
     expect(result.get("IN1")?.bounds.elapsedMinutes).toBe(0);
   });
 
-  it("fetches every candidate page with the fixed filter and projection", async () => {
+  it("fetches every catalogue candidate page", async () => {
     const requests: URL[] = [];
     server.use(
-      http.get("/api/v2/booking-configurations", ({ request }) => {
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
         const result =
           url.searchParams.get("page") === "1"
             ? page([candidate(1, "IN1", "UTC")], 1, 2, 2)
             : page([candidate(2, "IN2", "Europe/Berlin")], 2, 2, 2);
-        const { totalDocs, totalPages, ...withoutTotals } = result;
-        return HttpResponse.json(url.searchParams.get("totals") === "true" ? result : withoutTotals);
+        return HttpResponse.json(result);
       }),
     );
 
     const result = await fetchAvailabilityCandidates(new AbortController().signal);
     expect(result).toHaveLength(2);
     expect(requests.map((request) => request.searchParams.get("page"))).toEqual(["1", "2"]);
-    expect(requests[0].searchParams.get("where")).toBe("enabled==true;state==ACTIVE;target.deleted==false");
-    expect(requests.every((request) => request.searchParams.get("totals") === "true")).toBe(true);
+    expect(requests[0].searchParams.get("where")).toBeNull();
     expect(requests[0].searchParams.get("limit")).toBe("100");
-    expect(requests[0].searchParams.get("depth")).toBe("1");
-    expect(requests[0].searchParams.get("fields[booking-configurations]")).toBe(
-      "target,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
+  });
+
+  it("pushes the safe candidate predicate down before applying the candidate limit", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
+      }),
     );
+
+    await fetchAvailabilityCandidates(new AbortController().signal, "target.customFields.SF152==BSL-2");
+
+    expect(requests[0].searchParams.get("where")).toBe("target.customFields.SF152==BSL-2");
+  });
+
+  it("preserves OR candidates before the filtered capacity limit", async () => {
+    const rule = "target==IN1,target==IN2";
+    const expected = rule;
+    server.use(
+      http.get("/api/v2/booking-catalogue", ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.get("where") === expected
+            ? page([candidate(1, "IN1", "UTC"), candidate(2, "IN2", "UTC")])
+            : page([], 1, 11, 1001),
+        ),
+      ),
+    );
+    await expect(fetchAvailabilityCandidates(new AbortController().signal, rule)).resolves.toHaveLength(2);
   });
 
   it("rejects candidate collections above the relationship-filter ceiling", async () => {
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([], 1, 11, 1001))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([], 1, 11, 1001))));
     await expect(fetchAvailabilityCandidates(new AbortController().signal)).rejects.toBeInstanceOf(
       AvailabilityCandidateLimitError,
     );
+  });
+
+  it("applies catalogue search and types before the candidate capacity limit", async () => {
+    server.use(
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const parameters = new URL(request.url).searchParams;
+        return HttpResponse.json(
+          parameters.get("q") === "microscope" && parameters.get("type") === "INSTRUMENT"
+            ? page([candidate(1, "IN1", "UTC")])
+            : page([], 1, 11, 1001),
+        );
+      }),
+    );
+    await expect(fetchAvailabilityCandidates(new AbortController().signal)).rejects.toBeInstanceOf(
+      AvailabilityCandidateLimitError,
+    );
+    await expect(
+      fetchAvailabilityCandidates(new AbortController().signal, undefined, {
+        q: "microscope",
+        types: ["INSTRUMENT"],
+      }),
+    ).resolves.toHaveLength(1);
   });
 
   it("classifies candidates using each configured time zone", async () => {
@@ -889,7 +977,7 @@ describe("availability quick filters", () => {
     let candidateRequests = 0;
     let bookingRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () => {
+      http.get("/api/v2/booking-catalogue", () => {
         candidateRequests += 1;
         return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
       }),
@@ -946,7 +1034,7 @@ describe("availability quick filters", () => {
     let candidateRequests = 0;
     let bookingRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () => {
+      http.get("/api/v2/booking-catalogue", () => {
         candidateRequests += 1;
         return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
       }),
@@ -973,7 +1061,7 @@ describe("availability quick filters", () => {
     };
     let bookingRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([configuration]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([configuration]))),
       http.get("/api/v2/bookings", () => {
         bookingRequests += 1;
         return HttpResponse.json({ docs: [], limit: 100, totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
@@ -989,7 +1077,7 @@ describe("availability quick filters", () => {
     await waitFor(() => expect(result.current.data?.get("IN1")?.category).toBe("available-now"));
 
     configuration = { ...configuration, openingHours: [{ dayOfWeek: 1, start: "12:00", end: "18:00" }] };
-    await act(() => queryClient.refetchQueries({ queryKey: getListBookingConfigurationsQueryKey() }));
+    await act(() => queryClient.refetchQueries({ queryKey: getSearchBookingCatalogueQueryKey() }));
 
     await waitFor(() => expect(result.current.data?.get("IN1")?.category).toBe("free-later-today"));
     expect(bookingRequests).toBe(1);

@@ -1,4 +1,5 @@
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import { useListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
@@ -256,7 +257,9 @@ describe("AddBookableItemPage", () => {
         return HttpResponse.json({ id: 7 }, { status: 201 });
       }),
     );
-    const { container } = renderPage(undefined, true);
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
+    const { container, queryClient } = renderPage(undefined, true);
+    queryClient.setQueryData(catalogueQueryKey, []);
 
     expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
@@ -269,6 +272,7 @@ describe("AddBookableItemPage", () => {
 
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
     expect(postSaveListGets).toBe(1);
+    expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
     expect(authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(requestBody).toEqual({
       target: { relationTo: "instruments", value: 123 },

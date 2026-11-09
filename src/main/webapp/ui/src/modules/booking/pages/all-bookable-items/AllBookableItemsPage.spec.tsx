@@ -1,5 +1,5 @@
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { Page } from "@/modules/common/api/v2/generated/models/page";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -73,9 +73,10 @@ describe("the All Bookable Items page", () => {
   test("explains the quick-filter capacity limit without offering a futile retry", async () => {
     let requests = 0;
     worker.use(
-      http.get<never, never, ListBookingConfigurations200 | ApiV2Problem>("/api/v2/booking-configurations", () => {
+      http.get<never, never, Page | ApiV2Problem>("/api/v2/booking-catalogue", ({ request }) => {
+        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
         requests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 1001, totalPages: 11, limit: 100, page: 1 });
+        return HttpResponse.json({ items: [], total: 1001, page: 1, pageSize: 100, facets: { types: ["INSTRUMENT"] } });
       }),
     );
     render(<AllBookableItemsStory history={history} />);
@@ -91,13 +92,11 @@ describe("the All Bookable Items page", () => {
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
     const response = Promise.withResolvers<void>();
     worker.use(
-      http.get<never, never, ListBookingConfigurations200 | ApiV2Problem>(
-        "/api/v2/booking-configurations",
-        async () => {
-          await response.promise;
-          return undefined;
-        },
-      ),
+      http.get<never, never, Page | ApiV2Problem>("/api/v2/booking-catalogue", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("limit") !== "100") return undefined;
+        await response.promise;
+        return undefined;
+      }),
     );
     await withViewport(width, async () => {
       history.replace("/booking/all-items?date=2026-08-17&availability=available-now");

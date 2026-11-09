@@ -1,3 +1,4 @@
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import "@/__tests__/__mocks__/matchMedia";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -6,6 +7,7 @@ import { delay, HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+
 import type { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";
@@ -33,7 +35,9 @@ describe("BookableItemPage", () => {
       }),
     );
     const user = userEvent.setup();
-    const { router } = renderPage();
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
+    const { queryClient, router } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
 
     await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.menu" }));
     await user.click(await screen.findByRole("menuitem", { name: "booking:bookableItems.actions.archive" }));
@@ -46,6 +50,7 @@ describe("BookableItemPage", () => {
     expect(postArchiveListGets).toBe(1);
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
@@ -62,7 +67,9 @@ describe("BookableItemPage", () => {
       }),
     );
     const user = userEvent.setup();
-    renderPage();
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
+    const { queryClient } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
 
     await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.menu" }));
     await user.click(await screen.findByRole("menuitem", { name: "booking:bookableItems.actions.restore" }));
@@ -73,6 +80,43 @@ describe("BookableItemPage", () => {
     await expect(patchRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
     expect(await screen.findByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toHaveFocus();
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+  });
+
+  it("invalidates availability after leaving a configuration", async () => {
+    const user = userEvent.setup();
+    const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
+    const leaveConfiguration = {
+      ...configuration,
+      capabilities: { ...configuration.capabilities, canLeaveConfiguration: true },
+    };
+    let leaveRequests = 0;
+    let postLeaveListGets = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", async () => {
+        if (leaveRequests > 0) {
+          postLeaveListGets += 1;
+          await delay(50);
+        }
+        return HttpResponse.json<ListBookingConfigurations200>(collectionPage([leaveConfiguration], 2));
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
+      http.delete("/api/v2/booking-configurations/7/access/me", () => {
+        leaveRequests += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { queryClient, router } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.actions.leave" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "booking:bookableItemDetails.leaveDialog.title" });
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookableItemDetails.actions.leave" }));
+
+    await waitFor(() => expect(leaveRequests).toBe(1));
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking"));
+    expect(postLeaveListGets).toBe(1);
   });
 
   it("requires the exact item name before directly deleting an active configuration", async () => {
