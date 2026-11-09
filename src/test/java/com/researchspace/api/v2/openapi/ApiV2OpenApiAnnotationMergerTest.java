@@ -169,7 +169,14 @@ class ApiV2OpenApiAnnotationMergerTest {
         Set.of("canUseInventory", "canPublish", "canViewSystem"));
     assertRequiredProperties(schemas, "ApiV2CurrentUserLiveChat", Set.of("enabled", "serverKey"));
     assertRequiredProperties(
-        schemas, "ApiV2CurrentUserSession", Set.of("operatedAs", "lastSession"));
+        schemas,
+        "ApiV2CurrentUserSession",
+        Set.of(
+            "operatedAs",
+            "lastSession",
+            "canUseDevtools",
+            "canOverrideFeatureFlags",
+            "canChangeFeatureFlagBaselines"));
     assertRequiredProperties(schemas, "ApiV2UiToken", Set.of("accessToken"));
 
     assertEquals(

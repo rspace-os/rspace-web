@@ -8,6 +8,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
+import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import Alerts from "../../components/Alerts/Alerts";
@@ -554,7 +555,7 @@ function GalleryFileInFolder() {
 
 const queryClient = new QueryClient();
 
-export function Gallery() {
+export function Gallery({ canUseDevtools = false }: { canUseDevtools?: boolean }) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
@@ -617,6 +618,7 @@ export function Gallery() {
                 </ErrorBoundary>
               </LandmarksProvider>
             </Analytics>
+            <FeatureFlagDevtoolsMount canUseDevtools={canUseDevtools} />
           </QueryClientProvider>
         </Alerts>
       </ThemeProvider>
