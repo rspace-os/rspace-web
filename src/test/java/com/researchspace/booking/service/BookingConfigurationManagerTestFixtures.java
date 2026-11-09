@@ -8,6 +8,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -45,6 +47,8 @@ final class BookingConfigurationManagerTestFixtures {
   final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   final BookingConfigurationDefaultsDao defaultsDao = mock(BookingConfigurationDefaultsDao.class);
   final InstrumentDao instrumentDao = mock(InstrumentDao.class);
+  final BookingCalendarSubscriptionDao calendarSubscriptions =
+      mock(BookingCalendarSubscriptionDao.class);
   final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
 
   final User actor = mock(User.class);
@@ -52,6 +56,8 @@ final class BookingConfigurationManagerTestFixtures {
   final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
   final BookingItemPermissions itemPermissions = mock(BookingItemPermissions.class);
   final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
+  final BookingCalendarPermissionGateDao permissionGate =
+      mock(BookingCalendarPermissionGateDao.class);
   final BookingConfigurationManager manager =
       new BookingConfigurationManagerImpl(
           auditDao,
@@ -63,7 +69,9 @@ final class BookingConfigurationManagerTestFixtures {
           resourceRegistry,
           ApiV2BookingConfigurationResource.DESCRIPTION,
           itemPermissions,
-          timeSlotBookings);
+          calendarSubscriptions,
+          timeSlotBookings,
+          permissionGate);
 
   void setUp() {
     when(dao.saveAndFlush(any(BookingConfiguration.class)))
