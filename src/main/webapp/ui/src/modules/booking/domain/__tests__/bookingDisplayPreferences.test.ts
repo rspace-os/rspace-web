@@ -63,6 +63,21 @@ describe("Booking display preferences", () => {
     await expect(fetchBookingDisplayPreferences()).rejects.toThrow();
   });
 
+  it("reads a missing time format as Automatic and rejects unknown ones", async () => {
+    let document: object = inherited;
+    server.use(http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)));
+
+    const withoutTimeFormat = await fetchBookingDisplayPreferences();
+    expect(withoutTimeFormat.timeFormat).toBe("AUTOMATIC");
+    expect(resolveBookingDisplayPreferences(withoutTimeFormat).timeFormat).toBe("AUTOMATIC");
+
+    document = { ...inherited, timeFormat: "H24" };
+    expect(resolveBookingDisplayPreferences(await fetchBookingDisplayPreferences()).timeFormat).toBe("H24");
+
+    document = { ...inherited, timeFormat: "SOMETIMES" };
+    await expect(fetchBookingDisplayPreferences()).rejects.toThrow();
+  });
+
   it("sends only the strict replacement document", async () => {
     let body: unknown;
     server.use(
@@ -83,12 +98,14 @@ describe("Booking display preferences", () => {
       availabilityWindowEnd: "17:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
     expect(body).toEqual({
       availabilityWindowStart: "09:00",
       availabilityWindowEnd: "17:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
   });
 });
