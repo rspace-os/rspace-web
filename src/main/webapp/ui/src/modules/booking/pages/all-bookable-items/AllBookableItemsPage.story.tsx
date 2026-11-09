@@ -9,8 +9,8 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
-import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 
 export function BookableItemsStory() {

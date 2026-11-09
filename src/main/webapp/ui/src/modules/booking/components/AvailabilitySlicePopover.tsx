@@ -29,9 +29,10 @@ export function AvailabilitySlicePopover({
         type="button"
         openOnHover
         delay={0}
-        closeDelay={200}
+        closeDelay={500}
         aria-label={label}
-        onFocus={() => {
+        onFocus={(event) => {
+          if (!event.currentTarget.matches(":focus-visible")) return;
           if (suppressRestoredFocusRef.current) {
             suppressRestoredFocusRef.current = false;
             return;

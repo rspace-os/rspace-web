@@ -340,7 +340,8 @@ The adapter validates `v.required(v.pick(schema, selected))` before invoking the
 The mapper receives that validated projection and preserves the domain's unavailable/error
 behavior. Without a mapper, the option type requires the schema output to fit the document
 type. Only the adapter contains a documented projection assertion, because columns are
-chosen at runtime; callers do not cast. The adapter accepts `docs` collection pages and maps their count and next-page information.
+chosen at runtime; callers do not cast. The adapter accepts both `docs` collection envelopes
+and catalogue `items` pages and maps their count and next-page information.
 
 When caching wire responses, previous pages are reused only while the column selection matches. Newly selected fields wait for the next response instead of validating an older projection.
 
