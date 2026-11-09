@@ -5688,7 +5688,6 @@ export default interface Resources {
             "authorizedCallers": "Authenticated callers authorized by the registered protected resource.",
             "document": "Current direct assignments and caller capabilities.",
             "grantees": "Eligible users and groups.",
-            "ifMatch": "Strong ETag from the latest access document.",
             "leave": {
               "summary": "Remove the caller's direct assignment"
             },

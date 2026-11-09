@@ -91,7 +91,6 @@
           "authorizedCallers": "Authenticated callers authorized by the registered protected resource.",
           "document": "Current direct assignments and caller capabilities.",
           "grantees": "Eligible users and groups.",
-          "ifMatch": "Strong ETag from the latest access document.",
           "leave": {
             "summary": "Remove the caller's direct assignment"
           },
@@ -123,7 +122,8 @@
           "tooManyRequests": "The request was throttled.",
           "unauthenticated": "Authentication is required.",
           "unexpectedError": "An unexpected server error occurred.",
-          "unsupportedMediaType": "The request media type is unsupported."
+          "unsupportedMediaType": "The request media type is unsupported.",
+          "versionChanged": "The resource version changed."
         },
         "runtimeFields": {
           "ids": "Comma-separated field identifiers.",
