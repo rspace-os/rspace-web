@@ -63,6 +63,9 @@ jobs:
             frontend:
               - 'src/main/webapp/ui/**/*.{js,jsx,ts,tsx}'
               - 'src/main/webapp/ui/**/*.{css,json}'
+              - 'src/main/resources/feature-flags/**'
+              - 'scripts/generate-feature-flags.mjs'
+              - 'scripts/templates/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -163,6 +166,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Feature flag manifest check
+        run: pnpm run feature-flags:check
       - name: Check generated API v2 client
         run: |
           pnpm generate:api-v2
