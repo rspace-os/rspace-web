@@ -44,6 +44,21 @@ afterEach(() => {
 });
 
 describe("the All Bookable Items page", () => {
+  test("keeps owner and availability presets in the expression with the existing badge count", async () => {
+    render(<AllBookableItemsStory history={history} />);
+    const owner = page.getByRole("button", { name: "Owned Items" });
+    await owner.click();
+    await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBe("targetOwner==me");
+    await expect.element(owner).toHaveAttribute("aria-pressed", "true");
+    await pageObj.freeLaterToday.click();
+    await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toContain("targetOwner==me");
+    await expect.element(page.getByRole("button", { name: "Filters 1 applied", exact: true })).toBeVisible();
+    await owner.click();
+    await expect
+      .poll(() => new URLSearchParams(history.location.search).get("where"))
+      .toBe("availability==free-later-today");
+  });
+
   test("reserves availability space beside realistic long item and location labels at 1280 px", async () => {
     const name = "Live-cell confocal microscope with environmental chamber";
     worker.use(

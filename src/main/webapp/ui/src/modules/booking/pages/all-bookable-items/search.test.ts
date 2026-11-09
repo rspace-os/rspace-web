@@ -29,7 +29,7 @@ describe("All Bookable Items search", () => {
   });
 
   it("keeps only an enabled Owned Items quick filter", () => {
-    expect(allBookableItemsSearch({ mine: true })).toEqual({ date: undefined, mine: true });
+    expect(allBookableItemsSearch({ mine: true })).toEqual({ date: undefined });
     expect(allBookableItemsSearch({ mine: false })).toEqual({ date: undefined });
   });
 });

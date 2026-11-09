@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   CalendarClockIcon,
   CalendarPlusIcon,
@@ -14,6 +14,7 @@ import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
 import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import { addCalendarDays } from "@/modules/booking/domain/bookingTime";
+import { hasPreset, togglePreset } from "@/modules/common/table-list/presets";
 import {
   TableList,
   type TableListFilterButtons,
@@ -33,6 +34,7 @@ import {
   permanentlyDeleteBookingConfiguration,
 } from "../bookable-items/bookingConfiguration";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
+import { ownerPreset } from "../ownerPreset";
 import { type AllBookableItem, withAvailability } from "./availabilityQuickFilters";
 import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
@@ -52,7 +54,6 @@ type AllBookableItemsTableProps = Omit<
   | "setFailedBulkAction"
 > & {
   types?: readonly string[];
-  mine: boolean;
   directSysadmin: boolean;
   tableProps: TableListProps<AllBookableItem>;
   setDate: (nextDate: string) => void;
@@ -70,7 +71,6 @@ export function AllBookableItemsTable({
   clearSelection,
   availability,
   types,
-  mine,
   directSysadmin,
   tableProps,
   setDate,
@@ -88,7 +88,6 @@ export function AllBookableItemsTable({
   attachAlerts,
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
-  const navigate = useNavigate({ from: "/booking/all-items/" });
   const rowActions = useMemo<TableListRowActions<AllBookableItem>>(
     () => ({
       id: "actions",
@@ -192,19 +191,17 @@ export function AllBookableItemsTable({
         onDateChange={setDate}
       />
     ),
-    hasChanges: selectedDate !== userToday || Boolean(types?.length) || mine,
+    hasChanges: selectedDate !== userToday || Boolean(types?.length),
     buttons: [
       {
         id: "mine",
         label: t("allBookableItems.quickFilters.myItems"),
         icon: <PackageCheckIcon aria-hidden="true" />,
-        pressed: mine,
+        pressed: hasPreset(filters.expression, ownerPreset),
+        inExpression: true,
         onClick: () => {
           clearSelection();
-          void navigate({
-            search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
-            replace: true,
-          });
+          setFilters({ ...filters, expression: togglePreset(filters.expression, ownerPreset) });
         },
       },
       ...(["available-now", "free-later-today"] as const).map((mode) => {

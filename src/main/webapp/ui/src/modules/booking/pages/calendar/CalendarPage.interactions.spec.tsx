@@ -40,6 +40,38 @@ afterEach(() => {
 });
 
 describe("Calendar page", () => {
+  test("routes Owner panel edits back to the item expression", async () => {
+    history = createMemoryHistory({
+      initialEntries: [
+        "/booking/calendar?date=2026-08-17&calendar-events.where=requester.value%3D%3Dme&calendar-resources.where=targetOwner%3D%3Dme",
+      ],
+    });
+    render(<CalendarPageStory history={history} />);
+    await page.getByRole("button", { name: "Filters 2 applied", exact: true }).click();
+    await page.getByRole("button", { name: "Edit filters", exact: true }).click();
+    await expect.element(page.getByRole("combobox", { name: "Field for filter 2", exact: true })).toHaveValue("Owner");
+    await expect.element(page.getByRole("combobox", { name: "Value for filter 2", exact: true })).toHaveValue("Me");
+    await page.getByRole("button", { name: "Remove filter 2", exact: true }).click();
+    await page.getByRole("button", { name: "Apply filters", exact: true }).click();
+    await expect.poll(() => new URLSearchParams(history.location.search).get("calendar-resources.where")).toBeNull();
+    await expect
+      .poll(() => new URLSearchParams(history.location.search).get("calendar-events.where"))
+      .toBe("requester.value==me");
+    await expect.element(page.getByRole("button", { name: "Filters 1 applied", exact: true })).toBeVisible();
+  });
+
+  test("edits the requester preset through the existing Filters panel", async () => {
+    render(<CalendarPageStory history={history} />);
+    await page.getByRole("button", { name: "Filters, none applied", exact: true }).click();
+    await page.getByRole("switch", { name: "My Bookings", exact: true }).click();
+    await expect
+      .poll(() => new URLSearchParams(history.location.search).get("calendar-events.where"))
+      .toBe("requester.value==me");
+    await expect.element(page.getByRole("button", { name: "Filters 1 applied", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Edit filters", exact: true }).click();
+    await expect.element(page.getByRole("combobox", { name: "Value for filter 1", exact: true })).toHaveValue("Me");
+  });
+
   test("keeps the event expand control fixed when details open", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.chooseView("Time grid");

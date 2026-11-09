@@ -121,7 +121,7 @@ export function InlineBookingEditor({
       flushSync(onClose);
       if (updated) {
         await updateOptions.onSuccess?.(
-          updated,
+          { id: updated.id },
           { id: event.id, data: {}, headers: { "If-Match": `"${event.version}"` } },
           onMutateResult,
           mutationContext,

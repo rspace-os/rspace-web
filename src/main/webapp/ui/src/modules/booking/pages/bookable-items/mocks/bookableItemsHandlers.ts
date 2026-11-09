@@ -33,19 +33,21 @@ function matchesCatalogueFilter(
   const customFieldPrefix = "target.customFields.";
   const customFields = (fixture as unknown as Record<string, unknown>)["target.customFields"];
   const actual = (
-    node.left.selector === "id"
-      ? fixture.id
-      : node.left.selector === "target"
-        ? fixture.target.globalId
-        : node.left.selector === "target.id"
-          ? fixture.target.value.id
-          : node.left.selector === "target.name"
-            ? fixture.target.value.name
-            : node.left.selector.startsWith(customFieldPrefix)
-              ? (customFields as Record<string, unknown> | undefined)?.[
-                  node.left.selector.slice(customFieldPrefix.length)
-                ]
-              : undefined
+    node.left.selector === "targetOwner"
+      ? "me"
+      : node.left.selector === "id"
+        ? fixture.id
+        : node.left.selector === "target"
+          ? fixture.target.globalId
+          : node.left.selector === "target.id"
+            ? fixture.target.value.id
+            : node.left.selector === "target.name"
+              ? fixture.target.value.name
+              : node.left.selector.startsWith(customFieldPrefix)
+                ? (customFields as Record<string, unknown> | undefined)?.[
+                    node.left.selector.slice(customFieldPrefix.length)
+                  ]
+                : undefined
   ) as string | number | undefined;
   if (actual === undefined) return node.operator === "!=" || node.operator === "=out=";
   const raw = Array.isArray(node.right.value) ? node.right.value : [node.right.value];

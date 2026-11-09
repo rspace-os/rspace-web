@@ -12,7 +12,6 @@ import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDi
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
-import type { FieldName } from "@/modules/common/collection/config";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -24,6 +23,7 @@ import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
+import { requesterValueField } from "../ownerPreset";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
@@ -121,12 +121,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     () => ({
       kind: "and",
       children: [
-        {
-          kind: "comparison",
-          field: "requester.value" as FieldName<BookingListDocument>,
-          operator: "equals",
-          value: requesterId,
-        },
+        { kind: "comparison", field: requesterValueField, operator: "equals", value: requesterId },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
         // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
         ...(period === "cancelled"

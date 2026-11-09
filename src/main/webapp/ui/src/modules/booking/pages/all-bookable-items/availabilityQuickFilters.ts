@@ -6,6 +6,7 @@ import {
   type CatalogueAvailabilityWindow,
 } from "@/modules/booking/domain/bookingCatalogue";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
+import { togglePreset, withoutPresets } from "@/modules/common/table-list/presets";
 import type { FilterExpression } from "@/modules/common/table-list/types";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 
@@ -26,31 +27,19 @@ export function hasAvailabilityFilter(expression: FilterExpression<AllBookableIt
   );
 }
 
-/** Replaces only availability predicates; other rules and their grouping remain intact. */
+export const availabilityPresets = ["available-now", "free-later-today"].map(
+  (value) => ({ kind: "comparison", field: "availability", operator: "equals", value }) as const,
+);
+
+/** Replaces the exclusive top-level availability preset, preserving OR subtrees. */
 export function withAvailability(
   expression: FilterExpression<AllBookableItem> | null,
   availability: AvailabilityQuickFilter | undefined,
 ): FilterExpression<AllBookableItem> | null {
-  let remaining = expression;
-  if (expression?.kind === "comparison") {
-    if (expression.field === "availability") remaining = null;
-  } else if (expression) {
-    const children = expression.children.flatMap((child) => {
-      const next = withAvailability(child, undefined);
-      return next ? [next] : [];
-    });
-    remaining = children.length === 0 ? null : children.length === 1 ? children[0] : { ...expression, children };
-  }
-  if (!availability) return remaining;
-  const rule: FilterExpression<AllBookableItem> = {
-    kind: "comparison",
-    field: "availability",
-    operator: "equals",
-    value: availability,
-  };
-  return remaining
-    ? { kind: "and", children: remaining.kind === "and" ? [...remaining.children, rule] : [remaining, rule] }
-    : rule;
+  const remaining = withoutPresets(expression, availabilityPresets);
+  return availability
+    ? togglePreset(remaining, { kind: "comparison", field: "availability", operator: "equals", value: availability })
+    : remaining;
 }
 
 function conjuncts(expression: FilterExpression<AllBookableItem>): FilterExpression<AllBookableItem>[] {
