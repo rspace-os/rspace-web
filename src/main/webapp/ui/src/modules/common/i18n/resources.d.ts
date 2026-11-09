@@ -4230,7 +4230,9 @@ export default interface Resources {
         "move": {
           "alreadyOnBench": "All items are already on your bench.",
           "confirmOnBench": {
+            "itemsLabel": "The items are:",
             "message": "The items are: <itemList/> Do you want to move them to your bench?",
+            "prompt": "Do you want to move them to your bench?",
             "title": "Some items are in containers that are already on your bench."
           },
           "none": "Nothing to move.",
@@ -6509,6 +6511,9 @@ export default interface Resources {
           "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
+        "inventoryOauthToken": {
+          "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+        },
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
         "signing": "Only the record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",
