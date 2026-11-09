@@ -9,7 +9,7 @@ import {
   RouterProvider,
   useMatches,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -86,6 +86,11 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
         }),
         createRoute({
           getParentRoute: () => bookingRoute,
+          path: "/calendar/bookings/add/",
+          component: () => <main>{"Add booking destination"}</main>,
+        }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
           path: "/bookable-items/$globalId/{-$tab}/",
           validateSearch: bookableItemSearch,
           component: BookableItemPage,
@@ -105,6 +110,29 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
 }
 
 describe("booking layout", () => {
+  it("omits breadcrumbs from the Booking root", async () => {
+    renderAt("/booking");
+
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
+    expect(screen.queryByRole("navigation", { name: "booking:breadcrumbs.label" })).not.toBeInTheDocument();
+  });
+
+  it("shows linked ancestors and the current page on nested Booking routes", async () => {
+    const { container } = renderAt("/booking/calendar/bookings/add");
+
+    const breadcrumbs = await screen.findByRole("navigation", { name: "booking:breadcrumbs.label" });
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:sidebar.label" })).toHaveAttribute(
+      "href",
+      "/booking",
+    );
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:calendar.title" })).toHaveAttribute(
+      "href",
+      "/booking/calendar",
+    );
+    expect(within(breadcrumbs).getByText("booking:bookings.addTitle")).toHaveAttribute("aria-current", "page");
+    await expectAccessible(container);
+  });
+
   it("keeps the shell mounted while preferences suspend the sidebar and inactive creation dialog", async () => {
     const preferences = Promise.withResolvers<void>();
     const { container } = renderAt("/booking", false, preferences.promise);
@@ -147,6 +175,11 @@ describe("booking layout", () => {
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toHaveAttribute(
       "href",
       expect.stringMatching(/^\/booking\/calendar\?date=\d{4}-\d{2}-\d{2}$/),
+    );
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/booking\/all-items\?date=\d{4}-\d{2}-\d{2}$/),
     );
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.addBooking" })).toHaveAttribute(
