@@ -3,6 +3,18 @@ export const crossResourceInvalidation: ReadonlyArray<{
   invalidates: ReadonlyArray<{ query: string; params?: readonly string[] }>;
 }> = [
   {
+    onMutations: ["replaceMyBookingPreferences", "resetMyBookingPreferences"],
+    invalidates: [{ query: "getMyBookingPreferences" }],
+  },
+  {
+    onMutations: ["patchAdminBookingSettings"],
+    invalidates: [
+      { query: "getBookingSettings" },
+      { query: "getAdminBookingSettings" },
+      { query: "getMyBookingPreferences" },
+    ],
+  },
+  {
     onMutations: [
       "createBookingConfiguration",
       "updateBookingConfiguration",
