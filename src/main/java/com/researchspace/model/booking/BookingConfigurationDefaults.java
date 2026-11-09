@@ -157,7 +157,7 @@ public class BookingConfigurationDefaults implements Serializable {
   }
 
   @Transient
-  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.granularity.invalidTitle}")
   public boolean isGranularityValid() {
     return BookingSchedulingSettings.isGranularityValid(slotGranularityMinutes, incrementUnit);
   }
@@ -181,14 +181,14 @@ public class BookingConfigurationDefaults implements Serializable {
   }
 
   @Transient
-  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.buffer.invalidTitle}")
   public boolean areBuffersValid() {
     return BookingSchedulingSettings.isBufferValid(bufferBeforeMinutes)
         && BookingSchedulingSettings.isBufferValid(bufferAfterMinutes);
   }
 
   @Transient
-  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalid}")
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalidTitle}")
   public boolean isMaximumDurationValid() {
     return BookingSchedulingSettings.isMaximumDurationValid(
         maxBookingDurationMinutes, slotGranularityMinutes, incrementUnit);

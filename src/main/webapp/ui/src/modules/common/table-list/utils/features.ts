@@ -17,6 +17,7 @@ import type { CollectionTranslationKey, FieldOrigin, LabelText } from "@/modules
 import type { TableListFeatures, TableListItemFieldLayout } from "../types";
 
 export type ColumnMeta = {
+  widthMode?: "fill" | "content";
   labelKey?: CollectionTranslationKey;
   label?: string;
   derivedLabel?: LabelText;

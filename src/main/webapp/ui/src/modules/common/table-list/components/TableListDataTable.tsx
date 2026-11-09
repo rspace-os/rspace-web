@@ -1,18 +1,21 @@
 import {
   type ColumnOrderState,
+  type ColumnSizingState,
   type ColumnVisibilityState,
   FlexRender,
   functionalUpdate,
   type SortingState,
   useTable,
 } from "@tanstack/react-table";
+import { clamp } from "es-toolkit";
 import type { Namespace } from "i18next";
-import { type ReactNode, useCallback, useId, useMemo } from "react";
+import { Fragment, type ReactNode, useCallback, useId, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { FieldName } from "@/modules/common/collection/config";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/modules/common/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/modules/common/ui/table";
 import { cn } from "@/modules/common/utils/cn";
 import { useTableListColumnDefs } from "../hooks/useTableListColumnDefs";
 import type { FilterState, TableListPresentationVisibility, TableListProps, TableListStatus } from "../types";
@@ -45,6 +48,7 @@ function bodyStateFor(status: TableListStatus, rowCount: number, rowsWhenEmpty: 
 
 type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
   TableListProps<TDocument>,
+  | "stickyActions"
   | "config"
   | "rows"
   | "getRowId"
@@ -66,6 +70,7 @@ type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
 
 export function TableListDataTable<TDocument extends Record<string, unknown>>({
   config,
+  stickyActions = "always",
   rows,
   getRowId,
   features,
@@ -136,6 +141,58 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   );
   const globalFilter = filteringState === false ? undefined : filteringState;
 
+  // React owns the column sizes: the sizes captured at the first resize plus the user's edits.
+  const [storedSizing, setStoredSizing] = useState<ColumnSizingState>({});
+  const [capturedLayout, setCapturedLayout] = useState(false);
+  const [userSizedFillId, setUserSizedFillId] = useState<string | null>(null);
+  // A fill resize that starts the capture works from the measured fill width until it ends.
+  const [capturingFillId, setCapturingFillId] = useState<string | null>(null);
+  // Written and read only in resize handlers.
+  const pendingFillResize = useRef<{ id: string; size: number } | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const observeContainer = useCallback((container: HTMLDivElement) => {
+    const observer = new ResizeObserver(() => setContainerWidth(container.clientWidth));
+    observer.observe(container);
+    setContainerWidth(container.clientWidth);
+    return () => observer.disconnect();
+  }, []);
+  const [overflowing, setOverflowing] = useState(false);
+  const observeTable = useCallback((element: HTMLTableElement) => {
+    const scroller = element.parentElement;
+    if (!scroller) return;
+    const updateOverflow = () => setOverflowing(scroller.scrollWidth > scroller.clientWidth);
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(element);
+    observer.observe(scroller);
+    updateOverflow();
+    return () => observer.disconnect();
+  }, []);
+  // Once captured, an untouched fill column takes the container's spare width, so refitting follows the Columns
+  // panel, saved-view restores, navigation and container changes. A fill width the user chose stays until reset.
+  const visibleColumnDefs = [
+    ...columnOrder.flatMap((id) => columns.filter((column) => column.id === id)),
+    ...columns.filter((column) => column.id === undefined || !columnOrder.includes(column.id)),
+  ].filter((column) => column.id !== undefined && columnVisibility[column.id] !== false);
+  const sizeOf = (column: (typeof columns)[number]) =>
+    clamp(
+      (column.id === undefined ? undefined : storedSizing[column.id]) ?? column.size ?? 150,
+      column.minSize ?? 20,
+      column.maxSize ?? Number.MAX_SAFE_INTEGER,
+    );
+  const fillDef = visibleColumnDefs.find((column) => column.meta?.widthMode === "fill");
+  const effectiveSizing: ColumnSizingState =
+    capturedLayout && fillDef?.id !== undefined && userSizedFillId !== fillDef.id && capturingFillId !== fillDef.id
+      ? {
+          ...storedSizing,
+          [fillDef.id]: clamp(
+            containerWidth -
+              visibleColumnDefs.filter((column) => column !== fillDef).reduce((sum, column) => sum + sizeOf(column), 0),
+            fillDef.minSize ?? 20,
+            fillDef.maxSize ?? Number.MAX_SAFE_INTEGER,
+          ),
+        }
+      : storedSizing;
+
   const table = useTable<typeof tableListFeatures, TDocument>({
     features: tableListFeatures,
     columns,
@@ -147,6 +204,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
       columnVisibility,
       pagination,
       globalFilter,
+      columnSizing: effectiveSizing,
     },
     globalFilterFn: (row, _columnId, value: FilterState<TDocument>) =>
       matchesFilters(row.original, config, value, i18n.resolvedLanguage ?? i18n.language),
@@ -157,6 +215,19 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     rowCount: features.pagination === false ? rows.length : features.pagination.rowCount,
     enableMultiSort: true,
     columnResizeMode: "onEnd",
+    onColumnSizingChange: (updater) => {
+      const next = functionalUpdate(updater, effectiveSizing);
+      const pending = pendingFillResize.current;
+      if (pending && Math.abs((next[pending.id] ?? pending.size) - pending.size) >= 0.01) {
+        setUserSizedFillId(pending.id);
+        pendingFillResize.current = null;
+      } else if (userSizedFillId !== null && next[userSizedFillId] === undefined) {
+        // A reset dropped the user's fill width.
+        setUserSizedFillId(null);
+      }
+      setCapturingFillId(null);
+      setStoredSizing(next);
+    },
     onSortingChange:
       sortingFeature === false
         ? undefined
@@ -171,8 +242,13 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   });
 
   const rowModel = table.getRowModel();
-  const visibleRows = rowModel.rows.map((row) => row.original);
-  const visibleRowIds = rowModel.rows.map((row) => row.id);
+  const { visibleRows, visibleRowIds } = useMemo(
+    () => ({
+      visibleRows: rowModel.rows.map((row) => row.original),
+      visibleRowIds: rowModel.rows.map((row) => row.id),
+    }),
+    [rowModel],
+  );
   const selectedVisibleCount = selection ? visibleRowIds.filter((rowId) => selection.value.has(rowId)).length : 0;
   const allVisibleSelected = visibleRowIds.length > 0 && selectedVisibleCount === visibleRowIds.length;
   const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
@@ -193,6 +269,50 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     selection.onChange(next);
   };
 
+  const visibleColumns = table.getVisibleLeafColumns();
+  const hasWidthModes = columns.some((column) => column.meta?.widthMode);
+  const fillColumn = visibleColumns.find((column) => column.columnDef.meta?.widthMode === "fill");
+  const totalWidth = table.getTotalSize();
+  const pinActions = stickyActions === "always" || !overflowing;
+
+  // Capture by identity: selection and presentation cells need not have resize handles.
+  const prepareResize = (element: HTMLElement) => {
+    const resizingFill = fillColumn && element.closest("th")?.dataset.columnId === fillColumn.id;
+    if (!hasWidthModes || capturedLayout) {
+      pendingFillResize.current = resizingFill ? { id: fillColumn.id, size: fillColumn.getSize() } : null;
+      return true;
+    }
+    const headers = new Map(
+      Array.from(element.closest("tr")?.querySelectorAll<HTMLTableCellElement>("th[data-column-id]") ?? []).map(
+        (header) => [header.dataset.columnId, header],
+      ),
+    );
+    const captured: [string, number][] = [];
+    for (const column of visibleColumns) {
+      const header = headers.get(column.id);
+      if (!header) {
+        console.warn(`Missing rendered header for column ${column.id}; cancelling column resize`);
+        pendingFillResize.current = null;
+        return false;
+      }
+      captured.push([
+        column.id,
+        Math.min(
+          column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER,
+          Math.max(column.columnDef.minSize ?? 20, header.getBoundingClientRect().width),
+        ),
+      ]);
+    }
+    const sizes = Object.fromEntries(captured);
+    // Commit the capture before the resize handler that follows reads the column sizes.
+    flushSync(() => {
+      setStoredSizing(sizes);
+      setCapturedLayout(true);
+      setCapturingFillId(resizingFill ? fillColumn.id : null);
+    });
+    pendingFillResize.current = resizingFill ? { id: fillColumn.id, size: fillColumn.getSize() } : null;
+    return true;
+  };
   const resizeColumn = (columnId: string, size: number) =>
     table.setColumnSizing((current) => ({ ...current, [columnId]: size }));
   const selectAllPage = (
@@ -228,6 +348,9 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     [selection, t],
   );
 
+  const spacerBeforeId = visibleColumns.some((column) => column.id === "actions")
+    ? "actions"
+    : visibleColumns.at(-1)?.id;
   const renderedDataRows = useMemo(
     () =>
       renderRows
@@ -239,24 +362,32 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               className="group/row hover:bg-muted/40 data-[state=selected]:bg-primary/10"
             >
               {row.getVisibleCells().map((cell) => (
-                <TableCell
-                  key={cell.id}
-                  className={cn(
-                    "overflow-hidden py-2 text-ellipsis",
-                    cell.column.id === "actions" &&
-                      "sticky right-0 z-10 bg-background group-hover/row:bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-background))] group-data-[state=selected]/row:bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-background))]",
-                  )}
-                >
-                  {cell.column.id === selectionColumnId && selection ? (
-                    renderRowSelection(row.id, row.original)
-                  ) : (
-                    <FlexRender cell={cell} />
-                  )}
-                </TableCell>
+                <Fragment key={cell.id}>
+                  {capturedLayout && cell.column.id === spacerBeforeId ? (
+                    <TableCell role="presentation" className="p-0" />
+                  ) : null}
+                  <TableCell
+                    className={cn(
+                      "overflow-hidden py-2 text-ellipsis",
+                      cell.column.id === "actions" &&
+                        pinActions &&
+                        "sticky right-0 z-10 bg-background group-hover/row:bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-background))] group-data-[state=selected]/row:bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-background))]",
+                    )}
+                  >
+                    {cell.column.id === selectionColumnId && selection ? (
+                      renderRowSelection(row.id, row.original)
+                    ) : (
+                      <FlexRender cell={cell} />
+                    )}
+                  </TableCell>
+                </Fragment>
               ))}
             </TableRow>
           )),
     [
+      capturedLayout,
+      pinActions,
+      spacerBeforeId,
       columns,
       columnState,
       config,
@@ -324,8 +455,18 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     t,
     uiColumns,
   ]);
-  const visibleColumns = table.getVisibleLeafColumns();
-  const colSpan = Math.max(visibleColumns.length, 1);
+  const intrinsicWidths = hasWidthModes && !capturedLayout;
+  const resetColumn = (columnId: string) => {
+    if (hasWidthModes || capturedLayout) {
+      table.resetColumnSizing(true);
+      setCapturedLayout(false);
+      setUserSizedFillId(null);
+      pendingFillResize.current = null;
+    } else {
+      table.getColumn(columnId)?.resetSize();
+    }
+  };
+  const colSpan = Math.max(visibleColumns.length + (capturedLayout ? 1 : 0), 1);
   const columnResizing = table.atoms.columnResizing.get();
 
   const renderBodyState = (
@@ -428,32 +569,57 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
         </section>
       ) : null}
       {!renderRows && tablePresentation !== false ? (
-        <div className={presentationClass(tablePresentation)}>
+        <div
+          ref={observeContainer}
+          className={cn(presentationClass(tablePresentation), "[&>[data-slot=table-container]]:scroll-pr-3")}
+        >
           <Table
+            ref={observeTable}
             aria-label={t("tableList.view", { collection: collectionLabel })}
             aria-busy={status === "loading" || status === "refreshing"}
-            className="table-fixed min-w-full"
-            style={{ width: table.getTotalSize() }}
+            className={cn(intrinsicWidths ? "table-auto" : "table-fixed", "min-w-full")}
+            style={{
+              width: intrinsicWidths ? "100%" : totalWidth,
+            }}
           >
             <colgroup>
               {visibleColumns.map((column) => (
-                <col key={column.id} style={{ width: column.getSize() }} />
+                <Fragment key={column.id}>
+                  {capturedLayout && column.id === spacerBeforeId ? <col style={{ width: "auto" }} /> : null}
+                  <col
+                    style={{
+                      width:
+                        intrinsicWidths && column.columnDef.meta?.widthMode === "fill"
+                          ? "100%"
+                          : intrinsicWidths && column.columnDef.meta?.widthMode === "content"
+                            ? "1%"
+                            : column.getSize(),
+                    }}
+                  />
+                </Fragment>
               ))}
             </colgroup>
             <TableHeader>
               {table.getHeaderGroups().map((group) => (
-                <TableRow key={group.id} className="hover:bg-transparent">
+                <TableRow key={group.id} className="bg-muted/35 hover:bg-muted/35">
                   {group.headers.map((header) => (
-                    <TableListHeaderCell
-                      key={header.id}
-                      header={header}
-                      resizeId={resizeId}
-                      resizeOffset={
-                        columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0
-                      }
-                      selectAllControl={selection ? selectAllPage : undefined}
-                      onResize={resizeColumn}
-                    />
+                    <Fragment key={header.id}>
+                      {capturedLayout && header.column.id === spacerBeforeId ? (
+                        <TableHead role="presentation" className="p-0" />
+                      ) : null}
+                      <TableListHeaderCell
+                        header={header}
+                        pinActions={pinActions}
+                        resizeId={resizeId}
+                        resizeOffset={
+                          columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0
+                        }
+                        selectAllControl={selection ? selectAllPage : undefined}
+                        onResize={resizeColumn}
+                        onResizeStart={prepareResize}
+                        onReset={resetColumn}
+                      />
+                    </Fragment>
                   ))}
                 </TableRow>
               ))}

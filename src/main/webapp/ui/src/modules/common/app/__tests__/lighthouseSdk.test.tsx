@@ -17,13 +17,14 @@ it("does not load Lighthouse on a public route without a help menu", async () =>
     beforeLoad: () => ({ appBar: false as const }),
     component: () => <h1>{publicTitle}</h1>,
   });
+  const queryClient = new QueryClient();
   const router = createRouter({
     routeTree: Route.addChildren([publicRoute]),
-    context: { tokenProvider: getApiV2TokenProvider() },
+    context: { queryClient, tokenProvider: getApiV2TokenProvider() },
     history: createMemoryHistory({ initialEntries: ["/public/apiDocs"] }),
   });
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );

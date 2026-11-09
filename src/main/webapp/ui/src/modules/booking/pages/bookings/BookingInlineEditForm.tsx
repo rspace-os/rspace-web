@@ -39,7 +39,8 @@ function editable(booking: BookingDetails): booking is BookingDetails & {
 export default function BookingInlineEditForm() {
   const { t } = useTranslation(["booking", "common"]);
   const { t: bookingT } = useTranslation("booking");
-  const { booking, displayTimeZone, formId, editButtonRef, announce, setDirty, refreshBooking } = useBookingEvent();
+  const { booking, displayTimeZone, formId, editButtonRef, reportBookingUpdated, setDirty, refreshBooking } =
+    useBookingEvent();
   const [base] = useState(booking);
   const [conflict, setConflict] = useState(false);
   const draftBridge = useBookingTimelineDraft();
@@ -88,7 +89,7 @@ export default function BookingInlineEditForm() {
           { cancelRefetch: false },
         );
       }
-      announce(t("bookings.details.edit.saved"));
+      if (updated) reportBookingUpdated(updated, base.target?.value.name ?? t("common:values.unknownItem"));
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
@@ -103,7 +104,6 @@ export default function BookingInlineEditForm() {
         await refreshBooking();
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        await invalidateListBookingConfigurations(queryClient);
         await invalidateListBookingConfigurations(queryClient);
       }
     },
@@ -132,16 +132,13 @@ export default function BookingInlineEditForm() {
   }, [conflict, mutation.error, mutation.isError, mutation.isPending]);
 
   const resetMutation = mutation.reset;
-  const handleStateChange = useCallback(
-    (state: BookingFormState) => {
-      draftBridge.onStateChange(state);
-      setDirty(state.dirty);
-      if (mutation.isError && !conflict) {
-        resetMutation();
-      }
-    },
-    [draftBridge.onStateChange, setDirty, resetMutation, mutation.isError, conflict],
-  );
+  const handleStateChange = (state: BookingFormState) => {
+    draftBridge.onStateChange(state);
+    setDirty(state.dirty);
+    if (mutation.isError && !conflict) {
+      resetMutation();
+    }
+  };
 
   const originalDraft = wallClockDraftFromInstants(base.start, base.end, displayTimeZone);
   const availability = useBookingDraftAvailability({
@@ -180,9 +177,9 @@ export default function BookingInlineEditForm() {
     <>
       <div ref={panelRef} className="min-w-0 @4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
         <Panel
-          heading={t(
-            base.kind === "MAINTENANCE" ? "bookings.details.edit.maintenanceTitle" : "bookings.details.edit.title",
-          )}
+          heading={
+            base.kind === "MAINTENANCE" ? t("bookings.details.edit.maintenanceTitle") : t("bookings.details.edit.title")
+          }
           headingId="booking-details-heading"
           headingRef={headingRef}
           action={
@@ -268,6 +265,7 @@ export default function BookingInlineEditForm() {
         <div className="min-w-0 @4xl:col-start-2 @4xl:row-start-2">
           <BookingDayTimelineAside
             target={configuration.data}
+            eventKind={base.kind === "MAINTENANCE" ? "MAINTENANCE" : "BOOKING"}
             formContainerRef={panelRef}
             draft={draftBridge.draft ?? originalDraft}
             timezone={displayTimeZone}

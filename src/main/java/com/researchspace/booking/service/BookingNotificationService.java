@@ -12,12 +12,13 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.NotificationConfig;
+import com.researchspace.service.UserLocaleService;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,16 +31,19 @@ public class BookingNotificationService {
   private final CommunicationManager communicationManager;
   private final BookingNotificationRecipientReader recipientReader;
   private final BookingNotificationMessageFormatter messageFormatter;
+  private final UserLocaleService userLocaleService;
 
   public BookingNotificationService(
       InstrumentDao instrumentDao,
       CommunicationManager communicationManager,
       BookingNotificationRecipientReader recipientReader,
-      BookingNotificationMessageFormatter messageFormatter) {
+      BookingNotificationMessageFormatter messageFormatter,
+      UserLocaleService userLocaleService) {
     this.instrumentDao = instrumentDao;
     this.communicationManager = communicationManager;
     this.recipientReader = recipientReader;
     this.messageFormatter = messageFormatter;
+    this.userLocaleService = userLocaleService;
   }
 
   /**
@@ -59,7 +63,28 @@ public class BookingNotificationService {
     send(booking, actor, NotificationType.NOTIFICATION_BOOKING_RESTORED);
   }
 
+  /** Notifies subscribers of a time change, retaining the interval before the edit. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyChanged(
+      TimeSlotBooking booking, User actor, Instant previousStart, Instant previousEnd) {
+    send(
+        booking,
+        actor,
+        NotificationType.NOTIFICATION_BOOKING_CHANGED,
+        previousStart.toString(),
+        previousEnd.toString());
+  }
+
   private void send(TimeSlotBooking booking, User actor, NotificationType notificationType) {
+    send(booking, actor, notificationType, null, null);
+  }
+
+  private void send(
+      TimeSlotBooking booking,
+      User actor,
+      NotificationType notificationType,
+      String previousStart,
+      String previousEnd) {
     if (booking == null || booking.getKind() != BookingEventKind.BOOKING || actor == null) {
       return;
     }
@@ -75,6 +100,8 @@ public class BookingNotificationService {
             targetInstrument.getId(), notificationType, actor.getId(), requesterId);
     for (BookingNotificationRecipient recipient : recipients) {
       BookingNotificationData data = notificationData(booking, targetInstrument);
+      data.setPreviousStartTime(previousStart);
+      data.setPreviousEndTime(previousEnd);
       data.setEmailDisplayTimezone(recipient.displayZone().getId());
       data.setEmailTimeFormat(recipient.timeFormat());
       NotificationConfig config = new NotificationConfig();
@@ -87,8 +114,9 @@ public class BookingNotificationService {
       config.setNotificationData(data);
       config.setNotificationEventPreferenceOverride(recipient.requester());
 
-      // The saved message is the email body, so its links must be absolute. In-app lists
-      // re-format the structured data with root-relative links at display time.
+      // The saved message is the email body, so its links must be absolute and its words are the
+      // recipient's, like the subject. In-app lists re-format the structured data with
+      // root-relative links at display time.
       communicationManager.notify(
           actor,
           null,
@@ -97,7 +125,7 @@ public class BookingNotificationService {
               notificationType,
               data,
               recipient.displayZone(),
-              LocaleContextHolder.getLocale(),
+              userLocaleService.getLocaleFor(recipient.user()),
               recipient.timeFormat()));
     }
   }

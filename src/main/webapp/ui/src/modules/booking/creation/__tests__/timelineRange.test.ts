@@ -4,6 +4,8 @@ import * as bookingOpeningHours from "@/modules/booking/domain/bookingOpeningHou
 import { ALL_ISO_WEEKDAYS, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import {
+  proposeDayRange,
+  proposeDragRange,
   type TimelineContext,
   type TimelineRange,
   timelineAdjuster,
@@ -250,6 +252,44 @@ describe("hidden endpoints", () => {
   });
 });
 
+describe("creation proposals", () => {
+  it("rounds both boundaries to the nearest instrument step", () => {
+    const policy = context("2026-08-17", "UTC", "UTC", 17, {}).policy;
+    expect(proposeDayRange({ startMinute: 547, endMinute: 600 }, "2026-08-17", "UTC", policy)).toEqual({
+      startMinute: 544,
+      endMinute: 595,
+    });
+  });
+
+  it("keeps at least one step when both boundaries round to the same time", () => {
+    const policy = context("2026-08-17", "UTC", "UTC", 15, {}).policy;
+    expect(proposeDayRange({ startMinute: 608, endMinute: 609 }, "2026-08-17", "UTC", policy)).toEqual({
+      startMinute: 615,
+      endMinute: 630,
+    });
+  });
+
+  it("offers no Day proposal whose end would need an occurrence choice", () => {
+    const policy = context("2026-10-24", "Europe/Berlin", "Europe/Berlin", 1440, {
+      incrementUnit: "DAYS",
+    }).policy;
+    expect(
+      proposeDayRange({ startMinute: 150, endMinute: 151 }, "2026-10-24", "Europe/Berlin", policy),
+    ).toBeUndefined();
+  });
+
+  it("extends a Day proposal to the same local time on a later date", () => {
+    const policy = context("2026-03-28", "Europe/Berlin", "Europe/Berlin", 1440, {
+      incrementUnit: "DAYS",
+    }).policy;
+    // Noon Saturday to noon Sunday in Berlin is 23 elapsed hours.
+    expect(proposeDayRange({ startMinute: 720, endMinute: 721 }, "2026-03-28", "Europe/Berlin", policy)).toEqual({
+      startMinute: 720,
+      endMinute: 720 + 23 * 60,
+    });
+  });
+});
+
 describe("preserved whole-window movement", () => {
   it.each([
     [
@@ -343,4 +383,41 @@ describe("preserved whole-window movement", () => {
       end: "2026-08-19T10:00:00Z",
     });
   });
+});
+
+describe("drag creation maximum", () => {
+  const policy = { ...utc15.policy, maxBookingDurationMinutes: 50 };
+  it.each([
+    [540, 570, { startMinute: 540, endMinute: 570 }],
+    [570, 540, { startMinute: 540, endMinute: 570 }],
+    [540, 720, { startMinute: 540, endMinute: 585 }],
+    [720, 540, { startMinute: 675, endMinute: 720 }],
+    [540, 541, { startMinute: 540, endMinute: 555 }],
+  ])("caps %s to %s at a whole increment", (anchor, pointer, expected) => {
+    expect(proposeDragRange(anchor, pointer, "2026-08-17", "UTC", policy)).toEqual(expected);
+  });
+  it("does not propose an increment longer than the maximum", () => {
+    expect(
+      proposeDragRange(540, 541, "2026-08-17", "UTC", { ...policy, maxBookingDurationMinutes: 10 }),
+    ).toBeUndefined();
+  });
+});
+
+it("caps maintenance at the absolute maximum", () => {
+  const limit = bookingOpeningHours.MAX_BOOKING_DURATION_MINUTES;
+  expect(proposeDragRange(0, limit + 60, "2026-08-17", "UTC", unrestrictedTimelinePolicy("UTC"))).toEqual({
+    startMinute: 0,
+    endMinute: limit,
+  });
+});
+it("measures day increments in elapsed minutes across spring forward", () => {
+  const policy = context("2026-03-29", "Europe/Berlin", "Europe/Berlin", 1440, {
+    incrementUnit: "DAYS",
+    maxBookingDurationMinutes: 1440,
+  }).policy;
+  expect(proposeDragRange(0, 4000, "2026-03-29", "Europe/Berlin", policy)).toEqual({ startMinute: 0, endMinute: 1380 });
+});
+it("snaps in the scheduling zone when the display zone differs", () => {
+  const policy = context("2026-08-17", "UTC", "Asia/Kolkata", 60, { maxBookingDurationMinutes: 120 }).policy;
+  expect(proposeDragRange(540, 900, "2026-08-17", "UTC", policy)).toEqual({ startMinute: 570, endMinute: 690 });
 });

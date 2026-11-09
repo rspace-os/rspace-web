@@ -3,8 +3,10 @@ import { isNil } from "es-toolkit";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
+import { bookingDisplayLocale, bookingLocale, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
@@ -26,9 +28,10 @@ export function useAuditEventKindLabels(): Record<AuditEventKind, string> {
 }
 
 function useAuditEventLabel(row: AuditRow): string {
+  const { t } = useTranslation("booking");
   const labels = useAuditEventKindLabels();
   const kind = auditEventKind(row);
-  return kind === null ? row.action : labels[kind];
+  return kind === null ? t("bookableItemDetails.audit.actions.other") : labels[kind];
 }
 
 export function AuditActionBadge({ row }: { row: AuditRow }) {
@@ -47,16 +50,26 @@ function RecordedValues({ row }: { row: AuditRow }) {
     cancellationReason: t("bookableItemDetails.audit.values.cancellationReason"),
     state: t("bookableItemDetails.audit.values.state"),
     target: t("bookableItemDetails.audit.values.target"),
+    targetName: t("bookableItemDetails.audit.values.targetName"),
     bookingConfigurationId: t("bookableItemDetails.audit.values.configuration"),
-    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
     enabled: t("bookableItemDetails.audit.values.enabled"),
     timezone: t("bookableItemDetails.audit.values.timezone"),
     openingHours: t("bookableItemDetails.audit.values.openingHours"),
     slotGranularityMinutes: t("bookableItemDetails.audit.values.increment"),
+    incrementUnit: t("bookableItemDetails.audit.values.incrementUnit"),
     maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
     bufferBeforeMinutes: t("bookableItemDetails.audit.values.bufferBefore"),
     bufferAfterMinutes: t("bookableItemDetails.audit.values.bufferAfter"),
     allowDoubleBooking: t("bookableItemDetails.audit.values.allowDoubleBooking"),
+    availabilityWindowStart: t("bookableItemDetails.audit.values.availabilityWindowStart"),
+    availabilityWindowEnd: t("bookableItemDetails.audit.values.availabilityWindowEnd"),
+    timezoneMode: t("bookableItemDetails.audit.values.timezoneMode"),
+    customTimezone: t("bookableItemDetails.audit.values.customTimezone"),
+    timeFormat: t("bookableItemDetails.audit.values.timeFormat"),
+    configurationVersion: t("bookableItemDetails.audit.values.configurationVersion"),
+    removedBookings: t("bookableItemDetails.audit.values.removedBookings"),
+    removedSubscriptions: t("bookableItemDetails.audit.values.removedSubscriptions"),
+    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
   };
   const words = {
     yes: t("bookableItemDetails.yes"),
@@ -68,16 +81,42 @@ function RecordedValues({ row }: { row: AuditRow }) {
       CANCELLED: t("bookings.details.cancelled"),
       BOOKING: t("bookings.form.typeBooking"),
       MAINTENANCE: t("bookings.form.typeBlockout"),
+      MINUTES: t("settings.fields.incrementMinutes"),
+      HOURS: t("settings.fields.incrementHours"),
+      DAYS: t("settings.fields.incrementDays"),
+      BROWSER: t("bookableItemDetails.audit.settingValues.browserTimezone"),
+      INSTITUTION: t("bookableItemDetails.audit.settingValues.institutionTimezone"),
+      CUSTOM: t("bookableItemDetails.audit.settingValues.customTimezone"),
+      AUTOMATIC: t("bookableItemDetails.audit.settingValues.automaticTimeFormat"),
+      H12: t("bookableItemDetails.audit.settingValues.twelveHour"),
+      H24: t("bookableItemDetails.audit.settingValues.twentyFourHour"),
     },
   };
+  // With its unit recorded alongside, the increment reads as it was configured, such as "1 day", not 1440.
+  const recordedUnit = row.payload.incrementUnit;
+  const recordedMinutes = Number(row.payload.slotGranularityMinutes);
+  const incrementInUnit =
+    (recordedUnit === "MINUTES" || recordedUnit === "HOURS" || recordedUnit === "DAYS") &&
+    Number.isFinite(recordedMinutes)
+      ? formatIncrement({ slotGranularityMinutes: recordedMinutes, incrementUnit: recordedUnit }, t)
+      : undefined;
   return (
     <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
-      {recordedValues(row.payload, i18n.language, words, timeFormat).map(([label, value]) => (
-        <div className="contents" key={label}>
-          <dt className="break-words text-muted-foreground">{labels[label] ?? label}</dt>
-          <dd className="break-words">{value === "{}" ? t("bookableItemDetails.audit.values.empty") : value}</dd>
-        </div>
-      ))}
+      {recordedValues(row.payload, i18n.language, words, timeFormat).map(([label, value]) => {
+        const inUnit = label === "slotGranularityMinutes" ? incrementInUnit : undefined;
+        return (
+          <div className="contents" key={label}>
+            <dt className="break-words text-muted-foreground">
+              {inUnit
+                ? t("bookableItemDetails.fields.granularity")
+                : (labels[label] ?? t("bookableItemDetails.audit.values.other"))}
+            </dt>
+            <dd className="break-words">
+              {inUnit ?? (value === "{}" ? t("bookableItemDetails.audit.values.empty") : value)}
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }
@@ -88,9 +127,10 @@ function bookingId(target: string | null | undefined): string | null {
 }
 
 function AuditTarget({ target }: { target: AuditRow["target"] }) {
+  const { t } = useTranslation("booking");
   const id = bookingId(target);
   return id === null ? (
-    <span>{target ?? "—"}</span>
+    <span>{target ?? t("bookableItemDetails.audit.values.none")}</span>
   ) : (
     <Link className="underline" to="/booking/calendar/bookings/$id" params={{ id }}>
       {target}
@@ -99,11 +139,10 @@ function AuditTarget({ target }: { target: AuditRow["target"] }) {
 }
 
 function AuditTimestamp({ value }: { value: string }) {
-  const { i18n } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return (
     <time dateTime={value}>
-      {formatBookingDateTime(value, "UTC", i18n.language, timeFormat, { timeStyle: "long" })}
+      {formatBookingDateTime(value, "UTC", bookingDisplayLocale(timeFormat), timeFormat, { timeStyle: "long" })}
     </time>
   );
 }
@@ -129,11 +168,7 @@ export function AuditEventItem({ row }: { row: AuditRow }) {
   const [open, setOpen] = useState(false);
   const label = useAuditEventLabel(row);
   const description = readableDescription(row.description, (parts, subject) => {
-    const text = parts.reduce(
-      (description, part, index) =>
-        index > 0 ? t("booking:bookableItemDetails.audit.descriptionParts", { description, part }) : part,
-      "",
-    );
+    const text = formatList(parts, bookingLocale(), { type: "unit" });
     return subject
       ? parts.length > 0
         ? t("booking:bookableItemDetails.audit.descriptionWithSubject", { description: text, name: subject })

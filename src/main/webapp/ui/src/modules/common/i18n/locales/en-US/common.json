@@ -209,25 +209,6 @@
       "clear": "Clear {field}",
       "openOptions": "Show options for {field}"
     },
-    "examples": {
-      "fields": {
-        "collaborators": "Collaborators",
-        "enabled": "Enabled",
-        "id": "ID",
-        "modified": "Modified",
-        "notes": "Notes",
-        "owner": "Owner",
-        "score": "Score",
-        "status": "Status",
-        "title": "Title",
-        "titleDescription": "The human-readable name of the record."
-      },
-      "inventoryItem": "Inventory item",
-      "record": "Research record",
-      "recordDetails": "Record details",
-      "records": "Research records",
-      "relationships": "Relationships"
-    },
     "fieldHelp": "About {label}",
     "relationship": {
       "empty": "No options found",
@@ -756,7 +737,6 @@
     "assignmentLimitError": "This resource already has the maximum of {limit, plural, one {# named assignment} other {# named assignments}}.",
     "assignments": "Access assignments",
     "cancelled": "Unsaved access changes were cancelled.",
-    "conflict": "Access changed elsewhere. Your draft has been kept. Review the latest assignments before saving again.",
     "conflictCount": "Access changed elsewhere. Resolve {count, plural, one {this conflict} other {these # conflicts}} before saving.",
     "conflictMerged": "Independent access changes were merged into your draft. Review and save again.",
     "conflictRefreshError": "The latest access could not be loaded. Try again before reviewing your draft.",
@@ -788,7 +768,6 @@
     "saved": "Access changes saved.",
     "saveError": "Access changes could not be saved.",
     "saving": "Saving access changes.",
-    "search": "Search",
     "searchAssigned": "Search assigned users and groups",
     "searchError": "Users and groups could not be searched.",
     "searchHint": "Type at least {count, plural, one {# character} other {# characters}}.",
@@ -805,7 +784,6 @@
     "unavailableGroup": "Unavailable group",
     "unavailableUser": "Unavailable user",
     "unknownRole": "Unknown role",
-    "unsaved": "Access changes are not yet saved.",
     "unsavedChanges": "Unsaved changes",
     "useLatest": "Use latest",
     "userOrGroup": "User/Group",

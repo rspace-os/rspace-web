@@ -101,7 +101,14 @@ const tableOptions = {
   initialState: { filters: { search: "", expression: initialExpression } },
 };
 
-function Demo({ table }: { table: UseTableListResult<ReorderingRecord> }) {
+type Layout = { intrinsicWidths?: boolean; contentWidths?: boolean; maxWidth?: number };
+
+function Demo({
+  table,
+  intrinsicWidths,
+  contentWidths,
+  maxWidth,
+}: Layout & { table: UseTableListResult<ReorderingRecord> }) {
   const [commits, setCommits] = useState({ filters: 0, sorting: 0, columns: 0 });
   const commitCounts = `${commits.filters},${commits.sorting},${commits.columns}`;
   const counted = <T,>(feature: false | { value: T; onChange: (value: T) => void }, key: keyof typeof commits) =>
@@ -118,14 +125,30 @@ function Demo({ table }: { table: UseTableListResult<ReorderingRecord> }) {
   const { filters, sorting, visibleFields: columns } = table.state;
 
   return (
-    <div className="mx-auto w-180 max-w-full p-4">
+    <div className="mx-auto max-w-full p-4" style={{ width: intrinsicWidths ? 1000 : 720 }}>
       <TableList
         {...table.tableProps}
+        config={
+          intrinsicWidths
+            ? {
+                ...config,
+                fields: config.fields.map((field) =>
+                  field.name === "title"
+                    ? {
+                        ...field,
+                        list: { minWidth: 180, maxWidth, widthMode: "fill" },
+                      }
+                    : field,
+                ),
+              }
+            : config
+        }
         reserveEmptyRows={false}
         uiColumns={[
           {
             id: "actions",
             label: "Actions",
+            widthMode: contentWidths ? "content" : undefined,
             width: 120,
             minWidth: 96,
             renderCell: (row) => <button type="button" aria-label={`View ${row.title}`} />,
@@ -151,29 +174,33 @@ function Demo({ table }: { table: UseTableListResult<ReorderingRecord> }) {
   );
 }
 
-function LocalDemo() {
-  return <Demo table={useTableList(tableOptions)} />;
+function LocalDemo(layout: Layout) {
+  return <Demo {...layout} table={useTableList(tableOptions)} />;
 }
 
-function PersistedDemo() {
+function PersistedDemo(layout: Layout) {
   const searchParameters = useLocation({ select: (location) => location.searchStr });
   return (
     <>
-      <Demo table={usePersistedTableList({ ...tableOptions, persistence: reorderingTable })} />
+      <Demo {...layout} table={usePersistedTableList({ ...tableOptions, persistence: reorderingTable })} />
       <output aria-label="Search parameters">{searchParameters}</output>
     </>
   );
 }
 
 /** With `persist`, the table runs on a memory router at `search`, whose route saves the view to storage. */
-export function TableListReorderingStory({ persist = false, search = "" }: { persist?: boolean; search?: string }) {
+export function TableListReorderingStory({
+  persist = false,
+  search = "",
+  ...layout
+}: Layout & { persist?: boolean; search?: string }) {
   const [router] = useState(() =>
     createRouter({
       routeTree: createRootRoute({
         ...tableViewRouteOptions([reorderingTable]),
         component: () => (
           <MemoryHistoryNuqsAdapter>
-            <PersistedDemo />
+            <PersistedDemo {...layout} />
           </MemoryHistoryNuqsAdapter>
         ),
       }),
@@ -183,7 +210,7 @@ export function TableListReorderingStory({ persist = false, search = "" }: { per
   const [client] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={client}>
-      {persist ? <RouterProvider router={router} /> : <LocalDemo />}
+      {persist ? <RouterProvider router={router} /> : <LocalDemo {...layout} />}
     </QueryClientProvider>
   );
 }

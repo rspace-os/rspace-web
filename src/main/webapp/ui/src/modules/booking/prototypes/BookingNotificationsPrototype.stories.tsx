@@ -69,7 +69,7 @@ function ChoiceEditor({
 
   return (
     <Form of={form} className="space-y-3 rounded-sm border p-4" onSubmit={(input) => onSave(input.choice === "ON")}>
-      <BookingNotificationChoiceFields form={form} labelKey={label} descriptionKey={description} />
+      <BookingNotificationChoiceFields form={form} label={label} description={description} />
       <Button type="submit" size="sm" disabled={!dirty}>
         <SaveIcon aria-hidden="true" />
         Save

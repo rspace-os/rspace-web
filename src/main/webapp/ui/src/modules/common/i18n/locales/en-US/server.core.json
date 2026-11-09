@@ -142,18 +142,18 @@
           "lifecycleConflict": "Restore the archived booking configuration before changing it.",
           "stale": "The booking settings changed after this page was loaded. Reload and try again.",
           "granularity": {
-            "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period.",
+            "invalid": "The time increment must be a whole number of minutes from 1 to {0, number}, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period.",
             "invalidTitle": "The time increment is invalid."
           },
           "openingHours": {
             "invalid": "Opening hours must use HH:mm with start before end; the end may be 24:00 to close at midnight."
           },
           "buffer": {
-            "invalid": "Booking buffers must be between 0 and 10,080 minutes.",
+            "invalid": "Booking buffers must be between 0 and {0, number} minutes.",
             "invalidTitle": "A booking buffer is out of range."
           },
           "maximumDuration": {
-            "invalid": "Maximum booking duration must be 0, or from one time increment up to 527,040 elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of 1,440 minutes per day.",
+            "invalid": "Maximum booking duration must be 0, or from one time increment up to {0, number} elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of {1, number} minutes per day.",
             "invalidTitle": "The maximum booking duration is invalid."
           },
           "target": {
@@ -180,7 +180,7 @@
         "booking": {
           "window": "The end time must be after the start time.",
           "startInPast": "The booking start must be in the future.",
-          "duration": "Bookings may not last longer than 527,040 elapsed minutes (366 days of 24 hours).",
+          "duration": "Bookings may not last longer than {0, number} elapsed minutes ({1, number} days of 24 hours).",
           "durationTitle": "The booking is too long.",
           "cancellationReason": {
             "length": "The cancellation reason must not exceed 500 characters.",

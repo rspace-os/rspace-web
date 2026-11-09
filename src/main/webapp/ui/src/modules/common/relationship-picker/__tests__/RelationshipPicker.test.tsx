@@ -17,7 +17,7 @@ import { FilterValueInput } from "@/modules/common/table-list/components/FilterV
 import { instrumentRelationshipSources as relationshipSources } from "@/modules/inventory/instrumentRelationshipSource";
 import { listInstruments } from "./fixtures/relationshipPicker";
 
-function renderPicker(onChange: (value: string) => void) {
+function renderPicker(onChange: (value: string) => void, searchDebounceMs?: number) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
@@ -26,6 +26,7 @@ function renderPicker(onChange: (value: string) => void) {
         value=""
         onChange={onChange}
         ariaLabel="Relationship"
+        searchDebounceMs={searchDebounceMs}
       />
     </QueryClientProvider>,
   );
@@ -185,6 +186,31 @@ describe("relationship picker search", () => {
     // Seeded and baseline rows have negative IDs, such as US-3; zero and malformed IDs are rejected.
     expect(databaseIdFromGlobalId("us-3", "US")).toBe(-3);
     expect(["US0", "US--3", "IN3"].map((value) => databaseIdFromGlobalId(value, "US"))).toEqual([null, null, null]);
+  });
+
+  it("searches once for a term typed and corrected within the debounce wait", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    listInstruments((url) => requests.push(url));
+    renderPicker(vi.fn(), 200);
+
+    await user.type(screen.getByRole("combobox", { name: "Relationship" }), "IN124{Backspace}3");
+
+    expect(await screen.findByRole("option", { name: "Confocal microscope IN123" })).toBeInTheDocument();
+    const searches = requests.map((url) => url.searchParams.get("where"));
+    expect(searches.filter((where) => where?.startsWith("id=="))).toEqual(["id==123"]);
+  });
+
+  it("searches each term at once without a debounce wait", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    listInstruments((url) => requests.push(url));
+    renderPicker(vi.fn(), 0);
+
+    await user.type(screen.getByRole("combobox", { name: "Relationship" }), "IN124{Backspace}3");
+
+    await waitFor(() => expect(requests.map((url) => url.searchParams.get("where"))).toContain("id==124"));
+    expect(await screen.findByRole("option", { name: "Confocal microscope IN123" })).toBeInTheDocument();
   });
 
   it("keeps support for disabling options when an availability source is supplied", async () => {

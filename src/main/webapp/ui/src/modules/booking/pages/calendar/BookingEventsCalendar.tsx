@@ -1,11 +1,18 @@
 import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
-import * as React from "react";
+import type * as React from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
-import { TableList, type TableListProps, type TableListRuntimeFields } from "@/modules/common/table-list/TableList";
+import {
+  TableList,
+  type TableListAlertsApi,
+  type TableListProps,
+  type TableListRuntimeFields,
+} from "@/modules/common/table-list/TableList";
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/types";
 import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
@@ -59,6 +66,8 @@ export function BookingEventsCalendar({
   view,
   layout,
   timezone,
+  focusUnavailable = false,
+  focusFallback = null,
   availabilityStartMinute = 7 * 60,
   availabilityEndMinute = 19 * 60,
   events,
@@ -100,6 +109,8 @@ export function BookingEventsCalendar({
   view: CalendarView;
   layout: CalendarLayout;
   timezone: string;
+  focusUnavailable?: boolean;
+  focusFallback?: "resources" | "overflow" | null;
   availabilityStartMinute?: number;
   availabilityEndMinute?: number;
   events: readonly BookingListDocument[];
@@ -156,14 +167,26 @@ export function BookingEventsCalendar({
         },
       )
     : undefined;
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("calendar", deliverNotice, alertsReady);
   const todayValue = todayInTimeZone(timezone);
-  const [editors, setEditors] = React.useState(() => new Map<string, BookingListDocument>());
+  const [editors, setEditors] = useState(() => new Map<string, BookingListDocument>());
   // Pin open cards by booking id so reconciliation can show new times without unmounting their drafts.
-  const editorContext = React.useMemo(
+  const editorContext = useMemo(
     () => ({ setEditors, positions: new Map([...editors.values()].map((event) => [event.id, event])) }),
     [editors],
   );
-  const displayedEvents = React.useMemo(() => {
+  const displayedEvents = useMemo(() => {
     const byId = new Map(events.map((event) => [event.id, event]));
     for (const event of editors.values()) {
       if (!byId.has(event.id)) byId.set(event.id, event);
@@ -243,6 +266,7 @@ export function BookingEventsCalendar({
         ) : null}
         <TableList
           config={{ ...itemFilterConfig, labels: eventFilterConfig.labels }}
+          alertsRef={attachAlerts}
           rows={[]}
           getRowId={(row) => String(row.id)}
           clientSide={false}
@@ -269,7 +293,20 @@ export function BookingEventsCalendar({
           renderRowsWhenEmpty
           renderRows={() => (
             <>
-              {targetFilter ? <CalendarAppliedFilters targetFilter={targetFilter} quickFilters={[]} /> : null}
+              <CalendarAppliedFilters
+                targetFilter={targetFilter}
+                quickFilters={
+                  myItemsOnly
+                    ? [
+                        {
+                          id: "my-items",
+                          label: t("calendar.quickFilters.myItems"),
+                          onRemove: () => onMyItemsChange?.(false),
+                        },
+                      ]
+                    : []
+                }
+              />
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
               <CalendarAvailabilityRows data={availabilityLayout} />
             </>
@@ -296,12 +333,30 @@ export function BookingEventsCalendar({
       {isError && (
         <div role="alert" className="flex items-center gap-3">
           <span>{t("calendar.unavailable")}</span>
-          <Button type="button" variant="outline" onClick={onRetry}>
+          <Button type="button" variant="outline" onClick={onRetry} data-calendar-focus-keep-pending>
             {t("calendar.retry")}
           </Button>
         </div>
       )}
+      <div role="status" className={focusUnavailable && !isError ? "flex items-center gap-3" : "sr-only"}>
+        {focusUnavailable && !isError ? (
+          <>
+            <span>{t("calendar.eventFocusUnavailable")}</span>
+            <Button type="button" variant="outline" onClick={onRetry} data-calendar-focus-keep-pending>
+              {t("calendar.retry")}
+            </Button>
+          </>
+        ) : null}
+      </div>
+      <div role="status" className="sr-only">
+        {focusFallback === "resources"
+          ? t("calendar.focusFallback.resources", {})
+          : focusFallback === "overflow"
+            ? t("calendar.focusFallback.overflow", {})
+            : null}
+      </div>
       <TableList
+        alertsRef={attachAlerts}
         config={eventFilterConfig}
         rows={displayedEvents}
         getRowId={(event) => String(event.id)}
@@ -375,7 +430,7 @@ export function BookingEventsCalendar({
               <CalendarAppliedFilters
                 targetFilter={targetFilter}
                 quickFilters={[
-                  ...(mineOnly
+                  ...(mineOnly && layout !== "availability"
                     ? [
                         {
                           id: "mine",

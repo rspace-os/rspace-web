@@ -173,12 +173,15 @@ export type TableListFilterButtons = {
 };
 
 export type TableListUiColumn<TDocument> = {
+  /** Fill the available width, or size to unwrapped cell content. */
+  widthMode?: "fill" | "content";
   id: string;
   label: ReactNode;
   /** Initial column width in CSS pixels. */
   width?: number;
   /** Smallest user-selected column width in CSS pixels. */
   minWidth?: number;
+  maxWidth?: number;
   item?: TableListItemFieldLayout;
   renderCell: (row: TDocument) => ReactNode;
 };
@@ -239,6 +242,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   createAction?: ReactNode;
   /** Override the collection heading's visual style without changing its h1 semantics. */
   headingClassName?: string;
+  /** Allow wide content to scroll beside Actions without being covered by it. */
+  stickyActions?: "always" | "when-fitted";
   uiColumns?: readonly TableListUiColumn<TDocument>[];
   rowActions?: TableListRowActions<TDocument>;
   selection?: TableListSelection<TDocument>;

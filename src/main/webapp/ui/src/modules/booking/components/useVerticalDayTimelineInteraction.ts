@@ -16,16 +16,6 @@ import type { VerticalDayTimelineEditing, VerticalDayTimelineSchedule } from "./
 export type IsoRange = { start: string; end: string };
 export type AdjustmentEdge = "move" | "start" | "end";
 type Direction = "previous" | "next";
-type TimelineInteraction = {
-  edge: AdjustmentEdge;
-  pointerId: number;
-  handle: HTMLButtonElement;
-  originalRange: IsoRange;
-  pointerOffsetMinutes: number;
-  contextKey: string;
-  width: number;
-  height: number;
-};
 function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): IsoRange | undefined {
   if (!draft) return undefined;
   return resolveBookingWindow(draft, timezone).window;
@@ -44,7 +34,6 @@ export function timeRange(
     },
     date,
     timezone,
-    "–",
     timeFormat,
   );
 }
@@ -112,20 +101,14 @@ export function useVerticalDayTimelineInteraction({
     editing?.disabledReason ?? "",
   ].join("|");
 
-  const minuteAt = React.useCallback(
-    (clientY: number) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || rect.height === 0) return 0;
-      return Math.min(dayMinutes, Math.max(0, ((clientY - rect.top) / rect.height) * dayMinutes));
-    },
-    [dayMinutes],
-  );
-  const rangeAtMinute = React.useCallback(
-    (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString(),
-    [date, timezone],
-  );
+  const minuteAt = (clientY: number) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect || rect.height === 0) return 0;
+    return Math.min(dayMinutes, Math.max(0, ((clientY - rect.top) / rect.height) * dayMinutes));
+  };
+  const rangeAtMinute = (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString();
   const adjustInteractionRange = (
-    active: TimelineInteraction,
+    active: NonNullable<typeof interactionRef.current>,
     clientY: number,
     activeAdjuster: NonNullable<typeof adjuster>,
   ) => {
@@ -144,25 +127,19 @@ export function useVerticalDayTimelineInteraction({
       if (active.handle.hasPointerCapture(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     }
   }, []);
-  const abortInteraction = React.useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>) => {
-      if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
-    },
-    [cancelInteraction],
-  );
+  const abortInteraction = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
+  };
 
-  const commitRange = React.useCallback(
-    (next: IsoRange) => {
-      if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
-      editing.onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
-      setAnnouncement(
-        t("dayTimeline.vertical.intervalChanged", {
-          period: timeRange(next, date, timezone, timeFormat),
-        }),
-      );
-    },
-    [date, editing, editingRange, t, timezone],
-  );
+  const commitRange = (next: IsoRange) => {
+    if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
+    editing.onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
+    setAnnouncement(
+      t("dayTimeline.vertical.intervalChanged", {
+        period: timeRange(next, date, timezone, timeFormat),
+      }),
+    );
+  };
 
   const changeByStep = (edge: AdjustmentEdge, direction: Direction) => {
     if (!editing || !adjuster || interactionRef.current) return;

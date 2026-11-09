@@ -2,7 +2,7 @@ import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { isEqual, pick } from "es-toolkit";
 import { CheckIcon, SaveIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -58,15 +58,13 @@ export function BookingSettingsContent() {
   // Each adopted baseline starts a new editing session: remounting the fields drops closed-day drafts and the
   // opening hours that Open all day would restore, for saves, accepted refreshes and reloads alike.
   const [editorVersion, setEditorVersion] = useState(0);
-  const adoptSettings = useCallback(
-    (next: BookingAdminSettings & { etag: string }) => {
-      setSettings(next);
-      reset(form, { initialInput: next });
-      setDisplaySettings(displayInput(next));
-      setEditorVersion((version) => version + 1);
-    },
-    [form],
-  );
+  const adoptSettings = (next: BookingAdminSettings & { etag: string }) => {
+    setSettings(next);
+    reset(form, { initialInput: next });
+    setDisplaySettings(displayInput(next));
+    setEditorVersion((version) => version + 1);
+  };
+  const adoptRefreshedSettings = useEffectEvent(adoptSettings);
   const mutation = useMutation({
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(
@@ -93,9 +91,9 @@ export function BookingSettingsContent() {
   // Refresh the server baseline only when no local edits (including weekday hours) would be lost.
   useEffect(() => {
     if (loadedSettings !== settings && !dirty && !mutation.isPending) {
-      adoptSettings(loadedSettings);
+      adoptRefreshedSettings(loadedSettings);
     }
-  }, [loadedSettings, settings, dirty, mutation.isPending, adoptSettings]);
+  }, [loadedSettings, settings, dirty, mutation.isPending]);
 
   const stale = mutation.error instanceof ApiV2ProblemError && mutation.error.status === 412;
 

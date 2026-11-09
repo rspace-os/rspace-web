@@ -32,11 +32,11 @@ import org.springframework.stereotype.Repository;
  *
  * <p>Booking lists keep the counted entity path: their documents carry caller-specific privacy,
  * capabilities, role sources and owner health prepared from access aggregates. The ordered page
- * query selects IDs, then fetches the selected entities with their to-one actors and access
- * aggregate in one ID-scoped query; assignments and instrument targets are resolved in batches.
- * Moving these lists to scalar read documents would also require projecting those access inputs and
- * preserving their caller-specific preparation, so until then they count internally even without
- * {@code totals=true}.
+ * query selects IDs. A second query fetches only those entities with their to-one actors and
+ * configuration. Actor columns stay out of the paginated sort. Assignments and instrument targets
+ * are resolved in batches. Moving these lists to scalar read documents would also require
+ * projecting those access inputs and preserving their caller-specific preparation, so until then
+ * they count internally even without {@code totals=true}.
  */
 @Repository("timeSlotBookingDao")
 public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBooking, Long>

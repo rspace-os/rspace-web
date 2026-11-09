@@ -11,44 +11,34 @@ export function bookingNotificationChoice(enabled: boolean): BookingNotification
   return { choice: enabled ? "ON" : "OFF" };
 }
 
+/** The On/Off radio choice; `label` and `description` are translated text. */
 export function BookingNotificationChoiceFields({
   form,
-  labelKey,
-  descriptionKey,
+  label,
+  description,
   disabled = false,
 }: {
   form: FormStore;
-  labelKey: string;
-  descriptionKey?: string;
+  label: string;
+  description?: string;
   disabled?: boolean;
 }) {
   const { t } = useTranslation("booking");
-  const autoSubscribe = labelKey === "notificationSubscriptions.preferences.autoSubscribe.label";
-  const key = autoSubscribe
-    ? "booking:notificationSubscriptions.preferences.autoSubscribe.label"
-    : "booking:notificationSubscriptions.item.label";
-  const label = autoSubscribe
-    ? t("notificationSubscriptions.preferences.autoSubscribe.label")
-    : labelKey === "notificationSubscriptions.item.label"
-      ? t("notificationSubscriptions.item.label")
-      : labelKey;
-  const fieldDescription =
-    descriptionKey === "notificationSubscriptions.preferences.autoSubscribe.description"
-      ? t("notificationSubscriptions.preferences.autoSubscribe.description")
-      : descriptionKey;
   const fields = resolveCollectionConfig<BookingNotificationChoice>({
     slug: "booking-notification-choice",
     idField: "choice",
     useAsTitle: "choice",
-    labels: { singularKey: key, pluralKey: key },
+    labels: {
+      singularKey: "booking:notificationSubscriptions.item.title",
+      pluralKey: "booking:notificationSubscriptions.item.title",
+    },
     defaultColumns: ["choice"],
     fields: [
       {
         name: "choice",
         type: "select",
-        labelKey: key,
         label,
-        form: { widget: "radio", ...(fieldDescription ? { description: fieldDescription } : {}) },
+        form: { widget: "radio", ...(description ? { description } : {}) },
         options: [
           { label: t("notificationSubscriptions.options.on"), value: "ON" },
           { label: t("notificationSubscriptions.options.off"), value: "OFF" },

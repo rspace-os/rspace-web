@@ -17,7 +17,7 @@ export const DASHBOARD_BOOKING_FIELDS = [...BOOKING_READ_FIELDS, "requester"] as
 type DashboardBookingPage = Awaited<ReturnType<typeof fetchDashboardBookingPage>>;
 
 const MAX_MONTHLY_PAGES = 10;
-const MAX_MONTHLY_RAW_DOCUMENTS = 1_000;
+export const MAX_MONTHLY_RAW_DOCUMENTS = 1_000;
 
 export class TooManyDashboardBookingsError extends Error {
   constructor() {
@@ -149,9 +149,14 @@ export async function fetchMonthlyDashboardBookings({
   return deduplicateAndSort(bookings);
 }
 
+/**
+ * The six visible weeks around `month`, starting on `weekStart`, an ISO weekday (1 Monday to 7 Sunday) that callers
+ * take from the browser region with `firstDayOfWeek(bookingDateTimeLocale())`.
+ */
 export function dashboardMonthInterval(
   month: Date,
   timeZone: string,
+  weekStart: number,
 ): {
   start: string;
   end: string;
@@ -162,7 +167,7 @@ export function dashboardMonthInterval(
     month: month.getMonth() + 1,
     day: 1,
   });
-  const firstVisibleDate = firstOfMonth.subtract({ days: firstOfMonth.dayOfWeek - 1 });
+  const firstVisibleDate = firstOfMonth.subtract({ days: (firstOfMonth.dayOfWeek - weekStart + 7) % 7 });
   const dates = Array.from({ length: 42 }, (_, index) => firstVisibleDate.add({ days: index }).toString());
   return {
     start: zonedDayBounds(dates[0], timeZone).start,

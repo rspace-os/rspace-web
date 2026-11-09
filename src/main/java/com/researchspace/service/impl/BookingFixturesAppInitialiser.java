@@ -21,7 +21,6 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.service.AfterCommit;
 import com.researchspace.service.IContentInitializer;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.time.DayOfWeek;
@@ -49,12 +48,12 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final ZoneId FIXTURE_DATE_ZONE = ZoneId.of("Europe/Berlin");
   private static final int BUSY_CALENDAR_INSTRUMENT_COUNT = 500;
   private static final int BUSY_CALENDAR_EVENTS_PER_INSTRUMENT = 2;
-  private static final List<String> SEARCH_EVENT_FIXTURE_MESSAGE_KEYS =
+  private static final List<String> SEARCH_EVENT_FIXTURE_PURPOSES =
       List.of(
-          "bookingFixtures.purposes.auroraCalibration",
-          "bookingFixtures.purposes.beaconCellImaging",
-          "bookingFixtures.purposes.cometProteomics");
-  private static final int SEARCH_EVENT_FIXTURE_COUNT = SEARCH_EVENT_FIXTURE_MESSAGE_KEYS.size();
+          BookingFixtureText.PURPOSE_AURORA_CALIBRATION,
+          BookingFixtureText.PURPOSE_BEACON_CELL_IMAGING,
+          BookingFixtureText.PURPOSE_COMET_PROTEOMICS);
+  private static final int SEARCH_EVENT_FIXTURE_COUNT = SEARCH_EVENT_FIXTURE_PURPOSES.size();
   private static final List<BookingOpeningHoursEntry> STANDARD_FIXTURE_OPENING_HOURS =
       schedule("08:00", "17:00", 1, 2, 3, 4, 5, 6, 7);
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
@@ -152,7 +151,6 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private final InstrumentDao instrumentDao;
   private final ContainerApiManager containerManager;
   private final InstrumentEntityApiManager instrumentManager;
-  private final MessageSourceUtils messages;
   private final BookingConfigurationManager configurationManager;
   private final TimeSlotBookingManager bookingManager;
   private final BookingConfigurationDao configurationDao;
@@ -171,7 +169,6 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       InstrumentDao instrumentDao,
       ContainerApiManager containerManager,
       InstrumentEntityApiManager instrumentManager,
-      MessageSourceUtils messages,
       BookingConfigurationManager configurationManager,
       TimeSlotBookingManager bookingManager,
       BookingConfigurationDao configurationDao,
@@ -187,14 +184,13 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     this.instrumentDao = instrumentDao;
     this.containerManager = containerManager;
     this.instrumentManager = instrumentManager;
-    this.messages = messages;
     this.configurationManager = configurationManager;
     this.bookingManager = bookingManager;
     this.configurationDao = configurationDao;
     this.bookingDao = bookingDao;
     this.inventoryFixtures =
         new BookingInventoryFixtureFactory(
-            containerDao, instrumentDao, containerManager, instrumentManager, messages);
+            containerDao, instrumentDao, containerManager, instrumentManager);
     this.schedulingFixtures =
         new BookingSchedulingFixtureFactory(
             configurationManager, bookingManager, configurationDao, bookingDao);
@@ -271,48 +267,42 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             FIXTURE_USER,
             devUserPassword,
             () -> {
-              Instrument confocal =
-                  ensureInstrument(message("bookingFixtures.instruments.confocal"), owner);
+              Instrument confocal = ensureInstrument(BookingFixtureText.INSTRUMENT_CONFOCAL, owner);
               moveToParent(
                   confocal,
-                  ensureContainer(message("bookingFixtures.containers.imagingLab"), owner, false));
+                  ensureContainer(BookingFixtureText.CONTAINER_IMAGING_LAB, owner, false));
               instruments.add(confocal);
 
               Instrument electron =
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.electronMicroscope"), owner);
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_ELECTRON_MICROSCOPE, owner);
               moveToParent(
                   electron,
-                  ensureContainer(message("bookingFixtures.containers.cryoEmSuite"), owner, false));
+                  ensureContainer(BookingFixtureText.CONTAINER_CRYO_EM_SUITE, owner, false));
               instruments.add(electron);
 
               Instrument massSpectrometer =
-                  ensureInstrument(message("bookingFixtures.instruments.massSpectrometer"), owner);
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_MASS_SPECTROMETER, owner);
               moveToParent(massSpectrometer, containerDao.getWorkbenchForUser(owner));
               instruments.add(massSpectrometer);
 
               Instrument flowCytometer =
-                  ensureInstrument(message("bookingFixtures.instruments.flowCytometer"), owner);
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_FLOW_CYTOMETER, owner);
               moveToParent(
                   flowCytometer,
                   ensureContainer(
-                      message("bookingFixtures.containers.longCellAnalysisFacility"),
-                      owner,
-                      false));
+                      BookingFixtureText.CONTAINER_LONG_CELL_ANALYSIS_FACILITY, owner, false));
               instruments.add(flowCytometer);
 
               Instrument noParent =
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.noParentCentrifuge"), owner);
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_NO_PARENT_CENTRIFUGE, owner);
               removeFromParent(noParent);
               instruments.add(noParent);
 
               Instrument deletedLocation =
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.deletedLocationSequencer"), owner);
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_DELETED_LOCATION_SEQUENCER, owner);
               Container deletedParent =
                   ensureContainer(
-                      message("bookingFixtures.containers.deletedInstrumentRoom"), owner, true);
+                      BookingFixtureText.CONTAINER_DELETED_INSTRUMENT_ROOM, owner, true);
               if (deletedParent.isDeleted() && !hasParent(deletedLocation, deletedParent)) {
                 deletedParent.setRecordDeleted(false);
                 containerDao.save(deletedParent);
@@ -325,31 +315,25 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               instruments.add(deletedLocation);
 
               bookingCardInstruments.add(
-                  ensureInstrument(message("bookingFixtures.instruments.bookingCardSetup"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_BOOKING_CARD_SETUP, owner));
               bookingCardInstruments.add(
-                  ensureInstrument(message("bookingFixtures.instruments.bookingCardBook"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_BOOKING_CARD_BOOK, owner));
               bookingCardInstruments.add(
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.bookingCardDisabled"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_BOOKING_CARD_DISABLED, owner));
               bookingCardInstruments.add(
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.bookingCardArchived"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_BOOKING_CARD_ARCHIVED, owner));
 
               List<Instrument> busyCalendar = ensureBusyCalendarInstruments(owner);
               instruments.add(
-                  ensureInstrument(message("bookingFixtures.instruments.bookingAlerts"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_BOOKING_ALERTS, owner));
               schedulingEdgeInstruments.add(
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.aucklandPcrCycler"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_AUCKLAND_PCR_CYCLER, owner));
               schedulingEdgeInstruments.add(
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.honoluluDiffractometer"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_HONOLULU_DIFFRACTOMETER, owner));
               schedulingEdgeInstruments.add(
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.kolkataNmrSpectrometer"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_KOLKATA_NMR_SPECTROMETER, owner));
               schedulingEdgeInstruments.add(
-                  ensureInstrument(
-                      message("bookingFixtures.instruments.closedDayIncubator"), owner));
+                  ensureInstrument(BookingFixtureText.INSTRUMENT_CLOSED_DAY_INCUBATOR, owner));
               return busyCalendar;
             });
 
@@ -360,7 +344,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             () -> {
               Instrument instrument =
                   ensureInstrument(
-                      message("bookingFixtures.instruments.restrictedLocationPlateReader"),
+                      BookingFixtureText.INSTRUMENT_RESTRICTED_LOCATION_PLATE_READER,
                       restrictedInstrumentOwner);
               instrument.setSharingMode(InventorySharingMode.OWNER_ONLY);
               instrumentDao.save(instrument);
@@ -374,7 +358,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             () -> {
               Container container =
                   ensureContainer(
-                      message("bookingFixtures.containers.restrictedInstrumentRoom"),
+                      BookingFixtureText.CONTAINER_RESTRICTED_INSTRUMENT_ROOM,
                       restrictedContainerOwner,
                       false);
               container.setSharingMode(InventorySharingMode.OWNER_ONLY);
@@ -491,7 +475,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate,
               LocalTime.of(9, 0),
               LocalTime.of(10, 30),
-              message("bookingFixtures.purposes.cellImaging"),
+              BookingFixtureText.PURPOSE_CELL_IMAGING,
               owner);
           ensureBooking(
               instruments.get(0),
@@ -499,7 +483,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate,
               LocalTime.of(13, 0),
               LocalTime.of(14, 0),
-              message("bookingFixtures.purposes.calibrationRun"),
+              BookingFixtureText.PURPOSE_CALIBRATION_RUN,
               owner);
           ensureBooking(
               instruments.get(1),
@@ -508,7 +492,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
                   fixtureDate, BookingSchedulingSettings.from(configurations.get(1))),
               LocalTime.of(10, 0),
               LocalTime.of(12, 0),
-              message("bookingFixtures.purposes.ultrastructureImaging"),
+              BookingFixtureText.PURPOSE_ULTRASTRUCTURE_IMAGING,
               owner);
           LocalDate massSpectrometerDate =
               firstOpenDayOnOrAfter(
@@ -519,7 +503,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               massSpectrometerDate,
               LocalTime.of(8, 0),
               LocalTime.of(9, 30),
-              message("bookingFixtures.purposes.proteomicsRun"),
+              BookingFixtureText.PURPOSE_PROTEOMICS_RUN,
               owner);
           ensureBooking(
               instruments.get(2),
@@ -527,7 +511,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               massSpectrometerDate,
               LocalTime.of(8, 30),
               LocalTime.of(9, 30),
-              message("bookingFixtures.purposes.overlappingProteomicsRun"),
+              BookingFixtureText.PURPOSE_OVERLAPPING_PROTEOMICS_RUN,
               owner);
           ensureBooking(
               instruments.get(3),
@@ -535,7 +519,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate,
               LocalTime.of(14, 0),
               LocalTime.of(16, 0),
-              message("bookingFixtures.purposes.cellSorting"),
+              BookingFixtureText.PURPOSE_CELL_SORTING,
               owner);
           ensureBooking(
               instruments.get(3),
@@ -543,7 +527,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate,
               LocalTime.of(23, 30),
               LocalTime.of(0, 30),
-              message("bookingFixtures.purposes.overnightAnalysis"),
+              BookingFixtureText.PURPOSE_OVERNIGHT_ANALYSIS,
               owner);
           ensureBooking(
               instruments.get(4),
@@ -551,7 +535,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)),
               LocalTime.of(22, 0),
               LocalTime.of(0, 0),
-              message("bookingFixtures.purposes.lateSpin"),
+              BookingFixtureText.PURPOSE_LATE_SPIN,
               owner);
           LocalDate sequencerMonday = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
           ensureEvent(
@@ -560,7 +544,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               sequencerMonday.atStartOfDay(),
               sequencerMonday.plusDays(2).atStartOfDay(),
               BookingEventKind.BOOKING,
-              message("bookingFixtures.purposes.twoDaySequencingRun"),
+              BookingFixtureText.PURPOSE_TWO_DAY_SEQUENCING_RUN,
               owner);
           // Auckland's 09:00 is the previous European evening, so start a day later to stay future.
           ensureBooking(
@@ -569,7 +553,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate.plusDays(1),
               LocalTime.of(9, 0),
               LocalTime.of(10, 0),
-              message("bookingFixtures.purposes.pcrAmplification"),
+              BookingFixtureText.PURPOSE_PCR_AMPLIFICATION,
               owner);
           ensureBooking(
               instruments.get(9),
@@ -578,7 +562,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
                   fixtureDate, BookingSchedulingSettings.from(configurations.get(9))),
               LocalTime.of(18, 0),
               LocalTime.of(19, 0),
-              message("bookingFixtures.purposes.crystalScreening"),
+              BookingFixtureText.PURPOSE_CRYSTAL_SCREENING,
               owner);
           ensureBooking(
               instruments.get(10),
@@ -586,7 +570,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate,
               LocalTime.of(10, 15),
               LocalTime.of(11, 30),
-              message("bookingFixtures.purposes.quarterHourNmr"),
+              BookingFixtureText.PURPOSE_QUARTER_HOUR_NMR,
               owner);
           ensureBooking(
               instruments.get(11),
@@ -594,12 +578,12 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate.plusDays(2),
               LocalTime.of(10, 0),
               LocalTime.of(11, 0),
-              message("bookingFixtures.purposes.closedDayBooking"),
+              BookingFixtureText.PURPOSE_CLOSED_DAY_BOOKING,
               owner);
 
           LocalDate busyCalendarWeekStart =
               fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-          String busyCalendarPurpose = message("bookingFixtures.purposes.busyCalendar");
+          String busyCalendarPurpose = BookingFixtureText.PURPOSE_BUSY_CALENDAR;
           for (int instrumentIndex = 0;
               instrumentIndex < busyCalendarFixtures.size();
               instrumentIndex++) {
@@ -619,7 +603,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             }
           }
           for (int searchIndex = 0;
-              searchIndex < SEARCH_EVENT_FIXTURE_MESSAGE_KEYS.size();
+              searchIndex < SEARCH_EVENT_FIXTURE_PURPOSES.size();
               searchIndex++) {
             BusyCalendarFixture searchFixture = busyCalendarFixtures.get(searchIndex);
             ensureBooking(
@@ -628,7 +612,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
                 busyCalendarWeekStart.plusDays(searchIndex),
                 LocalTime.of(18, 0),
                 LocalTime.of(18, 45),
-                message(SEARCH_EVENT_FIXTURE_MESSAGE_KEYS.get(searchIndex)),
+                SEARCH_EVENT_FIXTURE_PURPOSES.get(searchIndex),
                 owner);
           }
           log.info(
@@ -650,7 +634,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate.minusDays(1),
               LocalTime.of(10, 0),
               LocalTime.of(11, 0),
-              message("bookingFixtures.purposes.bookingAlertsPast"),
+              BookingFixtureText.PURPOSE_BOOKING_ALERTS_PAST,
               sysadmin);
           ensureBooking(
               instruments.get(6),
@@ -658,7 +642,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               fixtureDate,
               LocalTime.of(10, 0),
               LocalTime.of(11, 0),
-              message("bookingFixtures.purposes.bookingAlertsOverlap"),
+              BookingFixtureText.PURPOSE_BOOKING_ALERTS_OVERLAP,
               sysadmin);
 
           LocalDate maintenanceDate = fixtureDate.plusDays(3);
@@ -668,7 +652,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               maintenanceDate.atTime(10, 0),
               maintenanceDate.atTime(12, 0),
               BookingEventKind.MAINTENANCE,
-              message("bookingFixtures.purposes.closedDayMaintenance"),
+              BookingFixtureText.PURPOSE_CLOSED_DAY_MAINTENANCE,
               sysadmin);
           // Reruns rely on findFirstOverlap skipping both events before createBooking rejects them.
           ensureConfiguration(
@@ -728,10 +712,6 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
   private Container ensureContainer(String name, User owner, boolean includeDeleted) {
     return inventoryFixtures.ensureContainer(name, owner, includeDeleted);
-  }
-
-  private String message(String key) {
-    return inventoryFixtures.message(key);
   }
 
   private void moveToParent(Instrument instrument, Container parent) {
@@ -803,7 +783,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             .filter(day -> !closed.contains(day))
             .map(day -> new BookingOpeningHoursEntry(day.getValue(), "00:00", "24:00"))
             .toList();
-    return new BookingSchedulingSettings.Patch(null, openingHours, null, null, null, null);
+    return new BookingSchedulingSettings.Patch(null, null, openingHours, null, null, null, null);
   }
 
   private static List<BookingOpeningHoursEntry> schedule(String start, String end, int... days) {

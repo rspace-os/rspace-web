@@ -31,6 +31,7 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
   onRowOpen,
   createAction,
   headingClassName,
+  stickyActions,
   uiColumns,
   rowActions,
   selection,
@@ -181,6 +182,7 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
                   reserveEmptyRows={reserveEmptyRows}
                   uiColumns={tableUiColumns}
                   selection={selection}
+                  stickyActions={stickyActions}
                   presentations={presentations}
                   renderRows={renderRows}
                   renderRowsWhenEmpty={renderRowsWhenEmpty}

@@ -9,7 +9,7 @@ export type CalendarFilterPanelKind = "items" | "events";
 
 export function CalendarFilterIssue({ kind, encoded, network, onRetry, onReset }: CalendarFilterIssueState) {
   const { t: bookingT } = useTranslation("booking");
-  const title = bookingT(`calendar.filterGroups.${kind}`);
+  const title = kind === "items" ? bookingT("calendar.filterGroups.items") : bookingT("calendar.filterGroups.events");
   return (
     <RestoredViewIssue
       className="mt-2 rounded-sm border border-destructive/30 bg-destructive/5 p-3"

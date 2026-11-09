@@ -21,7 +21,7 @@ import AllBookableItemsPage from "./AllBookableItemsPage";
 
 export function AllBookableItemsStory({
   containerWidth = 1500,
-  history = createMemoryHistory({ initialEntries: ["/booking/all-items"] }),
+  history = createMemoryHistory({ initialEntries: ["/booking/all-items?date=2026-08-17"] }),
 }: {
   containerWidth?: number;
   history?: RouterHistory;

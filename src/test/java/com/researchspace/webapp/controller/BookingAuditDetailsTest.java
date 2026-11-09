@@ -20,6 +20,13 @@ class BookingAuditDetailsTest {
   private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Test
+  void labelsTheDirectionalBookingGap() {
+    assertEquals(
+        "Gap before (minutes): 15",
+        BookingAuditDetails.format(Map.of("bufferBeforeMinutes", 15), messages, Locale.US));
+  }
+
+  @Test
   void formatsIndependentHoursAndKeepsUnknownHistoricalSchedulesVisible() {
     AuditData data =
         AuditData.fromJson(
@@ -32,6 +39,27 @@ class BookingAuditDetailsTest {
     AuditData unknown = AuditData.fromJson("{\"data\":{\"openingHours\":null}}");
     assertEquals(
         "Opening hours: —", BookingAuditDetails.format(unknown.getData(), messages, Locale.US));
+  }
+
+  @Test
+  void incrementUnitIsLabelledAfterTheIncrement() {
+    AuditData data =
+        AuditData.fromJson(
+            "{\"data\":{\"incrementUnit\":\"DAYS\","
+                + "\"maxBookingDurationMinutes\":0,\"slotGranularityMinutes\":1440}}");
+
+    // Both labels live in the booking namespace that the item's audit history also renders.
+    assertEquals(
+        "Time increment (minutes): 1440; "
+            + label("incrementUnit")
+            + ": DAYS; "
+            + "Maximum duration (minutes): 0",
+        BookingAuditDetails.format(data.getData(), messages, Locale.US));
+  }
+
+  private String label(String key) {
+    return messages.getMessageForLocale(
+        "booking:bookableItemDetails.audit.values." + key, Locale.US);
   }
 
   @Test
@@ -158,6 +186,37 @@ class BookingAuditDetailsTest {
     assertEquals("IN7", booking.getEvent().getDisplayName());
     assertNull(record.getEvent().getDetails());
     assertNull(record.getEvent().getDisplayName());
+  }
+
+  @Test
+  void wordsIncrementUnitsForDisplay() {
+    AuditTrailSearchResult booking = result(AuditDomain.BOOKING, "bookings:1");
+    booking.getEvent().getData().getData().put("incrementUnit", "DAYS");
+
+    BookingAuditDetails.addTo(List.of(booking), messages, Locale.US);
+
+    assertEquals(
+        "Status: Active; " + label("incrementUnit") + ": Days", booking.getEvent().getDetails());
+  }
+
+  @Test
+  void displayWordsValuesLocalizesInstantsAndHoursAndNamesTheDelegatedSubject() {
+    AuditTrailSearchResult deleted = result(AuditDomain.BOOKING, "booking-configurations:9");
+    Map<String, Object> data = deleted.getEvent().getData().getData();
+    data.put("targetName", null);
+    data.put("timezoneMode", "INSTITUTION");
+    data.put("deletedAt", "2026-09-28T18:29:48.5Z");
+    data.put("openingHours", List.of(Map.of("dayOfWeek", 1, "start", "09:00", "end", "24:00")));
+    deleted.getEvent().setDescription("permanent=true; subject=user2b");
+
+    BookingAuditDetails.addTo(List.of(deleted), messages, Locale.US);
+
+    // JDK 20+ puts a narrow no-break space before AM and PM.
+    assertEquals(
+        "Status: Active; Bookable item name: Unavailable bookable item;"
+            + " Opening hours: Monday 9:00 AM–12:00 AM; Time zone mode: Institution time zone;"
+            + " Deleted at (UTC): Sep 28, 2026, 6:29:48 PM; On behalf of user2b",
+        deleted.getEvent().getDetails().replace('\u202f', ' '));
   }
 
   private static AuditTrailSearchResult result(AuditDomain domain, String id) {

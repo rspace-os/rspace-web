@@ -4,7 +4,12 @@ import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { monthlyDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
+import { bookingDateTimeLocale, bookingDisplayLocale } from "@/modules/booking/domain/bookingTime";
+import {
+  MAX_MONTHLY_RAW_DOCUMENTS,
+  monthlyDashboardBookingsQuery,
+} from "@/modules/booking/pages/dashboard/dashboardBookings";
+import { firstDayOfWeek } from "@/modules/common/i18n/localeFormat";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { DashboardCalendarContext, DashboardCalendarDay } from "./DashboardCalendarDay";
@@ -32,11 +37,13 @@ export function AtAGlanceWidget({
   timeZone: string;
   today: string;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const [month, setMonth] = useState(() => monthStartForTimeZone(timeZone));
   const [openDayKey, setOpenDayKey] = useState<string | null>(null);
-  const interval = useMemo(() => dashboardMonthInterval(month, timeZone), [month, timeZone]);
+  // The week start is a regional convention, like the clock, so it follows the browser region.
+  const weekStart = firstDayOfWeek(bookingDateTimeLocale());
+  const interval = useMemo(() => dashboardMonthInterval(month, timeZone, weekStart), [month, timeZone, weekStart]);
   // Plain useQuery: the month grid stays mounted so open day popovers keep focus while months load.
   const query = useQuery({
     ...monthlyDashboardBookingsQuery(requesterId, timeZone, interval.start, interval.end),
@@ -48,7 +55,7 @@ export function AtAGlanceWidget({
         : new Map<string, readonly BookingListDocument[]>(),
     [interval.dates, query.data, query.isSuccess, timeZone],
   );
-  const displayLocale = i18n.resolvedLanguage ?? i18n.language;
+  const displayLocale = bookingDisplayLocale();
   const monthLabel = new Intl.DateTimeFormat(displayLocale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(month.getFullYear(), month.getMonth(), 1)),
   );
@@ -69,7 +76,8 @@ export function AtAGlanceWidget({
           setOpenDayKey(null);
           setMonth(new TZDate(nextMonth.getFullYear(), nextMonth.getMonth(), 1, timeZone));
         }}
-        weekStartsOn={1}
+        // Day Picker counts weekdays from Sunday (0); ISO counts from Monday (1) to Sunday (7).
+        weekStartsOn={(weekStart % 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6}
         fixedWeeks
         className="w-full max-md:[&_.rdp-today]:bg-transparent max-md:[&_[role=gridcell]]:flex max-md:[&_[role=gridcell]]:h-8 max-md:[&_[role=gridcell]]:aspect-auto max-md:[&_[role=gridcell]]:items-center max-md:[&_[role=gridcell]]:justify-center max-md:[&_[role=gridcell]]:rounded-sm max-md:[&_button[data-day]]:h-full max-md:[&_button[data-day]]:w-full max-md:[&_button[data-day]]:aspect-auto max-md:[&_button[data-day]]:rounded-sm max-md:[&_button[data-day]]:py-0"
         formatters={{
@@ -88,7 +96,7 @@ export function AtAGlanceWidget({
         components={{ DayButton: DashboardCalendarDay }}
       />
     ),
-    [month, todayDate, timeZone, displayLocale, t],
+    [month, todayDate, timeZone, displayLocale, weekStart, t],
   );
 
   return (
@@ -114,7 +122,9 @@ export function AtAGlanceWidget({
         <DashboardError
           title={tooMany ? t("dashboard.calendar.tooMany.title") : t("dashboard.calendar.error.title")}
           description={
-            tooMany ? t("dashboard.calendar.tooMany.description") : t("dashboard.calendar.error.description")
+            tooMany
+              ? t("dashboard.calendar.tooMany.description", { max: MAX_MONTHLY_RAW_DOCUMENTS })
+              : t("dashboard.calendar.error.description")
           }
           retryLabel={tooMany ? t("dashboard.calendar.viewAll") : retryLabel}
           onRetry={() => {

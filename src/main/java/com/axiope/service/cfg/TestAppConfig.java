@@ -30,7 +30,6 @@ import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IMediaFactory;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RemoteLicenseService;
 import com.researchspace.service.impl.BookingFixturesAppInitialiser;
 import com.researchspace.service.impl.CommunicationManagerImpl;
@@ -174,7 +173,6 @@ public class TestAppConfig extends BaseConfig {
       InstrumentDao instrumentDao,
       ContainerApiManager containerManager,
       InstrumentEntityApiManager instrumentManager,
-      MessageSourceUtils messages,
       BookingConfigurationManager configurationManager,
       TimeSlotBookingManager bookingManager,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
@@ -189,7 +187,6 @@ public class TestAppConfig extends BaseConfig {
         instrumentDao,
         containerManager,
         instrumentManager,
-        messages,
         configurationManager,
         bookingManager,
         configurationDao,

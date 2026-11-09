@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -15,6 +16,7 @@ import {
 import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import type { BookingTimezoneMode } from "@/modules/common/api/v2/generated/models/bookingTimezoneMode";
 import { BookingDisplayPreferencesReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 
@@ -45,9 +47,17 @@ function RadioList<Value extends string>({
   ));
 }
 
-/** An afternoon time written with `format`'s clock, so each Time format option shows what it looks like. */
+/**
+ * An afternoon time written with `format`'s clock, so each Time format option shows what it looks like. The
+ * 12-hour example drops the leading zero of the hour, as people usually write it.
+ */
 function timeFormatExample(format: BookingTimeFormat): string {
-  return formatWallClockTime("14:30", bookingDateTimeLocale(format));
+  return format === "H12"
+    ? Temporal.PlainTime.from("14:30").toLocaleString(bookingDateTimeLocale(format), {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : formatWallClockTime("14:30", bookingDateTimeLocale(format));
 }
 
 export function BookingDisplaySettingsFields({
@@ -93,6 +103,8 @@ export function BookingDisplaySettingsFields({
     () => bookingTimeZoneOptions(browserTimezone, institutionTimezone, value.customTimezone),
     [browserTimezone, institutionTimezone, value.customTimezone],
   );
+  const allDay = value.availabilityWindowStart === "00:00" && value.availabilityWindowEnd === "24:00";
+  const previousWindow = useRef({ availabilityWindowStart: "08:00", availabilityWindowEnd: "18:00" });
   const patch = (next: Partial<BookingDisplayPreferencesReplacement>) => onChange({ ...value, ...next });
   const timezoneModeOptions = [
     ["BROWSER", t("preferences.timezone.browser", { timezone: browserTimezone })],
@@ -115,12 +127,30 @@ export function BookingDisplaySettingsFields({
       <fieldset className="space-y-3" disabled={disabled}>
         <legend className="font-medium">{t("preferences.availabilityWindow.legend")}</legend>
         <p className="text-sm text-muted-foreground">{t("preferences.availabilityWindow.description")}</p>
+        <Label className="flex items-center gap-2" htmlFor={`${id}-all-day`}>
+          <Checkbox
+            id={`${id}-all-day`}
+            checked={allDay}
+            disabled={disabled}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                previousWindow.current = {
+                  availabilityWindowStart: value.availabilityWindowStart,
+                  availabilityWindowEnd: value.availabilityWindowEnd,
+                };
+                patch({ availabilityWindowStart: "00:00", availabilityWindowEnd: "24:00" });
+              } else patch(previousWindow.current);
+            }}
+          />
+          {t("preferences.availabilityWindow.allDay")}
+        </Label>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`${id}-start`}>{t("preferences.availabilityWindow.start")}</Label>
             <Input
               id={`${id}-start`}
               type="time"
+              disabled={disabled || allDay}
               required
               aria-invalid={Boolean(errors?.availabilityWindowStart)}
               aria-describedby={errors?.availabilityWindowStart ? errorId : undefined}
@@ -133,6 +163,7 @@ export function BookingDisplaySettingsFields({
             <Input
               id={`${id}-end`}
               type="time"
+              disabled={disabled || allDay}
               required
               aria-invalid={Boolean(errors?.availabilityWindowEnd)}
               aria-describedby={`${endTimeDescriptionId}${errors?.availabilityWindowEnd ? ` ${errorId}` : ""}`}

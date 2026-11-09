@@ -1,4 +1,4 @@
-export { CardSelectStory } from "./CardSelectDemo";
-export { InventoryRelationshipStory } from "./InventoryRelationshipDemo";
-export { RadioSelectStory } from "./RadioSelectDemo";
-export { type ExampleDocument, exampleConfig, RenderFieldsStory } from "./RenderFieldsDemo";
+export { CardSelectStory } from "./CardSelectDemo.story";
+export { InventoryRelationshipStory } from "./InventoryRelationshipDemo.story";
+export { RadioSelectStory } from "./RadioSelectDemo.story";
+export { type ExampleDocument, exampleConfig, RenderFieldsStory } from "./RenderFieldsDemo.story";

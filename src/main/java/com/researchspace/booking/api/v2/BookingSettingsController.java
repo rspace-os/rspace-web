@@ -34,6 +34,7 @@ import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -129,8 +130,10 @@ public final class BookingSettingsController {
 
   @Schema(name = "BookingSettingsPatch")
   public record SettingsPatch(
-      @Min(value = 1, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
-          @Max(value = 527040, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
+      @Min(value = 1, message = "{errors.api.v2.bookingConfiguration.granularity.invalidTitle}")
+          @Max(
+              value = 527040,
+              message = "{errors.api.v2.bookingConfiguration.granularity.invalidTitle}")
           @Schema(
               types = {"integer", "null"},
               nullable = true)
@@ -157,22 +160,22 @@ public final class BookingSettingsController {
               maxItems = 7,
               uniqueItems = false)
           JsonNode openingHours,
-      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
-          @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
+      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalidTitle}")
+          @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalidTitle}")
           @Schema(
               types = {"integer", "null"},
               nullable = true)
           Long bufferBeforeMinutes,
-      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
-          @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
+      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalidTitle}")
+          @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalidTitle}")
           @Schema(
               types = {"integer", "null"},
               nullable = true)
           Long bufferAfterMinutes,
-      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalid}")
+      @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalidTitle}")
           @Max(
               value = 527_040,
-              message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalid}")
+              message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalidTitle}")
           @Schema(
               types = {"integer", "null"},
               nullable = true)
@@ -225,26 +228,35 @@ public final class BookingSettingsController {
       }
     }
 
+    /**
+     * Decodes the complete schedule strictly, without Jackson's scalar coercion. Omitted and null
+     * both leave the stored schedule unchanged.
+     */
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
           incrementUnit,
-          decodeOpeningHours(openingHours),
+          decode(
+              openingHours,
+              BookingOpeningHoursCodec::openingHours,
+              InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS),
           bufferBeforeMinutes,
           bufferAfterMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
     }
 
-    private static List<BookingOpeningHoursEntry> decodeOpeningHours(JsonNode node) {
+    private static <V> V decode(
+        JsonNode node,
+        Function<JsonNode, V> decoder,
+        InvalidBookingSchedulingSettingsException.Reason reason) {
       if (node == null || node.isNull()) {
         return null;
       }
       try {
-        return BookingOpeningHoursCodec.openingHours(node);
+        return decoder.apply(node);
       } catch (IllegalArgumentException ex) {
-        throw new InvalidBookingSchedulingSettingsException(
-            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS);
+        throw new InvalidBookingSchedulingSettingsException(reason);
       }
     }
 

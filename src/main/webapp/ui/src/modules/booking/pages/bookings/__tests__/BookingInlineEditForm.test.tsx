@@ -8,7 +8,7 @@ import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/gene
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -113,6 +113,7 @@ describe("BookingInlineEditForm", () => {
       expect(screen.getByText("booking:bookings.form.policyMismatchPurpose")).toHaveAttribute("role", "status");
       await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
       await waitFor(() => expect(patches).toEqual([{ purpose: "Updated purpose" }]));
+      expect(await screen.findByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
     },
   );
 
@@ -148,6 +149,80 @@ describe("BookingInlineEditForm", () => {
     await user.tab();
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
     await waitFor(() => expect(patches).toEqual([{ end: "2026-10-19T09:00:00Z" }]));
+    expect(await screen.findByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
+  });
+
+  it.each([
+    { revoked: "item access", hideTarget: false },
+    { revoked: "booking target", hideTarget: true },
+  ])("removes calendar focus but keeps success after a background refresh revokes $revoked", async ({ hideTarget }) => {
+    let saved = false;
+    let revoked = false;
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          purpose: saved ? "Updated imaging" : document.purpose,
+          canViewConfiguration: !(revoked && !hideTarget),
+          target: revoked && hideTarget ? null : document.target,
+        }),
+      ),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
+      http.patch("/api/v2/bookings/41", () => {
+        saved = true;
+        return HttpResponse.json({ ...document, version: 8, purpose: "Updated imaging" });
+      }),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = renderEdit();
+    const purpose = await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" });
+    await user.clear(purpose);
+    await user.type(purpose, "Updated imaging");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    const notices = await screen.findByRole("list", { name: "common:tableList.alerts.label" });
+    expect(within(notices).getByRole("link", { name: "booking:bookings.feedback.focusOnCalendar" })).toBeVisible();
+    const successMessage = within(notices).getByText("booking:bookings.feedback.eventUpdated");
+
+    revoked = true;
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: bookingQueryOptions(41).queryKey });
+    });
+
+    await waitFor(() => expect(within(notices).queryByRole("link")).not.toBeInTheDocument());
+    expect(successMessage).toBeVisible();
+  });
+
+  it("omits calendar focus when the refreshed booking revokes item access", async () => {
+    let saved = false;
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          purpose: saved ? "Updated imaging" : document.purpose,
+          canViewConfiguration: !saved,
+        }),
+      ),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
+      http.patch("/api/v2/bookings/41", () => {
+        saved = true;
+        return HttpResponse.json({ ...document, version: 8, purpose: "Updated imaging" });
+      }),
+    );
+    const user = userEvent.setup();
+    renderEdit();
+    const purpose = await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" });
+    await user.clear(purpose);
+    await user.type(purpose, "Updated imaging");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    const notices = await screen.findByRole("list", { name: "common:tableList.alerts.label" });
+    expect(within(notices).getByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
+    expect(within(notices).queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("saves changed fields against the frozen version and returns to the mounted readout", async () => {
@@ -155,21 +230,36 @@ describe("BookingInlineEditForm", () => {
       ...document,
       version: document.version as number,
       purpose: document.purpose as string,
+      state: document.state as "CONFIRMED" | "CANCELLED",
+      cancellationReason: document.cancellationReason as string | null,
+      canEdit: document.canEdit as boolean,
+      canCancel: document.canCancel as boolean,
     };
     let reads = 0;
     let patch: Request | undefined;
     const scheduleRequests: Request[] = [];
     server.use(
-      http.get("/api/v2/bookings/41", () => {
+      http.get("/api/v2/bookings/:id", ({ params }) => {
         reads += 1;
-        return HttpResponse.json(current);
+        return HttpResponse.json(params.id === "41" ? current : { ...document, id: Number(params.id) });
       }),
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
       ),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         patch = request.clone();
-        current = { ...current, version: 8, purpose: "Updated imaging" };
+        const body = (await request.json()) as { state?: string; cancellationReason?: string };
+        current =
+          body.state === "CANCELLED"
+            ? {
+                ...current,
+                version: 9,
+                state: "CANCELLED",
+                cancellationReason: body.cancellationReason ?? null,
+                canEdit: false,
+                canCancel: false,
+              }
+            : { ...current, version: 8, purpose: "Updated imaging" };
         return HttpResponse.json(current);
       }),
     );
@@ -220,6 +310,53 @@ describe("BookingInlineEditForm", () => {
     expect(scheduleRequests.filter((request) => request.signal.aborted)).toEqual([]);
     expect(queryClient.getQueryState(calendarKey)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(catalogueKey)?.isInvalidated).toBe(true);
+    const notices = screen.getByRole("list", { name: "common:tableList.alerts.label" });
+    expect(within(notices).getByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
+    expect(within(notices).getByRole("link", { name: "booking:bookings.feedback.focusOnCalendar" })).toBeVisible();
+    expect(
+      within(notices).queryByRole("link", { name: "booking:bookings.feedback.viewDetails" }),
+    ).not.toBeInTheDocument();
+
+    act(() => {
+      void router.navigate({ to: "/booking/calendar/bookings/$id", params: { id: "42" } });
+    });
+    expect(await screen.findByText("Cell imaging")).toBeVisible();
+    expect(screen.queryByRole("list", { name: "common:tableList.alerts.label" })).not.toBeInTheDocument();
+    act(() => {
+      void router.navigate({ to: "/booking/calendar/bookings/$id", params: { id: "41" } });
+    });
+    expect(await screen.findByText("Updated imaging")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const cancelButtons = screen.getAllByRole("button", { name: "booking:bookings.actions.cancel" });
+    await user.click(cancelButtons[cancelButtons.length - 1]);
+    await waitFor(() => expect(screen.getByText("booking:bookings.details.cancelled")).toHaveFocus());
+    expect(screen.queryByRole("list", { name: "common:tableList.alerts.label" })).not.toBeInTheDocument();
+  });
+
+  it("does not announce a no-op save as a change", async () => {
+    let patchRequests = 0;
+    server.use(
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
+      http.patch("/api/v2/bookings/41", () => {
+        patchRequests += 1;
+        return HttpResponse.json(document);
+      }),
+    );
+    const { router } = renderEdit();
+    const user = userEvent.setup();
+
+    const save = await screen.findByRole("button", { name: "booking:bookings.form.save" });
+    await waitFor(() => expect(save).toBeEnabled());
+    await user.click(save);
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    expect(await screen.findByRole("heading", { name: "booking:bookings.details.title" })).toBeVisible();
+    expect(patchRequests).toBe(0);
+    expect(screen.queryByRole("list", { name: "common:tableList.alerts.label" })).not.toBeInTheDocument();
   });
 
   it("submits the acknowledged timeline range and omits the unchanged purpose from the patch", async () => {
@@ -264,6 +401,7 @@ describe("BookingInlineEditForm", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
     expect(patch?.headers.get("If-Match")).toBe('"7"');
     expect(await patch?.json()).toEqual({ start: "2026-10-19T08:01:00Z", end: "2026-10-19T10:01:00Z" });
+    expect(await screen.findByText("booking:bookings.feedback.eventUpdated")).toBeVisible();
   });
 
   it("keeps the draft and permanently blocks save after a conflict without refetching", async () => {
@@ -360,9 +498,9 @@ describe("BookingInlineEditForm", () => {
 
     const alert = await screen.findByRole("alert");
     await waitFor(() => expect(alert).toHaveFocus());
-    expect(alert).toMatchTextContent("booking:bookings.errors.bufferAfter");
+    expect(alert).toMatchTextContent("booking:bookings.errors.buffer");
     expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
-    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.overlapBooking");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:time.labelWithPeriod");
     expect(save).toBeDisabled();
   });
 
@@ -429,6 +567,7 @@ describe("BookingInlineEditForm", () => {
     const { router } = renderEdit();
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    expect(await screen.findByRole("heading", { name: "booking:bookings.details.title" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookings.form.save" })).not.toBeInTheDocument();
   });
 });

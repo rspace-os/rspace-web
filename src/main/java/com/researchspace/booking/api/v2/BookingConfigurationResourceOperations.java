@@ -95,6 +95,7 @@ public final class BookingConfigurationResourceOperations
                     "errors.api.v2.bookingConfiguration.granularity.invalid",
                     "The scheduling settings are invalid.")
                 .code(exception -> exception.reason().errorCode())
+                .arguments(exception -> exception.reason().messageArguments())
                 .build(),
             ApiV2ErrorMapping.forException(InvalidBookableTargetException.class)
                 .status(HttpStatus.BAD_REQUEST)

@@ -18,6 +18,8 @@ import { parseRawTableView } from "../utils/viewStorage";
 import { type TableListFeatureSelection, useTableViewState } from "./useTableViewState";
 import { type TableViewStore, useLocalTableView, useUrlTableView } from "./useTableViewStore";
 
+const noRows: readonly never[] = Object.freeze([]);
+
 export type UseTableListOptions<TDocument extends Record<string, unknown>> = {
   config: ResolvedCollectionConfig<TDocument>;
   dataSource: TableListDataSource<TDocument>;
@@ -73,8 +75,8 @@ function currentPage<TDocument>(
   data: CollectionPage<TDocument> | undefined,
 ): Pick<CollectionPage<TDocument>, "rows" | "rowCount"> {
   if (dataSource.type === "client") return { rows: dataSource.rows, rowCount: dataSource.rows.length };
-  if (!canFetch) return { rows: [], rowCount: 0 };
-  return { rows: data?.rows ?? [], rowCount: data?.rowCount };
+  if (!canFetch) return { rows: noRows, rowCount: 0 };
+  return { rows: data?.rows ?? noRows, rowCount: data?.rowCount };
 }
 
 function tableListStatus(

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
@@ -17,11 +17,11 @@ export function useAllBookableItemsData({ subjectId }: { subjectId: number }) {
     [t],
   );
   const droppedFilterFields = useRef<readonly string[]>([]);
-  const normalizeFilterExpression = useCallback((expression: FilterExpression<BookingConfiguration> | null) => {
+  const normalizeFilterExpression = (expression: FilterExpression<BookingConfiguration> | null) => {
     const recovered = dropInvalidMeRules(expression, ["targetOwner"]);
     if (recovered.dropped.length > 0) droppedFilterFields.current = recovered.dropped;
     return recovered.expression;
-  }, []);
+  };
   const table = usePersistedApiV2TableList({
     persistence: allBookableItemsTable,
     normalizeFilterExpression,

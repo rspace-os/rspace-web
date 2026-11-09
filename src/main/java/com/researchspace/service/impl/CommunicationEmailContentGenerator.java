@@ -5,6 +5,7 @@ import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.NotificationTypeMessages;
@@ -28,14 +29,16 @@ class CommunicationEmailContentGenerator {
 
   EmailContent generate(Communication communication) {
     if (communication instanceof Notification notification
+        && BookingNotificationMessageFormatter.isBookingNotification(
+            notification.getNotificationType())
         && notification.getNotificationDataObject() instanceof BookingNotificationData data) {
-      var model = velocityModelFor(communication);
+      Map<String, Object> model = velocityModelFor(communication);
       model.put(
           "bookingTimestamp",
           BookingNotificationMessageFormatter.formatEmailTimestamp(
-              Instant.now(), data, contentGenerator.getLocale()));
+              Instant.now(), data, contentGenerator.getMessages(), contentGenerator.getLocale()));
       return contentGenerator.render(
-          NotificationTypeMessages.keyFor(notification.getNotificationType()) + "Subject",
+          bookingSubjectKey(notification.getNotificationType()),
           new Object[] {data.getInstrumentName()},
           "notification.vm",
           model);
@@ -54,6 +57,16 @@ class CommunicationEmailContentGenerator {
     }
     throw new IllegalArgumentException(
         "Unsupported communication type: " + communication.getClass().getName());
+  }
+
+  private static String bookingSubjectKey(NotificationType type) {
+    return switch (type) {
+      case NOTIFICATION_BOOKING_CREATED -> "notificationType.bookingCreatedSubject";
+      case NOTIFICATION_BOOKING_CANCELLED -> "notificationType.bookingCancelledSubject";
+      case NOTIFICATION_BOOKING_RESTORED -> "notificationType.bookingRestoredSubject";
+      case NOTIFICATION_BOOKING_CHANGED -> "notificationType.bookingChangedSubject";
+      default -> throw new IllegalArgumentException("Not a booking notification: " + type);
+    };
   }
 
   private Map<String, Object> velocityModelFor(Communication communication) {

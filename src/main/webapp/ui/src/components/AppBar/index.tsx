@@ -37,7 +37,9 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { formatRelativeTime } from "@/modules/common/i18n/localeFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
+import { userInitials } from "@/modules/common/ui/user-badge";
 import type { Person } from "@/stores/definitions/Person";
 import type { URL } from "@/util/types";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
@@ -50,7 +52,6 @@ import useWhoAmI from "../../hooks/api/useWhoAmI";
 import useSessionStorage from "../../hooks/browser/useSessionStorage";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import useWebSocketNotifications from "../../hooks/websockets/useWebSocketNotifications";
-import { getRelativeTime } from "../../stores/definitions/Units";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -114,10 +115,12 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
   );
 };
 const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const popoverId = React.useId();
-  const message = t("appBar.maintenancePopup", { relativeTime: getRelativeTime(startDate) });
+  const message = t("appBar.maintenancePopup", {
+    relativeTime: formatRelativeTime(startDate, i18n.resolvedLanguage ?? i18n.language),
+  });
 
   /*
    * On the non-react parts of the product, the app bar is rendered inside of a
@@ -211,6 +214,7 @@ const DynamicAvatar = ({
   uiNavigationData: FetchingData.Fetched<UiNavigationData>;
   size?: "small";
 }) => {
+  const { i18n } = useTranslation("common");
   return FetchingData.match(uiNavigationData, {
     loading: () => (
       <StyledAvatar size={size}>
@@ -253,7 +257,7 @@ const DynamicAvatar = ({
               }
             : {})}
         >
-          {fullName[0]}
+          {userInitials(fullName, i18n.resolvedLanguage ?? i18n.language)}
         </StyledAvatar>
       );
     },
@@ -345,7 +349,7 @@ function GalleryAppBar({
   helpPage,
   ambientI18n = false,
 }: GalleryAppBarArgs): React.ReactNode {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const theme = useTheme();
   const { isViewportSmall } = useViewportDimensions();
   const uiNavigationData = useUiNavigationData();
@@ -674,6 +678,15 @@ function GalleryAppBar({
                 }}
                 icon={<DynamicAvatar uiNavigationData={uiNavigationData} size="small" />}
                 title={t("appBar.accountMenu")}
+                ariaLabel={FetchingData.match(uiNavigationData, {
+                  loading: () => t("appBar.accountMenu"),
+                  error: () => t("appBar.accountMenu"),
+                  success: ({ userDetails: { fullName } }) =>
+                    t("appBar.accountMenuAccessible", {
+                      name: fullName,
+                      initials: userInitials(fullName, i18n.resolvedLanguage ?? i18n.language),
+                    }),
+                })}
                 id="account-menu-button"
                 aria-haspopup="menu"
                 aria-controls="account-menu"
