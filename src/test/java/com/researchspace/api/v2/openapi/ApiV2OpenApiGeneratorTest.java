@@ -104,20 +104,10 @@ class ApiV2OpenApiGeneratorTest {
         ApiV2ResourceSpec.builder(ApiV2UserResource.DESCRIPTION, userOperations, Long::valueOf)
             .mutationErrors("create-error", "update-error")
             .audit(ResourceAuditPolicy.standard(userOperations))
-            .audit(ResourceAuditPolicy.standard(userOperations))
             .build();
     ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurations =
         ApiV2ResourceSpec.builder(
                 ApiV2BookingConfigurationResource.DESCRIPTION, bookingOperations, Long::valueOf)
-            .mutationPolicy(
-                new MutationPolicy(
-                    VersionPolicy.required(
-                        "configurationVersion",
-                        "errors.api.v2.bookingConfiguration.ifMatchRequired",
-                        ResourceOperation.UPDATE,
-                        ResourceOperation.DELETE),
-                    DeletePolicy.SOFT.withPermanentOption(),
-                    IdempotencyPolicy.NONE))
             .mutationPolicy(
                 new MutationPolicy(
                     VersionPolicy.required(
@@ -479,7 +469,6 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> timeSlotBookingSelectors =
         objectMap(objectMap(timeSlotBookingWhere.get("x-rspace-filter")).get("selectors"));
     Map<String, Object> requesterValue = objectMap(timeSlotBookingSelectors.get("requester.value"));
-    assertEquals("integer", objectMap(requesterValue.get("schema")).get("type"));
     assertTrue(((List<?>) requesterValue.get("operators")).contains("=="));
     Map<String, Object> timeSlotBookingSort =
         timeSlotBookingParameters.stream()

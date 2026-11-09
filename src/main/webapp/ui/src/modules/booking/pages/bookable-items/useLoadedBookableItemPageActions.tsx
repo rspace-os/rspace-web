@@ -9,6 +9,7 @@ import {
   getSearchBookingCatalogueQueryKey,
   getSearchCalendarCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
@@ -18,6 +19,7 @@ import {
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
+import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import type { BookingConfigurationLifecycleAction } from "./BookingConfigurationActionsMenu";
 import type { BookingConfiguration } from "./bookingConfiguration";
 import { bookingConfigurationTargetQuery } from "./bookingConfigurationApi";
@@ -40,6 +42,8 @@ export function useLoadedBookableItemPageActions({
   const queryClient = useQueryClient();
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
+  // The server version loaded after a conflict; the next Save of the kept draft targets it.
+  const [conflictVersion, setConflictVersion] = useState<number | null>(null);
   const [rulesSaveBlocked, setRulesSaveBlocked] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
@@ -81,14 +85,17 @@ export function useLoadedBookableItemPageActions({
       ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
+      setConflictVersion(null);
       setEdit(false);
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
-        await queryClient.refetchQueries({
-          queryKey: bookingConfigurationTargetQuery(globalId).queryKey,
-        });
+        const queryKey = bookingConfigurationTargetQuery(globalId).queryKey;
+        await queryClient.refetchQueries({ queryKey });
+        const latest = queryClient.getQueryData<ListBookingConfigurations200>(queryKey);
+        const version = latest?.docs?.find(({ id }) => id === configuration.id)?.configurationVersion;
+        if (typeof version === "number") setConflictVersion(version);
       }
     },
   });
@@ -148,7 +155,10 @@ export function useLoadedBookableItemPageActions({
         params: { permanent: true },
       }),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() }),
+      ]);
       setPermanentDeleteOpen(false);
       void navigate({ to: "/booking/all-items", ignoreBlocker: true });
     },
@@ -206,7 +216,14 @@ export function useLoadedBookableItemPageActions({
   const cancelEdit = () => {
     setSaveAnnouncement(null);
     setStaleEdit(false);
+    setConflictVersion(null);
     setEdit(false);
+  };
+
+  const discardConflictedDraft = () => {
+    updateMutation.reset();
+    setStaleEdit(false);
+    setConflictVersion(null);
   };
 
   const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
@@ -246,6 +263,8 @@ export function useLoadedBookableItemPageActions({
     handleLifecycleAction,
     rulesSaveBlocked,
     setRulesSaveBlocked,
+    conflictVersion,
+    discardConflictedDraft,
   };
 }
 

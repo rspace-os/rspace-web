@@ -85,7 +85,7 @@ function AllBookableItemsContentForUser() {
     onSuccess: () => setSelectedRowIds(new Set()),
   });
   const eligibleTargets = useEligibleBookingTargets().data;
-  const canAdd = eligibleTargets === undefined || eligibleTargets.length > 0;
+  const canAdd = (eligibleTargets?.length ?? 0) > 0;
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
