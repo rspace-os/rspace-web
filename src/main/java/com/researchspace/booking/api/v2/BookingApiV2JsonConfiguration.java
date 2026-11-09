@@ -13,6 +13,9 @@ public class BookingApiV2JsonConfiguration {
     return new ApiV2JsonBodyTypes(
         List.of(
             BookingSettingsController.SettingsPatch.class,
-            BookingDisplayPreferencesController.Replacement.class));
+            BookingDisplayPreferencesController.Replacement.class,
+            BookingNotificationSubscriptionController.PreferenceReplacement.class,
+            BookingNotificationSubscriptionController.SubscriptionReplacement.class,
+            BookingNotificationSubscriptionController.Lookup.class));
   }
 }

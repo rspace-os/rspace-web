@@ -12,4 +12,5 @@ public record BookingConfigurationCapabilities(
     boolean canManageAllEvents,
     boolean canCreateBlockout,
     boolean canSubscribeCalendar,
-    boolean canLeaveConfiguration) {}
+    boolean canLeaveConfiguration,
+    boolean canManageNotificationSubscription) {}
