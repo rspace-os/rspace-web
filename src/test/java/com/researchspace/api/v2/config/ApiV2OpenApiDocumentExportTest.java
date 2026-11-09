@@ -13,11 +13,13 @@ import com.researchspace.api.v2.openapi.*;
 import com.researchspace.api.v2.resource.*;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.dao.ExtraFieldDao;
+import com.researchspace.featureflags.FeatureFlagResourceOperations;
 import com.researchspace.inventory.api.v2.ContainerResourceOperations;
 import com.researchspace.inventory.api.v2.InstrumentResourceOperations;
 import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.service.*;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.inventory.*;
 import java.nio.file.*;
 import java.util.*;
@@ -63,6 +65,8 @@ class ApiV2OpenApiDocumentExportTest {
           UserResourceOperations.class,
           InstrumentResourceOperations.class,
           ContainerResourceOperations.class);
+      context.registerBean(FeatureFlagManager.class, () -> mock(FeatureFlagManager.class));
+      context.register(FeatureFlagResourceOperations.class);
       context.refresh();
       var document =
           new ApiV2OpenApiDocumentService(

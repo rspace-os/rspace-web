@@ -40,6 +40,7 @@ import java.util.List;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -78,9 +79,11 @@ public class RSDevConfig extends BaseConfig {
    * @return
    */
   @Bean
-  public GlobalInitManager globalInitManager() {
+  public GlobalInitManager globalInitManager(
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
+    inits.add(featureFlagInitialisor);
     inits.add(fileStoreRootDetector());
     inits.add(integrationsHandlerInitialisor());
     mgr.setApplicationInitialisors(inits);
