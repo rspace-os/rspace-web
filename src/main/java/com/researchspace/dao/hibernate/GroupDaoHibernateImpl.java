@@ -6,6 +6,7 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.model.Group;
+import com.researchspace.model.GroupPermissionsChangedEvent;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
@@ -27,10 +28,37 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Repository;
 
 @Repository("groupDao")
 public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> implements GroupDao {
+
+  @Autowired private ApplicationEventPublisher events;
+
+  @Override
+  public Group save(Group value) {
+    Group saved = super.save(value);
+    events.publishEvent(new GroupPermissionsChangedEvent(saved));
+    return saved;
+  }
+
+  @Override
+  public void remove(Long id) {
+    Group removed = get(id);
+    super.remove(id);
+    events.publishEvent(new GroupPermissionsChangedEvent(removed));
+  }
+
+  @Override
+  public void setPublicationAllowed(Long groupId, boolean allowed) {
+    getSession()
+        .createMutationQuery("update Group set publicationAllowed = :allowed where id = :id")
+        .setParameter("allowed", allowed)
+        .setParameter("id", groupId)
+        .executeUpdate();
+  }
 
   public GroupDaoHibernateImpl() {
     super(Group.class);

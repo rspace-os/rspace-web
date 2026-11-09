@@ -18,13 +18,11 @@ public class BookingCalendarCreationTransaction {
   private final BookingCalendarPermissionGateDao permissionGate;
 
   /**
-   * Creates or rotates a subscription with a fresh subject inside a READ_COMMITTED transaction.
+   * Creates a subscription with a fresh subject inside a READ_COMMITTED transaction.
    *
-   * <p>The item callback acquires the shared permission fence before the target and configuration
-   * locks, preserving the lock order used by all booking mutations.
-   *
-   * <p>READ_COMMITTED also lets a caller that waited on the configuration or user lock see a link
-   * committed by the request it waited for, so a repeated create returns that link.
+   * <p>The creation callback locks the booking configuration before resolving mutation permission;
+   * that resolution acquires the shared permission fence. Keeping the fence acquisition in the
+   * callback preserves the configuration-to-fence lock order used by all booking mutations.
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
   public BookingCalendarManager.Created create(

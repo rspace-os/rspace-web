@@ -6,9 +6,9 @@ import type { ApiV2RuntimeFieldCatalog } from "@/modules/common/api/v2/generated
 import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import type { BookingCatalogueManagerLocationPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerLocationPage";
-import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 
 const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   ...booking,

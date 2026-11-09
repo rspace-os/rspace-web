@@ -227,7 +227,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
             Date.from(start.plus(1, ChronoUnit.HOURS)),
             null);
     var booking = bookingManager.createBooking(create, booker, booker);
-    var link = calendarManager.create(setup.configurationId(), booker, booker);
+    var link =
+        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
     String token = URI.create(link.subscriptionUrl()).getRawQuery().substring("token=".length());
     var competing = new TransactionTemplate(getTxMger());
     competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -314,7 +315,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
     setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_GROUPS, owner);
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     BookingCalendarManager.Created original =
-        calendarManager.create(setup.configurationId(), booker, booker);
+        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
 
     logoutAndLoginAs(piUser);
     new TransactionTemplate(getTxMger())
@@ -341,7 +342,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
     setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_GROUPS, owner);
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     BookingCalendarManager.Created original =
-        calendarManager.create(setup.configurationId(), labAdmin, labAdmin);
+        calendarManager.createOrRotate(setup.configurationId(), labAdmin, labAdmin, "\"inactive\"");
 
     setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_ONLY, owner);
     BookingCalendarManager.Status viewer =
@@ -366,7 +367,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
     setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_GROUPS, owner);
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     BookingCalendarManager.Created original =
-        calendarManager.create(setup.configurationId(), booker, booker);
+        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
     String rawToken =
         URI.create(original.subscriptionUrl()).getRawQuery().substring("token=".length());
     ApiInstrument revoke = instrumentApiMgr.getApiInstrumentById(instrument.getId(), owner);

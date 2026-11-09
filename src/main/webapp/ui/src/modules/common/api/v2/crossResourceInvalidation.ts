@@ -69,7 +69,7 @@ export const crossResourceInvalidation: ReadonlyArray<{
       "replaceBookingConfigurationAccess",
       "leaveBookingConfigurationAccess",
     ],
-    invalidates: [{ query: "countBookingCatalogueAvailability" }],
+    invalidates: [{ query: "searchCalendarEvents" }, { query: "searchCalendarCatalogue" }],
   },
   {
     onMutations: [

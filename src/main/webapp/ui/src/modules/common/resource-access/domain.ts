@@ -1,6 +1,5 @@
 import type { ResourceAccessAssignmentDocument } from "@/modules/common/api/v2/generated/models/resourceAccessAssignmentDocument";
 import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
-import type { ResourceAccessGranteeDocumentKind } from "@/modules/common/api/v2/generated/models/resourceAccessGranteeDocumentKind";
 import type { ResourceGranteeDirectoryEntry } from "@/modules/common/api/v2/generated/models/resourceGranteeDirectoryEntry";
 
 function required<T>(value: T | undefined, field: string): T {
@@ -65,4 +64,3 @@ export type AccessDocument = ReturnType<typeof accessDocument>;
 export type ResourceAccessAssignment = AccessDocument["assignments"][number];
 export type ResourceGrantee = ResourceAccessAssignment["grantee"];
 export type DirectoryEntry = ReturnType<typeof directoryEntry>;
-export type GranteeKind = ResourceAccessGranteeDocumentKind;

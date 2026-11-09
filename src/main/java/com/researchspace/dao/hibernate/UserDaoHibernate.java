@@ -245,6 +245,66 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     return update.executeUpdate() == 1;
   }
 
+  @Override
+  public User readLoginState(String name) {
+    List<Object[]> rows =
+        getSession()
+            .createQuery(
+                "select u.id, u.numConsecutiveLoginFailures, u.loginFailure, u.accountLocked"
+                    + " from User u where u.username = :name or u.usernameAlias = :name"
+                    + " order by case when u.username = :name then 0 else 1 end",
+                Object[].class)
+            .setParameter("name", name)
+            .setMaxResults(1)
+            .list();
+    if (rows.isEmpty()) {
+      throw new ObjectRetrievalFailureException(User.class, name);
+    }
+    Object[] row = rows.get(0);
+    User state = new User();
+    state.setId((Long) row[0]);
+    state.setNumConsecutiveLoginFailures((Byte) row[1]);
+    state.setLoginFailure((Date) row[2]);
+    state.setAccountLocked((Boolean) row[3]);
+    return state;
+  }
+
+  @Override
+  public User lockLoginAccount(Long id) {
+    return getSession()
+        .createQuery("from User u where u.id = :id", User.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .getSingleResult();
+  }
+
+  @Override
+  public boolean updateLoginState(User before, User after, Date lastLogin) {
+    String timestampGuard =
+        before.getLoginFailure() == null
+            ? "u.loginFailure is null"
+            : "u.loginFailure = :oldTimestamp";
+    MutationQuery update =
+        getSession()
+            .createMutationQuery(
+                "update User u set u.numConsecutiveLoginFailures = :count,"
+                    + " u.loginFailure = :timestamp, u.accountLocked = :locked"
+                    + (lastLogin == null ? "" : ", u.lastLogin = :lastLogin")
+                    + " where u.id = :id and u.numConsecutiveLoginFailures = :oldCount"
+                    + " and u.accountLocked = :oldLocked and "
+                    + timestampGuard)
+            .setParameter("count", after.getNumConsecutiveLoginFailures())
+            .setParameter("timestamp", after.getLoginFailure())
+            .setParameter("locked", after.isAccountLocked())
+            .setParameter("id", before.getId())
+            .setParameter("oldCount", before.getNumConsecutiveLoginFailures())
+            .setParameter("oldLocked", before.isAccountLocked());
+    if (before.getLoginFailure() != null)
+      update.setParameter("oldTimestamp", before.getLoginFailure());
+    if (lastLogin != null) update.setParameter("lastLogin", lastLogin);
+    return update.executeUpdate() == 1;
+  }
+
   /** Constructor that sets the entity to User.class. */
   public UserDaoHibernate() {
     super(User.class);
