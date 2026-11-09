@@ -6120,7 +6120,8 @@ export default interface Resources {
         "structuredDocumentRequired": "only structured documents can be signed"
       },
       "signup": {
-        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
+        "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment.",
+        "termsRequired": "Please agree to the terms and conditions before signing up."
       },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."

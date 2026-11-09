@@ -79,6 +79,10 @@ public class ExternalAuthController extends BaseController {
       @RequestParam("clientId") String clientId,
       HttpServletRequest request)
       throws UserExistsException {
+    if (properties.isCloud() && !"true".equals(request.getParameter("termsAccepted"))) {
+      return new AjaxReturnObject<String>(
+          null, ErrorList.createErrListWithSingleMsg(getText("errors.signup.termsRequired")));
+    }
     Optional<ExternalProfile> profile = externalAuthVerifier.verify(clientId, idTokenString);
     if (profile.isPresent()) {
       User newUser = createUserFromProfile(profile.get());

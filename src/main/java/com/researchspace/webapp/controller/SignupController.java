@@ -232,6 +232,10 @@ public class SignupController extends BaseController {
       return getCancelView();
     }
     log.info("Signing up user {}", user.getUsername());
+    if (properties.isCloud() && !"true".equals(request.getParameter("termsAccepted"))) {
+      errors.reject("errors.signup.termsRequired");
+      return returnToSignupPage(user);
+    }
     // we verify captcha 1st if it is enabled
     if ("true".equals(properties.getSignupCaptchaEnabled())) {
       String verificationResult = captchaVerifier.verifyCaptchaFromRequest(request);

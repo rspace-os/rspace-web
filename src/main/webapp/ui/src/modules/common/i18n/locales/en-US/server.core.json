@@ -191,6 +191,7 @@
       "rateLimited": "Too many password resets are being processed right now. Please try again in a moment."
     },
     "signup": {
+      "termsRequired": "Please agree to the terms and conditions before signing up.",
       "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
     },
     "composedId": {
