@@ -24,6 +24,11 @@ export function head<T>(array: ReadonlyArray<T>): Result<T> {
 }
 
 /**
+ * Narrows an array to a non-empty tuple, such as an `in` list in a typed REST API v2 filter.
+ */
+export const isNonEmpty = <A>(as: ReadonlyArray<A>): as is readonly [A, ...A[]] => as.length > 0;
+
+/**
  * Pulls a representative value from any iterable, such as a Set of distinct
  * field values, without materializing it as an array.
  */
