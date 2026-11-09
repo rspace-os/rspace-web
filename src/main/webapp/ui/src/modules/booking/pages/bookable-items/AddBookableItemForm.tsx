@@ -39,7 +39,7 @@ import { Button } from "@/modules/common/ui/button";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
-import { searchBookingTargets } from "./bookingConfigurationTargets";
+import { MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationTargets";
 
 const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
@@ -63,7 +63,10 @@ type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | 
 const bookingConfigurationTargetSource: RelationshipSource = {
   id: "booking-configuration-targets",
   globalIdPrefix: "IN",
-  search: (term, signal) => (term.trim().length < 2 ? Promise.resolve([]) : searchBookingTargets(term.trim(), signal)),
+  search: (term, signal) =>
+    term.trim().length > 0 && term.trim().length < MINIMUM_TARGET_QUERY_LENGTH
+      ? Promise.resolve([])
+      : searchBookingTargets(term, signal),
   batchSize: 1,
   resolveMany: async (values, signal) =>
     Object.fromEntries(
@@ -139,9 +142,11 @@ export function AddBookableItemForm({
   const createMutation = useMutation({
     mutationFn: (input: BookingConfigurationsCreate) => createOperation.mutateAsync({ data: input }),
     onSuccess: async () => {
+      // The new configuration is readable, and its instrument is no longer an eligible target.
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         joinBookingCatalogueRefresh(queryClient),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() }),
       ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
@@ -188,6 +193,9 @@ export function AddBookableItemForm({
             required
             ariaLabel={t("bookableItems.targetSearch.label")}
             className="w-full rounded-sm"
+            browseWhenEmpty
+            browseEmptyMessage={t("bookableItems.targetSearch.noEligible")}
+            minimumSearchLength={MINIMUM_TARGET_QUERY_LENGTH}
           />
         </div>
         {target.type === "unsupported" ? (

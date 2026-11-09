@@ -5,7 +5,7 @@ import type { TargetDirectoryDocument } from "@/modules/common/api/v2/generated/
 
 export const MINIMUM_TARGET_QUERY_LENGTH = 2;
 
-function mapBookingTargetDirectory(response: TargetDirectoryDocument): BookingConfigurationTarget[] {
+export function mapBookingTargetDirectory(response: TargetDirectoryDocument): BookingConfigurationTarget[] {
   return response.docs.map((target) => {
     if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
     return {

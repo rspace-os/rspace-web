@@ -12,6 +12,7 @@ import {
   getSearchBookingCatalogueQueryKey,
   getSearchCalendarCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteManyBookingConfigurations,
   getCountBookingConfigurationsQueryKey,
@@ -48,6 +49,7 @@ import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
 import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
 import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
+import { useEligibleBookingTargets } from "./bookableItemsAdministrationAccess";
 import {
   archiveBookingConfiguration,
   type BookingConfigurationRow,
@@ -153,6 +155,18 @@ export function BookableItemsContent() {
     },
     [onChanged, queryClient],
   );
+  const onPermanentlyDeleted = useCallback(
+    async (configurationId?: number) => {
+      // The deleted configuration's instrument becomes an eligible target again.
+      await Promise.all([
+        onChanged(configurationId),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() }),
+      ]);
+    },
+    [onChanged, queryClient],
+  );
+  // Add stays hidden until the caller has an instrument to set up, so a direct URL offers no dead end.
+  const canAdd = (useEligibleBookingTargets().data?.length ?? 0) > 0;
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
@@ -219,11 +233,11 @@ export function BookableItemsContent() {
             configuration={row}
             close={close}
             onDelete={onPermanentDelete}
-            onDeleted={onChanged}
+            onDeleted={onPermanentlyDeleted}
           />
         ) : null,
     }),
-    [directSysadmin, onArchive, onCatalogueChanged, onChanged, onPermanentDelete, onRestore, t],
+    [directSysadmin, onArchive, onCatalogueChanged, onPermanentDelete, onPermanentlyDeleted, onRestore, t],
   );
 
   return (
@@ -265,10 +279,12 @@ export function BookableItemsContent() {
             : undefined
         }
         createAction={
-          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-            <PlusIcon aria-hidden="true" data-icon="inline-start" />
-            {t("bookableItems.actions.add")}
-          </Link>
+          canAdd ? (
+            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+              <PlusIcon aria-hidden="true" data-icon="inline-start" />
+              {t("bookableItems.actions.add")}
+            </Link>
+          ) : undefined
         }
       />
     </main>

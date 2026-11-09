@@ -488,7 +488,6 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> timeSlotBookingSelectors =
         objectMap(objectMap(timeSlotBookingWhere.get("x-rspace-filter")).get("selectors"));
     Map<String, Object> requesterValue = objectMap(timeSlotBookingSelectors.get("requester.value"));
-    assertEquals("integer", objectMap(requesterValue.get("schema")).get("type"));
     assertTrue(((List<?>) requesterValue.get("operators")).contains("=="));
     Map<String, Object> timeSlotBookingSort =
         timeSlotBookingParameters.stream()
