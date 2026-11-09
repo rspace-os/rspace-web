@@ -24,9 +24,16 @@ vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi
 beforeEach(() => setupPage());
 
 describe("BookableItemPage", () => {
-  it("renders identity, rules, and role-sensitive actions", async () => {
+  it("renders identity, rules, role-sensitive actions, and event requests with one cutoff", async () => {
     const user = userEvent.setup();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))));
+    const eventFilters: string[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", ({ request }) => {
+        eventFilters.push(new URL(request.url).searchParams.get("where") ?? "");
+        return HttpResponse.json(collectionPage([], 10));
+      }),
+    );
     const { container } = renderPage();
 
     const heading = await screen.findByRole("heading", { level: 1, name: "Confocal microscope" });
@@ -42,10 +49,13 @@ describe("BookableItemPage", () => {
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
     expect(within(heading.closest("section") as HTMLElement).queryByText("UTC")).not.toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    expect(screen.getByText("booking:bookableItemDetails.upcoming")).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.past")).toBeVisible();
+    await waitFor(() => expect(eventFilters).toHaveLength(4));
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByText("08:00–17:30")).toBeVisible();
@@ -58,6 +68,9 @@ describe("BookableItemPage", () => {
     );
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.edit" })).toBeVisible();
+    const boundaries = eventFilters.map((where) => where.match(/end=(?:gt|le)=([^;]+)/)?.[1]);
+    expect(boundaries[0]).toBeTruthy();
+    expect(new Set(boundaries).size).toBe(1);
     await expectAccessible(container);
   });
 
