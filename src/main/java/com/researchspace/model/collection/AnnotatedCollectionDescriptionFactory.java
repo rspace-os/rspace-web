@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -52,8 +53,14 @@ final class AnnotatedCollectionDescriptionFactory {
           memberFrom(resourceType, component, entityType, definition, properties, fieldTypes));
     }
     if (definition.auditFields()) {
-      fields.addAll(AuditResourceMembers.fields(properties));
-      fields.addAll(AuditResourceMembers.relationships(properties));
+      fields.addAll(
+          AuditResourceMembers.guaranteed(
+              AuditResourceMembers.fields(properties),
+              AuditResourceMembers.relationships(properties),
+              Set.of(definition.readGuaranteedAuditFields())));
+    } else if (definition.readGuaranteedAuditFields().length > 0) {
+      throw new IllegalArgumentException(
+          resourceType.getName() + " guarantees audit fields but disables them");
     }
     return new CollectionDescription<>(
         definition.name(),
@@ -256,6 +263,9 @@ final class AnnotatedCollectionDescriptionFactory {
     if (definition.allowSelfReference()) {
       result = result.allowSelfReference();
     }
+    if (definition.readGuaranteed()) {
+      result = result.readGuaranteed();
+    }
     return result
         .readableBy(definition.readAccess().resolve())
         .writableBy(definition.writeAccess().resolve())
@@ -367,6 +377,9 @@ final class AnnotatedCollectionDescriptionFactory {
     }
     if (definition.nullable()) {
       field = field.allowNull();
+    }
+    if (definition.readGuaranteed()) {
+      field = field.readGuaranteed();
     }
     Stream.concat(Stream.of(definition.example()), Stream.of(definition.additionalExamples()))
         .filter(example -> !example.isBlank())

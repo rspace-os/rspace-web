@@ -7,6 +7,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.model.ApiV2CountResult;
+import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionFieldType;
@@ -23,8 +24,15 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 final class ApiV2OpenApiResourceDocumentBuilder {
+
+  /**
+   * Marks a {@code *Read} property that a readable document always contains when it is requested:
+   * the id, or a member declared read-guaranteed. Removing it is a breaking change.
+   */
+  static final String READ_GUARANTEED = "x-rspace-read-guaranteed";
 
   private static AccessDocumentation access(AccessPolicySchema access, WriteOperation operation) {
     return access(access.readAccess(), access.createAccess(), access.updateAccess(), operation);
@@ -46,15 +54,20 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       Map<String, Object> components,
       ResourceSchema resource,
       Map<String, String> names,
-      boolean routable,
+      Set<ResourceOperation> operations,
       ApiV2OpenApiText text) {
     String component = names.get(resource.name());
     components.put(component + "Reference", referenceSchema(resource));
     components.put(component + "Read", documentSchema(resource, names, null, text, components));
-    if (routable) {
+    // Write schemas exist only for the operations whose request bodies reference them.
+    if (operations.contains(ResourceOperation.CREATE)
+        || operations.contains(ResourceOperation.BULK_CREATE)) {
       components.put(
           component + "Create",
           documentSchema(resource, names, WriteOperation.CREATE, text, components));
+    }
+    if (operations.contains(ResourceOperation.UPDATE)
+        || operations.contains(ResourceOperation.BULK_UPDATE)) {
       components.put(
           component + "Update",
           documentSchema(resource, names, WriteOperation.UPDATE, text, components));
@@ -95,6 +108,10 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       }
       Map<String, Object> property =
           documentFieldProperty(field, names, writeOperation, false, false, text, components);
+      if (writeOperation == null
+          && (field.name().equals(resource.idField()) || field.readGuaranteed())) {
+        property.put(READ_GUARANTEED, true);
+      }
       properties.put(field.name(), property);
       if ((writeOperation == WriteOperation.CREATE && field.requiredOnCreate())
           || (writeOperation == null && field.name().equals(resource.idField()))) {

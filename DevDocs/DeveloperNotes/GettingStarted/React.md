@@ -14,22 +14,44 @@ replacing the previous ESLint + Prettier setup.
   needed; otherwise install the community types, e.g. `pnpm add -D @types/<package-name>`.
 
 ## Notes
-- Native `fetch` calls to APIs authenticated with a browser UI token should use
-  `fetchWithUiToken` from `modules/common/utils/fetchWithUiToken`. A rejected
-  token triggers a session-token refresh and validation. For the same user,
-  GET requests retry once and later requests use the stored replacement even
-  if their hook or query still holds the expired token. A changed identity
-  reloads the tab to discard the previous Operate As user's caches and UI state.
-  Axios calls (including `axios.create` instances) imported from `common/axios`
-  use the same recovery for same-origin API requests. Pending writes are never
-  replayed. An expired browser session navigates to login; public document views
-  reload their existing URL to restore the anonymous session. Other refresh or
-  validation failures leave the original error with the caller. Concurrent
-  failures share recovery only when their tokens match.
 - Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
 - Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the
   check (`pnpm run lint:ci`).
+
+## API authentication
+
+The frontend calls two APIs, each with its own token path. Do not mix them.
+
+### API v1
+
+`useOauthToken` and `useOauthTokenQuery` get a UI token from `/userform/ajax/inventoryOauthToken` with the signed-in
+browser session and cache it in session storage. The route refuses to mint a token while operating as another user or
+when the account's login is disabled.
+
+Send native `fetch` calls that carry this token through `fetchWithUiToken` from
+`modules/common/utils/fetchWithUiToken`. Send Axios calls through `common/axios`, including `axios.create` instances.
+Both recover a rejected token on same-origin `/api/` requests:
+
+| # | Step | Behaviour |
+| --- | --- | --- |
+| 1. | Check | A 401 can also mean a refused permission, so `/api/v1/userDetails/whoami` first confirms that the token itself is invalid. A rejected `whoami` request skips this check. |
+| 2. | Public documents | Public document views reload their URL to restore the anonymous session. |
+| 3. | Replace | A replacement comes from the legacy route. It is checked against `whoami` before it is stored, so a disabled account cannot loop on reloads. A refused token request, a login page or a response without a token navigates to `/login`. Any other failure leaves the original error with the caller. |
+| 4. | Retry | For the same user, a GET retries once. Later requests whose hook or query still holds the old token send the stored replacement instead, when both tokens belong to the same session and the stored one is newer. Writes never replay. |
+| 5. | Identity change | A replacement for another identity reloads the tab to discard the previous user's caches and UI state. |
+
+Concurrent failures share one recovery when they carry the same token.
+
+### API v2
+
+Call REST API v2 through the generated Orval operations, which share one transport (`apiV2Fetch` and its header and
+binary variants). Protected operations send a bearer token from the page's `SessionTokenProvider`. Public operations
+send one when the provider can supply it and otherwise read anonymously. Session operations, including token creation,
+use the browser session. The provider mints session-bound tokens from `POST /api/v2/oauth/tokens` and keeps them in
+memory. Starting or ending Operate As invalidates them. Do not use `fetchWithUiToken`, `common/axios` or
+the v1 token hooks for v2 calls. See [REST API v2 frontend client](../RestApiV2FrontendClient.md) for recovery,
+session handlers and anonymous public reads.
 
 ## React page fonts
 

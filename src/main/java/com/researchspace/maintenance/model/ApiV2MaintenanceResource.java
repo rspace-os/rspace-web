@@ -45,7 +45,12 @@ public record ApiV2MaintenanceResource(
             createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             nullable = true,
-            description = "Time after which ordinary users may no longer log in.")
+            description =
+                "Time after which ordinary users can no longer log in. A value must be before the"
+                    + " end, and at or before the start or, while the window has not ended, at or"
+                    + " before the time of the change. Omitted on create, it defaults to ten"
+                    + " minutes before the start; null makes the start the cutoff. A patch is"
+                    + " validated against the whole resulting window.")
         Date stopUserLoginDate,
     @ApiV2ResourceField(
             createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
@@ -57,7 +62,9 @@ public record ApiV2MaintenanceResource(
     @ApiV2ResourceField(
             filterable = false,
             sortable = false,
-            description = "Whether ordinary users can log in at the current server time.")
+            description =
+                "Whether ordinary users can log in at the current server time, computed for each"
+                    + " request; do not reuse it from a cached document.")
         boolean canUserLoginNow) {
 
   public static final CollectionMutationLimits MUTATION_LIMITS =

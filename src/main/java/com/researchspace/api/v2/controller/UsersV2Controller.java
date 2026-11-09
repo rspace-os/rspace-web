@@ -94,7 +94,10 @@ public class UsersV2Controller {
   @Operation(
       operationId = "getCurrentUserProfileImage",
       summary = "Get the current user's profile image",
-      description = "Returns a PNG image with Cache-Control: no-store.",
+      description =
+          "Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user"
+              + " uploads an image, so fetch it and show a placeholder on 404 instead of pointing"
+              + " an image element at this route.",
       responses = {
         @ApiResponse(
             responseCode = "200",

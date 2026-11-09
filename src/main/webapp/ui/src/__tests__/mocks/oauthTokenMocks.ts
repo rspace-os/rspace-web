@@ -1,5 +1,6 @@
 import type { RequestHandler } from "msw";
 import { HttpResponse, http } from "msw/http";
+import type { ApiV2UiToken } from "@/modules/common/api/v2/generated/models/apiV2UiToken";
 
 /*
  * A static, far-future-expiry JWT for the browser-test OAuth token endpoint.
@@ -11,3 +12,7 @@ export const OAUTH_TOKEN =
 
 export const oauthTokenHandler = (): RequestHandler =>
   http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: OAUTH_TOKEN }));
+
+/* REST API v2 calls mint their own token through the session token provider. */
+export const apiV2TokenHandler = (): RequestHandler =>
+  http.post("/api/v2/oauth/tokens", () => HttpResponse.json<ApiV2UiToken>({ accessToken: OAUTH_TOKEN }));

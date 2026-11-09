@@ -14,7 +14,7 @@ A file-name filter can be appended to run only matching tests. For example,
 
 ### Test environments
 
-`pnpm run test` runs two Vitest projects, configured in
+`pnpm run test` runs three Vitest projects, configured in
 `src/main/webapp/ui/vite.config.ts`:
 
 - `jsdom` runs every `*.test.*` file in a simulated browser DOM, after
@@ -26,6 +26,9 @@ A file-name filter can be appended to run only matching tests. For example,
   `ArrayUtils`, `Util`, `StringUtils` and `parsers`). These run in plain Node,
   without `setup.ts`, so they have no DOM, MSW or i18n, and start faster. The
   `jsdom` project excludes them.
+- `scripts` runs the REST API v2 generator script tests and invalidation checks
+  in plain Node, because Orval loads esbuild at import time (see
+  `scripts/api-v2-valibot/README.md`).
 
 Add a folder to `nodeTestFiles` only when none of its tests need the DOM,
 network mocks or translations; put any test that does in another folder.
