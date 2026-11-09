@@ -14,7 +14,7 @@ import { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/sc
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 
 export const CALENDAR_BOOKING_FIELDS =
-  "id,version,target,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
+  "id,version,target,location,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 export type CalendarEventFilterScope = Partial<Pick<SearchCalendarEventsParams, "where" | "q" | "mine">>;
 type CalendarEventRequest = Pick<SearchCalendarEventsParams, "start" | "end"> & {
   signal: AbortSignal;

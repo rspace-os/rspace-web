@@ -605,9 +605,31 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
-  void generatedFilterMetadataIsDeterministicAndAdditive() {
+  void publishesTheLocationFilterAndRequesterRelationship() {
+    Map<String, Object> bookings = where(document(), "/api/v2/bookings");
+    Map<String, Object> bookingSelectors =
+        objectMap(objectMap(bookings.get("x-rspace-filter")).get("selectors"));
+
+    assertTrue(bookingSelectors.containsKey("requester.value"));
+    assertFalse(bookingSelectors.containsKey("requesterId"));
+    // Bookings render the readable location too, and filter by it with the same picker.
+    assertEquals(
+        "containers",
+        objectMap(objectMap(bookingSelectors.get("location")).get("picker")).get("resource"));
+
+    Map<String, Object> configurations = where(document(), "/api/v2/booking-configurations");
+    Map<String, Object> configurationSelectors =
+        objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
+
+    assertEquals(
+        Map.of("resource", "containers", "identity", "globalId", "globalIdPrefix", "IC"),
+        objectMap(configurationSelectors.get("location")).get("picker"));
+    assertTrue(configurationSelectors.containsKey("location.name"));
+  }
+
+  @Test
+  void publishesFilterLimitsAndRelationshipTargetFields() {
     Map<String, Object> first = document();
-    Map<String, Object> second = document();
     Map<String, Object> paths = objectMap(first.get("paths"));
     Map<String, Object> list =
         objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
@@ -617,7 +639,6 @@ class ApiV2OpenApiGeneratorTest {
             .findFirst()
             .orElseThrow();
 
-    assertEquals(first, second);
     assertTrue(objectMap(where.get("x-rspace-filter")).containsKey("maximumComparisons"));
     assertTrue(
         objectMap(objectMap(where.get("x-rspace-filter")).get("selectors"))

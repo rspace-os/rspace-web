@@ -1,5 +1,4 @@
 import * as v from "valibot";
-import { validMaximumBookingDuration } from "@/modules/booking/configuration/schedulingSettings";
 import { SchedulingSettingsSchema } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import { mapBookingTarget } from "@/modules/booking/domain/booking";
 import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
@@ -21,16 +20,8 @@ const NO_BOOKING_CAPABILITIES = {
 };
 
 function mapConfigurationFields(input: BookingConfigurationsRead) {
-  const policy = v.parse(SchedulingSettingsSchema, input);
-  const slotGranularityMinutes = required(input.slotGranularityMinutes, "slotGranularityMinutes");
-  const maxBookingDurationMinutes = required(input.maxBookingDurationMinutes, "maxBookingDurationMinutes");
-  if (
-    ![1, 5, 10, 15].includes(slotGranularityMinutes) ||
-    !validMaximumBookingDuration(maxBookingDurationMinutes, slotGranularityMinutes)
-  )
-    throw new Error("Invalid booking configuration increment or maximum duration");
+  const settings = v.parse(SchedulingSettingsSchema, input);
   return {
-    ...input,
     ...input,
     id: input.id,
     configurationVersion: required(input.configurationVersion, "configurationVersion"),
@@ -38,6 +29,7 @@ function mapConfigurationFields(input: BookingConfigurationsRead) {
     enabled: required(input.enabled, "enabled"),
     state: required(input.state, "state"),
     timezone: required(input.timezone, "timezone"),
+    ...settings,
     updatedAt: input.updatedAt,
     createdAt: input.createdAt,
     createdByName: input.createdByName,
@@ -46,7 +38,6 @@ function mapConfigurationFields(input: BookingConfigurationsRead) {
     roleSources: input.roleSources ?? [],
     capabilities: { ...NO_BOOKING_CAPABILITIES, ...input.capabilities },
     ownerHealth: input.ownerHealth,
-    ...policy,
   };
 }
 type OptionalConfigurationFields = "createdAt" | "updatedAt" | "createdByName" | "createdBy" | "ownerHealth";

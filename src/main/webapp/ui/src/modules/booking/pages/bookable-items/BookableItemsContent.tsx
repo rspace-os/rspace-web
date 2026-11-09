@@ -7,6 +7,7 @@ import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/sc
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
+  getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
   getSearchCalendarCatalogueQueryKey,
@@ -283,6 +284,10 @@ async function invalidateBookableItemRecords(
     queryClient.invalidateQueries({ queryKey: getListBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueLocationsQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey() }, { cancelRefetch: false }),
+    queryClient.invalidateQueries(
+      { queryKey: getCountBookingCatalogueAvailabilityQueryKey() },
+      { cancelRefetch: false },
+    ),
     queryClient.invalidateQueries({ queryKey: getCountBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
     ...docs.flatMap(({ id }) =>

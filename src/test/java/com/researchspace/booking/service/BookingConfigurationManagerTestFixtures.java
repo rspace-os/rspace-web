@@ -96,10 +96,10 @@ final class BookingConfigurationManagerTestFixtures {
         .thenReturn(
             new ResourceRegistry(
                 List.of(
-                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION,
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION)));
+                    ApiV2UserResource.DESCRIPTION,
+                    com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION)));
     ResolvedResourceAccess ownerAccess =
         new ResolvedResourceAccess(
             Optional.of(BookingResourceRoleScheme.OWNER),

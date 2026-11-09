@@ -1,25 +1,40 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import type { InvalidateOptions, QueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import { invalidateSearchBookingConfigurationTargets } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import {
+  invalidateCountBookingConfigurations,
+  invalidateGetBookingCalendarSubscription,
+  invalidateGetBookingConfiguration,
+  invalidateGetBookingConfigurationAccess,
+  invalidateListBookingConfigurationAuditEvents,
+  invalidateListBookingConfigurations,
+} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterState } from "@/modules/common/table-list/types";
+import { mutateBookableItems } from "../bookable-items/BookableItemsContent";
+import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
+import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
-import { availabilityMode, createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
+import { createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
 import {
   type AllBookableItem,
   type AvailabilityQuickFilter,
-  deriveAvailabilityCandidateFilter,
-  fetchAvailabilityFilteredCatalogue,
-  hasAvailabilityFilter,
-  resolveAvailabilityFilters,
-  useAvailabilityQuickFilterIndex,
+  keepAcrossMinutes,
+  serverAvailabilityFilter,
+  todayAvailabilityWindow,
+  useAvailabilityCounts,
+  withAvailability,
 } from "./availabilityQuickFilters";
 
 type AllBookableItemsDataOptions = {
@@ -51,6 +66,10 @@ export function useAllBookableItemsData({
 }: AllBookableItemsDataOptions) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  // Add disappears once the caller is known to have no instrument to set up, so it offers no dead
+  // end; it stays while that answer loads so the toolbar does not shift for everyone else.
+  const eligibleTargets = useEligibleBookingTargets().data;
+  const canAdd = eligibleTargets === undefined || eligibleTargets.length > 0;
   const sourceConfig = useMemo(
     () =>
       createAllBookableItemsConfig(
@@ -60,6 +79,11 @@ export function useAllBookableItemsData({
       ),
     [commonT, t],
   );
+  const queryClient = useQueryClient();
+  const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
+  const clearSelection = useCallback(() => {
+    setSelectedRowIds((current) => (current.size ? new Set() : current));
+  }, []);
   const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
   const runtimeFieldState = useApiV2RuntimeFields({
     resource: apiV2Resources["booking-configurations"],
@@ -86,17 +110,19 @@ export function useAllBookableItemsData({
     }),
     [config, q, routeAvailability, target, where],
   );
+  // The server applies availability as one top-level rule; an availability rule nested in an OR
+  // group, which only a hand-written saved view can hold, is reported like an unknown field.
+  const serverFilter = serverAvailabilityFilter(filters.expression);
   const invalidFilter =
-    !runtimeFieldState.pending && runtimeFieldState.error === null && Boolean(where && !filters.expression);
+    !runtimeFieldState.pending &&
+    runtimeFieldState.error === null &&
+    (Boolean(where && !filters.expression) || !serverFilter.supported);
   const runtimeFilterBlocked =
     runtimeFieldState.pending ||
     runtimeFieldState.error !== null ||
     runtimeFieldState.missing.length > 0 ||
     invalidFilter;
-  const candidateFilter = deriveAvailabilityCandidateFilter(filters.expression);
-  const candidateWhere = candidateFilter ? serializeRsqlExpression(candidateFilter) : undefined;
-  const usesAvailability = hasAvailabilityFilter(filters.expression);
-  const quickMode = availabilityMode(filters.expression);
+  const quickMode = serverFilter.supported ? serverFilter.availability : undefined;
   const quickFilterText = {
     "available-now": {
       label: t("allBookableItems.quickFilters.availableNow"),
@@ -117,61 +143,64 @@ export function useAllBookableItemsData({
       ),
     [preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone, selectedDate],
   );
-  const quickIndex = useAvailabilityQuickFilterIndex(
-    preferences.timeZone,
-    preferences.availabilityWindow.start,
-    preferences.availabilityWindow.end,
-    clock,
-    candidateWhere,
-    !runtimeFilterBlocked,
-    subjectId,
-    { q, types, mine },
+  const minute = useAlignedMinute(clock);
+  const today = useMemo(
+    () =>
+      todayAvailabilityWindow(
+        new Date(minute),
+        preferences.timeZone,
+        preferences.availabilityWindow.start,
+        preferences.availabilityWindow.end,
+      ),
+    [minute, preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone],
   );
-  const quickFilterPending = usesAvailability && quickIndex.isPending;
-  const quickFilterError = usesAvailability && quickIndex.isError;
-  const serverFilter = usesAvailability ? null : filters.expression;
-  const serverWhere = serverFilter ? serializeRsqlExpression(serverFilter) : undefined;
-  const _availabilityIndexSignature = usesAvailability
-    ? quickIndex.data
-      ? [...quickIndex.data]
-          .map(([targetId, entry]) => [targetId, entry.category])
-          .toSorted(([left], [right]) => left.localeCompare(right))
-      : undefined
-    : undefined;
-  const catalogue = useQuery({
-    queryKey: [
-      ...getSearchBookingCatalogueQueryKey({
-        q,
-        type: types ? [...types] : undefined,
-        where: filters.expression
-          ? serializeRsqlExpression(
-              resolveAvailabilityFilters(filters.expression, quickIndex.data) ?? filters.expression,
-            )
-          : undefined,
-        page,
-        limit: pageSize,
-        mine,
-      }),
-      "allItems",
-    ],
-    queryFn: ({ signal }) => {
-      if (usesAvailability) {
-        if (!filters.expression || !quickIndex.data) {
-          throw new Error("Availability filter search requires the quick-filter index");
-        }
-        return fetchAvailabilityFilteredCatalogue(
-          filters.expression,
-          quickIndex.data,
-          { q, types, mine, page, pageSize },
-          signal,
-        );
-      }
-      return fetchBookingCatalogue({ q, types, mine, where: serverWhere, page, pageSize }, signal);
-    },
-    enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
-    staleTime: 30_000,
+  const serverWhere =
+    serverFilter.supported && serverFilter.where ? serializeRsqlExpression(serverFilter.where) : undefined;
+  const serverAvailability = serverFilter.supported ? serverFilter.availability : undefined;
+  // Counts describe the item rules alone, so each chip shows what selecting it would find.
+  const countsFilter = withAvailability(filters.expression, undefined);
+  const counts = useAvailabilityCounts(
+    subjectId,
+    { q, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
+    today,
+    !runtimeFilterBlocked,
+  );
+  // The table reads its own page; the server applies an availability rule before paging.
+  const catalogueQueryKey = getSearchBookingCatalogueQueryKey({
+    q,
+    type: types ? [...types] : undefined,
+    mine,
+    where: serverWhere,
+    page,
+    limit: pageSize,
+    availability: serverAvailability,
+    start: today.start,
+    end: today.end,
+    now: today.now,
   });
-  const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const catalogue = useQuery({
+    queryKey: catalogueQueryKey,
+    queryFn: ({ signal }) =>
+      fetchBookingCatalogue(
+        {
+          q,
+          totals: true,
+          types,
+          mine,
+          where: serverWhere,
+          page,
+          pageSize,
+          availability: serverAvailability,
+          availabilityWindow: today,
+        },
+        signal,
+      ),
+    enabled: !runtimeFilterBlocked,
+    staleTime: 30_000,
+    placeholderData: serverAvailability ? keepAcrossMinutes(catalogueQueryKey) : undefined,
+  });
+  const catalogueItems = catalogue.data?.items ?? [];
+  const rows = runtimeFilterBlocked ? [] : catalogueItems.map(catalogueItemAsConfiguration);
   // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
   const hasNoBookableItems =
     catalogue.isSuccess &&
@@ -182,21 +211,45 @@ export function useAllBookableItemsData({
     !routeAvailability &&
     !mine &&
     !types?.length;
+  // A disabled, archived or deleted item leaves this list, so it also leaves the selection.
+  const onLifecycleChanged = useCallback(
+    async (configurationIds: readonly number[], permanent = false, options?: InvalidateOptions) => {
+      setSelectedRowIds((current) => {
+        const next = new Set(current);
+        for (const id of configurationIds) next.delete(String(id));
+        return next;
+      });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, options),
+        invalidateListBookings(queryClient, undefined, options),
+        ...configurationIds.map((id) => invalidateGetBookingCalendarSubscription(queryClient, id, options)),
+        // A permanently deleted item's instrument becomes an eligible target again.
+        ...(permanent ? [invalidateSearchBookingConfigurationTargets(queryClient, {}, options)] : []),
+      ]);
+    },
+    [queryClient],
+  );
+  const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
+  const bulkMutation = useMutation({
+    mutationFn: ({ action, rowIds }: { action: BookableItemsBulkAction; rowIds: readonly string[] }) =>
+      mutateBookableItems(action, rowIds),
+    onMutate: () => setFailedBulkAction(null),
+    onSuccess: async (_data, { rowIds }) => {
+      await invalidateChangedConfigurations(queryClient, rowIds.map(Number));
+      await onLifecycleChanged(rowIds.map(Number));
+    },
+    onError: (_error, { action }) => setFailedBulkAction(action),
+  });
+  const selectionPending = bulkMutation.isPending;
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
     return availabilityRow ? [availabilityRow] : [];
   });
-  const useQuickAvailability =
-    selectedDate === userToday &&
-    !quickIndex.isError &&
-    (quickIndex.isPending || availabilityRows.every((row) => quickIndex.data?.has(row.globalId)));
-  const availability = useCalendarAvailability(
-    quickMode || useQuickAvailability ? [] : availabilityRows,
-    bounds,
-
-    subjectId,
-  );
+  // A quick filter always describes today, so its rows show today's bars and book today.
+  const rowsDate = quickMode ? today.date : selectedDate;
+  const rowsBounds = quickMode ? today.bounds : bounds;
+  const availability = useCalendarAvailability(availabilityRows, rowsBounds, subjectId);
 
   return {
     config,
@@ -206,17 +259,36 @@ export function useAllBookableItemsData({
     selectedDate,
     filters,
     invalidFilter,
-    runtimeFilterBlocked,
     quickMode,
-    quickFilterText,
-    bounds,
-    quickIndex,
-    quickFilterPending,
-    quickFilterError,
     catalogue,
     rows,
     hasNoBookableItems,
-    useQuickAvailability,
+    selectedRowIds,
+    setSelectedRowIds,
+    clearSelection,
     availability,
+    bulkMutation,
+    canAdd,
+    counts,
+    failedBulkAction,
+    minute,
+    onLifecycleChanged,
+    rowsBounds,
+    rowsDate,
+    selectionPending,
+    setFailedBulkAction,
+
+    quickFilterText,
   };
+}
+
+async function invalidateChangedConfigurations(queryClient: QueryClient, ids: readonly number[]) {
+  await Promise.all([
+    invalidateCountBookingConfigurations(queryClient),
+    ...ids.flatMap((id) => [
+      invalidateGetBookingConfiguration(queryClient, id),
+      invalidateGetBookingConfigurationAccess(queryClient, id),
+      invalidateListBookingConfigurationAuditEvents(queryClient, id),
+    ]),
+  ]);
 }

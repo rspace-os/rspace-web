@@ -11,6 +11,7 @@ export const ApiV2ListResultMapStringObjectSchema = native.ApiV2ListResultMapStr
 export const ApiV2ProblemSchema = native.ApiV2Problem;
 export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
+export const AvailabilityCountsSchema = native.AvailabilityCounts;
 export const BookingCalendarSubscriptionCreatedSchema = native.BookingCalendarSubscriptionCreated;
 export const BookingCalendarSubscriptionStatusSchema = native.BookingCalendarSubscriptionStatus;
 export const BookingConfigurationCapabilitiesSchema = native.BookingConfigurationCapabilities;
@@ -96,6 +97,7 @@ export type SchemaModelTypeChecks = {
   ApiV2Problem: [Assert<Extends<v.InferOutput<typeof ApiV2ProblemSchema>, Models.ApiV2Problem>>, Assert<Extends<Models.ApiV2Problem, v.InferOutput<typeof ApiV2ProblemSchema>>>];
   ApiV2RuntimeFieldCatalog: [Assert<Extends<v.InferOutput<typeof ApiV2RuntimeFieldCatalogSchema>, Models.ApiV2RuntimeFieldCatalog>>, Assert<Extends<Models.ApiV2RuntimeFieldCatalog, v.InferOutput<typeof ApiV2RuntimeFieldCatalogSchema>>>];
   ApiV2UiToken: [Assert<Extends<v.InferOutput<typeof ApiV2UiTokenSchema>, Models.ApiV2UiToken>>, Assert<Extends<Models.ApiV2UiToken, v.InferOutput<typeof ApiV2UiTokenSchema>>>];
+  AvailabilityCounts: [Assert<Extends<v.InferOutput<typeof AvailabilityCountsSchema>, Models.AvailabilityCounts>>, Assert<Extends<Models.AvailabilityCounts, v.InferOutput<typeof AvailabilityCountsSchema>>>];
   BookingCalendarSubscriptionCreated: [Assert<Extends<v.InferOutput<typeof BookingCalendarSubscriptionCreatedSchema>, Models.BookingCalendarSubscriptionCreated>>, Assert<Extends<Models.BookingCalendarSubscriptionCreated, v.InferOutput<typeof BookingCalendarSubscriptionCreatedSchema>>>];
   BookingCalendarSubscriptionStatus: [Assert<Extends<v.InferOutput<typeof BookingCalendarSubscriptionStatusSchema>, Models.BookingCalendarSubscriptionStatus>>, Assert<Extends<Models.BookingCalendarSubscriptionStatus, v.InferOutput<typeof BookingCalendarSubscriptionStatusSchema>>>];
   BookingConfigurationCapabilities: [Assert<Extends<v.InferOutput<typeof BookingConfigurationCapabilitiesSchema>, Models.BookingConfigurationCapabilities>>, Assert<Extends<Models.BookingConfigurationCapabilities, v.InferOutput<typeof BookingConfigurationCapabilitiesSchema>>>];

@@ -15,6 +15,12 @@ export type SearchBookingCatalogueParams = {
   location?: string[];
   capability?: SearchBookingCatalogueCapability;
   mine: boolean;
+  availability?: string;
+  /** Inclusive interval start. */
+  start?: string;
+  /** Exclusive interval end. */
+  end?: string;
+  now?: string;
   page: number;
   limit: number;
 };

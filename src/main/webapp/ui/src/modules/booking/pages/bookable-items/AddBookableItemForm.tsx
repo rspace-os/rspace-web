@@ -1,4 +1,5 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
+import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
@@ -11,19 +12,19 @@ import {
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import {
-  getSearchBookingConfigurationTargetsQueryKey,
-  searchBookingConfigurationTargets,
-} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+  getCountBookingCatalogueAvailabilityQueryKey,
+  getSearchBookingCatalogueLocationsQueryKey,
+  getSearchBookingCatalogueQueryKey,
+  getSearchCalendarCatalogueQueryKey,
+} from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
   useCreateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
-import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
 import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
@@ -33,18 +34,12 @@ import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigatio
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import type { RelationshipSource } from "@/modules/common/relationship-picker/sources";
+import { instrumentRelationshipOption, type RelationshipSource } from "@/modules/common/relationship-picker/sources";
 import { Button } from "@/modules/common/ui/button";
-import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
-
-async function searchBookingTargets(query: string, signal?: AbortSignal) {
-  return (await searchBookingConfigurationTargets({ q: query.trim(), limit: 20 }, { signal })).docs.map(
-    requireEligibleBookingTarget,
-  );
-}
+import { searchBookingTargets } from "./bookingConfigurationTargets";
 
 const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
@@ -89,20 +84,7 @@ const bookingConfigurationTargetSource: RelationshipSource = {
       instrument.deleted !== false
     )
       throw new Error("Booking target identity is missing");
-    return {
-      value: instrument.globalId,
-      label: instrument.name,
-      content: (
-        <InventoryItem
-          name={instrument.name}
-          globalId={instrument.globalId}
-          href={`/globalId/${instrument.globalId}`}
-          idLinkLabel={context.idLinkLabel(instrument.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
-      ),
-    };
+    return instrumentRelationshipOption(instrument, context);
   },
 };
 
@@ -159,7 +141,7 @@ export function AddBookableItemForm({
     onSuccess: async () => {
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+        joinBookingCatalogueRefresh(queryClient),
       ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
@@ -248,12 +230,13 @@ export function AddBookableItemForm({
   );
 }
 
-function requireEligibleBookingTarget(target: BookingConfigurationTarget) {
-  if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
-  return {
-    ...target,
-    id: requireBookingValue(target.id, "id"),
-    globalId: requireBookingValue(target.globalId, "globalId"),
-    name: requireBookingValue(target.name, "name"),
-  };
+function joinBookingCatalogueRefresh(queryClient: QueryClient) {
+  return Promise.all(
+    [
+      getSearchBookingCatalogueQueryKey(),
+      getSearchBookingCatalogueLocationsQueryKey(),
+      getSearchCalendarCatalogueQueryKey(),
+      getCountBookingCatalogueAvailabilityQueryKey(),
+    ].map((queryKey) => queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })),
+  );
 }

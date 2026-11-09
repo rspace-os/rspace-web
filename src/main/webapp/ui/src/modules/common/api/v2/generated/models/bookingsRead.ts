@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 import type { BookingsReadKind } from './bookingsReadKind.ts';
+import type { BookingsReadLocation } from './bookingsReadLocation.ts';
 import type { BookingsReadRequester } from './bookingsReadRequester.ts';
 import type { BookingsReadState } from './bookingsReadState.ts';
 import type { BookingsReadTarget } from './bookingsReadTarget.ts';
@@ -23,6 +24,8 @@ export interface BookingsRead {
   end?: string;
   readonly id: number;
   kind?: BookingsReadKind;
+  /** The bookable item's immediate Inventory parent Container or workbench, rendered and matched only where the caller may read it; otherwise null. Address a workbench as IC plus its ID. */
+  readonly location?: BookingsReadLocation;
   readonly privacy?: string;
   /**
      * @maxLength 1000

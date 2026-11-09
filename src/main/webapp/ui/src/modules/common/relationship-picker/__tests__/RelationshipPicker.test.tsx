@@ -6,9 +6,15 @@ import { HttpResponse, http } from "msw";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { optionBatchCacheKey, optionCacheKey, useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import { type RelationshipSource, relationshipSources } from "@/modules/common/relationship-picker/sources";
+import {
+  databaseIdFromGlobalId,
+  type RelationshipSource,
+  relationshipSources,
+} from "@/modules/common/relationship-picker/sources";
+import { FilterValueInput } from "@/modules/common/table-list/components/FilterValueInput";
 import { listInstruments } from "./fixtures/relationshipPicker";
 
 function renderPicker(onChange: (value: string) => void) {
@@ -16,7 +22,7 @@ function renderPicker(onChange: (value: string) => void) {
   return render(
     <QueryClientProvider client={queryClient}>
       <RelationshipPicker
-        source={relationshipSources.instruments}
+        sources={[relationshipSources.instruments]}
         value=""
         onChange={onChange}
         ariaLabel="Relationship"
@@ -174,10 +180,11 @@ describe("relationship picker search", () => {
 
     await user.type(screen.getByRole("combobox", { name: "Relationship" }), "IN123");
 
-    expect(
-      await screen.findByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Confocal microscope IN123" })).toBeInTheDocument();
     expect(requests.at(-1)?.searchParams.get("where")).toBe("id==123");
+    // Seeded and baseline rows have negative IDs, such as US-3; zero and malformed IDs are rejected.
+    expect(databaseIdFromGlobalId("us-3", "US")).toBe(-3);
+    expect(["US0", "US--3", "IN3"].map((value) => databaseIdFromGlobalId(value, "US"))).toEqual([null, null, null]);
   });
 
   it("keeps support for disabling options when an availability source is supplied", async () => {
@@ -188,7 +195,7 @@ describe("relationship picker search", () => {
     render(
       <QueryClientProvider client={queryClient}>
         <RelationshipPicker
-          source={relationshipSources.instruments}
+          sources={[relationshipSources.instruments]}
           availabilitySource={{
             queryKey: ["test-relationship-option-availability"],
             loadUnavailable: async () => ({ IN123: { reason: "test-unavailable" } }),
@@ -205,7 +212,7 @@ describe("relationship picker search", () => {
     await user.type(picker, "Conf");
 
     const option = await screen.findByRole("option", {
-      name: "Confocal microscope common:relationshipPicker.openRecord common:relationshipPicker.availabilityFailed",
+      name: "Confocal microscope IN123 common:relationshipPicker.availabilityFailed",
     });
     expect(await within(option).findByText("common:relationshipPicker.availabilityFailed")).toBeVisible();
     expect(option).toHaveAttribute("aria-disabled", "true");
@@ -317,7 +324,7 @@ describe("relationship picker restore", () => {
     render(
       <QueryClientProvider client={queryClient}>
         <RelationshipPicker
-          source={relationshipSources.instruments}
+          sources={[relationshipSources.instruments]}
           value="in00123,IN456"
           onChange={vi.fn()}
           ariaLabel="Selected relationships"
@@ -380,9 +387,9 @@ describe("relationship picker restore", () => {
     const { result } = renderHook(
       () =>
         useSelectedRelationshipOptions({
-          source,
+          sources: [source],
           values,
-          labels: { idLinkLabel: (globalId) => globalId },
+          labels: {},
         }),
       { wrapper },
     );
@@ -446,5 +453,84 @@ describe("relationship picker restore", () => {
 
     expect(await screen.findByText("FX500 — common:relationshipPicker.restoreFailed")).toBeVisible();
     expect(screen.queryByText("private endpoint error")).not.toBeInTheDocument();
+  });
+});
+
+describe("relationship filter value picker", () => {
+  function browsingSource(browsable: boolean, searches: string[]): RelationshipSource {
+    return {
+      id: "fixture-locations",
+      globalIdPrefix: "FX",
+      browsable,
+      search: async (term) => {
+        searches.push(term);
+        return [{ id: 12, name: "Cold room" }];
+      },
+      ownsValue: (value) => /^FX\d+$/.test(value),
+      toOption: (document) => {
+        const location = document as { id: number; name: string };
+        return { value: `FX${location.id}`, label: location.name };
+      },
+    };
+  }
+
+  function renderFilterValue(source: RelationshipSource) {
+    const field = resolveCollectionConfig<{ id: string; location: string }>({
+      slug: "fixtures",
+      idField: "id",
+      useAsTitle: "id",
+      labels: { singularKey: "a", pluralKey: "b" },
+      defaultColumns: ["id"],
+      fields: [
+        { name: "id", type: "text", labelKey: "id" },
+        {
+          name: "location",
+          type: "relationship",
+          relationTo: "fixture-locations",
+          hasMany: false,
+          labelKey: "location",
+          filterPicker: { resource: "fixture-locations", identity: "globalId", globalIdPrefix: "FX" },
+          capabilities: { filterOperators: ["equals"] },
+        },
+      ],
+    }).fields[1];
+    const onChange = vi.fn();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FilterValueInput
+          field={field}
+          sources={{ "fixture-locations": source }}
+          operator="equals"
+          value=""
+          number={1}
+          onChange={onChange}
+        />
+      </QueryClientProvider>,
+    );
+    return onChange;
+  }
+
+  it("lists a browsable source's choices before the user types", async () => {
+    const user = userEvent.setup();
+    const searches: string[] = [];
+    const onChange = renderFilterValue(browsingSource(true, searches));
+
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    await user.click(await screen.findByRole("option", { name: "Cold room" }));
+
+    expect(searches).toContain("");
+    expect(onChange).toHaveBeenCalledWith("FX12");
+  });
+
+  it("asks for a term when the source does not browse", async () => {
+    const user = userEvent.setup();
+    const searches: string[] = [];
+    renderFilterValue(browsingSource(false, searches));
+
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+
+    expect(await screen.findByText("common:relationshipPicker.enterSearchTerm")).toBeVisible();
+    expect(searches).toHaveLength(0);
   });
 });

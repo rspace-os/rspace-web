@@ -117,9 +117,24 @@ const requiresTraining = [
 
 const definitions = [...hazardClass, ...requiresTraining];
 
+/** An unconfigured instrument the story user could set up, so Administration offers Add. */
+const eligibleBookingTargetFixture = {
+  id: 950,
+  globalId: "IN950",
+  name: "Unconfigured spectrometer",
+  deleted: false,
+};
+
 export function bookableItemsHandlers(onCollectionRequest: (request: Request) => void): RequestHandler[] {
   return [
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
+    http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+      if (new URL(request.url).searchParams.has("query")) return new HttpResponse(null, { status: 400 });
+      return HttpResponse.json({ docs: [eligibleBookingTargetFixture] });
+    }),
+    http.get("/api/v2/booking-configurations/count", () =>
+      HttpResponse.json({ totalDocs: 1, totalIsLowerBound: true }),
+    ),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
@@ -157,6 +172,9 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
     http.get(/\/api\/v2\/booking-catalogue(?:\/calendar)?$/, ({ request }) => {
       onCollectionRequest(request);
       const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^(availability|calendar)(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
       const target = url.searchParams.get("target");
       const where = url.searchParams.get("where");
@@ -207,6 +225,14 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
             : null,
       }));
       return HttpResponse.json(bookingCataloguePage(items, page, pageSize, matching.length));
+    }),
+    // Pages with events of their own classify items; these fixtures have none to count.
+    http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
+      const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^availability(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
+      return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
     }),
     http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
       const url = new URL(request.url);

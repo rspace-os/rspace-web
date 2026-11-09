@@ -1,8 +1,10 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterState } from "@/modules/common/table-list/types";
+import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
 import { AllBookableItemsTable } from "./AllBookableItemsTable";
 import { type AllBookableItem, hasAvailabilityFilter, withAvailability } from "./availabilityQuickFilters";
 import { useAllBookableItemsData } from "./useAllBookableItemsData";
@@ -15,13 +17,22 @@ export type AllBookableItemsContentProps = {
 
 export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
   const { data: currentUser } = useCurrentUserQuery();
-  return <AllBookableItemsContentForUser key={currentUser.id} subjectId={currentUser.id} clock={clock} />;
+  return (
+    <AllBookableItemsContentForUser
+      key={currentUser.id}
+      subjectId={currentUser.id}
+      directSysadmin={currentUser.hasSysAdminRole && !currentUser.session.operatedAs}
+      clock={clock}
+    />
+  );
 }
 
 function AllBookableItemsContentForUser({
   clock = currentDate,
   subjectId,
-}: AllBookableItemsContentProps & { subjectId: number }) {
+  directSysadmin,
+}: AllBookableItemsContentProps & { subjectId: number; directSysadmin: boolean }) {
+  const { t: commonT } = useTranslation("common");
   const {
     date,
     availability: routeAvailability,
@@ -34,7 +45,19 @@ function AllBookableItemsContentForUser({
     pageSize = 20,
   } = useSearch({ from: "/booking/all-items/" });
   const navigate = useNavigate({ from: "/booking/all-items/" });
-  const { config, invalidFilter, catalogue, runtimeFieldState, ...data } = useAllBookableItemsData({
+  const {
+    config,
+    invalidFilter,
+    catalogue,
+    runtimeFieldState,
+    selectedRowIds,
+    bulkMutation,
+    failedBulkAction,
+    selectionPending,
+    setFailedBulkAction,
+    rows,
+    ...data
+  } = useAllBookableItemsData({
     clock,
     date,
     routeAvailability,
@@ -47,9 +70,10 @@ function AllBookableItemsContentForUser({
     page,
     pageSize,
   });
-  const { filters, userToday, rows, quickFilterError, quickFilterPending } = data;
+  const { filters, setSelectedRowIds, clearSelection, userToday } = data;
 
   const setDate = (nextDate: string) => {
+    clearSelection();
     const remaining = withAvailability(filters.expression, undefined);
     void navigate({
       search: (current) => ({
@@ -64,6 +88,7 @@ function AllBookableItemsContentForUser({
     });
   };
   const resetView = () => {
+    clearSelection();
     void navigate({
       search: (current) => ({
         ...current,
@@ -85,6 +110,7 @@ function AllBookableItemsContentForUser({
     if (nextSearch === q && nextWhere === where && !target && !routeAvailability && page === 1) {
       return;
     }
+    clearSelection();
     void navigate({
       search: (current) => ({
         ...current,
@@ -99,6 +125,7 @@ function AllBookableItemsContentForUser({
     });
   };
   const removeRestoredViewIssue = () => {
+    clearSelection();
     void navigate({
       search: (current) => ({ ...current, where: undefined, page: undefined }),
       replace: true,
@@ -120,18 +147,14 @@ function AllBookableItemsContentForUser({
     getRowId: (row) => String(row.id),
     clientSide: false,
     status:
-      runtimeFieldState.error !== null ||
-      runtimeFieldState.missing.length > 0 ||
-      invalidFilter ||
-      quickFilterError ||
-      catalogue.isError
+      runtimeFieldState.error !== null || runtimeFieldState.missing.length > 0 || invalidFilter || catalogue.isError
         ? "error"
-        : runtimeFieldState.pending || quickFilterPending || catalogue.isPending
+        : runtimeFieldState.pending || catalogue.isPending
           ? "loading"
           : catalogue.isFetching
             ? "refreshing"
             : "idle",
-    error: runtimeFieldState.error ?? (quickFilterError ? undefined : catalogue.error),
+    error: runtimeFieldState.error ?? catalogue.error,
     restoredViewIssue,
     onSelectRuntimeField: runtimeFieldState.selectRuntimeField,
     runtimeFieldDefinitions: runtimeFieldState.runtimeFields,
@@ -150,6 +173,7 @@ function AllBookableItemsContentForUser({
         onChange: (nextPage) => {
           const nextPageNumber = nextPage.pageSize === pageSize ? nextPage.pageIndex + 1 : 1;
           if (nextPageNumber === page && nextPage.pageSize === pageSize) return;
+          // Selection survives paging, as in Administration, so rows from several pages act together.
           void navigate({
             search: (current) => ({
               ...current,
@@ -161,6 +185,30 @@ function AllBookableItemsContentForUser({
         },
       },
     },
+    selection: directSysadmin
+      ? {
+          value: selectedRowIds,
+          onChange: (value) => {
+            setSelectedRowIds(value);
+            setFailedBulkAction(null);
+          },
+          disabled: selectionPending,
+          maximumCount: 100,
+          getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
+          renderActions: (selection) => (
+            <BookableItemsBulkActions
+              selection={selection}
+              disabled={selectionPending}
+              activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
+              failedAction={failedBulkAction}
+              offerEnable={false}
+              onAction={async (action, rowIds) => {
+                await bulkMutation.mutateAsync({ action, rowIds: [...rowIds] });
+              }}
+            />
+          ),
+        }
+      : undefined,
   };
 
   return (
@@ -168,6 +216,7 @@ function AllBookableItemsContentForUser({
       {...data}
       types={types}
       mine={mine}
+      directSysadmin={directSysadmin}
       tableProps={tableProps}
       setDate={setDate}
       resetView={resetView}

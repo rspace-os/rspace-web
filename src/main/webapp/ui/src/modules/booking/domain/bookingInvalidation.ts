@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
+  getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
   getSearchCalendarCatalogueQueryKey,
@@ -8,6 +9,7 @@ import {
 
 const window = { start: "1970-01-01T00:00:00Z", end: "1970-01-02T00:00:00Z", mine: false, page: 1, limit: 1 };
 const operationPaths = {
+  availabilityCounts: getCountBookingCatalogueAvailabilityQueryKey({ mine: false })[0],
   catalogue: getSearchBookingCatalogueQueryKey({ mine: false, page: 1, limit: 1 })[0],
   locations: getSearchBookingCatalogueLocationsQueryKey({ page: 1, limit: 1 })[0],
   calendarCatalogue: getSearchCalendarCatalogueQueryKey(window)[0],
