@@ -14,11 +14,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
+import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailImpl;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.audittrail.HistoryDAO;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
@@ -129,7 +132,7 @@ class BookingAuditTrailTest {
         new BookingConfigurationPermanentDeleteSnapshot(
             42L,
             3L,
-            null,
+            new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L),
             "Microscope",
             BookingConfigurationState.ARCHIVED,
             2,
@@ -150,7 +153,7 @@ class BookingAuditTrailTest {
         new BookingConfigurationPermanentDeleteSnapshot(
             42L,
             3L,
-            null,
+            new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L),
             "Microscope",
             BookingConfigurationState.ARCHIVED,
             2,
@@ -165,6 +168,45 @@ class BookingAuditTrailTest {
             .data()
             .toJson();
     assertTrue(json.contains("\"deletedAt\":\"2026-09-01T12:00:00Z\""), json);
+    assertTrue(json.contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":7}"), json);
+  }
+
+  @Test
+  void bookingConfigurationAuditSerializesItsTargetIdentity() {
+    User actor = TestFactory.createAnyUser("sysadmin");
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(42L);
+    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L));
+
+    SavedRecord saved =
+        savedRecord(
+            listener ->
+                listener.bookingConfigurationChanged(
+                    new BookingConfigurationAuditEvent(actor, configuration, AuditAction.CREATE)));
+    String json = saved.historicData().getData().toJson();
+    AuditData parsed = saved.data();
+    assertTrue(json.contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":7}"), json);
+    assertEquals("booking-configurations:42", parsed.getData().get("id"));
+    assertTrue(parsed.getData().get("target").toString().contains("INSTRUMENT"));
+    assertEquals(AuditDomain.BOOKING, saved.historicData().getDomain());
+  }
+
+  @Test
+  void allBookingAuditPayloadTypesUseTheBookingDomain() {
+    assertEquals(
+        AuditDomain.BOOKING,
+        BookingConfiguration.class.getAnnotation(AuditTrailData.class).auditDomain());
+    assertEquals(
+        AuditDomain.BOOKING,
+        TimeSlotBooking.class.getAnnotation(AuditTrailData.class).auditDomain());
+    assertEquals(
+        AuditDomain.BOOKING,
+        BookingConfigurationDefaults.class.getAnnotation(AuditTrailData.class).auditDomain());
+    assertEquals(
+        AuditDomain.BOOKING,
+        BookingConfigurationPermanentDeleteSnapshot.class
+            .getAnnotation(AuditTrailData.class)
+            .auditDomain());
   }
 
   @Test
@@ -212,7 +254,7 @@ class BookingAuditTrailTest {
                         actor, actor, (TimeSlotBooking) proxy, AuditAction.WRITE)));
     HistoricData record = saved.historicData();
     AuditData parsed = saved.data();
-    assertEquals(AuditDomain.UNKNOWN, record.getDomain());
+    assertEquals(AuditDomain.BOOKING, record.getDomain());
     assertEquals(AuditAction.WRITE, record.getAction());
     assertEquals("bookings:42", parsed.getData().get("id"));
     assertEquals("booking-configurations:7", parsed.getData().get("bookingConfigurationId"));
