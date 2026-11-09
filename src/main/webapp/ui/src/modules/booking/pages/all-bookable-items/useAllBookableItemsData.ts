@@ -28,6 +28,7 @@ type AllBookableItemsDataOptions = {
   date?: string;
   routeAvailability?: AvailabilityQuickFilter;
   target?: string;
+  mine: boolean;
   where?: string;
   q?: string;
   types?: readonly string[];
@@ -40,6 +41,7 @@ export function useAllBookableItemsData({
   date,
   routeAvailability,
   target,
+  mine,
   where,
   q,
   types,
@@ -117,7 +119,7 @@ export function useAllBookableItemsData({
     candidateWhere,
     !runtimeFilterBlocked,
     currentUser.id,
-    { q, types },
+    { q, types, mine },
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
   const quickFilterError = usesAvailability && quickIndex.isError;
@@ -142,6 +144,7 @@ export function useAllBookableItemsData({
           : undefined,
         page,
         limit: pageSize,
+        mine,
       }),
       "allItems",
     ],
@@ -153,11 +156,11 @@ export function useAllBookableItemsData({
         return fetchAvailabilityFilteredCatalogue(
           filters.expression,
           quickIndex.data,
-          { q, types, page, pageSize },
+          { q, types, mine, page, pageSize },
           signal,
         );
       }
-      return fetchBookingCatalogue({ q, types, where: serverWhere, page, pageSize }, signal);
+      return fetchBookingCatalogue({ q, types, mine, where: serverWhere, page, pageSize }, signal);
     },
     enabled: !runtimeFilterBlocked && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,

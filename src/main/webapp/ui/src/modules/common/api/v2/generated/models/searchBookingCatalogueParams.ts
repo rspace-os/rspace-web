@@ -14,6 +14,7 @@ export type SearchBookingCatalogueParams = {
   type?: string[];
   location?: string[];
   capability?: SearchBookingCatalogueCapability;
+  mine: boolean;
   page: number;
   limit: number;
 };

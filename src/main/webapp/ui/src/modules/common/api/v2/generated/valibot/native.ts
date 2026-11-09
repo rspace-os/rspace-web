@@ -162,6 +162,7 @@ export const SearchCalendarEventsQueryParams = v.object({
   end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
   where: v.optional(v.string()),
   q: v.optional(v.string()),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer()),
   fields: v.optional(v.pipe(v.record(v.string(), v.string()), v.description('Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.'))),
@@ -182,6 +183,7 @@ export const SearchBookingCatalogueQueryParams = v.object({
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(v.picklist(['CREATE_BOOKING', 'CREATE_BLOCKOUT'])),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer())
 })
@@ -199,6 +201,7 @@ export const SearchCalendarCatalogueQueryParams = v.object({
   where: v.optional(v.string()),
   eventWhere: v.optional(v.string()),
   q: v.optional(v.string()),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer())
 })

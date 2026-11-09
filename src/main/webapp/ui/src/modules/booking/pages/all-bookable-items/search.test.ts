@@ -27,4 +27,9 @@ describe("All Bookable Items search", () => {
       date: "2026-08-17",
     });
   });
+
+  it("keeps only an enabled Owned Items quick filter", () => {
+    expect(allBookableItemsSearch({ mine: true })).toEqual({ date: undefined, mine: true });
+    expect(allBookableItemsSearch({ mine: false })).toEqual({ date: undefined });
+  });
 });

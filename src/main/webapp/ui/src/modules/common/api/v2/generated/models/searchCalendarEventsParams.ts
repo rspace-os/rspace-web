@@ -13,6 +13,7 @@ export type SearchCalendarEventsParams = {
   end: string;
   where?: string;
   q?: string;
+  mine: boolean;
   page: number;
   limit: number;
   /** Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name. */

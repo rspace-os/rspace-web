@@ -14,6 +14,7 @@ export type SearchCalendarCatalogueParams = {
   where?: string;
   eventWhere?: string;
   q?: string;
+  mine: boolean;
   page: number;
   limit: number;
 };
