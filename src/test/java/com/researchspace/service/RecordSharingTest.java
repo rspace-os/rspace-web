@@ -16,12 +16,14 @@ import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserOrGroup;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
@@ -439,6 +441,115 @@ public class RecordSharingTest extends SpringTransactionalTest {
     recordDeletionMgr.deleteFolder(dest.getId(), notebook.getId(), other);
     assertTrue(folderDao.get(notebook.getId()).isDeleted());
     assertTrue(recordMgr.get(entryId).isDeleted());
+  }
+
+  @Test
+  public void sharingNotebookWithGroupWritesEachEntryOnce() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    int entries = 3;
+    Notebook notebook =
+        createNotebookWithNEntries(other.getRootFolder().getId(), "nb", entries, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    List<ACLElement> unshared = storedAcl(entryId);
+    ACLElement groupRead = acl(group, PermissionType.READ);
+    ACLElement groupWrite = acl(group, PermissionType.WRITE);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> shareNotebookWithGroup(other, notebook, group, "read")));
+    assertThat(storedAcl(entryId)).contains(groupRead);
+
+    Long rgsId =
+        regGrpDao.findByRecordAndUserOrGroup(group.getId(), notebook.getId()).get().getId();
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.updatePermissionForRecord(rgsId, "write", other.getUsername())));
+    assertThat(storedAcl(entryId)).contains(groupWrite).doesNotContain(groupRead);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> unshareRecordORNotebookWithGroup(other, notebook, group, "write")));
+    assertThat(storedAcl(entryId)).containsExactlyInAnyOrderElementsOf(unshared);
+  }
+
+  @Test
+  public void sharingNotebookWithUserWritesEachEntryOnce() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    int entries = 3;
+    Notebook notebook =
+        createNotebookWithNEntries(other.getRootFolder().getId(), "nb", entries, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    List<ACLElement> unshared = storedAcl(entryId);
+    ACLElement piWrite = acl(piUser, PermissionType.WRITE);
+    ACLElement piRead = acl(piUser, PermissionType.READ);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> shareNotebookWithGroupMember(other, notebook, piUser)));
+    assertThat(storedAcl(entryId)).contains(piWrite);
+
+    Long rgsId =
+        regGrpDao.findByRecordAndUserOrGroup(piUser.getId(), notebook.getId()).get().getId();
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.updatePermissionForRecord(rgsId, "read", other.getUsername())));
+    assertThat(storedAcl(entryId)).contains(piRead).doesNotContain(piWrite);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> unshareNotebookWithGroupMember(other, notebook, piUser)));
+    assertThat(storedAcl(entryId)).containsExactlyInAnyOrderElementsOf(unshared);
+  }
+
+  @Test
+  public void sharingNotebookAlreadyInGroupFolderStillUpdatesEntries() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    Notebook notebook = createNotebookWithNEntries(other.getRootFolder().getId(), "nb", 1, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    Folder groupFolder = folderDao.getSharedFolderForGroup(group);
+    folderMgr.addChild(groupFolder.getId(), notebook, other, ACLPropagationPolicy.NULL_POLICY);
+
+    shareNotebookWithGroup(other, notebook, group, "read");
+    assertThat(storedAcl(entryId)).contains(acl(group, PermissionType.READ));
+  }
+
+  @Test
+  public void publishingAndUnpublishingNotebookDoesNotWriteEntries() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    Notebook notebook = createNotebookWithNEntries(other.getRootFolder().getId(), "nb", 3, other);
+    User anonymous = userMgr.getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
+    ShareConfigElement[] publish = getIndividualShareCommand(anonymous, "read");
+
+    assertEquals(
+        0,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.shareRecord(other, notebook.getId(), publish)));
+    assertTrue(folderDao.get(notebook.getId()).isPublished());
+
+    assertEquals(
+        0,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.unshareRecord(other, notebook.getId(), publish)));
+    assertFalse(folderDao.get(notebook.getId()).isPublished());
+  }
+
+  private ACLElement acl(UserOrGroup sharee, PermissionType type) {
+    return new ACLElement(
+        sharee.getUniqueName(), new ConstraintBasedPermission(PermissionDomain.RECORD, type));
+  }
+
+  private long countStructuredDocumentUpdates(Executable action) {
+    return entityStatisticsFor(StructuredDocument.class, action).getUpdateCount();
   }
 
   private long countStructuredDocumentLoads(Executable action) {
