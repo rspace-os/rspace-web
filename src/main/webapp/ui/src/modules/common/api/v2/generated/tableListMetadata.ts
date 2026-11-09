@@ -4,6 +4,7 @@ export const apiV2CollectionMetadata = {
   containers: {
     resourceName: "containers",
     fields: ["id", "globalId", "name", "containerType", "deleted"],
+    structuredFields: {},
     sorting: {
       fields: ["id", "name", "containerType"],
       default: [
@@ -46,6 +47,7 @@ export const apiV2CollectionMetadata = {
   "feature-flags": {
     resourceName: "feature-flags",
     fields: ["name", "value", "baselineValue", "overrideValue", "source", "canOverride"],
+    structuredFields: {},
     sorting: {
       fields: ["name", "value", "baselineValue", "overrideValue", "source", "canOverride"],
       default: [{ field: "name", direction: "asc" }],
@@ -82,6 +84,7 @@ export const apiV2CollectionMetadata = {
   instruments: {
     resourceName: "instruments",
     fields: ["id", "name", "globalId", "deleted", "parentContainer"],
+    structuredFields: {},
     sorting: {
       fields: ["id", "name"],
       default: [
@@ -164,6 +167,7 @@ export const apiV2CollectionMetadata = {
   maintenances: {
     resourceName: "maintenances",
     fields: ["id", "version", "startDate", "endDate", "stopUserLoginDate", "message", "canUserLoginNow"],
+    structuredFields: {},
     sorting: {
       fields: ["id", "version", "startDate", "endDate", "stopUserLoginDate", "message"],
       default: [
@@ -219,6 +223,7 @@ export const apiV2CollectionMetadata = {
   users: {
     resourceName: "users",
     fields: ["id", "username", "firstName", "lastName", "email", "createdAt"],
+    structuredFields: {},
     sorting: {
       fields: ["id", "username", "firstName", "lastName", "email", "createdAt"],
       default: [

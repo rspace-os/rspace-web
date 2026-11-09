@@ -100,6 +100,7 @@ describe("tableListMetadata", () => {
       records: {
         resourceName: "records",
         fields: ["id", "title", "modifiedAt"],
+        structuredFields: {},
         sorting: {
           fields: ["title", "modifiedAt"],
           default: [{ field: "modifiedAt", direction: "desc" }],
@@ -336,5 +337,187 @@ describe("tableListMetadata", () => {
     const document = fixture();
     parameter(document, "fields")["x-rspace-allowed-fields"] = { instruments: ["id"] };
     expect(() => records(document)).toThrow("OpenAPI has no allowed fields for records");
+  });
+});
+
+function field(name: string, jsonType: string, overrides: Json = {}): Json {
+  return {
+    name,
+    property: name,
+    type: { jsonType, format: null, maxLength: null, structure: {} },
+    requiredOnCreate: false,
+    nullable: false,
+    readOnly: false,
+    writeOperations: ["CREATE", "UPDATE"],
+    defaultValue: null,
+    writeConstraints: {},
+    filterOperators: [],
+    supportsWildcards: false,
+    sortable: false,
+    openApi: { title: null, description: null, format: null, extensions: {} },
+    fields: [],
+    ...overrides,
+  };
+}
+
+function rowFields() {
+  return [
+    field("dayOfWeek", "integer", {
+      requiredOnCreate: true,
+      defaultValue: 1,
+      writeConstraints: { minimum: 1, maximum: 7 },
+      openApi: { title: "Weekday" },
+    }),
+    field("details", "object", {
+      nullable: true,
+      fields: [
+        field("label", "string", {
+          type: { jsonType: "string", maxLength: 64, structure: {} },
+          readOnly: true,
+          defaultValue: "Stored",
+          writeConstraints: { pattern: "^[A-Z]", maxLength: 12 },
+        }),
+        field("roles", "array", {
+          writeConstraints: { minItems: 0, maxItems: 3 },
+          fields: [
+            field("enabled", "boolean", { defaultValue: false }),
+            field("role", "string", { type: { jsonType: "string", structure: { enum: ["OWNER", "BOOKER"] } } }),
+            field("expiresAt", "string", { type: { jsonType: "string", format: "date-time", structure: {} } }),
+          ],
+        }),
+      ],
+    }),
+  ];
+}
+
+function withRows(children: unknown = rowFields(), overrides: Json = {}) {
+  const document = fixture();
+  document.components.schemas.RecordRead.properties = {
+    rows: {
+      type: ["array", "null"],
+      readOnly: true,
+      minItems: 1,
+      maxItems: 7,
+      items: { $ref: "#/components/schemas/RoleSource" },
+      "x-rspace-fields": children,
+      ...overrides,
+    },
+    owners: { type: "array", items: { oneOf: [] } },
+  };
+  return document;
+}
+
+describe("tableListMetadata structured fields", () => {
+  it("emits recursive Read metadata for properties that declare x-rspace-fields", () => {
+    expect(records(withRows()).structuredFields).toEqual({
+      rows: {
+        type: "array",
+        nullable: true,
+        readOnly: true,
+        minRows: 1,
+        maxRows: 7,
+        fields: [
+          {
+            name: "dayOfWeek",
+            type: "number",
+            required: true,
+            nullable: false,
+            readOnly: false,
+            defaultValue: 1,
+            writeConstraints: { minimum: 1, maximum: 7 },
+          },
+          {
+            name: "details",
+            type: "object",
+            required: false,
+            nullable: true,
+            readOnly: false,
+            writeConstraints: {},
+            fields: [
+              {
+                name: "label",
+                type: "text",
+                maximumLength: 12,
+                required: false,
+                nullable: false,
+                readOnly: true,
+                defaultValue: "Stored",
+                writeConstraints: { pattern: "^[A-Z]", maxLength: 12 },
+              },
+              {
+                name: "roles",
+                type: "array",
+                required: false,
+                nullable: false,
+                readOnly: false,
+                writeConstraints: { minItems: 0, maxItems: 3 },
+                minRows: 0,
+                maxRows: 3,
+                fields: [
+                  expect.objectContaining({ name: "enabled", type: "boolean", defaultValue: false }),
+                  expect.objectContaining({ name: "role", type: "select", options: ["OWNER", "BOOKER"] }),
+                  expect.objectContaining({ name: "expiresAt", type: "dateTime" }),
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it.each([null, undefined])("treats nullable record attributes %s as unset while retaining false", (unset) => {
+    const children = records(
+      withRows([
+        field("unset", "string", {
+          type: { jsonType: "string", format: unset, maxLength: unset, structure: {} },
+          openApi: { title: unset, format: unset },
+          defaultValue: unset,
+        }),
+        field("enabled", "boolean", { defaultValue: false }),
+      ]),
+    ).structuredFields.rows?.fields;
+    expect(children?.[0]).toMatchObject({ type: "text" });
+    expect(children?.[0]).not.toHaveProperty("label");
+    expect(children?.[0]).not.toHaveProperty("maximumLength");
+    expect(children?.[0]).not.toHaveProperty("defaultValue");
+    expect(children?.[1]).toHaveProperty("defaultValue", false);
+  });
+
+  it.each<[string, Json, string]>([
+    ["a scalar parent", { type: "string" }, "x-rspace-fields on a scalar field"],
+    ["a union parent", { type: ["array", "object", "null"] }, "type"],
+  ])("rejects %s", (_name, overrides, error) => {
+    expect(() => records(withRows(rowFields(), overrides))).toThrow(error);
+  });
+
+  it.each<[string, unknown, string]>([
+    ["empty children", [], "OpenAPI rows:"],
+    ["duplicate children", [field("name", "string"), field("name", "string")], "duplicate child"],
+    ["missing nested children", [field("nested", "array")], "OpenAPI rows.nested child fields:"],
+    [
+      "invalid flag",
+      [field("name", "string", { nullable: "yes" })],
+      "OpenAPI rows: Validation failed: x-rspace-fields.0.nullable",
+    ],
+    [
+      "scalar children",
+      [field("name", "string", { fields: [field("other", "string")] })],
+      "cannot declare child fields",
+    ],
+    ["unknown child type", [field("name", "relationship")], "type.jsonType"],
+    [
+      "invalid structure",
+      [field("name", "string", { type: { jsonType: "string", structure: "OBJECT" } })],
+      "type.structure",
+    ],
+    ["invalid constraints", [field("name", "string", { writeConstraints: [] })], "writeConstraints"],
+    [
+      "invalid row bounds",
+      [field("nested", "array", { fields: [field("name", "string")], writeConstraints: { minItems: 3, maxItems: 1 } })],
+      "row bounds",
+    ],
+  ])("rejects %s", (_name, children, error) => {
+    expect(() => records(withRows(children))).toThrow(error);
   });
 });

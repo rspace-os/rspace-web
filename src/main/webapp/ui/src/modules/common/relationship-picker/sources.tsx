@@ -52,6 +52,11 @@ export function databaseIdFromGlobalId(value: string, prefix: string): number | 
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
+/** The numeric ID inside a global ID, or null when the prefix belongs to another resource. */
+export function databaseId(source: RelationshipSource, globalId: string): number | null {
+  return source.globalIdPrefix === undefined ? null : databaseIdFromGlobalId(globalId, source.globalIdPrefix);
+}
+
 /** The canonical form of a source-owned value, or null when the source rejects it as malformed. */
 export function canonicalValue(source: RelationshipSource, value: string): string | null {
   return source.normalizeValue === undefined ? value : source.normalizeValue(value);
