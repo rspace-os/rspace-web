@@ -46,6 +46,8 @@ export const InstrumentsReferenceSchema = native.InstrumentsReference;
 export const InstrumentsUpdateSchema = native.InstrumentsUpdate;
 export const InvalidParamSchema = native.InvalidParam;
 export const ItemSchema = native.Item;
+export const ItemLinkDocumentSchema = native.ItemLinkDocument;
+export const ItemLinksDocumentSchema = native.ItemLinksDocument;
 export const LiveChatSchema = native.LiveChat;
 export const LocationSchema = native.Location;
 export const LocationPageSchema = native.LocationPage;
@@ -129,6 +131,8 @@ export type SchemaModelTypeChecks = {
   InstrumentsUpdate: [Assert<Extends<v.InferOutput<typeof InstrumentsUpdateSchema>, Models.InstrumentsUpdate>>, Assert<Extends<Models.InstrumentsUpdate, v.InferOutput<typeof InstrumentsUpdateSchema>>>];
   InvalidParam: [Assert<Extends<v.InferOutput<typeof InvalidParamSchema>, Models.InvalidParam>>, Assert<Extends<Models.InvalidParam, v.InferOutput<typeof InvalidParamSchema>>>];
   Item: [Assert<Extends<v.InferOutput<typeof ItemSchema>, Models.Item>>, Assert<Extends<Models.Item, v.InferOutput<typeof ItemSchema>>>];
+  ItemLinkDocument: [Assert<Extends<v.InferOutput<typeof ItemLinkDocumentSchema>, Models.ItemLinkDocument>>, Assert<Extends<Models.ItemLinkDocument, v.InferOutput<typeof ItemLinkDocumentSchema>>>];
+  ItemLinksDocument: [Assert<Extends<v.InferOutput<typeof ItemLinksDocumentSchema>, Models.ItemLinksDocument>>, Assert<Extends<Models.ItemLinksDocument, v.InferOutput<typeof ItemLinksDocumentSchema>>>];
   LiveChat: [Assert<Extends<v.InferOutput<typeof LiveChatSchema>, Models.LiveChat>>, Assert<Extends<Models.LiveChat, v.InferOutput<typeof LiveChatSchema>>>];
   Location: [Assert<Extends<v.InferOutput<typeof LocationSchema>, Models.Location>>, Assert<Extends<Models.Location, v.InferOutput<typeof LocationSchema>>>];
   LocationPage: [Assert<Extends<v.InferOutput<typeof LocationPageSchema>, Models.LocationPage>>, Assert<Extends<Models.LocationPage, v.InferOutput<typeof LocationPageSchema>>>];

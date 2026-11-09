@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -78,7 +79,7 @@ public class BookingCalendarSubscriptionController {
     this.manager = manager;
   }
 
-  private static String isoTimestamp(Date value) {
+  static String isoTimestamp(Date value) {
     return value == null ? null : DateTimeFormatter.ISO_INSTANT.format(value.toInstant());
   }
 
@@ -90,6 +91,11 @@ public class BookingCalendarSubscriptionController {
       description = "Returns the caller's current subscription URL when one exists.",
       responses = {
         @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
+        @ApiResponse(
             responseCode = "200",
             description = "Current subscription status.",
             headers = {
@@ -98,11 +104,6 @@ public class BookingCalendarSubscriptionController {
                   schema = @Schema(types = "string", allowableValues = "private, no-store")),
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
-        @ApiResponse(
-            responseCode = "406",
-            description = "The requested representation is unavailable."),
-        @ApiResponse(responseCode = "429", description = "Too many requests."),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })
@@ -117,11 +118,60 @@ public class BookingCalendarSubscriptionController {
   @PostMapping
   @Operation(
       tags = "booking-calendar-subscriptions",
-      operationId = "createOrReplaceBookingCalendarSubscription",
-      summary = "Create or replace a calendar subscription",
+      operationId = "createBookingCalendarSubscription",
+      summary = "Create a calendar subscription",
       description =
-          "Requires the current status ETag in If-Match and returns a new subscription URL.",
+          "Returns the caller's existing subscription URL unchanged, or issues one when none"
+              + " exists. Repeating the request is safe. Use the rotate operation to replace a"
+              + " URL.",
       responses = {
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
+        @ApiResponse(
+            responseCode = "200",
+            description = "The existing subscription URL.",
+            headers = {
+              @Header(
+                  name = "Cache-Control",
+                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
+              @Header(name = "ETag", ref = "#/components/headers/ETag")
+            }),
+        @ApiResponse(
+            responseCode = "201",
+            description = "A newly issued subscription URL.",
+            headers = {
+              @Header(
+                  name = "Cache-Control",
+                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
+              @Header(name = "ETag", ref = "#/components/headers/ETag")
+            }),
+        @ApiResponse(responseCode = "401", description = "Authentication is required."),
+        @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
+        @ApiResponse(responseCode = "409", description = "The item is archived.")
+      })
+  public ResponseEntity<CreatedDocument> create(
+      @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    return createdResponse(manager.create(configurationId, caller.subject(), caller.actor()));
+  }
+
+  @PostMapping("/rotate")
+  @Operation(
+      tags = "booking-calendar-subscriptions",
+      operationId = "rotateBookingCalendarSubscription",
+      summary = "Replace a calendar subscription URL",
+      description =
+          "Requires the current status ETag in If-Match. Issues a new URL; calendars using the old"
+              + " one stop updating.",
+      responses = {
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(
             responseCode = "200",
             description = "The new subscription URL.",
@@ -131,20 +181,14 @@ public class BookingCalendarSubscriptionController {
                   schema = @Schema(types = "string", allowableValues = "private, no-store")),
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
-        @ApiResponse(
-            responseCode = "406",
-            description = "The requested representation is unavailable."),
-        @ApiResponse(responseCode = "429", description = "Too many requests."),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
-        @ApiResponse(
-            responseCode = "409",
-            description = "The item is archived or the subscription changed."),
+        @ApiResponse(responseCode = "409", description = "The item is archived."),
         @ApiResponse(responseCode = "400", description = "Invalid If-Match."),
+        @ApiResponse(responseCode = "412", description = "The subscription is missing or changed."),
         @ApiResponse(responseCode = "428", description = "If-Match is required.")
       })
-  public ResponseEntity<CreatedDocument> createOrReplace(
+  public ResponseEntity<CreatedDocument> rotate(
       @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
       @Parameter(required = true, description = "Strong ETag from the latest subscription status.")
           @RequestHeader(name = "If-Match", required = false)
@@ -153,9 +197,16 @@ public class BookingCalendarSubscriptionController {
     String expectedEtag =
         ApiV2ConditionalRequest.parseStrongEtag(
             ifMatch, "errors.api.v2.bookingCalendar.ifMatchRequired");
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(configurationId, caller.subject(), caller.actor(), expectedEtag);
-    return ResponseEntity.ok().eTag(created.status().etag()).body(CreatedDocument.from(created));
+    BookingCalendarManager.Created rotated =
+        manager.rotate(configurationId, caller.subject(), caller.actor(), expectedEtag);
+    return ResponseEntity.ok().eTag(rotated.status().etag()).body(CreatedDocument.from(rotated));
+  }
+
+  /** 201 when the link was issued by this request, 200 when an existing link was returned. */
+  static ResponseEntity<CreatedDocument> createdResponse(BookingCalendarManager.Created created) {
+    return ResponseEntity.status(created.newlyIssued() ? HttpStatus.CREATED : HttpStatus.OK)
+        .eTag(created.status().etag())
+        .body(CreatedDocument.from(created));
   }
 
   @DeleteMapping
@@ -165,17 +216,17 @@ public class BookingCalendarSubscriptionController {
       summary = "Revoke a calendar subscription",
       responses = {
         @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
+        @ApiResponse(
             responseCode = "204",
             description = "The subscription is inactive.",
             headers =
                 @Header(
                     name = "Cache-Control",
                     schema = @Schema(types = "string", allowableValues = "private, no-store"))),
-        @ApiResponse(
-            responseCode = "406",
-            description = "The requested representation is unavailable."),
-        @ApiResponse(responseCode = "429", description = "Too many requests."),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })

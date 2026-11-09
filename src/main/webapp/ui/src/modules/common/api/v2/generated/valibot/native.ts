@@ -109,6 +109,10 @@ export const Location = v.object({globalId: v.optional(v.string()), name: v.opti
 
 export const Item = v.object({allowDoubleBooking: v.optional(v.boolean()), bufferAfterMinutes: v.optional(v.pipe(v.number(), v.integer())), bufferBeforeMinutes: v.optional(v.pipe(v.number(), v.integer())), capabilities: v.optional(v.record(v.string(), v.unknown())), configurationId: v.optional(v.pipe(v.number(), v.integer())), configurationVersion: v.optional(v.pipe(v.number(), v.integer())), effectiveRole: v.nullish(v.string()), globalId: v.optional(v.string()), location: v.optional(v.union([Location, v.null()])), maxBookingDurationMinutes: v.optional(v.pipe(v.number(), v.integer())), name: v.optional(v.string()), openingHours: v.optional(v.array(BookingOpeningHoursEntry)), slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer())), targetId: v.optional(v.pipe(v.number(), v.integer())), targetType: v.optional(v.string()), timezone: v.optional(v.string())});
 
+export const ItemLinkDocument = v.object({configurationId: v.optional(v.pipe(v.number(), v.integer())), itemGlobalId: v.optional(v.string()), itemName: v.optional(v.string()), subscriptionUrl: v.optional(v.string()), updatedAt: v.optional(v.string())});
+
+export const ItemLinksDocument = v.object({docs: v.optional(v.array(ItemLinkDocument))});
+
 export const LocationPage = v.object({items: v.optional(v.array(Location)), page: v.optional(v.pipe(v.number(), v.integer())), pageSize: v.optional(v.pipe(v.number(), v.integer())), total: v.optional(v.pipe(v.number(), v.integer()))});
 
 export const Lookup = v.object({configurationIds: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.gtValue(0))), v.minLength(1), v.maxLength(100))});
@@ -123,9 +127,9 @@ export const MaintenancesUpdate = v.object({endDate: v.optional(v.pipe(v.string(
 
 export const Page = v.object({facets: v.optional(Facets), items: v.optional(v.array(Item)), page: v.optional(v.pipe(v.number(), v.integer())), pageSize: v.optional(v.pipe(v.number(), v.integer())), total: v.optional(v.pipe(v.number(), v.integer()))});
 
-export const PreferenceReplacement = v.object({autoSubscribeOwnedItems: v.boolean(), notifyOwnActions: v.boolean()});
+export const PreferenceReplacement = v.object({autoSubscribeOwnedItems: v.boolean(), notifyOnCancelled: v.boolean(), notifyOnCreated: v.boolean(), notifyOwnActions: v.boolean()});
 
-export const Preferences = v.object({autoSubscribeOwnedItems: v.optional(v.boolean()), notifyOwnActions: v.optional(v.boolean())});
+export const Preferences = v.object({autoSubscribeOwnedItems: v.optional(v.boolean()), emailDelivery: v.optional(v.boolean()), notifyOnCancelled: v.optional(v.boolean()), notifyOnCreated: v.optional(v.boolean()), notifyOwnActions: v.optional(v.boolean())});
 
 export const Replacement = v.object({availabilityWindowEnd: v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$'))), availabilityWindowStart: v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$'))), customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.'))), timezoneMode: v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM'])});
 
@@ -378,19 +382,31 @@ export const GetBookingCalendarSubscriptionResponse = BookingCalendarSubscriptio
 
 
 /**
- * Requires the current status ETag in If-Match and returns a new subscription URL.
- * @summary Create or replace a calendar subscription
+ * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
+ * @summary Create a calendar subscription
  */;
 
-export const CreateOrReplaceBookingCalendarSubscriptionParams = v.object({
+export const CreateBookingCalendarSubscriptionParams = v.object({
   configurationId: v.pipe(v.number(), v.integer())
 })
 
-export const CreateOrReplaceBookingCalendarSubscriptionHeader = v.object({
+export const CreateBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
+
+
+/**
+ * Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.
+ * @summary Replace a calendar subscription URL
+ */;
+
+export const RotateBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer())
+})
+
+export const RotateBookingCalendarSubscriptionHeader = v.object({
   'If-Match': v.pipe(v.string(), v.description('Strong ETag from the latest subscription status.'))
 })
 
-export const CreateOrReplaceBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
+export const RotateBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
 
 
 /**
@@ -1390,6 +1406,14 @@ export const GetCurrentUserResponse = ApiV2CurrentUser
 
 
 /**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */;
+
+export const ListMyBookableItemCalendarSubscriptionsResponse = ItemLinksDocument
+
+
+/**
  * @summary Get the caller's booking calendar subscription
  */;
 
@@ -1397,17 +1421,27 @@ export const GetUserBookingCalendarSubscriptionResponse = BookingCalendarSubscri
 
 
 /**
- * @summary Create or replace the caller's booking calendar subscription
+ * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
+ * @summary Create the caller's booking calendar subscription
  */;
 
-export const CreateOrReplaceUserBookingCalendarSubscriptionHeader = v.object({
-  'If-Match': v.pipe(v.string(), v.description('Strong ETag from the latest subscription status.'))
-})
-
-export const CreateOrReplaceUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
+export const CreateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
 
 
 /**
+ * Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.
+ * @summary Replace the caller's booking calendar subscription URL
+ */;
+
+export const RotateUserBookingCalendarSubscriptionHeader = v.object({
+  'If-Match': v.pipe(v.string(), v.description('Strong ETag from the latest subscription status.'))
+})
+
+export const RotateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
+
+
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
  * @summary Get the caller's booking notification preferences
  */;
 
@@ -1415,7 +1449,8 @@ export const GetMyBookingNotificationPreferencesResponse = Preferences
 
 
 /**
- * @summary Change personal notification preferences without changing existing subscriptions
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
  */;
 
 export const ReplaceMyBookingNotificationPreferencesBody = PreferenceReplacement;

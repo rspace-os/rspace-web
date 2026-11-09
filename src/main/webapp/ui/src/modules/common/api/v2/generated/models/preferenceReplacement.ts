@@ -8,5 +8,7 @@
 
 export interface PreferenceReplacement {
   autoSubscribeOwnedItems: boolean;
+  notifyOnCancelled: boolean;
+  notifyOnCreated: boolean;
   notifyOwnActions: boolean;
 }

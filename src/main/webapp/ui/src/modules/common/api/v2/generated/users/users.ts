@@ -41,9 +41,9 @@ import type {
   BookingCalendarSubscriptionStatus,
   BookingDisplayPreferences,
   CountUsersParams,
-  CreateOrReplaceUserBookingCalendarSubscriptionHeaders,
   ForbiddenResponse,
   GetUserParams,
+  ItemLinksDocument,
   ListUserAuditEvents200,
   ListUserAuditEventsParams,
   ListUsers200,
@@ -54,6 +54,7 @@ import type {
   PreferenceReplacement,
   Preferences,
   Replacement,
+  RotateUserBookingCalendarSubscriptionHeaders,
   StatusList,
   TooManyRequestsResponse,
   UnauthenticatedResponse,
@@ -687,6 +688,198 @@ export function useGetCurrentUserSuspense<TData = Awaited<ReturnType<typeof getC
 
 
 
+export const getListMyBookableItemCalendarSubscriptionsUrl = () => {
+
+
+
+
+  return `/api/v2/users/me/bookable-item-calendar-subscriptions`
+}
+
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export const listMyBookableItemCalendarSubscriptions = async ( options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<ItemLinksDocument> => {
+
+  return apiV2Fetch<ItemLinksDocument>(getListMyBookableItemCalendarSubscriptionsUrl(),
+  {
+      ...options,
+    operationId: 'listMyBookableItemCalendarSubscriptions',
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyBookableItemCalendarSubscriptionsQueryKey = () => {
+    return [
+    `/api/v2/users/me/bookable-item-calendar-subscriptions`
+    ] as const;
+    }
+
+
+export const getListMyBookableItemCalendarSubscriptionsQueryOptions = <TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyBookableItemCalendarSubscriptionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>> = ({ signal }) => listMyBookableItemCalendarSubscriptions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListMyBookableItemCalendarSubscriptionsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>>
+export type ListMyBookableItemCalendarSubscriptionsQueryError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>
+
+
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptions<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>,
+          TError,
+          Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>
+        > , 'initialData'
+      >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptions<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>,
+          TError,
+          Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>
+        > , 'initialData'
+      >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptions<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptions<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListMyBookableItemCalendarSubscriptionsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useListMyBookableItemCalendarSubscriptions} query
+ */
+export const invalidateListMyBookableItemCalendarSubscriptions = async (
+ queryClient: QueryClient,  options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getListMyBookableItemCalendarSubscriptionsQueryKey() }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getListMyBookableItemCalendarSubscriptionsSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>( options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyBookableItemCalendarSubscriptionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>> = ({ signal }) => listMyBookableItemCalendarSubscriptions({ signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type ListMyBookableItemCalendarSubscriptionsSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>>
+export type ListMyBookableItemCalendarSubscriptionsSuspenseQueryError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>
+
+
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptionsSuspense<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptionsSuspense<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptionsSuspense<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export function useListMyBookableItemCalendarSubscriptionsSuspense<TData = Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListMyBookableItemCalendarSubscriptionsSuspenseQueryOptions(options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 export const getRevokeUserBookingCalendarSubscriptionUrl = () => {
 
 
@@ -932,7 +1125,7 @@ export function useGetUserBookingCalendarSubscriptionSuspense<TData = Awaited<Re
 
 
 
-export const getCreateOrReplaceUserBookingCalendarSubscriptionUrl = () => {
+export const getCreateUserBookingCalendarSubscriptionUrl = () => {
 
 
 
@@ -941,9 +1134,92 @@ export const getCreateOrReplaceUserBookingCalendarSubscriptionUrl = () => {
 }
 
 /**
- * @summary Create or replace the caller's booking calendar subscription
+ * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
+ * @summary Create the caller's booking calendar subscription
  */
-export const createOrReplaceUserBookingCalendarSubscription = (headers: CreateOrReplaceUserBookingCalendarSubscriptionHeaders, options?: Omit<NonNullable<Parameters<typeof apiV2HeadersFetch>[1]>, "operationId">) => {
+export const createUserBookingCalendarSubscription = ( options?: Omit<NonNullable<Parameters<typeof apiV2HeadersFetch>[1]>, "operationId">) => {
+
+  return apiV2HeadersFetch<BookingCalendarSubscriptionCreated>(getCreateUserBookingCalendarSubscriptionUrl(),
+  {
+      ...options,
+    operationId: 'createUserBookingCalendarSubscription',
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCreateUserBookingCalendarSubscriptionMutationKey = () => ['createUserBookingCalendarSubscription'] as const;
+
+export const getCreateUserBookingCalendarSubscriptionMutationOptions = <TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>, TError,void, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">}
+): UseMutationOptions<Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>, TError,void, TContext> => {
+
+const mutationKey = getCreateUserBookingCalendarSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>, void> = () => {
+
+
+          return  createUserBookingCalendarSubscription(requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>, variables: void, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ predicate: (query) => [getListUsersQueryKey(), getCountUsersQueryKey(), getGetUserBookingCalendarSubscriptionQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type CreateUserBookingCalendarSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>>
+
+    export type CreateUserBookingCalendarSubscriptionMutationError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
+
+
+    /**
+ * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
+ * @summary Create the caller's booking calendar subscription
+ */
+export const useCreateUserBookingCalendarSubscription = <TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>, TError,void, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>,
+        TError,
+        void,
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getCreateUserBookingCalendarSubscriptionMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getRotateUserBookingCalendarSubscriptionUrl = () => {
+
+
+
+
+  return `/api/v2/users/me/booking-calendar-subscription/rotate`
+}
+
+/**
+ * Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.
+ * @summary Replace the caller's booking calendar subscription URL
+ */
+export const rotateUserBookingCalendarSubscription = (headers: RotateUserBookingCalendarSubscriptionHeaders, options?: Omit<NonNullable<Parameters<typeof apiV2HeadersFetch>[1]>, "operationId">) => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -959,10 +1235,10 @@ export const createOrReplaceUserBookingCalendarSubscription = (headers: CreateOr
     }
     return headers;
   };
-return apiV2HeadersFetch<BookingCalendarSubscriptionCreated>(getCreateOrReplaceUserBookingCalendarSubscriptionUrl(),
+return apiV2HeadersFetch<BookingCalendarSubscriptionCreated>(getRotateUserBookingCalendarSubscriptionUrl(),
   {
       ...options,
-    operationId: 'createOrReplaceUserBookingCalendarSubscription',
+    operationId: 'rotateUserBookingCalendarSubscription',
     method: 'POST',
     headers: { ...headers, ...getHeaders(options?.headers) }
 
@@ -973,13 +1249,13 @@ return apiV2HeadersFetch<BookingCalendarSubscriptionCreated>(getCreateOrReplaceU
 
 
 
-export const getCreateOrReplaceUserBookingCalendarSubscriptionMutationKey = () => ['createOrReplaceUserBookingCalendarSubscription'] as const;
+export const getRotateUserBookingCalendarSubscriptionMutationKey = () => ['rotateUserBookingCalendarSubscription'] as const;
 
-export const getCreateOrReplaceUserBookingCalendarSubscriptionMutationOptions = <TError = BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | ApiV2Problem | TooManyRequestsResponse | UnexpectedErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>, TError,CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">}
-): UseMutationOptions<Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>, TError,CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables, TContext> => {
+export const getRotateUserBookingCalendarSubscriptionMutationOptions = <TError = BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | ApiV2Problem | TooManyRequestsResponse | UnexpectedErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>, TError,RotateUserBookingCalendarSubscriptionMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">}
+): UseMutationOptions<Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>, TError,RotateUserBookingCalendarSubscriptionMutationVariables, TContext> => {
 
-const mutationKey = getCreateOrReplaceUserBookingCalendarSubscriptionMutationKey();
+const mutationKey = getRotateUserBookingCalendarSubscriptionMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -989,13 +1265,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>, CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>, RotateUserBookingCalendarSubscriptionMutationVariables> = (props) => {
           const {headers} = props ?? {};
 
-          return  createOrReplaceUserBookingCalendarSubscription(headers,requestOptions)
+          return  rotateUserBookingCalendarSubscription(headers,requestOptions)
         }
 
-  const onSuccess = (data: Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>, variables: CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
+  const onSuccess = (data: Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>, variables: RotateUserBookingCalendarSubscriptionMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ predicate: (query) => [getListUsersQueryKey(), getCountUsersQueryKey(), getGetUserBookingCalendarSubscriptionQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
@@ -1007,22 +1283,25 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { ...mutationOptions, mutationFn, onSuccess }}
 
-    export type CreateOrReplaceUserBookingCalendarSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>>
+    export type RotateUserBookingCalendarSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>>
 
-    export type CreateOrReplaceUserBookingCalendarSubscriptionMutationError = BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | ApiV2Problem | TooManyRequestsResponse | UnexpectedErrorResponse
-    export type CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables = {headers: CreateOrReplaceUserBookingCalendarSubscriptionHeaders}
+    export type RotateUserBookingCalendarSubscriptionMutationError = BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | ApiV2Problem | TooManyRequestsResponse | UnexpectedErrorResponse
+    export type RotateUserBookingCalendarSubscriptionMutationVariables = {headers: RotateUserBookingCalendarSubscriptionHeaders}
 
-    /** @summary Create or replace the caller's booking calendar subscription */
-export const useCreateOrReplaceUserBookingCalendarSubscription = <TError = BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | ApiV2Problem | TooManyRequestsResponse | UnexpectedErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>, TError,CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">}
+    /**
+ * Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.
+ * @summary Replace the caller's booking calendar subscription URL
+ */
+export const useRotateUserBookingCalendarSubscription = <TError = BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | ApiV2Problem | TooManyRequestsResponse | UnexpectedErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>, TError,RotateUserBookingCalendarSubscriptionMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof createOrReplaceUserBookingCalendarSubscription>>,
+        Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>,
         TError,
-        CreateOrReplaceUserBookingCalendarSubscriptionMutationVariables,
+        RotateUserBookingCalendarSubscriptionMutationVariables,
         TContext
       > => {
       const backupQueryClient = useQueryClient();
-      return useMutation(getCreateOrReplaceUserBookingCalendarSubscriptionMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+      return useMutation(getRotateUserBookingCalendarSubscriptionMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetMyBookingNotificationPreferencesUrl = () => {
 
@@ -1033,6 +1312,7 @@ export const useCreateOrReplaceUserBookingCalendarSubscription = <TError = BadRe
 }
 
 /**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
  * @summary Get the caller's booking notification preferences
  */
 export const getMyBookingNotificationPreferences = async ( options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<Preferences> => {
@@ -1080,7 +1360,10 @@ export type GetMyBookingNotificationPreferencesQueryResult = NonNullable<Awaited
 export type GetMyBookingNotificationPreferencesQueryError = ErrorType<unknown>
 
 
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1091,7 +1374,10 @@ export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnTyp
       >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1102,12 +1388,18 @@ export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnTyp
       >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
@@ -1158,22 +1450,34 @@ export type GetMyBookingNotificationPreferencesSuspenseQueryResult = NonNullable
 export type GetMyBookingNotificationPreferencesSuspenseQueryError = ErrorType<unknown>
 
 
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient
@@ -1200,7 +1504,8 @@ export const getReplaceMyBookingNotificationPreferencesUrl = () => {
 }
 
 /**
- * @summary Change personal notification preferences without changing existing subscriptions
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
  */
 export const replaceMyBookingNotificationPreferences = async (preferenceReplacement: PreferenceReplacement, options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<Preferences> => {
 
@@ -1271,7 +1576,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReplaceMyBookingNotificationPreferencesMutationError = ErrorType<unknown>
     export type ReplaceMyBookingNotificationPreferencesMutationVariables = {data: BodyType<PreferenceReplacement>}
 
-    /** @summary Change personal notification preferences without changing existing subscriptions */
+    /**
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
+ */
 export const useReplaceMyBookingNotificationPreferences = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingNotificationPreferences>>, TError,ReplaceMyBookingNotificationPreferencesMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
  , queryClient?: QueryClient): UseMutationResult<

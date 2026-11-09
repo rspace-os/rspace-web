@@ -8,5 +8,8 @@
 
 export interface Preferences {
   autoSubscribeOwnedItems?: boolean;
+  emailDelivery?: boolean;
+  notifyOnCancelled?: boolean;
+  notifyOnCreated?: boolean;
   notifyOwnActions?: boolean;
 }

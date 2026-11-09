@@ -6,7 +6,10 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateOrReplaceBookingCalendarSubscriptionHeaders = {
-  /** Strong ETag from the latest subscription status. */
-  'If-Match': string;
-};
+export interface ItemLinkDocument {
+  configurationId?: number;
+  itemGlobalId?: string;
+  itemName?: string;
+  subscriptionUrl?: string;
+  updatedAt?: string;
+}

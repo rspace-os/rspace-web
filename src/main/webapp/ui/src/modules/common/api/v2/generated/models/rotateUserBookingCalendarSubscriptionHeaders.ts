@@ -6,7 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateOrReplaceUserBookingCalendarSubscriptionHeaders = {
+export type RotateUserBookingCalendarSubscriptionHeaders = {
   /** Strong ETag from the latest subscription status. */
   'If-Match': string;
 };

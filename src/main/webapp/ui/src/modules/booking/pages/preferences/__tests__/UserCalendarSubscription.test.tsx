@@ -5,7 +5,6 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import { getGetUserBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import { UserCalendarSubscription } from "../UserCalendarSubscription";
@@ -30,7 +29,7 @@ function renderSubscription() {
 }
 
 describe("UserCalendarSubscription", () => {
-  it("keeps a replaced link when an older status request returns afterward", async () => {
+  it("keeps a rotated link when an older status request returns afterward", async () => {
     const user = userEvent.setup();
     const staleResponse = Promise.withResolvers<Response>();
     const staleReadStarted = Promise.withResolvers<void>();
@@ -50,11 +49,11 @@ describe("UserCalendarSubscription", () => {
           { headers: { ETag: '"current"' } },
         );
       }),
-      http.post<never, never, BookingCalendarSubscriptionCreated | ApiV2Problem>(path, ({ request }) => {
+      http.post(`${path}/rotate`, ({ request }) => {
         expect(request.headers.get("If-Match")).toBe('"current"');
         return HttpResponse.json(
           { active: true, updatedAt, subscriptionUrl: urlFor("r") },
-          { headers: { ETag: '"replaced"' } },
+          { headers: { ETag: '"rotated"' } },
         );
       }),
     );
@@ -70,6 +69,9 @@ describe("UserCalendarSubscription", () => {
     });
     await staleReadStarted.promise;
     await user.click(screen.getByRole("button", { name: "booking:preferences.calendarSubscription.replace" }));
+    await user.click(
+      screen.getByRole("button", { name: "booking:preferences.calendarSubscription.replaceDialog.confirm" }),
+    );
     await waitFor(() => expect(linkField).toHaveValue(urlFor("r")));
 
     staleResponse.resolve(
@@ -78,7 +80,7 @@ describe("UserCalendarSubscription", () => {
     await Promise.all([statusRefresh, staleReadReturned.promise]);
     expect(queryClient.getQueryData(getGetUserBookingCalendarSubscriptionQueryKey())).toMatchObject({
       subscriptionUrl: urlFor("r"),
-      etag: '"replaced"',
+      etag: '"rotated"',
     });
     expect(screen.getByRole("textbox", { name: "booking:preferences.calendarSubscription.copyPrompt" })).toHaveValue(
       urlFor("r"),

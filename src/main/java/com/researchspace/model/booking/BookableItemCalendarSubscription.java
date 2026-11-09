@@ -52,7 +52,11 @@ public class BookableItemCalendarSubscription implements Serializable {
   @JsonIgnore
   private String tokenHash;
 
-  @Column(length = 255)
+  /**
+   * Retains the bearer token to return the existing URL; feed lookup uses {@code tokenHash}. Rotate
+   * both values atomically and keep this token out of generic JSON output and logs.
+   */
+  @Column(nullable = false, length = 255)
   @Size(max = 255)
   @JsonIgnore
   private String rawToken;

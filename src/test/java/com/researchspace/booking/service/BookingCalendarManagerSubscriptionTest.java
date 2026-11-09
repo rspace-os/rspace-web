@@ -35,9 +35,12 @@ import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.testutils.TestFactory;
@@ -45,6 +48,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.shiro.authz.AuthorizationException;
@@ -131,8 +135,7 @@ class BookingCalendarManagerSubscriptionTest {
 
   @Test
   void createStoresTheTokenAndReturnsTheFixedFeedQueryUrl() {
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
+    BookingCalendarManager.Created created = manager.create(CONFIGURATION_ID, owner, owner);
 
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
@@ -164,8 +167,7 @@ class BookingCalendarManagerSubscriptionTest {
     owner.setEnabled(false);
     when(permissionGate.hasActiveGate()).thenReturn(true);
 
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
+    BookingCalendarManager.Created created = manager.create(CONFIGURATION_ID, owner, owner);
 
     assertTrue(created.status().active());
     verify(creationTransaction, never()).create(any(), any());
@@ -180,7 +182,7 @@ class BookingCalendarManagerSubscriptionTest {
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+        () -> manager.create(CONFIGURATION_ID, owner, owner));
 
     verify(subscriptionDao, never()).saveAndFlush(any(BookableItemCalendarSubscription.class));
   }
@@ -194,10 +196,12 @@ class BookingCalendarManagerSubscriptionTest {
         .assertNoSuspendedAncestor();
 
     assertThrows(
-        IllegalStateException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, subject, actor, "\"etag\""));
+        IllegalStateException.class, () -> manager.create(CONFIGURATION_ID, subject, actor));
+    assertThrows(IllegalStateException.class, () -> manager.createUser(subject, actor));
     assertThrows(
-        IllegalStateException.class, () -> manager.createOrRotateUser(subject, actor, "\"etag\""));
+        IllegalStateException.class,
+        () -> manager.rotate(CONFIGURATION_ID, subject, actor, "\"etag\""));
+    assertThrows(IllegalStateException.class, () -> manager.rotateUser(subject, actor, "\"etag\""));
 
     verifyNoInteractions(subject, actor);
   }
@@ -213,9 +217,8 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   @Test
-  void duplicateItemCreationCannotReplaceTheFirstSuccessfulCredential() {
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
+  void repeatedItemCreationReturnsTheFirstLinkUnchanged() {
+    BookingCalendarManager.Created created = manager.create(CONFIGURATION_ID, owner, owner);
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
     verify(subscriptionDao).saveAndFlush(saved.capture());
@@ -232,13 +235,24 @@ class BookingCalendarManagerSubscriptionTest {
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(saved.getValue()));
 
-    assertThrows(
-        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
-    assertEquals(
-        created.subscriptionUrl(),
-        manager.status(CONFIGURATION_ID, owner, owner).subscriptionUrl());
+    BookingCalendarManager.Created repeated = manager.create(CONFIGURATION_ID, owner, owner);
+
+    assertTrue(created.newlyIssued());
+    assertFalse(repeated.newlyIssued());
+    assertEquals(created.subscriptionUrl(), repeated.subscriptionUrl());
+    assertEquals(created.status().etag(), repeated.status().etag());
     verify(subscriptionDao).saveAndFlush(any(BookableItemCalendarSubscription.class));
+  }
+
+  @Test
+  void disabledBookingIsUnavailableForCalendarWrites() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.create(CONFIGURATION_ID, owner, owner));
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.createUser(owner, owner));
   }
 
   @Test
@@ -272,13 +286,15 @@ class BookingCalendarManagerSubscriptionTest {
     assertNull(status.subscriptionUrl());
     assertThrows(
         BookingConfigurationLifecycleException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+        () -> manager.create(CONFIGURATION_ID, owner, owner));
+    assertThrows(
+        BookingConfigurationLifecycleException.class,
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"stale\""));
   }
 
   @Test
   void userSubscriptionCreatesOnePrivateFeedForAllBookings() {
-    BookingCalendarManager.Created created =
-        manager.createOrRotateUser(owner, owner, "\"inactive\"");
+    BookingCalendarManager.Created created = manager.createUser(owner, owner);
 
     ArgumentCaptor<UserBookingCalendarSubscription> saved =
         ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
@@ -292,7 +308,7 @@ class BookingCalendarManagerSubscriptionTest {
   @Test
   void statusReturnsTheExistingSubscriptionUrl() {
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
-        .thenReturn(Optional.of(subscription(configuration, owner)));
+        .thenReturn(Optional.of(BookingCalendarManagerTest.subscription(configuration, owner)));
 
     BookingCalendarManager.Status status = manager.status(CONFIGURATION_ID, owner, owner);
 
@@ -323,12 +339,13 @@ class BookingCalendarManagerSubscriptionTest {
     }
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+        () -> manager.create(CONFIGURATION_ID, owner, owner));
   }
 
   @Test
-  void replaceUpdatesTheExistingCredentialInsteadOfCreatingAnotherRow() {
-    BookableItemCalendarSubscription existing = subscription(configuration, owner);
+  void rotateUpdatesTheExistingCredentialInsteadOfCreatingAnotherRow() {
+    BookableItemCalendarSubscription existing =
+        BookingCalendarManagerTest.subscription(configuration, owner);
     String previousHash = existing.getTokenHash();
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(existing));
@@ -354,10 +371,10 @@ class BookingCalendarManagerSubscriptionTest {
         .thenReturn(after);
 
     String etag = manager.status(CONFIGURATION_ID, owner, owner).etag();
-    manager.createOrRotate(CONFIGURATION_ID, owner, owner, etag);
+    manager.rotate(CONFIGURATION_ID, owner, owner, etag);
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, etag));
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, etag));
 
     verify(subscriptionDao)
         .rotateCurrent(eq(before), eq(previousHash), any(), eq(RAW_TOKEN), any());
@@ -383,9 +400,97 @@ class BookingCalendarManagerSubscriptionTest {
 
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () ->
-            manager.createOrRotate(
-                CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+  }
+
+  @Test
+  void rotateConflictsWhenThereIsNoLinkToReplace() {
+    assertThrows(
+        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+    assertThrows(
+        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () -> manager.rotateUser(owner, owner, "\"inactive\""));
+    verify(subscriptionDao, never()).saveAndFlush(any(BookableItemCalendarSubscription.class));
+    verify(userSubscriptionDao, never()).saveAndFlush(any(UserBookingCalendarSubscription.class));
+  }
+
+  @Test
+  void repeatedUserCreationReturnsTheExistingLinkAndRotationReplacesIt() {
+    UserBookingCalendarSubscription existing =
+        new UserBookingCalendarSubscription(
+            owner, CryptoUtils.hashToken("previous"), "previous", new java.util.Date(1000L));
+    when(userSubscriptionDao.findByUserId(owner.getId())).thenReturn(Optional.of(existing));
+
+    BookingCalendarManager.Created repeated = manager.createUser(owner, owner);
+
+    assertFalse(repeated.newlyIssued());
+    assertEquals(
+        "https://rspace.example/context/public/booking/calendars/feed.ics?token=previous",
+        repeated.subscriptionUrl());
+    verify(userSubscriptionDao, never()).saveAndFlush(any(UserBookingCalendarSubscription.class));
+
+    BookingCalendarManager.Created rotated =
+        manager.rotateUser(owner, owner, repeated.status().etag());
+
+    assertTrue(rotated.newlyIssued());
+    assertEquals(
+        "https://rspace.example/context/public/booking/calendars/feed.ics?token=" + RAW_TOKEN,
+        rotated.subscriptionUrl());
+    assertSame(existing, verifySavedUserSubscription());
+  }
+
+  @Test
+  void itemLinksListOnlyActiveReadableInstrumentsByName() {
+    BookingConfiguration archived = configuration(15L, 102L);
+    archived.setState(BookingConfigurationState.ARCHIVED);
+    BookingConfiguration unreadable = configuration(12L, 103L);
+    BookingConfiguration deletedItem = configuration(13L, 104L);
+    BookingConfiguration second = configuration(14L, 105L);
+    when(accessManager.resolveAll(any(), eq(owner)))
+        .thenReturn(
+            java.util.Map.of(
+                configuration.getId(), ownerAccess(),
+                unreadable.getId(), ResolvedResourceAccess.none(),
+                deletedItem.getId(), ownerAccess(),
+                second.getId(), ownerAccess()));
+    when(subscriptionDao.findByUserId(owner.getId()))
+        .thenReturn(
+            List.of(
+                subscription(configuration, "first"),
+                subscription(archived, "archived"),
+                subscription(unreadable, "unreadable"),
+                subscription(deletedItem, "deleted"),
+                subscription(second, "second")));
+    when(instrumentDao.getBookingSummaries(java.util.Set.of(101L, 104L, 105L)))
+        .thenReturn(
+            java.util.Map.of(
+                101L, instrument(101L, "microscope", false),
+                104L, instrument(104L, "Centrifuge", true),
+                105L, instrument(105L, "Autoclave", false)));
+
+    List<BookingCalendarManager.ItemLink> links = manager.itemLinks(owner, owner);
+
+    assertEquals(
+        List.of("Autoclave", "microscope"),
+        links.stream().map(BookingCalendarManager.ItemLink::itemName).toList());
+    assertEquals(105L, links.get(0).targetId());
+    assertEquals(14L, links.get(0).configurationId());
+    assertEquals(
+        "https://rspace.example/context/public/booking/calendars/feed.ics?token=second",
+        links.get(0).subscriptionUrl());
+    verify(accessManager)
+        .resolveAll(eq(List.of(configuration, unreadable, deletedItem, second)), eq(owner));
+    verify(accessManager, never()).resolve(any(BookingConfiguration.class), eq(owner));
+  }
+
+  @Test
+  void itemLinksRequireAnActivePersonalCaller() {
+    User delegate = TestFactory.createAnyUser("delegate");
+    delegate.setId(8L);
+
+    assertThrows(AuthorizationException.class, () -> manager.itemLinks(owner, delegate));
+    verify(subscriptionDao, never()).findByUserId(any());
   }
 
   @Test
@@ -407,9 +512,7 @@ class BookingCalendarManagerSubscriptionTest {
 
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () ->
-            manager.createOrRotate(
-                CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
   }
 
   @Test
@@ -437,5 +540,33 @@ class BookingCalendarManagerSubscriptionTest {
     MISSING,
     UNREADABLE,
     ARCHIVED_WITHOUT_ACCESS
+  }
+
+  private UserBookingCalendarSubscription verifySavedUserSubscription() {
+    ArgumentCaptor<UserBookingCalendarSubscription> saved =
+        ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
+    verify(userSubscriptionDao).saveAndFlush(saved.capture());
+    return saved.getValue();
+  }
+
+  private BookingConfiguration configuration(long id, long instrumentId) {
+    BookingConfiguration value = new BookingConfiguration();
+    value.setId(id);
+    value.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId));
+    return value;
+  }
+
+  private BookableItemCalendarSubscription subscription(
+      BookingConfiguration forConfiguration, String rawToken) {
+    return new BookableItemCalendarSubscription(
+        forConfiguration,
+        owner,
+        CryptoUtils.hashToken(rawToken),
+        rawToken,
+        new java.util.Date(1000L));
+  }
+
+  private static InstrumentReadSummary instrument(long id, String name, boolean deleted) {
+    return new InstrumentReadSummary(id, name, deleted, null);
   }
 }
