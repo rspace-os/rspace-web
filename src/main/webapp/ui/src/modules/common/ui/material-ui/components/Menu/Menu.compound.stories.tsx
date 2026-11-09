@@ -6,6 +6,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Navigation/Menu/Composition",
+  tags: ["autodocs"],
   component: MenuList,
   parameters: { a11y: { test: "error" } },
   argTypes: { dense: { control: "boolean" } },
