@@ -1,21 +1,17 @@
+import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
+import { type AvailabilityInterval, type AvailabilitySource, type AvailabilityState, buildAvailabilitySlices, timestamp } from "@/modules/booking/domain/availability";
+import { formatList } from "@/modules/common/i18n/listFormat";
+import { buttonVariants } from "@/modules/common/ui/button";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
+import { UserBadge } from "@/modules/common/ui/user-badge";
+import { cn } from "@/modules/common/utils/cn";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Temporal } from "@js-temporal/polyfill";
+import { Link } from "@tanstack/react-router";
 import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  type AvailabilityInterval,
-  type AvailabilitySource,
-  type AvailabilityState,
-  buildAvailabilitySlices,
-  timestamp,
-} from "@/modules/booking/domain/availability";
-import { formatList } from "@/modules/common/i18n/listFormat";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import { PopoverContent, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
-import { cn } from "@/modules/common/utils/cn";
-import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
 
 export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
 
@@ -164,6 +160,16 @@ function BookingSourceAccordion({
               <dd className="text-xs leading-4">{source.booking.purpose ?? t("bookings.details.noneProvided")}</dd>
             </div>
           </dl>
+          <Link
+            to="/booking/calendar/bookings/$id"
+            params={{ id: String(source.booking.id) }}
+            className={cn(
+              buttonVariants({ variant: "link", size: "xs" }),
+              "h-auto w-full rounded-none border-t-border py-2",
+            )}
+          >
+            {t("availabilityBar.slice.details")}
+          </Link>
         </div>
       </details>
     </li>

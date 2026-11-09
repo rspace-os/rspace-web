@@ -1,0 +1,103 @@
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import "@/modules/common/styles/index.css";
+import { cleanup, render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { type Locator, page, userEvent } from "vitest/browser";
+import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
+import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
+import { MyBookingsPageStory } from "./MyBookingsPage.story";
+import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
+import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
+
+const pageObj = new MyBookingsPageObject();
+
+function clickWithoutDriverWait(locator: Locator) {
+  const element = locator.element();
+  if (!(element instanceof HTMLElement)) throw new TypeError("Expected an HTML element");
+  element.click();
+}
+
+function registerHandlers() {
+  worker.use(
+    http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+    ...bookableItemDetailsHandlers(),
+    ...bookingHandlers(),
+    http.get("/api/v2/bookings/41", () => HttpResponse.json(upcomingBooking)),
+  );
+}
+
+beforeEach(() => {
+  worker.use(oauthTokenHandler(true));
+  window.history.replaceState({}, "", "/");
+  registerHandlers();
+});
+
+afterEach(() => {
+  window.history.replaceState({}, "", "/");
+  cleanup();
+});
+
+describe("the My Bookings page", () => {
+  test("shows a tooltip for every icon-only page control", async () => {
+    render(<MyBookingsPageStory />);
+    await expect.element(pageObj.upcoming).toHaveAccessibleName("Upcoming 2");
+
+    const controls = [
+      [pageObj.confocalDetails, "View details"],
+      [pageObj.confocalItemCalendar, "View item calendar"],
+      [pageObj.confocalEdit, "Edit"],
+      [pageObj.confocalCancel, "Cancel booking"],
+    ] as const;
+
+    for (const [control, label] of controls) {
+      await control.hover();
+      await expect.element(pageObj.tooltip(label)).toBeVisible();
+      await page.getByRole("heading", { name: "My Bookings", exact: true }).hover();
+      control.element().focus();
+      await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+      await expect.element(pageObj.tooltip(label)).toBeVisible();
+    }
+  });
+
+  test("navigates from a booking row to the bookable item details page", async () => {
+    render(<MyBookingsPageStory />);
+
+    await expect.element(pageObj.confocalItemCalendar).toBeVisible();
+    clickWithoutDriverWait(pageObj.confocalItemCalendar);
+
+    await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
+    await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
+  });
+
+  test("navigates from View details to the booking event", async () => {
+    render(<MyBookingsPageStory />);
+
+    await expect.element(pageObj.confocalDetails).toBeVisible();
+    clickWithoutDriverWait(pageObj.confocalDetails);
+
+    await expect.poll(() => window.location.pathname).toBe("/booking/calendar/bookings/41");
+    await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
+  });
+});
+
+test("keeps all row actions visible at common desktop widths", async () => {
+  await page.viewport(1376, 795);
+  render(<MyBookingsPageStory />);
+  for (const control of [
+    pageObj.confocalItemCalendar,
+    pageObj.confocalDetails,
+    pageObj.confocalEdit,
+    pageObj.confocalCancel,
+  ]) {
+    await expect.element(control).toBeVisible();
+    await expect
+      .poll(() => {
+        const box = control.element().getBoundingClientRect();
+        return box.left >= 0 && box.right <= 1376;
+      })
+      .toBe(true);
+  }
+});
