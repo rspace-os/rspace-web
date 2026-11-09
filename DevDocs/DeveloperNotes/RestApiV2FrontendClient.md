@@ -62,7 +62,7 @@ part of the generated operation signature. Array query parameters repeat their k
 values that contain commas. Generated queries pass their cancellation signal to fetch.
 
 `apiV2HeadersFetch<T>` returns `{ body: T, headers: Headers }` for calendar-subscription get, create
-operations, including user subscriptions, and notification-subscription GET/PUT operations,
+and rotate operations, including user subscriptions, and notification-subscription GET/PUT operations,
 which need `ETag`. Notification editors cache the body and headers together and send the baseline
 ETag in `If-Match`; 412 reloads the latest state. `apiV2BlobFetch` returns `{
 body: Blob, headers: Headers }` for calendar-file downloads that need `Content-Disposition`. Both

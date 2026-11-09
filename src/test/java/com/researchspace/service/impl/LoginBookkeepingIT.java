@@ -2,10 +2,13 @@ package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.service.BookingCalendarManager;
 import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.dao.UserDao;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.webapp.filter.DefaultLockoutPolicy;
@@ -13,6 +16,7 @@ import java.util.Date;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.shiro.SecurityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -165,6 +169,51 @@ class LoginBookkeepingIT extends RealTransactionSpringTestBase {
     setState(user, 4, true, 0);
     service.recordFailure(user.getUsername());
     assertTrue(read(user).isAccountLocked());
+  }
+
+  @Test
+  void publicationAndContentPatchFinishWhileSharedGateIsHeld() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    User freshOwner = userMgr.get(owner.getId());
+    freshOwner.addRole(roleMgr.getRole(Constants.PI_ROLE));
+    userMgr.save(freshOwner);
+    Group group = createGroupForPiAndUsers(freshOwner, new User[] {freshOwner});
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Neutral gate control");
+    logoutAndLoginAs(freshOwner);
+    var authenticated = SecurityUtils.getSubject();
+    CountDownLatch sharedHeld = new CountDownLatch(1);
+    CountDownLatch releaseShared = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      Future<?> holder =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(transactions)
+                      .executeWithoutResult(
+                          status -> {
+                            gate.lockShared();
+                            sharedHeld.countDown();
+                            await(releaseShared);
+                          }));
+      await(sharedHeld);
+      Future<?> neutral =
+          pool.submit(
+              authenticated.associateWith(
+                  () -> {
+                    assertTrue(grpMgr.setPublicationAllowed(group.getId(), true, freshOwner));
+                    ApiInstrument patch = new ApiInstrument();
+                    patch.setId(instrument.getId());
+                    patch.setName("Updated neutral name");
+                    instrumentApiMgr.updateApiInstrument(patch, freshOwner);
+                  }));
+      neutral.get(10, TimeUnit.SECONDS);
+      assertTrue(grpMgr.getGroup(group.getId()).isPublicationAllowed());
+      releaseShared.countDown();
+      holder.get(10, TimeUnit.SECONDS);
+    } finally {
+      releaseShared.countDown();
+      pool.shutdownNow();
+    }
   }
 
   @Test

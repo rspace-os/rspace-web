@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import {
+  getGetMyBookingNotificationSubscriptionQueryKey,
   getGetMyBookingNotificationSubscriptionQueryOptions,
   getMyBookingNotificationSubscription,
   replaceMyBookingNotificationSubscription,
@@ -31,7 +32,13 @@ export async function fetchBookingNotificationPreferences(
 export async function replaceBookingNotificationPreferences(
   input: BookingNotificationSubscriptionControllerPreferenceReplacement,
 ): Promise<BookingNotificationSubscriptionManagerPreferences> {
-  return replaceMyBookingNotificationPreferences(input);
+  const { autoSubscribeOwnedItems, notifyOwnActions, notifyOnCreated, notifyOnCancelled } = input;
+  return replaceMyBookingNotificationPreferences({
+    autoSubscribeOwnedItems,
+    notifyOwnActions,
+    notifyOnCreated,
+    notifyOnCancelled,
+  });
 }
 export async function fetchBookingNotificationSubscription(configurationId: number, signal?: AbortSignal) {
   return getMyBookingNotificationSubscription(configurationId, { signal });
@@ -54,6 +61,22 @@ export function useReplaceBookingNotificationPreferences(_subjectId: number) {
     onSuccess: async (data, input, result, context) => {
       queryClient.setQueryData(getGetMyBookingNotificationPreferencesQueryKey(), data);
       await options.onSuccess?.(data, { data: input }, result, context);
+      await invalidateBookingNotificationSubscriptions(queryClient);
     },
+  });
+}
+
+/** Refreshes every cached read of the item notification-subscription operation. */
+export async function invalidateBookingNotificationSubscriptions(queryClient: QueryClient): Promise<void> {
+  const marker = 2026110731;
+  const template = getGetMyBookingNotificationSubscriptionQueryKey(marker)[0];
+  const pattern = new RegExp(
+    `^${template
+      .split(String(marker))
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("\\d+")}$`,
+  );
+  await queryClient.invalidateQueries({
+    predicate: ({ queryKey }) => typeof queryKey[0] === "string" && pattern.test(queryKey[0]),
   });
 }
