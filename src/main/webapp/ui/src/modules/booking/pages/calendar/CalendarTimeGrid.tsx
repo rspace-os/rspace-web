@@ -4,11 +4,9 @@ import { DayTimeline } from "@/modules/booking/components/DayTimeline";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
-import { BookingEditorsContext } from "./BookingEventsCalendar";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
-  blockoutActionsFor,
   type CalendarView,
   calendarDates,
   eventsOn,
@@ -18,6 +16,7 @@ import {
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
+import { BookingEditorsContext } from "./InlineBookingEditor";
 
 export function CalendarTimeGrid({
   date,
@@ -58,8 +57,8 @@ export function CalendarTimeGrid({
               startWindow={availabilityStartMinute}
               endWindow={availabilityEndMinute}
               showZoomControls={false}
-              renderEventActions={actionsFor(events, timezone)}
-              renderBlockoutActions={blockoutActionsFor(events, timezone)}
+              renderEventActions={actionsFor(events, timezone, date)}
+              renderBlockoutActions={actionsFor(events, timezone, date)}
             />
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { CompactBookingCreationDialog } from "@/modules/booking/creation/CompactBookingCreationDialog";
 import { Heading } from "@/modules/common/ui/typography";
+import { BookingBreadcrumbs } from "./BookingBreadcrumbs";
 
 export function BookingDashboard() {
   const { t } = useTranslation("booking");
@@ -20,6 +21,7 @@ export default function BookingPage() {
   return (
     <BookingCreationStoreProvider>
       <div className="mx-auto w-full max-w-7xl">
+        <BookingBreadcrumbs />
         <Outlet />
       </div>
       <Suspense fallback={null}>

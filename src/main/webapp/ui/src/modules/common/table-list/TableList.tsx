@@ -39,6 +39,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   rows,
   getRowId,
   features,
+  onReset,
   clientSide,
   status = "idle",
   error,
@@ -79,7 +80,14 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   const alerts = useTableListAlertsState({ root: rootRef, rowIds });
   useImperativeHandle(alertsRef, () => alerts.api, [alerts.api]);
   const collectionLabel = t(config.labels.pluralKey as never);
-  const filterCount = features.filtering === false ? 0 : topLevelFilterCount(features.filtering.value.expression);
+  const filterCount =
+    features.filtering === false
+      ? 0
+      : Math.max(
+          0,
+          topLevelFilterCount(features.filtering.value.expression) -
+            (filterButtons?.buttons.filter((button) => button.pressed && button.inExpression).length ?? 0),
+        );
   const tableUiColumns = useMemo(() => {
     if (!rowActions) return uiColumns;
     return [
@@ -144,6 +152,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
                   debounceSearch={debounceSearch}
                   onPanelChange={setActivePanel}
                   onReset={() => setActivePanel(null)}
+                  resetView={onReset}
                 />
                 <TableListControlPanel
                   onSelectRuntimeField={onSelectRuntimeField}

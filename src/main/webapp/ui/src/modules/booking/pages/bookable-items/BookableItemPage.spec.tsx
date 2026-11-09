@@ -5,18 +5,23 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import {
   emulateForcedColors,
   emulateReducedMotion,
   expectNoAxeViolations,
 } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
+import { bookingPagesHandlers } from "@/modules/booking/pages/mocks/bookingPagesMocks";
+import { AllBookableItemsStory } from "../all-bookable-items/AllBookableItemsPage.story";
+import { AllBookableItemsPage } from "../all-bookable-items/pageObjects/AllBookableItemsPage";
 import { auditPage } from "./__tests__/bookableItemAuditFixtures";
 import { BookableItemPageStory } from "./BookableItemPage.story";
 import { bookableItemDetailsHandlers, bookableItemFixtures, bookableItemsHandlers } from "./mocks/bookableItemsMocks";
 import { BookableItemPage } from "./pageObjects/BookableItemPage";
 
 const pageObj = new BookableItemPage();
+const allItemsPageObj = new AllBookableItemsPage();
 const auditEvent = {
   eventId: "a".repeat(64),
   timestamp: "2026-08-25T10:42:18Z",
@@ -74,13 +79,7 @@ function bookableItemAccessHandlers() {
       ),
     ),
     http.get("/api/v2/booking-configurations/7/access/grantees", () =>
-      HttpResponse.json({
-        docs: [{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }],
-        totalDocs: 1,
-        limit: 20,
-        page: 1,
-        hasNextPage: false,
-      }),
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
     ),
   ];
 }
@@ -398,6 +397,31 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByRole("heading", { name: "Bookable Items", exact: true })).toBeVisible();
   });
 
+  test("starts immutable maintenance creation from bookable item details for a direct sysadmin", async () => {
+    worker.use(
+      http.get("/api/v2/users/me", () =>
+        HttpResponse.json({
+          ...currentUser,
+          hasSysAdminRole: true,
+          session: { ...currentUser.session, operatedAs: false },
+        }),
+      ),
+      ...bookingPagesHandlers(),
+    );
+    history.replace("/booking/all-items?date=2026-08-17");
+    render(<AllBookableItemsStory history={history} />);
+    await allItemsPageObj.detailsButton.click();
+
+    await page.getByRole("button", { name: "More event creation options" }).click();
+    await page.getByRole("menuitem", { name: "New Maintenance Event" }).click();
+    const dialog = page.getByRole("dialog", { name: "New Maintenance Event" });
+    await expect.element(dialog).toBeVisible();
+    await expect.element(dialog.getByText("Confocal microscope", { exact: true })).toBeVisible();
+    await expect.element(dialog.getByRole("combobox", { name: "Bookable item" })).not.toBeInTheDocument();
+    await expect.element(dialog.getByRole("radio")).not.toBeInTheDocument();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+  });
+
   test("uses a distinct path for each tab", async () => {
     let auditRequests = 0;
     worker.use(
@@ -514,7 +538,7 @@ describe("BookableItemPage", () => {
       await pageObj.auditTab.click();
 
       const alert = page.getByRole("alert");
-      await expect.element(alert.getByText(title, { exact: true })).toBeVisible();
+      await expect.element(alert).toHaveTextContent(title);
       await expect.element(alert).not.toHaveTextContent("Do not display");
       await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
       await expectNoAxeViolations();
