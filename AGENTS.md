@@ -140,7 +140,7 @@ Remove duplicate tests and comments that restate code. Keep a minimal check for 
 Use both MCP tools against this worktree's Docker Dev Stack:
 
 - Playwright `mcp__playwright__browser_*` for repeatable flows and accessibility snapshots.
-- Chrome DevTools `mcp__chrome_devtools__*` for console/network errors, layout/reflow, performance traces, and Lighthouse.
+- Chrome DevTools `mcp__chrome-devtools__*` for console/network errors, layout/reflow, performance traces, and Lighthouse.
 
 Cover happy paths and likely regressions, including accessibility, failed requests, layout shifts, responsiveness, and performance. Report unavailable tools; do not claim full browser verification without both. Fixture and settings changes are allowed in this throwaway stack.
 </important>
