@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
-import { findBookingConfigurationByTarget } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
+import { findBookingConfigurationQueryOptions } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
 
 type BookingActionProps = {
   globalId: string | null;
@@ -17,17 +17,15 @@ type BookingActionProps = {
 
 function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner: boolean }) {
   const { t } = useTranslation("inventory");
-  const configuration = useQuery({
-    queryKey: ["api-v2", "booking-configurations", "inventory-action", globalId],
-    queryFn: ({ signal }) => findBookingConfigurationByTarget(globalId, signal),
-  });
+  const configuration = useQuery(findBookingConfigurationQueryOptions(globalId));
 
   if (!configuration.isSuccess) return null;
 
   const current = configuration.data;
   const configured = current !== null;
+  const canBook = current?.state === "ACTIVE" && current.enabled && current.capabilities.canCreateBooking;
   if (!configured && !isOwner) return null;
-  const action = configured ? "open" : "setup";
+  const action = configured ? (canBook ? "book" : "open") : "setup";
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction={{ xs: "column", sm: "row" }} sx={{ alignItems: { sm: "center" }, gap: 2 }}>
@@ -58,16 +56,24 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
         <Button
           component="a"
           href={
-            action === "open"
-              ? `/booking/bookable-items/${encodeURIComponent(globalId)}`
-              : `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
+            action === "book"
+              ? `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`
+              : action === "open"
+                ? `/booking/bookable-items/${encodeURIComponent(globalId)}`
+                : `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
           }
           variant="contained"
           color="callToAction"
           startIcon={<CalendarMonthIcon />}
           sx={{ flex: "0 0 auto", alignSelf: { xs: "stretch", sm: "center" } }}
         >
-          {t(action === "open" ? "instrument.booking.configured.open" : "instrument.booking.notConfigured.action")}
+          {t(
+            action === "book"
+              ? "instrument.booking.configured.book"
+              : action === "open"
+                ? "instrument.booking.configured.open"
+                : "instrument.booking.notConfigured.action",
+          )}
         </Button>
       </Stack>
     </Paper>

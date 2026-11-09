@@ -1,4 +1,3 @@
-import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
   updateBookingConfiguration as generatedUpdateBookingConfiguration,
@@ -7,7 +6,6 @@ import {
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
   await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
@@ -80,9 +78,13 @@ export function bookingConfigurationTargetQuery(globalId: string) {
   });
 }
 
-export function bookingRouteTargetQuery(globalId: string | undefined) {
-  return getSearchBookingConfigurationTargetsQueryOptions(
-    { q: globalId ?? "", limit: 20 },
-    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
-  );
+export function findBookingConfigurationQueryOptions(globalId: string) {
+  return getListBookingConfigurationsQueryOptions<BookingConfiguration | null>(parameters(globalId), {
+    query: {
+      select: (result) => {
+        if (result.docs.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+        return result.docs.length === 0 ? null : mapBookingConfiguration(result.docs[0]);
+      },
+    },
+  });
 }
