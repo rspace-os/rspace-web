@@ -130,6 +130,10 @@ export default defineConfig({
     // partial dependency cache can reload later files in a full run.
     entries: ["src/**/*.spec.{ts,tsx}", "!src/__tests__/e2e/**"],
     include: [
+      // Keep nuqs and its router adapter in the same pre-bundled module graph.
+      "nuqs/adapters/tanstack-router",
+      "nuqs/adapters/testing",
+      "nuqs/adapters/custom",
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
