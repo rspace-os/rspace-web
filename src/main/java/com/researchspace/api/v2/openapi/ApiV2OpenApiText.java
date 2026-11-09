@@ -127,14 +127,14 @@ public final class ApiV2OpenApiText {
     ACCESS_SEARCH_SUMMARY("resourceAccess.search.summary"),
     ACCESS_MANAGING_CALLERS("resourceAccess.managingCallers"),
     ACCESS_AUTHORIZED_CALLERS("resourceAccess.authorizedCallers"),
-    ACCESS_IF_MATCH("resourceAccess.ifMatch"),
     ACCESS_QUERY("resourceAccess.query"),
     ACCESS_LIMIT("resourceAccess.limit"),
     ACCESS_ASSIGNMENT_ABSENT("resourceAccess.assignmentAbsent"),
     ACCESS_GRANTEES("resourceAccess.grantees"),
     ACCESS_DOCUMENT("resourceAccess.document"),
     ACCESS_OWNER_REQUIRED("resourceAccess.ownerRequired"),
-    ACCESS_STALE("resourceAccess.stale");
+    ACCESS_STALE("resourceAccess.stale"),
+    RESPONSE_VERSION_CHANGED("responses.versionChanged");
 
     static final String PREFIX = "api.v2.openapi.";
 

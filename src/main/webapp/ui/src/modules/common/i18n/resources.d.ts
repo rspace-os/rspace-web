@@ -852,15 +852,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
@@ -5697,7 +5688,6 @@ export default interface Resources {
             "authorizedCallers": "Authenticated callers authorized by the registered protected resource.",
             "document": "Current direct assignments and caller capabilities.",
             "grantees": "Eligible users and groups.",
-            "ifMatch": "Strong ETag from the latest access document.",
             "leave": {
               "summary": "Remove the caller's direct assignment"
             },

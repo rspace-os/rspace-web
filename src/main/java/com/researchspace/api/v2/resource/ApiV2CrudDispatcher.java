@@ -241,7 +241,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
       ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.CREATE,
-        () -> document(operations.create(document, caller), selection, caller.subject()));
+        () -> document(operations.create(document, caller, null).resource(), selection, caller.subject()));
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(
