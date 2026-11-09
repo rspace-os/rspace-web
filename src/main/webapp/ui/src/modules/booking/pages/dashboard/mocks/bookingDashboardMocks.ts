@@ -12,8 +12,9 @@ export function collectionResponse<T>(
   docs: readonly T[],
   { page = 1, limit = 100, hasNextPage = false }: { page?: number; limit?: number; hasNextPage?: boolean } = {},
 ) {
+  // Fixtures are mapped documents; the server also sends the guaranteed cancellation reason.
   return {
-    docs: [...docs],
+    docs: docs.map((document) => ({ cancellationReason: null, ...document })),
     limit,
     page,
     hasNextPage,

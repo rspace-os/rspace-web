@@ -23,11 +23,24 @@ describe("bookingCreationStore", () => {
     expect(store.getState().beginCreation(secondCreation)).toBe(false);
     expect(store.getState().activeCreation).toEqual(firstCreation);
 
-    store.getState().endCreation(secondCreation.ownerId);
+    store.getState().endCreation(secondCreation);
     expect(store.getState().activeCreation).toEqual(firstCreation);
 
-    store.getState().endCreation(firstCreation.ownerId);
+    store.getState().endCreation(firstCreation);
     expect(store.getState().activeCreation).toBeNull();
     expect(store.getState().beginCreation(secondCreation)).toBe(true);
+  });
+
+  it("does not let a stale session release a reopened creation with the same owner", () => {
+    const store = createBookingCreationStore();
+    const firstCreation = { ownerId: "calendar", triggerId: "row-1", eventKind: "BOOKING" as const };
+    const reopenedCreation = { ownerId: "calendar", triggerId: "row-2", eventKind: "BOOKING" as const };
+
+    expect(store.getState().beginCreation(firstCreation)).toBe(true);
+    store.getState().endCreation(firstCreation);
+    expect(store.getState().beginCreation(reopenedCreation)).toBe(true);
+
+    store.getState().endCreation(firstCreation);
+    expect(store.getState().activeCreation).toBe(reopenedCreation);
   });
 });

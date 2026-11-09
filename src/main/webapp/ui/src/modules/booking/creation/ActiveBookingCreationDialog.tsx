@@ -44,44 +44,48 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const dirty = formState?.dirty ?? false;
   const closingRef = React.useRef(false);
   const previousPathname = React.useRef(pathname);
-  const shouldBlock = React.useCallback(() => dirty && !closingRef.current, [dirty]);
+  const shouldBlock = React.useCallback(
+    () => (dirty || mutation.isPending) && !closingRef.current,
+    [dirty, mutation.isPending],
+  );
   const blocker = useBlocker({
     shouldBlockFn: shouldBlock,
     withResolver: true,
     enableBeforeUnload: shouldBlock,
   });
 
-  const closeCreation = React.useCallback(() => {
+  const closeCreation = () => {
     closingRef.current = true;
-    endCreation(creation.ownerId);
-  }, [creation.ownerId, endCreation]);
+    return endCreation(creation);
+  };
 
-  const finish = React.useCallback(() => {
-    closeCreation();
-    window.setTimeout(() => document.getElementById(creation.triggerId)?.focus(), 0);
-  }, [closeCreation, creation.triggerId]);
+  const finish = () => {
+    if (closeCreation()) window.setTimeout(() => document.getElementById(creation.triggerId)?.focus(), 0);
+  };
+  const finishFromEffect = React.useEffectEvent(() => finish());
 
   React.useEffect(() => {
     const routeChanged = previousPathname.current !== pathname;
     previousPathname.current = pathname;
-    if (routeChanged && !dirty) finish();
-  }, [creation, dirty, finish, pathname]);
+    if (routeChanged && !dirty) finishFromEffect();
+  }, [creation, dirty, pathname]);
 
   React.useEffect(() => {
     if (blocker.status !== "blocked") return;
-    if (!dirty) {
-      finish();
+    if (!dirty && !mutation.isPending) {
+      finishFromEffect();
       blocker.proceed();
     }
-  }, [blocker, dirty, finish]);
+  }, [blocker, dirty, mutation.isPending]);
 
   const requestClose = () => {
+    if (mutation.isPending) return;
     if (dirty) setConfirmClose(true);
     else finish();
   };
 
   const openMoreOptions = () => {
-    if (maintenance) return;
+    if (maintenance || mutation.isPending) return;
     const draft: BookingCreationDraft | undefined = formState
       ? {
           targetGlobalId: formState.target?.globalId,
@@ -106,6 +110,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   };
 
   const discard = () => {
+    if (mutation.isPending) return;
     setConfirmClose(false);
     finish();
     if (blocker.status === "blocked") blocker.proceed();
@@ -210,6 +215,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             size="icon-sm"
             className="absolute top-3 right-3"
             aria-label={commonT("actions.close")}
+            disabled={mutation.isPending}
             onClick={requestClose}
           >
             <XIcon aria-hidden="true" />
@@ -258,7 +264,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={keepEditing}>{t("bookings.compact.keepEditing")}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={discard}>
+            <AlertDialogAction variant="destructive" disabled={mutation.isPending} onClick={discard}>
               {t("bookings.compact.discard")}
             </AlertDialogAction>
           </AlertDialogFooter>

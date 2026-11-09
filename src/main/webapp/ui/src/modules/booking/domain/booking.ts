@@ -79,6 +79,7 @@ export const BOOKING_READ_FIELDS = [
   "state",
   "kind",
   "purpose",
+  "cancellationReason",
   "bookedBy",
   "createdBy",
   "privacy",
@@ -160,7 +161,7 @@ export function mapBookingSummary(input: MappedBooking) {
   return summary;
 }
 
-function mapPrivacy(input: MappedBooking) {
+function mapListPrivacy(input: MappedBooking) {
   const management: {
     createdAt: string;
     updatedAt: string;
@@ -195,10 +196,17 @@ function mapPrivacy(input: MappedBooking) {
   };
 }
 
+function mapFullPrivacy(input: MappedBooking) {
+  const privacy = mapListPrivacy(input);
+  if (input.cancellationReason === undefined || (privacy.privacy === "busy" && input.cancellationReason !== null))
+    throw new BookingUnavailableError("Booking cancellation reason is unavailable");
+  return { ...privacy, cancellationReason: input.cancellationReason };
+}
+
 export function mapBooking(input: MappedBooking) {
   return {
     ...mapIdentity(input, mapBookingTarget(input.target), mapBookingLocation(input.location)),
-    ...mapPrivacy(input),
+    ...mapFullPrivacy(input),
   };
 }
 function mapReadIdentity(input: MappedBooking) {
@@ -218,7 +226,7 @@ function mapReadIdentity(input: MappedBooking) {
 }
 export function mapBookingDetails(input: MappedBooking) {
   try {
-    const privacy = mapPrivacy(input);
+    const privacy = mapFullPrivacy(input);
     if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
     return {
       ...mapReadIdentity(input),
@@ -232,7 +240,7 @@ export function mapBookingDetails(input: MappedBooking) {
 }
 export function mapBookingListDocument(input: MappedBooking) {
   if (input.requester === undefined) throw new BookingUnavailableError("Booking requester is unavailable");
-  const { purpose, bookedBy, privacy, canEdit, canCancel, ...metadata } = mapPrivacy(input);
+  const { purpose, bookedBy, privacy, canEdit, canCancel, ...metadata } = mapListPrivacy(input);
   return {
     ...mapReadIdentity(input),
     ...metadata,
@@ -253,7 +261,7 @@ export function mapBookingMutation(input: MappedBooking) {
       typeof target.value === "number" ? target : mapBookingTarget(target),
       mapMutationLocation(input.location),
     ),
-    ...mapPrivacy(input),
+    ...mapFullPrivacy(input),
   };
 }
 
@@ -338,6 +346,16 @@ export async function createBooking(input: BookingsCreate, idempotencyKey?: stri
 export async function updateBooking(id: number, version: number, input: BookingsUpdate): Promise<BookingMutation> {
   return selectedMutation(await generatedUpdateBooking(id, input, { "If-Match": `"${version}"` }));
 }
-export function cancelBooking(id: number, version: number): Promise<BookingMutation> {
-  return updateBooking(id, version, { state: "CANCELLED" });
+export function cancelBooking(id: number, version: number, reason?: string): Promise<BookingMutation> {
+  const cancellationReason = reason?.trim();
+  return updateBooking(
+    id,
+    version,
+    cancellationReason ? { state: "CANCELLED", cancellationReason } : { state: "CANCELLED" },
+  );
+}
+
+/** Returns a cancelled booking to its slot, if it has not started and the slot is still free. */
+export function restoreBooking(id: number, version: number): Promise<BookingMutation> {
+  return updateBooking(id, version, { state: "CONFIRMED" });
 }

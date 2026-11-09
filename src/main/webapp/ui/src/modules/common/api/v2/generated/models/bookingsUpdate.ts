@@ -9,6 +9,11 @@
 import type { BookingState } from "./bookingState.ts";
 
 export interface BookingsUpdate {
+  /**
+   * @maxLength 500
+   * @nullable
+   */
+  cancellationReason?: string | null;
   end?: string;
   /**
    * @maxLength 1000

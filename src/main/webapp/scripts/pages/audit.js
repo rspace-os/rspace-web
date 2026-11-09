@@ -180,14 +180,13 @@ function _convertAuditTrailResults (xhr){
 		result.event.displayDomain = result.event.domain === "BOOKING"
 			? RS.msg("legacyjs.audit.bookingActivityArea")
 			: result.event.domain;
+		// booking snapshots have no name; the server supplies one as displayName
+		var payload = result.event.data && result.event.data.data;
+		result.event.displayName = result.event.displayName || (payload && payload.name);
+		// the server words a booking's details and recorded description together in the request
+		// language; displayAction above still reads the raw description
 		if (result.event.domain === "BOOKING") {
-			result.event.description = _readableBookingDescription(result.event.description);
-		}
-		// Keep the raw description available for displayAction above.
-		if (result.event.details) {
-			result.event.description = result.event.description
-				? result.event.details + "; " + result.event.description
-				: result.event.details;
+			result.event.description = result.event.details || "";
 		}
      	// show export description if possible:
      	if( result.data.action ==='EXPORT'
@@ -227,28 +226,6 @@ function _convertAuditTrailResults (xhr){
      }
 }
 
-// Delegated booking changes record "subject=<username>"; a permanent delete also records
-// "permanent=true", which the display action already states. Other text passes through.
-function _readableBookingDescription(description) {
-	if (!description) {
-		return description;
-	}
-	var subject = null;
-	var parts = description.split(";").map(function (part) {
-		return part.trim();
-	}).filter(function (part) {
-		if (part.indexOf("subject=") === 0) {
-			subject = part.slice("subject=".length);
-			return false;
-		}
-		return part !== "permanent=true" && part !== "";
-	});
-	if (subject) {
-		parts.push(RS.msg("legacyjs.audit.onBehalfOf", subject));
-	}
-	return parts.join("; ");
-}
-
 function _getAuditDisplayAction(event) {
 	var action = event.action;
 	if (event.domain !== "BOOKING") {
@@ -256,9 +233,7 @@ function _getAuditDisplayAction(event) {
 	}
 	var payload = event.data && event.data.data;
 	var state = payload && payload.state;
-	var permanentDelete = action === "DELETE"
-		&& /(?:^|;)\s*permanent=true(?:;|$)/.test(event.description || "");
-	if (permanentDelete) {
+	if (_isPermanentDelete(event)) {
 		return RS.msg("legacyjs.audit.permanentlyDeleted");
 	}
 	if (action === "DELETE" && state === "ARCHIVED") {
@@ -267,7 +242,24 @@ function _getAuditDisplayAction(event) {
 	if (action === "WRITE" && state === "CANCELLED") {
 		return RS.msg("legacyjs.audit.cancelled");
 	}
+	if (action === "CREATE") {
+		return RS.msg("legacyjs.audit.created");
+	}
+	if (action === "WRITE") {
+		return RS.msg("legacyjs.audit.changed");
+	}
+	if (action === "DELETE") {
+		return RS.msg("legacyjs.audit.deleted");
+	}
+	if (action === "RESTORE") {
+		return RS.msg("legacyjs.audit.restored");
+	}
 	return action;
+}
+
+function _isPermanentDelete(event) {
+	return event.action === "DELETE"
+		&& /(?:^|;)\s*permanent=true(?:;|$)/.test(event.description || "");
 }
 
 function _getAuditResourceHref(event) {
@@ -282,6 +274,10 @@ function _getAuditResourceHref(event) {
 	}
 	var configurationId = /^booking-configurations:([1-9][0-9]*)$/.exec(id);
 	if (configurationId && _isLongId(configurationId[1])) {
+		// a permanently deleted configuration's page no longer exists
+		if (_isPermanentDelete(event)) {
+			return null;
+		}
 		var target = payload.target;
 		var targetId = target && _positiveLongId(target.id);
 		if (target && target.type === "INSTRUMENT" && targetId) {
