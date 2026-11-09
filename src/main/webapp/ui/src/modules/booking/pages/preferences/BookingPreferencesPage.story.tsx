@@ -16,8 +16,9 @@ import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
 import { getGetCurrentUserQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import AllBookableItemsPage from "../all-bookable-items/AllBookableItemsPage";
 
-/** Fetches preferences so reload persistence is observable. */
+/** A multi-route story that deliberately fetches preferences so reload persistence is observable. */
 export function BookingPreferencesPageStory({
   history = createMemoryHistory({ initialEntries: ["/booking/preferences"] }),
 }: {
@@ -45,6 +46,11 @@ export function BookingPreferencesPageStory({
           path: "/calendar/",
           validateSearch: bookingFormSearch,
           component: CalendarPage,
+        }),
+        createRoute({
+          getParentRoute: () => booking,
+          path: "/all-items/",
+          component: AllBookableItemsPage,
         }),
       ]),
     ]),

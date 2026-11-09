@@ -10,6 +10,7 @@
 export type SearchBookingCatalogueLocationsParams = {
   q?: string;
   type?: string[];
+  globalId?: string[];
   page: number;
   limit: number;
 };

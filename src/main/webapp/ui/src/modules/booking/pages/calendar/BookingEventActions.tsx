@@ -5,7 +5,7 @@ import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import { InlineBookingEditor } from "./BookingEventsCalendar";
+import { InlineBookingEditor } from "./InlineBookingEditor";
 
 const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
 
@@ -13,12 +13,27 @@ function isEditableBooking(event: BookingListDocument): event is BookingListDocu
   return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
 }
 
-export function BookingActions({ event, timezone }: { event: BookingListDocument; timezone: string }) {
+export function BookingActions({
+  event,
+  timezone,
+  timelineDate,
+}: {
+  event: BookingListDocument;
+  timezone: string;
+  timelineDate?: string;
+}) {
   const { t } = useTranslation("booking");
   const [editing, setEditing] = React.useState(false);
   const editable = isEditableBooking(event);
   if (editing && editable) {
-    return <InlineBookingEditor event={event} timezone={timezone} onClose={() => setEditing(false)} />;
+    return (
+      <InlineBookingEditor
+        event={event}
+        timezone={timezone}
+        timelineDate={timelineDate}
+        onClose={() => setEditing(false)}
+      />
+    );
   }
   const canViewDetails = event.privacy === "full";
   const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0);

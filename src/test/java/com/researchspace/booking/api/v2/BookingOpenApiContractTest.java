@@ -53,6 +53,7 @@ class BookingOpenApiContractTest {
               "/api/v2/booking-settings",
               "/api/v2/booking-settings/admin",
               "/api/v2/booking-catalogue",
+              "/api/v2/booking-catalogue/availability-counts",
               "/api/v2/booking-catalogue/locations",
               "/api/v2/booking-configuration-targets"),
           mapper.convertValue(paths, Map.class).keySet());

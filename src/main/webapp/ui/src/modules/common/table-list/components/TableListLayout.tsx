@@ -24,6 +24,7 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
   rows,
   getRowId,
   features,
+  onReset,
   clientSide,
   status = "idle",
   error,
@@ -85,7 +86,14 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
     [cancelWatchers, controlPanelId, parameterPrefix, registry, slug, storageKey],
   );
   const collectionLabel = t(config.labels.pluralKey);
-  const filterCount = features.filtering === false ? 0 : topLevelFilterCount(features.filtering.value.expression);
+  const filterCount =
+    features.filtering === false
+      ? 0
+      : Math.max(
+          0,
+          topLevelFilterCount(features.filtering.value.expression) -
+            (filterButtons?.buttons.filter((button) => button.pressed && button.inExpression).length ?? 0),
+        );
   const tableUiColumns = useMemo(() => {
     if (!rowActions) return uiColumns;
     return [
@@ -148,6 +156,7 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
                   debounceSearch={debounceSearch}
                   onPanelChange={setActivePanel}
                   onReset={() => setActivePanel(null)}
+                  resetView={onReset}
                 />
                 <TableListControlPanel
                   runtimeFields={runtimeFields}

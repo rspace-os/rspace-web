@@ -37,6 +37,7 @@ import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import {
+  getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
 } from "../booking-catalogue/booking-catalogue.ts";
@@ -520,6 +521,7 @@ export const getCreateBookingMutationOptions = <
             getCountBookingsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }
@@ -1369,6 +1371,7 @@ export const getUpdateBookingMutationOptions = <
             getListBookingAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }
