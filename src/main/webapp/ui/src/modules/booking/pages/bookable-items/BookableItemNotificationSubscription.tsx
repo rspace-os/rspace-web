@@ -1,6 +1,6 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { BellIcon, CheckIcon } from "lucide-react";
+import { BellIcon, CheckIcon, SaveIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { bookingNotificationSubscriptionQuery } from "@/modules/booking/domain/bookingNotificationSubscriptions";
@@ -12,7 +12,6 @@ import {
   useReplaceMyBookingNotificationSubscription,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { BookingNotificationSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionStatus";
-import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { QueryBoundary } from "@/modules/common/queries/QueryBoundary";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
@@ -154,7 +153,7 @@ function ItemNotificationEditor({
                   : undefined
               }
             >
-              {saved ? <CheckIcon aria-hidden="true" /> : null}
+              {saved ? <CheckIcon aria-hidden="true" /> : <SaveIcon aria-hidden="true" />}
               {saved ? t("preferences.actions.saved") : t("preferences.actions.save")}
             </Button>
             <Button
@@ -168,32 +167,13 @@ function ItemNotificationEditor({
                 setFeedback(null);
               }}
             >
+              <XIcon aria-hidden="true" />
               {t("bookableItemDetails.cancelEdit")}
             </Button>
           </div>
         </Form>
       </CardContent>
     </Card>
-  );
-}
-
-export function BookableItemNotificationSubscription({
-  configurationId,
-  globalId,
-  canManageNotificationSubscription,
-}: {
-  configurationId: number;
-  globalId: string;
-  canManageNotificationSubscription: boolean;
-}) {
-  const { data: currentUser } = useCurrentUserQuery();
-  return (
-    <BookableItemNotificationSubscriptionForUser
-      key={`${currentUser.id}-${configurationId}-${canManageNotificationSubscription}`}
-      configurationId={configurationId}
-      globalId={globalId}
-      canManageNotificationSubscription={canManageNotificationSubscription}
-    />
   );
 }
 
@@ -242,16 +222,13 @@ function ItemNotificationSubscription({ configurationId, globalId }: { configura
   );
 }
 
-function BookableItemNotificationSubscriptionForUser({
+export function BookableItemNotificationSubscription({
   configurationId,
   globalId,
-  canManageNotificationSubscription,
 }: {
   configurationId: number;
   globalId: string;
-  canManageNotificationSubscription: boolean;
 }) {
-  if (!canManageNotificationSubscription) return null;
   return (
     <QueryBoundary
       fallback={
