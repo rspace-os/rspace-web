@@ -144,8 +144,8 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addViewController("/public/maintenanceInProgress")
         .setViewName("public/maintenanceInProgress");
-    registry.addViewController("/public/terms").setViewName("public/terms");
     registry.addViewController("/public/ssoinfo").setViewName("public/ssoinfo");
+    registry.addViewController("/public/ssologout").setViewName("public/ssologout");
     registry.addViewController("/public/noldapsignup").setViewName("public/noLdapSignUp");
     registry
         .addViewController("/public/ssoinfoUsernameConflict")
@@ -156,6 +156,14 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry.addViewController("/public/ipAddressInvalid").setViewName("public/ipAddressInvalid");
     registry.addViewController("/public/apiDocs").setViewName("public/apiDocs");
     registry.addViewController("/audit/auditing").setViewName("audit/auditing");
+    registry.addViewController("/requestFeedback").setViewName("requestFeedback");
+    registry.addViewController("/import/archiveImport").setViewName("import/archiveImport");
+    registry
+        .addViewController("/import/archiveImportReport")
+        .setViewName("import/archiveImportReport");
+    registry
+        .addViewController("/system/ajax/batchUserRegistration")
+        .setViewName("system/batchUserRegistration");
 
     registry
         .addViewController("/externalTinymcePlugins/internalLink")
@@ -163,7 +171,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
     registry.addViewController("/searchableRecordPicker").setViewName("searchableRecordPicker");
 
-    registry.addViewController("/test/template").setViewName("test/template");
     registry
         .addViewController("/admin/cloud/createCloudGroupSuccess")
         .setViewName("admin/cloud/createCloudGroupSuccess");
