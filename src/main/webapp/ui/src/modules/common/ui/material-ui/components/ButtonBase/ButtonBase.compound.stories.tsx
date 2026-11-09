@@ -4,6 +4,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Inputs/ButtonBase/Composition",
+  tags: ["autodocs"],
   component: ButtonBase,
   parameters: { a11y: { test: "error" } },
   argTypes: { disabled: { control: "boolean" } },
