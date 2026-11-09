@@ -1,5 +1,6 @@
 package com.researchspace.dao.hibernate;
 
+import com.axiope.search.FieldNames;
 import com.axiope.search.IFileSearcher;
 import com.axiope.search.IFullTextSearcher;
 import com.axiope.search.InventorySearchConfig;
@@ -25,6 +26,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.SearchOperator;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.lucene.index.Term;
 import org.hibernate.SessionFactory;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.mapper.orm.Search;
@@ -200,6 +203,17 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         && !srchConfig.isNotebookFilter()
         && !srchConfig.getFilters().isSomeFilterActive()) {
       List<BaseRecord> attachmentList = getAttachmentList(srchConfig, fullTextOption.get());
+      if (!attachmentList.isEmpty()
+          && srchConfig.getSearchStrategy() == ADVANCED_LUCENE_SEARCH_STRATEGY
+          && srchConfig.getOperator() == SearchOperator.AND) {
+        List<Term> metadataTerms =
+            srchConfig.getAllTerms().stream()
+                .filter(term -> !FieldNames.FIELD_DATA.equals(term.field()))
+                .collect(Collectors.toList());
+        if (!metadataTerms.isEmpty()) {
+          attachmentList = filterAttachmentMetadata(attachmentList, srchConfig, metadataTerms);
+        }
+      }
       if (!attachmentList.isEmpty()) {
         attachmentBaseRecordList =
             new PostTextSearchResultFilterer(
@@ -293,6 +307,32 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         new ArrayList<>(
             searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults()));
     return results;
+  }
+
+  private List<BaseRecord> filterAttachmentMetadata(
+      List<BaseRecord> attachments, LuceneSrchCfg config, List<Term> metadataTerms) {
+    SearchSession session = getSearchSession();
+    SearchScope<IFieldLinkableElement> scope = session.scope(ELN_SEARCH_CLASSES);
+    SearchPredicate predicate = queryBuilder.getSearchPredicate(scope, config, metadataTerms);
+    if (predicate == null) {
+      return List.of();
+    }
+    // Candidates are one file-search page. An ID predicate uses a set query,
+    // avoiding one Boolean clause per ID even when a caller requests a large page.
+    Set<Long> candidateIds =
+        attachments.stream().map(BaseRecord::getId).collect(Collectors.toSet());
+    Set<Long> matchingIds =
+        session
+            .search(scope)
+            .where(f -> f.bool().must(predicate).filter(f.id().matchingAny(candidateIds)))
+            .fetchHits(config.getMaxResults())
+            .stream()
+            .flatMap(hit -> baseRecordAdapter.getAsBaseRecord(hit).stream())
+            .map(BaseRecord::getId)
+            .collect(Collectors.toSet());
+    return attachments.stream()
+        .filter(file -> matchingIds.contains(file.getId()))
+        .collect(Collectors.toList());
   }
 
   /** Returns Search Session */

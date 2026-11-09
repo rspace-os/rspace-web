@@ -71,9 +71,13 @@ class RSQueryBuilder {
    */
   protected SearchPredicate getSearchPredicate(SearchScope<?> scope, LuceneSrchCfg cfg) {
 
+    return getSearchPredicate(scope, cfg, cfg.getAllTerms());
+  }
+
+  SearchPredicate getSearchPredicate(SearchScope<?> scope, LuceneSrchCfg cfg, List<Term> terms) {
     String srchTerm = "";
-    if (cfg.getTermList().size() > 0) {
-      srchTerm = cfg.getAllTerms().get(0).text();
+    if (!terms.isEmpty()) {
+      srchTerm = terms.get(0).text();
     } else {
       throw new SearchQueryParseException(
           new Exception("A search term is missing in the search config object"));
@@ -85,18 +89,18 @@ class RSQueryBuilder {
     try {
       switch (cfg.getSearchStrategy()) {
         case IFullTextSearcher.ALL_LUCENE_SEARCH_STRATEGY:
-          predicate = createShouldPredicate(f, cfg.getAllTerms());
+          predicate = createShouldPredicate(f, terms);
           break;
 
         case IFullTextSearcher.ADVANCED_LUCENE_SEARCH_STRATEGY:
           if (cfg.getOperator().equals(SearchOperator.AND)) {
-            predicate = createMustPredicate(f, cfg.getAllTerms());
+            predicate = createMustPredicate(f, terms);
           } else {
-            predicate = createShouldPredicate(f, cfg.getAllTerms());
+            predicate = createShouldPredicate(f, terms);
           }
           break;
         case IFullTextSearcher.SINGLE_LUCENE_SEARCH_STRATEGY:
-          predicate = createMustPredicate(f, cfg.getAllTerms());
+          predicate = createMustPredicate(f, terms);
           break;
 
         default:
