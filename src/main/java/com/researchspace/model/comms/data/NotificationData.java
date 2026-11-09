@@ -9,6 +9,11 @@ public abstract class NotificationData {
   public static NotificationData createFromJson(
       NotificationType notificationType, String notificationDataJson) {
     if (!StringUtils.isEmpty(notificationDataJson)) {
+      if (notificationType == NotificationType.NOTIFICATION_BOOKING_CREATED
+          || notificationType == NotificationType.NOTIFICATION_BOOKING_CANCELLED
+          || notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
+        return JacksonUtil.fromJson(notificationDataJson, OwnerBookingNotificationData.class);
+      }
       if (NotificationType.ARCHIVE_EXPORT_COMPLETED.equals(notificationType)) {
         return JacksonUtil.fromJson(notificationDataJson, ArchiveExportNotificationData.class);
       }
