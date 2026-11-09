@@ -46,20 +46,35 @@ function AppBarRoute() {
   );
 }
 
-export function AppBarStory() {
+export function AppBarStory({
+  administrator = false,
+  bookingEnabled = false,
+  bannerImageUrl = "",
+}: {
+  administrator?: boolean;
+  bookingEnabled?: boolean;
+  bannerImageUrl?: string;
+}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  queryClient.setQueryDefaults(getListMaintenancesQueryKey(), {
-    enabled: false,
-    initialData: { docs: [], limit: 1, page: 1 } satisfies ListMaintenances200,
+  queryClient.setQueryData(getGetCurrentUserQueryKey(), {
+    ...storyUser,
+    hasSysAdminRole: administrator,
+    capabilities: { ...storyUser.capabilities, canViewSystem: administrator },
   });
-  queryClient.setQueryData([...getListFeatureFlagsQueryKey({ limit: 100 }), "featureFlags"], disabledFeatureFlags());
-  queryClient.setQueryData(getGetCurrentUserQueryKey(), storyUser);
   queryClient.setQueryData(getGetApiV2ConfigQueryKey(), {
     version: "2.99.1",
-    branding: { bannerImageUrl: "" },
+    branding: { bannerImageUrl },
     helpLinks: [{ label: "Local help", url: "https://help.example.com" }],
     deploymentDescription: "",
     deploymentHelpEmail: null,
+  });
+  queryClient.setQueryDefaults(getListMaintenancesQueryKey(), {
+    enabled: false,
+    initialData: { docs: [], page: 1, limit: 1 } satisfies ListMaintenances200,
+  });
+  queryClient.setQueryData([...getListFeatureFlagsQueryKey({ limit: 100 }), "featureFlags"], {
+    ...disabledFeatureFlags(),
+    bookingEnabled,
   });
 
   const rootRoute = createRootRoute({ component: AppBarRoute });

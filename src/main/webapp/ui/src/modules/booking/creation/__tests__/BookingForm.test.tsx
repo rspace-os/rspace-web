@@ -48,19 +48,17 @@ describe("BookingForm", () => {
     vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   });
   it.each([
-    ["H12", "en-GB", true, "Open: 02:00 pm - 06:00 pm"],
-    ["H24", "en-US", true, "Open: 14:00 - 18:00"],
-    ["H12", "en-GB", false, "Open on this date: 08:00 am - 12:00 pm"],
-    ["H24", "en-US", false, "Open on this date: 08:00 - 12:00"],
+    ["H12", "en-GB", true, "Open: 02:00 pm–06:00 pm"],
+    ["H24", "en-US", true, "Open: 14:00–18:00"],
+    ["H12", "en-GB", false, "Open on this date: 08:00 am–12:00 pm"],
+    ["H24", "en-US", false, "Open on this date: 08:00–12:00"],
   ] as const)(
     "uses %s over the %s browser clock for compact opening hours (uniform: %s)",
     async (timeFormat, browserLocale, uniform, expected) => {
-      const resolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
-      vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockImplementation(function (
-        this: Intl.DateTimeFormat,
-      ) {
-        const options = resolvedOptions.call(this);
-        return new Intl.Locale(options.locale).hourCycle ? options : { ...options, locale: browserLocale };
+      const OriginalDateTimeFormat = Intl.DateTimeFormat;
+      // biome-ignore lint/complexity/useArrowFunction: Intl.DateTimeFormat is called with new.
+      vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locale, options) {
+        return new OriginalDateTimeFormat(locale ?? browserLocale, options);
       });
       expect(formatWallClockTime("14:00")).toBe(browserLocale === "en-US" ? "02:00 PM" : "14:00");
       const initialTarget = {
@@ -132,6 +130,46 @@ describe("BookingForm", () => {
     await user.click(await screen.findByRole("button", { name: "booking:bookings.form.submit" }));
     return submit;
   }
+
+  it("warns, without blocking, when the entered window crosses a clock change", async () => {
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={{ ...editableBooking, start: "2026-10-24T10:00:00Z", end: "2026-10-25T11:00:00Z" }}
+        configuration={target}
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole("note")).toHaveTextContent("booking:bookings.clockChange.daylightSavingDays");
+    expect(screen.getByRole("button", { name: "booking:bookings.form.save" })).toBeInTheDocument();
+  });
+
+  it("warns while adding a booking whose entered window crosses a clock change", async () => {
+    const user = userEvent.setup();
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        initialTarget={target}
+        initialDate="2026-10-24"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    await user.type(within(start).getByLabelText("booking:bookings.form.time"), "12:00");
+    await user.clear(within(end).getByLabelText("booking:bookings.form.date"));
+    await user.type(within(end).getByLabelText("booking:bookings.form.date"), "2026-10-25");
+    await user.type(within(end).getByLabelText("booking:bookings.form.time"), "12:00");
+
+    expect(await screen.findByRole("note")).toHaveTextContent("booking:bookings.clockChange.daylightSavingDays");
+    expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeEnabled();
+  });
 
   it("uses refreshed edit policies without resetting entered fields", async () => {
     const user = userEvent.setup();
@@ -286,11 +324,12 @@ describe("BookingForm", () => {
       }),
     );
 
-    await user.click(screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.editTimezone" }));
     const timezone = screen.getByRole("combobox", { name: "booking:bookings.form.startTimezone" });
     expect(timezone).toHaveValue("Europe/Berlin");
     await user.clear(timezone);
-    await user.type(timezone, "Asia/Tokyo");
+    await user.type(timezone, "Tokyo");
+    await user.click(await screen.findByRole("option", { name: "Asia/Tokyo" }));
 
     // 03:00 now means 03:00 in Tokyo, the instrument's own zone, so the note goes. The end follows the start, and the
     // page sees the moved instants as Berlin wall clocks.
@@ -354,12 +393,13 @@ describe("BookingForm", () => {
       />,
     );
 
-    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.changeTimezone" }));
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.editTimezone" }));
     expect(screen.getByRole("combobox", { name: "booking:bookings.form.startTimezone" })).toHaveValue("Europe/Berlin");
     const endZone = screen.getByRole("combobox", { name: "booking:bookings.form.endTimezone" });
     expect(endZone).toHaveValue("Europe/Berlin");
     await user.clear(endZone);
-    await user.type(endZone, "America/New_York");
+    await user.type(endZone, "New_York");
+    await user.click(await screen.findByRole("option", { name: "America/New_York" }));
 
     // 03:00 Berlin to 04:00 New York: both entered times stay and only the end's instant moves.
     expect(screen.getByLabelText("booking:bookings.form.startTime")).toHaveValue("03:00");
@@ -368,7 +408,7 @@ describe("BookingForm", () => {
       expect.objectContaining({ window: { start: "2026-10-12T01:00:00Z", end: "2026-10-12T08:00:00Z" } }),
     );
 
-    const globe = screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" });
+    const globe = screen.getByRole("button", { name: "booking:bookings.form.editTimezone" });
     expect(globe).toHaveAttribute("aria-expanded", "true");
     await user.click(globe);
     expect(screen.queryByRole("combobox", { name: "booking:bookings.form.startTimezone" })).not.toBeInTheDocument();
@@ -395,7 +435,7 @@ describe("BookingForm", () => {
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("");
-    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "300");
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "60");
     expect(within(end).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
     expect(screen.getByText("booking:bookings.form.openAllDay")).toBeVisible();
 
@@ -411,8 +451,8 @@ describe("BookingForm", () => {
 
   it.each([
     [1, "60"],
-    [15, "900"],
-  ])("uses the configured %i-minute increment", async (increment, step) => {
+    [15, "60"],
+  ])("uses the configured %i-minute increment with whole-minute starts", async (increment, step) => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
@@ -428,65 +468,71 @@ describe("BookingForm", () => {
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
-    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
+    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "60");
   });
 
-  it.each(["add", "edit"] as const)("snaps typed %s-form times to the nearest configured interval", async (mode) => {
-    const user = userEvent.setup();
-    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
-    const form =
-      mode === "add" ? (
-        <BookingForm
-          mode="add"
-          eventKind="BOOKING"
-          initialTarget={{ ...target, slotGranularityMinutes: 10 }}
-          initialDate="2026-08-17"
-          pending={false}
-          onSubmit={submit}
-        />
-      ) : (
-        <BookingForm
-          mode="edit"
-          booking={{
-            ...editableBooking,
-            start: "2026-08-17T07:00:00Z",
-            end: "2026-08-17T08:00:00Z",
-          }}
-          configuration={{ ...target, slotGranularityMinutes: 10 }}
-          pending={false}
-          onSubmit={submit}
-        />
+  it.each(["add", "edit"] as const)(
+    "keeps typed %s-form starts and snaps the end to a duration multiple",
+    async (mode) => {
+      const user = userEvent.setup();
+      const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+      server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+      const form =
+        mode === "add" ? (
+          <BookingForm
+            mode="add"
+            eventKind="BOOKING"
+            initialTarget={{ ...target, slotGranularityMinutes: 10 }}
+            initialDate="2026-08-17"
+            pending={false}
+            onSubmit={submit}
+          />
+        ) : (
+          <BookingForm
+            mode="edit"
+            booking={{
+              ...editableBooking,
+              start: "2026-08-17T07:00:00Z",
+              end: "2026-08-17T08:00:00Z",
+            }}
+            configuration={{ ...target, slotGranularityMinutes: 10 }}
+            pending={false}
+            onSubmit={submit}
+          />
+        );
+      renderForm(form);
+
+      const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+      const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+      const startTime = within(start).getByLabelText("booking:bookings.form.time");
+      const endTime = within(end).getByLabelText("booking:bookings.form.time");
+      if (mode === "edit") {
+        await user.clear(startTime);
+        await user.clear(endTime);
+      }
+      await user.type(startTime, "09:04");
+      await user.tab();
+      expect(startTime).toHaveValue("09:04");
+      await user.type(endTime, "10:06");
+      await user.tab();
+      expect(endTime).toHaveValue("10:04");
+
+      await user.click(
+        screen.getByRole("button", {
+          name: mode === "add" ? "booking:bookings.form.submit" : "booking:bookings.form.save",
+        }),
       );
-    renderForm(form);
-
-    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
-    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
-    const startTime = within(start).getByLabelText("booking:bookings.form.time");
-    const endTime = within(end).getByLabelText("booking:bookings.form.time");
-    if (mode === "edit") {
-      await user.clear(startTime);
-      await user.clear(endTime);
-    }
-    await user.type(startTime, "09:04");
-    await user.tab();
-    expect(startTime).toHaveValue("09:00");
-    await user.type(endTime, "10:06");
-    await user.tab();
-    expect(endTime).toHaveValue("10:10");
-
-    await user.click(
-      screen.getByRole("button", {
-        name: mode === "add" ? "booking:bookings.form.submit" : "booking:bookings.form.save",
-      }),
-    );
-    expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
-    expect(submit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        window: { start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:10:00Z" },
-      }),
-    );
-  });
+      if (mode === "add") {
+        expect(screen.queryByText("booking:bookings.errors.durationMultiple")).not.toBeInTheDocument();
+      }
+      expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
+      expect(submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          window: { start: "2026-08-17T07:04:00Z", end: "2026-08-17T08:04:00Z" },
+        }),
+      );
+    },
+  );
 
   it("supports a compact dialog with an initial window, dirty state, and controlled cancellation", async () => {
     const user = userEvent.setup();
@@ -520,18 +566,18 @@ describe("BookingForm", () => {
     const startTime = screen.getByLabelText("booking:bookings.form.startTime");
     const endTime = screen.getByLabelText("booking:bookings.form.endTime");
     expect(startTime).toHaveValue("09:00");
-    expect(startTime).toHaveAttribute("step", "600");
+    expect(startTime).toHaveAttribute("step", "60");
     expect(endTime).toHaveValue("10:00");
     await waitFor(() => expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: false })));
 
     await user.clear(startTime);
     await user.type(startTime, "09:04");
     await user.tab();
-    expect(startTime).toHaveValue("09:00");
+    expect(startTime).toHaveValue("09:04");
     await user.clear(endTime);
     await user.type(endTime, "10:06");
     await user.tab();
-    expect(endTime).toHaveValue("10:10");
+    expect(endTime).toHaveValue("10:04");
     await user.type(screen.getByRole("textbox", { name: "booking:bookings.form.purpose" }), "Imaging");
     await waitFor(() =>
       expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: true, purpose: "Imaging" })),
@@ -854,19 +900,6 @@ describe("BookingForm", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("uses the maintenance notes label for an unchanged off-grid interval", async () => {
-    renderForm(
-      <BookingForm
-        mode="edit"
-        booking={{ ...editableBooking, kind: "MAINTENANCE" }}
-        configuration={{ ...target, slotGranularityMinutes: 45 }}
-        pending={false}
-        onSubmit={async () => undefined}
-      />,
-    );
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.form.policyMismatchNotes");
-  });
-
   it("preserves maintenance exemptions from duration and opening hours rules", async () => {
     renderForm(
       <BookingForm
@@ -898,7 +931,9 @@ describe("BookingForm", () => {
         initialTarget={{
           ...target,
           timezone: "UTC",
-          openingHours: target.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+          openingHours: target.openingHours.filter((entry) =>
+            [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+          ),
         }}
         initialWindow={{ startDate: "2026-08-22", startTime: "10:00", endDate: "2026-08-22", endTime: "11:00" }}
         pending={false}
@@ -952,7 +987,7 @@ describe("BookingForm", () => {
       "2026-08-17",
       "openingWindowsOnDate",
     ],
-  ])("summarizes %s on an item closed on some weekdays", async (_, displayTimezone, weekdays, initialDate, summary) => {
+  ])("summarizes %s on an item closed on some weekdays", async (_, displayTimezone, openDays, initialDate, summary) => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
@@ -962,7 +997,7 @@ describe("BookingForm", () => {
         initialTarget={{
           ...target,
           timezone: "UTC",
-          openingHours: target.openingHours.filter(({ dayOfWeek }) => weekdays.includes(dayOfWeek)),
+          openingHours: target.openingHours.filter((entry) => openDays.includes(entry.dayOfWeek)),
         }}
         initialDate={initialDate}
         pending={false}

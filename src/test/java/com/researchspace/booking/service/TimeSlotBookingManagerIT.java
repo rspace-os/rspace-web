@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.function.BiConsumer;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,6 +119,43 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void maintenanceCanTouchMaintenanceButKeepsBookingsBufferInBothInsertionOrders() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Maintenance buffer scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 1L, 20, 20);
+    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+    Instant start =
+        LocalDate.ofInstant(institutionClock.instant(), ZoneOffset.UTC)
+            .plusDays(7)
+            .atTime(10, 0)
+            .toInstant(ZoneOffset.UTC);
+    BiConsumer<Instant, Instant> maintenance =
+        (from, to) ->
+            bookingManager.createBooking(
+                new TimeSlotBookingManager.Create(
+                    target, Date.from(from), Date.from(to), null, BookingEventKind.MAINTENANCE),
+                owner,
+                owner);
+    maintenance.accept(start, start.plus(1, ChronoUnit.HOURS));
+    maintenance.accept(start.plus(1, ChronoUnit.HOURS), start.plus(2, ChronoUnit.HOURS));
+    assertThrows(
+        BookingBufferConflictException.class,
+        () ->
+            create(
+                target, owner, start.plus(2, ChronoUnit.HOURS), start.plus(3, ChronoUnit.HOURS)));
+    create(target, owner, start.plus(140, ChronoUnit.MINUTES), start.plus(200, ChronoUnit.MINUTES));
+    Instant bookingStart = start.plus(4, ChronoUnit.HOURS);
+    create(target, owner, bookingStart, bookingStart.plus(1, ChronoUnit.HOURS));
+    assertThrows(
+        BookingBufferConflictException.class,
+        () ->
+            maintenance.accept(
+                bookingStart.plus(1, ChronoUnit.HOURS), bookingStart.plus(2, ChronoUnit.HOURS)));
+    maintenance.accept(
+        bookingStart.plus(80, ChronoUnit.MINUTES), bookingStart.plus(140, ChronoUnit.MINUTES));
+  }
+
+  @Test
   public void zeroBuffersAllowTouchingRawBookingIntervals() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument created = createBasicInstrumentForUser(owner, "Zero buffer boundary scope");
@@ -181,8 +220,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       User owner,
       Long instrumentId,
       boolean allowDoubleBooking,
-      long bufferBeforeMinutes,
-      long bufferAfterMinutes) {
+      long bufferMinutes,
+      long otherGap) {
     return TimeSlotBookingManagerIT.persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -191,8 +230,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
         owner,
         instrumentId,
         allowDoubleBooking,
-        bufferBeforeMinutes,
-        bufferAfterMinutes);
+        bufferMinutes,
+        otherGap);
   }
 
   private Setup persistConfiguration(
@@ -200,8 +239,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       Long instrumentId,
       boolean allowDoubleBooking,
       Long slotGranularityMinutes,
-      long bufferBeforeMinutes,
-      long bufferAfterMinutes) {
+      long bufferMinutes,
+      long otherGap) {
     return TimeSlotBookingManagerIT.persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -211,8 +250,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
         instrumentId,
         allowDoubleBooking,
         slotGranularityMinutes,
-        bufferBeforeMinutes,
-        bufferAfterMinutes);
+        bufferMinutes,
+        otherGap);
   }
 
   static Setup persistConfiguration(
@@ -223,8 +262,9 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       User owner,
       Long instrumentId,
       boolean allowDoubleBooking,
-      long bufferBeforeMinutes,
-      long bufferAfterMinutes) {
+      long bufferMinutes,
+      long otherGap) {
+    // Five-minute increments keep the default buffer boundaries on the grid.
     return persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -233,9 +273,9 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
         owner,
         instrumentId,
         allowDoubleBooking,
-        null,
-        bufferBeforeMinutes,
-        bufferAfterMinutes);
+        5L,
+        bufferMinutes,
+        otherGap);
   }
 
   static Setup persistConfiguration(
@@ -247,8 +287,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       Long instrumentId,
       boolean allowDoubleBooking,
       Long slotGranularityMinutes,
-      long bufferBeforeMinutes,
-      long bufferAfterMinutes) {
+      long bufferMinutes,
+      long otherGap) {
     openTransaction.run();
     Instrument instrument = instrumentDao.get(instrumentId);
     Hibernate.initialize(instrument.getOwner());
@@ -264,8 +304,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                 new BookingSchedulingSettings.Patch(
                     slotGranularityMinutes,
                     null,
-                    bufferBeforeMinutes,
-                    bufferAfterMinutes,
+                    bufferMinutes,
+                    otherGap,
                     null,
                     allowDoubleBooking)),
             owner,

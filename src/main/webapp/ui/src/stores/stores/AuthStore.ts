@@ -1,6 +1,6 @@
 import { action, makeObservable, observable } from "mobx";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { onApiV2TokenRefresh } from "@/modules/common/api/v2/tokenProvider";
+import { ApiV2IdentityChangedError, onApiV2TokenRefresh } from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
 import { getUiToken } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
@@ -105,6 +105,8 @@ export default class AuthStore {
       )
       .catch(
         action((error: unknown) => {
+          // The token provider reloads the page itself after an identity change; never send it to /login.
+          if (error instanceof ApiV2IdentityChangedError) throw error;
           this.isSynchronizing = false;
           if (this.isSigningOut) return;
           const validityMs = storedTokenValidityMs();

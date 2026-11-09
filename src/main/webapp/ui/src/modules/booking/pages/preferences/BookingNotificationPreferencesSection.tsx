@@ -13,7 +13,7 @@ import { useUnsubscribeMyBookingNotifications } from "@/modules/common/api/v2/ge
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
-import { Field, FieldLabel } from "@/modules/common/ui/field";
+import { Field, FieldContent, FieldDescription, FieldLabel } from "@/modules/common/ui/field";
 import { Switch } from "@/modules/common/ui/switch";
 import { Heading } from "@/modules/common/ui/typography";
 import {
@@ -85,7 +85,9 @@ export function BookingNotificationPreferencesSection() {
 
 function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: number }) {
   const { t } = useTranslation("booking");
-  const preferences = useSuspenseQuery(bookingNotificationPreferencesQuery(subjectId)).data;
+  const preferences = useSuspenseQuery({
+    ...bookingNotificationPreferencesQuery(subjectId),
+  }).data;
   const form = useForm({
     schema: NotificationPreferencesFormSchema,
     initialInput: formInput(preferences),
@@ -185,8 +187,15 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             {t("notificationSubscriptions.preferences.saveError")}
           </p>
         ) : null}
-        <div className="space-y-2">
-          <label htmlFor="notify-own-actions">{t("notificationSubscriptions.preferences.ownActions.label")}</label>
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="notify-own-actions">
+              {t("notificationSubscriptions.preferences.ownActions.label")}
+            </FieldLabel>
+            <FieldDescription id="notify-own-actions-description">
+              {t("notificationSubscriptions.preferences.ownActions.description")}
+            </FieldDescription>
+          </FieldContent>
           <Switch
             id="notify-own-actions"
             checked={notifyOwnActions.input ?? false}
@@ -194,8 +203,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             aria-describedby="notify-own-actions-description"
             onCheckedChange={(checked) => notifyOwnActions.onChange(checked)}
           />
-          <p id="notify-own-actions-description">{t("notificationSubscriptions.preferences.ownActions.description")}</p>
-        </div>
+        </Field>
         <Button
           type="submit"
           size="sm"
@@ -222,6 +230,9 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
         >
           {t("notificationSubscriptions.preferences.cancel")}
         </Button>
+        <p role="status" className="sr-only">
+          {saved ? t("preferences.actions.saved") : null}
+        </p>
       </Form>
       <div className="space-y-3 rounded-sm border p-4">
         <p className="text-sm text-muted-foreground">
@@ -232,11 +243,11 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             {t("notificationSubscriptions.preferences.unsubscribeError")}
           </p>
         ) : null}
-        {unsubscribeCount !== undefined ? (
-          <p role="status" className="text-sm text-muted-foreground">
-            {t("notificationSubscriptions.preferences.unsubscribed", { count: unsubscribeCount })}
-          </p>
-        ) : null}
+        <p role="status" className={unsubscribeCount !== undefined ? "text-sm text-muted-foreground" : "sr-only"}>
+          {unsubscribeCount !== undefined
+            ? t("notificationSubscriptions.preferences.unsubscribed", { count: unsubscribeCount })
+            : null}
+        </p>
         <Button
           type="button"
           variant="outline"

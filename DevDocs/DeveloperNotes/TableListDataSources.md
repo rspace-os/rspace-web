@@ -166,9 +166,10 @@ Store a zero-based `pageIndex`. The REST API v2 adapter converts it to a one-bas
 | 12. | [REST API v2 Storybook example](../../src/main/webapp/ui/src/modules/common/table-list/TableList.apiV2.stories.tsx) |
 
 REST API v2 sources use `apiV2Resources` entries, generated keys and generated requests.
-They cache the wire response and map pages in `select`. Generic remote sources may use
+They cache wire responses and map pages in `select`. Generic remote sources may use
 `wire.request` and `wire.select` to keep response data separate from table presentation.
-Runtime catalogs use the registry's generated runtime-field operation; batching preserves
-requested ID order and omits missing definitions. Tests and stories use fake entries.
+Runtime catalogs use generated operations; batching preserves requested ID order and
+omits missing definitions. Tests and stories can supply fake registry entries, and the
+retained prototype supplies catalog entries through `RuntimeFieldResourcesProvider`.
 
 When caching wire responses, previous pages are reused only while the column selection matches. Newly selected fields wait for the next response instead of validating an older projection.

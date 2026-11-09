@@ -90,6 +90,7 @@ const BOOKING_PROBLEM_KEYS = {
   "errors.api.v2.booking.overlap": "bookings.errors.overlap",
   [BUFFER_CODE]: "bookings.errors.overlap",
   "errors.api.v2.booking.granularity": "bookings.errors.granularity",
+  "errors.api.v2.booking.dayEndMissing": "bookings.errors.dayEndMissingRejected",
   "errors.api.v2.booking.openingHours": "bookings.errors.openingHours",
   "errors.api.v2.booking.target.unavailable": "bookings.errors.targetUnavailable",
   "errors.api.v2.forbidden": "bookings.errors.forbidden",
@@ -113,42 +114,31 @@ export function bookingProblemKey(error: unknown): BookingProblemKey {
   return isMappedBookingProblemCode(error.code) ? BOOKING_PROBLEM_KEYS[error.code] : "bookings.errors.generic";
 }
 
+export function bookingCreationProblemKey(
+  error: unknown,
+): ReturnType<typeof bookingProblemKey> | "bookings.errors.outcomeUncertain" {
+  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
+}
+
 export function bookingProblemMessage(
   error: unknown,
   t: TFunction<"booking">,
   maxBookingDurationMinutes?: number,
 ): string {
   if (error instanceof ApiV2ProblemError && error.code === BUFFER_CODE) {
-    const { bufferBeforeMinutes = 0, bufferAfterMinutes = 0 } = bookingProblemDetails(error);
+    const { bufferBeforeMinutes, bufferAfterMinutes } = bookingProblemDetails(error);
+    if (bufferBeforeMinutes === undefined || bufferAfterMinutes === undefined) {
+      return t("bookings.errors.bufferUnknown");
+    }
     const before = formatDurationMinutes(bufferBeforeMinutes);
     const after = formatDurationMinutes(bufferAfterMinutes);
-    if (bufferBeforeMinutes > 0 && bufferAfterMinutes > 0) {
-      return t("bookings.errors.buffer", {
-        before,
-        after,
-      });
-    }
-    if (bufferBeforeMinutes > 0) {
-      return t("bookings.errors.bufferBefore", {
-        before,
-      });
-    }
-    if (bufferAfterMinutes > 0) {
-      return t("bookings.errors.bufferAfter", {
-        after,
-      });
-    }
-    return t("bookings.errors.bufferUnknown");
+    return t("bookings.errors.buffer", { before, after });
   }
   if (error instanceof ApiV2ProblemError && error.code === MAXIMUM_DURATION_CODE) {
     const limit = bookingProblemDetails(error).maximumDurationMinutes ?? maxBookingDurationMinutes;
     if (limit) return maximumDurationMessage(limit, t);
   }
   return t(bookingProblemKey(error));
-}
-
-export function bookingCreationProblemKey(error: unknown): BookingProblemKey | "bookings.errors.outcomeUncertain" {
-  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
 /** The maximum-duration rejection with the limit spelled out, shared with the client-side check. */

@@ -86,6 +86,34 @@ describe("VerticalDayTimeline", () => {
     }
   });
 
+  test("starts at the first opening hour when no start has been entered", async () => {
+    render(
+      <VerticalDayTimelineStory
+        initialDraft={{ startDate: "2026-10-25", startTime: "", endDate: "2026-10-25", endTime: "" }}
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" }))}
+      />,
+    );
+    const scroller = page.getByTestId("vertical-day-timeline-scroller");
+    const opening = page.getByText("08:00 AM +01:00", { exact: true });
+    await expect.element(scroller).toBeVisible();
+    await expect
+      .poll(() =>
+        Math.abs(opening.element().getBoundingClientRect().top - scroller.element().getBoundingClientRect().top),
+      )
+      .toBeLessThan(40);
+  });
+
+  test("scrolls to the entered start before an end has been entered", async () => {
+    render(
+      <VerticalDayTimelineStory
+        initialDraft={{ startDate: "2026-10-25", startTime: "15:00", endDate: "2026-10-25", endTime: "" }}
+      />,
+    );
+    const scroller = page.getByTestId("vertical-day-timeline-scroller");
+    await expect.element(scroller).toBeVisible();
+    await expect.poll(() => scroller.element().scrollTop).toBeGreaterThan(500);
+  });
+
   test("scrolls the draft into view when a hidden timeline becomes visible", async () => {
     render(<InitiallyHiddenTimelineStory />);
 

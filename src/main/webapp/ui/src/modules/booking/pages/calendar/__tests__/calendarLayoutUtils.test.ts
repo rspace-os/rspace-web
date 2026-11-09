@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
+import type { IncrementUnit } from "@/modules/booking/domain/bookingIncrement";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { nextFreeRange, scrollCalendarWithArrowKeys, shiftDate, startOfWeek } from "../calendarLayoutUtils";
 
@@ -31,45 +34,98 @@ describe("calendar date layout", () => {
   });
 });
 
+function policy(slotGranularityMinutes: number, { timezone = "UTC", incrementUnit = "MINUTES" as IncrementUnit } = {}) {
+  return timelinePolicy({
+    timezone,
+    slotGranularityMinutes,
+    incrementUnit,
+
+    ...ALWAYS_OPEN,
+    maxBookingDurationMinutes: 0,
+  });
+}
+
 describe("nextFreeRange", () => {
   it("fits whole increments to a 30-minute opening", () => {
     const closed = [
       { startMinute: 0, endMinute: 10 * 60 },
       { startMinute: 10 * 60 + 30, endMinute: 24 * 60 },
     ];
-    expect(nextFreeRange([], "2026-10-05", "UTC", 8 * 60, 18 * 60, 15, closed)).toEqual({
+    expect(nextFreeRange([], "2026-10-05", "UTC", 8 * 60, 18 * 60, policy(15), closed)).toEqual({
       startMinute: 10 * 60,
       endMinute: 10 * 60 + 30,
     });
   });
 
-  it("rounds the preferred duration up to whole increments", () => {
-    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, 45)).toEqual({
-      startMinute: 630,
-      endMinute: 720,
-    });
-    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, 120)).toEqual({
-      startMinute: 600,
-      endMinute: 720,
-    });
-  });
-
   it("does not propose a slot on a wholly closed day", () => {
     expect(
-      nextFreeRange([], "2026-10-05", "UTC", 0, 24 * 60, 15, [{ startMinute: 0, endMinute: 24 * 60 }]),
+      nextFreeRange([], "2026-10-05", "UTC", 0, 24 * 60, policy(15), [{ startMinute: 0, endMinute: 24 * 60 }]),
     ).toBeUndefined();
   });
 
+  it("fits a short window from its first free minute and respects the item maximum", () => {
+    expect(nextFreeRange([], "2026-10-05", "UTC", 607, 640, policy(15))).toEqual({
+      startMinute: 607,
+      endMinute: 637,
+    });
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, { ...policy(15), maxBookingDurationMinutes: 30 })).toEqual(
+      {
+        startMinute: 600,
+        endMinute: 630,
+      },
+    );
+  });
+
+  it("proposes a whole number of increments from the first free minute", () => {
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(120))).toEqual({
+      startMinute: 600,
+      endMinute: 720,
+    });
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(45))).toEqual({ startMinute: 600, endMinute: 690 });
+  });
+  it("starts a proposal at the window start", () => {
+    expect(nextFreeRange([], "2026-10-05", "UTC", 607, 1080, policy(45, {}))).toEqual({
+      startMinute: 607,
+      endMinute: 697,
+    });
+  });
+  it("extends a Day proposal past the displayed day at the same local time", () => {
+    // 5 October 2026 has 24 hours in UTC, so a two-day proposal is 2880 elapsed minutes.
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, policy(2880, { incrementUnit: "DAYS" }))).toEqual({
+      startMinute: 600,
+      endMinute: 600 + 2880,
+    });
+  });
   it("skips unavailable ranges such as closed hours", () => {
     const closed = [
       { startMinute: 0, endMinute: 10 * 60 },
       { startMinute: 16 * 60, endMinute: 24 * 60 },
     ];
-    expect(nextFreeRange([], "2026-10-05", "Europe/Berlin", 9 * 60, 19 * 60, 15, closed)).toEqual({
+    expect(
+      nextFreeRange(
+        [],
+        "2026-10-05",
+        "Europe/Berlin",
+        9 * 60,
+        19 * 60,
+        policy(15, { timezone: "Europe/Berlin" }),
+        closed,
+      ),
+    ).toEqual({
       startMinute: 10 * 60,
       endMinute: 11 * 60,
     });
-    expect(nextFreeRange([], "2026-10-05", "Europe/Berlin", 17 * 60, 19 * 60, 15, closed)).toBeUndefined();
+    expect(
+      nextFreeRange(
+        [],
+        "2026-10-05",
+        "Europe/Berlin",
+        17 * 60,
+        19 * 60,
+        policy(15, { timezone: "Europe/Berlin" }),
+        closed,
+      ),
+    ).toBeUndefined();
   });
 });
 

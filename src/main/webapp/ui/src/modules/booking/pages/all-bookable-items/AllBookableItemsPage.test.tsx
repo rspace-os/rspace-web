@@ -3,8 +3,8 @@ import { getGetBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
-import type { BookingConfigurationTargetControllerTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetControllerTargetDirectoryDocument";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { BookingConfigurationTargetControllerTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetControllerTargetDirectoryDocument";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -28,7 +28,6 @@ import { server } from "@/__tests__/mswServer";
 import BookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
-import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -40,6 +39,7 @@ import {
   ownerBookingAccess,
 } from "../bookable-items/mocks/bookableItemsMocks";
 import { mutateBookableItems } from "../bookable-items/mutateBookableItems";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
