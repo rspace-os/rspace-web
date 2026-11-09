@@ -8,6 +8,11 @@
 import type { BookingsUpdateState } from './bookingsUpdateState.ts';
 
 export interface BookingsUpdate {
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  cancellationReason?: string | null;
   end?: string;
   /**
      * @maxLength 1000

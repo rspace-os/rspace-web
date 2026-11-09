@@ -8,9 +8,13 @@ const EDIT_LABEL = "Edit";
 export function DayTimelineStory({ width = 480 }: { width?: number }) {
   return (
     <main className="min-h-screen bg-background p-4 text-foreground">
-      <button type="button" className="mb-3 rounded-sm border px-3 py-2">
-        {OUTSIDE_LABEL}
-      </button>
+      {/* Inputs receive pointer focus consistently across the three test browsers. */}
+      <input
+        type="text"
+        aria-label={OUTSIDE_LABEL}
+        placeholder={OUTSIDE_LABEL}
+        className="mb-3 rounded-sm border px-3 py-2"
+      />
       <div style={{ width, maxWidth: "100%" }}>
         <DayTimeline
           date="2026-08-17"

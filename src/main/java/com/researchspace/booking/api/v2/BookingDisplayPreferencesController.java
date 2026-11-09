@@ -49,12 +49,11 @@ public final class BookingDisplayPreferencesController {
               example = "America/New_York",
               nullable = true)
           String customTimezone,
-      @Schema(
+      @NotNull
+          @Schema(
               description =
-                  "AUTOMATIC (default when omitted) follows the browser region in the UI and the"
-                      + " language's usual clock in email; H12 and H24 force a 12- or 24-hour"
-                      + " clock.",
-              nullable = true)
+                  "AUTOMATIC follows the browser region in the UI and the language's usual clock"
+                      + " in email; H12 and H24 force a 12- or 24-hour clock.")
           BookingTimeFormat timeFormat) {
 
     @JsonAnySetter
@@ -124,7 +123,7 @@ public final class BookingDisplayPreferencesController {
       summary = "Replace Booking display preferences",
       description =
           "Stores one complete override. customTimezone is required only for CUSTOM and is"
-              + " discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.",
+              + " discarded for BROWSER or INSTITUTION. timeFormat is required.",
       responses = {
         @ApiResponse(responseCode = "200", description = "Stored Booking display preferences."),
         @ApiResponse(responseCode = "400", description = "The replacement document is invalid."),

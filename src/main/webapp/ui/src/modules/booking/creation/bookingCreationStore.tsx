@@ -17,9 +17,12 @@ export type BookingCreationContext = Readonly<{
 }>;
 
 export type BookingCreationStore = {
+  /** The context object identifies the single active session; retain it for endCreation. */
   activeCreation: BookingCreationContext | null;
+  /** Returns false while a creation session is already active. */
   beginCreation: (context: BookingCreationContext) => boolean;
-  endCreation: (ownerId: string) => void;
+  /** Releases only the exact context accepted by beginCreation, so stale cleanup cannot close a reopened session. */
+  endCreation: (context: BookingCreationContext) => boolean;
 };
 
 export function createBookingCreationStore() {
@@ -32,9 +35,10 @@ export function createBookingCreationStore() {
           set({ activeCreation: context }, undefined, "beginCreation");
           return true;
         },
-        endCreation: (ownerId) => {
-          if (get().activeCreation?.ownerId !== ownerId) return;
+        endCreation: (context) => {
+          if (get().activeCreation !== context) return false;
           set({ activeCreation: null }, undefined, "endCreation");
+          return true;
         },
       }),
       { name: "bookingCreationStore", enabled: import.meta.env.DEV },

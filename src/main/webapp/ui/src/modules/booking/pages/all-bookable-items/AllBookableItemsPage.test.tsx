@@ -208,9 +208,9 @@ async function renderPage(
     ]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
-  return renderBookingTestPage(router, (queryClient) =>
-    queryClient.setQueryData(getGetCurrentUserQueryKey(), currentUser),
-  );
+  return renderBookingTestPage(router, {
+    prepareQueryClient: (queryClient) => queryClient.setQueryData(getGetCurrentUserQueryKey(), currentUser),
+  });
 }
 
 async function renderMutationPages(initialEntry: string) {
@@ -243,9 +243,11 @@ async function renderMutationPages(initialEntry: string) {
     ]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
-  return renderBookingTestPage(router, (queryClient) => {
-    queryClient.setQueryData(getGetCurrentUserQueryKey(), currentUser);
-    queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  return renderBookingTestPage(router, {
+    prepareQueryClient: (queryClient) => {
+      queryClient.setQueryData(getGetCurrentUserQueryKey(), currentUser);
+      queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+    },
   });
 }
 

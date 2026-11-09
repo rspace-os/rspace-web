@@ -12,7 +12,9 @@ import type { ApiV2AuditEventAction } from "@/modules/common/api/v2/generated/mo
 import type { ListBookingConfigurationAuditEvents200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEvents200";
 import type { ListBookingConfigurationAuditEventsParams } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEventsParams";
 import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { formatNumber } from "@/modules/common/i18n/localeFormat";
 
 const AUDIT_EVENT_ID = /^[0-9a-f]{64}$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -186,9 +188,12 @@ function openingValue(key: string, value: unknown, locale: string, timeLocale: s
       return formatList(
         exceptions
           .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
-          .map(
-            (exception) =>
-              `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception, timeLocale)}`,
+          .map((exception) =>
+            i18n.t("booking:bookableItemDetails.audit.weekdayRange", {
+              day: formatIsoWeekday(exception.dayOfWeek, "long", locale),
+              hours: formatOpeningRange(exception, timeLocale),
+              lng: locale,
+            }),
           ),
         locale,
         { type: "unit" },
@@ -232,20 +237,30 @@ export function recordedValues(
   words?: RecordedValueWords,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<[string, string]> {
-  return Object.entries(payload).map(([key, value]) => {
-    if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
-      const date = new Date(value);
-      if (Number.isFinite(date.getTime())) {
-        return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+  return Object.entries(payload)
+    .filter(([key, value]) => !(key === "cancellationReason" && value === null))
+    .map(([key, value]) => {
+      if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
+        const date = new Date(value);
+        if (Number.isFinite(date.getTime())) {
+          return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+        }
       }
-    }
-    const opening = openingValue(key, value, locale, bookingDateTimeLocale(timeFormat));
-    if (opening !== undefined) return [key, opening];
-    const word = words && wordValue(key, value, words);
-    if (word !== undefined) return [key, word];
-    return [
-      key,
-      value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value),
-    ];
-  });
+      const opening = openingValue(key, value, locale, bookingDateTimeLocale(timeFormat));
+      if (opening !== undefined) return [key, opening];
+      if (
+        ["bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "slotGranularityMinutes"].includes(
+          key,
+        ) &&
+        (typeof value === "number" ||
+          (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))))
+      )
+        return [key, formatNumber(Number(value), locale)];
+      const word = words && wordValue(key, value, words);
+      if (word !== undefined) return [key, word];
+      return [
+        key,
+        value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value),
+      ];
+    });
 }

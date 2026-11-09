@@ -18,6 +18,7 @@ const busy: BookingsRead = {
   kind: "BOOKING",
   privacy: "busy",
   purpose: null,
+  cancellationReason: null,
   bookedBy: null,
   canEdit: false,
   canCancel: false,
