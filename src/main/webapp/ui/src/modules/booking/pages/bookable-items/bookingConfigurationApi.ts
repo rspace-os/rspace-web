@@ -86,7 +86,7 @@ export function bookingConfigurationTargetQuery(globalId: string) {
   });
 }
 
-export function findBookingConfigurationQueryOptions(globalId: string) {
+export function inventoryBookingConfigurationQuery(globalId: string) {
   return getListBookingConfigurationsQueryOptions<BookingConfiguration | null>(parameters(globalId), {
     query: {
       select: (result) => {

@@ -182,3 +182,22 @@ describe("booking configuration schedules", () => {
     ]);
   });
 });
+
+it("preserves projected runtime fields on the configuration and its instrument", () => {
+  const customFields = { "17": "Screening" };
+  const extraFields = { "19": { type: "Text", value: "Floor 2" } };
+  const mapped = mapBookingConfiguration({
+    ...configuration,
+    state: "ACTIVE",
+    "target.customFields": customFields,
+    target: {
+      ...configuration.target,
+      relationTo: "instruments",
+      value: { ...configuration.target.value, parentContainer: null, customFields, extraFields },
+    },
+  });
+  expect(mapped).toMatchObject({
+    "target.customFields": customFields,
+    target: { value: { customFields, extraFields } },
+  });
+});
