@@ -85,6 +85,12 @@ Verified, except where marked "going by the code":
   entries (`FolderManagerSpringTest.moveKeepsAclInheritedThroughFolderWhenDocIsAlsoInNotebook`;
   the old code kept it). Such a document is still written twice, as a content query flushes it
   between visits: 4 document updates for two such documents, 2 with the old code.
+- Sharing, changing the permission of and unsharing a notebook, with a group or a user, write each
+  entry once (`RecordSharingTest`, Hibernate statistics), and the notebook and the sharee's row once
+  (checked once with the same statistics); publishing or unpublishing writes no entry. The old code
+  also wrote entries once, going by the code, except that unsharing with a user wrote them twice. A
+  first version walked the entries in `RecordSharingManagerImpl` and again in `FolderManager`,
+  writing each entry twice.
 
 ## Decision
 
@@ -106,8 +112,12 @@ Remove `Folder.children` and everything that walked it in memory:
   `aclsRemovedFromDescendants`. The add walk runs only when `propagatesToDescendants()` is true (the
   inherit-from-parent policies), so adding a user's Workspace to a PI's LabGroups folder with the
   null policy doesn't walk it; the removal walk runs only when an edge was really removed and
-  `aclsRemovedFromDescendants` returns elements. Sharing and unsharing go through those
-  `FolderManager` methods. The unused `ACLPropagationPolicy.propagate` goes.
+  `aclsRemovedFromDescendants` returns elements. Sharing adds the edge through those methods and
+  walks the content itself only when their walk didn't run (for example the notebook was already
+  in the target folder); unsharing removes the edge with the null policy and walks the content
+  itself, removing the shared folder's ACL elements together with the sharee's; a permission change
+  walks it once with the old and new elements. Each entry is changed by a single walk (see
+  Findings). The unused `ACLPropagationPolicy.propagate` goes.
 - The unreferenced Liquibase update classes and their tests are deleted.
 
 Considered and rejected:
@@ -166,8 +176,7 @@ What stays the same or improves:
   are in `BaseRecord`, so a walk that updates a folder doesn't block adds into it. A removal is a
   DELETE by primary key. Concurrent adds and removes in one folder still don't block each other. A
   `FolderManager` walk updates the same rows as the old model recursion, each once with its final
-  ACL, except a document reached twice in a move (see Findings). Sharing or unsharing a notebook,
-  and changing the permission of a shared notebook, are also exceptions: see Failure modes below.
+  ACL, except a document reached twice in a move.
 - **Shorter transactions.** Most of the old request time on large folders was loading the folder
   content inside the transaction (see Performance). The single-transaction bulk autoshare shrinks
   the same way going by the code, and `move` no longer loads the whole target subtree. Shorter
@@ -185,17 +194,11 @@ Failure modes that change, all low:
   Same locks, taken earlier and held for the rest of the walk; a conflict (an edge another
   transaction already deleted, a version conflict on the group's row) fails there instead of at
   commit. Document adds and removes run no walk query and are unaffected.
-- Notebook sharing walks the entries in `RecordSharingManagerImpl` (`propagateACLAddition` /
-  `propagateACLRemoval`) and then again in `FolderManager`, and the second walk's query flushes the
-  first walk's result. Sharing a notebook therefore writes each entry twice; changing the
-  permission of a shared notebook writes the notebook, its entries and the sharee's row twice (the
-  group's version goes up twice); unsharing a notebook with a user writes the entries once more per
-  removed element (the old code already wrote them twice there). Same rows in the same transaction, the
-  same exclusive lock order, one Envers row per entity, and the intermediate state is never visible
-  to other transactions, so this costs writes but adds no race. One ordering detail: in a notebook
-  share the edge INSERT's shared lock on the target folder's `Folder` row now comes after the
-  sharee row's update instead of before it; no path writes that `Folder` row and then the sharee or
-  notebook row, so no deadlock follows.
+- From the SQL log: unsharing a notebook updates the notebook, deletes the edge, then updates the
+  entries, and a share inserts the edge before it updates the notebook and the sharee's row. The old
+  code (going by the code) updated the entries before the DELETE and inserted the share edge first
+  too. That adds no deadlock: every transaction that inserts or deletes that edge locks the
+  notebook row first (its UPDATE, or the foreign-key check of its inserts).
 - Removing a child passed in detached deletes its edge from the detached copy's snapshot. If another
   transaction removed that edge after the copy was loaded but before this transaction's first read,
   this now fails the transaction (`StaleObjectStateException` at flush, or an entity-not-found error
@@ -226,9 +229,6 @@ autoshare folder grew. Move was not measured on the stack (see Findings for its 
   cost one query per folder, plus one per record for its eager `parents`, as the lazy `children`
   load did. Adding a new, empty folder or notebook also runs one content query, which finds
   nothing.
-- Sharing, unsharing or changing the permission of a notebook writes its entries more than once
-  (see Concurrency). Still far cheaper than before; merging `propagateACLAddition` /
-  `propagateACLRemoval` into the `FolderManager` walk would make it one pass.
 - Code that walks content casts to `Folder` after `isFolder()` (for example `FolderManagerImpl`,
   `RecordSharingManagerImpl`, `RecordDeletionManagerImpl`, `AuditManagerImpl`); a `BaseRecord` proxy
   would fail the cast (going by the code). The old code already did such casts elsewhere.
