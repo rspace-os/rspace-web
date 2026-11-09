@@ -3,6 +3,7 @@ import { useForm } from "@formisch/react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, test } from "vitest";
 import { page, server, userEvent } from "vitest/browser";
+import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { OpeningHoursEditor } from "./OpeningHoursEditor";
 import { SchedulingSettingsSchema } from "./schedulingSettingsSchema";
 
@@ -24,8 +25,12 @@ function Editor() {
 
 afterEach(cleanup);
 
-test("keeps midnight segment edits mounted", async () => {
-  render(<Editor />);
+test.each(["H12", "H24"] as const)("keeps midnight segment edits mounted with %s formatting", async (timeFormat) => {
+  render(
+    <BookingTimeFormatProvider timeFormat={timeFormat}>
+      <Editor />
+    </BookingTimeFormatProvider>,
+  );
   const start = page.getByLabelText("Opening start");
   const allDay = page.getByRole("checkbox", { name: "Open all day" });
   // Tab reaches the first native time segment without relying on engine-specific pointer hit areas.

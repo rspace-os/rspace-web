@@ -4,7 +4,6 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { VerticalDayTimeline } from "@/modules/booking/components/VerticalDayTimeline";
-import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   type BookingWindowDraft,
@@ -16,6 +15,7 @@ import { dayScheduleQuery } from "@/modules/booking/domain/fetchDayBookings";
 import { Button } from "@/modules/common/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/modules/common/ui/sheet";
 import type { BookableItemOption } from "./bookableItemOption";
+import { timelinePolicy } from "./timelineRange";
 
 function draftDay(value: string): string | undefined {
   return isPlainDate(value) ? value : undefined;
@@ -27,11 +27,14 @@ export function BookingDayTimelineAside({
   draft,
   timezone,
 
+  eventKind = "BOOKING",
   disabledReason,
   onChange,
   onInteractionChange,
 }: {
   target: BookableItemOption | undefined;
+  /** Maintenance keeps its exemptions from the item's increment, opening hours and maximum. */
+  eventKind?: "BOOKING" | "MAINTENANCE";
   formContainerRef: RefObject<HTMLDivElement | null>;
   draft: BookingWindowDraft;
   timezone: string;
@@ -103,7 +106,7 @@ export function BookingDayTimelineAside({
           ? {
               draft,
               targetKey: target.globalId,
-              policy: timelinePolicy(target),
+              policy: timelinePolicy(target, eventKind),
               onChange,
               onInteractionChange,
               disabledReason,

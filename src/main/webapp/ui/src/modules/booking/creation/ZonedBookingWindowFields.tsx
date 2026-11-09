@@ -25,6 +25,7 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
+import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/modules/common/ui/combobox";
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
@@ -45,10 +46,17 @@ function offset(instant: string, timezone: string): string {
   return Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).offset;
 }
 
+/** What the end snap could not apply: a Day end that does not exist, or a repeated one to choose. */
 type EndIssue = (
   | { kind: "missing"; date: string; time: string }
   | { kind: "choose"; date: string; time: string; earlier: string; later: string }
 ) & { draft: BookingWindowDraft; contextKey: string };
+
+/** Maintenance is exempt from the item's increment, as the server is. */
+export const UNRESTRICTED_INCREMENT: IncrementSettings = {
+  slotGranularityMinutes: 1,
+  incrementUnit: "MINUTES",
+};
 
 export function ZonedBookingWindowFields({
   displayTimezone,
@@ -94,6 +102,20 @@ export function ZonedBookingWindowFields({
   onTimezoneChange?: (name: "start" | "end", timezone: string) => void;
 }) {
   const { t } = useTranslation("booking");
+  const endpointLabels = {
+    start: {
+      label: t("bookings.form.start"),
+      time: t("bookings.form.startTime"),
+      date: t("bookings.form.startDate"),
+      timezone: t("bookings.form.startTimezone"),
+    },
+    end: {
+      label: t("bookings.form.end"),
+      time: t("bookings.form.endTime"),
+      date: t("bookings.form.endDate"),
+      timezone: t("bookings.form.endTimezone"),
+    },
+  };
   const timeFormat = useBookingTimeFormat();
   const fieldId = `booking-window-${useId()}`;
   const windowErrorId = `${fieldId}-errors`;
@@ -136,6 +158,7 @@ export function ZonedBookingWindowFields({
   const increment = formatIncrement({ slotGranularityMinutes, incrementUnit }, t);
   const locale = bookingDateTimeLocale(timeFormat);
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
+  // The endpoint each snap produced, so the adjustment is announced rather than silent until the next edit.
   const [snaps, setSnaps] = useState<Partial<Record<"start" | "end", { date: string; time: string; note: string }>>>(
     {},
   );
@@ -144,6 +167,7 @@ export function ZonedBookingWindowFields({
   const endIssueContextKey = [
     slotGranularityMinutes,
     incrementUnit,
+
     zones.start,
     zones.end,
     resolvedSchedulingTimezone,
@@ -267,7 +291,6 @@ export function ZonedBookingWindowFields({
   const timezoneFieldId = (name: "start" | "end") => `${fieldId}-${name}-timezone`;
   const [timezoneOpen, setTimezoneOpen] = useState(false);
   // Typed text that is not yet a known zone; dropped on blur so the field shows the current zone again.
-  const [timezoneText, setTimezoneText] = useState<Partial<Record<"start" | "end", string>>>({});
   const timezoneOptions = useMemo(
     () => bookingTimeZoneOptions(resolvedDisplayTimezone, resolvedEndTimezone, resolvedSchedulingTimezone),
     [resolvedDisplayTimezone, resolvedEndTimezone, resolvedSchedulingTimezone],
@@ -288,11 +311,11 @@ export function ZonedBookingWindowFields({
     showErrors
       ? [
           name === "start" ? startErrorId : undefined,
-          name === "end" && activeEndIssue ? `${fieldId}-end-issue` : undefined,
           endpointUnresolved(name, endpointResolution) ? `${fieldId}-${name}-error` : undefined,
           !endpointResolution || result.orderInvalid || (policyInvalid && !allowPolicyMismatch)
             ? windowErrorId
             : undefined,
+          name === "end" && activeEndIssue ? `${fieldId}-end-issue` : undefined,
         ]
           .filter(Boolean)
           .join(" ") || undefined
@@ -371,7 +394,7 @@ export function ZonedBookingWindowFields({
   const timeInput = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) => {
     const inputProps = {
       id: `${fieldId}-${name}-time`,
-      "aria-label": t(`bookings.form.${name}Time`),
+      "aria-label": endpointLabels[name].time,
       type: "time",
       step: 60,
       required: true,
@@ -384,9 +407,11 @@ export function ZonedBookingWindowFields({
       onBlur: name === "end" ? snapEnd : undefined,
     };
     if (!onTimezoneChange || name !== "start") return <Input {...inputProps} />;
-    const timezoneLabel = t("bookings.form.changeTimezone");
+    const timezoneLabel = t("bookings.form.editTimezone", {
+      timezone: zones.start,
+    });
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Input {...inputProps} className="min-w-0 flex-1" />
         <Tooltip>
           <TooltipTrigger
@@ -416,31 +441,34 @@ export function ZonedBookingWindowFields({
     const id = timezoneFieldId(name);
     return (
       <div id={id} className="space-y-2">
-        <Label htmlFor={`${id}-input`}>{t(`bookings.form.${name}Timezone`)}</Label>
-        <Input
-          id={`${id}-input`}
-          role="combobox"
-          aria-expanded="false"
-          list={`${id}-options`}
+        <Label htmlFor={`${id}-input`}>{endpointLabels[name].timezone}</Label>
+        <Combobox
+          autoComplete="both"
+          autoHighlight
+          items={timezoneOptions}
+          value={zones[name]}
           disabled={disabled}
-          value={timezoneText[name] ?? zones[name]}
-          onChange={(event) => {
-            const next = event.currentTarget.value;
-            // Only a known zone reaches the form; a partial name would not resolve.
-            if (timezoneOptions.includes(next)) {
-              setTimezoneText((text) => ({ ...text, [name]: undefined }));
-              if (next !== zones[name]) onTimezoneChange(name, next);
-            } else {
-              setTimezoneText((text) => ({ ...text, [name]: next }));
-            }
+          onValueChange={(zone) => {
+            if (zone) onTimezoneChange(name, zone);
           }}
-          onBlur={() => setTimezoneText((text) => ({ ...text, [name]: undefined }))}
-        />
-        <datalist id={`${id}-options`}>
-          {timezoneOptions.map((timeZone) => (
-            <option key={timeZone} value={timeZone} />
-          ))}
-        </datalist>
+        >
+          <ComboboxInput
+            className="[&>[data-slot=input-group-addon]]:mr-0"
+            id={`${id}-input`}
+            aria-label={endpointLabels[name].timezone}
+            triggerLabel={endpointLabels[name].timezone}
+            showClear={false}
+          />
+          <ComboboxContent>
+            <ComboboxList>
+              {(zone: string) => (
+                <ComboboxItem key={zone} value={zone}>
+                  {zone}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
     );
   };
@@ -452,13 +480,13 @@ export function ZonedBookingWindowFields({
   // tells the repeated hour's two occurrences apart.
   const instrumentTime = (instant: string, enteredDate: string) => {
     const local = Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone);
-    let time = formatWallClockTime(
+    const clock = formatWallClockTime(
       local.toPlainTime().toString({ smallestUnit: "minute" }),
       bookingDateTimeLocale(timeFormat),
     );
-    if (local.hoursInDay !== 24) time += ` (UTC${local.offset})`;
+    const time = local.hoursInDay === 24 ? clock : t("time.wallClockWithOffset", { time: clock, offset: local.offset });
     const date = local.toPlainDate().toString();
-    return date === enteredDate ? time : `${formatPlainDate(date)} ${time}`;
+    return date === enteredDate ? time : t("time.wallClockWithDate", { date: formatPlainDate(date), time });
   };
   const instrumentTimes =
     (!sameTimeZone(resolvedSchedulingTimezone, zones.start) || !sameTimeZone(resolvedSchedulingTimezone, zones.end)) &&
@@ -492,7 +520,7 @@ export function ZonedBookingWindowFields({
     const dateInput = (
       <Input
         id={dateId}
-        aria-label={t(`bookings.form.${name}Date`)}
+        aria-label={endpointLabels[name].date}
         type="date"
         required
         aria-invalid={showErrors && (!value[dateKey] || endpointInvalid(name, endpointResolution)) ? true : undefined}
@@ -504,7 +532,7 @@ export function ZonedBookingWindowFields({
     );
     return (
       <FieldSet className="gap-3">
-        <FieldLegend>{t(`bookings.form.${name}`)}</FieldLegend>
+        <FieldLegend>{endpointLabels[name].label}</FieldLegend>
         <div className={cn("grid sm:grid-cols-2", density === "compact" ? "gap-2" : "gap-4")}>
           <div className="space-y-2">
             <Label htmlFor={dateId}>{t("bookings.form.date")}</Label>
@@ -519,10 +547,10 @@ export function ZonedBookingWindowFields({
             <Label htmlFor={timeId}>{t("bookings.form.time")}</Label>
             {timeInput(name, endpointResolution)}
             {snapNote(name)}
+            {name === "end" ? endIssueFields() : null}
           </div>
         </div>
         {timezoneField(name)}
-        {name === "end" ? endIssueFields() : null}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
       </FieldSet>
@@ -537,7 +565,7 @@ export function ZonedBookingWindowFields({
     const timeId = `${fieldId}-${name}-time`;
     return (
       <div className="min-w-0 space-y-2">
-        <Label htmlFor={timeId}>{t(`bookings.form.${name}`)}</Label>
+        <Label htmlFor={timeId}>{endpointLabels[name].label}</Label>
         {timeInput(name, endpointResolution)}
         {snapNote(name)}
         {name === "end" ? endIssueFields() : null}
@@ -589,6 +617,7 @@ export function ZonedBookingWindowFields({
     </div>
   ) : null;
 
+  // The compact layout has one date for both endpoints, so a multi-day draft or Day increment needs both dates.
   if (density === "compact" && value.startDate === value.endDate && incrementUnit !== "DAYS") {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate || Boolean(startErrorId);

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingDayTimelineAside } from "@/modules/booking/creation/BookingDayTimelineAside";
@@ -15,6 +15,8 @@ import {
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingAddedNoticeValues } from "@/modules/booking/domain/bookingTime";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingFormFeedback } from "./bookingFormFeedback";
 
@@ -24,7 +26,9 @@ export function AddBookingContent() {
   const transferredDraft = useLocation({
     select: (location) => bookingCreationDraftFromHistoryState(location.state, search.target),
   });
+  const searchStr = useLocation({ select: (location) => location.searchStr });
   const navigate = useNavigate({ from: "/booking/calendar/bookings/add/" });
+  const notices = useBookingNotices();
   const preferences = useBookingDisplayPreferences();
   const initialTarget = useBookableItem(search.target);
   const draftBridge = useBookingTimelineDraft();
@@ -40,17 +44,14 @@ export function AddBookingContent() {
   };
   const mutation = useCreateBooking();
   const resetMutation = mutation.reset;
-  const updatePageState = useCallback(
-    (state: BookingFormState) => {
-      draftBridge.onStateChange(state);
-      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
-      resetMutation();
-    },
-    [draftBridge.onStateChange, mutation.error, mutation.isError, resetMutation],
-  );
-  const updateTarget = useCallback(() => {
+  const updatePageState = (state: BookingFormState) => {
+    draftBridge.onStateChange(state);
+    if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
+    resetMutation();
+  };
+  const updateTarget = () => {
     draftBridge.onTargetChange();
-  }, [draftBridge.onTargetChange]);
+  };
   const availability = useBookingDraftAvailability({
     formState: draftBridge.formState,
     displayTimezone: preferences.timeZone,
@@ -72,7 +73,19 @@ export function AddBookingContent() {
     t,
   });
   const submit = async (submission: BookingFormSubmission) => {
-    await mutation.mutateAsync(submission);
+    const created = await mutation.mutateAsync(submission);
+    notices.notify(
+      "calendar",
+      createBookingEventNotice({
+        event: created,
+        message: t("bookings.feedback.eventAdded", {
+          ...bookingAddedNoticeValues(created.start, created.end, preferences.timeZone, preferences.timeFormat),
+          itemName: submission.target.name,
+        }),
+        timeZone: preferences.timeZone,
+        searchStr,
+      }),
+    );
     await navigate({
       to: "/booking/calendar",
       search: { date: submission.returnDate, target: submission.target.globalId },
@@ -87,7 +100,7 @@ export function AddBookingContent() {
         <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
       )}
       <div className="@container">
-        <div className="grid gap-6 @4xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)]">
+        <div className="grid gap-6 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div ref={formContainerRef} className="min-w-0 space-y-6">
             <BookingForm
               mode="add"

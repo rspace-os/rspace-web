@@ -17,15 +17,21 @@ function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
 /** A sortable, resizable column header, or the select-all control for the selection column. */
 export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
   header,
+  pinActions,
   resizeId,
   resizeOffset,
   selectAllControl,
   onResize,
+  onResizeStart,
+  onReset,
 }: {
   header: Header<typeof tableListFeatures, TDocument, unknown>;
+  pinActions: boolean;
   resizeId: string;
   resizeOffset: number;
   selectAllControl: ReactNode;
+  onReset: (columnId: string) => void;
+  onResizeStart: (element: HTMLElement) => boolean;
   onResize: (columnId: string, size: number) => void;
 }) {
   const { i18n, t } = useTranslation("common");
@@ -39,6 +45,8 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
   const resizeLabelId = `${resizeId}-${header.id}-resize`;
   return (
     <TableHead
+      scope="col"
+      data-column-id={header.column.id}
       aria-labelledby={headerLabelId}
       aria-sort={
         header.column.getCanSort()
@@ -52,6 +60,7 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
       className={cn(
         "relative h-9 bg-muted/35 pr-4 text-xs",
         header.column.id === "actions" &&
+          pinActions &&
           "sticky right-0 z-10 bg-[color-mix(in_oklab,var(--color-muted)_35%,var(--color-background))]",
       )}
     >
@@ -99,17 +108,24 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
           type="button"
           aria-labelledby={`${resizeLabelId} ${headerLabelId}`}
           className="group absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          onMouseDown={header.getResizeHandler()}
-          onTouchStart={header.getResizeHandler()}
-          onDoubleClick={() => header.column.resetSize()}
+          onMouseDown={(event) => {
+            if (!onResizeStart(event.currentTarget)) return;
+            header.getResizeHandler()(event);
+          }}
+          onTouchStart={(event) => {
+            if (!onResizeStart(event.currentTarget)) return;
+            header.getResizeHandler()(event);
+          }}
+          onDoubleClick={() => onReset(header.column.id)}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              header.column.resetSize();
+              onReset(header.column.id);
               return;
             }
             if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
             event.preventDefault();
+            if (!onResizeStart(event.currentTarget)) return;
             const minimum = header.column.columnDef.minSize ?? 20;
             const maximum = header.column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
             const delta = event.key === "ArrowLeft" ? -16 : 16;

@@ -1,29 +1,11 @@
-import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
-import { searchBookingConfigurationTargets } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
-import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
-import type { BookingConfigurationTargetControllerTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetControllerTargetDirectoryDocument";
+import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
+import { mapBookingTargetDirectory } from "./bookingConfigurationApi";
 
-export const MINIMUM_TARGET_QUERY_LENGTH = 2;
-
-export function mapBookingTargetDirectory(
-  response: BookingConfigurationTargetControllerTargetDirectoryDocument,
-): BookingConfigurationTarget[] {
-  return response.docs.map((target) => {
-    if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
-    return {
-      ...target,
-      id: requireBookingValue(target.id, "id"),
-      globalId: requireBookingValue(target.globalId, "globalId"),
-      name: requireBookingValue(target.name, "name"),
-    };
-  });
-}
-export async function searchBookingTargets(query: string, signal?: AbortSignal): Promise<BookingConfigurationTarget[]> {
-  const q = query.trim();
-  return mapBookingTargetDirectory(
-    await searchBookingConfigurationTargets(
-      { q: q.length >= MINIMUM_TARGET_QUERY_LENGTH ? q : undefined, limit: 20 },
-      { signal },
-    ),
+export { MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationApi";
+export function eligibleBookingTargetsQuery(_scope: number) {
+  return getSearchBookingConfigurationTargetsQueryOptions(
+    { limit: 20 },
+    { query: { select: mapBookingTargetDirectory, retry: retryUnlessClientError, staleTime: 10 * 60 * 1000 } },
   );
 }

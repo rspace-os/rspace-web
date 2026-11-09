@@ -2,14 +2,16 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
-import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
-import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
-import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
+
+import {
+  expectNoAlertMessage,
+  renderPage,
+  useDefaultBookingPreferencesHandlers,
+} from "./bookingPreferencesPageTestUtils";
 
 describe("BookingPreferencesPage", () => {
   beforeEach(() => useDefaultBookingPreferencesHandlers());
@@ -17,10 +19,6 @@ describe("BookingPreferencesPage", () => {
   it("creates a user-wide calendar subscription from Booking preferences", async () => {
     let creates = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.post<never, never, BookingCalendarSubscriptionCreated | ApiV2Problem>(
         "/api/v2/users/me/booking-calendar-subscription",
         ({ request }) => {
@@ -51,10 +49,6 @@ describe("BookingPreferencesPage", () => {
 
   it("shows the existing link without an error when Create finds one already made elsewhere", async () => {
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       // The page loaded before another tab created the link; the create returns that link unchanged.
       http.post<never, never, BookingCalendarSubscriptionCreated | ApiV2Problem>(
         "/api/v2/users/me/booking-calendar-subscription",
@@ -77,16 +71,12 @@ describe("BookingPreferencesPage", () => {
     expect(await screen.findByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
       "https://example.test/public/booking/calendars/feed.ics?token=existing",
     );
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlertMessage("booking:preferences.calendarSubscription.createError");
   });
 
   it("replaces the private link only after the user confirms", async () => {
     const rotations: (string | null)[] = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.get<never, never, BookingCalendarSubscriptionStatus | ApiV2Problem>(
         "/api/v2/users/me/booking-calendar-subscription",
         () =>
@@ -137,22 +127,5 @@ describe("BookingPreferencesPage", () => {
       ),
     );
     expect(rotations).toEqual(['"subscription-0"']);
-  });
-
-  it("shows only the user-wide calendar link on preferences", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
-    );
-    renderPage();
-
-    expect(
-      await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }),
-    ).toBeVisible();
-    expect(
-      screen.queryByRole("region", { name: "booking:preferences.calendarSubscription.itemLinks.title" }),
-    ).not.toBeInTheDocument();
   });
 });

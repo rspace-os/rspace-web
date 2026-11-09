@@ -5,6 +5,7 @@ import {
   type IncrementViolation,
   incrementRule,
   incrementViolation,
+  snapEndToIncrement,
 } from "@/modules/booking/domain/bookingIncrement";
 import {
   ALWAYS_OPEN,
@@ -12,7 +13,13 @@ import {
   MAX_BOOKING_DURATION_MINUTES,
   type OpeningSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { addCalendarDays, resolveWallClock, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  addCalendarDays,
+  dayMinuteToZonedTime,
+  instantToDayMinute,
+  resolveWallClock,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 
 /** Everything a timeline needs to tell a valid interval from an invalid one, without server-only checks. */
 export type TimelinePolicy = OpeningSchedule &
@@ -103,6 +110,10 @@ function rangeFailure(
     return "openingHours";
   }
   return null;
+}
+
+function toWholeMinute(instant: Temporal.Instant): Temporal.Instant {
+  return instant.round({ smallestUnit: "minute" });
 }
 
 function compare(left: Temporal.Instant, right: Temporal.Instant): number {
@@ -349,4 +360,98 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
   };
 
   return { visible: { start: startVisible, end: endVisible }, canResize, adjust, step, hiddenEdge };
+}
+
+/**
+ * A creation proposal from a rough start and end: the start stays at its whole minute and the end
+ * becomes the nearest whole number of increments. Day increments keep the start's local time and may end on a
+ * later date. An end on a skipped or repeated local time gives no proposal, since only the form can ask which
+ * occurrence to use.
+ */
+function proposeTimelineRange(roughStart: string, roughEnd: string, policy: TimelinePolicy): TimelineRange | undefined {
+  const rule = incrementRule(policy);
+  const timezone = policy.schedulingTimezone;
+  const wholeStart = toWholeMinute(Temporal.Instant.from(roughStart));
+  const midnight = wholeStart.toZonedDateTimeISO(timezone).startOfDay().toInstant();
+  const nearestStep = (instant: Temporal.Instant) => {
+    if (rule.kind !== "elapsed") return instant;
+    const step = BigInt(rule.minutes) * MINUTE_NS;
+    const offset = instant.epochNanoseconds - midnight.epochNanoseconds;
+    return Temporal.Instant.fromEpochNanoseconds(midnight.epochNanoseconds + ((offset + step / 2n) / step) * step);
+  };
+  const start = nearestStep(wholeStart).toString();
+  const end = nearestStep(Temporal.Instant.from(roughEnd)).toString();
+  const snap = snapEndToIncrement(rule, start, end, timezone);
+  return snap.kind === "instant" ? { start, end: snap.instant } : undefined;
+}
+
+/** `proposeTimelineRange` in a displayed day's elapsed-minute coordinates, which may extend past the day. */
+export function proposeDayRange(
+  range: { startMinute: number; endMinute: number },
+  date: string,
+  displayTimezone: string,
+  policy: TimelinePolicy,
+): { startMinute: number; endMinute: number } | undefined {
+  const instant = (minute: number) => dayMinuteToZonedTime(date, displayTimezone, minute).toInstant().toString();
+  const proposal = proposeTimelineRange(instant(range.startMinute), instant(range.endMinute), policy);
+  if (!proposal) return undefined;
+  return {
+    startMinute: instantToDayMinute(proposal.start, date, displayTimezone),
+    endMinute: instantToDayMinute(proposal.end, date, displayTimezone),
+  };
+}
+
+/** Snap a drag in either direction, keeping the anchor's snapped edge when the maximum caps it. */
+export function proposeDragRange(
+  anchorMinute: number,
+  pointerMinute: number,
+  date: string,
+  displayTimezone: string,
+  policy: TimelinePolicy,
+): { startMinute: number; endMinute: number } | undefined {
+  const proposal = proposeDayRange(
+    { startMinute: Math.min(anchorMinute, pointerMinute), endMinute: Math.max(anchorMinute, pointerMinute) },
+    date,
+    displayTimezone,
+    policy,
+  );
+  if (!proposal) return undefined;
+  const start = dayMinuteToZonedTime(date, displayTimezone, proposal.startMinute).toInstant();
+  const end = dayMinuteToZonedTime(date, displayTimezone, proposal.endMinute).toInstant();
+  const limit =
+    policy.maxBookingDurationMinutes > 0
+      ? Math.min(policy.maxBookingDurationMinutes, MAX_BOOKING_DURATION_MINUTES)
+      : MAX_BOOKING_DURATION_MINUTES;
+  if (end.since(start).total("minutes") <= limit) return proposal;
+  const forward = pointerMinute >= anchorMinute;
+  const fixed = forward ? start : end;
+  const rule = incrementRule(policy);
+  if (rule.kind === "elapsed") {
+    const minutes = Math.floor(limit / rule.minutes) * rule.minutes;
+    if (minutes <= 0) return undefined;
+    const moved = fixed.add({ minutes: forward ? minutes : -minutes });
+    return {
+      startMinute: instantToDayMinute((forward ? fixed : moved).toString(), date, displayTimezone),
+      endMinute: instantToDayMinute((forward ? moved : fixed).toString(), date, displayTimezone),
+    };
+  }
+  // Calendar increments are measured in elapsed minutes across clock changes.
+  let best: Temporal.Instant | undefined;
+  for (let days = rule.days; days <= Math.ceil(limit / 1380) + rule.days; days += rule.days) {
+    const targetDate = fixed
+      .toZonedDateTimeISO(policy.schedulingTimezone)
+      .toPlainDate()
+      .add({ days: forward ? days : -days });
+    const time = fixed.toZonedDateTimeISO(policy.schedulingTimezone).toPlainTime().toString({ smallestUnit: "minute" });
+    const resolution = resolveWallClock(targetDate.toString(), time, policy.schedulingTimezone);
+    if (resolution.kind !== "unique") continue;
+    const moved = Temporal.Instant.from(resolution.instant);
+    if (Math.abs(moved.since(fixed).total("minutes")) > limit) break;
+    best = moved;
+  }
+  if (!best) return undefined;
+  return {
+    startMinute: instantToDayMinute((forward ? fixed : best).toString(), date, displayTimezone),
+    endMinute: instantToDayMinute((forward ? best : fixed).toString(), date, displayTimezone),
+  };
 }

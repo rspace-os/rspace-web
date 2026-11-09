@@ -39,6 +39,7 @@ import jakarta.persistence.OptimisticLockException;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -283,7 +284,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         create.end(),
         conflict,
         null,
-        conflictingKinds(configuration, create.kind()));
+        conflictingKinds(configuration, create.kind()),
+        create.kind());
 
     validateWindow(create.start(), create.end());
     Date now = new Date();
@@ -368,6 +370,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               if (!booking.getStartTime().toInstant().isAfter(clock.instant())) {
                 throw new BookingStateTransitionException();
               }
+              Instant previousStart = booking.getStartTime().toInstant();
+              Instant previousEnd = booking.getEndTime().toInstant();
               Date start = patch.start() == null ? booking.getStartTime() : patch.start();
               Date end = patch.end() == null ? booking.getEndTime() : patch.end();
               boolean intervalChanged =
@@ -385,7 +389,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                     end,
                     conflict,
                     booking.getId(),
-                    conflictingKinds(configuration, booking.getKind()));
+                    conflictingKinds(configuration, booking.getKind()),
+                    booking.getKind());
               }
               if (patch.purposeSupplied()) {
                 validatePurpose(patch.purpose());
@@ -409,8 +414,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                 bookingNotificationService.notify(
                     saved, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
               } else if (booking.getKind() == BookingEventKind.BOOKING && intervalChanged) {
-                bookingNotificationService.notify(
-                    saved, actor, NotificationType.NOTIFICATION_BOOKING_CHANGED);
+                bookingNotificationService.notifyChanged(saved, actor, previousStart, previousEnd);
               }
               events.publishEvent(
                   new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.WRITE));
@@ -507,7 +511,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       Date end,
       BookingSchedulingPolicy.ConflictInterval buffered,
       Long excludedId,
-      Set<BookingEventKind> includedKinds) {
+      Set<BookingEventKind> includedKinds,
+      BookingEventKind requestedKind) {
     Optional<TimeSlotBooking> overlap =
         BookingCurrentReads.read(
             () ->
@@ -516,24 +521,31 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     if (overlap.isPresent()) {
       throw new BookingOverlapException(ConflictingEvent.of(overlap.get()));
     }
-    if (buffered.start().getTime() == start.getTime()
-        && buffered.end().getTime() == end.getTime()) {
-      return;
-    }
-    Optional<TimeSlotBooking> bufferConflict =
-        BookingCurrentReads.read(
-            () ->
-                bookingDao.findFirstOverlap(
-                    configuration.getId(),
-                    buffered.start(),
-                    buffered.end(),
-                    excludedId,
-                    includedKinds));
-    if (bufferConflict.isPresent()) {
-      throw new BookingBufferConflictException(
-          ConflictingEvent.of(bufferConflict.get()),
-          configuration.getBufferBeforeMinutes(),
-          configuration.getBufferAfterMinutes());
+    long before = configuration.getBufferBeforeMinutes();
+    long after = configuration.getBufferAfterMinutes();
+    if (before + after == 0) return;
+    for (BookingEventKind existingKind : includedKinds) {
+      boolean maintenance = requestedKind == BookingEventKind.MAINTENANCE;
+      if (maintenance && existingKind == BookingEventKind.MAINTENANCE) continue;
+      long startGap =
+          maintenance ? after : existingKind == BookingEventKind.BOOKING ? before + after : before;
+      long endGap =
+          maintenance ? before : existingKind == BookingEventKind.BOOKING ? before + after : after;
+      Date searchStart = Date.from(start.toInstant().minus(startGap, ChronoUnit.MINUTES));
+      Date searchEnd = Date.from(end.toInstant().plus(endGap, ChronoUnit.MINUTES));
+      Optional<TimeSlotBooking> bufferConflict =
+          BookingCurrentReads.read(
+              () ->
+                  bookingDao.findFirstOverlap(
+                      configuration.getId(),
+                      searchStart,
+                      searchEnd,
+                      excludedId,
+                      Set.of(existingKind)));
+      if (bufferConflict.isPresent()) {
+        throw new BookingBufferConflictException(
+            ConflictingEvent.of(bufferConflict.get()), before, after);
+      }
     }
   }
 
@@ -631,7 +643,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         end,
         conflict,
         booking.getId(),
-        conflictingKinds(configuration, booking.getKind()));
+        conflictingKinds(configuration, booking.getKind()),
+        booking.getKind());
     booking.setState(BookingState.CONFIRMED);
     booking.setCancellationReason(null);
     booking.setUpdatedAt(new Date());

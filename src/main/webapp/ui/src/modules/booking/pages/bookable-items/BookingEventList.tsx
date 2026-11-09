@@ -12,6 +12,7 @@ import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { type BookingEventPeriod, bookableItemEventsQuery, fetchBookableItemEvents } from "./bookableItemEvents";
 
@@ -55,8 +56,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             type: "dateTime",
             labelKey: "booking:bookings.form.time" satisfies CollectionTranslationKey,
             list: {
-              width: 280,
-              minWidth: 220,
+              width: 200,
+              minWidth: 200,
               dependencies: ["end"],
               renderCell: ({ row }) => (
                 <BookingInstrumentTimeTooltip
@@ -65,8 +66,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
                   displayTimeZone={timezone}
                   instrumentTimeZone={row.timezone}
                 >
-                  <time dateTime={row.start}>
-                    {formatBookingPeriod(row.start, row.end, timezone, i18n.language, timeFormat)}
+                  <time dateTime={row.start} className="whitespace-normal">
+                    {formatBookingPeriod(row.start, row.end, timezone, undefined, timeFormat)}
                   </time>
                 </BookingInstrumentTimeTooltip>
               ),
@@ -83,7 +84,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
             list: {
-              width: 180,
+              width: 120,
               renderCell: ({ row }) =>
                 row.kind === "MAINTENANCE" ? t("bookings.form.typeBlockout") : t("bookings.form.typeBooking"),
             },
@@ -94,7 +95,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             nullable: true,
             labelKey: "booking:bookableItemDetails.events.actor" satisfies CollectionTranslationKey,
             list: {
-              width: 220,
+              width: 160,
               renderCell: ({ row }) => {
                 if (row.kind === "MAINTENANCE") {
                   return row.createdBy ? <UserBadge name={row.createdBy} /> : t("bookings.maintenanceLabel");
@@ -120,7 +121,23 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             nullable: true,
             labelKey: "booking:bookableItemDetails.events.purpose" satisfies CollectionTranslationKey,
             list: {
-              renderCell: ({ row }) => (row.kind === "MAINTENANCE" || row.privacy === "full" ? row.purpose : null),
+              widthMode: "fill",
+              renderCell: ({ row }) =>
+                (row.kind === "MAINTENANCE" || row.privacy === "full") && row.purpose ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          className="block min-w-24 text-left whitespace-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      }
+                    >
+                      <span className="line-clamp-2 break-words">{row.purpose}</span>
+                    </TooltipTrigger>
+                    <TooltipContent role="tooltip">{row.purpose}</TooltipContent>
+                  </Tooltip>
+                ) : null,
             },
           },
         ],
@@ -179,8 +196,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
     () => ({
       id: "actions",
       label: t("calendar.actions.label"),
-      width: 220,
-      minWidth: 180,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <div className="flex gap-2">
           {row.privacy === "full" ? (
@@ -234,7 +250,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       }}
       hideHeader
       emptyDescription={t("bookableItemDetails.events.empty")}
-      presentations={{ table: "wide", cards: "narrow" }}
+      presentations={{ table: "all", cards: false }}
+      stickyActions="always"
       rowActions={rowActions}
     />
   );

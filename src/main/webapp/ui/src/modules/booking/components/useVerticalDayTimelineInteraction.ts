@@ -16,16 +16,6 @@ import type { VerticalDayTimelineEditing, VerticalDayTimelineSchedule } from "./
 export type IsoRange = { start: string; end: string };
 export type AdjustmentEdge = "move" | "start" | "end";
 type Direction = "previous" | "next";
-type TimelineInteraction = {
-  edge: AdjustmentEdge;
-  pointerId: number;
-  handle: HTMLButtonElement;
-  originalRange: IsoRange;
-  pointerOffsetMinutes: number;
-  contextKey: string;
-  width: number;
-  height: number;
-};
 function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): IsoRange | undefined {
   if (!draft) return undefined;
   return resolveBookingWindow(draft, timezone).window;
@@ -44,7 +34,6 @@ export function timeRange(
     },
     date,
     timezone,
-    "–",
     timeFormat,
   );
 }
@@ -125,7 +114,7 @@ export function useVerticalDayTimelineInteraction({
     [date, timezone],
   );
   const adjustInteractionRange = (
-    active: TimelineInteraction,
+    active: NonNullable<typeof interactionRef.current>,
     clientY: number,
     activeAdjuster: NonNullable<typeof adjuster>,
   ) => {
@@ -161,7 +150,7 @@ export function useVerticalDayTimelineInteraction({
         }),
       );
     },
-    [date, editing, editingRange, t, timezone],
+    [date, editing, editingRange, t, timeFormat, timezone],
   );
 
   const changeByStep = (edge: AdjustmentEdge, direction: Direction) => {

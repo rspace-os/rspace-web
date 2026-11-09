@@ -10,7 +10,7 @@ import {
   groupBookingsByStartDate,
 } from "@/modules/booking/domain/bookingAgenda";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingLocale, currentWallClock } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale, currentWallClock } from "@/modules/booking/domain/bookingTime";
 import { BookingSummaryCard } from "./BookingSummaryCard";
 
 type ControlledExpansion = {
@@ -36,7 +36,7 @@ export function BookingAgenda(props: BookingAgendaProps) {
   const agendaId = useId();
   const [localExpandedIds, setLocalExpandedIds] = useState<ReadonlySet<number>>(() => new Set());
   const expandedIds = props.expandedIds ?? localExpandedIds;
-  const locale = bookingLocale();
+  const locale = bookingDateTimeLocale();
   const groups = groupBookingsByStartDate(props.bookings, props.timeZone);
   const todayDate = currentWallClock(Temporal.Instant.fromEpochMilliseconds(props.now), props.timeZone).date;
   const currentYear = Temporal.PlainDate.from(todayDate).year;

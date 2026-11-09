@@ -173,7 +173,7 @@ class EmailContentGeneratorTest {
     String header =
         content.htmlContent().split("https://rspace.example/booking/calendar/bookings/42", 2)[0];
     assertThat(header)
-        .contains("Jan 16, 2026", "06:17", "Asia/Tokyo, UTC+09:00")
+        .contains("Jan 16, 2026", "06:17", "JST (Asia/Tokyo)")
         .doesNotContain(" AM", " PM");
     assertEquals(subject, content.subject());
     assertThat(content.htmlContent())

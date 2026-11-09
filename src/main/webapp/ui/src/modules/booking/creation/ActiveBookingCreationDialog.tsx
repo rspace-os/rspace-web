@@ -16,6 +16,8 @@ import {
   withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingAddedNoticeValues } from "@/modules/booking/domain/bookingTime";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 
 import {
   AlertDialog,
@@ -37,6 +39,8 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const navigate = useNavigate();
   const preferences = useBookingDisplayPreferences();
   const pathname = useLocation({ select: (location) => location.pathname });
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const notices = useBookingNotices();
   const endCreation = useBookingCreationStore((state) => state.endCreation);
   const mutation = useCreateBooking();
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
@@ -122,15 +126,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   };
 
   const resetMutation = mutation.reset;
-  const updateFormState = React.useCallback(
-    (state: BookingFormState) => {
-      setFormState(state);
-      setWindowAdjustment(undefined);
-      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
-      resetMutation();
-    },
-    [mutation.error, mutation.isError, resetMutation],
-  );
+  const updateFormState = (state: BookingFormState) => {
+    setFormState(state);
+    setWindowAdjustment(undefined);
+    if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
+    resetMutation();
+  };
 
   const maintenance = creation.eventKind === "MAINTENANCE";
   const availabilityTarget = formState?.target ?? creation.target;
@@ -200,7 +201,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
         >
           <PopoverHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">
             <PopoverTitle>
-              {t(maintenance ? "bookings.compact.maintenanceTitle" : "bookings.compact.bookingTitle")}
+              {maintenance ? t("bookings.compact.maintenanceTitle") : t("bookings.compact.bookingTitle")}
             </PopoverTitle>
             {maintenance ? (
               <PopoverDescription>{t("bookings.compact.maintenanceDescription")}</PopoverDescription>
@@ -250,7 +251,29 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             onMoreOptions={maintenance ? undefined : openMoreOptions}
             onStateChange={updateFormState}
             onSubmit={async (submission) => {
-              await mutation.mutateAsync(submission);
+              const created = await mutation.mutateAsync(submission);
+              notices.notify(
+                creation.originHost ?? "calendar",
+                createBookingEventNotice({
+                  event: created,
+                  message:
+                    submission.eventKind === "MAINTENANCE"
+                      ? t("bookings.feedback.maintenanceAdded", {
+                          itemName: submission.target.name,
+                        })
+                      : t("bookings.feedback.eventAdded", {
+                          ...bookingAddedNoticeValues(
+                            created.start,
+                            created.end,
+                            preferences.timeZone,
+                            preferences.timeFormat,
+                          ),
+                          itemName: submission.target.name,
+                        }),
+                  timeZone: preferences.timeZone,
+                  searchStr,
+                }),
+              );
               finish();
             }}
           />

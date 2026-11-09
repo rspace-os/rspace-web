@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { instrumentZoneDiffers, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
+import { UserBadge, userInitials } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingInstrumentTimeTooltip } from "./BookingInstrumentTimeTooltip";
 import {
@@ -13,6 +13,7 @@ import {
   dateForMinute,
   formatDayDate,
   formatMinute,
+  formatMinuteWithDayOffset,
   period,
 } from "./DayTimelineEvent";
 import { ExpandedEventCard } from "./ExpandedEventCard";
@@ -74,13 +75,14 @@ export function DayTimelineEventCard({
   const twoLineTitle =
     !truncateTitle && !compactCards && (fitHeight === undefined || fitHeight >= TWO_LINE_TITLE_MIN_HEIGHT);
   const showBadge = fitHeight === undefined || fitHeight >= BADGE_MIN_HEIGHT;
+  const bookerName = event.kind === "booking" && event.privacy === "full" ? event.bookedBy : "";
   const labelledTitle =
     event.kind === "booking" && event.privacy === "full"
-      ? t("dayTimeline.event.titleWithBooker", { title, booker: event.bookedBy })
+      ? t("dayTimeline.event.titleWithBooker", { title, booker: bookerName })
       : title;
   const isBusy = event.kind === "booking" && event.privacy === "busy";
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
-  const exactPeriod = period(event, date, timezone, "–", timeFormat);
+  const exactPeriod = period(event, date, timezone, timeFormat);
   const accessibleLabel = notes
     ? t("dayTimeline.event.labelWithNotes", { title: labelledTitle, period: exactPeriod, notes })
     : t("dayTimeline.event.label", { title: labelledTitle, period: exactPeriod });
@@ -103,7 +105,10 @@ export function DayTimelineEventCard({
           start: formatDayDate(startDate, timeFormat),
           end: formatDayDate(endDate, timeFormat),
         });
-  const compactPeriod = period(event, date, timezone, " - ", timeFormat);
+  const compactPeriod = t("time.openingRange", {
+    start: formatMinuteWithDayOffset(date, timezone, event.startMinute, timeFormat),
+    end: formatMinuteWithDayOffset(date, timezone, event.endMinute, timeFormat),
+  });
   const triggerClassName =
     "absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60";
   const toggleLabel = isExpanded
@@ -153,7 +158,7 @@ export function DayTimelineEventCard({
       aria-label={accessibleLabel}
       title={instrumentTimezoneDiffers ? undefined : title}
       className={cn(
-        "group flex w-full cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-sm border px-1.5 py-1 text-xs leading-tight shadow-sm",
+        "@container/event group flex w-full cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-sm border px-1.5 py-1 text-xs leading-tight shadow-sm",
         timeline ? "absolute inset-y-0 left-0" : "relative min-h-12",
         !isBlockout && !isBusy && "border-blue-700 bg-blue-600 text-white",
         isBlockout && "border-amber-600 bg-amber-100 text-amber-950",
@@ -162,7 +167,7 @@ export function DayTimelineEventCard({
         expandsInPlace && timeline && "w-72",
       )}
     >
-      <div className="min-w-0 pr-7">
+      <div className="min-w-0 pr-7 @max-[10rem]/event:hidden">
         <span className={cn("flex min-w-0 gap-1", twoLineTitle ? "items-start" : "items-center")}>
           <EventIcon event={event} />
           <span
@@ -174,7 +179,7 @@ export function DayTimelineEventCard({
         </span>
         {event.kind === "booking" && event.privacy === "full" && showBadge ? (
           <UserBadge
-            name={event.bookedBy}
+            name={bookerName}
             density="compact"
             className="mt-0.5 max-w-full border-current/30 bg-background/90 text-foreground"
           />
@@ -202,6 +207,11 @@ export function DayTimelineEventCard({
           <span className="block truncate text-[11px]">{exactPeriod}</span>
         )}
       </time>
+      {event.kind === "booking" && event.privacy === "full" ? (
+        <span title={bookerName} className="hidden font-semibold @max-[10rem]/event:block">
+          {userInitials(bookerName)}
+        </span>
+      ) : null}
       {event.startInstant ? (
         <BookingInstrumentTimeTooltip
           start={event.startInstant}
@@ -243,10 +253,15 @@ export function DayTimelineEventCard({
     <Popover
       open={isExpanded}
       onOpenChange={(nextOpen, eventDetails) => {
+        // Pressing or focusing a timeline editor handle, such as a midnight continuation, is not leaving the card;
+        // Escape and the close button still close it from there.
+        const destination =
+          eventDetails.event instanceof FocusEvent ? eventDetails.event.relatedTarget : eventDetails.event.target;
         if (
           !nextOpen &&
-          eventDetails.event.target instanceof Element &&
-          eventDetails.event.target.closest("[data-timeline-window-editor]")
+          (eventDetails.reason === "outside-press" || eventDetails.reason === "focus-out") &&
+          destination instanceof Element &&
+          destination.closest("[data-timeline-window-editor]")
         ) {
           eventDetails.cancel();
           return;
@@ -266,8 +281,8 @@ export function DayTimelineEventCard({
     >
       {compactCard}
       <PopoverContent
-        positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
         portalContainer={portalContainer}
+        positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
         id={detailsId}
         align="start"
         side="bottom"

@@ -202,47 +202,29 @@ export function SchedulingSettingsFields({
   );
   const inline = layout === "inline";
   const rowClass = inline ? RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME : "space-y-2";
-  const openingHours = <OpeningHoursEditor form={form} disabled={disabled} layout={layout} />;
-  const maximumDuration = (
-    <div className={rowClass}>
-      <FieldLabel htmlFor={`${id}-maximum-duration`}>
-        {inline ? t("bookableItemDetails.fields.maximumDuration") : t("settings.fields.maximumDuration")}
-      </FieldLabel>
-      <MaximumDurationField form={form} id={`${id}-maximum-duration`} disabled={disabled} />
-    </div>
-  );
-  const bufferRowClass = inline ? "min-w-0 space-y-2" : rowClass;
-  const buffers = (
-    <>
-      <div className={bufferRowClass}>
-        <FieldLabel htmlFor={`${id}-buffer-Before`}>
-          {inline ? t("bookableItemDetails.fields.bufferBefore") : t("settings.fields.bufferBefore")}
-        </FieldLabel>
-        {bufferControl(before, "Before")}
-      </div>
-      <div className={bufferRowClass}>
-        <FieldLabel htmlFor={`${id}-buffer-After`}>
-          {inline ? t("bookableItemDetails.fields.bufferAfter") : t("settings.fields.bufferAfter")}
-        </FieldLabel>
-        {bufferControl(after, "After")}
-      </div>
-    </>
-  );
   return (
     <div className={inline ? RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME : undefined}>
       <fieldset className={inline ? `${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4` : "space-y-6"}>
         <legend className={inline ? "sr-only" : "text-base font-medium"}>{t("settings.fields.legend")}</legend>
-        {inline ? openingHours : null}
+        <OpeningHoursEditor form={form} disabled={disabled} layout={layout} />
         <div className={rowClass}>
           <FieldLabel htmlFor={`${id}-granularity`}>
             {inline ? t("bookableItemDetails.fields.granularity") : t("settings.fields.granularity")}
           </FieldLabel>
           <TimeIncrementField form={form} id={`${id}-granularity`} disabled={disabled} />
         </div>
-        {inline ? null : openingHours}
-        {inline ? maximumDuration : null}
-        {inline ? <div className="grid min-w-0 grid-cols-2 items-start gap-4 @md:col-span-2">{buffers}</div> : buffers}
-        {inline ? null : maximumDuration}
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-buffer-Before`}>{t("settings.fields.bufferBefore")}</FieldLabel>
+          {bufferControl(before, "Before")}
+        </div>
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-buffer-After`}>{t("settings.fields.bufferAfter")}</FieldLabel>
+          {bufferControl(after, "After")}
+        </div>
+        <div className={rowClass}>
+          <FieldLabel htmlFor={`${id}-maximum-duration`}>{t("settings.fields.maximumDuration")}</FieldLabel>
+          <MaximumDurationField form={form} id={`${id}-maximum-duration`} disabled={disabled} />
+        </div>
         <div className={rowClass}>
           <FieldLabel htmlFor={`${id}-double-booking`}>
             {inline ? t("bookableItemDetails.fields.doubleBooking") : t("settings.fields.allowDoubleBooking")}

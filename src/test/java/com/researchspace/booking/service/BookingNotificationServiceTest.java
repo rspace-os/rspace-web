@@ -129,23 +129,23 @@ class BookingNotificationServiceTest {
                 + bookingLink
                 + " was created for instrument "
                 + itemLink
-                + " from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-                + "5:04 AM (Europe/Berlin, UTC+01:00)."
+                + " from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
+                + "5:04 AM CET (Europe/Berlin)."
             : "Booking "
                 + bookingLink
                 + " for instrument "
                 + itemLink
                 + " was cancelled. It was "
-                + "scheduled from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-                + "5:04 AM (Europe/Berlin, UTC+01:00).";
+                + "scheduled from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
+                + "5:04 AM CET (Europe/Berlin).";
     if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
       expectedMessage =
           "Booking "
               + bookingLink
               + " for instrument "
               + itemLink
-              + " was changed to Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-              + "5:04 AM (Europe/Berlin, UTC+01:00).";
+              + " was changed. It is scheduled from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
+              + "5:04 AM CET (Europe/Berlin).";
     }
     assertEquals(expectedMessage, message.getValue());
   }
@@ -241,11 +241,11 @@ class BookingNotificationServiceTest {
                     ((BookingNotificationData) config.getNotificationData()).getEmailTimeFormat())
             .toList());
     assertTrue(messages.getAllValues().get(0).contains("Jan 2, 2026, 4:04 AM"));
-    assertTrue(messages.getAllValues().get(0).contains("Europe/Berlin, UTC+01:00"));
+    assertTrue(messages.getAllValues().get(0).contains("CET (Europe/Berlin)"));
     assertTrue(
         messages.getAllValues().get(1).contains("Jan 1, 2026, 19:04"),
         messages.getAllValues().get(1));
-    assertTrue(messages.getAllValues().get(1).contains("America/Los_Angeles, UTC-08:00"));
+    assertTrue(messages.getAllValues().get(1).contains("PST (America/Los_Angeles)"));
   }
 
   @Test
