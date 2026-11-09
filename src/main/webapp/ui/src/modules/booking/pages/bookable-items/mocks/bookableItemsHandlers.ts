@@ -275,6 +275,18 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
 
 export function bookableItemDetailsHandlers(): RequestHandler[] {
   return [
+    http.get("/api/v2/booking-configurations/:id/notification-subscription", ({ params }) =>
+      HttpResponse.json(
+        {
+          configurationId: Number(params.id),
+          enabled: false,
+          createdEnabled: true,
+          cancelledEnabled: true,
+          emailEnabled: false,
+        },
+        { headers: { ETag: '"vabsent-000"' } },
+      ),
+    ),
     http.get("/api/inventory/v1/instruments/123", () =>
       HttpResponse.json({
         sharingMode: "WHITELIST",

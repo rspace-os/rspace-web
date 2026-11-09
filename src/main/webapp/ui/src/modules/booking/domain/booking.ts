@@ -237,15 +237,14 @@ export function bookingQueryOptions(id: number | undefined) {
     },
   });
 }
-export async function createBooking(input: BookingsCreate): Promise<BookingMutation> {
-  return mapBookingMutation(await generatedCreateBooking(input));
+export async function createBooking(input: BookingsCreate, idempotencyKey?: string): Promise<BookingMutation> {
+  return mapBookingMutation(
+    await generatedCreateBooking(input, idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined),
+  );
 }
 export async function updateBooking(id: number, version: number, input: BookingsUpdate): Promise<BookingMutation> {
   return mapBookingMutation(await generatedUpdateBooking(id, input, { "If-Match": `"${version}"` }));
 }
 export function cancelBooking(id: number, version: number): Promise<BookingMutation> {
   return updateBooking(id, version, { state: "CANCELLED" });
-}
-export function isBookingOverlapError(error: unknown): boolean {
-  return error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.overlap";
 }
