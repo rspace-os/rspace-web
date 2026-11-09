@@ -125,9 +125,7 @@ class ResourceMutationScopeTest {
     AccessFunction scoped =
         AccessFunction.documented(
             "TestMutationScope",
-            "Scope",
-            Set.of(),
-            ignored -> AccessResult.allowedWhere(constraint));
+            "Scope", Set.of(), ignored -> AccessResult.allowedWhere(constraint));
     var description =
         new CollectionDescription<>(
             source.resourceName(),
