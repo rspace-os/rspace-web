@@ -1,23 +1,23 @@
-import * as React from "react";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { dayMinuteToZonedTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { DroppedFilterNotice } from "../DroppedFilterNotice";
+import { hasAvailabilityFilter, withAvailability } from "./availability/availabilityQuickFilters";
 import { BookingEventsCalendar } from "./BookingEventsCalendar";
 import { calendarEventFocusRetryChanges } from "./calendarEventFocus";
 import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
   const {
+    availabilityLayout,
+    itemConfig,
     droppedFilterFields,
     creationTarget,
-    navigate,
     calendarSearch,
-    setCalendarSearch,
     view,
     setView,
     layout,
     setLayout,
-    setResettingControls,
     preferences,
     beginCreation,
     creationActive,
@@ -39,8 +39,6 @@ export function CalendarContent() {
     mineOnly,
     onEventFiltersChange,
     onSearchChange,
-    setEventWhere,
-    setItemWhere,
     setMineOnly,
     myItemsOnly,
     setMyItemsOnly,
@@ -57,6 +55,15 @@ export function CalendarContent() {
     <>
       <DroppedFilterNotice fields={droppedFilterFields} />
       <BookingEventsCalendar
+        availabilityLayout={availabilityLayout}
+        itemFilterConfig={itemConfig}
+        onItemFilterChange={(expression) => {
+          replaceSearch((search) => {
+            if (expression) search.set("calendar-resources.where", serializeRsqlExpression(expression));
+            else search.delete("calendar-resources.where");
+            if (hasAvailabilityFilter(expression)) search.delete("date");
+          });
+        }}
         date={selectedDate}
         view={view}
         layout={layout}
@@ -112,12 +119,22 @@ export function CalendarContent() {
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
         }}
         isLoading={
-          itemRuntimeFields.pending ||
-          eventRuntimeFields.pending ||
-          (displayReady && events.isPending && resourceTable.tableProps.status !== "error")
+          layout === "availability"
+            ? availabilityLayout.tableProps.status === "loading"
+            : itemRuntimeFields.pending ||
+              eventRuntimeFields.pending ||
+              (displayReady && events.isPending && resourceTable.tableProps.status !== "error")
         }
-        isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
+        isError={
+          layout === "availability"
+            ? availabilityLayout.queryReady && availabilityLayout.tableProps.status === "error"
+            : events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")
+        }
         onRetry={() => {
+          if (layout === "availability") {
+            void availabilityLayout.refetch();
+            return;
+          }
           if (focusUnavailableRequest) {
             setFocusUnavailableRequest(undefined);
             replaceSearch((search) => calendarEventFocusRetryChanges(search, focusUnavailableRequest), false);
@@ -128,24 +145,30 @@ export function CalendarContent() {
             void events.refetch();
           }
         }}
-        onDateChange={(nextDate) => replaceSearch((search) => search.set("date", nextDate))}
-        onControlsReset={async () => {
-          // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
-          setResettingControls(true);
-          try {
-            await navigate({
-              search: (current) => ({ ...current, date: undefined, target: undefined }),
-              replace: true,
-            });
-            await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
-            resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
-            React.startTransition(() => {
-              setView("day");
-              setLayout("resources");
-            });
-          } finally {
-            React.startTransition(() => setResettingControls(false));
-          }
+        onDateChange={(nextDate) =>
+          replaceSearch((search) => {
+            search.set("date", nextDate);
+            if (layout === "availability") {
+              const remaining = withAvailability(itemExpression, undefined);
+              if (remaining) search.set("calendar-resources.where", serializeRsqlExpression(remaining));
+              else search.delete("calendar-resources.where");
+            }
+          })
+        }
+        onControlsReset={() => {
+          replaceSearch((search) => {
+            for (const key of [
+              "date",
+              "target",
+              "calendar-resources.q",
+              "calendar-resources.where",
+              "calendar-events.where",
+              "view",
+              "layout",
+            ])
+              search.delete(key);
+          });
+          resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
         }}
         onViewChange={setView}
         onLayoutChange={setLayout}

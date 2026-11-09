@@ -1,4 +1,4 @@
-import { hashKey, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
 import {
   bookingCatalogueAvailabilityCountsQuery,
@@ -8,7 +8,7 @@ import {
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { togglePreset, withoutPresets } from "@/modules/common/table-list/presets";
 import type { FilterExpression } from "@/modules/common/table-list/types";
-import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import type { BookingConfiguration } from "../../bookable-items/bookingConfiguration";
 
 export type AvailabilityQuickFilter = CatalogueAvailability;
 export type AllBookableItem = BookingConfiguration & {
@@ -119,15 +119,10 @@ export function todayAvailabilityWindow(
  */
 export function keepAcrossMinutes(queryKey: readonly unknown[]) {
   const scope = (key: readonly unknown[]) =>
-    hashKey(
-      key.map((part) => {
-        if (part === null || typeof part !== "object" || Array.isArray(part)) return part;
-        return Object.fromEntries(Object.entries(part).filter(([name]) => name !== "now"));
-      }),
-    );
-  const currentScope = scope(queryKey);
+    JSON.stringify(key, (name, value: unknown) => (name === "now" ? undefined : value));
+  const current = scope(queryKey);
   return <T>(previous: T | undefined, previousQuery?: { queryKey: readonly unknown[] }): T | undefined =>
-    previousQuery && scope(previousQuery.queryKey) === currentScope ? previous : undefined;
+    previousQuery && scope(previousQuery.queryKey) === current ? previous : undefined;
 }
 
 export type AvailabilityCountsSearch = {

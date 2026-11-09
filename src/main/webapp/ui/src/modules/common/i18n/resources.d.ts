@@ -766,15 +766,11 @@ export default interface Resources {
       "actions": {
         "access": "Access",
         "book": "Book",
-        "nextDay": "Next day",
-        "previousDay": "Previous day",
         "settings": "Settings",
-        "today": "Today",
+        "viewAvailability": "View availability",
         "viewDetails": "View details"
       },
       "date": "Date",
-      "dateControls": "Availability date controls",
-      "dateNavigation": "Availability date navigation",
       "fields": {
         "actions": "Actions"
       },
@@ -782,24 +778,14 @@ export default interface Resources {
         "location": "Location",
         "locationOption": "{name} ({globalId})"
       },
-      "jumpToDate": "Jump to date",
+      "legend": "Quick filters",
+      "loading": "Finding bookable items…",
       "location": {
         "description": "Where this instrument is stored in Inventory.",
         "workbenchDescription": "Where this instrument is stored in Inventory. WB = workbench."
       },
+      "ownerPreset": "Owned Items",
       "plural": "All Bookable Items",
-      "quickFilters": {
-        "availableNow": "Available now",
-        "availableNowDescription": "Free at this moment",
-        "error": "Could not find available items.",
-        "freeLaterToday": "Free later",
-        "freeLaterTodayDescription": "Busy now, free again later today",
-        "legend": "Quick filters",
-        "loading": "Finding bookable items…",
-        "myItems": "Owned Items",
-        "retry": "Retry",
-        "scope": "Availability uses the selected display date and time zone."
-      },
       "singular": "Bookable item",
       "title": "All Bookable Items",
       "toolbar": "All Bookable Items controls"
@@ -841,6 +827,19 @@ export default interface Resources {
         "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
       },
       "timezone": "Time zone: {timezone}"
+    },
+    "availabilityLayout": {
+      "quickFilters": {
+        "availableNow": "Available now",
+        "availableNowDescription": "Free at this moment",
+        "error": "Could not find available items.",
+        "freeLaterToday": "Free later",
+        "freeLaterTodayDescription": "Busy now, free again later today",
+        "legend": "Quick filters",
+        "loading": "Finding bookable items…",
+        "myItems": "Owned Items",
+        "retry": "Retry"
+      }
     },
     "bookableItemDetails": {
       "about": "About this item",
@@ -1506,6 +1505,7 @@ export default interface Resources {
       "jumpToDate": "Jump to date",
       "layout": {
         "agenda": "Agenda",
+        "availability": "Availability",
         "legend": "Layout",
         "resources": "By Item",
         "time-grid": "Time grid"
@@ -1515,6 +1515,8 @@ export default interface Resources {
       "nextPeriod": "{period, select, day {Next day} week {Next week} month {Next month} other {Next period}}",
       "period": {
         "day": "Day",
+        "dayOnlyAvailability": "Availability is available for Day only.",
+        "dayOnlyShort": "Day only",
         "legend": "Period",
         "month": "Month",
         "monthUnavailableInResources": "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",

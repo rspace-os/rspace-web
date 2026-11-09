@@ -20,8 +20,6 @@ import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks
 import { institutionBookingPreferences } from "../preferences/bookingPreferencesFixtures";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 
-const storyClock = () => new Date("2026-08-17T08:30:00Z");
-
 export function AllBookableItemsStory({
   containerWidth = 1500,
   history = createMemoryHistory({ initialEntries: ["/booking/all-items?date=2026-08-17"] }),
@@ -47,7 +45,7 @@ export function AllBookableItemsStory({
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
           validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage clock={storyClock} />,
+          component: () => <AllBookableItemsPage />,
         }),
         createRoute({
           getParentRoute: () => bookingRoute,

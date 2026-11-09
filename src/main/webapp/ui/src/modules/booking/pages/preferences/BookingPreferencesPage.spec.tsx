@@ -5,7 +5,7 @@ import "@/modules/common/styles/index.css";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
@@ -60,6 +60,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe("Booking display preferences", () => {
@@ -109,6 +110,7 @@ describe("Booking display preferences", () => {
   });
 
   test("a custom preference survives reload and remains authoritative across Booking routes", async () => {
+    vi.setSystemTime(new Date("2026-08-28T16:00:00Z"));
     const browserUrl = window.location.href;
     const first = render(<BookingPreferencesPageStory />);
     await expect.element(preferences.heading).toBeVisible();
@@ -144,12 +146,19 @@ describe("Booking display preferences", () => {
       .toBeVisible();
     await expect.element(page.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
 
-    history.push("/booking/all-items?date=2026-08-28");
+    history.push("/booking/all-items");
     await expect.element(page.getByRole("heading", { name: "All Bookable Items" })).toBeVisible();
-    await expect.element(page.getByLabelText("Time zone: America/New_York")).not.toBeInTheDocument();
     const itemNames = ["Confocal microscope", "Electron microscope", "Mass spectrometer", "Flow cytometer"];
-    // The heading renders before the availability bars, and expect.poll gives up after 1 s.
     for (const name of itemNames) {
+      await expect.element(page.getByRole("link", { name, exact: true })).toBeVisible();
+    }
+
+    history.push("/booking/calendar?layout=availability&date=2026-08-28");
+    await expect.element(page.getByRole("heading", { name: "Calendar", exact: true })).toBeVisible();
+    await expect.element(page.getByLabelText("Time zone: America/New_York")).not.toBeInTheDocument();
+    // Wait for every bar before polling marker positions.
+    for (const name of itemNames) {
+      await expect.element(page.getByRole("link", { name, exact: true })).toBeVisible();
       await expect
         .element(page.getByRole("img", { name: `${name} availability` }).getByTitle("Current time", { exact: false }))
         .toBeInTheDocument();

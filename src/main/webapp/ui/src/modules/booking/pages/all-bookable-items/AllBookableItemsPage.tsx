@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { AllBookableItemsContent, type AllBookableItemsContentProps } from "./AllBookableItemsContent";
+import { AllBookableItemsContent } from "./AllBookableItemsContent";
 
 function AllItemsSkeleton() {
   const { t } = useTranslation("common");
@@ -21,10 +21,10 @@ function AllItemsSkeleton() {
   );
 }
 
-export default function AllBookableItemsPage(props: AllBookableItemsContentProps = {}) {
+export default function AllBookableItemsPage() {
   return (
     <Suspense fallback={<AllItemsSkeleton />}>
-      <AllBookableItemsContent {...props} />
+      <AllBookableItemsContent />
     </Suspense>
   );
 }
