@@ -1,11 +1,17 @@
 package com.researchspace.maintenance.dao;
 
-import com.researchspace.dao.GenericDao;
+import com.researchspace.dao.CollectionDao;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import java.util.List;
 import java.util.Optional;
 
-public interface MaintenanceDao extends GenericDao<ScheduledMaintenance, Long> {
+public interface MaintenanceDao extends CollectionDao<ScheduledMaintenance, Long> {
+
+  /** Locks and reads the current row, discarding any snapshot loaded earlier. */
+  Optional<ScheduledMaintenance> lockCurrent(Long id);
+
+  /** Flushes the mutation so its returned version and delete outcome are final. */
+  void flushChanges();
 
   /**
    * Finds scheduled maintenance that is either active now, or is closest in the future

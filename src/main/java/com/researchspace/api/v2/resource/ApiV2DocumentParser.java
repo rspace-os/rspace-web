@@ -5,9 +5,12 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldType.InputKind;
 import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.DeclaredFieldType;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
+import com.researchspace.model.collection.EmbeddedFieldException;
+import com.researchspace.model.collection.EmbeddedObjects;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.Relationship;
@@ -159,7 +162,7 @@ public final class ApiV2DocumentParser {
                 return;
               }
               int violationCount = violations.size();
-              Object value = value(entry.getValue(), describedField, violations);
+              Object value = value(entry.getValue(), describedField, operation, violations);
               if (violations.size() == violationCount) {
                 values.put(name, value);
               }
@@ -176,7 +179,13 @@ public final class ApiV2DocumentParser {
                   return;
                 }
                 if (field.hasDefaultValue()) {
-                  values.put(field.name(), field.defaultValue());
+                  try {
+                    values.put(field.name(), field.validateValue(field.defaultValue()));
+                  } catch (EmbeddedFieldException ex) {
+                    violations.add(new Violation(path(field.name(), ex.path()), ex.reason()));
+                  } catch (RuntimeException ex) {
+                    violations.add(new Violation(field.name(), Reason.INVALID_VALUE));
+                  }
                 } else if (field.isRequiredOnCreate()) {
                   violations.add(new Violation(field.name(), Reason.REQUIRED));
                 }
@@ -211,8 +220,15 @@ public final class ApiV2DocumentParser {
               String name = entry.getKey();
               var field = description.findField(name);
               if (field.isPresent()) {
-                if (!field.orElseThrow().writableOn(operation, inputContext)) {
+                Field<T, ?> describedField = field.orElseThrow();
+                if (!describedField.writableOn(operation, inputContext)) {
                   violations.add(new Violation(name, Reason.READ_ONLY));
+                } else if (describedField.type() instanceof DeclaredFieldType<?> declared) {
+                  try {
+                    EmbeddedObjects.authorize(declared, entry.getValue(), operation, inputContext);
+                  } catch (EmbeddedFieldException ex) {
+                    violations.add(new Violation(path(name, ex.path()), ex.reason()));
+                  }
                 }
                 return;
               }
@@ -324,23 +340,31 @@ public final class ApiV2DocumentParser {
     return new ResourceReference<>(target.storedKind(), id);
   }
 
-  private static Object value(JsonNode node, Field<?, ?> field, List<Violation> violations) {
+  private static Object value(
+      JsonNode node, Field<?, ?> field, WriteOperation operation, List<Violation> violations) {
     if (node.isNull()) {
       if (!field.nullable()) {
         violations.add(new Violation(field.name(), Reason.NULL_NOT_ALLOWED));
       }
       return null;
     }
-    if (!hasExpectedKind(node, field.type().inputKind())) {
+    if (!field.type().accepts(node)) {
       violations.add(new Violation(field.name(), Reason.WRONG_TYPE));
       return null;
     }
     try {
-      return field.validateValue(field.type().parse(node.asText()));
+      return field.validateValue(field.type().parseDocument(node, operation));
+    } catch (EmbeddedFieldException ex) {
+      violations.add(new Violation(path(field.name(), ex.path()), ex.reason()));
+      return null;
     } catch (RuntimeException ex) {
       violations.add(new Violation(field.name(), Reason.INVALID_VALUE));
       return null;
     }
+  }
+
+  private static String path(String parent, String child) {
+    return child.isEmpty() ? parent : parent + (child.startsWith("[") ? "" : ".") + child;
   }
 
   private static boolean hasExpectedKind(JsonNode node, InputKind kind) {

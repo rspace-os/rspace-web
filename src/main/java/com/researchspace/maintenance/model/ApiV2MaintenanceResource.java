@@ -27,6 +27,8 @@ public record ApiV2MaintenanceResource(
             example = "42",
             additionalExamples = {"43"})
         Long id,
+    @ApiV2ResourceField(description = "Version for conditional updates and deletes.", example = "0")
+        long version,
     @ApiV2ResourceField(
             createAccess = ApiV2ResourceField.AccessPreset.INHERITED,
             updateAccess = ApiV2ResourceField.AccessPreset.INHERITED,
