@@ -1,18 +1,13 @@
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
-import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
+import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
-
-function dateInTimeZone(date: string, timeZone: string): Date {
-  const [year, month, day] = date.split("-").map(Number);
-  return new TZDate(year, month - 1, day, timeZone);
-}
 
 export function BookingDateControls({
   date,
