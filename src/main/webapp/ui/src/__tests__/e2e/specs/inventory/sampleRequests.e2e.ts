@@ -1117,8 +1117,11 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
 
     for (const name of sampleNames) {
       // New Samples start non-requestable by default (Sample.requestable is a boolean field),
-      // so there's nothing to opt out of for this test to exercise opting in.
-      await clientInventory.createSample({ name });
+      // so there's nothing to opt out of for this test to exercise opting in. Registered with
+      // createdRequestableSamples so afterEach resets requestable=false even if a later
+      // assertion fails, the same as every other sample this file marks requestable.
+      const sample = await clientInventory.createSample({ name });
+      createdRequestableSamples.push({ client: clientInventory, id: sample.id });
     }
 
     const form = await test.step("When I select both and open Batch Edit", async () => {
