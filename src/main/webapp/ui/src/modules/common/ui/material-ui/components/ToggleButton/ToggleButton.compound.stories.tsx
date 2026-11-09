@@ -6,6 +6,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Inputs/ToggleButton/Composition",
+  tags: ["autodocs"],
   component: ToggleButtonGroup,
   parameters: { a11y: { test: "error" } },
   argTypes: {
