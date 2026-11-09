@@ -775,6 +775,63 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void selectedTemplateImportsIntoImportersTemplatesFolder() throws Exception {
+    User exporter = createInitAndLoginAnyUser();
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(exporter, "selection document");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), exporter);
+    ArchiveExportConfig cfg = createDefaultArchiveConfig(exporter, tempExportFolder);
+    cfg.setArchiveType(ArchiveExportConfig.XML);
+    ExportSelection selection =
+        ExportSelection.createRecordsExportSelection(
+            new Long[] {doc.getId(), template.getId()}, new String[] {"NORMAL", "NORMAL:TEMPLATE"});
+    ArchiveResult result =
+        exportImportMgr
+            .asyncExportSelectionToArchive(selection, cfg, exporter, anyURI(), standardPostExport)
+            .get();
+    ArchivalImportConfig parseConfig =
+        createDefaultArchiveImportConfig(exporter, tempImportFolder2);
+    IArchiveModel archive =
+        doInTransaction(
+            () ->
+                archiveParser.loadArchive(
+                    result.getExportFile(), new ImportArchiveReport(), parseConfig));
+    assertThat(
+            archive
+                .findCurrentDocArchiveByName(template.getName())
+                .get(0)
+                .getArchivalDocument()
+                .getType())
+        .contains("TEMPLATE");
+
+    User importer = createInitAndLoginAnyUser();
+    Long templateFolderId = folderMgr.getTemplateFolderForUser(importer).getId();
+    Long rootFolderId = getRootRecordForUser(importer).getId();
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(result.getExportFile().getName(), result.getExportFile()),
+            importer.getUsername(),
+            new ArchivalImportConfig(),
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful());
+    assertThat(report.getImportedRecords()).hasSize(2);
+    doInTransaction(
+        () -> {
+          sessionFactory.getCurrentSession().flush();
+          sessionFactory.getCurrentSession().clear();
+          for (BaseRecord imported : report.getImportedRecords()) {
+            BaseRecord persisted = recordMgr.get(imported.getId());
+            assertEquals(
+                persisted.hasType(RecordType.TEMPLATE) ? templateFolderId : rootFolderId,
+                persisted.getParent().getId(),
+                "Persisted parent of " + persisted.getName());
+          }
+        });
+  }
+
+  @Test
   public void RobRSpaceTrainingandCertification() throws Exception {
     User u2 = createInitAndLoginAnyUser();
     File archiveToImport = RSpaceTestUtils.getResource("Rob-RSpaceTrainingandCertification.zip");
