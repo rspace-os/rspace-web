@@ -1,6 +1,9 @@
 package com.researchspace.model.audittrail;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /** The type of operation performed by auditable event. */
+@Schema(enumAsRef = true)
 public enum AuditAction {
   /*
    * Declare these in alphabetical order to facilitate ordering and searching

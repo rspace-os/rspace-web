@@ -66,3 +66,19 @@ without requiring code, useful for adding loggers with default behaviour.
 Using slf4j API will be useful for any RSpace Java API libraries we
 write in the future, since they don't impose a logging implementation on
 the client using it.
+
+
+## Audit file format maintenance
+
+`Log4jHistoryDAOImpl` writes the `RSLogs*` audit lines. The Log4j timestamp prefix is
+part of that format. Update `AuditLogLineFormat`, the v1 `LogLineParser` and the v2
+`ApiV2AuditStrictSearch` together whenever the writer or prefix changes. Run
+`AuditLogLineFormatTest`, which feeds the same samples to both readers, plus
+`LogLineParserTest` and `ApiV2AuditStrictSearchTest`. Keep examples for absent and empty
+descriptions, `#` and operate-as usernames, and the historical `COPY` action.
+
+The readers share syntax but retain different policies. V1 skips malformed lines and
+uses lenient dates in the default JVM zone. V2 fails eligible malformed reads with `503`,
+uses strict zone-aware dates, and resolves DST overlaps only after relevance filtering.
+See the audit section of `RestApiV2Collections.md` for access filtering, descriptions,
+completed-day snapshots, concurrency limits and cache settings.
