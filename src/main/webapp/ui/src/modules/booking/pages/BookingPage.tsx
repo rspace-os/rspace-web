@@ -1,5 +1,8 @@
 import { Outlet } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
+import { CompactBookingCreationDialog } from "@/modules/booking/creation/CompactBookingCreationDialog";
 import { Heading } from "@/modules/common/ui/typography";
 
 export function BookingDashboard() {
@@ -15,8 +18,13 @@ export function BookingDashboard() {
 
 export default function BookingPage() {
   return (
-    <div className="mx-auto w-full max-w-7xl">
-      <Outlet />
-    </div>
+    <BookingCreationStoreProvider>
+      <div className="mx-auto w-full max-w-7xl">
+        <Outlet />
+      </div>
+      <Suspense fallback={null}>
+        <CompactBookingCreationDialog />
+      </Suspense>
+    </BookingCreationStoreProvider>
   );
 }

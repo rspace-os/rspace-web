@@ -9,7 +9,7 @@ export const MAX_BOOKING_DURATION_MINUTES = 527_040;
 
 export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
 
-const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+export const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
 export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);
 
@@ -42,6 +42,11 @@ export type OpeningInterval = Pick<BookingOpeningHoursEntry, "start" | "end">;
 
 /** The opening-hour part of scheduling settings. */
 export type OpeningSchedule = { openingHours: readonly BookingOpeningHoursEntry[] };
+
+/** Every day, all day: the explicit opening-hours bypass for maintenance. */
+export const ALWAYS_OPEN: OpeningSchedule = {
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+};
 
 /** A localized weekday name for an ISO weekday; 2024-01-01 is a Monday. */
 export function formatIsoWeekday(dayOfWeek: number, width: "long" | "short" = "long", locale = "en-US"): string {
@@ -183,4 +188,15 @@ export function openingIntervals(
     }
   }
   return merged.map((opening) => ({ start: opening.start.toString(), end: opening.end.toString() }));
+}
+
+/** Every instant of a non-empty booking window must be open. */
+export function coversInterval(settings: OpeningSchedule, timezone: string, interval: OpeningInterval): boolean {
+  if (Temporal.Instant.compare(interval.start, interval.end) >= 0) return false;
+  const openings = openingIntervals(settings, timezone, interval);
+  return (
+    openings.length === 1 &&
+    Temporal.Instant.compare(openings[0].start, interval.start) === 0 &&
+    Temporal.Instant.compare(openings[0].end, interval.end) === 0
+  );
 }

@@ -1,17 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  createMemoryHistory,
+  createBrowserHistory,
   createRootRoute,
   createRoute,
   createRouter,
   Outlet,
-  type RouterHistory,
   RouterProvider,
 } from "@tanstack/react-router";
+import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
-import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
-import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import {
@@ -44,25 +43,15 @@ export const storyUser: ApiV2CurrentUser = {
   },
 };
 
-export function BookableItemPageStory({
-  hasSysAdminRole = true,
-  initialPath = "/booking/bookable-items/IN123",
-  history,
-}: {
-  hasSysAdminRole?: boolean;
-  initialPath?: string;
-  history?: RouterHistory;
-} = {}) {
+export function BookableItemPageStory({ hasSysAdminRole = true }: { hasSysAdminRole?: boolean } = {}) {
+  if (!window.location.pathname.startsWith("/booking/bookable-items/")) {
+    window.history.replaceState({}, "", "/booking/bookable-items/IN123");
+  }
+
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
   queryClient.setQueryData(getGetCurrentUserQueryKey(), { ...storyUser, hasSysAdminRole });
-  const rootRoute = createRootRoute({
-    component: () => (
-      <NuqsAdapter>
-        <Outlet />
-      </NuqsAdapter>
-    ),
-  });
+  const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
@@ -80,7 +69,7 @@ export function BookableItemPageStory({
         }),
       ]),
     ]),
-    history: history ?? createMemoryHistory({ initialEntries: [initialPath] }),
+    history: createBrowserHistory(),
   });
 
   return (
