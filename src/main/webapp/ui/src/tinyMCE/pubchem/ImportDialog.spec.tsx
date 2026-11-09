@@ -51,7 +51,16 @@ const pubchemSearchHandler = () =>
 const dialog = new PubchemImportDialogPage();
 
 beforeEach(() => {
-  worker.use(pubchemSearchHandler());
+  worker.use(
+    http.get(
+      "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi",
+      () =>
+        new HttpResponse('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>', {
+          headers: { "Content-Type": "image/svg+xml" },
+        }),
+    ),
+    pubchemSearchHandler(),
+  );
 });
 
 afterEach(() => {
