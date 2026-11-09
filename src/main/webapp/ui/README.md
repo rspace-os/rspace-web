@@ -65,6 +65,9 @@ copying them into feature modules.
 | 1. | `modules/common/ui/tooltip-icon-link.tsx` | `TooltipIconLink` composes an icon link with a labelled tooltip. |
 | 2. | `modules/common/hooks/useAlignedMinute.ts` | `useAlignedMinute` returns epoch milliseconds aligned to minute boundaries, with an optional clock for tests. |
 | 3. | `modules/common/queries/queryRetry.ts` | `httpStatusOf`, `isPermanentClientError`, and `retryUnlessClientError` handle retry policy. Permanent 4xx responses stop retries, except 408 and 429; other failures retry while the failure count is below three. |
+| 4. | `modules/common/app/detailPageLayout.ts` | `detailPageClassName` and `detailColumnsClassName` supply shared detail-page container and column classes. |
+| 5. | `modules/common/app/PageSkeleton.tsx` | `PageSkeleton` renders a busy main landmark and translated loading status; callers provide the placeholder rows and layout. |
+| 6. | `__tests__/helpers/renderInRouter.tsx` | `renderInRouter` renders a supplied route tree with memory history and returns the render result plus router. It accepts an alternate renderer. |
 
 The UI helpers use the existing generated `modules/common/utils/cn-tables.ts`. The root
 `postinstall` runs `pnpm cn:build` to generate it from the shared stylesheet.

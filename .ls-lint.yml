@@ -1,0 +1,15 @@
+# lint:routes sets the workdir to src/main/webapp/ui/src/routes.
+ls:
+  .dir: regex:([A-Za-z0-9]+(-[A-Za-z0-9]+)*|\$[A-Za-z][A-Za-z0-9]*|\{-\$[A-Za-z][A-Za-z0-9]*\})
+  .*: regex:!.*
+  .: regex:!.*
+  .*.*: regex:!.*
+  .*.*.*: regex:!.*
+  .tsx: regex:(index|route|__root)
+  '*':
+    .dir: regex:([A-Za-z0-9]+(-[A-Za-z0-9]+)*|\$[A-Za-z][A-Za-z0-9]*|\{-\$[A-Za-z][A-Za-z0-9]*\})
+    .*: regex:!.*
+    .: regex:!.*
+    .*.*: regex:!.*
+    .*.*.*: regex:!.*
+    .tsx: regex:(index|route)
