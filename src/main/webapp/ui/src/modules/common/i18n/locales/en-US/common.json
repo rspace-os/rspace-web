@@ -147,6 +147,7 @@
   "appBar": {
     "aboutRSpace": "About RSpace",
     "accountMenu": "Account Menu",
+    "accountMenuAccessible": "{label} {name} ({initials})",
     "apps": "Apps",
     "brandingAlt": "branding",
     "closeSidebar": "close sidebar",
@@ -997,7 +998,8 @@
     "none": "None",
     "noValue": "No Value",
     "unknown": "Unknown",
-    "unknownItem": "Unknown item"
+    "unknownItem": "Unknown item",
+    "userWithUsername": "{name} ({username})"
   },
   "versionLockPicker": {
     "columns": {

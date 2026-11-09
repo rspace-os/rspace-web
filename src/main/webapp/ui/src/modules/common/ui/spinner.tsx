@@ -17,3 +17,13 @@ function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
 }
 
 export { Spinner };
+
+function ContentLoadingSpinner() {
+  return (
+    <div className="grid min-h-48 flex-1 place-items-center self-stretch">
+      <Spinner className="size-8" />
+    </div>
+  );
+}
+
+export { ContentLoadingSpinner };
