@@ -62,12 +62,30 @@ export function mapBookingTarget(target: BookingsRead["target"]) {
   return { ...reference, relationTo: "instruments" as const, globalId: reference.globalId, value };
 }
 
-function mapIdentity<TTarget>(input: BookingsRead, target: TTarget) {
+function mapBookingLocation(location: BookingsRead["location"]) {
+  if (location == null) return location;
+  if (typeof location.value === "number") throw new BookingUnavailableError("Booking location is not expanded");
+  return {
+    ...location,
+    value: {
+      ...location.value,
+      id: location.value.id,
+      globalId: required(location.value.globalId, "location.globalId"),
+      name: required(location.value.name, "location.name"),
+    },
+  };
+}
+function mapMutationLocation(location: BookingsRead["location"]) {
+  return location == null || typeof location.value === "number" ? location : mapBookingLocation(location);
+}
+
+function mapIdentity<TTarget, TLocation>(input: BookingsRead, target: TTarget, location: TLocation) {
   if (input.timezone === undefined) throw new BookingUnavailableError("Booking timezone is unavailable");
   const identity = {
     id: input.id,
     version: required(input.version, "version"),
     target,
+    ...(location === undefined ? {} : { location }),
     timezone: input.timezone,
     start: required(input.start, "start"),
     end: required(input.end, "end"),
@@ -83,6 +101,7 @@ export function mapBookingSummary(input: BookingsRead) {
   const summary = {
     id: input.id,
     target: input.target === null ? null : mapBookingTarget(input.target),
+    ...(input.location === undefined ? {} : { location: mapBookingLocation(input.location) }),
     timezone: input.timezone,
     start: required(input.start, "start"),
     end: required(input.end, "end"),
@@ -130,7 +149,10 @@ function mapPrivacy(input: BookingsRead) {
 }
 
 export function mapBooking(input: BookingsRead) {
-  return { ...mapIdentity(input, mapBookingTarget(input.target)), ...mapPrivacy(input) };
+  return {
+    ...mapIdentity(input, mapBookingTarget(input.target), mapBookingLocation(input.location)),
+    ...mapPrivacy(input),
+  };
 }
 function mapReadIdentity(input: BookingsRead) {
   if (input.timezone === undefined) throw new BookingUnavailableError("Booking timezone is unavailable");
@@ -138,6 +160,7 @@ function mapReadIdentity(input: BookingsRead) {
     id: input.id,
     version: required(input.version, "version"),
     target: input.target === null ? null : mapBookingTarget(input.target),
+    ...(input.location === undefined ? {} : { location: mapBookingLocation(input.location) }),
     timezone: input.timezone,
     start: required(input.start, "start"),
     end: required(input.end, "end"),
@@ -179,7 +202,11 @@ export function mapBookingListDocument(input: BookingsRead) {
 export function mapBookingMutation(input: BookingsRead) {
   const target = required(input.target, "target");
   return {
-    ...mapIdentity(input, typeof target.value === "number" ? target : mapBookingTarget(target)),
+    ...mapIdentity(
+      input,
+      typeof target.value === "number" ? target : mapBookingTarget(target),
+      mapMutationLocation(input.location),
+    ),
     ...mapPrivacy(input),
   };
 }
@@ -201,7 +228,7 @@ export const BookingListDocumentTableValidation = {
 };
 
 export const BOOKING_READ_FIELDS =
-  "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
+  "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 const readParameters = {
   depth: 2,
   fields: {
