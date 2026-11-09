@@ -7,6 +7,8 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import type React from "react";
 import axios from "@/common/axios";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 import NavigateContext from "../../../../stores/contexts/Navigate";
@@ -26,6 +28,9 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
     value: false,
   }),
 }));
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
+}));
 
 // Defaults to DENIED so the two pre-existing tests below are unaffected; the Requests-visibility
 // tests further down set this explicitly for each case.
@@ -34,9 +39,51 @@ function deploymentProperties(sampleRequestsAvailable: "ALLOWED" | "DENIED" = "D
 }
 
 const mockAxios = new MockAdapter(axios);
+
+function renderSidebar(
+  rootStore: ReturnType<typeof makeMockRootStore>,
+  content: React.ReactNode = <Sidebar id="foo" />,
+) {
+  return renderWithProviders(
+    <ThemeProvider theme={materialTheme}>
+      <DeploymentPropertyContext.Provider value={deploymentProperties()}>
+        <LandmarksProvider>
+          <storesContext.Provider value={rootStore}>{content}</storesContext.Provider>
+        </LandmarksProvider>
+      </DeploymentPropertyContext.Provider>
+    </ThemeProvider>,
+  );
+}
+
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
+  });
+
+  test("Booking System links to Booking when enabled", () => {
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    renderSidebar(rootStore);
+
+    expect(useIsFeatureFlagEnabled).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
+    expect(screen.getByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).toHaveAttribute(
+      "href",
+      "/booking",
+    );
+  });
+
+  test("Booking System is hidden when the feature is disabled", () => {
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    renderSidebar(rootStore);
+
+    expect(screen.queryByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).not.toBeInTheDocument();
   });
 
   test("Should have no axe violations.", async () => {
@@ -54,17 +101,7 @@ describe("Sidebar", () => {
         },
       },
     });
-    const { container } = renderWithProviders(
-      <ThemeProvider theme={materialTheme}>
-        <DeploymentPropertyContext.Provider value={deploymentProperties()}>
-          <LandmarksProvider>
-            <storesContext.Provider value={rootStore}>
-              <Sidebar id="foo" />
-            </storesContext.Provider>
-          </LandmarksProvider>
-        </DeploymentPropertyContext.Provider>
-      </ThemeProvider>,
-    );
+    const { container } = renderSidebar(rootStore);
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
@@ -95,29 +132,22 @@ describe("Sidebar", () => {
         },
       },
     });
-    renderWithProviders(
-      <ThemeProvider theme={materialTheme}>
-        <DeploymentPropertyContext.Provider value={deploymentProperties()}>
-          <LandmarksProvider>
-            <storesContext.Provider value={rootStore}>
-              <NavigateContext.Provider
-                value={{
-                  useNavigate: () => navFn,
-                  useLocation: () => ({
-                    hash: "",
-                    pathname: "",
-                    search: "",
-                    state: {},
-                    key: "",
-                  }),
-                }}
-              >
-                <Sidebar id="foo" />
-              </NavigateContext.Provider>
-            </storesContext.Provider>
-          </LandmarksProvider>
-        </DeploymentPropertyContext.Provider>
-      </ThemeProvider>,
+    renderSidebar(
+      rootStore,
+      <NavigateContext.Provider
+        value={{
+          useNavigate: () => navFn,
+          useLocation: () => ({
+            hash: "",
+            pathname: "",
+            search: "",
+            state: {},
+            key: "",
+          }),
+        }}
+      >
+        <Sidebar id="foo" />
+      </NavigateContext.Provider>,
     );
 
     await user.click(screen.getByRole("button", { name: "inventory:recordTypes.instrument.plural" }));
@@ -128,7 +158,7 @@ describe("Sidebar", () => {
     expect(setVisiblePanel).not.toHaveBeenCalled();
   });
 
-  function renderSidebar(sampleRequestsAvailable: "ALLOWED" | "DENIED") {
+  function renderSidebarWithSampleRequests(sampleRequestsAvailable: "ALLOWED" | "DENIED") {
     mockAxios.onGet("livechatProperties").reply(200, { livechatEnabled: false });
     const rootStore = makeMockRootStore({
       uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
@@ -148,13 +178,13 @@ describe("Sidebar", () => {
   }
 
   test("hides the Requests nav item when inventory.sampleRequests.available is not ALLOWED.", () => {
-    renderSidebar("DENIED");
+    renderSidebarWithSampleRequests("DENIED");
 
     expect(screen.queryByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeNull();
   });
 
   test("shows the Requests nav item when inventory.sampleRequests.available is ALLOWED.", () => {
-    renderSidebar("ALLOWED");
+    renderSidebarWithSampleRequests("ALLOWED");
 
     expect(screen.getByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeInTheDocument();
   });

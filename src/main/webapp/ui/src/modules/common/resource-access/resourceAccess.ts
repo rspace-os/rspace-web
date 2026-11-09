@@ -1,6 +1,7 @@
 import type { QueryClient, QueryKey, UseMutationOptions } from "@tanstack/react-query";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
+import * as bookingSettings from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
 import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
 import type { ResourceAccessReplacement } from "@/modules/common/api/v2/generated/models/resourceAccessReplacement";
 import type { ResourceGranteeDirectoryDocument } from "@/modules/common/api/v2/generated/models/resourceGranteeDirectoryDocument";
@@ -78,5 +79,10 @@ export async function searchResourceGrantees(
   signal?: AbortSignal,
 ) {
   const document = await resource.grantees.request(id, { q: query, limit: 20 }, { signal });
+  return (document.docs ?? []).map(directoryEntry);
+}
+
+export async function searchBookingSettingsGrantees(query: string, signal?: AbortSignal) {
+  const document = await bookingSettings.searchBookingSettingsAccessGrantees({ q: query, limit: 20 }, { signal });
   return (document.docs ?? []).map(directoryEntry);
 }
