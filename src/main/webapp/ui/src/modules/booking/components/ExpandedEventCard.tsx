@@ -1,11 +1,13 @@
 import { Wrench, X } from "lucide-react";
-import * as React from "react";
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingDetailRows } from "./BookingDetailRows";
 import {
+  type DayTimelineActionRenderers,
   type DayTimelineEvent,
   dateForMinute,
   formatDayDate,
@@ -13,7 +15,7 @@ import {
   formatMinuteWithDayOffset,
 } from "./DayTimelineEvent";
 
-export type DetailedDayTimelineEvent =
+type DetailedDayTimelineEvent =
   | Extract<DayTimelineEvent, { kind: "blockout" }>
   | Extract<DayTimelineEvent, { kind: "booking"; privacy: "full" }>;
 
@@ -24,23 +26,28 @@ export function ExpandedEventCard({
   exactPeriod,
   renderEventActions,
   renderBlockoutActions,
-}: {
+}: DayTimelineActionRenderers & {
   date: string;
   timezone: string;
   event: DetailedDayTimelineEvent;
   exactPeriod: string;
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const isBlockout = event.kind === "blockout";
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
   const spansMultipleDates = startDate !== endDate;
-  const labelledTitle = event.kind === "booking" ? `${event.title} · ${event.bookedBy}` : event.title;
+  const labelledTitle =
+    event.kind === "booking"
+      ? t("dayTimeline.event.titleWithBooker", { title: event.title, booker: event.bookedBy })
+      : event.title;
   const duration = Math.max(0, event.endMinute - event.startMinute);
   const actions =
     event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
+  const dateTimeRows = [
+    { key: "start", label: t("bookings.form.start"), date: startDate, minute: event.startMinute },
+    { key: "end", label: t("bookings.form.end"), date: endDate, minute: event.endMinute },
+  ];
 
   return (
     <>
@@ -57,43 +64,36 @@ export function ExpandedEventCard({
               {event.title}
             </p>
           ) : null}
-          <PopoverTitle className="font-semibold text-lg tabular-nums leading-tight">{exactPeriod}</PopoverTitle>
+          <div className="flex flex-wrap items-baseline gap-x-1.5">
+            <PopoverTitle className="font-semibold text-lg tabular-nums leading-tight">{exactPeriod}</PopoverTitle>
+            <PopoverDescription className={cn("text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}>
+              {t("dayTimeline.expanded.duration", {
+                hours: Math.floor(duration / 60),
+                minutes: duration % 60,
+              })}
+            </PopoverDescription>
+          </div>
           {spansMultipleDates ? (
             <dl className="mt-1.5 grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs leading-4">
-              <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-                {t("bookings.form.start")}
-              </dt>
-              <dd>
-                <time dateTime={`${startDate}T${formatMinute(date, timezone, event.startMinute)}`}>
-                  {t("dayTimeline.expanded.dateTime", {
-                    date: formatDayDate(startDate),
-                    time: formatMinuteWithDayOffset(date, timezone, event.startMinute),
-                  })}
-                </time>
-              </dd>
-              <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-                {t("bookings.form.end")}
-              </dt>
-              <dd>
-                <time dateTime={`${endDate}T${formatMinute(date, timezone, event.endMinute)}`}>
-                  {t("dayTimeline.expanded.dateTime", {
-                    date: formatDayDate(endDate),
-                    time: formatMinuteWithDayOffset(date, timezone, event.endMinute),
-                  })}
-                </time>
-              </dd>
+              {dateTimeRows.map(({ key, label, date: endpointDate, minute }) => (
+                <Fragment key={key}>
+                  <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>{label}</dt>
+                  <dd>
+                    <time dateTime={`${endpointDate}T${formatMinute(date, timezone, minute)}`}>
+                      {t("dayTimeline.expanded.dateTime", {
+                        date: formatDayDate(endpointDate),
+                        time: formatMinuteWithDayOffset(date, timezone, minute),
+                      })}
+                    </time>
+                  </dd>
+                </Fragment>
+              ))}
             </dl>
           ) : (
             <time dateTime={startDate} className="mt-1.5 block text-xs leading-4">
               {formatDayDate(startDate)}
             </time>
           )}
-          <PopoverDescription className={cn("mt-1 text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-            {t("dayTimeline.expanded.duration", {
-              hours: Math.floor(duration / 60),
-              minutes: duration % 60,
-            })}
-          </PopoverDescription>
         </div>
         <PopoverClose
           type="button"
@@ -107,15 +107,25 @@ export function ExpandedEventCard({
         </PopoverClose>
       </div>
 
-      <dl className="divide-y divide-border px-4 text-sm">
-        <div className="py-2">
+      <dl className="divide-y divide-border text-sm">
+        <div className="px-4 py-2">
           <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
           <dd>
             <InventoryItem
-              name={event.item.name}
+              name={
+                event.item.canViewConfiguration ? (
+                  <BookableItemName name={event.item.name} globalId={event.item.globalId} />
+                ) : (
+                  event.item.name
+                )
+              }
               globalId={event.item.globalId}
-              href={`/globalId/${event.item.globalId}`}
-              idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })}
+              href={event.item.canViewConfiguration ? `/globalId/${event.item.globalId}` : undefined}
+              idLinkLabel={
+                event.item.canViewConfiguration
+                  ? t("dayTimeline.expanded.openItem", { globalId: event.item.globalId })
+                  : undefined
+              }
               idPlacement="title"
               className="p-0"
             >
@@ -128,10 +138,16 @@ export function ExpandedEventCard({
         <BookingDetailRows
           actor={event.kind === "booking" ? event.bookedBy : event.createdBy}
           showActor={event.kind === "booking" || Boolean(event.createdBy)}
-          actorLabel={t(event.kind === "booking" ? "dayTimeline.expanded.bookedBy" : "dayTimeline.expanded.createdBy")}
-          detailsLabel={t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
+          actorLabel={
+            event.kind === "booking"
+              ? t("dayTimeline.expanded.bookedBy")
+              : event.createdBy
+                ? t("dayTimeline.expanded.createdBy")
+                : ""
+          }
+          detailsLabel={isBlockout ? t("dayTimeline.expanded.notes") : t("dayTimeline.expanded.purpose")}
           details={event.notes}
-          rowClassName="grid grid-cols-[4.5rem_1fr] gap-2 py-2"
+          rowClassName="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2"
         />
       </dl>
 

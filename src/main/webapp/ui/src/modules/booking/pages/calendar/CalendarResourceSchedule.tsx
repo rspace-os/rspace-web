@@ -2,22 +2,24 @@ import { Link } from "@tanstack/react-router";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
-import { type BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { cn } from "@/modules/common/utils/cn";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
   type BookingCalendarResource,
-  blockoutActionsFor,
   type CalendarView,
   formatDate,
   nextFreeRange,
-  occursOn,
   periodDates,
   resourceLocation,
   scrollCalendarWithArrowKeys,
@@ -27,7 +29,23 @@ import {
 } from "./calendarLayoutUtils";
 import { BookingEditorsContext } from "./InlineBookingEditor";
 
-export function ResourceDateGrid({
+function ResourceHeader({ resource }: { resource: BookingCalendarResource }) {
+  const { t } = useTranslation("booking");
+  return (
+    <InventoryItem
+      locationPlacement="below"
+      name={<BookableItemName name={resource.value.name} globalId={resource.globalId} />}
+      globalId={resource.globalId}
+      href={`/globalId/${resource.globalId}`}
+      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+      size="xs"
+    >
+      <InventoryLocationLink name={resourceLocation(resource)?.name} globalId={resourceLocation(resource)?.globalId} />
+    </InventoryItem>
+  );
+}
+
+function ResourceDateGrid({
   dates,
   view,
   children,
@@ -104,9 +122,16 @@ export function CalendarResourceSchedule({
   const dates = React.useMemo(() => periodDates(date, view), [date, view]);
   const eventsByResourceAndDate = React.useMemo(() => {
     const index = new Map<string, BookingListDocument[]>();
+    const boundsByDate = dates.map((day) => {
+      const bounds = zonedDayBounds(day, timezone);
+      return { day, start: Date.parse(bounds.start), end: Date.parse(bounds.end) };
+    });
     for (const event of events) {
-      for (const day of dates) {
-        if (!occursOn(editorPositions?.get(event.id) ?? event, day, timezone)) continue;
+      const occurrence = editorPositions?.get(event.id) ?? event;
+      const eventStart = Date.parse(occurrence.start);
+      const eventEnd = Date.parse(occurrence.end);
+      for (const { day, start, end } of boundsByDate) {
+        if (!(eventStart < end && eventEnd > start)) continue;
         const key = `${event.target.globalId}|${day}`;
         const rows = index.get(key) ?? [];
         rows.push(event);
@@ -133,18 +158,33 @@ export function CalendarResourceSchedule({
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
     [resourceConfigurations],
   );
-  const editConfigurationLink = (resource: BookingCalendarResource, configuration?: BookableItemOption) => {
+  const editConfigurationLink = (
+    resource: BookingCalendarResource,
+    configuration?: BookableItemOption,
+    size: "icon-xs" | "icon-sm" = "icon-xs",
+  ) => {
     if (configuration?.capabilities?.canEditConfiguration !== true) return null;
+    const label = t("bookableItemDetails.edit");
     return (
-      <Link
-        className={buttonVariants({ variant: "outline", size: "xs", className: "w-full" })}
-        to="/booking/bookable-items/$globalId/{-$tab}"
-        params={{ globalId: resource.globalId, tab: "details" }}
-        search={{ edit: true }}
-      >
-        <PencilIcon aria-hidden="true" />
-        {t("bookableItemDetails.edit")}
-      </Link>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Link
+              aria-label={label}
+              className={cn(buttonVariants({ variant: "outline", size }))}
+              data-slot="button"
+              to="/booking/bookable-items/$globalId/{-$tab}"
+              params={{ globalId: resource.globalId, tab: "details" }}
+              search={{ edit: true }}
+            />
+          }
+        >
+          <PencilIcon aria-hidden="true" />
+        </TooltipTrigger>
+        <TooltipContent role="tooltip" side="left">
+          {label}
+        </TooltipContent>
+      </Tooltip>
     );
   };
   return (
@@ -176,22 +216,7 @@ export function CalendarResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
-                    <div className="space-y-1">
-                      <InventoryItem
-                        locationPlacement="below"
-                        name={resource.value.name}
-                        globalId={resource.globalId}
-                        href={`/globalId/${resource.globalId}`}
-                        idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                        size="xs"
-                      >
-                        <InventoryLocationLink
-                          name={resourceLocation(resource)?.name}
-                          globalId={resourceLocation(resource)?.globalId}
-                        />
-                      </InventoryItem>
-                      {editConfigurationLink(resource, configuration)}
-                    </div>
+                    <ResourceHeader resource={resource} />
                   </header>
                   <div className="relative grid min-h-32 min-w-0">
                     <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>
@@ -210,7 +235,7 @@ export function CalendarResourceSchedule({
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
                         renderEventActions={actionsFor(resourceEvents, timezone, date)}
-                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone, date)}
+                        renderBlockoutActions={actionsFor(resourceEvents, timezone, date)}
                         snapIncrementMinutes={configuration?.slotGranularityMinutes}
                         creationDisabled={isLoading || creationDisabled || !canCreateBooking}
                         onRangeSelect={
@@ -222,7 +247,7 @@ export function CalendarResourceSchedule({
                     </div>
                     {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
                   </div>
-                  <div className="flex items-center border-l p-2">
+                  <div className="flex flex-col items-center justify-center gap-1 border-l p-2">
                     <Button
                       type="button"
                       size="icon-sm"
@@ -238,6 +263,7 @@ export function CalendarResourceSchedule({
                     >
                       <PlusIcon aria-hidden="true" />
                     </Button>
+                    {editConfigurationLink(resource, configuration, "icon-sm")}
                   </div>
                 </section>
               );
@@ -249,19 +275,7 @@ export function CalendarResourceSchedule({
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
                   <div className="space-y-1">
-                    <InventoryItem
-                      locationPlacement="below"
-                      name={resource.value.name}
-                      globalId={resource.globalId}
-                      href={`/globalId/${resource.globalId}`}
-                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                      size="xs"
-                    >
-                      <InventoryLocationLink
-                        name={resourceLocation(resource)?.name}
-                        globalId={resourceLocation(resource)?.globalId}
-                      />
-                    </InventoryItem>
+                    <ResourceHeader resource={resource} />
                     {editConfigurationLink(resource, configurationByTarget.get(resource.globalId))}
                   </div>
                 </div>
@@ -291,7 +305,6 @@ export function CalendarResourceSchedule({
     </section>
   );
 }
-
 export function ResourceScheduleSkeleton({ period }: { period?: { date: string; view: CalendarView } } = {}) {
   const { t } = useTranslation("common");
   const dates = period && period.view !== "day" ? periodDates(period.date, period.view) : undefined;

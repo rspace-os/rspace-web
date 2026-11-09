@@ -24,11 +24,10 @@ import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import { mutateBookableItems } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
-import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -39,6 +38,7 @@ import {
   collectionPage,
   ownerBookingAccess,
 } from "../bookable-items/mocks/bookableItemsMocks";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
@@ -207,9 +207,7 @@ describe("BookableItemsPage", () => {
   it("shows today's server availability counts", async () => {
     server.use(
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(pagedCollectionResponse([bookingConfiguration], 1)),
-      ),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(pagedCollectionResponse([bookingConfiguration], 1))),
     );
     renderBookableItemsPage();
     expect(await screen.findByText("booking:allBookableItems.quickFilters.availableNow: 2")).toBeInTheDocument();

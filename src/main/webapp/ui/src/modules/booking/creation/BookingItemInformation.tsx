@@ -1,9 +1,9 @@
 import { InfoIcon } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { Card, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { BookingItemInformationContent } from "./BookingItemInformationContent";
-import { type BookableItemOption } from "./bookableItemOption";
 
 export function BookingItemInformationCard({
   item,

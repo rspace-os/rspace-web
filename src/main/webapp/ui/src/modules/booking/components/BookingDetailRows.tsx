@@ -1,8 +1,7 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 
 const labelClassName = "text-muted-foreground text-xs";
-
 const valueClassName = "text-xs leading-4";
 
 type BookingDetailRowsProps = {

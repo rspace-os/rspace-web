@@ -4,6 +4,7 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  RouterContextProvider,
   RouterProvider,
 } from "@tanstack/react-router";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -17,6 +18,7 @@ vi.unmock("react-i18next");
 
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
 const { AvailabilityBar } = await import("./AvailabilityBar");
+const { BookingSummaryAccordion } = await import("./BookingSummaryAccordion");
 
 const resources = { booking: bookingEnglish };
 
@@ -137,6 +139,61 @@ describe("AvailabilityBar", () => {
         name: "Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event",
       }),
     ).toHaveAccessibleName("Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event");
+  });
+
+  it.each([true, false, undefined])(
+    "gates summary item links on configuration access (%s)",
+    async (canViewConfiguration) => {
+      const user = userEvent.setup();
+      const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
+      await renderWithRealI18n(
+        <RouterContextProvider router={router}>
+          <BookingSummaryAccordion
+            accordionName="permissions"
+            heading={item.name}
+            period="09:00–10:00"
+            purpose="Imaging"
+            item={item}
+            canViewConfiguration={canViewConfiguration}
+          />
+        </RouterContextProvider>,
+        { resources, defaultNS: "booking" },
+      );
+      await user.click(await screen.findByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+      if (canViewConfiguration) {
+        expect(screen.getByRole("link", { name: item.name })).toHaveAttribute("href", "/booking/bookable-items/IN123");
+        expect(screen.getByRole("link", { name: "Open inventory record IN123" })).toHaveAttribute(
+          "href",
+          "/globalId/IN123",
+        );
+      } else {
+        expect(screen.queryByRole("link", { name: item.name })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+        expect(screen.getAllByText(item.name)).toHaveLength(2);
+      }
+    },
+  );
+
+  it("renders a booking summary without availability-bar context", async () => {
+    const user = userEvent.setup();
+    await renderWithRealI18n(
+      <BookingSummaryAccordion
+        accordionName="dashboard-bookings"
+        heading="Confocal microscope"
+        period="09:00–10:00"
+        purpose="Cell imaging"
+      />,
+      { resources, defaultNS: "booking" },
+    );
+
+    expect(screen.getByText("Confocal microscope")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Details" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+
+    await user.click(await screen.findByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+
+    expect(screen.getByText("Cell imaging")).toBeVisible();
+    expect(screen.queryByText("None provided")).not.toBeInTheDocument();
   });
 
   it("explains an empty DST display window without drawing a misleading availability bar", async () => {
@@ -351,6 +408,7 @@ describe("AvailabilityBar", () => {
               id: 41,
               kind,
               privacy: "full",
+              canViewConfiguration: true,
               purpose: "Cell imaging",
               bookedBy: "Ada Lovelace",
               createdBy: "Ada Lovelace",

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
+import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import {
@@ -12,7 +13,6 @@ import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowE
 import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
 import { type BookingListDocument, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -21,7 +21,7 @@ import {
   invalidateGetBooking,
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { type BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
+import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
@@ -76,6 +76,7 @@ export function InlineBookingEditor({
       return Object.keys(patch).length === 0 ? Promise.resolve(event) : updateBooking(event.id, event.version, patch);
     },
     onSuccess: async (updated, _variables, onMutateResult, mutationContext) => {
+      flushSync(onClose);
       if (updated) {
         await updateOptions.onSuccess?.(
           updated,
@@ -88,7 +89,6 @@ export function InlineBookingEditor({
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
         invalidateGetBooking(queryClient, event.id, undefined, { cancelRefetch: false }),
       ]);
-      onClose();
     },
     onError: async (error) => {
       if (
@@ -128,7 +128,7 @@ export function InlineBookingEditor({
         ...configuration.data,
         openingHours:
           event.kind === "MAINTENANCE"
-            ? ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+            ? [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
             : configuration.data.openingHours,
         allowDoubleBooking: event.kind === "MAINTENANCE" ? false : configuration.data.allowDoubleBooking,
       })
@@ -198,7 +198,7 @@ export function InlineBookingEditor({
           tone={event.kind === "MAINTENANCE" ? "maintenance" : "booking"}
         />
       ) : null}
-      <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
+      <div className="flex min-h-0 max-h-[min(22rem,45vh)] max-sm:max-h-[60dvh] flex-col border-border border-t">
         <BookingForm
           key={formEvent.version}
           mode="edit"

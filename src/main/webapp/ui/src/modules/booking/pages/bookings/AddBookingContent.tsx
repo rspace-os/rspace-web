@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
-import { type BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingCreationDraftFromHistoryState } from "@/modules/booking/creation/bookingCreationDraft";
 import {
   bookingCreationProblemKey,

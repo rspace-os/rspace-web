@@ -1,3 +1,4 @@
+import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -8,7 +9,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { useState } from "react";
@@ -59,14 +60,52 @@ function renderList(options: { controls?: boolean } = {}) {
     routeTree: root.addChildren([listRoute, detailsRoute, editRoute]),
     history: createMemoryHistory({ initialEntries: ["/events"] }),
   });
-  return render(
+  const rendered = render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router as never} />
     </QueryClientProvider>,
   );
+  return { ...rendered, queryClient };
 }
 
 describe("BookingEventList", () => {
+  it("requests totals once and navigates count-free pages using hasNextPage", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    let releaseTotals: () => void = () => undefined;
+    const totalsReady = new Promise<void>((resolve) => {
+      releaseTotals = resolve;
+    });
+    server.use(
+      http.get("/api/v2/bookings", async ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const page = Number(url.searchParams.get("page"));
+        const response = bookableItemEventResponse([fullBooking], { page, hasNextPage: page === 1, totalDocs: 11 });
+        if (url.searchParams.get("totals") === "true") {
+          await totalsReady;
+          return HttpResponse.json(response);
+        }
+        const { totalDocs: _totalDocs, ...slice } = response;
+        return HttpResponse.json(slice);
+      }),
+    );
+    const { queryClient } = renderList();
+    await screen.findAllByText("Cell imaging");
+    expect(screen.getByText("common:tableList.resultsUnknown")).toBeVisible();
+    releaseTotals();
+    expect(await screen.findByText("common:tableList.results")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.nextPage" }));
+    await expect.poll(() => requests.some((url) => url.searchParams.get("page") === "2")).toBe(true);
+    expect(requests.filter((url) => url.searchParams.get("totals") === "true")).toHaveLength(1);
+    expect(requests.find((url) => url.searchParams.get("page") === "2")?.searchParams.has("totals")).toBe(false);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "common:tableList.actions.nextPage" })).toBeDisabled(),
+    );
+    await queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
+    expect(requests.filter((url) => url.searchParams.get("totals") === "true")).toHaveLength(2);
+  });
+
   it("renders full and busy events without leaking busy details", async () => {
     server.use(
       http.get("/api/v2/bookings", () => HttpResponse.json(bookableItemEventResponse([fullBooking, busyBooking]))),
@@ -119,7 +158,7 @@ describe("BookingEventList", () => {
     await user.click(screen.getByRole("button", { name: changeTimezoneLabel }));
 
     expect(within(table).getByRole("time")).not.toHaveTextContent(utcText ?? "");
-    expect(requests).toBe(1);
+    expect(requests).toBe(2);
   });
 
   it("paginates and resets to the first page for a new target", async () => {

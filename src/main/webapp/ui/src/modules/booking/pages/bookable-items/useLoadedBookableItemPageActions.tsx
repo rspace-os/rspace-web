@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
   invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
@@ -9,22 +10,24 @@ import {
   useUpdateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { type BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
-import { type BookingConfigurationLifecycleAction } from "./BookingConfigurationActionsMenu";
-import { type BookingConfiguration } from "./bookingConfiguration";
+import type { BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
+import type { BookingConfigurationLifecycleAction } from "./BookingConfigurationActionsMenu";
+import type { BookingConfiguration } from "./bookingConfiguration";
 import { bookingConfigurationTargetQuery } from "./bookingConfigurationApi";
 
 export type BookableItemTab = "bookings" | "details" | "audit" | "access";
+
+type LoadedBookableItemPageActionsOptions = {
+  configuration: BookingConfiguration;
+  globalId: string;
+  tab: BookableItemTab;
+};
 
 export function useLoadedBookableItemPageActions({
   configuration,
   globalId,
   tab,
-}: {
-  configuration: BookingConfiguration;
-  globalId: string;
-  tab: BookableItemTab;
-}) {
+}: LoadedBookableItemPageActionsOptions) {
   const { edit = false } = useSearch({ from: "/booking/bookable-items/$globalId/{-$tab}/" });
   const navigate = useNavigate({ from: "/booking/bookable-items/$globalId/{-$tab}/" });
   const queryClient = useQueryClient();
@@ -46,6 +49,7 @@ export function useLoadedBookableItemPageActions({
       search: next ? { edit: true } : {},
       replace: true,
     });
+
   const setTab = (next: BookableItemTab) =>
     void navigate({
       to: "/booking/bookable-items/$globalId/{-$tab}",
@@ -54,6 +58,7 @@ export function useLoadedBookableItemPageActions({
       replace: true,
       resetScroll: false,
     });
+
   const updateOperation = useUpdateBookingConfiguration();
   const deleteOperation = useDeleteBookingConfiguration();
   const leaveOperation = useLeaveBookingConfigurationAccess();
@@ -68,7 +73,7 @@ export function useLoadedBookableItemPageActions({
       setEdit(false);
     },
     onError: async (error) => {
-      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
         await queryClient.refetchQueries({
           queryKey: bookingConfigurationTargetQuery(globalId).queryKey,
@@ -92,7 +97,7 @@ export function useLoadedBookableItemPageActions({
       setSaveAnnouncement("archived");
     },
     onError: async (error) => {
-      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
           queryKey: bookingConfigurationTargetQuery(globalId).queryKey,
         });
@@ -115,7 +120,7 @@ export function useLoadedBookableItemPageActions({
       setSaveAnnouncement("restored");
     },
     onError: async (error) => {
-      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
           queryKey: bookingConfigurationTargetQuery(globalId).queryKey,
         });
@@ -135,12 +140,7 @@ export function useLoadedBookableItemPageActions({
       void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "status" in error &&
-        (error.status === 409 || error.status === 412)
-      ) {
+      if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
         await queryClient.refetchQueries({
           queryKey: bookingConfigurationTargetQuery(globalId).queryKey,
         });
@@ -154,13 +154,16 @@ export function useLoadedBookableItemPageActions({
       void navigate({ to: "/booking", ignoreBlocker: true });
     },
   });
+
   useEffect(() => {
     if (wasEditing.current && !editing) editButtonRef.current?.focus();
     wasEditing.current = editing;
   }, [editing]);
+
   useEffect(() => {
     if (updateMutation.isError && !updateMutation.isPending) saveButtonRef.current?.focus();
   }, [updateMutation.isError, updateMutation.isPending]);
+
   useEffect(() => {
     // onSuccess runs before the mutation clears pending and re-enables this button.
     if (
@@ -173,9 +176,11 @@ export function useLoadedBookableItemPageActions({
     const frame = requestAnimationFrame(() => actionsButtonRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [archiveMutation.isPending, archiveMutation.isSuccess, restoreMutation.isPending, restoreMutation.isSuccess]);
+
   useEffect(() => {
     if (!active && edit) setEdit(false);
   }, [active, edit]);
+
   useEffect(() => {
     if (
       (tab === "audit" && !configuration.capabilities.canViewAudit) ||
@@ -184,11 +189,13 @@ export function useLoadedBookableItemPageActions({
       setTab("bookings");
     }
   }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
+
   const cancelEdit = () => {
     setSaveAnnouncement(null);
     setStaleEdit(false);
     setEdit(false);
   };
+
   const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
     if (action === "archive") setArchiveOpen(true);
     if (action === "restore") restoreMutation.mutate();
@@ -197,32 +204,33 @@ export function useLoadedBookableItemPageActions({
       setPermanentDeleteOpen(true);
     }
   };
+
   return {
-    actionsButtonRef,
-    active,
-    archiveMutation,
-    archiveOpen,
-    canEdit,
-    cancelEdit,
-    editButtonRef,
-    editing,
-    handleLifecycleAction,
-    leaveMutation,
-    leaveOpen,
     navigate,
-    permanentDeleteConfirmation,
-    permanentDeleteMutation,
-    permanentDeleteOpen,
-    restoreMutation,
     saveAnnouncement,
-    saveButtonRef,
-    setArchiveOpen,
-    setEdit,
-    setLeaveOpen,
-    setPermanentDeleteConfirmation,
-    setPermanentDeleteOpen,
-    setTab,
     staleEdit,
+    archiveOpen,
+    setArchiveOpen,
+    permanentDeleteOpen,
+    setPermanentDeleteOpen,
+    permanentDeleteConfirmation,
+    setPermanentDeleteConfirmation,
+    leaveOpen,
+    setLeaveOpen,
+    editButtonRef,
+    saveButtonRef,
+    actionsButtonRef,
+    canEdit,
+    active,
+    editing,
+    setEdit,
+    setTab,
     updateMutation,
+    archiveMutation,
+    restoreMutation,
+    permanentDeleteMutation,
+    leaveMutation,
+    cancelEdit,
+    handleLifecycleAction,
   };
 }

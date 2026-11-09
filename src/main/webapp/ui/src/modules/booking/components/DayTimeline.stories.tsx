@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { type DayTimelineEvent, type DayTimelineViewState } from "@/modules/booking/components/DayTimelineEvent";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { DayTimeline } from "./DayTimeline";
+import { DayTimeline, type DayTimelineEvent, type DayTimelineViewState } from "./DayTimeline";
 import { DayTimelineStory } from "./DayTimeline.story";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
@@ -141,9 +140,9 @@ export const Sub15MinuteEvents: Story = {
       const timeRange = eventBar.querySelector<HTMLElement>("[data-event-time-range]");
       expect(card).not.toBeNull();
       expect(time).not.toBeNull();
-      expect(eventDate).toHaveTextContent("22-07-2026");
+      expect(eventDate).toBeNull();
       expect(timeRange).toHaveTextContent(/\d{2}:\d{2} - \d{2}:\d{2}/);
-      if (!card || !time || !eventDate || !timeRange) throw new Error("Timeline card content is missing");
+      if (!card || !time || !timeRange) throw new Error("Timeline card content is missing");
       expect(card).toHaveAttribute("title");
       expect(time.getBoundingClientRect().top).toBeGreaterThan(card.getBoundingClientRect().top);
       expect(time.getBoundingClientRect().bottom).toBeLessThanOrEqual(card.getBoundingClientRect().bottom);
