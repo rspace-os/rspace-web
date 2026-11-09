@@ -22,8 +22,8 @@ public record ApiV2ListResult<T>(
         Integer totalPages,
     boolean hasPrevPage,
     boolean hasNextPage,
-    Integer prevPage,
-    Integer nextPage,
+    @Schema(nullable = true) Integer prevPage,
+    @Schema(nullable = true) Integer nextPage,
     @Schema(description = "True when the requested total exceeds max.")
         @JsonInclude(JsonInclude.Include.NON_NULL)
         Boolean totalIsLowerBound) {

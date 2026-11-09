@@ -17,7 +17,7 @@ public record ApiV2CurrentUser(
     @Schema(
             requiredMode = Schema.RequiredMode.REQUIRED,
             description = "Current user's email address.",
-            format = "email")
+            example = "ada@example.org")
         String email,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Current user's given name.")
         String firstName,

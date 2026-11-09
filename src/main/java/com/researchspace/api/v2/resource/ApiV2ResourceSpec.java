@@ -28,7 +28,55 @@ public record ApiV2ResourceSpec<T, ID>(
     Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings,
     CollectionMutationLimits mutationLimits,
     List<RuntimeCollectionFields<T>> runtimeFields,
-    Optional<ResourceAccessSpec<T, ID>> resourceAccess) {
+    Optional<ResourceAccessSpec<T, ID>> resourceAccess,
+    String singularOverride) {
+
+  public ApiV2ResourceSpec(
+      CollectionDescription<T> description,
+      ResourceOperations<T, ID> operations,
+      Function<String, ID> idParser,
+      String createErrorKey,
+      String updateErrorKey,
+      Set<ResourceOperation> exposedOperations,
+      Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation,
+      Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings,
+      CollectionMutationLimits mutationLimits,
+      List<RuntimeCollectionFields<T>> runtimeFields,
+      Optional<ResourceAccessSpec<T, ID>> resourceAccess) {
+    this(
+        description,
+        operations,
+        idParser,
+        createErrorKey,
+        updateErrorKey,
+        exposedOperations,
+        operationDocumentation,
+        errorMappings,
+        mutationLimits,
+        runtimeFields,
+        resourceAccess,
+        "");
+  }
+
+  /** Uses an explicit singular declared by the resource definition. */
+  public ApiV2ResourceSpec<T, ID> withDefinition(Class<?> definitionType) {
+    var definition =
+        definitionType.getAnnotation(
+            com.researchspace.model.collection.ApiV2ResourceDefinition.class);
+    return new ApiV2ResourceSpec<>(
+        description,
+        operations,
+        idParser,
+        createErrorKey,
+        updateErrorKey,
+        exposedOperations,
+        operationDocumentation,
+        errorMappings,
+        mutationLimits,
+        runtimeFields,
+        resourceAccess,
+        definition.singular());
+  }
 
   private static final Set<ResourceOperation> STANDARD_OPERATIONS =
       Set.copyOf(EnumSet.allOf(ResourceOperation.class));

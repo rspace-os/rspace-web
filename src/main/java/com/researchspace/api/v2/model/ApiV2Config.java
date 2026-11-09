@@ -25,7 +25,6 @@ public record ApiV2Config(
     @Schema(
             requiredMode = Schema.RequiredMode.REQUIRED,
             description = "Support email address for this deployment.",
-            format = "email",
             nullable = true,
             example = "support@example.org")
         String deploymentHelpEmail) {
@@ -44,9 +43,6 @@ public record ApiV2Config(
               description = "Link label shown to users.",
               example = "Help")
           String label,
-      @Schema(
-              requiredMode = Schema.RequiredMode.REQUIRED,
-              description = "Absolute or root-relative help URL.",
-              format = "uri-reference")
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Configured help URL.")
           String url) {}
 }

@@ -101,6 +101,11 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         new ApiV2RuntimeFieldProjection<>(description, spec, this.providersByResource);
   }
 
+  /** Explicit operation-name singular, if the definition overrides the default. */
+  public String singularOverride() {
+    return spec.singularOverride();
+  }
+
   public String resourceName() {
     return description.resourceName();
   }
