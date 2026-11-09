@@ -1,0 +1,10 @@
+/* Fontsource bundles OFL-1.1 variable fonts locally. Each face has a unicode-range,
+ * so the browser fetches only slices matching visible content, including input.
+ * CJK content therefore works independently of the UI language. */
+@import "@fontsource-variable/noto-sans/wght.css";
+@import "@fontsource-variable/noto-sans/wght-italic.css";
+@import "@fontsource-variable/noto-sans-sc/wght.css";
+@import "@fontsource-variable/noto-sans-tc/wght.css";
+@import "@fontsource-variable/noto-sans-hk/wght.css";
+@import "@fontsource-variable/noto-sans-jp/wght.css";
+@import "@fontsource-variable/noto-sans-kr/wght.css";
