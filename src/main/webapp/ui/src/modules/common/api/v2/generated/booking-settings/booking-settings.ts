@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 import {
+  matchQuery,
   queryOptions as queryOptionsBuilder,
   useMutation,
   useQuery,
@@ -46,6 +47,10 @@ import type {
   UnauthenticatedResponse,
   UnexpectedErrorResponse
 } from '../models';
+
+import {
+  getGetMyBookingPreferencesQueryKey
+} from '../users/users.ts';
 
 import { apiV2Fetch } from '../../apiV2Fetch.ts';
 import type { ErrorType } from '../../apiV2Fetch.ts';
@@ -671,7 +676,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof patchAdminBookingSettings>>, variables: PatchAdminBookingSettingsMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetBookingSettingsQueryKey() });
+        queryClient.invalidateQueries({ predicate: (query) => [getGetBookingSettingsQueryKey(), getGetAdminBookingSettingsQueryKey(), getGetMyBookingPreferencesQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };

@@ -16,6 +16,7 @@ export const BookingConfigurationsCreateSchema = native.BookingConfigurationsCre
 export const BookingConfigurationsReadSchema = native.BookingConfigurationsRead;
 export const BookingConfigurationsReferenceSchema = native.BookingConfigurationsReference;
 export const BookingConfigurationsUpdateSchema = native.BookingConfigurationsUpdate;
+export const BookingDisplayPreferencesSchema = native.BookingDisplayPreferences;
 export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
 export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
 export const BookingsCreateSchema = native.BookingsCreate;
@@ -51,6 +52,7 @@ export const MaintenancesReferenceSchema = native.MaintenancesReference;
 export const MaintenancesUpdateSchema = native.MaintenancesUpdate;
 export const OrcidSchema = native.Orcid;
 export const PageSchema = native.Page;
+export const ReplacementSchema = native.Replacement;
 export const ResourceAccessAssignmentDocumentSchema = native.ResourceAccessAssignmentDocument;
 export const ResourceAccessCallerCapabilitiesSchema = native.ResourceAccessCallerCapabilities;
 export const ResourceAccessCallerDocumentSchema = native.ResourceAccessCallerDocument;
@@ -88,6 +90,7 @@ export type SchemaModelTypeChecks = {
   BookingConfigurationsRead: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsReadSchema>, Models.BookingConfigurationsRead>>, Assert<Extends<Models.BookingConfigurationsRead, v.InferOutput<typeof BookingConfigurationsReadSchema>>>];
   BookingConfigurationsReference: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsReferenceSchema>, Models.BookingConfigurationsReference>>, Assert<Extends<Models.BookingConfigurationsReference, v.InferOutput<typeof BookingConfigurationsReferenceSchema>>>];
   BookingConfigurationsUpdate: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsUpdateSchema>, Models.BookingConfigurationsUpdate>>, Assert<Extends<Models.BookingConfigurationsUpdate, v.InferOutput<typeof BookingConfigurationsUpdateSchema>>>];
+  BookingDisplayPreferences: [Assert<Extends<v.InferOutput<typeof BookingDisplayPreferencesSchema>, Models.BookingDisplayPreferences>>, Assert<Extends<Models.BookingDisplayPreferences, v.InferOutput<typeof BookingDisplayPreferencesSchema>>>];
   BookingOpeningHoursEntry: [Assert<Extends<v.InferOutput<typeof BookingOpeningHoursEntrySchema>, Models.BookingOpeningHoursEntry>>, Assert<Extends<Models.BookingOpeningHoursEntry, v.InferOutput<typeof BookingOpeningHoursEntrySchema>>>];
   BookingOwnerHealth: [Assert<Extends<v.InferOutput<typeof BookingOwnerHealthSchema>, Models.BookingOwnerHealth>>, Assert<Extends<Models.BookingOwnerHealth, v.InferOutput<typeof BookingOwnerHealthSchema>>>];
   BookingsCreate: [Assert<Extends<v.InferOutput<typeof BookingsCreateSchema>, Models.BookingsCreate>>, Assert<Extends<Models.BookingsCreate, v.InferOutput<typeof BookingsCreateSchema>>>];
@@ -123,6 +126,7 @@ export type SchemaModelTypeChecks = {
   MaintenancesUpdate: [Assert<Extends<v.InferOutput<typeof MaintenancesUpdateSchema>, Models.MaintenancesUpdate>>, Assert<Extends<Models.MaintenancesUpdate, v.InferOutput<typeof MaintenancesUpdateSchema>>>];
   Orcid: [Assert<Extends<v.InferOutput<typeof OrcidSchema>, Models.Orcid>>, Assert<Extends<Models.Orcid, v.InferOutput<typeof OrcidSchema>>>];
   Page: [Assert<Extends<v.InferOutput<typeof PageSchema>, Models.Page>>, Assert<Extends<Models.Page, v.InferOutput<typeof PageSchema>>>];
+  Replacement: [Assert<Extends<v.InferOutput<typeof ReplacementSchema>, Models.Replacement>>, Assert<Extends<Models.Replacement, v.InferOutput<typeof ReplacementSchema>>>];
   ResourceAccessAssignmentDocument: [Assert<Extends<v.InferOutput<typeof ResourceAccessAssignmentDocumentSchema>, Models.ResourceAccessAssignmentDocument>>, Assert<Extends<Models.ResourceAccessAssignmentDocument, v.InferOutput<typeof ResourceAccessAssignmentDocumentSchema>>>];
   ResourceAccessCallerCapabilities: [Assert<Extends<v.InferOutput<typeof ResourceAccessCallerCapabilitiesSchema>, Models.ResourceAccessCallerCapabilities>>, Assert<Extends<Models.ResourceAccessCallerCapabilities, v.InferOutput<typeof ResourceAccessCallerCapabilitiesSchema>>>];
   ResourceAccessCallerDocument: [Assert<Extends<v.InferOutput<typeof ResourceAccessCallerDocumentSchema>, Models.ResourceAccessCallerDocument>>, Assert<Extends<Models.ResourceAccessCallerDocument, v.InferOutput<typeof ResourceAccessCallerDocumentSchema>>>];
