@@ -123,9 +123,11 @@ public class TestAppConfig extends BaseConfig {
 
   @Bean
   public GlobalInitManager globalInitManager(
-      @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker) {
+      @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker,
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
+    inits.add(featureFlagInitialisor);
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
     inits.add(chemistryIndexer());
