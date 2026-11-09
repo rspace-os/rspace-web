@@ -63,6 +63,9 @@ Examples:
 ?fields[widgets]=name,enabled
 ```
 
+The OpenAPI fieldset parameters include nested relationship targets, so a depth-2 read can name
+`fields[instruments]` and `fields[containers]` in the same request.
+
 Responses always contain the ID. Field access rules can hide fields. Clients cannot use hidden
 fields in `where` or `sort`.
 
@@ -673,6 +676,7 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
 
 ## Generated frontend access and relationship clients
 

@@ -68,3 +68,14 @@ export function bookingConfigurationTargetQuery(globalId: string) {
     },
   });
 }
+
+export function findBookingConfigurationQueryOptions(globalId: string) {
+  return getListBookingConfigurationsQueryOptions<BookingConfiguration | null>(parameters(globalId), {
+    query: {
+      select: (result) => {
+        if (result.docs.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+        return result.docs.length === 0 ? null : mapBookingConfiguration(result.docs[0]);
+      },
+    },
+  });
+}

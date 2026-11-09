@@ -13,6 +13,8 @@ import {
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
@@ -585,6 +587,15 @@ function LoadedBookableItemPage({
               target={target}
               action={
                 <>
+                  {active &&
+                  (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
+                    <BookingCreationButtonGroup
+                      ownerId={`bookable-item-${configuration.id}`}
+                      target={bookableItemOption({ ...configuration, target })}
+                      lockTarget
+                      disabled={!configuration.enabled}
+                    />
+                  ) : null}
                   {active && configuration.capabilities.canLeaveConfiguration ? (
                     <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
                       {t("bookableItemDetails.actions.leave")}
