@@ -9,5 +9,7 @@
 
 export interface BookingNotificationPreferenceReplacement {
   autoSubscribeOwnedItems: boolean;
+  notifyOnCancelled: boolean;
+  notifyOnCreated: boolean;
   notifyOwnActions: boolean;
 }

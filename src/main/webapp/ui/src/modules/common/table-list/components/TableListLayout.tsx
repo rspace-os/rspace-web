@@ -119,6 +119,7 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
       <TableListAlertsProvider api={alerts.api}>
         <section
           ref={attachRoot}
+          data-table-list
           className="text-foreground [&_[data-inventory-item]]:p-0 [&_[data-unknown-item]]:p-0 [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!"
         >
           {hideHeader ? null : (

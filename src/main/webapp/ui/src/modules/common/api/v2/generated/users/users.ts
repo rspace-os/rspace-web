@@ -1971,6 +1971,7 @@ export const getGetMyBookingNotificationPreferencesUrl = () => {
 };
 
 /**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
  * @summary Get the caller's booking notification preferences
  */
 export const getMyBookingNotificationPreferences = async (
@@ -2013,7 +2014,10 @@ export type GetMyBookingNotificationPreferencesQueryResult = NonNullable<
 >;
 export type GetMyBookingNotificationPreferencesQueryError = ErrorType<unknown>;
 
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2032,7 +2036,10 @@ export function useGetMyBookingNotificationPreferences<
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2051,7 +2058,10 @@ export function useGetMyBookingNotificationPreferences<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2062,7 +2072,10 @@ export function useGetMyBookingNotificationPreferences<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2124,7 +2137,10 @@ export type GetMyBookingNotificationPreferencesSuspenseQueryResult = NonNullable
 >;
 export type GetMyBookingNotificationPreferencesSuspenseQueryError = ErrorType<unknown>;
 
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2137,7 +2153,10 @@ export function useGetMyBookingNotificationPreferencesSuspense<
   },
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2150,7 +2169,10 @@ export function useGetMyBookingNotificationPreferencesSuspense<
   },
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2163,7 +2185,10 @@ export function useGetMyBookingNotificationPreferencesSuspense<
   },
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>,
   TError = ErrorType<unknown>,
@@ -2190,7 +2215,8 @@ export const getReplaceMyBookingNotificationPreferencesUrl = () => {
 };
 
 /**
- * @summary Change personal notification preferences without changing existing subscriptions
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
  */
 export const replaceMyBookingNotificationPreferences = async (
   bookingNotificationPreferenceReplacement: BookingNotificationPreferenceReplacement,
@@ -2272,7 +2298,10 @@ export type ReplaceMyBookingNotificationPreferencesMutationVariables = {
   data: BodyType<BookingNotificationPreferenceReplacement>;
 };
 
-/** @summary Change personal notification preferences without changing existing subscriptions */
+/**
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
+ */
 export const useReplaceMyBookingNotificationPreferences = <TError = ErrorType<unknown>, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
