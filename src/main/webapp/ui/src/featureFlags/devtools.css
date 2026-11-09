@@ -1,0 +1,10 @@
+/* Legacy MUI pages need the panel's utilities and tokens, without AppShell's
+   preflight or global body styles changing the rest of the page. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "../modules/common/styles/theme.css";
+
+@source "./";
+@source "../modules/common/ui";
+@custom-variant dark (&:is(.dark *));

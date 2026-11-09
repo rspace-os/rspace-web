@@ -7,7 +7,8 @@ import { Gallery } from "./index";
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
-  if (domContainer) {
+  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
+    domContainer.dataset.reactRootMounted = "true";
     window.scrollTo(0, 1);
 
     const root = createRoot(domContainer);
@@ -15,7 +16,7 @@ window.addEventListener("load", () => {
       <React.StrictMode>
         <I18nRoot namespaces={["gallery", "common", "about", "inventory"]} fallback={<LoaderCircular />}>
           <BrowserRouter>
-            <Gallery />
+            <Gallery canUseDevtools={domContainer.dataset.canUseDevtools === "true"} />
           </BrowserRouter>
         </I18nRoot>
       </React.StrictMode>,
