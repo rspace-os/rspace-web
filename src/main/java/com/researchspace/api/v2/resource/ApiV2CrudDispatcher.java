@@ -237,11 +237,19 @@ public final class ApiV2CrudDispatcher<T, ID> {
         readContext(actor));
   }
 
-  public Map<String, Object> create(
-      ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
+  public CreateResult<Map<String, Object>> create(
+      ParsedDocument document, ApiV2Caller caller, FieldSelection selection, String key) {
     return invoke(
         ResourceOperation.CREATE,
-        () -> document(operations.create(document, caller, null).resource(), selection, caller.subject()));
+        () -> {
+          CreateResult<T> result =
+              operations.create(
+                  document,
+                  caller,
+                  mutationPolicy.idempotency() == IdempotencyPolicy.CREATOR_SCOPED ? key : null);
+          return new CreateResult<>(
+              document(result.resource(), selection, caller.subject()), result.replayed());
+        });
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(
