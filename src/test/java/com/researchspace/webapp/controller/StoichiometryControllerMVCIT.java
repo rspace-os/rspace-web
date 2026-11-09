@@ -19,6 +19,8 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
+import com.researchspace.apiutils.ApiError;
+import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -74,6 +76,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   @MockitoBean private ChemicalSearcher chemicalSearcher;
 
   private static final String URL = "/api/v1/stoichiometry";
+  private static final String GENERIC_SERVER_ERROR = "An error occurred on the server.";
 
   @BeforeEach
   public void setup() throws Exception {
@@ -751,11 +754,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                     .header("apiKey", apiKey))
             .andExpect(status().isInternalServerError())
             .andReturn();
-    String body = result.getResponse().getContentAsString();
-    assertThat(body)
-        .contains(
-            "Object of class [com.researchspace.model.stoichiometry.Stoichiometry] with identifier"
-                + " [-999]: not found");
+    assertGenericServerErrorWithoutDetails(
+        result, "com.researchspace.model.stoichiometry.Stoichiometry", "identifier [-999]");
   }
 
   @Test
@@ -786,13 +786,20 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                     .param("chemId", "-999")
                     .principal(principal)
                     .header("apiKey", apiKey))
+            .andExpect(status().isInternalServerError())
             .andReturn();
 
-    String body = result.getResponse().getContentAsString();
-    assertThat(body)
-        .contains(
-            "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
-                + " found");
+    assertGenericServerErrorWithoutDetails(
+        result, "com.researchspace.model.RSChemElement", "identifier [-999]");
+  }
+
+  private void assertGenericServerErrorWithoutDetails(MvcResult result, String... hiddenDetails)
+      throws Exception {
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertEquals(ApiErrorCodes.GENERAL_ERROR.getCode(), error.getInternalCode());
+    assertEquals(GENERIC_SERVER_ERROR, error.getMessage());
+    assertEquals(List.of(GENERIC_SERVER_ERROR), error.getErrors());
+    assertThat(result.getResponse().getContentAsString()).doesNotContain(hiddenDetails);
   }
 
   @Test

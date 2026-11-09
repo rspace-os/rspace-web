@@ -49,6 +49,11 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
           return null;
         }
 
+        @Override
+        public ScheduledMaintenance updateScheduledMaintenance(ScheduledMaintenance m, User user) {
+          throw new UnsupportedOperationException();
+        }
+
         public void removeScheduledMaintenance(Long id, User user) {}
       };
 
