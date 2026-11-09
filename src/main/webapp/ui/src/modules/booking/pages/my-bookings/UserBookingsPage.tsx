@@ -12,6 +12,7 @@ import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDi
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
+import type { FieldName } from "@/modules/common/collection/config";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -53,6 +54,7 @@ const projection = {
     "id",
     "version",
     "target",
+    "requester",
     "canViewConfiguration",
     "timezone",
     "start",
@@ -119,7 +121,12 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     () => ({
       kind: "and",
       children: [
-        { kind: "comparison", field: "requester", operator: "equals", value: requesterId },
+        {
+          kind: "comparison",
+          field: "requester.value" as FieldName<BookingListDocument>,
+          operator: "equals",
+          value: requesterId,
+        },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
         // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
         ...(period === "cancelled"
@@ -158,29 +165,14 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       queryString: { parameterPrefix: "my-bookings", tableId: "booking-my-bookings" },
     },
   });
-  const upcomingCount = useQuery(
-    getCountBookingsQueryOptions(
-      {
-        where: upcomingBookingWhere(requesterId, asOfDate.toISOString()),
-        max: 100,
-      },
-      {
-        query: {
-          select: (result) => {
-            if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-            return { ...result, totalDocs: result.totalDocs };
-          },
-        },
-      },
-    ),
-  );
+  const upcomingCount = useQuery({
+    ...upcomingBookingCountQuery(requesterId, asOfDate),
+  });
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
-      width: 200,
-      minWidth: 200,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <BookingRowActions row={row} timeZone={preferences.timeZone} timeFormat={preferences.timeFormat} />
       ),
@@ -241,6 +233,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                           : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                       }
                     >
+                      {" "}
                       {upcomingCount.data.totalIsLowerBound
                         ? t("myBookings.count.lowerBound")
                         : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
@@ -288,3 +281,16 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     </TooltipProvider>
   );
 }
+
+export const upcomingBookingCountQuery = (requesterId: number, asOf: Date) =>
+  getCountBookingsQueryOptions(
+    { where: upcomingBookingWhere(requesterId, asOf.toISOString()), max: 100 },
+    {
+      query: {
+        select: (result) => {
+          if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
+          return { ...result, totalDocs: result.totalDocs };
+        },
+      },
+    },
+  );

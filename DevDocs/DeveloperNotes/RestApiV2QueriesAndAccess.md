@@ -22,20 +22,26 @@ negative, as in seeded and baseline rows such as `US-3`. The API rejects version
 
 For booking domain rules and API examples, see [Booking](Booking.md).
 
-### Inventory container read constraints
+### Containers and trusted read constraints
+
+The read-only `containers` collection exposes `id`, `globalId`, `name`, `containerType`
+and `deleted`, with list, count and single reads.
 
 `InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
-`ContainerReadAccess` excludes deleted containers and allows direct Inventory read access or access
-through an active immediate child Container, Instrument or SubSample. Role visibility applies to the
-container itself, not its children. System administrators can read every active container, including
-workbenches. The query compiler uses correlated subqueries so filtering, totals and pagination use
-the same rule.
+`ContainerReadAccess` excludes deleted containers and allows direct Inventory read
+access or access through an active immediate child Container, Instrument or SubSample.
+Role visibility applies to the container itself, not its children. System administrators
+can read every active container, including workbenches. The query compiler uses correlated
+subqueries so filtering, totals and pagination use the same rule. Booking location queries
+reuse this constraint. For domain rules that caller filter syntax cannot express, add a typed
+`QueryConstraint` carrying caller facts and compile it centrally; combine it with caller filters
+instead of rebuilding the access predicate in each feature.
 
-Instrument location is the nullable `parentContainer` to-one relationship to `containers`, bound to
-`parentLocation.container.id`. Use relationship expansion to read its name and global ID. An
-authorization-aware target resolver returns no target for an unreadable container, which renders the
-relationship as `null`. Instrument scalar summaries carry only the parent container ID; the target
-registration controls its visibility and expansion.
+Instrument location is the nullable `parentContainer` to-one relationship to
+`containers`, bound to `parentLocation.container.id`. Use relationship expansion
+to read its name and global ID. An authorization-aware target resolver returns
+no target for an unreadable container, which renders the relationship as `null`.
+Instrument scalar summaries carry only the parent container ID; the target registration controls its visibility and expansion.
 
 ## Query configuration
 
@@ -166,34 +172,35 @@ generated selector includes:
 "picker": {"resource": "instruments", "identity": "globalId", "globalIdPrefix": "IN"}
 ```
 
-Public target fields such as `instrument.name` appear as selectors beside it. The shared instruments
-source supplies its picker through the application registry.
+Public target fields such as `instrument.name` appear as selectors beside it.
+The shared instruments source supplies its picker through the application registry.
 
-The client selects an application-owned source using `resource`. Metadata never supplies a search
-URL. A new collection opts in through its declared relationship and existing target prefix. It needs
-no collection-specific query compiler. Register its source in the client registry if users need
-search and selection controls. Unprefixed and multi-target relationships omit the picker descriptor
-and retain their existing typed identity and compatible target-property selectors. `target.value`,
-`target.relationTo`, and the exact `createdBy.value==me` spelling remain compatible. Older clients
-can ignore `picker`.
+The client uses `resource` to select an application-owned source. Metadata never
+supplies a search URL. A new collection opts in through its declared relationship
+and existing target prefix, without a collection-specific query compiler. Register
+its source in the client registry if users need search and selection controls.
+Unprefixed and multi-target relationships omit the picker descriptor and retain
+their existing typed identity and compatible target-property selectors.
+`target.value`, `target.relationTo`, and the exact `createdBy.value==me` spelling
+remain compatible. Older clients can ignore `picker`.
 
-Target-property and runtime traversal remain one hop. Runtime traversal requires one target;
-existing multi-target identity and common scalar queries remain valid. A missing or inaccessible
-identity matches `exists=false` but never a negative identity comparison. A runtime predicate
-through a relationship always requires a readable target, including `exists=false`; that operator
-then means the readable target has no nonempty value. Page and count queries share these predicates.
+Target-property and runtime traversal remain one hop. Runtime traversal requires
+one target; existing multi-target identity and common scalar queries remain valid.
+A missing or inaccessible identity matches `exists=false` but never a negative
+identity comparison. A runtime predicate through a relationship always requires a
+readable target, including `exists=false`; that operator then means the readable
+target has no nonempty value. Page and count queries share these predicates.
 Request copies made during access checks or projection narrowing must preserve
-`ResourceRequest.runtime()`, which contains the resolved runtime selectors needed by the query
-compiler.
+`ResourceRequest.runtime()`, which contains the resolved runtime selectors needed
+by the query compiler.
 
 Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. For client catalog
-allowlisting and redirect rejection, see [Relationship
-filters](TableListInteractions.md#relationship-filters). Target-only aliases may delegate catalogs;
-never infer the catalog resource from `viaResource`.
+allowlisting and redirect rejection, see [Relationship filters](TableListInteractions.md#relationship-filters).
+Relationship runtime catalogs belong to the registered target collection.
 
-Direct, relationship, and runtime predicates share the 50-comparison budget. Argument, nesting,
-LIKE, catalog-ID, page-size, and projection limits continue to apply independently; adding picker
-metadata does not raise them.
+The 50-comparison budget covers direct, relationship, and runtime
+predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection
+limits continue to apply independently; adding picker metadata does not raise them.
 
 ### Scalar read documents
 
@@ -718,6 +725,7 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
 
 ## Generated frontend access and relationship clients
 

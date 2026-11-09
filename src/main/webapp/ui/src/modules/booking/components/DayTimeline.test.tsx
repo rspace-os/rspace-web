@@ -16,6 +16,7 @@ import userEvent from "@testing-library/user-event";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { proposeDayRange, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
@@ -88,10 +89,7 @@ describe("DayTimeline table row", () => {
   });
 
   it("keeps the item name and time on short duration-sized cards by dropping the booker badge first", async () => {
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const event = {
       id: "sized-card",
       kind: "booking",
@@ -118,7 +116,7 @@ describe("DayTimeline table row", () => {
 
     const short = card(56);
     expect(short.container.querySelector("[data-event-time]")).toBeInTheDocument();
-    expect(within(short.container).queryByText("Ada Lovelace (ada)")).not.toBeInTheDocument();
+    expect(within(short.container).queryByText("Ada Lovelace")).not.toBeInTheDocument();
     expect(within(short.container).getByText("Confocal microscope", { selector: "span[title]" })).toHaveClass(
       "truncate",
     );
@@ -162,7 +160,7 @@ describe("DayTimeline table row", () => {
       );
 
       expect(screen.queryByText("08/17/2026")).not.toBeInTheDocument();
-      expect(screen.getByText("08:00 AM - 09:00 AM")).toBeVisible();
+      expect(screen.getByText("08:00 AM–09:00 AM")).toBeVisible();
       const details = screen.getByRole("button", {
         name: "Show details for Confocal microscope · Ada, 08:00 AM–09:00 AM",
       });
@@ -214,16 +212,13 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.queryByText(/08\/17\/2026/)).not.toBeInTheDocument();
-    expect(screen.getByText("11:00 PM - 12:00 AM (+1)")).toBeVisible();
+    expect(screen.queryByText("08/17/2026–08/18/2026")).not.toBeInTheDocument();
+    expect(screen.getByText("11:00 PM–12:00 AM (+1)")).toBeVisible();
   });
 
   it("shows both dates and day offsets for an event crossing the displayed day", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimelineEventCard
@@ -244,8 +239,8 @@ describe("DayTimeline table row", () => {
       { wrapper },
     );
 
-    expect(screen.getByText("08/16/2026 - 08/18/2026")).toBeVisible();
-    expect(screen.getByText("11:30 PM (-1) - 01:30 AM (+1)")).toBeVisible();
+    expect(screen.getByText("08/16/2026–08/18/2026")).toBeVisible();
+    expect(screen.getByText("11:30 PM (-1)–01:30 AM (+1)")).toBeVisible();
     const details = screen.getByRole("button", {
       name: "Show details for Overnight acquisition · Ada, 11:30 PM (-1)–01:30 AM (+1)",
     });
@@ -260,10 +255,7 @@ describe("DayTimeline table row", () => {
   });
 
   it("uses the item name in its accessible label and hides detail controls", async () => {
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimeline
@@ -288,10 +280,7 @@ describe("DayTimeline table row", () => {
 
   it("closes event details when another card or the surrounding page is clicked", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     render(
       <DayTimeline
         date="2026-08-17"
@@ -352,10 +341,7 @@ describe("DayTimeline table row", () => {
 
   it("renders clock-change bookings with distinct offsets and selectable elapsed positions", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const onRangeSelect = vi.fn();
     render(
       <DayTimeline
@@ -406,18 +392,29 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 195 } },
     ]);
-    expect(screen.getByText("02:45 AM +02:00–02:15 AM +01:00")).toBeVisible();
+    expect(screen.getAllByText("02:45 AM +02:00–02:15 AM +01:00")[0]).toBeVisible();
     await user.pointer("[/MouseLeft]");
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 165, endMinute: 195 }, expect.any(HTMLElement));
   });
 
   it("snaps drag selection to the resource increment and disables creation while leased", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const onRangeSelect = vi.fn();
+    const policy = timelinePolicy({
+      timezone: "Europe/Berlin",
+      slotGranularityMinutes: 15,
+      incrementUnit: "MINUTES",
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+      maxBookingDurationMinutes: 0,
+    });
+    const proposeQuarterHours = (anchor: number, pointer: number) =>
+      proposeDayRange(
+        { startMinute: Math.min(anchor, pointer), endMinute: Math.max(anchor, pointer) },
+        "2026-08-17",
+        "Europe/Berlin",
+        policy,
+      );
     const { rerender } = render(
       <DayTimeline
         date="2026-08-17"
@@ -426,7 +423,7 @@ describe("DayTimeline table row", () => {
         startWindow={0}
         endWindow={24 * 60}
         variant="table-row"
-        snapIncrementMinutes={15}
+        proposeSelection={proposeQuarterHours}
         onRangeSelect={onRangeSelect}
       />,
       { wrapper },
@@ -461,7 +458,7 @@ describe("DayTimeline table row", () => {
         startWindow={0}
         endWindow={24 * 60}
         variant="table-row"
-        snapIncrementMinutes={15}
+        proposeSelection={proposeQuarterHours}
         creationDisabled
         onRangeSelect={onRangeSelect}
       />,
@@ -475,11 +472,107 @@ describe("DayTimeline table row", () => {
     expect(onRangeSelect).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    {
+      incrementUnit: "MINUTES",
+      slotGranularityMinutes: 15,
+      startMinute: 600,
+      endMinute: 615,
+      label: "10:00 AM–10:15 AM",
+    },
+    {
+      incrementUnit: "DAYS",
+      slotGranularityMinutes: 1440,
+      startMinute: 607,
+      endMinute: 2047,
+      label: "10:07 AM–10:07 AM (+1)",
+    },
+  ] as const)(
+    "previews and commits the snapped $incrementUnit proposal",
+    async ({ incrementUnit, slotGranularityMinutes, startMinute, endMinute, label }) => {
+      const user = userEvent.setup();
+      const wrapper = await createRealI18nWrapper({
+        resources: { booking: bookingEnglish, common: commonEnglish },
+        defaultNS: "common",
+      });
+      const onRangeSelect = vi.fn();
+      const policy = timelinePolicy({
+        timezone: "UTC",
+        slotGranularityMinutes,
+        incrementUnit,
+        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+        maxBookingDurationMinutes: 0,
+      });
+      render(
+        <DayTimeline
+          date="2026-08-17"
+          timezone="UTC"
+          events={[]}
+          startWindow={0}
+          endWindow={1440}
+          proposeSelection={(anchor, pointer) =>
+            proposeDayRange(
+              { startMinute: Math.min(anchor, pointer), endMinute: Math.max(anchor, pointer) },
+              "2026-08-17",
+              "UTC",
+              policy,
+            )
+          }
+          onRangeSelect={onRangeSelect}
+        />,
+        { wrapper },
+      );
+      const canvas = screen.getByTestId("day-timeline-canvas");
+      vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        right: 1440,
+        bottom: 100,
+        width: 1440,
+        height: 100,
+        toJSON: () => ({}),
+      });
+      await user.pointer([
+        { target: canvas, coords: { clientX: 607 } },
+        { keys: "[MouseLeft>]", target: canvas },
+      ]);
+      expect(screen.getByText(label)).toBeVisible();
+      await user.pointer("[/MouseLeft]");
+      expect(onRangeSelect).toHaveBeenCalledWith({ startMinute, endMinute }, expect.any(HTMLElement));
+    },
+  );
+
+  it("preserves parenthesized suffixes in the booker display name", async () => {
+    const wrapper = await timelineWrapper();
+    render(
+      <DayTimelineEventCard
+        date="2026-08-17"
+        timezone="UTC"
+        event={{
+          id: "named",
+          kind: "booking",
+          privacy: "full",
+          title: "Scope",
+          bookedBy: "Ada Lovelace (Visiting)",
+          item: { name: "Scope", globalId: "IN123" },
+          canEdit: false,
+          startMinute: 480,
+          endMinute: 540,
+        }}
+      />,
+      { wrapper },
+    );
+    expect(screen.getByText("Ada Lovelace (Visiting)").parentElement).toHaveAttribute(
+      "title",
+      "Ada Lovelace (Visiting)",
+    );
+    expect(screen.getByRole("button", { name: /Scope.*Ada Lovelace \(Visiting\)/ })).toBeVisible();
+  });
+
   it("shades closed periods behind events and fully shades a closed day", async () => {
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const timeline = (closedPeriods: ReadonlyArray<{ startMinute: number; endMinute: number }> | undefined) => (
       <DayTimeline
         date="2026-08-17"

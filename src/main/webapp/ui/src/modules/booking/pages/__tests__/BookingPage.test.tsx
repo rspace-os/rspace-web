@@ -1,8 +1,9 @@
+import type { AppRouterContext } from "@/modules/common/app/router";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   Outlet,
@@ -89,7 +90,7 @@ function renderAt(
       return HttpResponse.json(inheritedBrowserBookingPreferences);
     }),
   );
-  const rootRoute = createRootRoute({ component: TestShell });
+  const rootRoute = createRootRouteWithContext<AppRouterContext>()({ component: TestShell });
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
@@ -98,6 +99,7 @@ function renderAt(
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
+    context: { queryClient },
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
         createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboardPage }),

@@ -251,6 +251,10 @@
           "customTimezone" : {
             "type" : [ "string", "null" ]
           },
+          "incrementUnit" : {
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "type" : "string"
+          },
           "institutionTimezone" : {
             "type" : "string"
           },
@@ -713,6 +717,17 @@
               "description" : "A logged-in session is required."
             }
           },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "example" : "MINUTES",
+            "type" : "string",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
           "maxBookingDurationMinutes" : {
             "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
             "example" : 120,
@@ -905,8 +920,8 @@
             } ]
           },
           "slotGranularityMinutes" : {
-            "description" : "Allowed wall-clock booking increment in minutes.",
-            "example" : 5,
+            "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+            "example" : 15,
             "format" : "int64",
             "type" : "integer",
             "x-rspace-access" : {
@@ -1085,6 +1100,17 @@
             "format" : "int64",
             "readOnly" : true,
             "type" : "integer",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "example" : "MINUTES",
+            "type" : "string",
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -1614,8 +1640,8 @@
             } ]
           },
           "slotGranularityMinutes" : {
-            "description" : "Allowed wall-clock booking increment in minutes.",
-            "example" : 5,
+            "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+            "example" : 15,
             "format" : "int64",
             "type" : "integer",
             "x-rspace-access" : {
@@ -1793,6 +1819,17 @@
           "enabled" : {
             "description" : "Whether bookings are enabled for the target.",
             "type" : "boolean",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "example" : "MINUTES",
+            "type" : "string",
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -1991,8 +2028,8 @@
             } ]
           },
           "slotGranularityMinutes" : {
-            "description" : "Allowed wall-clock booking increment in minutes.",
-            "example" : 5,
+            "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+            "example" : 15,
             "format" : "int64",
             "type" : "integer",
             "x-rspace-access" : {
@@ -3227,6 +3264,10 @@
           "globalId" : {
             "type" : "string"
           },
+          "incrementUnit" : {
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "type" : "string"
+          },
           "location" : {
             "anyOf" : [ {
               "$ref" : "#/components/schemas/Location"
@@ -3904,6 +3945,10 @@
           "customTimezone" : {
             "type" : [ "string", "null" ]
           },
+          "incrementUnit" : {
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "type" : "string"
+          },
           "institutionTimezone" : {
             "type" : "string"
           },
@@ -3965,6 +4010,11 @@
           "customTimezoneValid" : {
             "type" : "boolean"
           },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. DAYS counts calendar days in the item's timezone and needs slotGranularityMinutes to be a whole number of days.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS", null ],
+            "type" : [ "string", "null" ]
+          },
           "maxBookingDurationMinutes" : {
             "format" : "int64",
             "maximum" : 527040,
@@ -3982,7 +4032,7 @@
           },
           "slotGranularityMinutes" : {
             "format" : "int64",
-            "maximum" : 15,
+            "maximum" : 527040,
             "minimum" : 1,
             "type" : [ "integer", "null" ]
           },
@@ -4971,6 +5021,14 @@
                 },
                 "wildcards" : false
               },
+              "incrementUnit" : {
+                "operators" : [ "!=", "==", "=exists=" ],
+                "schema" : {
+                  "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
               "location" : {
                 "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
                 "picker" : {
@@ -5448,6 +5506,14 @@
                 },
                 "wildcards" : false
               },
+              "incrementUnit" : {
+                "operators" : [ "!=", "==", "=exists=" ],
+                "schema" : {
+                  "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
               "location" : {
                 "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
                 "picker" : {
@@ -5714,7 +5780,7 @@
           },
           "x-rspace-sort" : {
             "default" : [ "id" ],
-            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
+            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
             "maximumFields" : 5
           }
         }, {
@@ -5794,7 +5860,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -5827,7 +5893,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -6084,6 +6150,14 @@
                 "schema" : {
                   "format" : "int64",
                   "type" : "integer"
+                },
+                "wildcards" : false
+              },
+              "incrementUnit" : {
+                "operators" : [ "!=", "==", "=exists=" ],
+                "schema" : {
+                  "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+                  "type" : "string"
                 },
                 "wildcards" : false
               },
@@ -6521,6 +6595,7 @@
                 "bufferAfterMinutes" : 15,
                 "bufferBeforeMinutes" : 15,
                 "enabled" : true,
+                "incrementUnit" : "MINUTES",
                 "maxBookingDurationMinutes" : 120,
                 "openingHours" : [ {
                   "dayOfWeek" : 1,
@@ -6547,7 +6622,7 @@
                   "end" : "16:00",
                   "start" : "10:00"
                 } ],
-                "slotGranularityMinutes" : 5,
+                "slotGranularityMinutes" : 15,
                 "target" : {
                   "relationTo" : "instruments",
                   "value" : 123
@@ -6988,6 +7063,14 @@
                 "schema" : {
                   "format" : "int64",
                   "type" : "integer"
+                },
+                "wildcards" : false
+              },
+              "incrementUnit" : {
+                "operators" : [ "!=", "==", "=exists=" ],
+                "schema" : {
+                  "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+                  "type" : "string"
                 },
                 "wildcards" : false
               },
@@ -7940,7 +8023,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -7973,7 +8056,7 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
             "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -9859,12 +9942,12 @@
               "application/problem+json" : {
                 "examples" : {
                   "errors.api.v2.booking.duration" : {
-                    "summary" : "The booking interval exceeds 366 days.",
+                    "summary" : "The booking interval exceeds 527040 elapsed minutes.",
                     "value" : {
                       "code" : "errors.api.v2.booking.duration",
-                      "detail" : "The booking interval exceeds 366 days.",
+                      "detail" : "The booking interval exceeds 527040 elapsed minutes.",
                       "status" : 400,
-                      "title" : "The booking interval exceeds 366 days."
+                      "title" : "The booking interval exceeds 527040 elapsed minutes."
                     }
                   },
                   "errors.api.v2.booking.granularity" : {
@@ -9900,7 +9983,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 366 days."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
@@ -10750,12 +10833,12 @@
                     }
                   },
                   "errors.api.v2.booking.duration" : {
-                    "summary" : "The booking interval exceeds 366 days.",
+                    "summary" : "The booking interval exceeds 527040 elapsed minutes.",
                     "value" : {
                       "code" : "errors.api.v2.booking.duration",
-                      "detail" : "The booking interval exceeds 366 days.",
+                      "detail" : "The booking interval exceeds 527040 elapsed minutes.",
                       "status" : 400,
-                      "title" : "The booking interval exceeds 366 days."
+                      "title" : "The booking interval exceeds 527040 elapsed minutes."
                     }
                   },
                   "errors.api.v2.booking.granularity" : {
@@ -10791,7 +10874,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 366 days. The cancellation reason must not exceed 500 characters. A cancellation reason can only be supplied when cancelling a booking."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes. The cancellation reason must not exceed 500 characters. A cancellation reason can only be supplied when cancelling a booking."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"

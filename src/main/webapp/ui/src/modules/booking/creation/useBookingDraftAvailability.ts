@@ -1,5 +1,4 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useMemo } from "react";
 import type { BookingFormState } from "@/modules/booking/creation/BookingForm";
 import { bookingConflicts, calendarAvailabilityRow } from "@/modules/booking/domain/availability";
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
@@ -38,19 +37,15 @@ export function useBookingDraftAvailability({
         !sameInstant(window.start, originalWindow.start) ||
         !sameInstant(window.end, originalWindow.end)),
   );
-  const row = useMemo(
-    () =>
-      target
-        ? calendarAvailabilityRow({
-            ...target,
-            // Opening hours are the form's own check, so closed time must not read as an overlap here.
-            ...ALWAYS_OPEN,
-            // Fetch overlaps even when the target permits double booking so the form can explain them.
-            allowDoubleBooking: false,
-          })
-        : undefined,
-    [target],
-  );
+  const row = target
+    ? calendarAvailabilityRow({
+        ...target,
+        // Opening hours are the form's own check, so closed time must not read as an overlap here.
+        ...ALWAYS_OPEN,
+        // Fetch overlaps even when the target permits double booking so the form can explain them.
+        allowDoubleBooking: false,
+      })
+    : undefined;
   const interval = window
     ? {
         ...window,
@@ -59,7 +54,7 @@ export function useBookingDraftAvailability({
         elapsedMinutes: (Date.parse(window.end) - Date.parse(window.start)) / 60_000,
       }
     : { start: "", end: "", date: "", timeZone: displayTimezone, elapsedMinutes: 0 };
-  const availability = useCalendarAvailability(row && intervalChanged ? [row] : [], interval);
+  const availability = useCalendarAvailability(row && intervalChanged ? [{ ...row, eventKind }] : [], interval);
   const checking = Boolean(row && intervalChanged && availability.isPending);
   const intervals = availability.isSuccess ? (availability.data.get(target?.globalId ?? "") ?? []) : [];
   const violation = Boolean(

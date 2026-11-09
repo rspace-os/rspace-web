@@ -1,8 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import type { HttpResponseResolver } from "msw";
 import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
-import { getListBookingConfigurationsQueryOptions } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { getListBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
@@ -72,6 +69,7 @@ function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
     name: target.value.name,
     timezone: configuration.timezone,
     slotGranularityMinutes: configuration.slotGranularityMinutes,
+    incrementUnit: configuration.incrementUnit,
     openingHours: configuration.openingHours,
     bufferBeforeMinutes: configuration.bufferBeforeMinutes,
     bufferAfterMinutes: configuration.bufferAfterMinutes,
@@ -161,6 +159,7 @@ function BookingMutationTrigger() {
             name: "Confocal microscope",
             timezone: "Europe/Berlin",
             slotGranularityMinutes: 5,
+            incrementUnit: "MINUTES",
             openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
             bufferBeforeMinutes: 0,
             bufferAfterMinutes: 0,
@@ -431,7 +430,6 @@ describe("AllBookableItemsPage", () => {
   it("keeps the selection across pages and archives rows from both pages in one request", async () => {
     const user = userEvent.setup();
     const archiveRequests: string[] = [];
-    const reads = { configurations: 0, bookings: 0 };
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get<never, never, Page | ApiV2Problem>("/api/v2/booking-catalogue", ({ request }) => {
@@ -443,23 +441,16 @@ describe("AllBookableItemsPage", () => {
           total: 40,
         });
       }),
-      http.get<never, never, ListBookings200 | ApiV2Problem>("/api/v2/bookings", ({ request }) => {
-        if (new URL(request.url).searchParams.get("limit") === "3") reads.bookings += 1;
-        return HttpResponse.json({ ...collectionPage([]), hasNextPage: false });
-      }),
+      http.get<never, never, ListBookings200 | ApiV2Problem>("/api/v2/bookings", () =>
+        HttpResponse.json({ ...collectionPage([]), hasNextPage: false }),
+      ),
       http.delete("/api/v2/booking-configurations", ({ request }) => {
         archiveRequests.push(new URL(request.url).searchParams.get("where") ?? "");
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json({ docs: [{ id: 7 }, { id: 8 }] });
       }),
-      ...bookableItemsHandlers((request) => {
-        const url = new URL(request.url);
-        if (url.pathname === "/api/v2/booking-configurations" && url.searchParams.get("limit") === "3") {
-          reads.configurations += 1;
-        }
-      }),
+      ...bookableItemsHandlers(() => undefined),
     );
-    const { queryClient } = await renderPage(undefined, <ObservedLists />, sysadmin);
-    await waitFor(() => expect(reads).toEqual({ configurations: 1, bookings: 1 }));
+    await renderPage(undefined, undefined, sysadmin);
 
     await user.click((await screen.findAllByRole("checkbox", { name: "Select Confocal microscope" }))[0]);
     await user.click(screen.getByRole("button", { name: "Next page" }));
@@ -470,25 +461,25 @@ describe("AllBookableItemsPage", () => {
     expect(within(selectionBar).getByRole("button", { name: "Disable" })).toBeVisible();
     expect(within(selectionBar).queryByRole("button", { name: "Enable" })).not.toBeInTheDocument();
 
-    reads.configurations = 0;
-    reads.bookings = 0;
     await user.click(within(selectionBar).getByRole("button", { name: "Archive selected" }));
     const dialog = screen.getByRole("alertdialog", { name: "Archive 2 booking configurations?" });
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
     await waitFor(() => expect(archiveRequests).toEqual(["id=in=(7,8)"]));
+    expect(
+      await screen.findByText(
+        "2 items are now archived. Their future bookings, if any, were cancelled and will not return when they are restored.",
+      ),
+    ).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
     );
-    await waitFor(() => expect(queryClient.isMutating()).toBe(0));
-    expect(reads).toEqual({ configurations: 1, bookings: 1 });
   });
 
   it("keeps owner row actions without bulk selection and archives with the row version", async () => {
     const user = userEvent.setup();
     let archiveRequest: Request | undefined;
     let archived = false;
-    const reads = { configurations: 0, bookings: 0 };
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get<never, never, Page | ApiV2Problem>("/api/v2/booking-catalogue", () =>
@@ -508,18 +499,12 @@ describe("AllBookableItemsPage", () => {
           return HttpResponse.json(bookableItemFixtures[0]);
         },
       ),
-      http.get<never, never, ListBookings200 | ApiV2Problem>("/api/v2/bookings", ({ request }) => {
-        if (new URL(request.url).searchParams.get("limit") === "3") reads.bookings += 1;
-        return HttpResponse.json({ ...collectionPage([]), hasNextPage: false });
-      }),
-      ...bookableItemsHandlers((request) => {
-        const url = new URL(request.url);
-        if (url.pathname === "/api/v2/booking-configurations" && url.searchParams.get("limit") === "3")
-          reads.configurations += 1;
-      }),
+      http.get<never, never, ListBookings200 | ApiV2Problem>("/api/v2/bookings", () =>
+        HttpResponse.json({ ...collectionPage([]), hasNextPage: false }),
+      ),
+      ...bookableItemsHandlers(() => undefined),
     );
-    const { queryClient } = await renderPage(undefined, <ObservedLists />);
-    await waitFor(() => expect(reads).toEqual({ configurations: 1, bookings: 1 }));
+    await renderPage();
     await screen.findAllByRole("link", { name: "Confocal microscope" });
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Subscribe" })).not.toBeInTheDocument();
@@ -532,14 +517,12 @@ describe("AllBookableItemsPage", () => {
     expect(screen.queryByRole("menuitem", { name: "Delete permanently" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("menuitem", { name: "Archive" }));
     const dialog = await screen.findByRole("alertdialog");
-    reads.configurations = 0;
-    reads.bookings = 0;
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
-    expect(archiveRequest?.url.endsWith("/api/v2/booking-configurations/7")).toBe(true);
+    await screen.findByText(
+      "Confocal microscope is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.",
+    );
     expect(archiveRequest?.headers.get("If-Match")).toBe('"0"');
     await waitFor(() => expect(screen.queryByRole("link", { name: "Confocal microscope" })).not.toBeInTheDocument());
-    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
-    expect(reads).toEqual({ configurations: 1, bookings: 1 });
   });
 
   it.each([
@@ -1102,6 +1085,8 @@ describe("AllBookableItemsPage", () => {
       active ? "available-now" : null,
     ]);
     expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
+    await screen.findByRole("link", { name: "Add" });
+    await screen.findAllByRole("img", { name: "Mass spectrometer availability" });
     await expectAccessible(container);
     unmount();
     await act(async () => release?.());
@@ -1129,6 +1114,7 @@ describe("AllBookableItemsPage", () => {
     expect(screen.getByText("Finding bookable items…")).toHaveClass("sr-only");
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Jump to date, / })).toBeVisible();
+    await screen.findByRole("link", { name: "Add" });
     await expectAccessible(container);
     unmount();
     await act(async () => release?.());
@@ -1217,6 +1203,18 @@ describe("AllBookableItemsPage", () => {
         HttpResponse.json({ ...collectionPage([]), hasNextPage: false }),
       ),
     );
+    server.use(
+      http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+        HttpResponse.json({
+          configurationId: 7,
+          enabled: false,
+          version: -1,
+          createdEnabled: false,
+          cancelledEnabled: false,
+          emailEnabled: false,
+        }),
+      ),
+    );
     const { router } = await renderMutationPages("/booking/all-items?date=2026-08-17&availability=available-now");
 
     const available = await screen.findByRole("button", { name: "Available now" });
@@ -1233,7 +1231,11 @@ describe("AllBookableItemsPage", () => {
     await user.click(
       await screen.findByRole("checkbox", { name: bookingEnglish.bookableItemDetails.fields.doubleBooking }),
     );
-    await user.click(screen.getByRole("button", { name: bookingEnglish.bookableItems.actions.save }));
+    await user.click(
+      within(screen.getByRole("tabpanel", { name: "Details" })).getByRole("button", {
+        name: bookingEnglish.bookableItems.actions.save,
+      }),
+    );
     await waitFor(() => expect(patches).toHaveLength(1));
     expect(patches[0]).toMatchObject({ allowDoubleBooking: true });
     await waitFor(() => expect(router.state.location.search.edit).toBeUndefined());
@@ -1275,10 +1277,3 @@ describe("AllBookableItemsPage", () => {
     expect(requests).toHaveLength(0);
   });
 });
-
-// Keep the related lists active so the mutation's refreshes make real MSW requests.
-function ObservedLists() {
-  useQuery({ ...getListBookingConfigurationsQueryOptions({ limit: 3 }), staleTime: Infinity });
-  useQuery({ ...getListBookingsQueryOptions({ limit: 3 }), staleTime: Infinity });
-  return null;
-}

@@ -15,6 +15,7 @@ import { dayScheduleQuery } from "@/modules/booking/domain/fetchDayBookings";
 import { Button } from "@/modules/common/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/modules/common/ui/sheet";
 import type { BookableItemOption } from "./bookableItemOption";
+import { timelinePolicy } from "./timelineRange";
 
 function draftDay(value: string): string | undefined {
   return isPlainDate(value) ? value : undefined;
@@ -26,11 +27,14 @@ export function BookingDayTimelineAside({
   draft,
   timezone,
 
+  eventKind = "BOOKING",
   disabledReason,
   onChange,
   onInteractionChange,
 }: {
   target: BookableItemOption | undefined;
+  /** Maintenance keeps its exemptions from the item's increment, opening hours and maximum. */
+  eventKind?: "BOOKING" | "MAINTENANCE";
   formContainerRef: RefObject<HTMLDivElement | null>;
   draft: BookingWindowDraft;
   timezone: string;
@@ -102,8 +106,7 @@ export function BookingDayTimelineAside({
           ? {
               draft,
               targetKey: target.globalId,
-              schedulingTimeZone: target.timezone,
-              slotGranularityMinutes: target.slotGranularityMinutes,
+              policy: timelinePolicy(target, eventKind),
               onChange,
               onInteractionChange,
               disabledReason,

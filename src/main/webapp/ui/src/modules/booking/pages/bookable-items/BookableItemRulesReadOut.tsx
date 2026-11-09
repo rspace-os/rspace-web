@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { incrementFacts } from "@/modules/booking/configuration/incrementFacts";
 import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingDateTimeLocale } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale, formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -16,24 +17,15 @@ export function BookableItemRulesReadOut({ configuration }: { configuration: Boo
   const facts: Array<[string, ReactNode]> = [
     [t("bookableItemDetails.fields.timezone"), configuration.timezone],
     ...openingHoursFacts(configuration, t, bookingDateTimeLocale(timeFormat)),
-    [
-      t("bookableItemDetails.fields.granularity"),
-      t("bookableItemDetails.minutes", { count: configuration.slotGranularityMinutes }),
-    ],
+    ...incrementFacts(configuration, t),
     [
       t("bookableItemDetails.fields.maximumDuration"),
       configuration.maxBookingDurationMinutes === 0
         ? t("bookableItemDetails.unlimited")
-        : t("bookableItemDetails.minutes", { count: configuration.maxBookingDurationMinutes }),
+        : formatDurationMinutes(configuration.maxBookingDurationMinutes),
     ],
-    [
-      t("bookableItemDetails.fields.bufferBefore"),
-      t("bookableItemDetails.minutes", { count: configuration.bufferBeforeMinutes }),
-    ],
-    [
-      t("bookableItemDetails.fields.bufferAfter"),
-      t("bookableItemDetails.minutes", { count: configuration.bufferAfterMinutes }),
-    ],
+    [t("bookableItemDetails.fields.bufferBefore"), formatDurationMinutes(configuration.bufferBeforeMinutes)],
+    [t("bookableItemDetails.fields.bufferAfter"), formatDurationMinutes(configuration.bufferAfterMinutes)],
     [
       t("bookableItemDetails.fields.doubleBooking"),
       configuration.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),

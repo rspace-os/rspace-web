@@ -760,29 +760,7 @@ export default interface Resources {
     "access": {
       "allUsers": "All users",
       "editInventoryPermissions": "To edit the permissions, <inventoryLink>go to the inventory item's settings</inventoryLink>.",
-      "leave": "Leave configuration",
-      "roles": {
-        "booker": {
-          "description": "Can view the schedule, subscribe, create bookings, and manage their own bookings.",
-          "label": "Booker"
-        },
-        "manager": {
-          "description": "Can manage configuration, events, and non-owner access.",
-          "label": "Manager"
-        },
-        "noAccess": {
-          "description": "Does not grant public access. Direct user and group access still applies.",
-          "label": "No access"
-        },
-        "owner": {
-          "description": "Full control, including Owners and archiving.",
-          "label": "Owner"
-        },
-        "viewer": {
-          "description": "Can view the schedule and subscribe to the calendar.",
-          "label": "Viewer"
-        }
-      }
+      "leave": "Leave configuration"
     },
     "allBookableItems": {
       "actions": {
@@ -826,17 +804,6 @@ export default interface Resources {
       "title": "All Bookable Items",
       "toolbar": "All Bookable Items controls"
     },
-    "archived": {
-      "description": "This booking configuration is archived. New bookings, edits, access changes, and calendar links are unavailable until it is restored.",
-      "error": "This archived booking configuration is not available.",
-      "futureBookings": "Future bookings",
-      "loading": "Loading archived booking configuration.",
-      "noFutureBookings": "There are no future bookings to manage.",
-      "subscriptionInactive": "The item calendar subscription is inactive.",
-      "unarchive": "Unarchive",
-      "unarchiveError": "The configuration could not be unarchived. Refresh and try again.",
-      "unknownItem": "Archived booking configuration"
-    },
     "availabilityBar": {
       "current": {
         "available": "Available",
@@ -878,8 +845,6 @@ export default interface Resources {
     "bookableItemDetails": {
       "about": "About this item",
       "actions": {
-        "archive": "Archive bookable item",
-        "createBooking": "Create booking",
         "leave": "Leave configuration"
       },
       "archiveDialog": {
@@ -967,8 +932,8 @@ export default interface Resources {
           "allowDoubleBooking": "Allow concurrent bookings",
           "availabilityWindowEnd": "Availability window end",
           "availabilityWindowStart": "Availability window start",
-          "bufferAfter": "Buffer after (minutes)",
-          "bufferBefore": "Buffer before (minutes)",
+          "bufferAfter": "Gap after (minutes)",
+          "bufferBefore": "Gap before (minutes)",
           "cancellationReason": "Cancellation reason",
           "configuration": "Booking configuration",
           "configurationVersion": "Configuration version",
@@ -978,6 +943,7 @@ export default interface Resources {
           "enabled": "Enabled",
           "end": "End (UTC)",
           "increment": "Time increment (minutes)",
+          "incrementUnit": "Time increment unit",
           "kind": "Event type",
           "maximumDuration": "Maximum duration (minutes)",
           "openingHours": "Opening hours",
@@ -1006,6 +972,7 @@ export default interface Resources {
         "copy": "Copy link",
         "copyError": "The link could not be copied. Select and copy it manually.",
         "copyPrompt": "Or copy the calendar link below:",
+        "create": "Create link",
         "description": "Subscribe to this bookable item's read-only calendar.",
         "disconnect": "Disconnect",
         "disconnectConfirm": "Disconnect",
@@ -1020,12 +987,14 @@ export default interface Resources {
         "replaceConfirm": "Replace link",
         "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
         "replaceWarning": "Calendars using the current link will stop updating.",
+        "replaced": "Calendar link replaced.",
         "retry": "Retry",
         "statusError": "Calendar subscription status could not be loaded.",
         "title": "Add to your calendar",
         "trigger": "Add to calendar"
       },
       "cancelEdit": "Cancel",
+      "days": "{count, plural, one {# day} other {# days}}",
       "disableDialog": {
         "confirm": "Disable and save",
         "description": "{item} will stop accepting new bookings, and its future bookings cannot be moved or reinstated until it is enabled again. Existing bookings are kept.",
@@ -1056,8 +1025,8 @@ export default interface Resources {
         "requester": "Requester"
       },
       "fields": {
-        "bufferAfter": "Buffer after",
-        "bufferBefore": "Buffer before",
+        "bufferAfter": "Gap after",
+        "bufferBefore": "Gap before",
         "createdAt": "Created at",
         "createdBy": "Created by",
         "doubleBooking": "Allow double booking",
@@ -1068,6 +1037,7 @@ export default interface Resources {
         "openingHours": "Opening hours",
         "timezone": "Time zone"
       },
+      "hours": "{count, plural, one {# hour} other {# hours}}",
       "leaveDialog": {
         "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
         "error": "Could not leave this configuration.",
@@ -1094,9 +1064,9 @@ export default interface Resources {
       "permanentDeleteDialog": {
         "confirm": "Delete permanently",
         "confirmationLabel": "Item name",
-        "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+        "description": "This permanently deletes the booking setup for {item}, all its bookings and its calendar links. The Inventory instrument is kept. This cannot be undone. Type \"{item}\" to confirm.",
         "error": "The configuration could not be permanently deleted. Refresh and try again.",
-        "title": "Permanently delete configuration?"
+        "title": "Permanently delete booking setup?"
       },
       "rules": "Booking rules",
       "tabs": {
@@ -1183,6 +1153,20 @@ export default interface Resources {
       },
       "editError": "Could not update the bookable item. Try again.",
       "editTitle": "Edit Bookable Item",
+      "feedback": {
+        "added": "{item} was added as a bookable item.",
+        "archived": "{item} is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.",
+        "bulkArchived": "{count, plural, =0 {No items were archived.} one {# item is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.} other {# items are now archived. Their future bookings, if any, were cancelled and will not return when they are restored.}}",
+        "bulkArchivedUnknown": "The archive request succeeded. Refreshing the items to confirm their current state.",
+        "bulkDisabled": "{count, plural, =0 {No items were disabled.} one {# item is now disabled.} other {# items are now disabled.}}",
+        "bulkDisabledUnknown": "The disable request succeeded. Refreshing the items to confirm their current state.",
+        "bulkEnabled": "{count, plural, =0 {No items were enabled.} one {# item is now enabled.} other {# items are now enabled.}}",
+        "bulkEnabledUnknown": "The enable request succeeded. Refreshing the items to confirm their current state.",
+        "deleted": "{item} was permanently deleted.",
+        "restored": "{item} is now restored. Previously cancelled bookings remain cancelled.",
+        "viewCalendar": "View calendar",
+        "viewDetails": "View item details"
+      },
       "fields": {
         "actions": "Actions",
         "enabled": "Enabled",
@@ -1211,9 +1195,9 @@ export default interface Resources {
       },
       "permanentDeleteDialog": {
         "confirmationLabel": "Item name",
-        "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+        "description": "This permanently deletes the booking setup for {item}, all its bookings and its calendar links. The Inventory instrument is kept. This cannot be undone. Type \"{item}\" to confirm.",
         "error": "The configuration could not be permanently deleted. Refresh and try again.",
-        "title": "Permanently delete configuration?"
+        "title": "Permanently delete booking setup?"
       },
       "plural": "Bookable Items",
       "primer": {
@@ -1255,6 +1239,12 @@ export default interface Resources {
         "reasonLabel": "Cancellation reason (optional)",
         "title": "Cancel booking?"
       },
+      "clockChange": {
+        "changesDays": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses {count, plural, one {a clock change} other {# clock changes}} in {timezone}. It spans {days, plural, one {# calendar day} other {# calendar days}} but lasts {duration}.",
+        "changesRange": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses {count, plural, one {a clock change} other {# clock changes}} in {timezone}. It runs from {start} to {end} local time and lasts {duration}.",
+        "daylightSavingDays": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses a daylight-saving change in {timezone}. It spans {days, plural, one {# calendar day} other {# calendar days}} but lasts {duration}.",
+        "daylightSavingRange": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses a daylight-saving change in {timezone}. It runs from {start} to {end} local time and lasts {duration}."
+      },
       "compact": {
         "bookingTitle": "New Booking",
         "discard": "Discard changes",
@@ -1286,7 +1276,6 @@ export default interface Resources {
           "conflict": "This event changed while you were editing. Copy any changes you want to keep, then refresh this page.",
           "discard": "Discard",
           "maintenanceTitle": "Edit maintenance event",
-          "saved": "Changes saved.",
           "title": "Edit booking"
         },
         "lastUpdated": "Last updated",
@@ -1308,26 +1297,29 @@ export default interface Resources {
       },
       "editTitle": "Edit Booking",
       "errors": {
-        "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
-        "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
-        "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
+        "buffer": "Too close to another event. This item needs {before} before and {after} after each booking. Gaps between bookings add up.",
         "bufferSummary": "This period is within the buffer time of:",
         "bufferUnknown": "Too close to another booking.",
         "cancellationReasonLength": "The cancellation reason must be 500 characters or fewer.",
         "cancellationReasonRequiresCancel": "A cancellation reason can only be provided when cancelling a booking.",
         "checkExistingBookings": "Check My Bookings",
         "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
+        "dayEndMissing": "This booking would end at {time} on {date}, but that local time does not exist in {timezone}. Change the start time or choose another duration.",
+        "dayEndMissingRejected": "This booking would end at a local time that does not exist on its last day. Change the start time or choose another duration.",
+        "dayIncrement": "This booking lasts {length}. Day bookings must end at the same local time as they start, a multiple of {increment} later, in {timezone}.",
         "deleteForbidden": "You no longer have permission to cancel this booking.",
         "deleteGeneric": "RSpace could not cancel the booking. Try again.",
         "deleteStale": "This booking can no longer be cancelled.",
-        "duration": "Bookings may not exceed 366 days.",
+        "duration": "Bookings may not last longer than 8,784 hours.",
+        "durationMultiple": "This booking lasts {length}. Its length must be a multiple of {increment}.",
         "endAfterStart": "The end must be after the start.",
         "forbidden": "You cannot edit this booking.",
         "generic": "RSpace could not save the booking. Try again.",
-        "granularity": "Start and end times must use this bookable item's time increment.",
+        "granularity": "The booking length is not a whole number of this bookable item's time increments.",
         "itemLoad": "RSpace could not load bookable items.",
         "itemRequired": "Select a bookable item.",
         "load": "RSpace could not load this booking.",
+        "maintenanceConflict": "Maintenance: {label}",
         "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
         "maximumDurationLimit": "This booking exceeds the bookable item's maximum duration of {duration}.",
         "noLongerEditable": "This booking is no longer editable.",
@@ -1347,18 +1339,29 @@ export default interface Resources {
         "window": "Enter a start in the future and an end after the start.",
         "windowRequired": "Enter a valid start and end."
       },
+      "feedback": {
+        "eventAdded": "Booking added for {itemName}, {date}, {start} to {end}.",
+        "eventUpdated": "{itemName} event updated.",
+        "focusOnCalendar": "Focus on calendar",
+        "maintenanceAdded": "Maintenance for {itemName} added.",
+        "maintenanceUpdated": "Maintenance for {itemName} updated.",
+        "viewDetails": "View details"
+      },
       "form": {
         "cancel": "Cancel",
-        "changeTimezone": "Change Time Zone",
+        "changeTimezone": "Change time zone",
         "closedOnDate": "Closed on this date",
         "date": "Date",
         "earlierOccurrence": "Earlier occurrence ({offset})",
+        "editTimezone": "Timezone: {timezone} (click to edit)",
         "end": "End",
         "endDate": "End date",
+        "endSnapped": "End adjusted to {time} on {date} so the booking lasts a multiple of {increment}.",
         "endTime": "End time",
         "endTimezone": "End time zone",
-        "instrumentTimes": "Instrument time: {start} - {end} ({timezone})",
+        "instrumentTimes": "Instrument time: {start}–{end} ({timezone})",
         "item": "Bookable item",
+        "itemAccess": "Ask the instrument's owner to share it with you in Inventory.",
         "itemChoose": "Choose a bookable item",
         "itemNone": "No bookable items found",
         "itemOption": "{name} ({globalId}) — {timezone}",
@@ -1366,7 +1369,7 @@ export default interface Resources {
         "itemResults": "Bookable item results",
         "itemSearch": "Search bookable items",
         "laterOccurrence": "Later occurrence ({offset})",
-        "maximumDuration": "Maximum booking duration: {count, number} minutes",
+        "maximumDuration": "Maximum booking duration: {duration}",
         "moreOptions": "More options",
         "nextItems": "Next",
         "notes": "Notes",
@@ -1375,13 +1378,14 @@ export default interface Resources {
         "openAllDay": "Open all day",
         "openAllDayOnDate": "Open all day on this date",
         "openItem": "Open {globalId}",
-        "openingHours": "Open: {start} - {end}",
+        "openingHours": "Open: {start}–{end}",
         "openingWindowsOnDate": "Open on this date: {hours}",
         "policyMismatchNotes": "This booking does not meet the current booking rules. You can update its maintenance notes without changing its reserved times. Changing those times requires following the current rules.",
         "policyMismatchPurpose": "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
         "previousItems": "Previous",
         "purpose": "Purpose",
         "purposeCount": "{count, number}/1,000 characters",
+        "repeatedEnd": "The end time {time} occurs twice on {date} in {timezone}. Choose which one to use.",
         "returnToCalendar": "Return to Calendar",
         "returnToMyBookings": "Return to My Bookings",
         "save": "Save changes",
@@ -1393,16 +1397,17 @@ export default interface Resources {
         "submit": "Book",
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
-        "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
         "type": "Booking type",
         "typeBlockout": "Maintenance",
         "typeBooking": "Booking"
       },
+      "increment": {
+        "days": "{count, plural, one {# day} other {# days}}",
+        "hours": "{count, plural, one {# hour} other {# hours}}",
+        "minutes": "{count, plural, one {# minute} other {# minutes}}"
+      },
       "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
       "itemInformation": {
-        "buffer": "Buffer",
-        "bufferAfter": "{count, number}m after",
-        "bufferBefore": "{count, number}m before",
         "closedDay": "{day}: closed",
         "day": "{day}: {hours}",
         "doubleBookingAllowed": "Double booking allowed",
@@ -1444,6 +1449,7 @@ export default interface Resources {
       "detailLoading": "Loading bookings.",
       "detailUnavailable": "Bookings are unavailable.",
       "event": "Booking event",
+      "eventFocusUnavailable": "This event is no longer available in the calendar.",
       "feed": {
         "bookedBy": "Booked by: {0}",
         "booking": "Booking",
@@ -1482,6 +1488,10 @@ export default interface Resources {
         "events": "Booking events",
         "items": "Bookable items",
         "legend": "Calendar filters"
+      },
+      "focusFallback": {
+        "overflow": "Opened the Time grid day view to show the event hidden in the week view.",
+        "resources": "Opened the Time grid day view because this event's item has no enabled resource row."
       },
       "grid": "Calendar grid",
       "inlineEditor": {
@@ -1657,6 +1667,7 @@ export default interface Resources {
         "returnToDraftDay": "Draft day",
         "saving": "The booking is being saved.",
         "schedule": "Day schedule",
+        "timezoneAndItem": "{timezone} · {item}",
         "title": "Day schedule"
       },
       "zoom": {
@@ -1664,79 +1675,6 @@ export default interface Resources {
         "legend": "Timeline zoom",
         "out": "Zoom out"
       }
-    },
-    "detailPrototype": {
-      "acceptBookings": "Accept new bookings",
-      "acceptBookingsHint": "Turning this off keeps existing bookings and pauses new ones.",
-      "acceptingBookings": "Accepting bookings",
-      "accessHint": "Who can use and manage this bookable item.",
-      "accessSummary": "Imaging group can book · Grace Hopper owns this configuration",
-      "activity": "Activity",
-      "activityCount": "Showing {shown} of {total} activities",
-      "activityCreated": "Created",
-      "activityCreatedBy": "30 Aug 2026, 09:14 · Grace Hopper",
-      "activityDetail": "Sample change: scheduling details updated after a calibration review. Expand entries to read full actor names without truncation.",
-      "activityPage": "Page {page} of {total}",
-      "activitySummary": "Updated 31 Aug 2026 by Grace Hopper",
-      "activityUpdated": "Last updated",
-      "activityUpdatedBy": "31 Aug 2026, 16:40 · Grace Hopper",
-      "bufferAfterLabel": "Buffer after (minutes)",
-      "bufferBeforeLabel": "Buffer before (minutes)",
-      "compareLayouts": "Compare detail layouts",
-      "configurationBreadcrumb": "Booking / Configuration details",
-      "configurationInvalid": "Check opening hours, duration increments and non-negative buffer values.",
-      "dailyHours": "{start}–{end} daily",
-      "discard": "Discard changes",
-      "discarded": "Draft discarded. Saved details restored.",
-      "doubleBookingHint": "Allow reservations to overlap.",
-      "duration": "Duration",
-      "durationHint": "Use 0 for no limit.",
-      "editEvent": "Edit booking",
-      "editing": "Editing",
-      "eventBreadcrumb": "Booking / Event details",
-      "eventInvalid": "Choose a unique local time, with end after start, within the displayed booking rules.",
-      "eventPeriod": "{date} · {time}",
-      "eventTimeHint": "Times in {timezone}. Use 15-minute increments between 08:00 and 18:00, up to 4 hours.",
-      "footer": "Times shown in {timezone}. Full timestamps are under Activity.",
-      "invalidPeriod": "Choose a valid booking period",
-      "layouts": {
-        "ledger": "Ledger",
-        "overview": "Overview",
-        "reading": "Reading"
-      },
-      "nextActivities": "Next activities",
-      "nextLayout": "Next layout",
-      "noActivities": "No matching activities. Try another search.",
-      "noChanges": "No changes yet",
-      "notice": "Prototype · sample data · edits reset on reload",
-      "outlineHint": "Expand a section to see its details.",
-      "paused": "New bookings paused",
-      "peopleItem": "People & location",
-      "peopleSummary": "Ada Lovelace · Imaging suite",
-      "previousActivities": "Previous activities",
-      "previousLayout": "Previous layout",
-      "reservedTime": "Reserved time",
-      "rulesSummary": "{start}–{end} daily · {increment}-minute increments",
-      "saved": "Changes saved in this prototype.",
-      "scenario": "Stress scenario",
-      "scenarioState": "{nameLength}-character name · {activities} activities · {access} access entries",
-      "scenarios": {
-        "combined": "Combined stress",
-        "dst": "DST transition",
-        "longNames": "Very long text",
-        "manyActivities": "240 activities / 40 access entries",
-        "overnight": "Overnight booking",
-        "standard": "Standard",
-        "veryLong": "Very long booking"
-      },
-      "schedulePurpose": "Schedule & purpose",
-      "searchActivity": "Search activity by person, action or number",
-      "sections": "Detail sections",
-      "showMoreActivity": "Show more activities",
-      "timeSummary": "{duration} · {timezone}",
-      "unsaved": "Unsaved changes",
-      "whoCanBook": "Who can book",
-      "yourAccess": "You are an Owner. You can edit rules and manage access."
     },
     "myBookings": {
       "actions": {
@@ -1790,6 +1728,9 @@ export default interface Resources {
       "title": "My Bookings"
     },
     "notificationSubscriptions": {
+      "bulk": {
+
+      },
       "item": {
         "bothEventsDisabled": "Both booking events are off in My Profile.",
         "cancellations": "Booking cancellations",
@@ -1833,16 +1774,16 @@ export default interface Resources {
           "on": "Email delivery is on: booking notifications are also sent by email."
         },
         "events": {
-          "cancelled": "Notify me when bookings are cancelled",
-          "created": "Notify me when bookings are created",
+          "cancelled": "A booking on an instrument I subscribe to is cancelled",
+          "created": "A booking is created, restored or changed on an instrument I subscribe to",
           "description": "For instruments you're subscribed to. These are the same settings as the booking notifications in My Profile."
         },
         "existingSubscriptions": {
           "description": "Unsubscribe from every instrument. Your notification settings above stay as they are."
         },
         "ownActions": {
-          "description": "Applies to instruments you are subscribed to. Your booking-created and booking-cancelled notification choices still apply.",
-          "label": "Also notify me about bookings I create or cancel myself"
+          "description": "Applies to instruments you are subscribed to. Your notification choices above still apply.",
+          "label": "Also notify me about bookings I create, restore, change or cancel myself"
         },
         "save": "Save",
         "saveError": "Your notification preference could not be saved. Your changes have been kept. Please try again.",
@@ -1861,6 +1802,7 @@ export default interface Resources {
         "saved": "Saved"
       },
       "availabilityWindow": {
+        "allDay": "Show all day",
         "description": "The times shown on each day's availability bars and timelines.",
         "end": "End time",
         "endOfDay": "{midnight} means midnight at the end of the day.",
@@ -1877,9 +1819,11 @@ export default interface Resources {
         "create": "Create calendar subscription",
         "createError": "The calendar subscription could not be created. Try again.",
         "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+        "disconnected": "Calendar link disconnected.",
         "google": "Google Calendar",
         "loading": "Loading calendar subscription.",
         "other": "Other",
+        "ready": "Calendar link is ready.",
         "replace": "Replace private link",
         "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
         "replaceDialog": {
@@ -1888,6 +1832,7 @@ export default interface Resources {
           "description": "Calendars using the current link will stop updating. Add the new link to them to keep seeing your bookings.",
           "title": "Replace your private link?"
         },
+        "replaced": "Calendar link replaced.",
         "retry": "Retry",
         "revoke": "Disconnect calendar",
         "statusError": "The calendar subscription could not be loaded.",
@@ -1895,7 +1840,7 @@ export default interface Resources {
       },
       "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
       "errors": {
-        "invalid": "Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "invalid": "Choose a valid same-day window and, for Custom, a valid IANA time zone.",
         "save": "Booking preferences could not be saved."
       },
       "resetComplete": "Global Booking defaults restored.",
@@ -1908,11 +1853,11 @@ export default interface Resources {
         "twentyFourHour": "24-hour ({example})"
       },
       "timezone": {
-        "browser": "Use Browser Timezone ({timezone})",
-        "custom": "Use Custom Timezone",
-        "customLabel": "Custom timezone",
-        "institution": "Use Institution Timezone ({timezone})",
-        "legend": "Default timezone"
+        "browser": "Use browser time zone ({timezone})",
+        "custom": "Use custom time zone",
+        "customLabel": "Custom time zone",
+        "institution": "Use institution time zone ({timezone})",
+        "legend": "Default time zone"
       },
       "title": "Booking preferences"
     },
@@ -1935,25 +1880,32 @@ export default interface Resources {
       },
       "errors": {
         "buffer": "Enter a whole number from 0 to 10,080.",
-        "granularity": "Choose 1, 5, 10, or 15 minutes.",
-        "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
+        "incrementDaysNeedFullWeek": "Day increments require continuous availability, 24 hours a day, seven days a week.",
+        "incrementOpening": "The increment must fit within one continuous opening period.",
+        "incrementRange": "Enter an increment from 1 minute to 527,040 minutes.",
+        "incrementWholeDays": "Enter a whole number of days.",
+        "incrementWholeMinutes": "The increment must be a whole number of minutes.",
+        "maximumDuration": "Use 0, or a multiple of the time increment ({increment}). The system limit is 366 days.",
+        "maximumDurationDays": "The maximum must be 0 or at least {minutes, number} elapsed minutes for this {days, plural, one {#-day} other {#-day}} increment.",
         "openingHours": "Use an opening start before the end, or enter 00:00 as the end to close at midnight.",
         "save": "RSpace could not save the booking settings. Try again.",
         "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
       "fields": {
         "allowDoubleBooking": "Allow double booking",
-        "buffer": "Buffer before and after bookings (minutes)",
-        "bufferAfter": "Buffer after booking (minutes)",
-        "bufferBefore": "Buffer before booking (minutes)",
-        "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
+        "bufferAfter": "Gap after (minutes)",
+        "bufferBefore": "Gap before (minutes)",
         "granularity": "Time increment",
-        "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
+        "incrementDays": "Days",
+        "incrementDaysUnavailable": "Select Open all day on every day to use Days.",
+        "incrementHours": "Hours",
+        "incrementMinutes": "Minutes",
+        "incrementUnit": "Time increment unit",
         "legend": "Scheduling rules",
-        "maximumDuration": "Maximum booking duration (minutes)",
-        "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
+        "maximumDuration": "Maximum booking duration",
+        "maximumDurationDescription": "Use 0 for no item limit. A day is 24 elapsed hours. The system limit is 366 days.",
+        "maximumDurationUnit": "Maximum duration unit",
         "openingEnd": "Opening end",
-        "openingEndDescription": "Enter {midnight} to close at midnight (the end of the day).",
         "openingStart": "Opening start"
       },
       "notPermitted": {
@@ -1968,7 +1920,7 @@ export default interface Resources {
         },
         "midnightEnd": "An end of {midnight} closes at midnight at the end of this day.",
         "openAllDay": "Open all day",
-        "openAllDaySelected": "Open all day selected."
+        "openAllDaySelected": "Open all day selected. The start and end times stay unavailable until you clear it."
       },
       "saved": "Booking settings saved.",
       "title": "Booking Settings",
@@ -1991,12 +1943,32 @@ export default interface Resources {
     },
     "time": {
       "dateAndRange": "{date}; {period}",
-      "dateTimeRange": "{start} – {end}",
-      "openingRange": "{start} - {end}",
+      "dateTimeRange": "{start}–{end}",
+      "openingRange": "{start}–{end}",
       "range": "{start}–{end}",
       "rangeAndEndDate": "{period} · {date}",
       "rangeWithOffset": "{period} {offset}",
+      "wallClockWithDate": "{date} {time}",
+      "wallClockWithOffset": "{time} (UTC{offset})",
       "withDayOffset": "{time} ({days})"
+    },
+    "timelineEdit": {
+      "continuationHint": "Double-click or press Enter to apply.",
+      "endAtMidnight": "End at midnight after {date}",
+      "resizeDays": "Day bookings keep the same local start and end time. Move the booking or change its duration in the form.",
+      "resizeEnd": "No other valid end time fits on this day.",
+      "resizeStart": "No other valid start time fits on this day.",
+      "startAtMidnight": "Start at midnight on {date}",
+      "unavailable": {
+        "dayEndMissing": "Midnight would not leave a whole number of this item's increments.",
+        "duration": "Midnight would not leave a whole number of this item's increments.",
+        "maximum": "Midnight would make the booking longer than this item's maximum.",
+        "midnightRepeated": "Midnight occurs twice on {date} in {timezone}. Use the form to choose which one.",
+        "midnightSkipped": "Midnight does not occur on {date} in {timezone}. Use the form to set this time.",
+        "openingHours": "Midnight would extend the booking outside this item's opening hours.",
+        "order": "Midnight would leave the booking with no length.",
+        "precision": "Midnight would leave the booking with no length."
+      }
     },
     "toolbar": {
       "jumpToDateAccessible": "{label}, {date}"
@@ -2736,7 +2708,7 @@ export default interface Resources {
       "failed": "Search is unavailable. Try again.",
       "openOptions": "Show matching records",
       "remove": "Remove {item}",
-      "restoreFailed": "Could not restore this saved selection. Try again.",
+      "restoreFailed": "{value} — Could not restore this saved selection. Try again.",
       "search": "Search by name or global ID",
       "searchTooShort": "Type at least {count, plural, one {# character} other {# characters}} to search.",
       "unavailable": "{value} (unavailable)"
@@ -4462,7 +4434,7 @@ export default interface Resources {
       "accessPermissions": {
         "addGroup": "Add group",
         "editFirst": "You need to be in Edit mode to edit permissions.",
-        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs docLink=\"permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
+        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs docLink=\"permissions\">access permissions</helpDocs>, including under what circumstances some information may be more widely shared.",
         "explicitAccess": {
           "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
           "title": "Explicit access list"
@@ -7640,7 +7612,8 @@ export default interface Resources {
     "bookingNotifications": {
       "cancelled": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}.",
       "cancelledWithReason": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}. Reason: {7}",
-      "changed": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed to {3} to {4}.",
+      "changed": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed. It is scheduled from {3} to {4}.",
+      "changedWithPrevious": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed from {8}–{9} to {3}–{4}.",
       "created": "Booking <a href=\"{5}\">{0}</a> was created for instrument <a href=\"{6}\">{1} ({2})</a> from {3} to {4}.",
       "restored": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was restored. It is scheduled from {3} to {4}."
     }
@@ -7729,8 +7702,9 @@ export default interface Resources {
             },
             "concurrentModification": "The event changed while it was being edited.",
             "create": "The booking is invalid.",
-            "duration": "Bookings may not exceed 366 days.",
-            "granularity": "Start and end must align with this bookable item's slot granularity.",
+            "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
+            "duration": "Bookings may not last longer than 527,040 elapsed minutes (366 days of 24 hours).",
+            "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
             "idempotencyKey": {
               "conflict": "This Idempotency-Key was already used for a different booking request.",
               "invalid": "Idempotency-Key must contain 1 to 64 ASCII letters, digits, dots, underscores, colons or hyphens."
@@ -7768,12 +7742,12 @@ export default interface Resources {
             "concurrentModification": "The booking configuration changed. Reload it and try again.",
             "create": "The booking configuration is invalid.",
             "granularity": {
-              "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
+              "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
             },
             "ifMatchRequired": "The current booking configuration version is required.",
             "lifecycleConflict": "Restore the archived booking configuration before changing it.",
             "maximumDuration": {
-              "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
+              "invalid": "Maximum booking duration must be 0, or from one time increment up to 527,040 elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of 1,440 minutes per day."
             },
             "openDays": {
               "invalid": "Open days must list one to seven different weekdays, numbered 1 (Monday) to 7 (Sunday)."

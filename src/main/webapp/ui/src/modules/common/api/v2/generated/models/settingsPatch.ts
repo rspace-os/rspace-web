@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
+import type { SettingsPatchIncrementUnit } from './settingsPatchIncrementUnit.ts';
 import type { SettingsPatchTimeFormat } from './settingsPatchTimeFormat.ts';
 import type { SettingsPatchTimezoneMode } from './settingsPatchTimezoneMode.ts';
 
@@ -42,6 +43,11 @@ export interface SettingsPatch {
   customTimezone?: string | null;
   customTimezoneValid?: boolean;
   /**
+     * Unit of the time increment. DAYS counts calendar days in the item's timezone and needs slotGranularityMinutes to be a whole number of days.
+     * @nullable
+     */
+  incrementUnit?: SettingsPatchIncrementUnit;
+  /**
      * @minimum 0
      * @maximum 527040
      * @nullable
@@ -56,7 +62,7 @@ export interface SettingsPatch {
   openingHours?: BookingOpeningHoursEntry[] | null;
   /**
      * @minimum 1
-     * @maximum 15
+     * @maximum 527040
      * @nullable
      */
   slotGranularityMinutes?: number | null;

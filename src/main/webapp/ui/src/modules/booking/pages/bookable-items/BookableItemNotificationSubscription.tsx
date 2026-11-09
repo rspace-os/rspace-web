@@ -95,6 +95,7 @@ function ItemNotificationEditor({
     },
   });
   const saved = feedback === "saved" && !dirty;
+
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -134,6 +135,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
               aria-busy={mutation.isPending}
               className={
                 saved
@@ -214,13 +216,18 @@ export function BookableItemNotificationSubscription({
   }
 
   return (
-    <ItemNotificationEditor
-      subjectId={subjectId}
-      configurationId={configurationId}
-      globalId={globalId}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        subjectId={subjectId}
+        configurationId={configurationId}
+        globalId={globalId}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
   );
 }

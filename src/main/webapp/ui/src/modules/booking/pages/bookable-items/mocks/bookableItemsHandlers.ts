@@ -209,6 +209,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
         name: fixture.target.value.name,
         timezone: fixture.timezone,
         slotGranularityMinutes: fixture.slotGranularityMinutes,
+        incrementUnit: fixture.incrementUnit,
         openingHours: fixture.openingHours,
         bufferBeforeMinutes: fixture.bufferBeforeMinutes,
         bufferAfterMinutes: fixture.bufferAfterMinutes,

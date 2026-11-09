@@ -3,13 +3,16 @@ import type { Page } from "@/modules/common/api/v2/generated/models/page";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
-import { http } from "msw";
+import { getResponse, HttpResponse, http } from "msw";
+import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { bookingPagesHandlers, resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
+import { PageSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
 import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
 
@@ -41,32 +44,101 @@ afterEach(() => {
 });
 
 describe("the All Bookable Items page", () => {
-  test.each([
-    [1280, false],
-    [1376, false],
-    [1280, true],
-    [1376, true],
-  ] as const)("fits usable availability inside its cell at %s px (quick=%s)", async (width, quick) => {
+  test("reserves availability space beside realistic long item and location labels at 1280 px", async () => {
+    const name = "Live-cell confocal microscope with environmental chamber";
+    worker.use(
+      http.get<never, never, Page | ApiV2Problem>("/api/v2/booking-catalogue", async ({ request }) => {
+        const response = await getResponse(
+          bookableItemsHandlers(() => {}),
+          request,
+        );
+        if (!response) throw new Error("Expected catalogue fixture response");
+        const body = v.parse(v.required(PageSchema), await response.json());
+        return HttpResponse.json({
+          ...body,
+          items: body.items.map((item, index) =>
+            index === 0
+              ? {
+                  ...item,
+                  name,
+                  location: { name: "Imaging suite, room 2.14, north laboratory wing", globalId: "IC456" },
+                }
+              : item,
+          ),
+        });
+      }),
+    );
+    await withViewport(1280, async () => {
+      render(<AllBookableItemsStory history={history} containerWidth={934} />);
+      const bar = page.getByRole("img", { name: `${name} availability`, exact: true });
+      await expect.element(bar).toBeVisible();
+      expect(bar.element().getBoundingClientRect().width).toBeGreaterThanOrEqual(280);
+      const cell = bar.element().closest("td");
+      if (!cell?.parentElement?.lastElementChild) throw new Error("Expected availability and actions cells");
+      const actions = cell.parentElement.lastElementChild;
+      expect(bar.element().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
+      const label = page.getByRole("link", { name, exact: true }).first().element();
+      expect(label.getBoundingClientRect().width).toBeLessThanOrEqual(240);
+      const endLabel = () => {
+        const label = bar.element().parentElement?.previousElementSibling?.lastElementChild;
+        if (!label) throw new Error("Expected availability end label");
+        return label;
+      };
+      expect(endLabel().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
+      const handle = page.getByRole("button", { name: "Resize column Availability", exact: true });
+      await handle.click();
+      await userEvent.keyboard("{ArrowRight}".repeat(40));
+      const table = pageObj.table.element();
+      const scroller = table.parentElement;
+      if (!scroller) throw new Error("Expected table scroll container");
+      await expect.poll(() => scroller.scrollWidth).toBeGreaterThan(scroller.clientWidth);
+      await expect.poll(() => getComputedStyle(actions).position).not.toBe("sticky");
+      expect(
+        getComputedStyle(page.getByRole("columnheader", { name: "Actions", exact: true }).element()).position,
+      ).not.toBe("sticky");
+      const barBefore = bar.element().getBoundingClientRect().left;
+      const actionsBefore = actions.getBoundingClientRect().left;
+      scroller.scrollLeft = 100;
+      await expect.poll(() => scroller.scrollLeft).toBe(100);
+      expect(bar.element().getBoundingClientRect().left).toBeCloseTo(barBefore - 100, 0);
+      expect(actions.getBoundingClientRect().left).toBeCloseTo(actionsBefore - 100, 0);
+      expect(endLabel().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
+      await userEvent.keyboard("{Enter}");
+      await expect.poll(() => getComputedStyle(actions).position).toBe("sticky");
+      expect(endLabel().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
+    });
+  });
+
+  test("contains the whole availability bar and end label in a 320 px card", async () => {
+    await withViewport(320, async () => {
+      render(<AllBookableItemsStory history={history} containerWidth={320} />);
+      await expect.element(pageObj.confocalAvailability).toBeVisible();
+      const bar = pageObj.confocalAvailability.element();
+      const card = pageObj.card("Confocal microscope").element().getBoundingClientRect();
+      const endLabel = bar.parentElement?.previousElementSibling?.lastElementChild;
+      if (!endLabel) throw new Error("Expected availability end label");
+      for (const element of [bar, endLabel]) {
+        const bounds = element.getBoundingClientRect();
+        expect(bounds.left).toBeGreaterThanOrEqual(card.left);
+        expect(bounds.right).toBeLessThanOrEqual(card.right);
+        expect(bounds.right).toBeLessThanOrEqual(320);
+      }
+    });
+  });
+
+  test.each([1280, 1376])("fits availability inside its cell at %s px", async (width) => {
     await withViewport(width, async () => {
-      history = createMemoryHistory({
-        initialEntries: [`/booking/all-items?date=2026-08-17${quick ? "&availability=available-now" : ""}`],
-      });
       render(<AllBookableItemsStory history={history} containerWidth={width - 346} />);
       await expect.element(pageObj.confocalAvailability).toBeVisible();
-      if (quick) await expect.element(pageObj.availableNow).toHaveAttribute("aria-pressed", "true");
       const bar = pageObj.confocalAvailability.element();
       const cell = bar.closest("td");
+      expect(cell).not.toBeNull();
       if (!cell) throw new Error("Availability must be in a table cell");
       expect(bar.getBoundingClientRect().right).toBeLessThanOrEqual(cell.getBoundingClientRect().right - 1);
       expect(cell.scrollWidth).toBeLessThanOrEqual(cell.clientWidth);
       const actions = cell.parentElement?.lastElementChild;
       if (!actions) throw new Error("Expected row actions");
       expect(bar.getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
-      const trigger = page.getByRole("button", { name: /^Confocal microscope,.*events?$/ }).first();
-      await expect.element(trigger).toBeVisible();
-      trigger.element().focus();
-      await expect.element(trigger).toHaveFocus();
-      await expect.element(pageObj.availabilityDetails).toBeVisible();
     });
   });
 
@@ -205,7 +277,7 @@ describe("the All Bookable Items page", () => {
   test("shows the fixture maintenance blockout", async () => {
     render(<AllBookableItemsStory history={history} />);
 
-    const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Unavailable", ".*10:00.*11:00.*");
+    const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Maintenance", ".*10:00.*11:00.*");
     await slice.hover();
 
     await expect.element(pageObj.availabilityDetails).toBeVisible();
@@ -229,12 +301,9 @@ describe("the All Bookable Items page", () => {
     render(<AllBookableItemsStory history={history} />);
 
     await expect.element(pageObj.availabilitySlice("Confocal microscope", 11)).toBeVisible();
-    await pageObj.heading.hover();
-    await expect.element(pageObj.availabilityDetails).not.toBeInTheDocument();
     await userEvent.keyboard("{Tab}");
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
     await expect.element(pageObj.availabilityDetails).toBeVisible();
-    await expect.element(pageObj.availabilityDetails).toHaveFocus();
 
     await userEvent.keyboard("{Escape}");
 

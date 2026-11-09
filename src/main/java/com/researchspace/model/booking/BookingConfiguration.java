@@ -118,6 +118,15 @@ public class BookingConfiguration implements Serializable {
 
   @Getter(
       onMethod_ = {
+        @Enumerated(EnumType.STRING),
+        @Column(nullable = false, length = 8),
+        @AuditTrailProperty(name = "incrementUnit")
+      })
+  @Setter
+  private BookingIncrementUnit incrementUnit = BookingSchedulingSettings.DEFAULT_INCREMENT_UNIT;
+
+  @Getter(
+      onMethod_ = {
         @Convert(converter = BookingOpeningHoursConverter.class),
         @Column(nullable = false, length = 1024),
         @AuditTrailProperty(name = "openingHours")
@@ -252,7 +261,7 @@ public class BookingConfiguration implements Serializable {
   @Transient
   @AssertTrue(message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
   public boolean isGranularityValid() {
-    return BookingSchedulingSettings.isGranularityValid(slotGranularityMinutes);
+    return BookingSchedulingSettings.isGranularityValid(slotGranularityMinutes, incrementUnit);
   }
 
   @Transient
@@ -283,6 +292,6 @@ public class BookingConfiguration implements Serializable {
   @AssertTrue(message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalid}")
   public boolean isMaximumDurationValid() {
     return BookingSchedulingSettings.isMaximumDurationValid(
-        maxBookingDurationMinutes, slotGranularityMinutes);
+        maxBookingDurationMinutes, slotGranularityMinutes, incrementUnit);
   }
 }

@@ -5,6 +5,7 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
+import type { BookingConfigurationsCreateIncrementUnit } from './bookingConfigurationsCreateIncrementUnit.ts';
 import type { BookingConfigurationsCreateOpeningHoursItem } from './bookingConfigurationsCreateOpeningHoursItem.ts';
 import type { BookingConfigurationsCreateTarget } from './bookingConfigurationsCreateTarget.ts';
 
@@ -17,6 +18,8 @@ export interface BookingConfigurationsCreate {
   bufferBeforeMinutes?: number;
   /** Whether bookings are enabled for the target. */
   enabled?: boolean;
+  /** Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays. */
+  incrementUnit?: BookingConfigurationsCreateIncrementUnit;
   /** Maximum elapsed minutes for one booking, where 0 disables the item limit. */
   maxBookingDurationMinutes?: number;
   /**
@@ -25,7 +28,7 @@ export interface BookingConfigurationsCreate {
      * @maxItems 7
      */
   openingHours?: BookingConfigurationsCreateOpeningHoursItem[];
-  /** Allowed wall-clock booking increment in minutes. */
+  /** Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create. */
   slotGranularityMinutes?: number;
   /** Instrument to which this booking configuration applies. */
   target: BookingConfigurationsCreateTarget;

@@ -1,9 +1,12 @@
 import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
+import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
@@ -12,7 +15,6 @@ import {
   getSearchBookingCatalogueQueryKey,
   getSearchCalendarCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteManyBookingConfigurations,
   getCountBookingConfigurationsQueryKey,
@@ -40,6 +42,7 @@ import {
 } from "@/modules/common/api/v2/generated/users/users";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
@@ -48,6 +51,7 @@ import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
 import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
+import { bookableItemBulkNotice, bookableItemLifecycleNotice, useBookableItemNoticeIds } from "./bookableItemFeedback";
 import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "./bookableItemsAdministrationAccess";
 import {
@@ -100,10 +104,21 @@ function bulkParameters(selectedRowIds: readonly string[]) {
 export async function mutateBookableItems(
   action: BookableItemsBulkAction,
   selectedRowIds: readonly string[],
-): Promise<void> {
+): Promise<readonly { id: number }[] | null> {
   const params = bulkParameters(selectedRowIds);
-  if (action === "archive") await deleteManyBookingConfigurations(params);
-  else await updateManyBookingConfigurations({ enabled: action === "enable" }, params);
+  try {
+    const response =
+      action === "archive"
+        ? await deleteManyBookingConfigurations(params)
+        : await updateManyBookingConfigurations({ enabled: action === "enable" }, params);
+    const docs = response?.docs;
+    if (!docs || docs.some(({ id }) => id == null || !Number.isSafeInteger(id) || id < 1)) return null;
+    return docs.map(({ id }) => ({ id: requireBookingValue(id, "id") }));
+  } catch (error) {
+    // A successful response with an unreadable receipt may already have committed.
+    if (error instanceof v.ValiError || error instanceof SyntaxError) return null;
+    throw error;
+  }
 }
 
 export function BookableItemsContent() {
@@ -111,6 +126,18 @@ export function BookableItemsContent() {
 
   const { data: currentUser } = useCurrentUserQuery();
   const queryClient = useQueryClient();
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("bookable-items", deliverNotice, alertsReady);
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
   const request = useMemo(
@@ -129,6 +156,7 @@ export function BookableItemsContent() {
     request,
     query: { keepPreviousData: true },
   });
+  const itemNoticeIds = useBookableItemNoticeIds(table.tableProps.rows);
   const onArchive = useCallback((id: number, version: number) => archiveBookingConfiguration(id, version), []);
   const onPermanentDelete = useCallback(
     (id: number, version: number) => permanentlyDeleteBookingConfiguration(id, version),
@@ -155,56 +183,61 @@ export function BookableItemsContent() {
     },
     [onChanged, queryClient],
   );
-  const onPermanentlyDeleted = useCallback(
-    async (configurationId?: number) => {
-      // The deleted configuration's instrument becomes an eligible target again.
-      await Promise.all([
-        onChanged(configurationId),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() }),
-      ]);
-    },
-    [onChanged, queryClient],
-  );
   // Add stays hidden until the caller has an instrument to set up, so a direct URL offers no dead end.
   const canAdd = (useEligibleBookingTargets().data?.length ?? 0) > 0;
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
-    onSuccess: (_data, configuration) => onCatalogueChanged(configuration.id),
+    onSuccess: async (_data, configuration) => {
+      alertsRef.current?.push(bookableItemLifecycleNotice("restored", configuration, t));
+      await onCatalogueChanged(configuration.id);
+    },
   });
-  const onRestore = useCallback(
-    (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
-    [restoreMutation],
-  );
+  const restore = restoreMutation.mutateAsync;
+  const onRestore = useCallback((configuration: BookingConfigurationRow) => restore(configuration), [restore]);
   const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
   const bulkUpdateOperation = useUpdateManyBookingConfigurations();
   const bulkDeleteOperation = useDeleteManyBookingConfigurations();
   const bulkMutation = useMutation({
     mutationFn: async ({ action, selectedRowIds: mutationRowIds }: BookableItemsBulkMutation) => {
       const params = bulkParameters(mutationRowIds);
-      const result =
-        action === "archive"
-          ? await bulkDeleteOperation.mutateAsync({ params })
-          : await bulkUpdateOperation.mutateAsync({ data: { enabled: action === "enable" }, params });
-      return result.docs;
+      try {
+        const result =
+          action === "archive"
+            ? await bulkDeleteOperation.mutateAsync({ params })
+            : await bulkUpdateOperation.mutateAsync({ data: { enabled: action === "enable" }, params });
+        return result?.docs ?? null;
+      } catch (error) {
+        // A successful response with an unreadable receipt may already have committed.
+        if (error instanceof v.ValiError || error instanceof SyntaxError) return null;
+        throw error;
+      }
     },
     onSuccess: async (docs, variables) => {
+      if (variables.action !== "enable") {
+        for (const id of docs?.map((doc) => doc.id) ?? variables.selectedRowIds.map(Number)) {
+          alertsRef.current?.dismiss(itemNoticeIds.get(id) ?? `bookable-item-${id}`);
+        }
+      }
+      alertsRef.current?.push(bookableItemBulkNotice(variables.action, docs?.length ?? null, t));
+
       await invalidateBookableItemRecords(queryClient, variables.action, docs ?? []);
       setSelectedRowIds(new Set());
       setFailedBulkAction(null);
     },
     onError: (_error, variables) => setFailedBulkAction(variables.action),
   });
-  const onSelectionChange = useCallback((value: ReadonlySet<string>) => {
+  const onSelectionChange = (value: ReadonlySet<string>) => {
     setSelectedRowIds(value);
     setFailedBulkAction(null);
-  }, []);
+  };
+  const mutateBulk = bulkMutation.mutateAsync;
   const onBulkAction = useCallback(
     async (action: BookableItemsBulkAction, actionRowIds: ReadonlySet<string>) => {
       setFailedBulkAction(null);
-      await bulkMutation.mutateAsync({ action, selectedRowIds: Array.from(actionRowIds) });
+      await mutateBulk({ action, selectedRowIds: Array.from(actionRowIds) });
     },
-    [bulkMutation],
+    [mutateBulk],
   );
   const rowActions = useMemo<TableListRowActions<BookingConfigurationRow>>(
     () => ({
@@ -226,18 +259,22 @@ export function BookableItemsContent() {
             configuration={row}
             close={close}
             onArchive={onArchive}
-            onArchived={onCatalogueChanged}
+            onArchived={async (_id) => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("archived", row, t));
+            }}
           />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
             close={close}
             onDelete={onPermanentDelete}
-            onDeleted={onPermanentlyDeleted}
+            onDeleted={async () => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
+            }}
           />
         ) : null,
     }),
-    [directSysadmin, onArchive, onCatalogueChanged, onPermanentDelete, onPermanentlyDeleted, onRestore, t],
+    [directSysadmin, onArchive, onPermanentDelete, onRestore, t],
   );
 
   return (
@@ -256,6 +293,7 @@ export function BookableItemsContent() {
       ) : null}
       <TableList
         {...table.tableProps}
+        alertsRef={attachAlerts}
         headingClassName="text-2xl font-semibold"
         rowActions={rowActions}
         selection={

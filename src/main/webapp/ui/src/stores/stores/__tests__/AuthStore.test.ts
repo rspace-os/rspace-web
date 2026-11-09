@@ -1,21 +1,22 @@
 import { HttpResponse, http } from "msw";
-import { afterEach, beforeEach, describe, expect, it, onTestFinished as restoreAfterTest, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { tokenExpiringIn } from "@/__tests__/helpers/jwt";
 import { server } from "@/__tests__/mswServer";
 import JwtService from "@/common/JwtService";
 import { createUiOAuthToken } from "@/modules/common/api/v2/generated/oauth/oauth";
-import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
+import { ApiV2IdentityChangedError, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
 
 beforeEach(() => {
-  restoreAfterTest(
+  onTestFinished(
     setApiV2TokenProvider({
       getToken: async () => (await createUiOAuthToken()).accessToken,
       recover: async () => (await createUiOAuthToken()).accessToken,
     }),
   );
+  vi.stubGlobal("location", { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" });
   resetUiTokenForTests();
   sessionStorage.clear();
   document.getElementById("public_document_view")?.remove();
@@ -56,6 +57,7 @@ describe("AuthStore", () => {
       await vi.advanceTimersByTimeAsync(3300_000);
       await vi.waitFor(() => expect(requestCount).toBe(4));
       expect(authStore.isAuthenticated).toBe(false);
+      expect(window.location.href).toBe("/login");
       expect(authStore.timeoutId).toBeNull();
       await vi.advanceTimersByTimeAsync(60_000);
       expect(requestCount).toBe(4);
@@ -91,6 +93,7 @@ describe("AuthStore", () => {
       await vi.advanceTimersByTimeAsync(1);
       await vi.waitFor(() => expect(requestCount).toBe(6));
       expect(authStore.isAuthenticated).toBe(false);
+      expect(window.location.href).toBe("/login");
       expect(authStore.timeoutId).toBeNull();
     } finally {
       if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
@@ -121,6 +124,7 @@ describe("AuthStore", () => {
     await rejection;
 
     expect(authStore.isAuthenticated).toBe(false);
+    expect(window.location.href).toBe("/login");
     expect(authStore.isSynchronizing).toBe(false);
     expect(authStore.timeoutId).toBeNull();
   });
@@ -142,7 +146,9 @@ describe("AuthStore", () => {
     }
   });
 
-  it.each([429, 500])("keeps the page when token minting fails with %s", async (status) => {
+  it.each([429, 500])("keeps the page and retries with a valid token after %s", async (status) => {
+    vi.useFakeTimers();
+    JwtService.saveToken(tokenExpiringIn(20));
     const location = { href: "http://localhost:3000/inventory", origin: "http://localhost:3000" };
     vi.stubGlobal("location", location);
     server.use(http.post("/api/v2/oauth/tokens", () => new HttpResponse(null, { status })));
@@ -153,6 +159,9 @@ describe("AuthStore", () => {
     expect(window.location).toBe(location);
     expect(location.href).toBe("http://localhost:3000/inventory");
     expect(authStore.isSynchronizing).toBe(false);
+    expect(authStore.timeoutId).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(21_000);
+    await vi.waitFor(() => expect(window.location.href).toBe("/login"));
   });
 
   it("redirects on an authentication failure", async () => {
@@ -211,4 +220,29 @@ describe("AuthStore", () => {
       if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
     }
   });
+});
+
+it("does not replace a provider identity reload with the login page", async () => {
+  const location = { href: "http://localhost:3000/inventory", origin: "http://localhost:3000", reload: vi.fn() };
+  vi.stubGlobal("location", location);
+  JwtService.saveToken(tokenExpiringIn(60));
+  const changed = new ApiV2IdentityChangedError();
+  const restore = setApiV2TokenProvider({
+    getToken: async () => {
+      JwtService.destroyToken();
+      location.reload();
+      throw changed;
+    },
+    recover: async () => {
+      throw changed;
+    },
+  });
+  try {
+    const authStore = new AuthStore({} as RootStore);
+    await expect(authStore.authenticate()).rejects.toBe(changed);
+    expect(location.reload).toHaveBeenCalledOnce();
+    expect(location.href).toBe("http://localhost:3000/inventory");
+  } finally {
+    restore();
+  }
 });

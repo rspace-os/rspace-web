@@ -56,6 +56,7 @@ it.each([
 
 it("retains unknown audit schedule values", () => {
   expect(recordedValues({ openingHours: { unknown: true } }, "en-US")).toEqual([["openingHours", '{"unknown":true}']]);
+  expect(recordedValues({ openingHours: null }, "en-US")).toEqual([["openingHours", "—"]]);
 });
 
 describe("recorded audit values", () => {
@@ -88,6 +89,14 @@ describe("recorded audit values", () => {
     ]);
     // An unknown state is left as recorded rather than hidden.
     expect(recordedValues({ state: "PENDING" }, "en-US", words)).toEqual([["state", "PENDING"]]);
+  });
+
+  it("reads the recorded increment unit as words", () => {
+    const words = { yes: "Yes", no: "No", values: { DAYS: "Days" } };
+    expect(recordedValues({ slotGranularityMinutes: 2880, incrementUnit: "DAYS" }, "en-US", words)).toEqual([
+      ["slotGranularityMinutes", "2,880"],
+      ["incrementUnit", "Days"],
+    ]);
   });
 
   it("formats booking instants in UTC while preserving unknown and invalid values", () => {

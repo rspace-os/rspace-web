@@ -7,6 +7,7 @@
  */
 import type { BookingConfigurationCapabilities } from './bookingConfigurationCapabilities.ts';
 import type { BookingConfigurationsReadCreatedBy } from './bookingConfigurationsReadCreatedBy.ts';
+import type { BookingConfigurationsReadIncrementUnit } from './bookingConfigurationsReadIncrementUnit.ts';
 import type { BookingConfigurationsReadLocation } from './bookingConfigurationsReadLocation.ts';
 import type { BookingConfigurationsReadOpeningHoursItem } from './bookingConfigurationsReadOpeningHoursItem.ts';
 import type { BookingConfigurationsReadState } from './bookingConfigurationsReadState.ts';
@@ -44,6 +45,8 @@ export interface BookingConfigurationsRead {
   enabled?: boolean;
   /** Stable booking-configuration identifier. */
   readonly id: number;
+  /** Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays. */
+  incrementUnit?: BookingConfigurationsReadIncrementUnit;
   /** Filter-only: the bookable item's immediate Inventory parent Container or workbench, matched only where the caller may read it. Address a workbench as IC plus its ID. Responses render null; the booking catalogue returns each item's readable location. */
   readonly location?: BookingConfigurationsReadLocation;
   /** Maximum elapsed minutes for one booking, where 0 disables the item limit. */
@@ -56,7 +59,7 @@ export interface BookingConfigurationsRead {
   openingHours?: BookingConfigurationsReadOpeningHoursItem[];
   readonly ownerHealth?: BookingOwnerHealth;
   readonly roleSources?: readonly DeclaredResourceRoleSource[];
-  /** Allowed wall-clock booking increment in minutes. */
+  /** Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create. */
   slotGranularityMinutes?: number;
   /** Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE. */
   state?: BookingConfigurationsReadState;

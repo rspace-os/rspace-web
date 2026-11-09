@@ -10,6 +10,7 @@ export type BookableItemOption = Required<
     | "name"
     | "timezone"
     | "slotGranularityMinutes"
+    | "incrementUnit"
     | "openingHours"
     | "bufferBeforeMinutes"
     | "bufferAfterMinutes"
@@ -44,6 +45,7 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     !source.target ||
     source.timezone === undefined ||
     source.slotGranularityMinutes === undefined ||
+    source.incrementUnit === undefined ||
     source.openingHours === undefined ||
     source.bufferBeforeMinutes === undefined ||
     source.bufferAfterMinutes === undefined ||
@@ -59,6 +61,7 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     name: source.target.value.name,
     timezone: source.timezone,
     slotGranularityMinutes: source.slotGranularityMinutes,
+    incrementUnit: source.incrementUnit,
     openingHours: source.openingHours,
     bufferBeforeMinutes: source.bufferBeforeMinutes,
     bufferAfterMinutes: source.bufferAfterMinutes,

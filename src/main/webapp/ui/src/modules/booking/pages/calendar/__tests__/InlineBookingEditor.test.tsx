@@ -1,7 +1,8 @@
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import "@/__tests__/__mocks__/matchMedia";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { createMemoryHistory, createRootRoute, createRouter } from "@tanstack/react-router";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
@@ -13,6 +14,7 @@ import { bookingTarget, collectionResponse, ownBooking } from "@/modules/booking
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { bookableItemFixtures, collectionPage } from "../../bookable-items/mocks/bookableItemsMocks";
 import { InlineBookingEditor } from "../InlineBookingEditor";
+import { renderBookingTestPage } from "./calendarTestHarness";
 
 function editableEvent(kind: "BOOKING" | "MAINTENANCE"): BookingListDocument & EditableBooking {
   return {
@@ -47,6 +49,40 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE") {
 }
 
 describe("InlineBookingEditor", () => {
+  it("does not apply booking buffers between maintenance windows", async () => {
+    const user = userEvent.setup();
+    const event = editableEvent("MAINTENANCE");
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          collectionPage([{ ...bookableItemFixtures[0], bufferBeforeMinutes: 30, bufferAfterMinutes: 30 }], 2),
+        ),
+      ),
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json(
+          collectionResponse([
+            event,
+            { ...overlappingEvent("MAINTENANCE"), start: "2030-10-07T11:30:00Z", end: "2030-10-07T12:30:00Z" },
+          ]),
+        ),
+      ),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
+    const root = createRootRoute({
+      component: () => <InlineBookingEditor event={event} timezone="UTC" onClose={() => undefined} />,
+    });
+    const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
+    await renderBookingTestPage(router, { queryClient, realI18n: false });
+
+    const endTime = await screen.findByLabelText("booking:bookings.form.endTime");
+    await user.clear(endTime);
+    await user.type(endTime, "11:15");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "booking:bookings.form.save" })).toBeEnabled());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it.each([
     ["maintenance", "BOOKING", true],
     ["booking", "MAINTENANCE", true],
@@ -64,11 +100,11 @@ describe("InlineBookingEditor", () => {
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
-    render(
-      <QueryClientProvider client={queryClient}>
-        <InlineBookingEditor event={event} timezone="UTC" onClose={() => undefined} />
-      </QueryClientProvider>,
-    );
+    const root = createRootRoute({
+      component: () => <InlineBookingEditor event={event} timezone="UTC" onClose={() => undefined} />,
+    });
+    const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
+    await renderBookingTestPage(router, { queryClient, realI18n: false });
 
     const endTime = await screen.findByLabelText("booking:bookings.form.endTime");
     await user.clear(endTime);
@@ -111,11 +147,11 @@ it.each(["committed", "changed", "network", "failed-fetch", "uneditable"])(
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
-    render(
-      <QueryClientProvider client={queryClient}>
-        <InlineBookingEditor event={event} timezone="UTC" onClose={close} />
-      </QueryClientProvider>,
-    );
+    const root = createRootRoute({
+      component: () => <InlineBookingEditor event={event} timezone="UTC" onClose={close} />,
+    });
+    const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
+    await renderBookingTestPage(router, { queryClient, realI18n: false });
     const purpose = await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" });
     await user.clear(purpose);
     await user.type(purpose, "Attempted purpose");

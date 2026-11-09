@@ -27,6 +27,7 @@ export const item: BookableItemOption = {
   name: "Confocal microscope",
   timezone: CONFIGURATION_TIMEZONE,
   slotGranularityMinutes: 15,
+  incrementUnit: "MINUTES",
   openingHours: [1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,

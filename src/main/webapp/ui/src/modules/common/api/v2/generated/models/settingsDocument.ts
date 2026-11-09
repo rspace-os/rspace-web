@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
+import type { SettingsDocumentIncrementUnit } from './settingsDocumentIncrementUnit.ts';
 import type { SettingsDocumentTimeFormat } from './settingsDocumentTimeFormat.ts';
 import type { SettingsDocumentTimezoneMode } from './settingsDocumentTimezoneMode.ts';
 
@@ -17,6 +18,7 @@ export interface SettingsDocument {
   bufferBeforeMinutes?: number;
   /** @nullable */
   customTimezone?: string | null;
+  incrementUnit?: SettingsDocumentIncrementUnit;
   institutionTimezone?: string;
   maxBookingDurationMinutes?: number;
   openingHours?: BookingOpeningHoursEntry[];

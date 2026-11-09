@@ -1,6 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2IdentityChangedError } from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
 import { isPublicDocumentView, mintUiToken, tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
@@ -86,6 +87,7 @@ export default class AuthStore {
       )
       .then(() => {})
       .catch((error: unknown) => {
+        if (error instanceof ApiV2IdentityChangedError) throw error;
         this.isSynchronizing = false;
         if (
           (error instanceof ApiV2ProblemError && error.status === 401) ||
@@ -103,6 +105,8 @@ export default class AuthStore {
           this.scheduleRefresh(Math.min(backoffMs, millisecondsToExpiry));
         } else {
           this.isAuthenticated = false;
+          JwtService.destroyToken();
+          window.location.href = "/login";
         }
         throw error;
       });

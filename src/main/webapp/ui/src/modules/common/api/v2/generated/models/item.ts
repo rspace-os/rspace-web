@@ -7,6 +7,7 @@
  */
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
 import type { ItemCapabilities } from './itemCapabilities.ts';
+import type { ItemIncrementUnit } from './itemIncrementUnit.ts';
 import type { Location } from './location.ts';
 
 export interface Item {
@@ -19,6 +20,7 @@ export interface Item {
   /** @nullable */
   effectiveRole?: string | null;
   globalId?: string;
+  incrementUnit?: ItemIncrementUnit;
   location?: Location | null;
   maxBookingDurationMinutes?: number;
   name?: string;

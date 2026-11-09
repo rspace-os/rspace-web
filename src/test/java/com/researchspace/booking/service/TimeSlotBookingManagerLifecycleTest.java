@@ -587,10 +587,7 @@ class TimeSlotBookingManagerLifecycleTest {
             actor)
         .orElseThrow();
     verify(bookingNotificationService)
-        .notify(
-            eq(existing),
-            eq(actor),
-            argThat(type -> type.name().equals("NOTIFICATION_BOOKING_CHANGED")));
+        .notifyChanged(eq(existing), eq(actor), eq(start().toInstant()), eq(end().toInstant()));
   }
 
   private void stubReadableBookingAndConfigurationLock(TimeSlotBooking booking) {

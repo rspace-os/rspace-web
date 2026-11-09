@@ -3,15 +3,17 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
 import type { PreferenceReplacement } from "@/modules/common/api/v2/generated/models/preferenceReplacement";
 import type { Preferences } from "@/modules/common/api/v2/generated/models/preferences";
 import type { UnsubscribeResult } from "@/modules/common/api/v2/generated/models/unsubscribeResult";
-import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
-import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
+
+import {
+  expectStatusMessage,
+  renderPage,
+  useDefaultBookingPreferencesHandlers,
+} from "./bookingPreferencesPageTestUtils";
 
 describe("BookingPreferencesPage", () => {
   beforeEach(() => useDefaultBookingPreferencesHandlers());
@@ -21,10 +23,6 @@ describe("BookingPreferencesPage", () => {
     let saved: unknown;
     let deleted = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.put<never, PreferenceReplacement, Preferences | ApiV2Problem>(
         "/api/v2/users/me/booking-notification-preferences",
         async ({ request }) => {
@@ -55,7 +53,7 @@ describe("BookingPreferencesPage", () => {
     const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
     expect(savedButton).toHaveClass("bg-emerald-600");
     expect(savedButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(saved).toEqual({
       notifyOwnActions: false,
       autoSubscribeOwnedItems: true,
@@ -66,7 +64,7 @@ describe("BookingPreferencesPage", () => {
     await user.click(
       screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),
     );
-    expect(await screen.findByText("booking:notificationSubscriptions.preferences.unsubscribed")).toBeVisible();
+    await expectStatusMessage("booking:notificationSubscriptions.preferences.unsubscribed");
     expect(deleted).toBe(1);
     expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(
@@ -77,10 +75,6 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let saved: unknown;
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.put<never, PreferenceReplacement, Preferences | ApiV2Problem>(
         "/api/v2/users/me/booking-notification-preferences",
         async ({ request }) => {
@@ -110,6 +104,7 @@ describe("BookingPreferencesPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
 
     expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(saved).toEqual({
       notifyOwnActions: true,
       autoSubscribeOwnedItems: false,
@@ -124,10 +119,6 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let attempts = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.put<never, PreferenceReplacement, Preferences | ApiV2Problem>(
         "/api/v2/users/me/booking-notification-preferences",
         async ({ request }) => {
@@ -143,7 +134,10 @@ describe("BookingPreferencesPage", () => {
     await user.click(on);
     const save = screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" });
     await user.click(save);
-    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toBeVisible();
+    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toHaveAttribute(
+      "role",
+      "alert",
+    );
     expect(on).toBeChecked();
     expect(save).toBeEnabled();
     await user.click(save);
