@@ -32,6 +32,15 @@ Successful Save or Reset adopts the returned server values and clears the draft,
 when the server document is unchanged. Failed requests retain the draft. Reverting every field to
 the editing baseline makes the form clean and adopts the latest cached server values.
 
+## Suspense reads
+
+Booking prefers Suspense reads: `useSuspenseQuery` with Suspense query options. `QueryBoundary`
+(`src/modules/common/queries/QueryBoundary.tsx`) pairs the Suspense fallback with an error
+boundary, and its retry resets the failed queries. A read that needs an input starts in a child
+rendered once the input exists. A plain `useQuery` stays only with a one-line comment giving the
+reason: polling, an optional or background read whose fallback would hide the page, inputs that stay
+interactive while their results load, or shown rows that a failed refresh must replace with Retry.
+
 ## Weekly scheduling defaults
 
 The `openingHours` schema and weekday rules are defined in [Booking.md](Booking.md).
