@@ -11,8 +11,10 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
@@ -34,7 +36,11 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public record InstrumentNameRow(Long instrumentId, String name) {}
 
-  public record InstrumentReadSummaryRow(Long instrumentId, String name, Boolean deleted) {}
+  public record InstrumentReadSummaryRow(
+      Long instrumentId, String name, Boolean deleted, Long parentContainerId) {}
+
+  public record InstrumentScalarRow(
+      Long instrumentId, String name, Boolean deleted, Long parentContainerId) {}
 
   private String defaultTemplateOwner;
 
@@ -48,13 +54,76 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   @Override
   public ResourcePage<Instrument> getReadableResources(
-      ResourceRequest request, AccessResult access) {
-    return readableResourcePage(COLLECTION_QUERY, request, access);
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
+    if (access.isDenied()) return new ResourcePage<>(List.of(), 0);
+    return COLLECTION_QUERY.page(
+        criteriaBuilderFactory(),
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+        relationships);
   }
 
   @Override
-  public long countReadableResources(ResourceRequest request, AccessResult access) {
-    return countReadableResources(COLLECTION_QUERY, request, access);
+  public ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
+    if (access.isDenied()) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+    ResourcePage<InstrumentScalarRow> rows =
+        COLLECTION_QUERY.projectedPage(
+            criteriaBuilderFactory(),
+            getSession(),
+            request,
+            access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+            relationships,
+            InstrumentScalarRow.class,
+            List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
+    return new ResourcePage<>(
+        rows.resources().stream()
+            .map(
+                row ->
+                    new InstrumentReadSummary(
+                        row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
+            .toList(),
+        rows.total());
+  }
+
+  @Override
+  public ResourceSlice<InstrumentReadSummary> getReadableResourceSummarySlice(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
+    if (access.isDenied()) {
+      return new ResourceSlice<>(List.of(), false);
+    }
+    ResourceSlice<InstrumentScalarRow> rows =
+        COLLECTION_QUERY.projectedSlice(
+            criteriaBuilderFactory(),
+            getSession(),
+            request,
+            access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+            relationships,
+            InstrumentScalarRow.class,
+            List.of("id", "editInfo.name", "deleted", "parentLocation.container.id"));
+    return new ResourceSlice<>(
+        rows.resources().stream()
+            .map(
+                row ->
+                    new InstrumentReadSummary(
+                        row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
+            .toList(),
+        rows.hasNext());
+  }
+
+  @Override
+  public long countReadableResources(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships) {
+    if (access.isDenied()) return 0;
+    return COLLECTION_QUERY.count(
+        criteriaBuilderFactory(),
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+        relationships);
   }
 
   @Override
@@ -72,6 +141,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .with("instrument.id")
             .with("instrument.editInfo.name")
             .with("instrument.deleted")
+            .with("instrument.parentLocation.container.id")
             .end()
             .whereExpression("instrument.id in :instrumentIds")
             .whereExpression("instrument.deleted = false")
@@ -80,7 +150,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     context.bind(query, null);
     return query
         .getResultStream()
-        .map(row -> new InstrumentReadSummary(row.instrumentId(), row.name(), row.deleted()))
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    row.instrumentId(), row.name(), row.deleted(), row.parentContainerId()))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
