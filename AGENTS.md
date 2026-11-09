@@ -107,7 +107,7 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 
 <important if="changing user-visible behavior">
 
-- Put backend user-facing text in `src/main/resources/bundles/` or `ApplicationResources.properties`; resolve through the injected message source. Exempt logs and internal messages.
+- Put backend user-facing text in the `server.*.json` catalogs under `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; resolve through the injected message source. Do not add properties bundles. Exempt logs and internal messages.
 - Frontend English catalogs live in `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; use semantic keys. Follow `DevDocs/DeveloperNotes/i18n.md`.
 - New frontend text: use `t()` with literal `defaultValue`, run `pnpm run i18n:extract --sync-primary`, review catalogs, remove `defaultValue`, then run `pnpm run i18n:types`, `pnpm run i18n:lint`, and `pnpm run tsc`. Never use `--sync-all`.
 - Wrap raw JSX text in `t()` before extraction. Use ICU syntax for interpolation and plurals.

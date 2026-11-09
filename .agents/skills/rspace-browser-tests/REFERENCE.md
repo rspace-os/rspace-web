@@ -13,7 +13,7 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserMocks";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { SomeStory } from "./Component.story";
 import { ComponentPage } from "./pageObjects/ComponentPage";
 

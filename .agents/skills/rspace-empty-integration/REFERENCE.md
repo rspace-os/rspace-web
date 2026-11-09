@@ -312,12 +312,13 @@ return isValidEmptyIntegration(integrationName)
 > token). An empty integration has no per-user options, so it must not appear
 > there. `isValidEmptyIntegration` is the correct home.
 
-### `system.properties`
+### `locales/en-US/server.system.json`
 
-Add a line in the `system.property.description.*.available` group:
+Inside `system.property.description`, add an entry beside the other
+`*Available` descriptions (for example `egnyteAvailable`):
 
-```properties
-system.property.description.<name>.available=Makes <Name> integration available.
+```json
+"<name>Available": "Makes <Name> integration available.",
 ```
 
 ### `sqlUpdates/liquibase-master.xml`
@@ -425,12 +426,12 @@ Insert object alphabetically:
 }
 ```
 
-### `assets/DocLinks.ts`
+### `locales/en-US/common.json`
 
-Insert alphabetically inside `docLinks`:
+Insert alphabetically inside `help`:
 
-```ts
-<name>: mkDocLink("TODO_<NAME>_DOC_ID"),
+```json
+"<name>": "TODO_<NAME>_DOC_ID",
 ```
 
 ### `WEB-INF/pages/system/settings_ajax.jsp`
@@ -438,7 +439,7 @@ Insert alphabetically inside `docLinks`:
 Add inside the block of `<div id="*.available.description">` siblings:
 
 ```jsp
-<div id="<name>.available.description"><spring:message code="system.property.description.<name>.available"/></div>
+<div id="<name>.available.description"><spring:message code="system.property.description.<name>Available"/></div>
 ```
 
 ### `scripts/pages/system/settings_mod.js`
@@ -470,8 +471,8 @@ Two insertions inside `initTinyMCE`:
    }
    ```
 
-> **⚠️ CRITICAL — the ` | ` separator is mandatory.** The argument to
-> `addToToolbarIfNotPresent` MUST be `" | <name>"` (space, pipe, space, then
+> **The ` | ` separator is required.** Pass `" | <name>"` to
+> `addToToolbarIfNotPresent` (space, pipe, space, then
 > the name). Passing only `"<name>"` concatenates it directly onto the last
 > toolbar token (e.g. `"fullscreennew_test"`), which TinyMCE cannot parse, and
 > **no toolbar button will appear** even though the plugin loads successfully.
@@ -515,7 +516,7 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 
 1. Replace placeholder strings in `<Name>.tsx`: `explanatoryText`,
    `usageText`, `helpLinkText`, `website`.
-2. Replace `TODO_<NAME>_DOC_ID` in `DocLinks.ts` with the real helpdocs short ID.
+2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs short ID.
 3. Hand-tune `LOGO_COLOR` in `branding/<name>/index.ts` to match the real brand.
 4. Replace the placeholder `branding/<name>/logo.svg` with a real
    100×100 logo per the conventions in

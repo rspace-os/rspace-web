@@ -40,7 +40,7 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
    Alternatively, start the app and confirm `<NAME>` in
    `GET /integration/allIntegrations`. Follow `AGENTS.md` for live verification.
 7. Report the reference's manual follow-ups: card text and website,
-   `TODO_<NAME>_DOC_ID` in `DocLinks.ts`, `LOGO_COLOR`, logo and toolbar SVGs,
+   `TODO_<NAME>_DOC_ID` in `common.json`, `LOGO_COLOR`, logo and toolbar SVGs,
    and the category in `settings_mod.js`.
 
 ## Scope
