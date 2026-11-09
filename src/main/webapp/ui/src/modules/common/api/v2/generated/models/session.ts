@@ -7,6 +7,12 @@
  */
 
 export interface Session {
+  /** Whether the user may change feature-flag baselines. */
+  canChangeFeatureFlagBaselines: boolean;
+  /** Whether the user may override feature flags. */
+  canOverrideFeatureFlags: boolean;
+  /** Whether the feature-flag developer tools are available. */
+  canUseDevtools: boolean;
   /**
      * Previous successful login instant.
      * @nullable

@@ -48,6 +48,10 @@ class ApiV2OpenApiDocumentExportTest {
           com.researchspace.api.v2.user.UserResourceOperations.class,
           com.researchspace.inventory.api.v2.InstrumentResourceOperations.class,
           com.researchspace.inventory.api.v2.ContainerResourceOperations.class);
+      context.registerBean(
+          com.researchspace.service.FeatureFlagManager.class,
+          () -> mock(com.researchspace.service.FeatureFlagManager.class));
+      context.register(com.researchspace.featureflags.FeatureFlagResourceOperations.class);
       context.refresh();
       var document =
           new ApiV2OpenApiDocumentService(

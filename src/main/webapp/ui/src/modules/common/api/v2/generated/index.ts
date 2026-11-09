@@ -1,5 +1,6 @@
 export * from './config/config.ts';
 export * from './containers/containers.ts';
+export * from './feature-flags/feature-flags.ts';
 export * from './instruments/instruments.ts';
 export * from './maintenances/maintenances.ts';
 export * from './oauth/oauth.ts';

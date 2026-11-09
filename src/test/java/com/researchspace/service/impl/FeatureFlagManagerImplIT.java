@@ -1,0 +1,285 @@
+package com.researchspace.service.impl;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.researchspace.dao.FeatureFlagDao;
+import com.researchspace.model.User;
+import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.FeatureFlagManager.Patch;
+import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
+
+  // Declared only in src/test/resources/feature-flags/feature-flags.jsonc, so these tests do not
+  // depend on a real flag that will later be removed.
+  private static final String FLAG = "testFlag";
+
+  private final FeatureFlagManager featureFlags;
+  private final FeatureFlagDao featureFlagDao;
+  private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+  @Autowired
+  FeatureFlagManagerImplIT(
+      FeatureFlagManager featureFlags,
+      FeatureFlagDao featureFlagDao,
+      org.springframework.jdbc.core.JdbcTemplate jdbc) {
+    this.featureFlags = featureFlags;
+    this.featureFlagDao = featureFlagDao;
+    this.jdbc = jdbc;
+  }
+
+  private User sysadmin;
+  private boolean originalBaseline;
+
+  @BeforeEach
+  void setUpFeatureFlag() throws Exception {
+    super.setUp();
+    sysadmin = getSysAdminUser();
+    originalBaseline = featureFlags.getFeatureFlag(FLAG, sysadmin).orElseThrow().isBaselineValue();
+    setBaseline(false);
+  }
+
+  @AfterEach
+  void restoreFeatureFlag() throws Exception {
+    setBaseline(originalBaseline);
+    super.tearDown();
+  }
+
+  @Test
+  void failedAfterCommitRefreshIsRecoveredInsideTransactionWithThePoolFull() {
+    FeatureFlagManagerImpl target =
+        org.springframework.test.util.AopTestUtils.getUltimateTargetObject(featureFlags);
+    setBaseline(true);
+    var pool = applicationContext.getBean(org.apache.commons.dbcp2.BasicDataSource.class);
+    int previousTotal = pool.getMaxTotal();
+    long previousWait = pool.getMaxWaitMillis();
+    try {
+      pool.setMaxTotal(Math.max(1, pool.getNumActive() + 1));
+      pool.setMaxWaitMillis(500);
+      ((org.apache.commons.pool2.impl.GenericObjectPool<?>)
+              org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                  pool, "getConnectionPool"))
+          .clear();
+      setBaseline(false);
+      assertTrue(
+          (Boolean)
+              org.springframework.test.util.ReflectionTestUtils.getField(target, "runtimeStale"));
+      new TransactionTemplate(getTxMger())
+          .executeWithoutResult(
+              status -> {
+                sessionFactory.getCurrentSession().doWork(connection -> {});
+                int activeConnections = pool.getNumActive();
+                assertFalse(featureFlagDao.getBaselineValues().get(FLAG));
+                assertFalse(
+                    featureFlags.getFeatureFlag(FLAG, null).orElseThrow().isBaselineValue());
+                org.junit.jupiter.api.Assertions.assertEquals(
+                    activeConnections, pool.getNumActive());
+              });
+    } finally {
+      pool.setMaxTotal(previousTotal);
+      pool.setMaxWaitMillis(previousWait);
+    }
+  }
+
+  @Test
+  void firstBaselineWritesHaveOneConflict() throws Exception {
+    jdbc.update("DELETE FROM FeatureFlagBaseline WHERE flag_name = ?", FLAG);
+    raceFirstWrites(
+        () -> featureFlagDao.getBaselineValues(), () -> featureFlagDao.upsertBaseline(FLAG, true));
+  }
+
+  @Test
+  void firstPersonalOverrideWritesHaveOneConflict() throws Exception {
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(status -> featureFlagDao.clearOverride(sysadmin.getId(), FLAG));
+    try {
+      raceFirstWrites(
+          () -> featureFlagDao.getOverridesForUser(sysadmin.getId()),
+          () -> featureFlagDao.setOverride(sysadmin.getId(), FLAG, true));
+    } finally {
+      new TransactionTemplate(getTxMger())
+          .executeWithoutResult(status -> featureFlagDao.clearOverride(sysadmin.getId(), FLAG));
+    }
+  }
+
+  private void raceFirstWrites(Runnable read, Runnable write) throws Exception {
+    var readAbsent = new CountDownLatch(2);
+    var release = new CountDownLatch(1);
+    var executor = Executors.newFixedThreadPool(2);
+    java.util.concurrent.Callable<Boolean> attempt =
+        () -> {
+          try {
+            new TransactionTemplate(getTxMger())
+                .executeWithoutResult(
+                    status -> {
+                      read.run();
+                      readAbsent.countDown();
+                      try {
+                        if (!release.await(10, TimeUnit.SECONDS))
+                          throw new IllegalStateException("Race not released");
+                      } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(ex);
+                      }
+                      write.run();
+                    });
+            return true;
+          } catch (RuntimeException ex) {
+            assertTrue(com.researchspace.api.ConcurrentChangeClassifier.isConcurrentChange(ex));
+            return false;
+          }
+        };
+    try {
+      var first = executor.submit(attempt);
+      var second = executor.submit(attempt);
+      assertTrue(readAbsent.await(10, TimeUnit.SECONDS));
+      release.countDown();
+      org.junit.jupiter.api.Assertions.assertNotEquals(
+          first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
+    } finally {
+      release.countDown();
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void repeatedBaselinePatchReadsTheValueWrittenEarlierInTheSameTransaction() {
+    AtomicReference<Boolean> secondResponse = new AtomicReference<>();
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored -> {
+              featureFlags.updateFeatureFlag(
+                  FLAG, new Patch(true, false, null), sysadmin, sysadmin);
+              secondResponse.set(
+                  featureFlags
+                      .updateFeatureFlag(FLAG, new Patch(true, false, null), sysadmin, sysadmin)
+                      .orElseThrow()
+                      .isBaselineValue());
+            });
+
+    assertTrue(secondResponse.get());
+    assertTrue(featureFlags.isFeatureFlagEnabled(FLAG, (User) null));
+  }
+
+  @Test
+  void finalBaselineChangeWinsWithinOneTransaction() {
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored -> {
+              featureFlags.updateFeatureFlag(
+                  FLAG, new Patch(true, false, null), sysadmin, sysadmin);
+              assertFalse(
+                  featureFlags
+                      .updateFeatureFlag(FLAG, new Patch(false, false, null), sysadmin, sysadmin)
+                      .orElseThrow()
+                      .isBaselineValue());
+            });
+    assertFalse(featureFlags.isFeatureFlagEnabled(FLAG, (User) null));
+  }
+
+  @Test
+  void laterCommittedBaselineWinsWhenEarlierAfterCommitCallbackRunsLast() throws Exception {
+    CountDownLatch earlierCommitReachedAfterCommit = new CountDownLatch(1);
+    CountDownLatch releaseEarlierCallback = new CountDownLatch(1);
+    Subject testSubject = SecurityUtils.getSubject();
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    try {
+      Future<?> earlierTransaction =
+          executor.submit(
+              () -> {
+                ThreadContext.bind(testSubject);
+                try {
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            TransactionSynchronizationManager.registerSynchronization(
+                                new TransactionSynchronization() {
+                                  @Override
+                                  public int getOrder() {
+                                    return Ordered.HIGHEST_PRECEDENCE;
+                                  }
+
+                                  @Override
+                                  public void afterCommit() {
+                                    earlierCommitReachedAfterCommit.countDown();
+                                    try {
+                                      if (!releaseEarlierCallback.await(30, TimeUnit.SECONDS)) {
+                                        throw new IllegalStateException(
+                                            "Timed out waiting to release the earlier baseline"
+                                                + " callback");
+                                      }
+                                    } catch (InterruptedException e) {
+                                      Thread.currentThread().interrupt();
+                                      throw new IllegalStateException(
+                                          "Interrupted while awaiting release of the earlier"
+                                              + " baseline callback",
+                                          e);
+                                    }
+                                  }
+                                });
+                            User transactionSysadmin = getSysAdminUser();
+                            featureFlags.updateFeatureFlag(
+                                FLAG,
+                                new Patch(true, false, null),
+                                transactionSysadmin,
+                                transactionSysadmin);
+                          });
+                } finally {
+                  ThreadContext.unbindSubject();
+                }
+              });
+
+      try {
+        assertTrue(
+            earlierCommitReachedAfterCommit.await(30, TimeUnit.SECONDS),
+            "earlier baseline transaction did not reach afterCommit");
+        setBaseline(false);
+        assertFalse(featureFlags.getFeatureFlag(FLAG, sysadmin).orElseThrow().isBaselineValue());
+      } finally {
+        releaseEarlierCallback.countDown();
+      }
+
+      earlierTransaction.get(30, TimeUnit.SECONDS);
+      Boolean persistedBaseline =
+          new TransactionTemplate(getTxMger())
+              .execute(ignored -> featureFlagDao.getBaselineValues().get(FLAG));
+      assertFalse(persistedBaseline);
+      assertFalse(featureFlags.isFeatureFlagEnabled(FLAG, (User) null));
+    } finally {
+      releaseEarlierCallback.countDown();
+      executor.shutdownNow();
+      assertTrue(
+          executor.awaitTermination(30, TimeUnit.SECONDS),
+          "earlier baseline transaction did not terminate");
+      new TransactionTemplate(getTxMger())
+          .executeWithoutResult(ignored -> featureFlags.reconcileOnStartup());
+    }
+  }
+
+  private void setBaseline(boolean value) {
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored ->
+                featureFlags.updateFeatureFlag(
+                    FLAG, new Patch(value, false, null), sysadmin, sysadmin));
+  }
+}

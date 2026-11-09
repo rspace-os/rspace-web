@@ -23,7 +23,7 @@ export const LiveChat = v.object({enabled: v.pipe(v.boolean(), v.description('Wh
 
 export const Orcid = v.object({available: v.pipe(v.boolean(), v.description('Whether ORCID integration is available.')), id: v.nullable(v.pipe(v.string(), v.regex(new RegExp('^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$')), v.description('Connected ORCID identifier.')))});
 
-export const Session = v.object({lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp(), v.description('Previous successful login instant.'))), operatedAs: v.pipe(v.boolean(), v.description('Whether a system administrator is operating as another user.'))});
+export const Session = v.object({canChangeFeatureFlagBaselines: v.pipe(v.boolean(), v.description('Whether the user may change feature-flag baselines.')), canOverrideFeatureFlags: v.pipe(v.boolean(), v.description('Whether the user may override feature flags.')), canUseDevtools: v.pipe(v.boolean(), v.description('Whether the feature-flag developer tools are available.')), lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp(), v.description('Previous successful login instant.'))), operatedAs: v.pipe(v.boolean(), v.description('Whether a system administrator is operating as another user.'))});
 
 export const ApiV2CurrentUser = v.object({capabilities: v.pipe(Capabilities, v.description('Capabilities enabled for the current user.')), email: v.pipe(v.string(), v.description('Current user\'s email address.')), firstName: v.pipe(v.string(), v.description('Current user\'s given name.')), hasPiRole: v.pipe(v.boolean(), v.description('Whether the user has the principal-investigator role.')), hasSysAdminRole: v.pipe(v.boolean(), v.description('Whether the user has the system-administrator role.')), homeFolderId: v.nullable(v.pipe(v.number(), v.integer(), v.description('Root folder identifier.'))), id: v.pipe(v.number(), v.integer(), v.description('Stable user identifier.')), lastName: v.pipe(v.string(), v.description('Current user\'s family name.')), livechat: v.pipe(LiveChat, v.description('Live-chat configuration for the current user.')), orcid: v.pipe(Orcid, v.description('ORCID availability and connection state.')), profileImageApiUrl: v.nullable(v.pipe(v.string(), v.description('REST API v2 profile-image URL.'))), profileImageUrl: v.nullable(v.pipe(v.string(), v.description('Legacy profile-image URL.'))), session: v.pipe(Session, v.description('State of the current authenticated session.')), username: v.pipe(v.string(), v.description('RSpace login name.')), workbenchId: v.nullable(v.pipe(v.number(), v.integer(), v.description('Inventory workbench identifier.')))});
 
@@ -46,6 +46,14 @@ export const ContainersRead = v.object({containerType: v.optional(v.picklist(['L
 export const ContainersReference = v.object({relationTo: v.literal('containers'), value: v.pipe(v.number(), v.integer())});
 
 export const ContainersUpdate = v.object({});
+
+export const FeatureFlagsCreate = v.object({});
+
+export const FeatureFlagsRead = v.object({baselineValue: v.optional(v.pipe(v.boolean(), v.description('Instance value before a user override is applied. Only a real sysadmin can change it.'))), canOverride: v.optional(v.pipe(v.boolean(), v.description('Whether this caller can set a user override.'))), name: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Stable lower-camel-case feature flag name.')), overrideValue: v.nullish(v.pipe(v.boolean(), v.description('Caller override. Set null to clear the override.'))), source: v.optional(v.pipe(v.picklist(['DEFAULT', 'DATABASE', 'USER_OVERRIDE', 'PROPERTIES_FILE']), v.description('Source of the effective value.'))), value: v.optional(v.pipe(v.boolean(), v.description('Effective value for this caller.')))});
+
+export const FeatureFlagsReference = v.object({relationTo: v.literal('feature-flags'), value: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'))});
+
+export const FeatureFlagsUpdate = v.object({baselineValue: v.optional(v.pipe(v.boolean(), v.description('Instance value before a user override is applied. Only a real sysadmin can change it.'))), overrideValue: v.nullish(v.pipe(v.boolean(), v.description('Caller override. Set null to clear the override.')))});
 
 export const InstrumentsCreate = v.object({});
 
@@ -191,6 +199,128 @@ export const ListContainerAuditEventsQueryParams = v.object({
 })
 
 export const ListContainerAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  hasNextPage: v.optional(v.boolean()),
+  hasPrevPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  nextPage: v.nullish(v.pipe(v.number(), v.integer())),
+  page: v.pipe(v.number(), v.integer()),
+  pagingCounter: v.optional(v.pipe(v.number(), v.integer())),
+  prevPage: v.nullish(v.pipe(v.number(), v.integer())),
+  snapshotDate: v.pipe(v.string(), v.isoDate()),
+  snapshotFingerprint: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$'))),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))),
+  totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))
+})
+
+
+/**
+ * Returns a paginated view of feature-flags. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * @summary List feature-flags
+ */;
+
+export const ListFeatureFlagsQueryParams = v.object({
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))),
+  sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
+  totals: v.optional(v.pipe(v.boolean(), v.description('Include totalDocs and totalPages. Defaults to false.')), false),
+  max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
+  depth: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10), v.description('Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.')), 0),
+  fields: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.'))),
+  exclude: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[feature-flags]=id,name.')))
+})
+
+export const ListFeatureFlagsResponse = v.object({
+  docs: v.array(FeatureFlagsRead),
+  hasNextPage: v.optional(v.boolean()),
+  hasPrevPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  nextPage: v.nullish(v.pipe(v.number(), v.integer())),
+  page: v.pipe(v.number(), v.integer()),
+  pagingCounter: v.optional(v.pipe(v.number(), v.integer())),
+  prevPage: v.nullish(v.pipe(v.number(), v.integer())),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))),
+  totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))
+})
+
+
+/**
+ * Counts feature-flags matching the optional bounded filter.
+ * @summary Count feature-flags
+ */;
+
+export const CountFeatureFlagsQueryParams = v.object({
+  max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.')))
+})
+
+export const CountFeatureFlagsResponse = ApiV2CountResult
+
+
+/**
+ * Returns one visible feature-flags. A resource that is absent or not readable is reported as not found.
+ * @summary Get one feature-flags
+ */;
+
+export const GetFeatureFlagParams = v.object({
+  id: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Resource identifier.'))
+})
+
+export const GetFeatureFlagQueryParams = v.object({
+  depth: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10), v.description('Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.')), 0),
+  fields: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.'))),
+  exclude: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[feature-flags]=id,name.')))
+})
+
+export const GetFeatureFlagResponse = FeatureFlagsRead
+
+
+/**
+ * Changes the caller override for one feature flag. A real sysadmin can also change the instance baseline.
+ * @summary Update one feature-flags
+ */;
+
+export const UpdateFeatureFlagParams = v.object({
+  id: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Resource identifier.'))
+})
+
+export const UpdateFeatureFlagBody = FeatureFlagsUpdate;
+
+export const UpdateFeatureFlagResponse = FeatureFlagsRead
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one feature-flags resource
+ */;
+
+export const ListFeatureFlagAuditEventsParams = v.object({
+  id: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Resource identifier.'))
+})
+
+export const ListFeatureFlagAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.'))),
+  snapshotDate: v.optional(v.pipe(v.string(), v.isoDate(), v.description('Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.'))),
+  snapshotFingerprint: v.optional(v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$')), v.description('Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum events per page.')), 20)
+})
+
+export const ListFeatureFlagAuditEventsResponse = v.object({
   docs: v.array(ApiV2AuditEvent),
   hasNextPage: v.optional(v.boolean()),
   hasPrevPage: v.optional(v.boolean()),
