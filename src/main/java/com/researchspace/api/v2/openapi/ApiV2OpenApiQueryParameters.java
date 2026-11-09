@@ -83,7 +83,8 @@ final class ApiV2OpenApiQueryParameters {
       parameters.add(sort);
       parameters.add(components.reference(PARAMETERS, "Page", pageParameter(text)));
       parameters.add(
-          components.reference(PARAMETERS, "Limit", limitParameter(text.get(Key.PARAMETER_LIMIT))));
+          components.reference(
+              PARAMETERS, "Limit", limitParameter(text.get(Key.PARAMETER_LIMIT))));
       parameters.add(
           components.reference(
               PARAMETERS,

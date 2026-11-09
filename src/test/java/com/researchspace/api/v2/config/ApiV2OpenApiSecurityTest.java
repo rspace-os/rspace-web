@@ -67,13 +67,7 @@ class ApiV2OpenApiSecurityTest {
       var catalog = context.getBean(ApiV2ResourceCatalog.class);
       var document =
           Json31.mapper()
-              .valueToTree(
-                  new ApiV2OpenApiGenerator(
-                          catalog,
-                          com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
-                          "API",
-                          "2.0.0")
-                      .generate());
+              .valueToTree(new ApiV2OpenApiGenerator(catalog, com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(), "API", "2.0.0").generate());
       for (var resource : catalog.routableResources()) {
         boolean anonymous =
             resource.description().schema().access().readAccess().authenticationRequirement()
