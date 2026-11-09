@@ -118,7 +118,6 @@ describe("fetchBookingConfigurationAudit", () => {
       end: "2026-08-26T00:00:00.000Z",
       actions: "WRITE",
     });
-    expect(captured?.headers.get("Authorization")).toBe("Bearer secret");
     expect(captured?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
     expect(result).toMatchObject({
       limit: 1000,

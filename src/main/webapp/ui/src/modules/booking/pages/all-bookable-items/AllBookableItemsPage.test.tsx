@@ -1,3 +1,4 @@
+import { getGetBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingConfigurationsBulkResult } from "@/modules/common/api/v2/generated/models/bookingConfigurationsBulkResult";
 import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
@@ -394,6 +395,10 @@ describe("BookableItemsPage", () => {
       }),
     );
     const { queryClient } = renderBookableItemsPage();
+    queryClient.setQueryData(getGetBookingCalendarSubscriptionQueryKey(7), {
+      body: { active: false, updatedAt: null, subscriptionUrl: null },
+      headers: new Headers({ ETag: '"1"' }),
+    });
     queryClient.setQueryData(getListBookingsQueryKey(), collectionPage([]));
 
     const archiveButtons = await screen.findAllByRole("button", { name: "booking:bookableItems.actions.archive" });
@@ -409,6 +414,9 @@ describe("BookableItemsPage", () => {
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(deleteRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
     await waitFor(() => expect(queryClient.getQueryState(getListBookingsQueryKey())?.isInvalidated).toBe(true));
+    await waitFor(() =>
+      expect(queryClient.getQueryState(getGetBookingCalendarSubscriptionQueryKey(7))?.isInvalidated).toBe(true),
+    );
   });
 
   it("restores a configuration and refreshes dependent queries", async () => {
@@ -440,6 +448,11 @@ describe("BookableItemsPage", () => {
     await waitFor(() =>
       expect(invalidateQueries.mock.calls.map(([filters]) => filters)).toContainEqual({
         queryKey: getListBookingsQueryKey(),
+      }),
+    );
+    await waitFor(() =>
+      expect(invalidateQueries.mock.calls.map(([filters]) => filters)).toContainEqual({
+        queryKey: getGetBookingCalendarSubscriptionQueryKey(7),
       }),
     );
   });
@@ -658,6 +671,12 @@ describe("BookableItemsPage", () => {
         queryKey: getListBookingsQueryKey(),
       }),
     );
+    await waitFor(() =>
+      expect(invalidateQueries.mock.calls.map(([filters]) => filters)).toContainEqual({
+        queryKey: getGetBookingCalendarSubscriptionQueryKey(7),
+      }),
+    );
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: getGetBookingCalendarSubscriptionQueryKey(8) });
   });
 
   it.each(["Enable", "Disable"] as const)("keeps selection after a failed bulk %s request", async (action) => {

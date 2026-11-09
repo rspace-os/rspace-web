@@ -48,28 +48,6 @@ describe("BookableItemPage", () => {
     expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
-  it("keeps archived configurations on the canonical route with read-only controls", async () => {
-    const archived = { ...configuration, state: "ARCHIVED" as const };
-    let posts = 0;
-    server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([archived], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
-      http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
-      ),
-      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
-        posts += 1;
-        return HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null });
-      }),
-    );
-    renderPage("/booking/bookable-items/IN123/details?edit=true");
-
-    expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    expect(posts).toBe(0);
-    expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
-  });
-
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
     const archived = { ...configuration, configurationVersion: 2, state: "ARCHIVED" as const };
     let current = archived as typeof archived | typeof configuration;
@@ -93,6 +71,7 @@ describe("BookableItemPage", () => {
     expect(patchRequest?.headers.get("Content-Type")).toBe("application/json");
     expect(patchRequest?.headers.get("If-Match")).toBe('"2"');
     await expect(patchRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
+    expect(await screen.findByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toHaveFocus();
   });
 

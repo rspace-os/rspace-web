@@ -18,17 +18,21 @@ class BookingCurrentReadsTest {
   @ParameterizedTest
   @MethodSource("convertedFailures")
   void convertsCurrentReadFailuresToBookingConflict(RuntimeException error) {
-    assertThrows(
-        BookingConcurrentModificationException.class,
-        () ->
-            BookingCurrentReads.read(
-                () -> {
-                  throw error;
-                }));
+    var conflict =
+        assertThrows(
+            BookingConcurrentModificationException.class,
+            () ->
+                BookingCurrentReads.read(
+                    () -> {
+                      throw error;
+                    }));
+    assertSame(error, conflict.getCause());
   }
 
   private static Stream<Arguments> convertedFailures() {
     return Stream.of(
+        Arguments.of(
+            new GenericJDBCException("changed", new SQLException("changed", "HY000", 1020))),
         Arguments.of(
             new HibernateJdbcException(
                 new GenericJDBCException("changed", new SQLException("changed", "HY000", 1020)))),
