@@ -51,7 +51,7 @@ function pixel(color: string, base?: string) {
 test("pins opaque actions and preserves hover and selected row colours", async () => {
   render(<StickyActions />);
   const table = page.getByRole("table");
-  const header = table.getByRole("cell", { name: "Actions", exact: true });
+  const header = table.getByRole("columnheader", { name: "Actions", exact: true });
   await expect.element(header).toBeVisible();
   expect(getComputedStyle(header.element()).position).toBe("sticky");
   expect(pixel(getComputedStyle(header.element()).backgroundColor)[3]).toBe(255);

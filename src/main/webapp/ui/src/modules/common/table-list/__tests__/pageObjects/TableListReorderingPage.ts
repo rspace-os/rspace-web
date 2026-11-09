@@ -159,6 +159,9 @@ export class TableListReorderingPage {
   async openFilters(): Promise<void> {
     await userEvent.click(this.filterButton);
     await this.filterList.findElement();
+    // Synthetic drags read coordinates directly, so wait for the popup's entrance animation.
+    const popup = this.filterList.element().closest<HTMLElement>('[data-slot="popover-content"]');
+    await Promise.all(popup?.getAnimations({ subtree: true }).map((animation) => animation.finished) ?? []);
   }
 
   async openSorting(): Promise<void> {

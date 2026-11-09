@@ -1,10 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { skipToken } from "@tanstack/react-query";
 import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
+import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
   getSearchBookingConfigurationTargetsQueryOptions,
   getSearchBookingConfigurationTargetsSuspenseQueryOptions,
+  searchBookingConfigurationTargets,
 } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
@@ -13,10 +15,11 @@ import {
   getListBookingConfigurationsSuspenseQueryOptions,
   listBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
+import type { BookingConfigurationTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetDirectoryDocument";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { isNonEmpty } from "@/util/ArrayUtils";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
   await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
@@ -172,4 +175,38 @@ export function bookingRouteTargetSuspenseQuery(globalId: string) {
     { q: globalId, limit: 20 },
     { query: { select: mapBookingTargetDirectory } },
   );
+}
+
+export const MINIMUM_TARGET_QUERY_LENGTH = 2;
+
+export function mapBookingTargetDirectory(response: BookingConfigurationTargetDirectoryDocument): BookingConfigurationTarget[] {
+  return response.docs.map((target) => {
+    if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
+    return {
+      ...target,
+      id: requireBookingValue(target.id, "id"),
+      globalId: requireBookingValue(target.globalId, "globalId"),
+      name: requireBookingValue(target.name, "name"),
+    };
+  });
+}
+export async function searchBookingTargets(query: string, signal?: AbortSignal): Promise<BookingConfigurationTarget[]> {
+  const q = query.trim();
+  return mapBookingTargetDirectory(
+    await searchBookingConfigurationTargets(
+      { q: q.length >= MINIMUM_TARGET_QUERY_LENGTH ? q : undefined, limit: 20 },
+      { signal },
+    ),
+  );
+}
+
+export function bookingConfigurationPickerTargetQuery(globalId: string | undefined) {
+  return getListBookingConfigurationsQueryOptions<BookingConfiguration>(parameters(globalId ?? ""), {
+    query: {
+      ...(globalId === undefined ? { queryFn: skipToken } : {}),
+      enabled: globalId !== undefined,
+      retry: false,
+      select: (result) => oneConfiguration(globalId ?? "", result.docs.map(mapBookingConfiguration)),
+    },
+  });
 }

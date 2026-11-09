@@ -23,9 +23,9 @@ import {
 } from "../preferences/BookingNotificationChoiceFields";
 
 type SubscriptionResponse = { body: BookingNotificationSubscriptionStatus; headers: Headers };
-function hasNotificationState(status: SubscriptionResponse | undefined): status is SubscriptionResponse & {
-  body: BookingNotificationSubscriptionStatus & { enabled: boolean };
-} {
+function hasNotificationState(
+  status: SubscriptionResponse | undefined,
+): status is SubscriptionResponse & { body: BookingNotificationSubscriptionStatus & { enabled: boolean } } {
   return typeof status?.body.enabled === "boolean" && status.headers.has("ETag");
 }
 function etag(status: SubscriptionResponse): string {
@@ -46,9 +46,7 @@ function ItemNotificationEditor({
   globalId: string;
 
   subjectId: number;
-  subscription: SubscriptionResponse & {
-    body: BookingNotificationSubscriptionStatus & { enabled: boolean };
-  };
+  subscription: SubscriptionResponse & { body: BookingNotificationSubscriptionStatus & { enabled: boolean } };
   feedback: "saved" | "conflict" | "saveError" | null;
   setFeedback: (value: "saved" | "conflict" | "saveError" | null) => void;
 }) {

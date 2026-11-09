@@ -58,15 +58,11 @@ export function setupPage() {
       }),
     ),
     http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
-      HttpResponse.json<BookingNotificationSubscriptionStatus>(notificationSubscription, {
-        headers: { ETag: '"v0-000"' },
-      }),
+      HttpResponse.json<BookingNotificationSubscriptionStatus>(notificationSubscription, { headers: { ETag: '"v0-000"' } }),
     ),
     http.put("/api/v2/booking-configurations/7/notification-subscription", () => {
       notificationSubscription = { ...notificationSubscription, enabled: true };
-      return HttpResponse.json<BookingNotificationSubscriptionStatus>(notificationSubscription, {
-        headers: { ETag: '"v0-000"' },
-      });
+      return HttpResponse.json<BookingNotificationSubscriptionStatus>(notificationSubscription, { headers: { ETag: '"v0-000"' } });
     }),
   );
   mockedUseCurrentUserQuery.mockReturnValue({

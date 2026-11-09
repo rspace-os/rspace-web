@@ -3,16 +3,17 @@ import {
   type ColumnVisibilityState,
   FlexRender,
   functionalUpdate,
+  makeStateUpdater,
   type SortingState,
   useTable,
 } from "@tanstack/react-table";
 import type { Namespace } from "i18next";
-import { memo, useCallback, useId, useMemo } from "react";
+import { Fragment, memo, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName } from "@/modules/common/collection/config";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/modules/common/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/modules/common/ui/table";
 import { cn } from "@/modules/common/utils/cn";
 import { useTableListColumnDefs } from "../hooks/columnDefs";
 import type { FilterState, TableListPresentationVisibility, TableListProps } from "../types";
@@ -35,6 +36,7 @@ function presentationClass(visibility: Exclude<TableListPresentationVisibility, 
 
 type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
   TableListProps<TDocument>,
+  | "stickyActions"
   | "config"
   | "rows"
   | "getRowId"
@@ -56,6 +58,7 @@ type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
 
 export function TableListDataTable<TDocument extends Record<string, unknown>>({
   config,
+  stickyActions = "always",
   rows,
   getRowId,
   features,
@@ -126,6 +129,10 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   );
   const globalFilter = filteringState === false ? undefined : filteringState;
 
+  const userSizedFillId = useRef<string | null>(null);
+  const pendingFillResize = useRef<{ id: string; size: number } | null>(null);
+  const automaticSizing = useRef(false);
+
   const table = useTable<typeof tableListFeatures, TDocument>({
     features: tableListFeatures,
     columns,
@@ -146,6 +153,21 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     rowCount: features.pagination === false ? rows.length : features.pagination.rowCount,
     enableMultiSort: true,
     columnResizeMode: "onEnd",
+    onColumnSizingChange: (updater) => {
+      const current = table.atoms.columnSizing.get();
+      const next = functionalUpdate(updater, current);
+      const pending = pendingFillResize.current;
+      if (
+        !automaticSizing.current &&
+        pending &&
+        Math.abs((next[pending.id] ?? pending.size) - pending.size) >= 0.01 &&
+        next[pending.id] !== current[pending.id]
+      ) {
+        userSizedFillId.current = pending.id;
+        pendingFillResize.current = null;
+      }
+      makeStateUpdater("columnSizing", table)(next);
+    },
     onSortingChange:
       sortingFeature === false
         ? undefined
@@ -183,6 +205,89 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     selection.onChange(next);
   };
 
+  const visibleColumns = table.getVisibleLeafColumns();
+  const hasWidthModes = useMemo(() => columns.some((column) => column.meta?.widthMode), [columns]);
+  const [capturedLayout, setCapturedLayout] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => setContainerWidth(container.clientWidth));
+    observer.observe(container);
+    setContainerWidth(container.clientWidth);
+    return () => observer.disconnect();
+  }, []);
+  const fillColumn = visibleColumns.find((column) => column.columnDef.meta?.widthMode === "fill");
+  const visibleColumnIds = visibleColumns.map((column) => column.id).join(",");
+  const totalWidth = table.getTotalSize();
+  const [overflowing, setOverflowing] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
+  useLayoutEffect(() => {
+    const element = tableRef.current;
+    const scroller = element?.parentElement;
+    if (!element || !scroller) return;
+    const updateOverflow = () => setOverflowing(scroller.scrollWidth > scroller.clientWidth);
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(element);
+    observer.observe(scroller);
+    updateOverflow();
+    return () => observer.disconnect();
+  }, []);
+  const pinActions = stickyActions === "always" || !overflowing;
+
+  useLayoutEffect(() => {
+    // Refit only on capture, visibility changes, and container changes. A user's
+    // fill width survives subsequent resizes, including a narrower container.
+    const fill = table.getVisibleLeafColumns().find((column) => column.columnDef.meta?.widthMode === "fill");
+    if (!capturedLayout || !fill || userSizedFillId.current === fill.id) return;
+    const size = Math.min(
+      fill.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER,
+      Math.max(fill.columnDef.minSize ?? 20, containerWidth - (table.getTotalSize() - fill.getSize())),
+    );
+    if (size !== fill.getSize()) {
+      automaticSizing.current = true;
+      table.setColumnSizing((current) => ({ ...current, [fill.id]: size }));
+      automaticSizing.current = false;
+    }
+  }, [capturedLayout, containerWidth, visibleColumnIds, table]);
+
+  // Capture by identity: selection and presentation cells need not have resize handles.
+  const prepareResize = (element: HTMLElement) => {
+    const resizingFill = fillColumn && element.closest("th")?.dataset.columnId === fillColumn.id;
+    if (!hasWidthModes || capturedLayout) {
+      pendingFillResize.current = resizingFill ? { id: fillColumn.id, size: fillColumn.getSize() } : null;
+      return true;
+    }
+    const headers = new Map(
+      Array.from(element.closest("tr")?.querySelectorAll<HTMLTableCellElement>("th[data-column-id]") ?? []).map(
+        (header) => [header.dataset.columnId, header],
+      ),
+    );
+    const captured: [string, number][] = [];
+    for (const column of visibleColumns) {
+      const header = headers.get(column.id);
+      if (!header) {
+        console.warn(`Missing rendered header for column ${column.id}; cancelling column resize`);
+        pendingFillResize.current = null;
+        return false;
+      }
+      captured.push([
+        column.id,
+        Math.min(
+          column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER,
+          Math.max(column.columnDef.minSize ?? 20, header.getBoundingClientRect().width),
+        ),
+      ]);
+    }
+    setCapturedLayout(true);
+    const sizes = Object.fromEntries(captured);
+    pendingFillResize.current = resizingFill ? { id: fillColumn.id, size: sizes[fillColumn.id] } : null;
+    automaticSizing.current = true;
+    table.setColumnSizing(sizes);
+    automaticSizing.current = false;
+    return true;
+  };
   const resizeColumn = (columnId: string, size: number) =>
     table.setColumnSizing((current) => ({ ...current, [columnId]: size }));
   const selectAllPage = (
@@ -218,6 +323,9 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     [selection, t],
   );
 
+  const spacerBeforeId = visibleColumns.some((column) => column.id === "actions")
+    ? "actions"
+    : visibleColumns.at(-1)?.id;
   const renderedDataRows = useMemo(
     () =>
       renderRows
@@ -229,24 +337,32 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               className="group/row hover:bg-muted/40 data-[state=selected]:bg-primary/10"
             >
               {row.getVisibleCells().map((cell) => (
-                <TableCell
-                  key={cell.id}
-                  className={cn(
-                    "overflow-hidden py-2 text-ellipsis",
-                    cell.column.id === "actions" &&
-                      "sticky right-0 z-10 bg-background group-hover/row:bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-background))] group-data-[state=selected]/row:bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-background))]",
-                  )}
-                >
-                  {cell.column.id === selectionColumnId && selection ? (
-                    renderRowSelection(row.id, row.original)
-                  ) : (
-                    <FlexRender cell={cell} />
-                  )}
-                </TableCell>
+                <Fragment key={cell.id}>
+                  {capturedLayout && cell.column.id === spacerBeforeId ? (
+                    <TableCell role="presentation" className="p-0" />
+                  ) : null}
+                  <TableCell
+                    className={cn(
+                      "overflow-hidden py-2 text-ellipsis",
+                      cell.column.id === "actions" &&
+                        pinActions &&
+                        "sticky right-0 z-10 bg-background group-hover/row:bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-background))] group-data-[state=selected]/row:bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-background))]",
+                    )}
+                  >
+                    {cell.column.id === selectionColumnId && selection ? (
+                      renderRowSelection(row.id, row.original)
+                    ) : (
+                      <FlexRender cell={cell} />
+                    )}
+                  </TableCell>
+                </Fragment>
               ))}
             </TableRow>
           )),
     [
+      capturedLayout,
+      pinActions,
+      spacerBeforeId,
       columns,
       columnState,
       config,
@@ -326,8 +442,18 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
       },
     ],
   }));
-  const visibleColumns = table.getVisibleLeafColumns();
-  const colSpan = Math.max(visibleColumns.length, 1);
+  const intrinsicWidths = hasWidthModes && !capturedLayout;
+  const resetColumn = (columnId: string) => {
+    if (hasWidthModes || capturedLayout) {
+      table.resetColumnSizing(true);
+      setCapturedLayout(false);
+      userSizedFillId.current = null;
+      pendingFillResize.current = null;
+    } else {
+      table.getColumn(columnId)?.resetSize();
+    }
+  };
+  const colSpan = Math.max(visibleColumns.length + (capturedLayout ? 1 : 0), 1);
   const columnResizing = table.atoms.columnResizing.get();
 
   return (
@@ -355,32 +481,58 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
           )}
         </section>
       ) : tablePresentation !== false ? (
-        <div className={presentationClass(tablePresentation)}>
+        <div
+          ref={containerRef}
+          className={cn(presentationClass(tablePresentation), "[&>[data-slot=table-container]]:scroll-pr-3")}
+        >
           <Table
+            ref={tableRef}
             aria-label={t("tableList.view", { collection: collectionLabel })}
             aria-busy={status === "loading" || status === "refreshing"}
-            className="table-fixed"
-            style={{ width: table.getTotalSize(), minWidth: "100%" }}
+            className={intrinsicWidths ? "table-auto" : "table-fixed"}
+            style={{
+              width: intrinsicWidths ? "100%" : totalWidth,
+              minWidth: "100%",
+            }}
           >
             <colgroup>
               {visibleColumns.map((column) => (
-                <col key={column.id} style={{ width: column.getSize() }} />
+                <Fragment key={column.id}>
+                  {capturedLayout && column.id === spacerBeforeId ? <col style={{ width: "auto" }} /> : null}
+                  <col
+                    style={{
+                      width:
+                        intrinsicWidths && column.columnDef.meta?.widthMode === "fill"
+                          ? "100%"
+                          : intrinsicWidths && column.columnDef.meta?.widthMode === "content"
+                            ? "1%"
+                            : column.getSize(),
+                    }}
+                  />
+                </Fragment>
               ))}
             </colgroup>
             <TableHeader>
               {table.getHeaderGroups().map((group) => (
-                <TableRow key={group.id} className="hover:bg-transparent">
+                <TableRow key={group.id} className="bg-muted/35 hover:bg-muted/35">
                   {group.headers.map((header) => (
-                    <TableListHeaderCell
-                      key={header.id}
-                      header={header}
-                      resizeId={resizeId}
-                      resizeOffset={
-                        columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0
-                      }
-                      selectAllControl={selection ? selectAllPage : undefined}
-                      onResize={resizeColumn}
-                    />
+                    <Fragment key={header.id}>
+                      {capturedLayout && header.column.id === spacerBeforeId ? (
+                        <TableHead role="presentation" className="p-0" />
+                      ) : null}
+                      <TableListHeaderCell
+                        header={header}
+                        pinActions={pinActions}
+                        resizeId={resizeId}
+                        resizeOffset={
+                          columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0
+                        }
+                        selectAllControl={selection ? selectAllPage : undefined}
+                        onResize={resizeColumn}
+                        onResizeStart={prepareResize}
+                        onReset={resetColumn}
+                      />
+                    </Fragment>
                   ))}
                 </TableRow>
               ))}

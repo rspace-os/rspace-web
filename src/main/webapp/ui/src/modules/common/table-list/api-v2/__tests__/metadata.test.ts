@@ -1,8 +1,11 @@
+import { QueryClient } from "@tanstack/react-query";
+import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { apiV2OpenApi } from "@/__tests__/mocks/apiV2OpenApi";
+import { server } from "@/__tests__/mswServer";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import type { TestRecord } from "../../__tests__/fixtures/tableList";
-import { apiV2CollectionMetadataFromOpenApi } from "../metadata";
+import { apiV2CollectionMetadataFromOpenApi, apiV2MetadataOptions } from "../metadata";
 
 const openApi = {
   components: { schemas: { RecordRead: { properties: {} } } },
@@ -444,4 +447,21 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
 
     expect(() => apiV2CollectionMetadataFromOpenApi<TestRecord>(invalid, "records")).toThrow("0.catalog:");
   });
+});
+
+it("shares the OpenAPI document across collection metadata lookups", async () => {
+  let requests = 0;
+  server.use(
+    http.get("/api/v2/openapi.json", () => {
+      requests += 1;
+      return HttpResponse.json(apiV2OpenApi);
+    }),
+  );
+  const client = new QueryClient();
+  await Promise.all([
+    client.fetchQuery(apiV2MetadataOptions("booking-configurations")),
+    client.fetchQuery(apiV2MetadataOptions("bookings")),
+  ]);
+  expect(requests).toBe(1);
+  client.clear();
 });

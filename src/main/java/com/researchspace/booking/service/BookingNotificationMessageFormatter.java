@@ -48,8 +48,8 @@ public class BookingNotificationMessageFormatter {
   private static final Logger log =
       LoggerFactory.getLogger(BookingNotificationMessageFormatter.class);
 
-  private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
   private static final String CHANGED_MESSAGE_KEY = "bookingNotifications.changed";
+  private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
   private static final String CANCELLED_MESSAGE_KEY = "bookingNotifications.cancelled";
   private static final String RESTORED_MESSAGE_KEY = "bookingNotifications.restored";
   private static final String CANCELLED_WITH_REASON_MESSAGE_KEY =
@@ -223,7 +223,14 @@ public class BookingNotificationMessageFormatter {
           formatRangeEnd(data.getStartTime(), data.getEndTime(), zone, locale, hourCycle),
           href(linkBase, BOOKING_PATH, data.getBookingId()),
           href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier()),
-          StringEscapeUtils.escapeHtml4(data.getCancellationReason())
+          StringEscapeUtils.escapeHtml4(data.getCancellationReason()),
+          data.getPreviousStartTime() == null
+              ? null
+              : formatInstant(data.getPreviousStartTime(), zone, locale, hourCycle),
+          data.getPreviousEndTime() == null
+              ? null
+              : formatRangeEnd(
+                  data.getPreviousStartTime(), data.getPreviousEndTime(), zone, locale, hourCycle)
         },
         locale);
   }
@@ -271,15 +278,21 @@ public class BookingNotificationMessageFormatter {
   }
 
   public static boolean isBookingNotification(NotificationType type) {
-    return NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)
-        || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type)
-        || NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)
-        || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(type);
+    return NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)
+        || NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type);
   }
 
   private static String messageKey(NotificationType type, BookingNotificationData data) {
-    if (type == NotificationType.NOTIFICATION_BOOKING_RESTORED) return RESTORED_MESSAGE_KEY;
-    if (type == NotificationType.NOTIFICATION_BOOKING_CHANGED) return CHANGED_MESSAGE_KEY;
+    if (NotificationType.NOTIFICATION_BOOKING_CHANGED.equals(type)) {
+      return data.getPreviousStartTime() != null && data.getPreviousEndTime() != null
+          ? "bookingNotifications.changedWithPrevious"
+          : CHANGED_MESSAGE_KEY;
+    }
+    if (NotificationType.NOTIFICATION_BOOKING_RESTORED.equals(type)) {
+      return RESTORED_MESSAGE_KEY;
+    }
     if (NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)) {
       return data.isRestored() ? RESTORED_MESSAGE_KEY : CREATED_MESSAGE_KEY;
     }
@@ -288,50 +301,49 @@ public class BookingNotificationMessageFormatter {
         : CANCELLED_WITH_REASON_MESSAGE_KEY;
   }
 
-  /** Formats the email header in the recipient zone saved with its body. */
+  /** Formats the email header using the recipient snapshot saved with its body. */
   public static String formatEmailTimestamp(
       Instant instant, BookingNotificationData data, Locale locale) {
+    ZoneId zone = validZone(data.getEmailDisplayTimezone()).orElse(ZoneOffset.UTC);
     return formatInstant(
-        instant.toString(),
-        validZone(data.getEmailDisplayTimezone()).orElse(ZoneOffset.UTC),
-        locale,
-        hourCycleKeyword(data.getEmailTimeFormat(), null));
+        instant.toString(), zone, locale, hourCycleKeyword(data.getEmailTimeFormat(), null));
   }
 
   private static String formatRangeEnd(
       String start, String end, ZoneId zone, Locale locale, String hourCycle) {
     ZonedDateTime endTime = Instant.parse(end).atZone(zone);
-    boolean sameDay = Instant.parse(start).atZone(zone).toLocalDate().equals(endTime.toLocalDate());
+    boolean sameDay =
+        start != null
+            && Instant.parse(start).atZone(zone).toLocalDate().equals(endTime.toLocalDate());
     return formatInstant(endTime, locale, hourCycle, !sameDay);
   }
 
+  /** Formats an instant with the {@code hc} keyword {@code hourCycle}, or the locale's if null. */
   private static String formatInstant(String value, ZoneId zone, Locale locale, String hourCycle) {
     return formatInstant(Instant.parse(value).atZone(zone), locale, hourCycle, true);
   }
 
   private static String formatInstant(
       ZonedDateTime value, Locale locale, String hourCycle, boolean includeDate) {
+    ZoneId zone = value.getZone();
     String localDateTime =
         hourCycle == null
             ? (includeDate
                     ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
                     : DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
                 .withLocale(locale)
+                .withZone(zone)
                 .format(value)
             : formatWithHourCycle(value.toLocalDateTime(), locale, hourCycle, includeDate);
-    String offset = value.getOffset().getId();
-    return localDateTime
-        + " ("
-        + value.getZone().getId()
-        + ", UTC"
-        + ("Z".equals(offset) ? "" : offset)
-        + ")";
+    String zoneLabel = DateTimeFormatter.ofPattern("z", locale).withZone(zone).format(value);
+    return localDateTime + " " + zoneLabel + " (" + zone.getId() + ")";
   }
 
   /**
-   * Formats a wall-clock time in {@code locale}'s words and field order with the clock selected by
-   * {@code hourCycle}. java.time ignores the Unicode {@code hc} keyword, so this uses ICU, which
-   * also backs the browser's {@code Intl} API.
+   * Formats a wall-clock time in {@code locale}'s words and field order with the 12- or 24-hour
+   * clock named by the Unicode {@code hc} keyword {@code hourCycle}, as the booking pages do.
+   * java.time ignores that keyword, so this uses ICU, which also backs the browser's {@code Intl}
+   * API.
    */
   private static String formatWithHourCycle(
       LocalDateTime wallClock, Locale locale, String hourCycle, boolean includeDate) {

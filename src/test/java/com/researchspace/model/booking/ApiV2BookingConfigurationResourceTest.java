@@ -536,4 +536,30 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals(1, failure.getViolations().size());
     return failure.getViolations().get(0).reason();
   }
+
+  @Test
+  void parsesTheIncrementUnitByNameAndRejectsAnyOtherValue() throws Exception {
+    ParsedDocument document = parseUpdate(mapper.readTree("{\"incrementUnit\": \"DAYS\"}"));
+
+    assertEquals(BookingIncrementUnit.DAYS, document.values().get("incrementUnit"));
+    assertEquals(
+        DocumentValidationException.Reason.INVALID_VALUE,
+        updateViolation("{\"incrementUnit\": \"WEEKS\"}"));
+    assertEquals(
+        DocumentValidationException.Reason.INVALID_VALUE,
+        updateViolation("{\"incrementUnit\": \"days\"}"));
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE, updateViolation("{\"incrementUnit\": 1}"));
+  }
+
+  private ParsedDocument parseUpdate(String json) throws Exception {
+    return parseUpdate(mapper.readTree(json));
+  }
+
+  private DocumentValidationException.Reason updateViolation(String json) {
+    DocumentValidationException failure =
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(json));
+    assertEquals(1, failure.getViolations().size());
+    return failure.getViolations().get(0).reason();
+  }
 }

@@ -274,7 +274,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
             Date.from(start.plus(1, ChronoUnit.HOURS)),
             null);
     var booking = bookingManager.createBooking(create, booker, booker);
-    var link = calendarManager.create(setup.configurationId(), booker, booker);
+    var link =
+        calendarManager.create(setup.configurationId(), booker, booker);
     String token = URI.create(link.subscriptionUrl()).getRawQuery().substring("token=".length());
     var competing = new TransactionTemplate(getTxMger());
     competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
