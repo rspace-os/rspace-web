@@ -122,33 +122,27 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const { t: commonT } = useTranslation("common");
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
+  const listConfig = useMemo(
+    () => bookingListConfig(preferences.timeZone, preferences.timeFormat),
+    [preferences.timeFormat, preferences.timeZone],
+  );
   const asOf = useAlignedMinute();
-  const asOfDate = useMemo(() => new Date(asOf), [asOf]);
-  const baseFilter = useMemo<ApiV2WhereObject<"Bookings">>(
-    () => ({
-      [requesterValueField]: requesterId,
-      kind: "BOOKING",
-      // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
-      ...(period === "cancelled"
-        ? { state: "CANCELLED" }
-        : {
-            state: "CONFIRMED",
-            end: period === "upcoming" ? { greaterThan: asOfDate.toISOString() } : { lessThanOrEqual: asOfDate.toISOString() },
-          }),
-    }),
-    [asOfDate, period, requesterId],
-  );
-  const request = useMemo(
-    () => ({
-      authScope: currentUser.id,
-      depth: 1,
-      projection,
-      baseFilter,
-      validateRows: BookingListDocumentTableValidation.validateRows,
-    }),
-    [baseFilter, currentUser.id],
-  );
+  const asOfDate = new Date(asOf);
+  const baseFilter: ApiV2WhereObject<"Bookings"> = {
+    [requesterValueField]: requesterId,
+    kind: "BOOKING",
+    // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
+    ...(period === "cancelled"
+      ? { state: "CANCELLED" }
+      : { state: "CONFIRMED", end: period === "upcoming" ? { greaterThan: asOfDate.toISOString() } : { lessThanOrEqual: asOfDate.toISOString() } }),
+  };
+  const request = {
+    authScope: currentUser.id,
+    depth: 1,
+    projection,
+    baseFilter,
+    validateRows: BookingListDocumentTableValidation.validateRows,
+  };
   const table = usePersistedApiV2TableList({
     persistence: myBookingsTable,
     resource: bookingListResource,
@@ -223,6 +217,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         <BookingRowActions
           row={row}
           timeZone={preferences.timeZone}
+          timeFormat={preferences.timeFormat}
           onCancelled={(cancelled) => {
             // The dialog has already refetched the bookings; another refetch would re-mount the rows and drop focus.
             setCancelAnnouncement(
@@ -234,7 +229,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       ),
       renderInteraction: () => null,
     }),
-    [preferences.timeZone, t],
+    [preferences.timeFormat, preferences.timeZone, t],
   );
 
   const selectPeriod = (nextPeriod: MyBookingsPeriod) => {

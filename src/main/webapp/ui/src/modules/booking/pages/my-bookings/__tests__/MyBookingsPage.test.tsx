@@ -103,7 +103,7 @@ beforeEach(() => {
 
 describe("My Bookings page", () => {
   it("keeps the persisted table descriptor in step with its configuration", () => {
-    const config = bookingListConfig("UTC");
+    const config = bookingListConfig("UTC", "H24");
     expect(myBookingsTable).toMatchObject({
       slug: config.slug,
       defaultColumns: config.defaultColumns,

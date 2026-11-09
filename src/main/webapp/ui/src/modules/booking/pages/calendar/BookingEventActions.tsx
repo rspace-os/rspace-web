@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
@@ -32,6 +33,7 @@ export function BookingActions({
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const timeFormat = useBookingTimeFormat();
   const [editing, setEditing] = React.useState(false);
   const editable = isEditableBooking(event);
   if (editing && editable) {
@@ -72,7 +74,7 @@ export function BookingActions({
         <BookingCalendarFileButton
           bookingId={event.id}
           itemName={event.target?.value.name ?? commonT("values.unknownItem")}
-          period={formatAgendaPeriod(event.start, event.end, timezone)}
+          period={formatAgendaPeriod(event.start, event.end, timezone, undefined, timeFormat)}
           size="xs"
           variant="link"
           className="h-auto rounded-none py-2"

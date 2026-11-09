@@ -23,6 +23,7 @@ export const bookingSettingsFixture = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
+  timeFormat: "AUTOMATIC" as const,
   institutionTimezone: "UTC",
   configurationVersion: 0,
 };

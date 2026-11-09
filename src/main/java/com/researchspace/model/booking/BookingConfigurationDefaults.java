@@ -130,6 +130,15 @@ public class BookingConfigurationDefaults implements Serializable {
     return customTimezone;
   }
 
+  @Setter private BookingTimeFormat timeFormat = BookingTimeFormat.AUTOMATIC;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 32)
+  @AuditTrailProperty(name = "timeFormat")
+  public BookingTimeFormat getTimeFormat() {
+    return timeFormat;
+  }
+
   @Setter private long configurationVersion;
 
   @Version
