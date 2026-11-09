@@ -2,11 +2,21 @@ import { useBlocker, useLocation, useNavigate } from "@tanstack/react-router";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { BookingForm, type BookingFormState } from "@/modules/booking/creation/BookingForm";
+import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
+import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
+import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
+import type { TimelineMovePolicy } from "@/modules/booking/creation/timelineMove";
 import {
-  calendarAvailabilityRow,
-  useCalendarAvailability,
-} from "@/modules/booking/pages/calendar/calendarAvailability";
+  bookingCreationProblemKey,
+  isBookingOutcomeUncertain,
+  useCreateBooking,
+} from "@/modules/booking/creation/useCreateBooking";
+import { calendarAvailabilityRow } from "@/modules/booking/domain/availability";
+import { isBookingOverlapError } from "@/modules/booking/domain/booking";
+import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,17 +30,6 @@ import {
 import { Button } from "@/modules/common/ui/button";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from "@/modules/common/ui/popover";
-import { BookingForm, type BookingFormState } from "./BookingForm";
-import { type BookingCreationDraft } from "./bookingCreationDraft";
-import { type BookingCreationContext, useBookingCreationStore } from "./bookingCreationStore";
-import { DraftMarker } from "./DraftMarker";
-import { timelinePolicy } from "./timelineRange";
-import {
-  bookingProblemFeedback,
-  isBookingConflictError,
-  isBookingOutcomeUncertain,
-  useCreateBooking,
-} from "./useCreateBooking";
 
 export function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationContext }) {
   const { t } = useTranslation("booking");
@@ -47,11 +46,10 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const closingRef = React.useRef(false);
   const previousPathname = React.useRef(pathname);
   const shouldBlock = React.useCallback(() => dirty && !closingRef.current, [dirty]);
-  const enableBeforeUnload = React.useCallback(() => dirty && !closingRef.current, [dirty]);
   const blocker = useBlocker({
     shouldBlockFn: shouldBlock,
     withResolver: true,
-    enableBeforeUnload,
+    enableBeforeUnload: shouldBlock,
   });
 
   const closeCreation = React.useCallback(() => {
@@ -75,7 +73,6 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
     if (!dirty) {
       finish();
       blocker.proceed();
-      return;
     }
   }, [blocker, dirty, finish]);
 
@@ -158,17 +155,16 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const availabilityViolation = Boolean(
     availability.isSuccess &&
       availabilityTarget &&
-      availability.data.get(availabilityTarget.globalId)?.some(() => true),
+      (availability.data.get(availabilityTarget.globalId)?.length ?? 0) > 0,
   );
 
-  const problem = bookingProblemFeedback(mutation.error, t, {
-    target: availabilityTarget && {
-      maxBookingDurationMinutes: maintenance ? 0 : availabilityTarget.maxBookingDurationMinutes,
-    },
-    creation: true,
-  });
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
+  const movementPolicy: TimelineMovePolicy = {
+    maxBookingDurationMinutes: maintenance ? 0 : (availabilityTarget?.maxBookingDurationMinutes ?? 0),
+    openingHours: availabilityTarget?.openingHours ?? [],
+    enforceOpeningHours: Boolean(availabilityTarget) && !maintenance,
+  };
 
   return (
     <>
@@ -177,9 +173,9 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           creation={creation}
           draft={markerDraft}
           timeZone={preferences.timeZone}
-          policy={
-            availabilityTarget ? timelinePolicy(availabilityTarget, maintenance ? "MAINTENANCE" : "BOOKING") : undefined
-          }
+          schedulingTimezone={availabilityTarget?.timezone ?? preferences.timeZone}
+          snapIncrementMinutes={availabilityTarget?.slotGranularityMinutes}
+          movementPolicy={movementPolicy}
           onChange={creation.timelineAdjustable ? setWindowAdjustment : undefined}
         />
       ) : null}
@@ -231,7 +227,6 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           <BookingForm
             mode="add"
             density="compact"
-            fixedTimezone
             displayTimezone={preferences.timeZone}
             eventKind={creation.eventKind}
             initialTarget={creation.target}
@@ -239,12 +234,18 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             initialWindow={creation.window}
             lockTarget={creation.lockTarget}
             pending={mutation.isPending}
-            error={availabilityViolation ? t("bookings.errors.overlap") : problem.message}
+            error={
+              availabilityViolation
+                ? t("bookings.errors.overlap")
+                : mutation.error
+                  ? t(bookingCreationProblemKey(mutation.error))
+                  : undefined
+            }
             outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||
               availabilityViolation ||
-              isBookingConflictError(mutation.error) ||
+              isBookingOverlapError(mutation.error) ||
               isBookingOutcomeUncertain(mutation.error)
             }
             windowAdjustment={windowAdjustment}

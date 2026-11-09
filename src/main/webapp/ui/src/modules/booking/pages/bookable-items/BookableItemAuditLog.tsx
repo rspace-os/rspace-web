@@ -8,11 +8,9 @@ import { resolveCollectionConfig } from "@/modules/common/collection/resolveConf
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList } from "@/modules/common/table-list/TableList";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
-import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
-import { UserBadge } from "@/modules/common/ui/user-badge";
-import { AuditEventItem, AuditTarget, AuditTimestamp, RecordedValues } from "./BookableItemAuditEvent";
+import { AuditEventItem } from "./BookableItemAuditEvent";
 import {
   AUDIT_ACTIONS,
   type AuditAction,
@@ -27,8 +25,21 @@ import {
 } from "./bookableItemAudit";
 
 const PRESET_DAYS = [7, 30, 90] as const;
-
 const RANGE_SEPARATOR = "\u2013";
+const errorMessageKeys = {
+  unavailable: {
+    title: "bookableItemDetails.audit.unavailable.title",
+    description: "bookableItemDetails.audit.unavailable.description",
+  },
+  tooMany: {
+    title: "bookableItemDetails.audit.tooMany.title",
+    description: "bookableItemDetails.audit.tooMany.description",
+  },
+  generic: {
+    title: "bookableItemDetails.audit.error.title",
+    description: "bookableItemDetails.audit.error.description",
+  },
+} as const;
 
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
   slug: "booking-configuration-audit",
@@ -41,68 +52,16 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
   defaultColumns: ["timestamp", "username", "action", "target", "payload"],
   listSearchableFields: ["username", "fullName", "action", "description", "target", "payload"],
   fields: [
-    { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId", list: false },
-    { name: "eventId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.eventId", list: false },
-    {
-      name: "timestamp",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.timestamp",
-      list: { width: 200, minWidth: 170, renderCell: ({ row }) => <AuditTimestamp value={row.timestamp} /> },
-    },
-    {
-      name: "username",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.actor",
-      list: {
-        width: 190,
-        minWidth: 160,
-        dependencies: ["fullName"],
-        renderCell: ({ row }) => <UserBadge name={row.fullName ?? row.username} username={row.username} />,
-      },
-    },
+    { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId" },
+    { name: "eventId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.eventId" },
+    { name: "timestamp", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.timestamp" },
+    { name: "username", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.actor" },
     { name: "fullName", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.fullName" },
-    {
-      name: "action",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.action",
-      list: {
-        width: 300,
-        minWidth: 220,
-        dependencies: ["description"],
-        renderCell: ({ row }) => (
-          <span>
-            <Badge variant="outline">{row.action}</Badge>
-            {row.description === null || row.description === undefined ? null : (
-              <span className="mt-2 block whitespace-normal text-muted-foreground">{row.description}</span>
-            )}
-          </span>
-        ),
-      },
-    },
+    { name: "action", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.action" },
     { name: "description", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.description" },
-    { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain", list: false },
-    {
-      name: "target",
-      type: "text",
-      labelKey: "booking:bookableItems.fields.id",
-      list: {
-        width: 120,
-        minWidth: 100,
-        dependencies: ["payload"],
-        renderCell: ({ row }) => <AuditTarget target={row.target} />,
-      },
-    },
-    {
-      name: "payload",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.values",
-      list: {
-        width: 320,
-        minWidth: 240,
-        card: { fullWidth: true },
-        renderCell: ({ row }) => <RecordedValues row={row} />,
-      },
-    },
+    { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain" },
+    { name: "target", type: "text", labelKey: "booking:bookableItems.fields.id" },
+    { name: "payload", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.values" },
   ],
 });
 
@@ -352,24 +311,17 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
 
       {audit.data?.truncated ? <p className="text-sm text-muted-foreground">{truncatedText}</p> : null}
 
-      {errorKind === "unavailable" ? (
+      {errorKind !== null ? (
         <Alert variant="destructive">
           <AlertTriangleIcon aria-hidden="true" />
-          <AlertTitle>{t("bookableItemDetails.audit.unavailable.title")}</AlertTitle>
-          <AlertDescription>{t("bookableItemDetails.audit.unavailable.description")}</AlertDescription>
-        </Alert>
-      ) : errorKind === "generic" ? (
-        <Alert variant="destructive">
-          <AlertTriangleIcon aria-hidden="true" />
-          <AlertTitle>{t("bookableItemDetails.audit.error.title")}</AlertTitle>
-          <AlertDescription>{t("bookableItemDetails.audit.error.description")}</AlertDescription>
+          <AlertTitle>{t(errorMessageKeys[errorKind].title)}</AlertTitle>
+          <AlertDescription>{t(errorMessageKeys[errorKind].description)}</AlertDescription>
         </Alert>
       ) : (
         <TableList
           {...table.tableProps}
           clientSide={false}
           status={audit.isPending ? "loading" : audit.isFetching ? "refreshing" : "idle"}
-          presentations={{ table: "wide", cards: "narrow" }}
           emptyDescription={
             stableEmpty ? t("bookableItemDetails.audit.emptyStable") : t("bookableItemDetails.audit.empty")
           }

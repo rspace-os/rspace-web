@@ -2,8 +2,6 @@ import { useTranslation } from "react-i18next";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 
-export const eventColumnsClassName = detailColumnsClassName;
-
 export function BookingEventSkeleton() {
   const { t } = useTranslation("common");
   return (
@@ -14,7 +12,7 @@ export function BookingEventSkeleton() {
       <div aria-hidden="true" className="space-y-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-14 w-full" />
-        <div className={eventColumnsClassName}>
+        <div className={detailColumnsClassName}>
           <div className="space-y-4">
             <Skeleton className="h-9 w-full" />
             {[0, 1, 2, 3].map((row) => (

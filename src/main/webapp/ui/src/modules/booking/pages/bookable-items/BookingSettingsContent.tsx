@@ -1,5 +1,5 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { SaveIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,16 +18,22 @@ import {
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
+  getSearchBookingSettingsAccessGranteesQueryKey,
   invalidateGetAdminBookingSettings,
   invalidateGetBookingSettings,
 } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
-import { type BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { ResourceGranteeDirectoryEntry } from "@/modules/common/api/v2/generated/models/resourceGranteeDirectoryEntry";
 import { invalidateGetMyBookingPreferences } from "@/modules/common/api/v2/generated/users/users";
 import { BookingDisplayPreferencesControllerReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { searchBookingSettingsGrantees } from "@/modules/common/resource-access/resourceAccess";
+
 import { Button } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
+import { Input } from "@/modules/common/ui/input";
 import { Separator } from "@/modules/common/ui/separator";
+import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "../preferences/BookingDisplaySettingsFields";
 
@@ -37,21 +43,36 @@ export function BookingSettingsContent() {
   const queryClient = useQueryClient();
   const loadedSettings = useSuspenseQuery(bookingAdminSettingsQuery()).data;
   const [settings, setSettings] = useState(loadedSettings);
+  const [editorVersion, setEditorVersion] = useState(0);
   const [displaySettings, setDisplaySettings] = useState<BookingDisplayPreferencesControllerReplacement>({
     availabilityWindowStart: settings.availabilityWindowStart,
     availabilityWindowEnd: settings.availabilityWindowEnd,
     timezoneMode: settings.timezoneMode,
     customTimezone: settings.customTimezone,
   });
+  const [defaultSharedWith, setDefaultSharedWith] = useState(settings.defaultSharedWith);
+  const [selectedGrantees, setSelectedGrantees] = useState<readonly ResourceGranteeDirectoryEntry[]>(
+    settings.selectedAccessGrantees.map((entry) => ({ ...entry, detail: entry.detail ?? undefined })),
+  );
+  const [granteeSearch, setGranteeSearch] = useState("");
+  const [submittedGranteeSearch, setSubmittedGranteeSearch] = useState("");
+  const grantees = useQuery({
+    queryKey: getSearchBookingSettingsAccessGranteesQueryKey({ q: submittedGranteeSearch }),
+    queryFn: ({ signal }) => searchBookingSettingsGrantees(submittedGranteeSearch, signal),
+    enabled: submittedGranteeSearch.length >= 2,
+  });
   const form = useForm({ schema: SchedulingSettingsSchema, initialInput: settings });
-  // Adopting a baseline ends the edit session, including retained closed-day drafts and custom-hour history.
-  const [editorVersion, setEditorVersion] = useState(0);
   const mutation = useMutation({
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(
         {
           ...input,
           ...displaySettings,
+          defaultSharedWith,
+          selectedGranteeKeys: selectedGrantees.map(({ key }) => {
+            if (!key) throw new Error("Access grantee key is missing");
+            return key;
+          }),
         },
         settings.etag,
       ),
@@ -67,6 +88,10 @@ export function BookingSettingsContent() {
         timezoneMode: saved.timezoneMode,
         customTimezone: saved.customTimezone,
       });
+      setDefaultSharedWith(saved.defaultSharedWith);
+      setSelectedGrantees(
+        saved.selectedAccessGrantees.map((entry) => ({ ...entry, detail: entry.detail ?? undefined })),
+      );
       await invalidateGetMyBookingPreferences(queryClient);
     },
   });
@@ -75,6 +100,7 @@ export function BookingSettingsContent() {
     v.safeParse(BookingDisplayPreferencesControllerReplacementSchema, displaySettings).success &&
     hasValidAvailabilityWindow(preferenceValues) &&
     hasValidCustomTimezone(preferenceValues);
+  const sharingValid = defaultSharedWith !== "SELECTED" || selectedGrantees.length > 0;
   const dirty =
     isDirty(form) ||
     JSON.stringify(displaySettings) !==
@@ -83,7 +109,16 @@ export function BookingSettingsContent() {
         availabilityWindowEnd: settings.availabilityWindowEnd,
         timezoneMode: settings.timezoneMode,
         customTimezone: settings.customTimezone,
-      });
+      }) ||
+    defaultSharedWith !== settings.defaultSharedWith ||
+    selectedGrantees
+      .map(({ key }) => key)
+      .toSorted()
+      .join("\0") !==
+      settings.selectedAccessGrantees
+        .map(({ key }) => key)
+        .toSorted()
+        .join("\0");
 
   return (
     <main className="p-4 sm:p-8">
@@ -119,6 +154,113 @@ export function BookingSettingsContent() {
           />
         </section>
         {!displaySettingsValid ? <FieldError>{t("preferences.errors.invalid")}</FieldError> : null}
+        <Separator />
+        <fieldset className="space-y-4">
+          <legend className="font-medium">{t("settings.defaultSharing.title")}</legend>
+          <p className="text-sm text-muted-foreground">{t("settings.defaultSharing.description")}</p>
+          <div className="grid gap-3">
+            {(["ALL_USERS", "SELECTED", "ONLY_ME"] as const).map((mode) => (
+              <label key={mode} className="flex items-start gap-2">
+                <input
+                  type="radio"
+                  name="default-shared-with"
+                  value={mode}
+                  checked={defaultSharedWith === mode}
+                  disabled={mutation.isPending}
+                  onChange={() => setDefaultSharedWith(mode)}
+                />
+                <span>
+                  <span className="block font-medium">{t(`settings.defaultSharing.options.${mode}.label`)}</span>
+                  <span className="block text-sm text-muted-foreground">
+                    {t(`settings.defaultSharing.options.${mode}.description`)}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          {defaultSharedWith === "SELECTED" ? (
+            <div className="space-y-3 rounded-2xl border p-4">
+              <div className="space-y-2">
+                <label htmlFor="booking-default-access-search" className="text-sm font-medium">
+                  {t("settings.defaultSharing.addUserOrGroup")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    id="booking-default-access-search"
+                    value={granteeSearch}
+                    minLength={2}
+                    disabled={mutation.isPending}
+                    onChange={(event) => setGranteeSearch(event.currentTarget.value)}
+                    className="min-w-48 flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={granteeSearch.trim().length < 2}
+                    onClick={() => setSubmittedGranteeSearch(granteeSearch.trim())}
+                  >
+                    {t("settings.defaultSharing.search")}
+                  </Button>
+                </div>
+              </div>
+              {grantees.data ? (
+                <ul aria-label={t("settings.defaultSharing.searchResults")} className="grid gap-2">
+                  {grantees.data
+                    .filter(({ key }) => !selectedGrantees.some((selected) => selected.key === key))
+                    .map((grantee) => (
+                      <li key={grantee.key} className="flex flex-wrap items-center justify-between gap-2">
+                        <span>{grantee.name}</span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedGrantees((current) => [...current, grantee])}
+                        >
+                          {t("settings.defaultSharing.addNamed", { name: grantee.name })}
+                        </Button>
+                      </li>
+                    ))}
+                </ul>
+              ) : null}
+              {grantees.isLoading ? (
+                <div aria-busy="true">
+                  <p role="status" className="sr-only">
+                    {t("settings.defaultSharing.loading")}
+                  </p>
+                  <Skeleton aria-hidden="true" className="h-9 w-full" />
+                </div>
+              ) : null}
+              {grantees.isError ? <p role="alert">{t("settings.defaultSharing.error")}</p> : null}
+              {grantees.isSuccess && grantees.data.length === 0 ? (
+                <p>{t("settings.defaultSharing.noResults")}</p>
+              ) : null}
+              <ul aria-label={t("settings.defaultSharing.selected")} className="grid gap-2">
+                {selectedGrantees.map((grantee) => (
+                  <li
+                    key={grantee.key}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted p-3"
+                  >
+                    <span>
+                      {grantee.name}
+                      {"available" in grantee && !grantee.available
+                        ? ` — ${t("settings.defaultSharing.unavailable")}`
+                        : null}
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedGrantees((current) => current.filter(({ key }) => key !== grantee.key))}
+                    >
+                      {t("settings.defaultSharing.removeNamed", { name: grantee.name })}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              {!sharingValid ? <FieldError>{t("settings.defaultSharing.required")}</FieldError> : null}
+            </div>
+          ) : null}
+        </fieldset>
         {mutation.isError ? (
           <FieldError>
             {t(
@@ -131,7 +273,7 @@ export function BookingSettingsContent() {
         {mutation.isSuccess && !dirty ? <p role="status">{t("settings.saved")}</p> : null}
         <Button
           type="submit"
-          disabled={mutation.isPending || !dirty || !displaySettingsValid}
+          disabled={mutation.isPending || !dirty || !displaySettingsValid || !sharingValid}
           aria-busy={mutation.isPending}
         >
           <SaveIcon aria-hidden="true" />

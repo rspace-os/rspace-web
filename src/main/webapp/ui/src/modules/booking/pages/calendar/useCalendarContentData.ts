@@ -14,19 +14,17 @@ import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
-import { useCalendarEvents } from "./calendarEvents";
 import { calendarDates } from "./calendarLayoutUtils";
+import { useCalendarEvents } from "./calendarEvents";
 
-export const calendarResourceConfig = resolveCollectionConfig({
+const calendarResourceConfig = resolveCollectionConfig({
   ...bookingConfigurationConfig,
   slug: "calendar-resources",
   defaultColumns: ["target"],
   pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
 } as const);
 
-export const calendarSearchParser = parseAsString
-  .withDefault("")
-  .withOptions({ history: "replace", clearOnDefault: true });
+const calendarSearchParser = parseAsString.withDefault("").withOptions({ history: "replace", clearOnDefault: true });
 
 export function useCalendarContentData() {
   const { date } = useSearch({ from: "/booking/calendar/" });
@@ -103,24 +101,25 @@ export function useCalendarContentData() {
         (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing")),
   );
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
+
   return {
-    beginCreation,
-    calendarSearch,
-    creationActive,
-    currentUser,
-    events,
-    layout,
     navigate,
-    preferences,
-    resourceConfigurations,
-    resourceTable,
-    resourceTargets,
-    selectedDate,
+    calendarSearch,
     setCalendarSearch,
-    setEventScopeIsFiltered,
+    currentUser,
+    view,
+    setView,
+    layout,
     setLayout,
     setResettingControls,
-    setView,
-    view,
+    setEventScopeIsFiltered,
+    preferences,
+    beginCreation,
+    creationActive,
+    selectedDate,
+    resourceTable,
+    resourceConfigurations,
+    events,
+    resourceTargets,
   };
 }

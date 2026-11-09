@@ -16,14 +16,14 @@ import {
   invalidateGetBooking,
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { detailPageClassName } from "@/modules/common/app/detailPageLayout";
+import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { BookingEventContext } from "./BookingEventContext";
-import { BookingEventSkeleton, eventColumnsClassName } from "./BookingEventSkeleton";
+import { BookingEventSkeleton } from "./BookingEventSkeleton";
 import { BookingMetadataAside } from "./BookingMetadataAside";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
@@ -198,7 +198,7 @@ export function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : eventColumnsClassName}>
+        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : detailColumnsClassName}>
           <Outlet />
           {editing && bookingItem.data ? (
             <div className="hidden @2xl:block">

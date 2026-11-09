@@ -7,7 +7,6 @@ import { useBookableItemConfiguration } from "@/modules/booking/creation/Bookabl
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import { isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
 import { type BookingDetails, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
-import { Panel, useBookingEvent } from "@/modules/booking/pages/bookings/BookingEventContext";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import {
@@ -17,6 +16,7 @@ import {
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { Panel, useBookingEvent } from "./BookingEventContext";
 
 function editable(booking: BookingDetails): booking is BookingDetails & { canEdit: true; state: "CONFIRMED" } {
   return booking.canEdit && booking.state === "CONFIRMED";

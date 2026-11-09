@@ -13,6 +13,7 @@ type BookableItemEventsInput = {
   limit: number;
 
   signal?: AbortSignal;
+  totals?: boolean;
 };
 
 function parameters(input: BookableItemEventsInput) {
@@ -31,6 +32,7 @@ function parameters(input: BookableItemEventsInput) {
   });
   return {
     where,
+    totals: input.totals || undefined,
     sort: input.period === "upcoming" ? "start,id" : "-end,-id",
     page: input.page + 1,
     limit: input.limit,

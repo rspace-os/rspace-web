@@ -5,8 +5,7 @@ import { Button } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { BookableItemSkeleton } from "./BookableItemSkeleton";
 import { bookingConfigurationTargetQuery } from "./bookingConfigurationApi";
-import { LoadedBookableItemPage } from "./LoadedBookableItemPage";
-import { type BookableItemTab } from "./useLoadedBookableItemPageActions";
+import { type BookableItemTab, LoadedBookableItemPage } from "./LoadedBookableItemPage";
 
 export function BookableItemDetailsLoader({ globalId, tab }: { globalId: string; tab: BookableItemTab }) {
   const { t } = useTranslation("booking");

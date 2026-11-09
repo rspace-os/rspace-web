@@ -7,7 +7,7 @@ import {
   BookingConfigurationActionsMenu,
   type BookingConfigurationLifecycleAction,
 } from "./BookingConfigurationActionsMenu";
-import { type BookingConfigurationRow } from "./bookingConfiguration";
+import type { BookingConfigurationRow } from "./bookingConfiguration";
 
 export function BookableItemActionTriggers({
   configuration,

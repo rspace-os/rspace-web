@@ -40,6 +40,7 @@ export function TimelineWindowEditor({
   onChange,
   tone = "booking",
   testId = "timeline-window-editor",
+  abovePopovers = onChange !== undefined,
 }: {
   anchor: HTMLElement | null;
   verticalAnchor?: HTMLElement | null;
@@ -50,6 +51,7 @@ export function TimelineWindowEditor({
   onChange?: (draft: BookingWindowDraft) => void;
   tone?: "booking" | "maintenance";
   testId?: string;
+  abovePopovers?: boolean;
 }) {
   const { t } = useTranslation("booking");
   const descriptionId = React.useId();
@@ -225,7 +227,8 @@ export function TimelineWindowEditor({
       data-testid={testId}
       className={cn(
         "absolute rounded-sm border-2 ring-3",
-        onChange ? "pointer-events-auto z-[60] max-sm:z-40" : "pointer-events-none z-40",
+        abovePopovers ? "z-[60] max-sm:z-40" : "z-40",
+        onChange ? "pointer-events-auto" : "pointer-events-none",
         tone === "maintenance"
           ? "border-amber-600 bg-amber-200/60 ring-amber-500/20"
           : "border-primary bg-primary/25 ring-ring/40",

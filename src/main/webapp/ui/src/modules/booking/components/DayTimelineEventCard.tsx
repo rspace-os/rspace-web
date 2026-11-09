@@ -6,16 +6,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/pop
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 import {
+  type DayTimelineActionRenderers,
   type DayTimelineEvent,
   dateForMinute,
   formatDayDate,
   formatMinute,
-  formatMinuteWithDayOffset,
   period,
 } from "./DayTimelineEvent";
 import { ExpandedEventCard } from "./ExpandedEventCard";
 
-export function EventIcon({ event }: { event: DayTimelineEvent }) {
+function EventIcon({ event }: { event: DayTimelineEvent }) {
   if (event.kind === "blockout") return <Wrench className="size-3.5 shrink-0" aria-hidden="true" />;
   if (event.privacy === "busy") return <LockKeyhole className="size-3.5 shrink-0" aria-hidden="true" />;
   return null;
@@ -43,9 +43,7 @@ export function DayTimelineEventCard({
   onExpandedChange?: (expanded: boolean) => void;
   collisionBoundary?: HTMLElement | null;
   expandedCardClassName?: string;
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
-}) {
+} & DayTimelineActionRenderers) {
   const { t } = useTranslation("booking");
   const detailsId = `${React.useId()}-details`;
   const [internalExpanded, setInternalExpanded] = React.useState(false);
@@ -56,20 +54,23 @@ export function DayTimelineEventCard({
   const setExpanded = onExpandedChange ?? setInternalExpanded;
   const title = event.kind === "blockout" || event.privacy === "full" ? event.title : t("dayTimeline.event.busy");
   const labelledTitle = event.kind === "booking" && event.privacy === "full" ? `${title} · ${event.bookedBy}` : title;
+  const isBusy = event.kind === "booking" && event.privacy === "busy";
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
   const exactPeriod = period(event, date, timezone);
   const accessibleLabel = notes
     ? t("dayTimeline.event.labelWithNotes", { title: labelledTitle, period: exactPeriod, notes })
     : t("dayTimeline.event.label", { title: labelledTitle, period: exactPeriod });
   const isBlockout = event.kind === "blockout";
-  const isBusy = event.kind === "booking" && event.privacy === "busy";
   const timeline = variant === "timeline";
   const expandsInPlace = isBusy && isExpanded;
   const startDate = dateForMinute(date, timezone, event.startMinute);
-  const endDate = dateForMinute(date, timezone, event.endMinute);
+  const endsAtMidnight = formatMinute(date, timezone, event.endMinute) === "00:00";
+  const endDate = dateForMinute(date, timezone, event.endMinute - (endsAtMidnight ? 1 : 0));
   const compactDate =
     startDate === endDate ? formatDayDate(startDate) : `${formatDayDate(startDate)} - ${formatDayDate(endDate)}`;
-  const compactPeriod = `${formatMinuteWithDayOffset(date, timezone, event.startMinute)} - ${formatMinuteWithDayOffset(date, timezone, event.endMinute)}`;
+  const compactPeriod = period(event, date, timezone, " - ");
+  const triggerClassName =
+    "absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60";
   const toggleLabel = isExpanded
     ? t("dayTimeline.event.hideDetails", { title: labelledTitle, period: exactPeriod })
     : t("dayTimeline.event.showDetails", { title: labelledTitle, period: exactPeriod });
@@ -127,9 +128,11 @@ export function DayTimelineEventCard({
       >
         {compactCards ? (
           <>
-            <span className="block truncate text-[10px]" data-event-date>
-              {compactDate}
-            </span>
+            {startDate !== date || endDate !== date ? (
+              <span className="block truncate text-[10px]" data-event-date>
+                {compactDate}
+              </span>
+            ) : null}
             <span className="block truncate text-[11px]" data-event-time-range>
               {compactPeriod}
             </span>
@@ -145,7 +148,7 @@ export function DayTimelineEventCard({
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={toggleLabel}
-          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+          className={triggerClassName}
           onClick={() => setExpanded(!isExpanded)}
           onKeyDown={(keyboardEvent) => {
             if (keyboardEvent.key !== "Escape" || !isExpanded) return;
@@ -160,7 +163,7 @@ export function DayTimelineEventCard({
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={toggleLabel}
-          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+          className={triggerClassName}
         />
       )}
       <span
@@ -216,6 +219,7 @@ export function DayTimelineEventCard({
     >
       {compactCard}
       <PopoverContent
+        positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
         id={detailsId}
         align="start"
         side="bottom"
@@ -225,7 +229,7 @@ export function DayTimelineEventCard({
         sticky
         finalFocus={false}
         className={cn(
-          "w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-sm border p-0 shadow-xl ring-4",
+          "max-sm:w-screen max-sm:max-h-[90dvh] max-sm:overflow-y-auto max-sm:rounded-b-none w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-sm border p-0 shadow-xl ring-4",
           expandedCardClassName,
           isBlockout ? "border-amber-600 ring-amber-500/15" : "border-primary ring-ring/20",
         )}

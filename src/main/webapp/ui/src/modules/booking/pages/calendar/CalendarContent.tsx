@@ -6,24 +6,24 @@ import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
   const {
-    beginCreation,
-    calendarSearch,
-    creationActive,
-    currentUser,
-    events,
-    layout,
     navigate,
-    preferences,
-    resourceConfigurations,
-    resourceTable,
-    resourceTargets,
-    selectedDate,
+    calendarSearch,
     setCalendarSearch,
-    setEventScopeIsFiltered,
+    currentUser,
+    view,
+    setView,
+    layout,
     setLayout,
     setResettingControls,
-    setView,
-    view,
+    setEventScopeIsFiltered,
+    preferences,
+    beginCreation,
+    creationActive,
+    selectedDate,
+    resourceTable,
+    resourceConfigurations,
+    events,
+    resourceTargets,
   } = useCalendarContentData();
 
   return (

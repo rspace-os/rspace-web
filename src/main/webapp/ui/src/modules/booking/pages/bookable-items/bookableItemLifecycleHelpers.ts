@@ -1,18 +1,18 @@
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { type BookingConfigurationRow } from "./bookingConfiguration";
+import type { BookingConfigurationRow } from "./bookingConfiguration";
+
+export type BookableItemsBulkAction = "enable" | "disable" | "archive";
 
 type BookableItemsLifecycleErrorKey =
   | "bookableItems.lifecycleErrors.restore"
   | "bookableItems.lifecycleErrors.stale"
   | "bookableItems.lifecycleErrors.stateChanged"
   | "bookableItems.permanentDeleteDialog.error";
-
 type BookableItemDetailLifecycleErrorKey =
   | "bookableItemDetails.lifecycleErrors.restore"
   | "bookableItemDetails.lifecycleErrors.stale"
   | "bookableItemDetails.lifecycleErrors.stateChanged"
   | "bookableItemDetails.permanentDeleteDialog.error";
-
 type LifecycleErrorKey = BookableItemsLifecycleErrorKey | BookableItemDetailLifecycleErrorKey;
 
 export function lifecycleErrorKey<
@@ -24,8 +24,6 @@ export function lifecycleErrorKey<
   if (error instanceof ApiV2ProblemError && error.status === 409) return stateChanged;
   return fallback;
 }
-
-export type BookableItemsBulkAction = "enable" | "disable" | "archive";
 
 export function requiredVersion(configuration: BookingConfigurationRow): number {
   if (configuration.configurationVersion === undefined) {

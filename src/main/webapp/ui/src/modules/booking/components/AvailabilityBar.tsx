@@ -1,7 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { CalendarClockIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import {
   type AvailabilityInterval,
   type AvailabilitySource,
@@ -13,7 +13,7 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverContent, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
-import { BookingSummaryAccordion } from "./BookingSummaryAccordion";
+import { BookingKindIcon } from "./BookingKindIcon";
 
 export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
 
@@ -76,44 +76,6 @@ function hasValidSource(interval: AvailabilityBarInterval): interval is SourcedA
 
 function hasBookingDetails(source: AvailabilitySource): source is DetailedBookingSource {
   return source.booking?.privacy === "full";
-}
-
-function BookingSourceAccordion({
-  accordionName,
-  item,
-  period,
-  showBookingContextDetails,
-  source,
-}: {
-  accordionName: string;
-  item: AvailabilityBarProps["item"];
-  period: string;
-  showBookingContextDetails: boolean;
-  source: DetailedBookingSource;
-}) {
-  const { t } = useTranslation("booking");
-  const maintenance = source.booking.kind === "MAINTENANCE";
-  const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
-
-  return (
-    <BookingSummaryAccordion
-      accordionName={accordionName}
-      heading={maintenance ? t("bookings.maintenanceLabel") : item.name}
-      summaryLabel={
-        maintenance
-          ? t("bookings.maintenanceLabel")
-          : actor
-            ? t("availabilityBar.slice.bookedBy", { user: actor })
-            : t("availabilityBar.slice.sources.booking")
-      }
-      period={period}
-      purpose={source.booking.purpose ?? null}
-      maintenance={maintenance}
-      item={maintenance || showBookingContextDetails ? item : undefined}
-      actor={maintenance || showBookingContextDetails ? actor : undefined}
-      detailsBookingId={source.booking.id}
-    />
-  );
 }
 
 export function AvailabilityBar({
@@ -383,35 +345,38 @@ export function AvailabilityBar({
                     </PopoverDescription>
                   </div>
                   <ul className="space-y-1">
-                    {contributors.map(({ kind, source }) =>
-                      hasBookingDetails(source) ? (
-                        <BookingSourceAccordion
-                          key={source.id}
-                          accordionName={accordionName}
-                          item={item}
-                          period={formatTimeRange(source)}
-                          showBookingContextDetails={showBookingContextDetails}
-                          source={source}
-                        />
-                      ) : (
+                    {contributors.map(({ kind, source }) => {
+                      if (hasBookingDetails(source)) {
+                        const maintenance = source.booking.kind === "MAINTENANCE";
+                        const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
+                        return (
+                          <BookingSummaryAccordion
+                            key={source.id}
+                            accordionName={accordionName}
+                            heading={maintenance ? t("bookings.maintenanceLabel") : item.name}
+                            summaryLabel={
+                              maintenance
+                                ? t("bookings.maintenanceLabel")
+                                : actor
+                                  ? t("availabilityBar.slice.bookedBy", { user: actor })
+                                  : t("availabilityBar.slice.sources.booking")
+                            }
+                            period={formatTimeRange(source)}
+                            canViewConfiguration={source.booking.canViewConfiguration}
+                            purpose={source.booking.purpose}
+                            maintenance={maintenance}
+                            item={maintenance || showBookingContextDetails ? item : undefined}
+                            actor={maintenance || showBookingContextDetails ? actor : undefined}
+                            detailsBookingId={source.booking.id}
+                          />
+                        );
+                      }
+                      return (
                         <li
                           key={source.id}
                           className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5"
                         >
-                          <span
-                            className={cn(
-                              "flex size-7 shrink-0 items-center justify-center rounded-sm",
-                              kind === "booking"
-                                ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
-                                : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-                            )}
-                          >
-                            {kind === "booking" ? (
-                              <CalendarClockIcon className="size-4" aria-hidden="true" />
-                            ) : (
-                              <WrenchIcon className="size-4" aria-hidden="true" />
-                            )}
-                          </span>
+                          <BookingKindIcon maintenance={kind !== "booking"} />
                           <span className="min-w-0 flex-1">
                             <span className="block text-xs font-medium">
                               {source.booking?.kind === "MAINTENANCE"
@@ -423,8 +388,8 @@ export function AvailabilityBar({
                             <span className="block text-[11px] text-muted-foreground">{formatTimeRange(source)}</span>
                           </span>
                         </li>
-                      ),
-                    )}
+                      );
+                    })}
                   </ul>
                 </PopoverContent>
               </AvailabilitySlicePopover>

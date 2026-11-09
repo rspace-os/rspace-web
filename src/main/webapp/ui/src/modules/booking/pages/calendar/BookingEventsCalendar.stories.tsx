@@ -2,10 +2,9 @@ import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import * as React from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { type CalendarLayout, type CalendarView } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { busyBooking, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
-import { BookingEventsCalendar } from "./BookingEventsCalendar";
+import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
 
 function InteractiveCalendar() {
   const [date, setDate] = React.useState("2026-08-17");

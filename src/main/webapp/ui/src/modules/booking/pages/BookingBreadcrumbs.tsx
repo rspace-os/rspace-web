@@ -3,10 +3,10 @@ import { ChevronRightIcon } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-export const breadcrumbLinkClassName =
+const breadcrumbLinkClassName =
   "rounded-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export type BreadcrumbItem = {
+type BreadcrumbItem = {
   key: string;
   content: ReactNode;
 };

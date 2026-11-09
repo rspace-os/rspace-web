@@ -1,11 +1,11 @@
-import * as React from "react";
-import { ActiveBookingCreationDialog } from "./ActiveBookingCreationDialog";
-import { useBookingCreationStore } from "./bookingCreationStore";
+import { useEffect } from "react";
+import { ActiveBookingCreationDialog } from "@/modules/booking/creation/ActiveBookingCreationDialog";
+import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 
 export function CompactBookingCreationDialog() {
   const creation = useBookingCreationStore((state) => state.activeCreation);
   const endCreation = useBookingCreationStore((state) => state.endCreation);
-  React.useEffect(
+  useEffect(
     () => () => {
       if (creation) endCreation(creation.ownerId);
     },

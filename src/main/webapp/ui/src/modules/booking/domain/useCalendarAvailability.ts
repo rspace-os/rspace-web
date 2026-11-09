@@ -19,11 +19,17 @@ import { requireBookingValue as required } from "./bookingMapping";
 
 type AvailabilityPage = Awaited<ReturnType<typeof fetchPage>>;
 const MAX_TARGETS_PER_BATCH = 500;
+
 const MAX_REQUEST_BYTES = 6000; // Leaves headroom for browser/proxy headers outside application control.
+
 const MAX_REQUEST_HEADER_BYTES = 8192;
+
 const MAX_FILTER_ARGUMENTS = 1000;
+
 const MAX_FILTER_COMPARISONS = 50;
+
 const MAX_ENCODED_WHERE_BYTES = 32768;
+
 const MAX_BOOKINGS_PER_BATCH = 1000;
 
 function bookingWhere(globalIds: readonly string[], start: string, end: string): string {

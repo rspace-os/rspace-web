@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type TableListSelectionContext } from "@/modules/common/table-list/TableList";
+import type { TableListSelectionContext } from "@/modules/common/table-list/TableList";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/modules/common/ui/alert-dialog";
 import { Button } from "@/modules/common/ui/button";
-import { type BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
+import type { BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
 
 export function BookableItemsBulkActions({
   selection,
@@ -29,14 +29,12 @@ export function BookableItemsBulkActions({
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [confirming, setConfirming] = useState<"disable" | "archive" | null>(null);
-  const error =
-    failedAction === "enable"
-      ? t("bookableItems.bulk.errors.enable")
-      : failedAction === "disable"
-        ? t("bookableItems.bulk.errors.disable")
-        : failedAction === "archive"
-          ? t("bookableItems.bulk.errors.archive")
-          : null;
+  const errorKeys = {
+    enable: "bookableItems.bulk.errors.enable",
+    disable: "bookableItems.bulk.errors.disable",
+    archive: "bookableItems.bulk.errors.archive",
+  } as const;
+  const error = failedAction === null ? null : t(errorKeys[failedAction]);
 
   const runAction = async (action: BookableItemsBulkAction) => {
     try {
@@ -94,7 +92,9 @@ export function BookableItemsBulkActions({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirming === "disable"
-                ? t("bookableItems.bulk.disableDialog.title", { count: selection.selectedRowIds.size })
+                ? t("bookableItems.bulk.disableDialog.title", {
+                    count: selection.selectedRowIds.size,
+                  })
                 : t("bookableItems.bulk.archiveDialog.title", { count: selection.selectedRowIds.size })}
             </AlertDialogTitle>
             <AlertDialogDescription>
