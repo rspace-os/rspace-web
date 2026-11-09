@@ -167,6 +167,7 @@ public final class ApiV2OpenApiGenerator {
           operations.operation(resource, operation, component, resourceSchemas, referenced));
     }
     runtimeFields.addRuntimeFieldsPath(paths, resource);
+    addResourceAccessPaths(paths, resource, component);
   }
 
   private void addResourceAccessPaths(
