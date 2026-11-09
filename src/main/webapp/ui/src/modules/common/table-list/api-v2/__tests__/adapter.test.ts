@@ -435,6 +435,9 @@ it("validates sparse wire fields before mapping them to domain rows", () => {
   expect(adapter.parseResponse({ docs: [{ id: "1", title: "One" }] }, ["id", "title"]).rows).toEqual([
     { id: "1", title: "One" },
   ]);
+  expect(
+    adapter.parseResponse({ items: [{ id: "3", title: "Three" }], total: 3, page: 1, pageSize: 2 }, ["id", "title"]),
+  ).toMatchObject({ rows: [{ id: "3", title: "Three" }], rowCount: 3, hasNextPage: true });
   expect(() => adapter.parseResponse({ docs: [{ id: "2", title: 42 }] }, ["id", "title"])).toThrow();
-  expect(mapped).toBe(1);
+  expect(mapped).toBe(2);
 });

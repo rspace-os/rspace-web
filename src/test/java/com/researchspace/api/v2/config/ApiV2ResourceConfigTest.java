@@ -54,13 +54,13 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.ResourceMutationManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.inventory.RuntimeFieldNamespaces;
 import com.researchspace.service.inventory.ContainerReadAccess;
 import com.researchspace.service.inventory.ContainerReadManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
-import com.researchspace.service.inventory.RuntimeFieldNamespaces;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -120,13 +120,7 @@ class ApiV2ResourceConfigTest {
 
       var document =
           new ObjectMapper()
-              .valueToTree(
-                  new ApiV2OpenApiGenerator(
-                          catalog,
-                          com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
-                          "Test",
-                          "2")
-                      .generate());
+              .valueToTree(new ApiV2OpenApiGenerator(catalog, com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(), "Test", "2").generate());
       String metadata = document.toString();
       assertTrue(metadata.contains("target.customFields"));
       assertTrue(metadata.contains("target.extraFields"));
@@ -236,8 +230,7 @@ class ApiV2ResourceConfigTest {
 
   static AnnotationConfigApplicationContext newContext() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-    context.registerBean(
-        "messageSource", org.springframework.context.MessageSource.class, JsonMessageSource::new);
+    context.registerBean("messageSource", org.springframework.context.MessageSource.class, JsonMessageSource::new);
     context.registerBean(ResourceMutationManager.class, ResourceMutationManager::new);
     context.registerBean(MaintenanceManager.class, () -> mock(MaintenanceManager.class));
     context.registerBean(UserManager.class, () -> mock(UserManager.class));
