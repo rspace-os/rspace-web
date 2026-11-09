@@ -1,5 +1,16 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiAuditDocs.auditPage;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.operationAccessExtension;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.field;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.scalarSchema;
+import com.researchspace.api.v2.resource.IdempotencyPolicy;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.FieldSchema;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.addResourceAccessSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas;
@@ -108,8 +119,28 @@ final class ApiV2OpenApiOperations {
             schema,
             resourceSchemas,
             resource.registry(),
-            runtimeFields.runtimeFieldsExtension(resource),
-            text);
+            runtimeFields.runtimeFieldsExtension(resource), text);
+    if (operation == ResourceOperation.CREATE
+        && resource.mutationPolicy().idempotency() == IdempotencyPolicy.CREATOR_SCOPED) {
+      parameters.add(
+          components.reference(
+              PARAMETERS,
+              "IdempotencyKey",
+              parameter(
+                  "Idempotency-Key",
+                  "header",
+                  false,
+                  ordered(
+                      "type",
+                      "string",
+                      "minLength",
+                      1,
+                      "maxLength",
+                      64,
+                      "pattern",
+                      "^[A-Za-z0-9._:-]+$"),
+                  text.get(Key.PARAMETER_IDEMPOTENCY_KEY))));
+    }
     if (resource.mutationPolicy().version().field().isPresent()
         && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
       boolean required = requiresIfMatch(resource, operation);
@@ -228,6 +259,18 @@ final class ApiV2OpenApiOperations {
         operation == ResourceOperation.COUNT && !documentedSuccess
             ? components.reference(RESPONSES, "CountResult", success)
             : success);
+    if (operation == ResourceOperation.CREATE
+        && resource.mutationPolicy().idempotency() == IdempotencyPolicy.CREATOR_SCOPED) {
+      responses.put(
+          "200",
+          ordered(
+              "description",
+              text.get(Key.RESPONSE_CREATE_RETRY),
+              "headers",
+              rateLimitHeaders(),
+              "content",
+              Map.of(APPLICATION_JSON_VALUE, successMedia)));
+    }
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
       responses.put(

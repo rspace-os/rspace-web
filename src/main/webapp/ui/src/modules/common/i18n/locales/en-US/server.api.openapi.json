@@ -84,7 +84,8 @@
           "sort": "Comma-separated sortable fields; prefix descending fields with '-'. At most {0} fields.",
           "totals": "Include totalDocs and totalIsLowerBound. Defaults to false.",
           "where": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.",
-          "whereWithRuntimeFields": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields."
+          "whereWithRuntimeFields": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+          "idempotencyKey": "Creator-scoped request identity, retained for the resource lifetime."
         },
         "resourceAccess": {
           "assignmentAbsent": "The direct assignment is absent.",
@@ -124,7 +125,8 @@
           "unauthenticated": "Authentication is required.",
           "unexpectedError": "An unexpected server error occurred.",
           "unsupportedMediaType": "The request media type is unsupported.",
-          "versionChanged": "The resource version changed."
+          "versionChanged": "The resource version changed.",
+          "createRetry": "Current resource returned for an identical create retry."
         },
         "runtimeFields": {
           "ids": "Comma-separated field identifiers.",

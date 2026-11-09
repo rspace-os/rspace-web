@@ -43,8 +43,8 @@ Paths below are relative to `src/main/webapp/ui/`:
 | 6. | `src/modules/common/api/v2/generated/valibot/operations.ts` | `apiV2Operations`, keyed by operation ID, with optional JSON request schemas, JSON success schemas by status and content type, and public/session flags. Downloads and empty operations retain entries without JSON body schemas. |
 
 Backend `operationId` values determine generated names. Collection names are plural, such as
-`listInstruments` and `countInstruments`; single-record names are singular, such as
-`getInstrument`. Fix names in the backend. There is no Orval operation-name
+`listBookings`, `countBookings` and `createManyBookings`; single-record names are singular, such as
+`getBooking` and `updateBooking`. Fix names in the backend. There is no Orval operation-name
 override or input transformer. 
 
 ## Transport and errors
@@ -98,7 +98,7 @@ prevents reload loops. Same-identity refreshes do not reload.
 
 ## Query keys and invalidation
 
-Use Orval's keys with the shape `[path, params?]`. Use a full path such as `/api/v2/instruments/42`.
+Use Orval's keys with the shape `[path, params?]`. Use a full path such as `/api/v2/bookings/42`.
 Suspense and ordinary hooks share keys. Do not add resource-root key factories or identity scopes.
 Identity changes reload the page through the provider. Current-user identity still supplies Table
 List `dataScope` metadata and runtime-field selection resets; those values are not query-key

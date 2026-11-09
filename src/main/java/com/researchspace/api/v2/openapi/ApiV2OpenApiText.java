@@ -145,7 +145,9 @@ public final class ApiV2OpenApiText {
     AUDIT_SUCCESS("audit.success"),
     AUDIT_INVALID("audit.invalid"),
     AUDIT_UNAVAILABLE("audit.unavailable"),
-    AUDIT_SUMMARY("audit.summary");
+    AUDIT_SUMMARY("audit.summary"),
+    PARAMETER_IDEMPOTENCY_KEY("parameters.idempotencyKey"),
+    RESPONSE_CREATE_RETRY("responses.createRetry");
 
     static final String PREFIX = "api.v2.openapi.";
 
