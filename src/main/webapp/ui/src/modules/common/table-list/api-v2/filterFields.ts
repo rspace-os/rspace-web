@@ -308,6 +308,39 @@ function assertPublishedOptions(
     throw new Error(`Select field ${name} offers values the API does not publish: ${unpublished.join(", ")}`);
 }
 
+type ChildField = FieldConfig<Record<string, unknown>>;
+
+/**
+ * The API declares each child's type and constraints; the collection config supplies what users read: labels,
+ * descriptions and option labels. A child keeps the declared constraints and takes a configured child of the same
+ * type as its presentation; a child of another type takes only the configured label.
+ */
+function withConfiguredChildren(declared: readonly ChildField[], configured: readonly ChildField[]): ChildField[] {
+  return declared.map((child) => {
+    const own = configured.find((candidate) => candidate.name === child.name);
+    if (!own) return child;
+    if (own.type !== child.type)
+      return { ...child, labelKey: own.labelKey, label: own.label, derivedLabel: own.derivedLabel };
+    const merged = {
+      ...own,
+      required: child.required,
+      nullable: child.nullable,
+      readOnly: child.readOnly,
+      defaultValue: child.defaultValue,
+      writeConstraints: child.writeConstraints,
+    };
+    if (merged.type === "text" && child.type === "text") return { ...merged, maximumLength: child.maximumLength };
+    if ((merged.type === "array" || merged.type === "object") && (child.type === "array" || child.type === "object"))
+      return {
+        ...merged,
+        minRows: child.minRows,
+        maxRows: child.maxRows,
+        fields: withConfiguredChildren(child.fields, merged.fields),
+      };
+    return merged;
+  });
+}
+
 export function createApiV2FilterFields<TDocument>({
   config: sourceConfig,
   metadata,
@@ -324,11 +357,26 @@ export function createApiV2FilterFields<TDocument>({
     if (localFields.includes(field.name)) return field;
     if (field.type === "select" && selector?.values)
       assertPublishedOptions(String(field.name), field.options, selector.values);
+    let sourceField = field;
+    const structured = metadata.structuredFields?.[field.name];
+    if ((field.type === "array" || field.type === "object") && metadata.structuredFields !== undefined) {
+      if (!structured) throw new Error(`OpenAPI field ${field.name} must declare x-rspace-fields`);
+      if (structured.type !== field.type)
+        throw new Error(`OpenAPI field ${field.name} has a different structured type`);
+      sourceField = {
+        ...field,
+        ...structured,
+        readOnly: field.readOnly || structured.readOnly,
+        fields: withConfiguredChildren(structured.fields, field.fields),
+      };
+    } else if (structured && field.type !== "relationship") {
+      throw new Error(`Collection config field ${field.name} must use type ${structured.type}`);
+    }
     const picker = selector?.picker;
     return {
-      ...field,
+      ...sourceField,
       ...(picker === undefined ? {} : { filterPicker: picker }),
-      capabilities: capabilitiesForSelector(field, metadata, selector),
+      capabilities: capabilitiesForSelector(sourceField, metadata, selector),
     };
   });
 

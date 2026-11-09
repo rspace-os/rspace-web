@@ -20,3 +20,15 @@ export type RelationshipOptionAvailabilitySource = {
   renderUnavailable: (option: RelationshipOption, status: UnavailableRelationshipOption) => ReactNode;
   renderAction?: (option: RelationshipOption, status: UnavailableRelationshipOption) => ReactNode;
 };
+
+export type ToOneRelationshipValue<
+  TValue extends string | number | { id: string | number } = string | number | { id: string | number },
+> = {
+  relationTo: string;
+  value: TValue;
+  globalId?: string;
+};
+
+export type RelationshipOptions = Readonly<Record<string, readonly RelationshipOption[]>>;
+
+export type RelationshipOptionAvailability = Readonly<Record<string, RelationshipOptionAvailabilitySource | undefined>>;

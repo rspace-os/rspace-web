@@ -5,15 +5,18 @@ import type { OpenApiDocument } from "orval";
 import * as v from "valibot";
 import { dereferenceApiV2OpenApi } from "../../src/modules/common/api/v2/openApiReferences.ts";
 import {
+  type ApiV2MetadataChild,
   metadataAllowedFieldsSchema,
   metadataDocumentSchema,
   metadataFilterSchema,
   metadataLimitSchema,
   metadataOperationSchema,
   metadataReadSchema,
+  metadataRowBoundsSchema,
   metadataRuntimeFieldsSchema,
   metadataSelectorsSchema,
   metadataSortSchema,
+  metadataStructuredPropertySchema,
   metadataWhereSchema,
 } from "../../src/modules/common/table-list/api-v2/metadataSchemas.ts";
 import { objectInput, runtimeFieldCatalogRoute } from "../../src/modules/common/table-list/api-v2/schemaPrimitives.ts";
@@ -34,6 +37,72 @@ function parseOpenApiSection<TSchema extends v.GenericSchema>(
     return path ? `${path}: ${issue.message}` : issue.message;
   });
   throw new Error(`OpenAPI ${section}: Validation failed: ${issues.join("; ")}`);
+}
+
+/** A structured field's children, in the shape of the table list's `FieldConfig`. */
+function declaredChildren(children: readonly ApiV2MetadataChild[], parent: string): Record<string, unknown>[] {
+  return children.map((child) => {
+    const { name, type: schema, writeConstraints, openApi } = child;
+    const path = `${parent}.${name}`;
+    const common = {
+      name,
+      required: child.requiredOnCreate,
+      nullable: child.nullable,
+      readOnly: child.readOnly,
+      ...(child.defaultValue == null ? {} : { defaultValue: child.defaultValue }),
+      writeConstraints,
+    };
+    if (schema.jsonType === "array" || schema.jsonType === "object") {
+      if (child.fields.length === 0) throw new Error(`OpenAPI ${path} child fields: at least one child is required`);
+      return {
+        ...common,
+        type: schema.jsonType,
+        fields: declaredChildren(child.fields, path),
+        ...(schema.jsonType === "array" ? parseOpenApiSection(metadataRowBoundsSchema, writeConstraints, path) : {}),
+      };
+    }
+    if (child.fields.length !== 0) throw new Error(`OpenAPI scalar field ${path} cannot declare child fields`);
+    switch (schema.jsonType) {
+      case "integer":
+      case "number":
+        return { ...common, type: "number" };
+      case "boolean":
+        return { ...common, type: "boolean" };
+      case "string": {
+        const options = writeConstraints.enum ?? schema.structure.enum;
+        if (options !== undefined) return { ...common, type: "select", options };
+        if ((openApi.format ?? schema.format) === "date-time") return { ...common, type: "dateTime" };
+        const maximumLength = writeConstraints.maxLength ?? schema.maxLength;
+        return { ...common, type: "text", ...(maximumLength == null ? {} : { maximumLength }) };
+      }
+      default:
+        throw new Error(`OpenAPI ${path} has an unsupported field type`);
+    }
+  });
+}
+
+/** The Read component's properties that declare `x-rspace-fields`, keyed by property name. */
+function structuredFields(properties: Record<string, Record<string, unknown>>) {
+  return Object.fromEntries(
+    Object.entries(properties)
+      .filter(([, property]) => property["x-rspace-fields"] !== undefined)
+      .map(([name, property]) => {
+        const parsed = parseOpenApiSection(metadataStructuredPropertySchema, property, name);
+        const type = parsed.type;
+        if (type !== "array" && type !== "object")
+          throw new Error(`OpenAPI ${name} has x-rspace-fields on a scalar field`);
+        return [
+          name,
+          {
+            type,
+            fields: declaredChildren(parsed["x-rspace-fields"], name),
+            nullable: Array.isArray(property.type) && property.type.includes("null"),
+            readOnly: parsed.readOnly,
+            ...(type === "array" ? parseOpenApiSection(metadataRowBoundsSchema, property, name) : {}),
+          },
+        ];
+      }),
+  );
 }
 
 function operationsOfKind(paths: Record<string, unknown>, kind: string): [string, Record<string, unknown>][] {
@@ -123,10 +192,11 @@ function collectionMetadata(
   const definition = component === undefined ? undefined : root.components.schemas[component];
   if (component === undefined || definition === undefined)
     throw new Error(`OpenAPI Read component ${component ?? item.$ref} was not found`);
-  parseOpenApiSection(metadataReadSchema, definition, `${component} Read component`);
+  const read = parseOpenApiSection(metadataReadSchema, definition, `${component} Read component`);
   return {
     resourceName,
     fields,
+    structuredFields: structuredFields(read.properties),
     sorting: { fields: sort.fields, default: sort.default, maximumFields: sort.maximumFields },
     filtering: {
       selectors,

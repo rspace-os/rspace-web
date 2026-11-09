@@ -1,0 +1,19 @@
+{
+  "fields": {
+    "collaborators": "Collaborators",
+    "enabled": "Enabled",
+    "id": "ID",
+    "modified": "Modified",
+    "notes": "Notes",
+    "owner": "Owner",
+    "score": "Score",
+    "status": "Status",
+    "title": "Title",
+    "titleDescription": "The human-readable name of the record."
+  },
+  "inventoryItem": "Inventory item",
+  "record": "Research record",
+  "recordDetails": "Record details",
+  "records": "Research records",
+  "relationships": "Relationships"
+}
