@@ -2,6 +2,7 @@ import { CalendarClockIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-rea
 import {
   type ComponentProps,
   createContext,
+  type ReactNode,
   type SetStateAction,
   useContext,
   useEffect,
@@ -10,6 +11,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
@@ -30,7 +32,7 @@ export type DashboardCalendarContextValue = {
 
 export const DashboardCalendarContext = createContext<DashboardCalendarContextValue | null>(null);
 
-function RestrictedBookingRow({ heading, period, label }: { heading: string; period: string; label: string }) {
+function RestrictedBookingRow({ heading, period, label }: { heading: string; period: ReactNode; label: string }) {
   return (
     <li className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5">
       <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
@@ -59,6 +61,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
   const bookingSignature = bookings.map((booking) => `${booking.id}:${booking.start}:${booking.end}`).join("|");
   const [requestedPage, setRequestedPage] = useState(0);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const accordionName = `${dateKey}-${useId()}`;
 
   useEffect(() => {
@@ -111,6 +114,8 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
         </Badge>
       </PopoverTrigger>
       <PopoverContent
+        ref={popupRef}
+        initialFocus={popupRef}
         side="bottom"
         align="start"
         sideOffset={8}
@@ -131,8 +136,23 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
             (() => {
               const itemName = booking.target?.value.name ?? t("calendar.feed.unknownItem");
               const period = formatAgendaPeriod(booking.start, booking.end, timeZone, locale);
+              const periodContent = (
+                <BookingInstrumentTimeTooltip
+                  start={booking.start}
+                  end={booking.end}
+                  displayTimeZone={timeZone}
+                  instrumentTimeZone={booking.timezone}
+                >
+                  {period}
+                </BookingInstrumentTimeTooltip>
+              );
               return booking.privacy === "busy" ? (
-                <RestrictedBookingRow key={booking.id} heading={itemName} period={period} label={t("calendar.busy")} />
+                <RestrictedBookingRow
+                  key={booking.id}
+                  heading={itemName}
+                  period={periodContent}
+                  label={t("calendar.busy")}
+                />
               ) : (
                 <BookingSummaryAccordion
                   key={booking.id}
@@ -140,6 +160,12 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
                   heading={itemName}
                   summaryLabel={itemName}
                   period={period}
+                  periodTooltip={{
+                    start: booking.start,
+                    end: booking.end,
+                    displayTimeZone: timeZone,
+                    instrumentTimeZone: booking.timezone,
+                  }}
                   purpose={booking.purpose}
                   detailsBookingId={booking.id}
                 />
