@@ -190,7 +190,8 @@ public final class BookingConfigurationResourceOperations
                                     == BookingConfigurationLifecycleException.class))
                 .toList())
         .mutationLimits(ApiV2BookingConfigurationResource.MUTATION_LIMITS)
-        .resourceAccess(new ResourceAccessSpec<>(protectedResourceAccess))
+        .resourceAccess(
+            new ResourceAccessSpec<>(protectedResourceAccess))
         .audit(
             new ResourceAuditPolicy<>(
                 (id, actor) ->
