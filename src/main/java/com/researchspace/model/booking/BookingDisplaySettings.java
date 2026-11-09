@@ -16,10 +16,13 @@ public record BookingDisplaySettings(
   public static final String DEFAULT_AVAILABILITY_WINDOW_END = "18:00";
   public static final BookingTimezoneMode DEFAULT_TIMEZONE_MODE = BookingTimezoneMode.BROWSER;
 
-  private static final Pattern START_TIME =
-      Pattern.compile(BookingOpeningHoursCodec.WALL_TIME_PATTERN);
-  private static final Pattern END_TIME =
-      Pattern.compile(BookingOpeningHoursCodec.CLOSING_TIME_PATTERN);
+  public static final String AVAILABILITY_WINDOW_START_PATTERN =
+      BookingOpeningHoursCodec.WALL_TIME_PATTERN;
+  public static final String AVAILABILITY_WINDOW_END_PATTERN =
+      BookingOpeningHoursCodec.CLOSING_TIME_PATTERN;
+
+  private static final Pattern START_TIME = Pattern.compile(AVAILABILITY_WINDOW_START_PATTERN);
+  private static final Pattern END_TIME = Pattern.compile(AVAILABILITY_WINDOW_END_PATTERN);
 
   public BookingDisplaySettings {
     if (timezoneMode != BookingTimezoneMode.CUSTOM) {
