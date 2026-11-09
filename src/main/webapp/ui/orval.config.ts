@@ -6,7 +6,10 @@ import { crossResourceInvalidation } from "./src/modules/common/api/v2/crossReso
 const spec: Document = JSON.parse(
   readFileSync(new URL("./src/modules/common/api/v2/openapi.generated.json", import.meta.url), "utf8"),
 );
+// Historical names are harmless at later layers: only operations present in the spec become overrides.
 const headersOperations = new Set([
+  "createOrReplaceBookingCalendarSubscription",
+  "createOrReplaceUserBookingCalendarSubscription",
   "getBookingCalendarSubscription",
   "createBookingCalendarSubscription",
   "rotateBookingCalendarSubscription",

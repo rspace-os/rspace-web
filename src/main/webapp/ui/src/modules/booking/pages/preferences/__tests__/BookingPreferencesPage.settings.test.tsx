@@ -12,7 +12,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense, useSyncExternalStore } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
@@ -23,7 +23,7 @@ import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/c
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import BookingPreferencesPage from "../BookingPreferencesPage";
 import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
-import { renderPage } from "./bookingPreferencesPageTestUtils";
+import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
 
 function BookingPreferencesQueryProbe() {
   const queryClient = useQueryClient();
@@ -41,6 +41,8 @@ function BookingPreferencesQueryProbe() {
 }
 
 describe("BookingPreferencesPage", () => {
+  beforeEach(() => useDefaultBookingPreferencesHandlers());
+
   it("saves one complete preference and replaces the shared query cache", async () => {
     let body: unknown;
     server.use(

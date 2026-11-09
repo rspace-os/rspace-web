@@ -28,6 +28,8 @@ function PreferencesSkeleton() {
           ))}
           <Skeleton className="h-9 w-56" />
         </div>
+        <Separator />
+        <Skeleton className="h-32 w-full max-w-2xl" />
       </div>
     </main>
   );

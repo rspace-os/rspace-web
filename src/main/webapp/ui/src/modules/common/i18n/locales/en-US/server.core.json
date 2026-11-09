@@ -35,6 +35,10 @@
     "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
     "api": {
       "v2": {
+        "bookingCalendar": {
+          "ifMatchRequired": "The current calendar subscription version is required.",
+          "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
+        },
         "forbidden": "You do not have permission to perform this action.",
         "invalidRequest": "The request contains an invalid value.",
         "authenticationRequired": "Authentication is required.",

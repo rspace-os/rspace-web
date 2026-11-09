@@ -85,11 +85,14 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from ClustermarketEquipment");
     jdbcTemplate.update("delete from FeatureFlagUserOverride");
     jdbcTemplate.update("delete from FeatureFlagBaseline");
+    jdbcTemplate.update("delete from BookingDefaultAccessGrantee_AUD");
+    jdbcTemplate.update("delete from BookingDefaultAccessGrantee");
+    jdbcTemplate.update("delete from BookableItemCalendarSubscription");
     jdbcTemplate.update("delete from BookingConfigurationDefaults_AUD");
     jdbcTemplate.update(
         "update BookingConfigurationDefaults set slotGranularityMinutes = 5, openingHours = ?,"
             + " bufferBeforeMinutes = 0, bufferAfterMinutes = 0, maxBookingDurationMinutes = 0,"
-            + " allowDoubleBooking = 0, configurationVersion = 0",
+            + " allowDoubleBooking = 0, defaultSharedWith = 'ALL_USERS', configurationVersion = 0",
         BookingOpeningHoursCodec.openingHoursJson(BookingSchedulingSettings.DEFAULT_OPENING_HOURS));
 
     jdbcTemplate.update("delete from OAuthApp where id > 0");
@@ -187,6 +190,7 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from FormUserMenu");
     jdbcTemplate.update("delete from UserPreference");
     jdbcTemplate.update("delete from UserApiKey");
+    jdbcTemplate.update("delete from UserBookingCalendarSubscription");
     jdbcTemplate.update("delete from ArchivalCheckSum");
     jdbcTemplate.update("delete from InventoryChoiceFieldDef");
     jdbcTemplate.update("delete from InventoryRadioFieldDef");

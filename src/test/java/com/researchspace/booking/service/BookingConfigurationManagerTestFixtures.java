@@ -5,13 +5,14 @@ import static com.researchspace.booking.service.BookingConfigurationManagerTestF
 import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
-import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
@@ -25,7 +26,13 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,21 +47,20 @@ final class BookingConfigurationManagerTestFixtures {
   static final int OVERSIZED_MUTATION_LIMIT =
       ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
 
-  final AuditDao auditDao = mock(AuditDao.class);
-
   final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   final BookingConfigurationDefaultsDao defaultsDao = mock(BookingConfigurationDefaultsDao.class);
   final InstrumentDao instrumentDao = mock(InstrumentDao.class);
+  final BookingCalendarSubscriptionDao calendarSubscriptions =
+      mock(BookingCalendarSubscriptionDao.class);
   final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
 
   final User actor = mock(User.class);
   final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
-  final BookingItemPermissions itemPermissions = mock(BookingItemPermissions.class);
+  final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
   final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
   final BookingConfigurationManager manager =
       new BookingConfigurationManagerImpl(
-          auditDao,
           dao,
           defaultsDao,
           instrumentDao,
@@ -62,7 +68,9 @@ final class BookingConfigurationManagerTestFixtures {
           events,
           resourceRegistry,
           ApiV2BookingConfigurationResource.DESCRIPTION,
-          itemPermissions,
+          accessManager,
+          new MessageSourceUtils(new JsonMessageSource()),
+          calendarSubscriptions,
           timeSlotBookings);
 
   void setUp() {
@@ -92,17 +100,15 @@ final class BookingConfigurationManagerTestFixtures {
                 BookingResourceRoleScheme.READ_RESOURCE,
                 BookingResourceRoleScheme.EDIT_CONFIGURATION),
             List.of());
-    when(itemPermissions.resolve(any(BookingConfiguration.class), eq(actor)))
+    when(accessManager.resolve(nullable(ResourceAccess.class), eq(actor))).thenReturn(ownerAccess);
+    when(accessManager.resolveForMutation(nullable(ResourceAccess.class), eq(actor)))
         .thenReturn(ownerAccess);
-    when(itemPermissions.resolveForMutation(any(BookingConfiguration.class), eq(actor)))
-        .thenReturn(ownerAccess);
-    when(itemPermissions.resolveAll(any(), eq(actor)))
+    when(accessManager.resolveAll(any(), eq(actor)))
         .thenAnswer(
             invocation -> {
-              List<BookingConfiguration> configurations = invocation.getArgument(0);
+              List<ResourceAccess> accesses = invocation.getArgument(0);
               Map<Long, ResolvedResourceAccess> result = new HashMap<>();
-              configurations.forEach(
-                  configuration -> result.put(configuration.getId(), ownerAccess));
+              accesses.forEach(access -> result.put(access.getId(), ownerAccess));
               return result;
             });
   }
@@ -126,6 +132,11 @@ final class BookingConfigurationManagerTestFixtures {
     configuration.setTimeZone("UTC");
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, targetId));
+    ResourceAccess access =
+        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, null, new Date());
+    access.setId(targetId);
+    access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, actor));
+    configuration.setResourceAccess(access);
     return configuration;
   }
 

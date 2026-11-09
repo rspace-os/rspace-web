@@ -14,6 +14,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
@@ -44,6 +45,8 @@ class BookingConfigurationLifecycleTest {
   private final BookingConfigurationManagerTestFixtures fixture =
       new BookingConfigurationManagerTestFixtures();
   private final BookingConfigurationDao dao = fixture.dao;
+  private final BookingCalendarSubscriptionDao calendarSubscriptions =
+      fixture.calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings = fixture.timeSlotBookings;
   private final User actor = fixture.actor;
   private final ApplicationEventPublisher events = fixture.events;
@@ -86,6 +89,7 @@ class BookingConfigurationLifecycleTest {
     assertSame(actor, second.getUpdatedBy());
     verify(dao).saveAndFlush(configuration);
     verify(dao, never()).remove(any());
+    verify(calendarSubscriptions).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
     verify(events, times(2))
         .publishEvent(
@@ -106,6 +110,7 @@ class BookingConfigurationLifecycleTest {
 
     verify(dao, never()).saveAndFlush(any());
     verify(dao, never()).remove(any());
+    verify(calendarSubscriptions, never()).deleteByConfigurationId(any());
     verify(events, never()).publishEvent(any());
   }
 
@@ -132,6 +137,7 @@ class BookingConfigurationLifecycleTest {
 
     assertEquals(BookingConfigurationState.ACTIVE, restored.getState());
     assertTrue(restored.isEnabled());
+    verify(calendarSubscriptions, never()).deleteByConfigurationId(any());
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
@@ -171,6 +177,7 @@ class BookingConfigurationLifecycleTest {
     second.setEnabled(true);
     int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
+    when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<BookingConfiguration> removed = manager.archiveConfigurations(request, actor, actor);
 
@@ -196,6 +203,7 @@ class BookingConfigurationLifecycleTest {
     int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any()))
         .thenReturn(List.of(active, alreadyArchived));
+    when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<BookingConfiguration> archived = manager.archiveConfigurations(request, actor, actor);
 
@@ -204,6 +212,8 @@ class BookingConfigurationLifecycleTest {
     assertEquals(3L, alreadyArchived.getConfigurationVersion());
     verify(dao).saveAndFlush(active);
     verify(dao, never()).saveAndFlush(alreadyArchived);
+    verify(calendarSubscriptions).deleteByConfigurationId(41L);
+    verify(calendarSubscriptions, never()).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
@@ -234,11 +244,13 @@ class BookingConfigurationLifecycleTest {
     configuration.setConfigurationVersion(7L);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(timeSlotBookings.removeAllByConfigurationId(42L)).thenReturn(3);
+    when(calendarSubscriptions.deleteByConfigurationId(42L)).thenReturn(2);
 
     assertEquals(42L, manager.permanentlyDeleteConfiguration(42L, 7L, actor, actor).orElseThrow());
 
     verify(timeSlotBookings).removeAllByConfigurationId(42L);
-    verify(dao).remove(42L);
+    verify(calendarSubscriptions).deleteByConfigurationId(42L);
+    verify(dao).removeConfigurationAndAccess(configuration);
     verify(events).publishEvent(any(BookingConfigurationPermanentDeleteAuditEvent.class));
   }
 
@@ -255,7 +267,7 @@ class BookingConfigurationLifecycleTest {
 
     verify(dao, never()).lockById(any());
     verify(timeSlotBookings, never()).removeAllByConfigurationId(any());
-    verify(dao, never()).remove(any());
+    verify(dao, never()).removeConfigurationAndAccess(any());
   }
 
   @Test
