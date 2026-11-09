@@ -1,0 +1,7 @@
+<%= it.banner %>
+export const FEATURE_FLAGS = {
+<% for (const flag of it.flags) { -%>
+  <%= flag.name %>: "<%= flag.name %>",
+<% } %>} as const;
+
+export type FeatureFlagName = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

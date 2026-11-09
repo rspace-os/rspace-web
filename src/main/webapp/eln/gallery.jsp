@@ -21,6 +21,6 @@
 
   <body>
     <noscript><spring:message code="common:javascriptRequired"/></noscript>
-    <div id="app"></div>
+    <div id="app" data-can-use-devtools="${canUseDevtools eq true}"></div>
   </body>
 </html>

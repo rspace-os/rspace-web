@@ -30,6 +30,8 @@
         <!--  <property name="hbm2ddl.auto">validate</property>   -->
         
         <mapping class="com.researchspace.model.User"/>
+        <mapping class="com.researchspace.featureflags.FeatureFlagBaseline"/>
+        <mapping class="com.researchspace.featureflags.FeatureFlagUserOverride"/>
         <mapping class="com.researchspace.model.Group"/>
         <mapping class="com.researchspace.model.UserGroup"/>
         <mapping class="com.researchspace.model.AbstractUserOrGroupImpl"/>
