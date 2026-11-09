@@ -66,7 +66,7 @@ describe("Requestable (batch)", () => {
     const toggle = screen.getByRole("switch", { name: "inventory:sample.requestsSection.switchLabel" });
     expect(toggle).toBeDisabled();
     expect(toggle).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "inventory:sample.requestsSection.batchEditLabel" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "common:inputs.chooseToEdit.label" })).not.toBeChecked();
   });
 
   test("shows 'Varies' instead of the switch when the selection disagrees and batch editing is not yet enabled.", () => {
@@ -83,7 +83,7 @@ describe("Requestable (batch)", () => {
     expect(screen.getByText("Varies")).toBeInTheDocument();
   });
 
-  test("enabling Batch edit this field makes the switch interactive and sets every selected sample.", async () => {
+  test("opting in on a disagreeing selection normalises every sample to the value shown, without touching the switch.", async () => {
     const user = userEvent.setup();
     const samples = [
       makeMockSample({ id: 1, requestable: false, permittedActions: [...CAN_SET_REQUESTABLE] }),
@@ -92,16 +92,33 @@ describe("Requestable (batch)", () => {
     const collection = new SampleCollection(new RsSet(samples));
     renderFor(collection);
 
-    await user.click(screen.getByRole("checkbox", { name: "inventory:sample.requestsSection.batchEditLabel" }));
+    await user.click(screen.getByRole("checkbox", { name: "common:inputs.chooseToEdit.label" }));
 
     const toggle = screen.getByRole("switch", {
       name: "inventory:sample.requestsSection.switchLabel",
     }) as HTMLInputElement;
     expect(toggle).toBeEnabled();
 
-    // The switch's initial position once editing is enabled is an arbitrary one of the
-    // disagreeing values (mirroring Expiry/Source's own firstValue-based seeding); what matters is
-    // that flipping it applies the same new value to every selected sample.
+    // Every sample must already match the shown position (see setFieldEditable).
+    expect(samples.every((s) => s.requestable === toggle.checked)).toBe(true);
+  });
+
+  test("toggling the switch after opting in applies the new value to every selected sample.", async () => {
+    const user = userEvent.setup();
+    const samples = [
+      makeMockSample({ id: 1, requestable: false, permittedActions: [...CAN_SET_REQUESTABLE] }),
+      makeMockSample({ id: 2, globalId: "SA2", requestable: true, permittedActions: [...CAN_SET_REQUESTABLE] }),
+    ];
+    const collection = new SampleCollection(new RsSet(samples));
+    renderFor(collection);
+
+    await user.click(screen.getByRole("checkbox", { name: "common:inputs.chooseToEdit.label" }));
+
+    const toggle = screen.getByRole("switch", {
+      name: "inventory:sample.requestsSection.switchLabel",
+    }) as HTMLInputElement;
+    expect(toggle).toBeEnabled();
+
     const initiallyChecked = toggle.checked;
     await user.click(toggle);
     expect(samples.every((s) => s.requestable === !initiallyChecked)).toBe(true);

@@ -4,10 +4,12 @@ import Switch from "@mui/material/Switch";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Heading } from "../../../components/DynamicHeadingLevel";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import ChooseToEdit from "../../../components/Inputs/ChooseToEdit";
+import NoValue from "../../../components/NoValue";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import { helpDocsArticleUrl } from "../../../modules/common/i18n/TransRichText";
 import type { SampleCollection } from "../../../stores/models/SampleModel";
@@ -23,6 +25,8 @@ import * as Parser from "../../../util/parsers";
 const Requestable = observer(({ collection }: { collection: SampleCollection }) => {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
+  const headingId = useId();
+  const controlledId = useId();
   const sampleRequestsAvailable = FetchingData.getSuccessValue(
     useDeploymentProperty("inventory.sampleRequests.available"),
   )
@@ -41,21 +45,17 @@ const Requestable = observer(({ collection }: { collection: SampleCollection }) 
   const noValueLabel = collection.noValueLabel.requestable;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      {/*
-       * ChooseToEdit positions itself absolutely, in the top-right corner of the nearest
-       * positioned ancestor. Every other batch field has a label row above its actual input,
-       * leaving that corner spare, but this card's title and switch already fill its only row, so
-       * ChooseToEdit is given its own reserved-height row above the card instead of being nested
-       * inside it, where it would float on top of the switch and block it from being operated.
-       */}
-      <Box sx={{ position: "relative", minHeight: 40 }}>
-        <ChooseToEdit
-          checked={editable}
-          onChange={(checked) => collection.setFieldEditable("requestable", checked)}
-          label={t("sample.requestsSection.batchEditLabel")}
-        />
-      </Box>
+    <Box
+      id={controlledId}
+      role="group"
+      aria-labelledby={headingId}
+      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+    >
+      <ChooseToEdit
+        checked={editable}
+        onChange={(checked) => collection.setFieldEditable("requestable", checked)}
+        ariaControls={controlledId}
+      />
       <Box
         sx={{
           display: "flex",
@@ -69,7 +69,7 @@ const Requestable = observer(({ collection }: { collection: SampleCollection }) 
         }}
       >
         <Box>
-          <Heading sx={{ mt: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Heading id={headingId} sx={{ mt: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
             {t("sample.requestsSection.title")}
             <HelpLinkIcon
               link={helpDocsArticleUrl("sampleRequests")}
@@ -93,7 +93,7 @@ const Requestable = observer(({ collection }: { collection: SampleCollection }) 
             label={t("sample.requestsSection.switchLabel")}
           />
         ) : (
-          <Typography variant="body2">{noValueLabel}</Typography>
+          <NoValue label={noValueLabel} />
         )}
       </Box>
     </Box>

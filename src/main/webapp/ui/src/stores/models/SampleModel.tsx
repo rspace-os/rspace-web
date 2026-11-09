@@ -1079,6 +1079,12 @@ export class SampleCollection
   }
 
   setFieldEditable(fieldName: string, value: boolean): void {
+    // Unlike storageTempMin/Max's "Varies" placeholder, the switch always shows a concrete
+    // value, so a disagreeing selection must be normalised to it on opt-in, or saving without
+    // touching the switch would apply nothing.
+    const requestableDisagrees = fieldName === "requestable" && value && this.noValueLabel.requestable !== null;
+    const requestableValueShown = requestableDisagrees ? this.fieldValues.requestable : null;
+
     for (const sample of this.records) {
       sample.setFieldEditable(fieldName, value);
 
@@ -1095,6 +1101,9 @@ export class SampleCollection
         sample.setFieldsDirty({
           storageTempMax: { numericValue: 30, unitId: CELSIUS },
         });
+      }
+      if (requestableDisagrees) {
+        sample.setFieldsDirty({ requestable: requestableValueShown });
       }
     }
   }
