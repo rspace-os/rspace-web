@@ -35,6 +35,7 @@ Reusable tag for incorporating a notifications section into a page.
 			</div>
 
 			<c:forEach items="${notificationList}" var="notification">
+				<c:set var="bookingNotificationMessage" value="${bookingNotificationMessages[notification.id]}" />
 				<table class="messageTable" cellspacing="0" style="width: 100%">
 					<tr class="notificationRow" id="notificnID_${notification.id}">
 						<td width="120" valign="top" class="leftInfo"
@@ -47,8 +48,11 @@ Reusable tag for incorporating a notifications section into a page.
 						</td>
 						<td id="mid" valign="top" class="mainMessage" style="word-wrap:break-word;">
 						<div>
-							<div class="msgContent" >
+							<div class="msgContent<c:if test='${not empty bookingNotificationMessage}'> bookingNotificationMessage</c:if>" >
 								<c:choose>
+									<c:when test="${not empty bookingNotificationMessage}">
+										<c:out value="${bookingNotificationMessage}" escapeXml="false" />
+									</c:when>
 									<c:when test="${not empty notification.notificationMessage}">
 						  ${notification.notificationMessage}
 						</c:when>

@@ -41,24 +41,33 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
 
   @Override
   public Access resolve(Long subjectId, Long instrumentId) {
+    return resolve(subjectId, instrumentId, " for update");
+  }
+
+  @Override
+  public Access resolveForRead(Long subjectId, Long instrumentId) {
+    return resolve(subjectId, instrumentId, " lock in share mode");
+  }
+
+  private Access resolve(Long subjectId, Long instrumentId, String lockClause) {
     permissionGate.requireHeld(BookingCalendarPermissionGateDao.Mode.SHARED);
     try {
       session().flush();
-      Target target = target(instrumentId);
+      Target target = target(instrumentId, lockClause);
       if (target == null || target.deleted || !"Instrument".equals(target.discriminator)) {
         return Access.DENIED;
       }
-      Map<Long, Person> people = people(subjectId, target.ownerId);
+      Map<Long, Person> people = people(subjectId, target.ownerId, lockClause);
       Person subject = people.get(subjectId);
       Person owner = people.get(target.ownerId);
       if (subject == null || owner == null || !subject.enabled || subject.locked) {
         return Access.DENIED;
       }
-      Set<String> roles = roles(subjectId);
+      Set<String> roles = roles(subjectId, lockClause);
       if (subjectId.equals(target.ownerId) || roles.contains("ROLE_SYSADMIN")) {
         return Access.OWNER;
       }
-      List<Membership> memberships = memberships(subjectId, target.ownerId);
+      List<Membership> memberships = memberships(subjectId, target.ownerId, lockClause);
       Set<Long> subjectGroups = groupsFor(memberships, subjectId);
       Set<Long> ownerGroups = groupsFor(memberships, target.ownerId);
       boolean sameGroup = subjectGroups.stream().anyMatch(ownerGroups::contains);
@@ -74,7 +83,7 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
       }
       boolean roleVisible =
           roles.contains("ROLE_ADMIN")
-              ? visibleInSoleAdminCommunity(subjectId, target.ownerId, ownerGroups)
+              ? visibleInSoleAdminCommunity(subjectId, target.ownerId, ownerGroups, lockClause)
               : visibleToPiOrLabAdmin(subjectId, ownerGroups, memberships);
       return roleVisible ? Access.VIEWER : Access.DENIED;
     } catch (RuntimeException failure) {
@@ -130,11 +139,16 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
   }
 
   private Target target(Long instrumentId) {
+    return target(instrumentId, " for update");
+  }
+
+  private Target target(Long instrumentId, String lockClause) {
     List<Object[]> rows =
         session()
             .createNativeQuery(
                 "select owner_id, sharingMode, acl, deleted, DTYPE from InstrumentEntity"
-                    + " where id = :id for update",
+                    + " where id = :id"
+                    + lockClause,
                 Object[].class)
             .setParameter("id", instrumentId)
             .getResultList();
@@ -150,7 +164,7 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
         (String) row[4]);
   }
 
-  private Map<Long, Person> people(Long subjectId, Long ownerId) {
+  private Map<Long, Person> people(Long subjectId, Long ownerId, String lockClause) {
     List<Long> ids =
         subjectId.equals(ownerId)
             ? List.of(subjectId)
@@ -159,7 +173,8 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
     session()
         .createNativeQuery(
             "select id, account_enabled, account_locked from User where id in (:ids)"
-                + " order by id for update",
+                + " order by id"
+                + lockClause,
             Object[].class)
         .setParameterList("ids", ids)
         .getResultList()
@@ -169,19 +184,20 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
     return result;
   }
 
-  private Set<String> roles(Long userId) {
+  private Set<String> roles(Long userId, String lockClause) {
     return new HashSet<>(
         session()
             .createNativeQuery(
                 "select roles.name from user_role membership join roles"
                     + " on roles.id = membership.role_id where membership.user_id = :userId"
-                    + " order by roles.id for update",
+                    + " order by roles.id"
+                    + lockClause,
                 String.class)
             .setParameter("userId", userId)
             .getResultList());
   }
 
-  private List<Membership> memberships(Long subjectId, Long ownerId) {
+  private List<Membership> memberships(Long subjectId, Long ownerId, String lockClause) {
     List<Long> ids =
         subjectId.equals(ownerId)
             ? List.of(subjectId)
@@ -191,7 +207,8 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
             "select membership.user_id, membership.group_id, membership.roleInGroup,"
                 + " membership.adminViewDocsEnabled, groups.uniqueName from UserGroup membership"
                 + " join rsGroup groups on groups.id = membership.group_id where membership.user_id"
-                + " in (:ids) order by membership.id for update",
+                + " in (:ids) order by membership.id"
+                + lockClause,
             Object[].class)
         .setParameterList("ids", ids)
         .getResultStream()
@@ -206,12 +223,14 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
         .toList();
   }
 
-  private boolean visibleInSoleAdminCommunity(Long subjectId, Long ownerId, Set<Long> ownerGroups) {
+  private boolean visibleInSoleAdminCommunity(
+      Long subjectId, Long ownerId, Set<Long> ownerGroups, String lockClause) {
     List<Long> communities =
         session()
             .createNativeQuery(
                 "select community_id from community_admin where user_id = :userId"
-                    + " order by community_id for update",
+                    + " order by community_id"
+                    + lockClause,
                 Long.class)
             .setParameter("userId", subjectId)
             .getResultList();
@@ -228,7 +247,8 @@ public class BookingCalendarCurrentAccessDaoHibernate implements BookingCalendar
         session()
             .createNativeQuery(
                 "select group_id from community_labGroups where community_id = :communityId"
-                    + " order by group_id for update",
+                    + " order by group_id"
+                    + lockClause,
                 Long.class)
             .setParameter("communityId", communities.get(0))
             .getResultList();

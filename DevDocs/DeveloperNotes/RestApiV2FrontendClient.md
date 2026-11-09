@@ -61,11 +61,13 @@ provider. This prevents recursive token creation. Header parameters, including `
 part of the generated operation signature. Array query parameters repeat their keys. This preserves
 values that contain commas. Generated queries pass their cancellation signal to fetch.
 
-`apiV2HeadersFetch<T>` returns `{ body: T, headers: Headers }` for calendar-subscription get and
-create operations, including user subscriptions, which need `ETag`. `apiV2BlobFetch` returns
-`{ body: Blob, headers: Headers }` for calendar-file downloads that need `Content-Disposition`.
-Both live in `apiV2HeadersFetch.ts` and share the default transport authentication, error handling
-and applicable validation.
+`apiV2HeadersFetch<T>` returns `{ body: T, headers: Headers }` for calendar-subscription get, create
+operations, including user subscriptions, and notification-subscription GET/PUT operations,
+which need `ETag`. Notification editors cache the body and headers together and send the baseline
+ETag in `If-Match`; 412 reloads the latest state. `apiV2BlobFetch` returns `{
+body: Blob, headers: Headers }` for calendar-file downloads that need `Content-Disposition`. Both
+live in `apiV2HeadersFetch.ts` and share the default transport's authentication, error handling and
+applicable validation.
 
 `apiV2Fetch.ts` exports `BodyType<B> = B` and `ErrorType<E> = ApiV2ProblemError | TypeError` for
 Orval. Generated hooks do not expose separate error types for each status. Every HTTP failure throws

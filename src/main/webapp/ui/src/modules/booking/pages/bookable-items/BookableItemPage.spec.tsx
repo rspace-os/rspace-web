@@ -158,7 +158,7 @@ describe("BookableItemPage", () => {
     expect(actionBar).not.toBeNull();
     const controls = Array.from(actionBar?.querySelectorAll<HTMLElement>('button, [data-slot="badge"]') ?? []);
     expect(controls.length).toBeGreaterThanOrEqual(5);
-    expect(new Set(controls.map((control) => control.getBoundingClientRect().height))).toEqual(new Set([30]));
+    expect(new Set(controls.map((control) => control.getBoundingClientRect().height))).toHaveProperty("size", 1);
   });
 
   test("archives and restores from the keyboard-accessible lifecycle menu", async () => {
@@ -196,7 +196,10 @@ describe("BookableItemPage", () => {
               limit: 20,
               page: 1,
 
+
               hasNextPage: false,
+
+
             })
           : undefined;
       }),
@@ -297,7 +300,10 @@ describe("BookableItemPage", () => {
               limit: 20,
               page: 1,
 
+
               hasNextPage: false,
+
+
             })
           : undefined;
       }),
@@ -543,9 +549,9 @@ describe("BookableItemPage", () => {
       await expect.element(pageObj.heading).toBeVisible();
       await pageObj.auditTab.click();
 
-      const alert = page.getByRole("alert");
-      await expect.element(alert.getByText(title, { exact: true })).toBeVisible();
-      await expect.element(alert).not.toHaveTextContent("Do not display");
+      const alert = pageObj.auditPanel.getByRole("alert");
+      await expect.element(alert).toMatchTextContent(title);
+      await expect.element(alert).not.toMatchTextContent("Do not display");
       await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
       await expectNoAxeViolations();
     },

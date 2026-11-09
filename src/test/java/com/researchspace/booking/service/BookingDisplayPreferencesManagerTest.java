@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,6 +112,29 @@ class BookingDisplayPreferencesManagerTest {
 
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)).thenReturn(false);
     assertThrows(NotFoundException.class, () -> manager.get(subject, actor));
+  }
+
+  @Test
+  void notificationPreferenceLookupFallsBackWithoutThrowingForUnavailableRecipients() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)).thenReturn(false);
+
+    assertTrue(manager.getForNotificationRecipient(subject).isEmpty());
+
+    when(subject.isEnabled()).thenReturn(false);
+    assertTrue(manager.getForNotificationRecipient(subject).isEmpty());
+  }
+
+  @Test
+  void notificationSnapshotUsesLoadedPreferencesWithoutApplicationCache() {
+    when(subject.getValueForPreference(Preference.BOOKING_DISPLAY_PREFERENCES))
+        .thenReturn(
+            new UserPreference(
+                Preference.BOOKING_DISPLAY_PREFERENCES,
+                subject,
+                "{\"version\":1,\"availabilityWindowStart\":\"08:00\",\"availabilityWindowEnd\":\"18:00\","
+                    + "\"timezoneMode\":\"CUSTOM\",\"customTimezone\":\"Asia/Tokyo\"}"));
+    assertEquals("Asia/Tokyo", manager.resolveForNotificationSnapshot(subject).customTimezone());
+    verifyNoInteractions(userManager);
   }
 
   private void preference(String value) {

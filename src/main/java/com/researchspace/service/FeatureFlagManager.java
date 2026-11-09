@@ -4,6 +4,7 @@ import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.model.User;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FeatureFlagManager {
 
@@ -34,6 +35,12 @@ public interface FeatureFlagManager {
    * deployment values still take precedence. Use for snapshot-sensitive authorization.
    */
   boolean isFeatureFlagEnabledInSnapshot(String flagName, User user);
+
+  /** Resolves committed baseline and override rows with shared locks in the caller transaction. */
+  boolean isFeatureFlagEnabledWithCurrentReads(String flagName, User user);
+
+  /** Resolves a flag for a set of users using one persisted snapshot. */
+  Set<Long> enabledUsersInSnapshot(String flagName, Set<Long> userIds);
 
   /** Returns whether the user may access internal devtools. */
   boolean canUseDevtools(User user);

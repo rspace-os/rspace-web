@@ -25,6 +25,9 @@ import java.util.Set;
 import java.util.function.IntSupplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -171,6 +174,25 @@ public class CommunicationManagerImplTest {
     mgr.broadcast(mor, Collections.EMPTY_SET);
     Mockito.verify(broadcaster2, Mockito.times(1)).broadcast(Mockito.any(Communication.class));
     assertTrue(mgr.notified);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void originatorDeliveryRequiresExplicitOptIn(boolean includeOriginator) {
+    wireManager();
+    User originator = TestFactory.createAnyUser("originator");
+    Mockito.when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
+    NotificationConfig config =
+        NotificationConfig.builder()
+            .notificationType(NotificationType.NOTIFICATION_DOCUMENT_SHARED)
+            .policyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY)
+            .notificationTargetsOverride(new HashSet<>(Set.of(originator)))
+            .build();
+    config.setIncludeOriginator(includeOriginator);
+    mgr.notify(originator, null, config, "message");
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    Mockito.verify(commDao).save(saved.capture());
+    assertEquals(includeOriginator ? 1 : 0, saved.getValue().getRecipients().size());
   }
 
   @Test

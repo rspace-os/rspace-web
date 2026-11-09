@@ -528,7 +528,10 @@ by depth and target types instead of by the number of returned entities.
 
 ## Conditional requests
 
-Versioned routes return an `ETag` and require its current value in `If-Match`. Preserve
+Versioned routes, including notification-subscription PUT, return an `ETag` and require its current
+value in `If-Match`. Notification subscription bodies contain only `enabled`; their opaque tags also
+cover effective preference flags. Missing `If-Match` returns 428, malformed tags return 400, and
+stale tags return 412. Preserve
 `Cache-Control: no-transform` so a compression proxy does not rewrite the validator. Shared
 `ApiV2ConditionalRequest` parsing accepts the known proxy alterations: one `-gzip`, `-br`, or
 `-deflate` suffix inside the quotes and an optional `W/` prefix. `parseStrongEtag` returns the

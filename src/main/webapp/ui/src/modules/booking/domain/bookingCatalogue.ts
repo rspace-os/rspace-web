@@ -42,6 +42,7 @@ export function mapBookingCatalogueItem(input: BookingCatalogueManagerItem) {
       canCreateBlockout: mapCapability(capabilities.canCreateBlockout),
       canSubscribeCalendar: mapCapability(capabilities.canSubscribeCalendar),
       canLeaveConfiguration: mapCapability(capabilities.canLeaveConfiguration),
+      canManageNotificationSubscription: mapCapability(capabilities.canManageNotificationSubscription, false),
     },
     location:
       input.location == null

@@ -3,14 +3,18 @@ package com.researchspace.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.mockStatic;
 
+import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.model.comms.NotificationType;
-import com.researchspace.model.comms.data.OwnerBookingNotificationData;
+import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.TestFactory;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class EmailContentGeneratorTest {
@@ -131,27 +136,44 @@ class EmailContentGeneratorTest {
 
   @ParameterizedTest
   @CsvSource({
-    "NOTIFICATION_BOOKING_CREATED,Booking Created: Microscope",
-    "NOTIFICATION_BOOKING_CANCELLED,Booking Cancelled: Microscope",
-    "NOTIFICATION_BOOKING_CHANGED,Booking Changed: Microscope"
+    "NOTIFICATION_BOOKING_CREATED,Booking Created: Microscope <script>",
+    "NOTIFICATION_BOOKING_CANCELLED,Booking Cancelled: Microscope <script>",
+    "NOTIFICATION_BOOKING_CHANGED,Booking Changed: Microscope <script>"
   })
-  void usesOwnerEmailContextForBookingSubjectsAndHeaders(NotificationType type, String subject) {
+  void usesRecipientEmailContextForBookingSubjectsAndHeaders(
+      NotificationType type, String subject) {
     setDeploymentLocale("en-US");
     var originator = TestFactory.createAnyUser("actor");
     originator.setId(7L);
     originator.setFirstName("Actor <script>");
     var notification = TestFactory.createANotification(originator);
     notification.setNotificationType(type);
-    notification.setNotificationDataObject(
-        new OwnerBookingNotificationData("Microscope", "Pacific/Auckland"));
-    EmailContent content =
-        new CommunicationEmailContentGenerator(generator, "https://rspace.example")
-            .generate(notification);
+    var data = new BookingNotificationData();
+    data.setInstrumentName("Microscope <script>");
+    data.setEmailDisplayTimezone("Asia/Tokyo");
+    data.setBookingId("42");
+    data.setInstrumentGlobalIdentifier("IN12");
+    data.setStartTime("2026-01-02T03:04:05Z");
+    data.setEndTime("2026-01-02T04:04:05Z");
+    notification.setNotificationMessage(
+        new BookingNotificationMessageFormatter(new JsonMessageSource())
+            .format(type, data, ZoneId.of("Asia/Tokyo"), Locale.US));
+    notification.setNotificationDataObject(data);
+    var fixedNow = Instant.parse("2026-01-15T21:17:00Z");
+    EmailContent content;
+    try (var instants = mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+      instants.when(Instant::now).thenReturn(fixedNow);
+      content =
+          new CommunicationEmailContentGenerator(generator, "https://rspace.example")
+              .generate(notification);
+    }
+    String header = content.htmlContent().split("Booking 42", 2)[0];
+    assertThat(header).contains("Jan 16, 2026", "6:17 AM", "Asia/Tokyo, UTC+09:00");
     assertEquals(subject, content.subject());
     assertThat(content.htmlContent())
-        .contains("Pacific/Auckland", "Actor &lt;script&gt;")
+        .contains("Asia/Tokyo", "Actor &lt;script&gt;", "Microscope &lt;script&gt;")
         .doesNotContain("Actor <script>");
-    assertThat(content.plainTextContent()).contains("Pacific/Auckland");
+    assertThat(content.plainTextContent()).contains("Asia/Tokyo", "Microscope <script>");
   }
 
   private void setDeploymentLocale(String languageTag) {

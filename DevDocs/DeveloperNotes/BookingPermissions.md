@@ -87,9 +87,8 @@ Instrument PATCH registers before its first database access when the request
 supplies `sharingMode` or `sharedWith`, including an empty list or unchanged value.
 Content-only PATCH skips registration. This decision never compares persisted
 state. Every PATCH then calls `InstrumentDaoHibernateImpl.lockById` before loading edit
-state, including content-only PATCH (`f58c61ea19`). The locking eager-join query
-at `InstrumentDaoHibernateImpl.java:64-71` remains a deadlock risk until the separate
-DAO fix is integrated. This serializes content writes with sharing and owner changes, so an
+state, including content-only PATCH. The DAO flushes pending edits, evicts the cached
+instrument and reloads its root columns with locking HQL, without locking eager associations. This serializes content writes with sharing and owner changes, so an
 ungated content write cannot replay stale permission or location fields. Deletion, restoration and owner transfer remain gated. Preference and
 change-email saves retain the general user-save gate.
 
@@ -101,3 +100,17 @@ to the UI; server authorization remains authoritative on every request.
 
 Creation and lifecycle rules are in [Booking](Booking.md#configuration-lifecycle);
 maintenance exemptions are in [Scheduling](Booking.md#scheduling).
+
+Personal notification subscription PUT takes the shared gate before instrument locks.
+Its final access check uses the existing scalar current-access DAO in the caller's
+transaction and connection. Account, role, membership, community and sharing checks
+therefore see current committed rows even when the caller already has a REPEATABLE
+READ snapshot or cached entities. The gate holds revocation until the write commits.
+Feature availability remains reversible. Its final check also uses shared locking scalar
+reads of the baseline and personal override, retaining deployment override precedence.
+
+With `innodb_snapshot_isolation=ON`, a personal notification subscription PUT
+joining an older snapshot can briefly return 409 when its current access read
+is rejected with MariaDB error 1020. It fails closed: the subscription is not
+changed. Retrying in a fresh transaction rechecks current permissions and
+returns 404 if access has been revoked.
