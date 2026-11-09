@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -224,6 +225,7 @@ class ApiV2PreHandlerProblemResolverTest {
   }
 
   @RestController
+  @Profile("never-active-outside-standalone-mockmvc")
   static class BodyController {
     @PostMapping("/api/v2/test-body")
     JsonNode body(@RequestBody ApiV2JsonBody body) {
