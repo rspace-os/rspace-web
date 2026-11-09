@@ -125,6 +125,33 @@ class EmailContentGeneratorTest {
     assertThat(content.plainTextContent()).contains("Actor <script>");
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "NOTIFICATION_BOOKING_CREATED,Booking Created: Microscope",
+    "NOTIFICATION_BOOKING_CANCELLED,Booking Cancelled: Microscope",
+    "NOTIFICATION_BOOKING_CHANGED,Booking Changed: Microscope"
+  })
+  void usesOwnerEmailContextForBookingSubjectsAndHeaders(
+      com.researchspace.model.comms.NotificationType type, String subject) {
+    setDeploymentLocale("en-US");
+    var originator = TestFactory.createAnyUser("actor");
+    originator.setId(7L);
+    originator.setFirstName("Actor <script>");
+    var notification = TestFactory.createANotification(originator);
+    notification.setNotificationType(type);
+    notification.setNotificationDataObject(
+        new com.researchspace.model.comms.data.OwnerBookingNotificationData(
+            "Microscope", "Pacific/Auckland"));
+    EmailContent content =
+        new CommunicationEmailContentGenerator(generator, "https://rspace.example")
+            .generate(notification);
+    assertEquals(subject, content.subject());
+    assertThat(content.htmlContent())
+        .contains("Pacific/Auckland", "Actor &lt;script&gt;")
+        .doesNotContain("Actor <script>");
+    assertThat(content.plainTextContent()).contains("Pacific/Auckland");
+  }
+
   private void setDeploymentLocale(String languageTag) {
     UserLocaleService locales =
         (UserLocaleService) ReflectionTestUtils.getField(generator, "userLocaleService");

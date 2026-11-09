@@ -6,7 +6,8 @@ public final class InvalidBookingSchedulingSettingsException extends RuntimeExce
     GRANULARITY("errors.api.v2.bookingConfiguration.granularity.invalid"),
     OPENING_HOURS("errors.api.v2.bookingConfiguration.openingHours.invalid"),
     BUFFER("errors.api.v2.bookingConfiguration.buffer.invalid"),
-    MAXIMUM_DURATION("errors.api.v2.bookingConfiguration.maximumDuration.invalid");
+    MAXIMUM_DURATION("errors.api.v2.bookingConfiguration.maximumDuration.invalid"),
+    TIME_ZONE("errors.api.v2.bookingConfiguration.timeZone.invalid");
 
     private final String errorCode;
 
