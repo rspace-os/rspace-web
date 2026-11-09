@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
+import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { eventPageClassName } from "./BookingEventPage";
 
-export const eventColumnsClassName = "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_16rem]";
+export const eventColumnsClassName = detailColumnsClassName;
 
 export function BookingEventSkeleton() {
   const { t } = useTranslation("common");
   return (
-    <main className={eventPageClassName} aria-busy="true">
+    <main className={detailPageClassName} aria-busy="true">
       <p role="status" className="sr-only">
         {t("loading")}
       </p>

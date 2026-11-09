@@ -59,7 +59,7 @@ export function BookingPreferencesContent() {
     <main className="space-y-6 p-4 sm:p-8">
       <DirtyNavigationGuard dirty={dirty} />
       <div>
-        <Heading level={2} as="h1" className="mb-2">
+        <Heading level={3} as="h1" className="mb-2">
           {t("preferences.title")}
         </Heading>
         <p className="text-sm text-muted-foreground">{t("preferences.description")}</p>

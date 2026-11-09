@@ -14,6 +14,7 @@ import { formatDateTime, Panel, useBookingEvent } from "./BookingEventContext";
 export function BookingDetailsView() {
   const { t, i18n } = useTranslation("booking");
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
+  const durationMinutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
   const facts: Array<[string, ReactNode]> = [
     [
       t("bookings.details.when"),
@@ -21,6 +22,7 @@ export function BookingDetailsView() {
         <time dateTime={booking.start}>{formatDateTime(booking.start, displayTimeZone, i18n.language)}</time>
         {" – "}
         <time dateTime={booking.end}>{formatDateTime(booking.end, displayTimeZone, i18n.language)}</time>
+        <span className="text-muted-foreground">{` · ${t("bookableItemDetails.minutes", { count: durationMinutes })}`}</span>
       </span>,
     ],
     ...(booking.kind === "BOOKING" && booking.bookedBy
