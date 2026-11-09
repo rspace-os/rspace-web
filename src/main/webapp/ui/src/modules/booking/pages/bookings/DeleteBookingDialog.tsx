@@ -206,7 +206,7 @@ export function DeleteBookingDialog({
               {maintenance ? t("bookings.cancelDialog.maintenanceReasonHint") : t("bookings.cancelDialog.reasonHint")}
             </p>
             <span id={reasonCountId} className="shrink-0" aria-live="polite">
-              {t("bookings.cancelDialog.reasonCount", { count: reason.length })}
+              {t("bookings.cancelDialog.reasonCount", { count: reason.length, max: CANCELLATION_REASON_MAX_LENGTH })}
             </span>
           </div>
         </div>

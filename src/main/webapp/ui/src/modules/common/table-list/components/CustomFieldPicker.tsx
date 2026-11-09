@@ -8,10 +8,10 @@ import {
   mapRuntimeFieldSearch,
   type RuntimeFieldCatalogForNamespace,
   type RuntimeFieldDefinition,
-  registeredRuntimeFieldSearches,
   runtimeFieldCatalogNamespace,
   soleRuntimeFieldSearch,
 } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
+import { useRuntimeFieldSearches } from "@/modules/common/table-list/api-v2/runtimeFieldResources";
 import {
   Combobox,
   ComboboxContent,
@@ -81,7 +81,7 @@ export function CustomFieldPicker({
   const [open, setOpen] = useState(false);
   const narrowed = term.trim().length >= MINIMUM_TERM;
 
-  const runtimeSearch = soleRuntimeFieldSearch(registeredRuntimeFieldSearches(sources));
+  const runtimeSearch = soleRuntimeFieldSearch(useRuntimeFieldSearches()(sources));
   const params = { q: term.trim(), limit: SEARCH_LIMIT };
   // Not a suspense query, so a new term does not suspend the input.
   const query = useQuery({
