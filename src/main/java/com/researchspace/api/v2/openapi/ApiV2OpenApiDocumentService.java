@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -190,6 +191,15 @@ public final class ApiV2OpenApiDocumentService {
   private static void normalize(Object value) {
     if (value instanceof Map<?, ?> raw) {
       var map = ApiV2OpenApiMaps.mutableObjectMap(raw);
+      // Swagger writes a nullable reference, such as to a shared enum, beside a null type.
+      if (map.get("$ref") != null
+          && map.get("type") instanceof Collection<?> types
+          && types.contains("null")) {
+        Object reference = map.remove("$ref");
+        map.remove("type");
+        map.remove("enum");
+        map.put("anyOf", List.of(Map.of("$ref", reference), Map.of("type", "null")));
+      }
       if (map.get("oneOf") instanceof List<?> branches
           && !branches.isEmpty()
           && branches.stream()
@@ -200,6 +210,14 @@ public final class ApiV2OpenApiDocumentService {
       if ("query".equals(map.get("in"))
           && map.get("schema") instanceof Map<?, ?> schema
           && "array".equals(schema.get("type"))) map.put("explode", true);
+      if (map.get("type") instanceof List<?> types
+          && types.contains("null")
+          && map.get("enum") instanceof List<?> choices
+          && !choices.contains(null)) {
+        var nullableChoices = new ArrayList<Object>(choices);
+        nullableChoices.add(null);
+        map.put("enum", nullableChoices);
+      }
       if (map.containsKey("$ref") && map.size() > 1) {
         Object reference = map.remove("$ref");
         var branches = new ArrayList<Object>();

@@ -203,7 +203,8 @@ describe("schema conversion", () => {
     expect(() => schema({ nullable: true })).toThrow("nullable");
     expect(() => schema({ type: "string", format: "uuid" })).toThrow("Unsupported format");
     expect(() => schema({ $ref: "#/components/schemas/Missing" })).toThrow("Missing component");
-    expect(() => schema({ allOf: [{ type: "string" }] })).toThrow("object members only");
+    expect(() => schema({ allOf: [{ type: "string" }, { type: "object" }] })).toThrow("object members only");
+    expect(() => schema({ allOf: [{ type: "string" }] })).not.toThrow();
   });
 });
 

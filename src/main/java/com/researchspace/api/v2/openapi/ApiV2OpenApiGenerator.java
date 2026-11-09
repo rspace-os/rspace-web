@@ -98,6 +98,7 @@ public final class ApiV2OpenApiGenerator {
                     exposedOperations.getOrDefault(description.resourceName(), Set.of()),
                     text));
     ApiV2OpenApiDeclaredRows.share(schemas, catalog.allSchemas(), componentNames);
+    ApiV2OpenApiSharedRelationships.share(schemas, catalog.allSchemas(), componentNames);
     catalog
         .routableResources()
         .forEach(

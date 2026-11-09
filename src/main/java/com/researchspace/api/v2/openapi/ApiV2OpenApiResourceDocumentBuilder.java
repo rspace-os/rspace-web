@@ -19,6 +19,7 @@ import com.researchspace.model.collection.ResourceFieldSchema;
 import com.researchspace.model.collection.ResourceSchema;
 import com.researchspace.model.collection.WriteOperation;
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,9 +128,11 @@ final class ApiV2OpenApiResourceDocumentBuilder {
     if (field instanceof FieldSchema scalar
         && scalar.fields().isEmpty()
         && scalar.type().objectType() != null) {
+      // Swagger publishes an enum annotated with enumAsRef as a component and references it.
       schema =
           new LinkedHashMap<>(
               ApiV2OpenApiSchemas.responseSchemaFor(scalar.type().objectType(), components));
+      schema.putAll(scalar.writeConstraints());
     } else if (field instanceof FieldSchema scalar) {
       schema = scalarSchema(scalar.type(), false);
       // Only body properties carry write constraints: where literals are never checked against
@@ -137,7 +140,9 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       schema.putAll(scalar.writeConstraints());
       if (!scalar.fields().isEmpty()) {
         Map<String, Object> object =
-            embeddedObjectSchema(scalar.fields(), names, writeOperation, text, components);
+            writeOperation != null && isPublishedRow(scalar.type().objectType())
+                ? ApiV2OpenApiSchemas.schemaFor(scalar.type().objectType(), components)
+                : embeddedObjectSchema(scalar.fields(), names, writeOperation, text, components);
         if ("array".equals(scalar.type().jsonType())) {
           schema.put("items", object);
         } else {
@@ -190,6 +195,14 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       property.put("readOnly", true);
     }
     return property;
+  }
+
+  /**
+   * Whether write schemas reference the row type's own component, published from its {@link Schema}
+   * annotation, instead of declaring the row again.
+   */
+  private static boolean isPublishedRow(Class<?> type) {
+    return type != null && type.isAnnotationPresent(Schema.class);
   }
 
   private static Map<String, Object> embeddedObjectSchema(
