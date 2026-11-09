@@ -10,6 +10,17 @@
     "get": "getInstrument",
     "runtimeFields": "getInstrumentRuntimeFields"
   },
+  "maintenances": {
+    "list": "listMaintenances",
+    "count": "countMaintenances",
+    "get": "getMaintenance",
+    "create": "createMaintenance",
+    "update": "updateMaintenance",
+    "delete": "deleteMaintenance",
+    "createMany": "createManyMaintenances",
+    "updateMany": "updateManyMaintenances",
+    "deleteMany": "deleteManyMaintenances"
+  },
   "users": {
     "list": "listUsers",
     "count": "countUsers",
