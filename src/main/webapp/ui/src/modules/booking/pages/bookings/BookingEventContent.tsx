@@ -27,6 +27,10 @@ import { BookingEventSkeleton } from "./BookingEventSkeleton";
 import { BookingMetadataAside } from "./BookingMetadataAside";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
+const isPermanentBookingError = (error: unknown) =>
+  error instanceof BookingUnavailableError ||
+  (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500);
+
 export function BookingEventContent() {
   const { t } = useTranslation(["booking", "common"]);
   const { id } = useParams({ from: "/booking/calendar/bookings/$id" });
@@ -43,11 +47,7 @@ export function BookingEventContent() {
   const booking = useQuery({
     ...bookingQueryOptions(bookingId),
     enabled: validBookingId,
-    retry: (failureCount, error) => {
-      if (error instanceof BookingUnavailableError) return false;
-      if (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500) return false;
-      return failureCount < 2;
-    },
+    retry: (failureCount, error) => failureCount < 2 && !isPermanentBookingError(error),
   });
   const editing = pathname.endsWith("/edit");
   const bookingItem = useBookableItemConfiguration(
@@ -67,10 +67,7 @@ export function BookingEventContent() {
   );
 
   if (!validBookingId || booking.isError || (!booking.isPending && !booking.data)) {
-    const transportFailure =
-      booking.isError &&
-      !(booking.error instanceof BookingUnavailableError) &&
-      !(booking.error instanceof ApiV2ProblemError && booking.error.status >= 400 && booking.error.status < 500);
+    const transportFailure = booking.isError && !isPermanentBookingError(booking.error);
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">
@@ -111,7 +108,7 @@ export function BookingEventContent() {
       invalidateGetBooking(queryClient, bookingId),
     ]);
   };
-  const location = target?.value.parentContainer;
+  const _location = target?.value.parentContainer;
   const eventName = target?.value.name ?? t("common:values.unknownItem");
   const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
 
@@ -150,8 +147,12 @@ export function BookingEventContent() {
               ) : undefined
             }
           >
-            {canViewItem && location && typeof location.value === "object" ? (
-              <InventoryLocationLink name={location.value.name} globalId={location.globalId} compact />
+            {canViewItem && document.location ? (
+              <InventoryLocationLink
+                name={document.location.value.name}
+                globalId={document.location.value.globalId}
+                compact
+              />
             ) : null}
           </InventoryItem>
         ) : (

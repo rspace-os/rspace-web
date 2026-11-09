@@ -16,12 +16,7 @@ import {
 } from "@/modules/common/ui/combobox";
 import { Spinner } from "@/modules/common/ui/spinner";
 import { cn } from "@/modules/common/utils/cn";
-import {
-  sourceList,
-  useRelationshipOptionAvailability,
-  useRelationshipOptions,
-  useSelectedRelationshipOptions,
-} from "./queries";
+import { useRelationshipOptionAvailability, useRelationshipOptions, useSelectedRelationshipOptions } from "./queries";
 import type { RelationshipOptionWithSource, RelationshipSource } from "./sources";
 
 // Matches the h-8 / text-xs controls a filter row uses. The inner input needs its own rules because
@@ -57,7 +52,6 @@ function sameOption(option: RelationshipOptionWithSource, other: RelationshipOpt
  * a caller stores and restores exactly what it sends.
  */
 export function RelationshipPicker({
-  source,
   sources,
   availabilitySource,
   authScope,
@@ -84,10 +78,8 @@ export function RelationshipPicker({
   browseEmptyMessage,
   minimumSearchLength,
 }: {
-  /** One source, retained as a compatibility alias. */
-  source?: RelationshipSource;
   /** Sources searched in parallel and merged in declaration order. */
-  sources?: readonly RelationshipSource[];
+  sources: readonly RelationshipSource[];
   availabilitySource?: RelationshipOptionAvailabilitySource;
   /** Caller identity used to partition cached options when permissions differ between callers. */
   authScope?: string | number;
@@ -126,14 +118,12 @@ export function RelationshipPicker({
   const { t } = useTranslation("common");
   const anchor = useComboboxAnchor();
   const [term, setTerm] = useState("");
-  const pickerSources = sourceList(source, sources);
   const trimmedTerm = term.trim();
   const hasSearchTerm = trimmedTerm !== "";
   const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && trimmedTerm.length < minimumSearchLength;
   const showsOptions = hasSearchTerm || browseWhenEmpty;
   const labels = useMemo(
     () => ({
-      idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
       unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
       failedLabel: () => t("relationshipPicker.restoreFailed"),
       compact,
@@ -142,20 +132,20 @@ export function RelationshipPicker({
   );
 
   const selected = useSelectedRelationshipOptions({
-    sources: pickerSources,
-    values: splitValue(value, pickerSources),
+    sources,
+    values: splitValue(value, sources),
     authScope,
     labels,
   });
   const { options, failed, loading } = useRelationshipOptions({
-    sources: pickerSources,
+    sources,
     term,
     authScope,
     labels,
     enabled: showsOptions,
   });
   const availability = useRelationshipOptionAvailability({
-    sourceId: pickerSources[0]?.id ?? "none",
+    sourceId: sources[0]?.id ?? "none",
     options,
     availabilitySource,
     authScope,

@@ -1,9 +1,10 @@
 import * as v from "valibot";
 import { listBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { InstrumentsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { BookingCatalogueManagerLocationSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { databaseIdFromGlobalId, type RelationshipSource } from "@/modules/common/relationship-picker/sources";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
-import { fetchBookingCatalogue } from "./bookingCatalogue";
+import { instrumentRelationshipOption } from "@/modules/inventory/instrumentRelationshipSource";
+import { fetchBookingCatalogue, fetchBookingCatalogueLocations } from "./bookingCatalogue";
 import { requireBookingValue as required } from "./bookingMapping";
 
 const validId = (value: string) => databaseIdFromGlobalId(value, "IN") !== null;
@@ -15,6 +16,7 @@ const canonicalId = (value: string) => {
 export const bookingInstrumentSource: RelationshipSource = {
   id: "items",
   globalIdPrefix: "IN",
+  browsable: true,
   normalizeValue: canonicalId,
   ownsValue: validId,
   batchSize: 100,
@@ -48,23 +50,43 @@ export const bookingInstrumentSource: RelationshipSource = {
       }),
     );
   },
+  toOption: instrumentRelationshipOption,
+};
+
+const locationId = (value: string) => databaseIdFromGlobalId(value, "IC") ?? databaseIdFromGlobalId(value, "BE");
+const canonicalLocation = (value: string) => {
+  const id = locationId(value);
+  return id === null ? null : `IC${id}`;
+};
+export const bookingLocationSource: RelationshipSource = {
+  id: "locations",
+  globalIdPrefix: "IC",
+  browsable: true,
+  normalizeValue: canonicalLocation,
+  ownsValue: (value) => locationId(value) !== null,
+  search: async (term, signal) => (await fetchBookingCatalogueLocations({ q: term, pageSize: 20 }, signal)).items,
+  batchSize: 100,
+  resolveMany: async (values, signal) => {
+    const globalIds = [...new Set(values.map(canonicalLocation).filter((value): value is string => value !== null))];
+    if (globalIds.length === 0) return {};
+    const page = await fetchBookingCatalogueLocations({ globalIds, pageSize: globalIds.length }, signal);
+    const requested = new Set(globalIds);
+    return Object.fromEntries(
+      page.items.flatMap((location) => {
+        const key = canonicalLocation(location.globalId);
+        return key !== null && requested.has(key) ? [[key, location]] : [];
+      }),
+    );
+  },
   toOption: (document, context) => {
-    const target = v.parse(v.required(v.pick(InstrumentsReadSchema, ["id", "name", "globalId"])), document);
+    const location = v.parse(v.required(v.pick(BookingCatalogueManagerLocationSchema, ["globalId", "name"])), document);
+    const value = canonicalLocation(location.globalId);
+    if (value === null) throw new Error("Booking location has an invalid global ID");
     return {
-      value: target.globalId,
-      label: target.name,
-      content: (
-        <InventoryItem
-          name={target.name}
-          globalId={target.globalId}
-          href={`/globalId/${target.globalId}`}
-          idLinkLabel={context.idLinkLabel(target.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
-      ),
+      value,
+      label: location.name,
+      content: <InventoryItem name={location.name} globalId={location.globalId} compact={context.compact} size="xs" />,
     };
   },
 };
-
-export const bookingRelationshipSources = { instruments: bookingInstrumentSource };
+export const bookingRelationshipSources = { instruments: bookingInstrumentSource, containers: bookingLocationSource };
