@@ -1,6 +1,8 @@
 import { useDroppable } from "@dnd-kit/core";
 import { rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
+import type { Namespace } from "i18next";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { FieldName } from "@/modules/common/collection/config";
 import { cn } from "@/modules/common/utils/cn";
 
@@ -24,12 +26,15 @@ export function ColumnDropZone<TDocument>({
   emptyLabel: string;
   children: ReactNode;
 }) {
+  const { i18n } = useTranslation<Namespace>("common");
   const { isOver, setNodeRef } = useDroppable({ id: columnDropZoneIds[placement], data: { section: placement } });
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
         <h3 className="text-xs font-semibold tracking-wide uppercase">{title}</h3>
-        <span className="text-xs text-muted-foreground">{fields.length}</span>
+        <span className="text-xs text-muted-foreground">
+          {new Intl.NumberFormat(i18n.resolvedLanguage ?? i18n.language, { useGrouping: false }).format(fields.length)}
+        </span>
       </div>
       <fieldset
         ref={setNodeRef}

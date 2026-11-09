@@ -6,6 +6,7 @@ import {
   type SortingState,
   useTable,
 } from "@tanstack/react-table";
+import type { Namespace } from "i18next";
 import { type ReactNode, useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName } from "@/modules/common/collection/config";
@@ -90,7 +91,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   if (!renderRows && tablePresentation === false && cardPresentation === false) {
     throw new Error("TableList must enable at least one presentation");
   }
-  const { i18n, t } = useTranslation("common");
+  const { i18n, t } = useTranslation<Namespace>("common");
   const cardViewLabel = t("tableList.cardView", { collection: collectionLabel });
   const resizeId = useId();
   const listFields = useMemo(() => config.fields.filter((field) => field.list !== false), [config.fields]);
