@@ -80,6 +80,8 @@ export const relationshipLabelKeys: Readonly<Record<string, CollectionTranslatio
   updatedBy: "common:tableList.fields.updatedBy",
   location: "common:tableList.fields.location",
   parentContainer: "common:tableList.fields.parentContainer",
+  requester: "common:tableList.fields.requester",
+  target: "common:tableList.fields.target",
 };
 
 type TargetFieldOf<Selector> = Selector extends `${string}.${infer Field}`

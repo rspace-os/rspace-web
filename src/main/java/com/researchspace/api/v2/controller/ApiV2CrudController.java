@@ -271,13 +271,15 @@ public class ApiV2CrudController {
   }
 
   @PostMapping(value = "/{resource}", consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<Map<String, Object>> create(
+  public ResponseEntity<Map<String, Object>> createWithKey(
       @PathVariable String resource,
       @RequestBody ApiV2JsonBody body,
-      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
-          ApiV2Caller caller) {
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(requireResource(resource, ResourceOperation.CREATE).create(body.node(), caller));
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
+      @RequestHeader(name = "Idempotency-Key", required = false) String key) {
+    var result =
+        requireResource(resource, ResourceOperation.CREATE).create(body.node(), caller, key);
+    return ResponseEntity.status(result.replayed() ? HttpStatus.OK : HttpStatus.CREATED)
+        .body(result.resource());
   }
 
   @PostMapping(value = "/{resource}/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)

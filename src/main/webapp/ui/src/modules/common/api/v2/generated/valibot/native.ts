@@ -147,10 +147,10 @@ export const ApiV2ProblemInvalidParam = v.object({
 
 export const ApiV2Problem = v.looseObject({
   code: v.string(),
-  detail: v.optional(v.string()),
+  detail: v.optional(v.pipe(v.string(), v.description("Optional explanation specific to this occurrence."))),
   invalidParams: v.optional(v.array(ApiV2ProblemInvalidParam)),
   status: v.pipe(v.number(), v.integer()),
-  title: v.string(),
+  title: v.pipe(v.string(), v.description("Stable summary for this problem code.")),
 });
 
 export const ApiV2RuntimeFieldCatalogSource = v.object({
@@ -188,6 +188,197 @@ export const ApiV2UiToken = v.object({
   accessToken: v.pipe(v.string(), v.description("OAuth bearer token for REST API requests.")),
 });
 
+export const BookingIncrementUnit = v.picklist(["MINUTES", "HOURS", "DAYS"]);
+
+export const BookingOpeningHoursEntry = v.pipe(
+  v.object({
+    dayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7), v.description("ISO weekday, Monday = 1.")),
+    end: v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 5 || (value.length <= 10 && [...value].length <= 5),
+        "Invalid length: Expected <=5",
+      ),
+      v.regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$/),
+      v.description("Exclusive closing time in HH:mm; 24:00 is next midnight."),
+    ),
+    start: v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 5 || (value.length <= 10 && [...value].length <= 5),
+        "Invalid length: Expected <=5",
+      ),
+      v.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
+      v.description("Opening time in HH:mm."),
+    ),
+  }),
+  v.description("One ISO weekday's opening interval in the scheduling timezone."),
+);
+
+export const BookingTimezoneMode = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
+
+export const BookingAdminSettingsDocument = v.object({
+  allowDoubleBooking: v.boolean(),
+  availabilityWindowEnd: v.string(),
+  availabilityWindowStart: v.string(),
+  bufferAfterMinutes: v.pipe(v.number(), v.integer()),
+  bufferBeforeMinutes: v.pipe(v.number(), v.integer()),
+  configurationVersion: v.pipe(v.number(), v.integer()),
+  customTimezone: v.nullable(v.string()),
+  incrementUnit: BookingIncrementUnit,
+  institutionTimezone: v.string(),
+  maxBookingDurationMinutes: v.pipe(v.number(), v.integer()),
+  openingHours: v.array(BookingOpeningHoursEntry),
+  slotGranularityMinutes: v.pipe(v.number(), v.integer()),
+  timezoneMode: BookingTimezoneMode,
+});
+
+export const BookingCatalogueCapability = v.picklist(["CREATE_BOOKING", "CREATE_BLOCKOUT"]);
+
+export const BookingCatalogueFacets = v.object({
+  types: v.array(v.string()),
+});
+
+export const BookingConfigurationCapabilities = v.object({
+  canCreateBlockout: v.boolean(),
+  canCreateBooking: v.boolean(),
+  canEditConfiguration: v.boolean(),
+  canLeaveConfiguration: v.boolean(),
+  canManageAllEvents: v.boolean(),
+  canManageAssignments: v.boolean(),
+  canManageOwnBookings: v.boolean(),
+  canManageOwners: v.boolean(),
+  canSubscribeCalendar: v.boolean(),
+  canViewAccess: v.boolean(),
+  canViewAudit: v.boolean(),
+});
+
+export const BookingCatalogueLocationDocument = v.object({
+  globalId: v.string(),
+  name: v.string(),
+});
+
+export const BookingCatalogueItemDocument = v.object({
+  allowDoubleBooking: v.boolean(),
+  bufferAfterMinutes: v.pipe(v.number(), v.integer()),
+  bufferBeforeMinutes: v.pipe(v.number(), v.integer()),
+  capabilities: BookingConfigurationCapabilities,
+  configurationId: v.pipe(v.number(), v.integer()),
+  configurationVersion: v.pipe(v.number(), v.integer()),
+  effectiveRole: v.nullable(v.string()),
+  globalId: v.string(),
+  incrementUnit: BookingIncrementUnit,
+  location: v.union([BookingCatalogueLocationDocument, v.null()]),
+  maxBookingDurationMinutes: v.pipe(v.number(), v.integer()),
+  name: v.string(),
+  openingHours: v.array(BookingOpeningHoursEntry),
+  slotGranularityMinutes: v.pipe(v.number(), v.integer()),
+  targetId: v.pipe(v.number(), v.integer()),
+  targetType: v.string(),
+  timezone: v.string(),
+});
+
+export const BookingCatalogueLocationPageDocument = v.object({
+  items: v.array(BookingCatalogueLocationDocument),
+  page: v.pipe(v.number(), v.integer()),
+  pageSize: v.pipe(v.number(), v.integer()),
+  total: v.pipe(v.number(), v.integer()),
+});
+
+export const BookingCataloguePageDocument = v.object({
+  facets: BookingCatalogueFacets,
+  items: v.array(BookingCatalogueItemDocument),
+  page: v.pipe(v.number(), v.integer()),
+  pageSize: v.pipe(v.number(), v.integer()),
+  total: v.pipe(v.number(), v.integer()),
+});
+
+export const BookingConfigurationState = v.picklist(["ACTIVE", "ARCHIVED"]);
+
+export const BookingConfigurationTarget = v.object({
+  deleted: v.boolean(),
+  globalId: v.string(),
+  id: v.pipe(v.number(), v.integer()),
+  name: v.string(),
+});
+
+export const BookingConfigurationTargetDirectoryDocument = v.object({
+  docs: v.array(BookingConfigurationTarget),
+});
+
+export const UsersReference = v.object({
+  relationTo: v.literal("users"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const UsersRead = v.object({
+  createdAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was created."))),
+  email: v.optional(v.pipe(v.string(), v.description("User's email address."))),
+  firstName: v.optional(v.pipe(v.string(), v.description("User's given name."))),
+  id: v.pipe(v.number(), v.integer(), v.description("Stable user identifier.")),
+  lastName: v.optional(v.pipe(v.string(), v.description("User's family name."))),
+  username: v.optional(v.pipe(v.string(), v.description("RSpace login name."))),
+});
+
+export const UsersRelationship = v.union([
+  UsersReference,
+  v.object({
+    relationTo: v.literal("users"),
+    value: UsersRead,
+  }),
+]);
+
+export const DeclaredBookingOpeningHoursEntry = v.object({
+  dayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7), v.description("ISO weekday, Monday = 1.")),
+  end: v.pipe(
+    v.string(),
+    v.check(
+      (value) => value.length <= 5 || (value.length <= 10 && [...value].length <= 5),
+      "Invalid length: Expected <=5",
+    ),
+    v.regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$/),
+    v.description("Exclusive closing time in HH:mm; 24:00 is next midnight."),
+  ),
+  start: v.pipe(
+    v.string(),
+    v.check(
+      (value) => value.length <= 5 || (value.length <= 10 && [...value].length <= 5),
+      "Invalid length: Expected <=5",
+    ),
+    v.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
+    v.description("Opening time in HH:mm."),
+  ),
+});
+
+export const BookingOwnerHealth = v.object({
+  hasEffectiveOwner: v.boolean(),
+});
+
+export const ResourceRoleSourceKind = v.picklist(["DIRECT", "GROUP", "AUDIENCE", "IMPLICIT"]);
+
+export const DeclaredResourceRoleSource = v.object({
+  grantee: v.optional(
+    v.object({
+      id: v.optional(v.union([v.pipe(v.number(), v.integer()), v.literal("ALL_USERS")])),
+      key: v.optional(v.string()),
+      kind: v.optional(v.string()),
+      name: v.optional(v.string()),
+    }),
+  ),
+  kind: v.optional(ResourceRoleSourceKind),
+  role: v.optional(v.string()),
+});
+
+export const InstrumentsReference = v.object({
+  relationTo: v.literal("instruments"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const ContainersReference = v.object({
+  relationTo: v.literal("containers"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
 export const ContainersRead = v.object({
   containerType: v.optional(v.picklist(["LIST", "GRID", "IMAGE", "WORKBENCH"])),
   deleted: v.optional(v.boolean()),
@@ -204,9 +395,395 @@ export const ContainersRead = v.object({
   ),
 });
 
-export const ContainersReference = v.object({
-  relationTo: v.literal("containers"),
+export const InstrumentsRead = v.object({
+  customFields: v.optional(v.record(v.string(), v.unknown())),
+  deleted: v.optional(v.pipe(v.boolean(), v.description("True when the instrument is in the trash."))),
+  extraFields: v.optional(v.record(v.string(), v.unknown())),
+  globalId: v.optional(v.pipe(v.string(), v.description("RSpace global identifier."))),
+  id: v.pipe(v.number(), v.integer(), v.description("Stable instrument identifier.")),
+  name: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description("Display name of the instrument."),
+    ),
+  ),
+  parentContainer: v.optional(
+    v.union([
+      v.union([
+        ContainersReference,
+        v.object({
+          relationTo: v.literal("containers"),
+          value: ContainersRead,
+        }),
+      ]),
+      v.null(),
+    ]),
+  ),
+});
+
+export const InstrumentsRelationship = v.union([
+  v.intersect([
+    InstrumentsReference,
+    v.object({
+      globalId: v.pipe(v.string(), v.regex(/^IN\d+$/)),
+    }),
+  ]),
+  v.object({
+    globalId: v.pipe(v.string(), v.regex(/^IN\d+$/)),
+    relationTo: v.literal("instruments"),
+    value: InstrumentsRead,
+  }),
+]);
+
+export const BookingConfigurationsRead = v.object({
+  allowDoubleBooking: v.optional(v.pipe(v.boolean(), v.description("Whether overlapping bookings are permitted."))),
+  bufferAfterMinutes: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Unavailable minutes after a booking.")),
+  ),
+  bufferBeforeMinutes: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Unavailable minutes before a booking.")),
+  ),
+  capabilities: v.optional(BookingConfigurationCapabilities),
+  configurationVersion: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Optimistic configuration revision.")),
+  ),
+  createdAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was created."))),
+  createdBy: v.optional(
+    v.pipe(v.union([UsersRelationship, v.null()]), v.description("User who created the resource.")),
+  ),
+  createdByName: v.nullish(v.string()),
+  effectiveRole: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64),
+        "Invalid length: Expected <=64",
+      ),
+    ),
+  ),
+  enabled: v.optional(v.pipe(v.boolean(), v.description("Whether bookings are enabled for the target."))),
+  id: v.pipe(v.number(), v.integer(), v.description("Stable booking-configuration identifier.")),
+  incrementUnit: v.optional(
+    v.pipe(
+      BookingIncrementUnit,
+      v.description(
+        "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+      ),
+    ),
+  ),
+  maxBookingDurationMinutes: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.description("Maximum elapsed minutes for one booking, where 0 disables the item limit."),
+    ),
+  ),
+  openingHours: v.optional(
+    v.pipe(
+      v.array(DeclaredBookingOpeningHoursEntry),
+      v.minLength(1),
+      v.maxLength(7),
+      v.description(
+        "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
+      ),
+    ),
+  ),
+  ownerHealth: v.optional(v.union([BookingOwnerHealth, v.null()])),
+  roleSources: v.optional(v.pipe(v.array(DeclaredResourceRoleSource), v.readonly())),
+  slotGranularityMinutes: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.description(
+        "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+      ),
+    ),
+  ),
+  state: v.optional(
+    v.pipe(
+      BookingConfigurationState,
+      v.description("Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE."),
+    ),
+  ),
+  target: v.optional(
+    v.pipe(
+      v.union([InstrumentsRelationship, v.null()]),
+      v.description("Instrument to which this booking configuration applies."),
+    ),
+  ),
+  "target.customFields": v.optional(v.record(v.string(), v.unknown())),
+  timezone: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description("Read-only scheduling timezone used for opening hours and booking policy."),
+    ),
+  ),
+  updatedAt: v.nullish(
+    v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was last updated.")),
+  ),
+  updatedBy: v.optional(
+    v.pipe(v.union([UsersRelationship, v.null()]), v.description("User who last updated the resource.")),
+  ),
+});
+
+export const BookingConfigurationsBulkResult = v.object({
+  docs: v.array(BookingConfigurationsRead),
+});
+
+export const InstrumentsRelationshipInput = v.intersect([
+  InstrumentsReference,
+  v.object({
+    globalId: v.optional(v.pipe(v.string(), v.regex(/^IN\d+$/))),
+  }),
+]);
+
+export const BookingConfigurationsCreate = v.object({
+  allowDoubleBooking: v.optional(v.pipe(v.boolean(), v.description("Whether overlapping bookings are permitted."))),
+  bufferAfterMinutes: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Unavailable minutes after a booking.")),
+  ),
+  bufferBeforeMinutes: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Unavailable minutes before a booking.")),
+  ),
+  enabled: v.optional(v.pipe(v.boolean(), v.description("Whether bookings are enabled for the target."))),
+  incrementUnit: v.optional(
+    v.pipe(
+      BookingIncrementUnit,
+      v.description(
+        "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+      ),
+    ),
+  ),
+  maxBookingDurationMinutes: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.description("Maximum elapsed minutes for one booking, where 0 disables the item limit."),
+    ),
+  ),
+  openingHours: v.optional(
+    v.pipe(
+      v.array(BookingOpeningHoursEntry),
+      v.minLength(1),
+      v.maxLength(7),
+      v.description(
+        "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
+      ),
+    ),
+  ),
+  slotGranularityMinutes: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.description(
+        "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+      ),
+    ),
+  ),
+  target: v.pipe(
+    InstrumentsRelationshipInput,
+    v.description("Instrument to which this booking configuration applies."),
+  ),
+});
+
+export const BookingConfigurationsReference = v.object({
+  relationTo: v.literal("booking-configurations"),
   value: v.pipe(v.number(), v.integer()),
+});
+
+export const BookingConfigurationsUpdate = v.object({
+  allowDoubleBooking: v.optional(v.pipe(v.boolean(), v.description("Whether overlapping bookings are permitted."))),
+  bufferAfterMinutes: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Unavailable minutes after a booking.")),
+  ),
+  bufferBeforeMinutes: v.optional(
+    v.pipe(v.number(), v.integer(), v.description("Unavailable minutes before a booking.")),
+  ),
+  enabled: v.optional(v.pipe(v.boolean(), v.description("Whether bookings are enabled for the target."))),
+  incrementUnit: v.optional(
+    v.pipe(
+      BookingIncrementUnit,
+      v.description(
+        "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+      ),
+    ),
+  ),
+  maxBookingDurationMinutes: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.description("Maximum elapsed minutes for one booking, where 0 disables the item limit."),
+    ),
+  ),
+  openingHours: v.optional(
+    v.pipe(
+      v.array(BookingOpeningHoursEntry),
+      v.minLength(1),
+      v.maxLength(7),
+      v.description(
+        "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
+      ),
+    ),
+  ),
+  slotGranularityMinutes: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.description(
+        "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+      ),
+    ),
+  ),
+  state: v.optional(
+    v.pipe(
+      BookingConfigurationState,
+      v.description("Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE."),
+    ),
+  ),
+});
+
+export const BookingEventKind = v.picklist(["BOOKING", "MAINTENANCE"]);
+
+export const BookingSettingsDocument = v.object({
+  allowDoubleBooking: v.boolean(),
+  availabilityWindowEnd: v.string(),
+  availabilityWindowStart: v.string(),
+  bufferAfterMinutes: v.pipe(v.number(), v.integer()),
+  bufferBeforeMinutes: v.pipe(v.number(), v.integer()),
+  customTimezone: v.nullable(v.string()),
+  incrementUnit: BookingIncrementUnit,
+  institutionTimezone: v.string(),
+  maxBookingDurationMinutes: v.pipe(v.number(), v.integer()),
+  openingHours: v.array(BookingOpeningHoursEntry),
+  slotGranularityMinutes: v.pipe(v.number(), v.integer()),
+  timezoneMode: BookingTimezoneMode,
+});
+
+export const BookingSettingsPatch = v.object({
+  allowDoubleBooking: v.nullish(v.boolean()),
+  availabilityWindowEnd: v.nullish(v.pipe(v.string(), v.regex(/(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)/))),
+  availabilityWindowStart: v.nullish(v.pipe(v.string(), v.regex(/(?:[01]\d|2[0-3]):[0-5]\d/))),
+  bufferAfterMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))),
+  bufferBeforeMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))),
+  customTimezone: v.nullish(
+    v.pipe(
+      v.string(),
+      v.minLength(0),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+    ),
+  ),
+  customTimezoneValid: v.optional(v.boolean()),
+  incrementUnit: v.optional(
+    v.pipe(
+      v.union([BookingIncrementUnit, v.null()]),
+      v.description(
+        "Unit of the time increment. DAYS counts calendar days in the item's timezone and needs slotGranularityMinutes to be a whole number of days.",
+      ),
+    ),
+  ),
+  maxBookingDurationMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(527040))),
+  openingHours: v.nullish(
+    v.pipe(
+      v.array(BookingOpeningHoursEntry),
+      v.minLength(1),
+      v.maxLength(7),
+      v.description("Independent opening interval for each listed ISO weekday; omitted days are closed."),
+    ),
+  ),
+  slotGranularityMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(527040))),
+  timezoneMode: v.optional(v.union([BookingTimezoneMode, v.null()])),
+});
+
+export const BookingState = v.picklist(["CONFIRMED", "CANCELLED"]);
+
+export const BookingsCreate = v.object({
+  end: v.pipe(v.string(), v.isoTimestamp()),
+  kind: v.optional(BookingEventKind),
+  purpose: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000),
+        "Invalid length: Expected <=1000",
+      ),
+    ),
+  ),
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  target: InstrumentsRelationshipInput,
+});
+
+export const BookingsRead = v.object({
+  bookedBy: v.nullish(v.string()),
+  canCancel: v.optional(v.boolean()),
+  canEdit: v.optional(v.boolean()),
+  canViewConfiguration: v.optional(v.boolean()),
+  createdAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  createdBy: v.nullish(v.string()),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  id: v.pipe(v.number(), v.integer()),
+  kind: v.optional(BookingEventKind),
+  privacy: v.optional(v.string()),
+  purpose: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000),
+        "Invalid length: Expected <=1000",
+      ),
+    ),
+  ),
+  requester: v.optional(
+    v.pipe(
+      v.union([UsersRelationship, v.null()]),
+      v.description("The user who requested this event, when the event is visible in full detail."),
+    ),
+  ),
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  state: v.optional(BookingState),
+  target: v.optional(v.union([InstrumentsRelationship, v.null()])),
+  "target.customFields": v.optional(v.record(v.string(), v.unknown())),
+  timezone: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+    ),
+  ),
+  updatedAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  version: v.optional(v.pipe(v.number(), v.integer())),
+});
+
+export const BookingsReference = v.object({
+  relationTo: v.literal("bookings"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const BookingsUpdate = v.object({
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  purpose: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000),
+        "Invalid length: Expected <=1000",
+      ),
+    ),
+  ),
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  state: v.optional(BookingState),
 });
 
 export const FeatureFlagsRead = v.object({
@@ -254,41 +831,6 @@ export const FeatureFlagsUpdate = v.object({
     ),
   ),
   overrideValue: v.nullish(v.pipe(v.boolean(), v.description("Caller override. Set null to clear the override."))),
-});
-
-export const InstrumentsRead = v.object({
-  customFields: v.optional(v.record(v.string(), v.unknown())),
-  deleted: v.optional(v.pipe(v.boolean(), v.description("True when the instrument is in the trash."))),
-  extraFields: v.optional(v.record(v.string(), v.unknown())),
-  globalId: v.optional(v.pipe(v.string(), v.description("RSpace global identifier."))),
-  id: v.pipe(v.number(), v.integer(), v.description("Stable instrument identifier.")),
-  name: v.optional(
-    v.pipe(
-      v.string(),
-      v.check(
-        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
-        "Invalid length: Expected <=255",
-      ),
-      v.description("Display name of the instrument."),
-    ),
-  ),
-  parentContainer: v.optional(
-    v.union([
-      v.union([
-        ContainersReference,
-        v.object({
-          relationTo: v.literal("containers"),
-          value: ContainersRead,
-        }),
-      ]),
-      v.null(),
-    ]),
-  ),
-});
-
-export const InstrumentsReference = v.object({
-  relationTo: v.literal("instruments"),
-  value: v.pipe(v.number(), v.integer()),
 });
 
 export const MaintenancesRead = v.object({
@@ -384,8 +926,6 @@ export const MaintenancesUpdate = v.object({
 
 export const ResourceGranteeKind = v.picklist(["USER", "GROUP", "AUDIENCE"]);
 
-export const ResourceRoleSourceKind = v.picklist(["DIRECT", "GROUP", "AUDIENCE", "IMPLICIT"]);
-
 export const ResourceRoleSourceGrantee = v.object({
   id: v.optional(v.union([v.pipe(v.number(), v.integer()), v.string()])),
   key: v.string(),
@@ -457,18 +997,736 @@ export const ResourceGranteeDirectoryDocument = v.object({
   docs: v.array(ResourceGranteeDirectoryEntry),
 });
 
-export const UsersRead = v.object({
-  createdAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was created."))),
-  email: v.optional(v.pipe(v.string(), v.description("User's email address."))),
-  firstName: v.optional(v.pipe(v.string(), v.description("User's given name."))),
-  id: v.pipe(v.number(), v.integer(), v.description("Stable user identifier.")),
-  lastName: v.optional(v.pipe(v.string(), v.description("User's family name."))),
-  username: v.optional(v.pipe(v.string(), v.description("RSpace login name."))),
+/**
+ * @summary Search the Booking catalogue
+ */
+export const SearchBookingCatalogueQueryParams = v.object({
+  q: v.optional(v.string()),
+  target: v.optional(v.string()),
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+      ),
+    ),
+  ),
+  type: v.optional(v.array(v.string())),
+  location: v.optional(v.array(v.string())),
+  capability: v.optional(BookingCatalogueCapability),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer()),
 });
 
-export const UsersReference = v.object({
-  relationTo: v.literal("users"),
-  value: v.pipe(v.number(), v.integer()),
+export const SearchBookingCatalogueResponse = BookingCataloguePageDocument;
+
+/**
+ * @summary Search Booking catalogue locations
+ */
+export const SearchBookingCatalogueLocationsQueryParams = v.object({
+  q: v.optional(v.string()),
+  type: v.optional(v.array(v.string())),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer()),
+});
+
+export const SearchBookingCatalogueLocationsResponse = BookingCatalogueLocationPageDocument;
+
+/**
+ * @summary Search eligible Booking configuration targets
+ */
+export const SearchBookingConfigurationTargetsQueryParams = v.object({
+  q: v.pipe(
+    v.string(),
+    v.check((value) => value.length >= 4 || [...value].length >= 2, "Invalid length: Expected >=2"),
+    v.description("Case-insensitive search text."),
+  ),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(50), v.description("Maximum results to return.")),
+    20,
+  ),
+});
+
+export const SearchBookingConfigurationTargetsResponse = BookingConfigurationTargetDirectoryDocument;
+
+/**
+ * Archives every booking-configurations matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.
+ * @summary Archive matching booking-configurations
+ */
+export const DeleteManyBookingConfigurationsQueryParams = v.object({
+  where: v.pipe(
+    v.string(),
+    v.check(
+      (value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768),
+      "Invalid length: Expected <=32768",
+    ),
+    v.description(
+      "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+    ),
+  ),
+});
+
+export const DeleteManyBookingConfigurationsResponse = BookingConfigurationsBulkResult;
+
+/**
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
+ * @summary List booking-configurations
+ */
+export const ListBookingConfigurationsQueryParams = v.object({
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768),
+        "Invalid length: Expected <=32768",
+      ),
+      v.description(
+        "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+      ),
+    ),
+  ),
+  sort: v.optional(
+    v.pipe(
+      v.string(),
+      v.description("Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields."),
+    ),
+  ),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description("One-based page number.")), 1),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description("Maximum documents per page.")),
+    20,
+  ),
+  totals: v.optional(
+    v.pipe(v.boolean(), v.description("Include totalDocs and totalIsLowerBound. Defaults to false.")),
+    false,
+  ),
+  max: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(1),
+      v.maxValue(10000),
+      v.description(
+        "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
+      ),
+    ),
+  ),
+  depth: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(0),
+      v.maxValue(10),
+      v.description(
+        "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
+      ),
+    ),
+    0,
+  ),
+  fields: v.optional(
+    v.pipe(
+      v.object({
+        "booking-configurations": v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[booking-configurations]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+      ),
+    ),
+  ),
+  exclude: v.optional(
+    v.pipe(
+      v.object({
+        "booking-configurations": v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[booking-configurations]=id,name.",
+      ),
+    ),
+  ),
+});
+
+export const ListBookingConfigurationsResponse = v.object({
+  docs: v.array(BookingConfigurationsRead),
+  hasNextPage: v.boolean(),
+  limit: v.pipe(v.number(), v.integer()),
+  page: v.pipe(v.number(), v.integer()),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description("Present only when totals=true."))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description("True when the requested total exceeds max."))),
+});
+
+/**
+ * Updates every booking-configurations matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.
+ * @summary Update matching booking-configurations
+ */
+export const UpdateManyBookingConfigurationsQueryParams = v.object({
+  where: v.pipe(
+    v.string(),
+    v.check(
+      (value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768),
+      "Invalid length: Expected <=32768",
+    ),
+    v.description(
+      "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+    ),
+  ),
+});
+
+export const UpdateManyBookingConfigurationsBody = BookingConfigurationsUpdate;
+
+export const UpdateManyBookingConfigurationsResponse = BookingConfigurationsBulkResult;
+
+/**
+ * Creates booking configuration for an instrument. Each instrument may have only one booking configuration.
+ * @summary Create one booking-configurations
+ */
+export const CreateBookingConfigurationBody = BookingConfigurationsCreate;
+
+export const CreateBookingConfigurationResponse = BookingConfigurationsRead;
+
+/**
+ * Creates the supplied booking-configurations documents in input order. The batch is handled as one service-layer mutation; validation failure prevents the entire batch from being created.
+ * @summary Create many booking-configurations
+ */
+export const CreateManyBookingConfigurationsBody = v.object({
+  docs: v.pipe(v.array(BookingConfigurationsCreate), v.minLength(1)),
+});
+
+export const CreateManyBookingConfigurationsResponse = BookingConfigurationsBulkResult;
+
+/**
+ * Counts booking-configurations matching the optional bounded filter.
+ * @summary Count booking-configurations
+ */
+export const CountBookingConfigurationsQueryParams = v.object({
+  max: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(1),
+      v.maxValue(10000),
+      v.description(
+        "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
+      ),
+    ),
+  ),
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768),
+        "Invalid length: Expected <=32768",
+      ),
+      v.description(
+        "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+      ),
+    ),
+  ),
+});
+
+export const CountBookingConfigurationsResponse = ApiV2CountResult;
+
+/**
+ * Archives one booking-configurations and returns the archived document. Repeating ordinary DELETE is a no-op. The explicit permanent=true option permanently removes the resource for a direct sysadmin and returns no document.
+ * @summary Archive one booking-configurations
+ */
+export const DeleteBookingConfigurationParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const DeleteBookingConfigurationQueryParams = v.object({
+  permanent: v.optional(
+    v.pipe(
+      v.boolean(),
+      v.description(
+        "When true, permanently removes the resource. This is restricted to a direct sysadmin and returns 204. The default false performs the ordinary retry-safe archive transition.",
+      ),
+    ),
+    false,
+  ),
+});
+
+export const DeleteBookingConfigurationHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[0-9]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const DeleteBookingConfigurationResponse = BookingConfigurationsRead;
+
+/**
+ * Returns one visible booking-configurations. A resource that is absent or not readable is reported as not found.
+ * @summary Get one booking-configurations
+ */
+export const GetBookingConfigurationParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const GetBookingConfigurationQueryParams = v.object({
+  depth: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(0),
+      v.maxValue(10),
+      v.description(
+        "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
+      ),
+    ),
+    0,
+  ),
+  fields: v.optional(
+    v.pipe(
+      v.object({
+        "booking-configurations": v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[booking-configurations]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+      ),
+    ),
+  ),
+  exclude: v.optional(
+    v.pipe(
+      v.object({
+        "booking-configurations": v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[booking-configurations]=id,name.",
+      ),
+    ),
+  ),
+});
+
+export const GetBookingConfigurationResponse = BookingConfigurationsRead;
+
+/**
+ * Partially updates one booking-configurations and returns the updated document.
+ * @summary Update one booking-configurations
+ */
+export const UpdateBookingConfigurationParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const UpdateBookingConfigurationHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[0-9]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const UpdateBookingConfigurationBody = BookingConfigurationsUpdate;
+
+export const UpdateBookingConfigurationResponse = BookingConfigurationsRead;
+
+/**
+ * @summary Get direct access assignments
+ */
+export const GetBookingConfigurationAccessParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const GetBookingConfigurationAccessResponse = ResourceAccessDocument;
+
+/**
+ * @summary Replace direct access assignments
+ */
+export const ReplaceBookingConfigurationAccessParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const ReplaceBookingConfigurationAccessHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[0-9]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const ReplaceBookingConfigurationAccessBody = ResourceAccessReplacement;
+
+export const ReplaceBookingConfigurationAccessResponse = ResourceAccessDocument;
+
+/**
+ * @summary Search eligible access grantees
+ */
+export const SearchBookingConfigurationAccessGranteesParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const SearchBookingConfigurationAccessGranteesQueryParams = v.object({
+  q: v.pipe(
+    v.string(),
+    v.check((value) => value.length >= 4 || [...value].length >= 2, "Invalid length: Expected >=2"),
+    v.description("Case-insensitive user or group search text."),
+  ),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(50), v.description("Maximum grantees to return.")),
+    20,
+  ),
+});
+
+export const SearchBookingConfigurationAccessGranteesResponse = ResourceGranteeDirectoryDocument;
+
+/**
+ * @summary Remove the caller's direct assignment
+ */
+export const LeaveBookingConfigurationAccessParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one booking-configurations resource
+ */
+export const ListBookingConfigurationAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const ListBookingConfigurationAuditEventsQueryParams = v.object({
+  start: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.description("Inclusive earliest event time. The server limits the range to 183 days."),
+    ),
+  ),
+  end: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.description(
+        "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+      ),
+    ),
+  ),
+  q: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description(
+        "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
+      ),
+    ),
+  ),
+  actions: v.optional(v.pipe(v.array(AuditAction), v.description("Audit actions to include."))),
+});
+
+export const ListBookingConfigurationAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  truncated: v.boolean(),
+});
+
+/**
+ * Returns scheduling defaults for future bookable items and account display fallbacks.
+ * @summary Get global Booking defaults
+ */
+export const GetBookingSettingsResponse = BookingSettingsDocument;
+
+/**
+ * @summary Get global Booking administration settings
+ */
+export const GetAdminBookingSettingsResponse = BookingAdminSettingsDocument;
+
+/**
+ * Changes scheduling defaults for future items and display fallbacks for users without an override, without modifying existing item scheduling rules.
+ * @summary Patch global Booking defaults
+ */
+export const PatchAdminBookingSettingsHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[0-9]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const PatchAdminBookingSettingsBody = BookingSettingsPatch;
+
+export const PatchAdminBookingSettingsResponse = BookingAdminSettingsDocument;
+
+/**
+ * Returns a paginated view of bookings. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * @summary List bookings
+ */
+export const ListBookingsQueryParams = v.object({
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768),
+        "Invalid length: Expected <=32768",
+      ),
+      v.description(
+        "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+      ),
+    ),
+  ),
+  sort: v.optional(
+    v.pipe(
+      v.string(),
+      v.description("Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields."),
+    ),
+  ),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description("One-based page number.")), 1),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description("Maximum documents per page.")),
+    20,
+  ),
+  totals: v.optional(
+    v.pipe(v.boolean(), v.description("Include totalDocs and totalIsLowerBound. Defaults to false.")),
+    false,
+  ),
+  max: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(1),
+      v.maxValue(10000),
+      v.description(
+        "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
+      ),
+    ),
+  ),
+  depth: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(0),
+      v.maxValue(10),
+      v.description(
+        "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
+      ),
+    ),
+    0,
+  ),
+  fields: v.optional(
+    v.pipe(
+      v.object({
+        bookings: v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[bookings]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+      ),
+    ),
+  ),
+  exclude: v.optional(
+    v.pipe(
+      v.object({
+        bookings: v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[bookings]=id,name.",
+      ),
+    ),
+  ),
+});
+
+export const ListBookingsResponse = v.object({
+  docs: v.array(BookingsRead),
+  hasNextPage: v.boolean(),
+  limit: v.pipe(v.number(), v.integer()),
+  page: v.pipe(v.number(), v.integer()),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description("Present only when totals=true."))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description("True when the requested total exceeds max."))),
+});
+
+/**
+ * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.
+ * @summary Create one bookings
+ */
+export const CreateBookingHeader = v.object({
+  "Idempotency-Key": v.optional(
+    v.pipe(
+      v.string(),
+      v.minLength(1),
+      v.check(
+        (value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64),
+        "Invalid length: Expected <=64",
+      ),
+      v.regex(/^[A-Za-z0-9._:-]+$/),
+      v.description("Creator-scoped request identity, retained for the resource lifetime."),
+    ),
+  ),
+});
+
+export const CreateBookingBody = BookingsCreate;
+
+export const CreateBookingResponse = BookingsRead;
+
+/**
+ * Counts bookings matching the optional bounded filter.
+ * @summary Count bookings
+ */
+export const CountBookingsQueryParams = v.object({
+  max: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(1),
+      v.maxValue(10000),
+      v.description(
+        "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
+      ),
+    ),
+  ),
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768),
+        "Invalid length: Expected <=32768",
+      ),
+      v.description(
+        "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+      ),
+    ),
+  ),
+});
+
+export const CountBookingsResponse = ApiV2CountResult;
+
+/**
+ * Returns one visible bookings. A resource that is absent or not readable is reported as not found.
+ * @summary Get one bookings
+ */
+export const GetBookingParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const GetBookingQueryParams = v.object({
+  depth: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(0),
+      v.maxValue(10),
+      v.description(
+        "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
+      ),
+    ),
+    0,
+  ),
+  fields: v.optional(
+    v.pipe(
+      v.object({
+        bookings: v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[bookings]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+      ),
+    ),
+  ),
+  exclude: v.optional(
+    v.pipe(
+      v.object({
+        bookings: v.optional(v.string()),
+        containers: v.optional(v.string()),
+        instruments: v.optional(v.string()),
+        users: v.optional(v.string()),
+      }),
+      v.description(
+        "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[bookings]=id,name.",
+      ),
+    ),
+  ),
+});
+
+export const GetBookingResponse = BookingsRead;
+
+/**
+ * Partially updates one bookings and returns the updated document.
+ * @summary Update one bookings
+ */
+export const UpdateBookingParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const UpdateBookingHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[0-9]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const UpdateBookingBody = BookingsUpdate;
+
+export const UpdateBookingResponse = BookingsRead;
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one bookings resource
+ */
+export const ListBookingAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description("Resource identifier.")),
+});
+
+export const ListBookingAuditEventsQueryParams = v.object({
+  start: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.description("Inclusive earliest event time. The server limits the range to 183 days."),
+    ),
+  ),
+  end: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.description(
+        "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+      ),
+    ),
+  ),
+  q: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description(
+        "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
+      ),
+    ),
+  ),
+  actions: v.optional(v.pipe(v.array(AuditAction), v.description("Audit actions to include."))),
+});
+
+export const ListBookingAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  truncated: v.boolean(),
 });
 
 /**

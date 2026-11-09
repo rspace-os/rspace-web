@@ -1,0 +1,291 @@
+package com.researchspace.model.booking;
+
+import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditTrailData;
+import com.researchspace.model.audittrail.AuditTrailIdentifier;
+import com.researchspace.model.audittrail.AuditTrailProperty;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Date;
+import lombok.Setter;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
+
+/** One confirmed or cancelled booking occurrence for a configured target. */
+@Entity
+@Audited
+@AuditTrailData
+public class TimeSlotBooking implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
+
+  @Setter private String idempotencyKey;
+
+  @Column(name = "idempotency_key", length = 64, updatable = false)
+  @NotAudited
+  public String getIdempotencyKey() {
+    return idempotencyKey;
+  }
+
+  @Setter private String idempotencyFingerprint;
+
+  @Column(name = "idempotency_fingerprint", length = 64, updatable = false)
+  @NotAudited
+  public String getIdempotencyFingerprint() {
+    return idempotencyFingerprint;
+  }
+
+  @Setter private Long id;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getId() {
+    return id;
+  }
+
+  @Setter private BookingConfiguration bookingConfiguration;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "bookingConfiguration_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public BookingConfiguration getBookingConfiguration() {
+    return bookingConfiguration;
+  }
+
+  @Setter private User requester;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "requester_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getRequester() {
+    return requester;
+  }
+
+  @Setter private BookingEventKind kind = BookingEventKind.BOOKING;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 32)
+  @AuditTrailProperty(name = "kind")
+  public BookingEventKind getKind() {
+    return kind;
+  }
+
+  private Date startTime;
+  private Date endTime;
+
+  @Setter private BookingState state;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 32)
+  @AuditTrailProperty(name = "state")
+  public BookingState getState() {
+    return state;
+  }
+
+  @Setter private String purpose;
+
+  @Column(length = 1000)
+  @AuditTrailProperty(name = "purpose")
+  public String getPurpose() {
+    return purpose;
+  }
+
+  @Setter private boolean deleted;
+
+  @Column(nullable = false)
+  public boolean isDeleted() {
+    return deleted;
+  }
+
+  private Date createdAt;
+  private Date updatedAt;
+
+  @Setter private long version;
+
+  @Version
+  @Column(nullable = false)
+  public long getVersion() {
+    return version;
+  }
+
+  @Setter private User createdBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "createdBy_id", updatable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getCreatedBy() {
+    return createdBy;
+  }
+
+  @Setter private User updatedBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updatedBy_id")
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getUpdatedBy() {
+    return updatedBy;
+  }
+
+  private transient BookingPrivacy preparedPrivacy = BookingPrivacy.BUSY;
+  private transient boolean preparedCanEdit;
+  private transient boolean preparedCanCancel;
+  private transient boolean preparedCanViewConfiguration;
+
+  public TimeSlotBooking() {}
+
+  /** Returns the resource-specific identifier stored in the searchable audit log. */
+  @Transient
+  @AuditTrailIdentifier
+  public String getAuditTrailIdentifier() {
+    return id == null ? null : "bookings:" + id;
+  }
+
+  /** Parent identifier copied into every audit payload for direct lifecycle aggregation. */
+  @Transient
+  @AuditTrailProperty(name = "bookingConfigurationId")
+  public String getAuditBookingConfigurationId() {
+    return bookingConfiguration == null ? null : bookingConfiguration.getAuditTrailIdentifier();
+  }
+
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "start")
+  public Date getStartTime() {
+    return copy(startTime);
+  }
+
+  public void setStartTime(Date startTime) {
+    this.startTime = copy(startTime);
+  }
+
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "end")
+  public Date getEndTime() {
+    return copy(endTime);
+  }
+
+  public void setEndTime(Date endTime) {
+    this.endTime = copy(endTime);
+  }
+
+  @Column(nullable = true, updatable = false)
+  public Date getCreatedAt() {
+    return copy(createdAt);
+  }
+
+  public void setCreatedAt(Date createdAt) {
+    this.createdAt = copy(createdAt);
+  }
+
+  @Column(nullable = true)
+  public Date getUpdatedAt() {
+    return copy(updatedAt);
+  }
+
+  public void setUpdatedAt(Date updatedAt) {
+    this.updatedAt = copy(updatedAt);
+  }
+
+  /**
+   * Prepares the safe response values for the current actor without changing persisted data.
+   *
+   * <p>When the configuration is not readable, the booking may still be visible to its requester,
+   * but target and configuration-derived getters return redacted values.
+   */
+  public void prepareView(
+      BookingPrivacy privacy, boolean canEdit, boolean canCancel, boolean canViewConfiguration) {
+    preparedPrivacy = privacy == null ? BookingPrivacy.BUSY : privacy;
+    preparedCanEdit = preparedPrivacy == BookingPrivacy.FULL && canEdit;
+    preparedCanCancel = preparedPrivacy == BookingPrivacy.FULL && canCancel;
+    preparedCanViewConfiguration = canViewConfiguration;
+  }
+
+  /** Preparation for callers that use the same eligibility for both actions. */
+  public void prepareView(BookingPrivacy privacy, boolean canEdit, boolean canViewConfiguration) {
+    prepareView(privacy, canEdit, canEdit, canViewConfiguration);
+  }
+
+  /** Returns the detail level prepared by the manager for this response. */
+  @Transient
+  public BookingPrivacy getPrivacy() {
+    return preparedPrivacy;
+  }
+
+  /** Returns whether the current actor may edit this booking. */
+  @Transient
+  public boolean isCanEdit() {
+    return preparedCanEdit;
+  }
+
+  /** Returns whether the current actor may cancel this booking. */
+  @Transient
+  public boolean isCanCancel() {
+    return preparedCanCancel;
+  }
+
+  /** Returns whether the current actor may navigate to the parent Booking configuration. */
+  @Transient
+  public boolean isCanViewConfiguration() {
+    return preparedCanViewConfiguration;
+  }
+
+  /** Returns the target configuration's IANA timezone without duplicating it in this row. */
+  @Transient
+  public String getTimeZone() {
+    return bookingConfiguration == null ? null : bookingConfiguration.getTimeZone();
+  }
+
+  /** Returns the target configuration's timezone only when its current permission is visible. */
+  @Transient
+  public String getVisibleTimeZone() {
+    return preparedCanViewConfiguration ? getTimeZone() : null;
+  }
+
+  /** Returns the target reference only when its current permission is visible. */
+  @Transient
+  public BookableTargetReference getVisibleTarget() {
+    return preparedCanViewConfiguration && bookingConfiguration != null
+        ? bookingConfiguration.getTarget()
+        : null;
+  }
+
+  /** Returns purpose only when the manager prepared a full response. */
+  @Transient
+  public String getVisiblePurpose() {
+    return preparedPrivacy == BookingPrivacy.FULL ? purpose : null;
+  }
+
+  /** Returns a non-sensitive requester label only when the manager prepared a full response. */
+  @Transient
+  public String getVisibleBookedBy() {
+    if (preparedPrivacy != BookingPrivacy.FULL || requester == null) {
+      return null;
+    }
+    return requester.getFullName();
+  }
+
+  /** Returns the actual creator's non-sensitive display label. */
+  @Transient
+  public String getVisibleCreatedBy() {
+    if (createdBy == null) {
+      return null;
+    }
+    return createdBy.getFullName();
+  }
+
+  static Date copy(Date value) {
+    return value == null ? null : new Date(value.getTime());
+  }
+}
