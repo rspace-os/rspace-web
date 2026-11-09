@@ -175,16 +175,42 @@ function mapPrivacy(input: MappedBooking) {
 export function mapBooking(input: MappedBooking) {
   return { ...mapIdentity(input, mapBookingTarget(input.target)), ...mapPrivacy(input) };
 }
+function mapReadIdentity(input: MappedBooking) {
+  const identity = {
+    id: input.id,
+    version: input.version,
+    target: input.target === null ? null : mapBookingTarget(input.target),
+    timezone: input.timezone,
+    start: input.start,
+    end: input.end,
+    state: input.state,
+    kind: input.kind ?? "BOOKING",
+  };
+  checkBookingInterval(identity);
+  return identity;
+}
 export function mapBookingDetails(input: MappedBooking) {
-  const booking = mapBooking(input);
-  if (booking.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
-  return { ...booking, canViewConfiguration: input.canViewConfiguration };
+  const privacy = mapPrivacy(input);
+  if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
+  return {
+    ...mapReadIdentity(input),
+    ...privacy,
+    canViewConfiguration: input.canViewConfiguration,
+  };
 }
 export function mapBookingListDocument(input: MappedBooking) {
+  if (input.requester === undefined) throw new BookingUnavailableError("Booking requester is unavailable");
+  const { purpose, bookedBy, privacy, canEdit, canCancel, ...metadata } = mapPrivacy(input);
   return {
-    ...mapBooking(input),
+    ...mapReadIdentity(input),
+    ...metadata,
+    purpose,
+    bookedBy,
+    privacy,
+    canEdit,
+    canCancel,
     canViewConfiguration: input.canViewConfiguration,
-    requester: input.requester ?? null,
+    requester: input.requester,
   };
 }
 export function mapBookingMutation(input: MappedBooking) {

@@ -35,6 +35,7 @@ function additionalEventResourceCount(
   const pageResourceIds = new Set(resources.map((resource) => resource.globalId));
   const additionalResourceIds = new Set<string>();
   for (const event of events) {
+    if (!event.target) continue;
     if (!pageResourceIds.has(event.target.globalId)) additionalResourceIds.add(event.target.globalId);
   }
   return additionalResourceIds.size;

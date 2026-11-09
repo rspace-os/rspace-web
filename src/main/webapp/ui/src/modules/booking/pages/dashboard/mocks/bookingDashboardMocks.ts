@@ -2,7 +2,6 @@ import { HttpResponse, http, type RequestHandler } from "msw";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { apiV2CollectionRequestProblem, badRequest } from "@/__tests__/mocks/apiV2CollectionMock";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { mapBookingListDocument } from "@/modules/booking/domain/booking";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 import { bookingTarget } from "../../mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
@@ -32,7 +31,7 @@ export function dashboardBookingFixture(
 ): BookingListDocument {
   const start = overrides.start ?? timestamp(day, 8 + (id % 8), (id % 2) * 30);
   const end = overrides.end ?? new Date(Date.parse(start) + 45 * 60 * 1000).toISOString();
-  return mapBookingListDocument({
+  return {
     id,
     version: 0,
     target: bookingTarget(id, `Instrument ${id}`),
@@ -52,7 +51,7 @@ export function dashboardBookingFixture(
     createdAt: overrides.createdAt ?? start,
     updatedAt: overrides.updatedAt ?? start,
     createdBy: overrides.createdBy ?? null,
-  });
+  };
 }
 
 export const dashboardBookings: readonly BookingListDocument[] = [

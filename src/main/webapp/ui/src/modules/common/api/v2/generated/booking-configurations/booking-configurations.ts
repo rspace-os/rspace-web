@@ -36,10 +36,12 @@ import {
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
 import { apiV2Fetch, apiV2HeadersFetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
+import { getSearchCalendarEventsQueryKey } from "../booking-calendar/booking-calendar.ts";
 import {
   getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
+  getSearchCalendarCatalogueQueryKey,
 } from "../booking-catalogue/booking-catalogue.ts";
 import { getSearchBookingConfigurationTargetsQueryKey } from "../booking-configuration-targets/booking-configuration-targets.ts";
 import { getCountBookingsQueryKey, getListBookingsQueryKey } from "../bookings/bookings.ts";
@@ -214,6 +216,8 @@ export const getDeleteManyBookingConfigurationsMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
@@ -703,6 +707,8 @@ export const getUpdateManyBookingConfigurationsMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
@@ -855,6 +861,8 @@ export const getCreateBookingConfigurationMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
@@ -1002,6 +1010,8 @@ export const getCreateManyBookingConfigurationsMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
@@ -2249,6 +2259,8 @@ export const getDeleteBookingConfigurationMutationOptions = <
             getCountBookingsQueryKey(),
             getGetBookingCalendarSubscriptionQueryKey(variables.id),
             getListMyBookableItemCalendarSubscriptionsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
@@ -2799,6 +2811,8 @@ export const getUpdateBookingConfigurationMutationOptions = <
             getCountBookingsQueryKey(),
             getGetBookingCalendarSubscriptionQueryKey(variables.id),
             getListMyBookableItemCalendarSubscriptionsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
@@ -3281,6 +3295,8 @@ export const getReplaceBookingConfigurationAccessMutationOptions = <
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -3807,6 +3823,8 @@ export const getLeaveBookingConfigurationAccessMutationOptions = <
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getSearchCalendarEventsQueryKey(),
+            getSearchCalendarCatalogueQueryKey(),
             getCountBookingCatalogueAvailabilityQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });

@@ -145,6 +145,17 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   @Override
+  public boolean setPublicationAllowed(Long groupId, boolean allowed, User subject) {
+    Group group = groupDao.getGroupWithCommunities(groupId);
+    if (!subject.hasRoleInGroup(group, RoleInGroup.PI)
+        || !permissnUtils.isPermitted(group, PermissionType.WRITE, subject)) {
+      return false;
+    }
+    groupDao.setPublicationAllowed(groupId, allowed);
+    return true;
+  }
+
+  @Override
   public Group saveGroup(Group group, boolean isNew, User subject) {
     calendarRevocations.affectAll();
     if (!isNew) {

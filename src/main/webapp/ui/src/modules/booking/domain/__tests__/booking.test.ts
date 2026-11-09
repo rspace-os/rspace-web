@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   BOOKING_READ_FIELDS,
   BookingUnavailableError,
+  mapBookingDetails,
+  mapBookingListDocument,
   mapBookingSummary,
   retryBookingRead,
   type SelectedBooking,
@@ -15,6 +17,34 @@ import {
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 
 describe("booking response intervals", () => {
+  it("accepts a retained booking whose target details are redacted", () => {
+    const redacted = {
+      id: 18,
+      version: 2,
+      target: null,
+      timezone: null,
+      start: "2026-08-17T10:00:00Z",
+      end: "2026-08-17T11:00:00Z",
+      state: "CONFIRMED",
+      kind: "BOOKING",
+      canViewConfiguration: false,
+      privacy: "full",
+      purpose: "Retained requester details",
+      bookedBy: "Ada Lovelace",
+      createdBy: "Grace Hopper (grace)",
+      canEdit: false,
+      canCancel: false,
+      createdAt: "2026-08-01T09:00:00Z",
+      updatedAt: "2026-08-02T10:00:00Z",
+    } as const;
+
+    expect(mapBookingDetails(redacted)).toEqual(redacted);
+    expect(mapBookingListDocument({ ...redacted, requester: { relationTo: "users", value: 84 } })).toEqual({
+      ...redacted,
+      requester: { relationTo: "users", value: 84 },
+    });
+  });
+
   it("retains a valid response and reports a non-increasing interval at end", () => {
     const target = {
       relationTo: "instruments" as const,

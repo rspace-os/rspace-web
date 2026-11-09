@@ -19,6 +19,7 @@ import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
+import { requesterValueField } from "../ownerPreset";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig, myBookingsTable } from "./bookingList";
@@ -104,7 +105,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const asOfDate = useMemo(() => new Date(asOf), [asOf]);
   const baseFilter = useMemo<ApiV2WhereObject<"Bookings">>(
     () => ({
-      "requester.value": requesterId,
+      [requesterValueField]: requesterId,
       kind: "BOOKING",
       ...(period === "upcoming"
         ? { state: "CONFIRMED", end: { greaterThan: asOfDate.toISOString() } }

@@ -27,6 +27,7 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
@@ -90,6 +91,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Mock private ApiExtraFieldsHelper extraFieldHelper;
   @Mock private InventoryMoveHelper inventoryMoveHelper;
   @Mock private MessageSourceUtils messages;
+  @Mock private BookingCalendarRevocationCoordinator bookingCalendarRevocationCoordinator;
   private InstrumentEntityApiManagerImpl manager;
 
   private User user;
@@ -112,6 +114,8 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ReflectionTestUtils.setField(manager, "extraFieldHelper", extraFieldHelper);
     ReflectionTestUtils.setField(manager, "inventoryMoveHelper", inventoryMoveHelper);
     ReflectionTestUtils.setField(manager, "messages", messages);
+    ReflectionTestUtils.setField(
+        manager, "calendarRevocations", bookingCalendarRevocationCoordinator);
     // the real factory is stateless, so the template-create path is exercised end to end
     ReflectionTestUtils.setField(
         manager, "apiFieldToModelFieldFactory", new ApiFieldToModelFieldFactory());

@@ -814,6 +814,7 @@ export default interface Resources {
         "legend": "Quick filters",
         "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
+        "myItems": "Owned Items",
         "retry": "Retry",
         "scope": "Availability uses the selected display date and timezone."
       },
@@ -1142,10 +1143,7 @@ export default interface Resources {
         "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
       },
       "ownerHealth": {
-        "error": "Could not find bookable items needing an owner.",
         "filter": "Owner attention needed",
-        "filters": "Owner health filters",
-        "loading": "Finding bookable items needing an owner…",
         "needsOwner": "Owner needed"
       },
       "permanentDeleteDialog": {
@@ -1552,6 +1550,11 @@ export default interface Resources {
       "unsaved": "Unsaved changes",
       "whoCanBook": "Who can book",
       "yourAccess": "You are an Owner. You can edit rules and manage access."
+    },
+    "filters": {
+      "dropped": "Some saved filter rules are no longer supported and were removed: {fields}.",
+      "me": "Me",
+      "owner": "Owner"
     },
     "myBookings": {
       "actions": {
@@ -7659,9 +7662,6 @@ export default interface Resources {
             },
             "concurrentModification": "The booking configuration changed. Reload it and try again.",
             "create": "The booking configuration is invalid.",
-            "defaultSharing": {
-              "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
-            },
             "granularity": {
               "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period.",
               "invalidTitle": "The time increment is invalid."
@@ -7740,6 +7740,7 @@ export default interface Resources {
             "duplicateGrantee": "Each user or group can have only one direct role.",
             "forbidden": "You do not have permission to manage access to this resource.",
             "ifMatchRequired": "The current access version is required.",
+            "inheritedReadOnly": "Access to this resource is inherited and cannot be changed here.",
             "invalidGrantee": "The selected user or group is no longer available.",
             "invalidRole": "The selected role is not valid for this resource.",
             "ownerRequired": "At least one direct Owner must remain.",

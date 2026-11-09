@@ -80,6 +80,7 @@
     <include relativeToChangelogFile="true" file="changeLog-booking-idempotency.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1173-booking-calendar-permission-gate.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscriptions.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-notification-subscriptions.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1225.xml"/>
