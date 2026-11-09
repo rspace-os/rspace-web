@@ -89,6 +89,7 @@ export function confocalBooking({
     kind,
     privacy: "full" as const,
     purpose,
+    cancellationReason: null,
     bookedBy: "Ada Lovelace",
     canEdit: false,
     canCancel: false,
@@ -103,6 +104,31 @@ export function confocalBookingPage(docs: readonly unknown[]) {
     page: 1,
     hasNextPage: false,
     limit: 100,
+  };
+}
+
+export function existingBooking({ id, start, end }: { id: number; start: string; end: string }) {
+  return {
+    id,
+    version: 0,
+    target: {
+      relationTo: "instruments",
+      value: { id: 123, name: "Confocal microscope", deleted: false },
+      globalId: "IN123",
+    },
+    timezone: "UTC",
+    start,
+    end,
+    state: "CONFIRMED",
+    kind: "BOOKING",
+    privacy: "full",
+    purpose: `Purpose ${id}`,
+    cancellationReason: null,
+    bookedBy: "Ada Lovelace",
+    canEdit: false,
+    canCancel: false,
+    createdAt: "2030-10-01T09:00:00Z",
+    updatedAt: "2030-10-01T09:00:00Z",
   };
 }
 
@@ -121,6 +147,7 @@ export const editableBooking = {
   kind: "BOOKING",
   privacy: "full",
   purpose: "Imaging",
+  cancellationReason: null,
   bookedBy: "Ada Lovelace",
   canEdit: true,
   canCancel: true,

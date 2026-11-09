@@ -67,7 +67,7 @@ describe("CalendarPage", () => {
         http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration]))),
         http.patch("/api/v2/bookings/41", async ({ request }) => {
           patches.push(await request.json());
-          return HttpResponse.json({ ...ownBooking, version: 8, purpose: "Updated purpose" });
+          return HttpResponse.json({ ...ownBooking, version: 8, purpose: "Updated purpose", cancellationReason: null });
         }),
       );
       await renderCalendar();
@@ -132,7 +132,7 @@ describe("CalendarPage", () => {
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         const patch = await request.json();
         patches.push(patch);
-        return HttpResponse.json({ ...ownBooking, version: 8, end: "2026-08-17T09:00:00Z" });
+        return HttpResponse.json({ ...ownBooking, version: 8, end: "2026-08-17T09:00:00Z", cancellationReason: null });
       }),
     );
     await renderCalendar();
@@ -154,7 +154,7 @@ describe("CalendarPage", () => {
     await user.tab();
     await waitFor(() => expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: "Save changes" }));
-    await waitFor(() => expect(patches).toEqual([{ end: "2026-08-17T09:00:00Z" }]));
+    await waitFor(() => expect(patches).toEqual([{ start: ownBooking.start, end: "2026-08-17T09:00:00Z" }]));
     await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
     expect(refreshes).toBe(1);
   });
@@ -196,11 +196,12 @@ describe("CalendarPage", () => {
               return HttpResponse.json({ status: 412 }, { status: 412 });
             }
             saved = true;
-            return HttpResponse.json(savedBooking);
+            return HttpResponse.json({ ...savedBooking, cancellationReason: null });
           }
           committed = true;
           return failure === "network" ? HttpResponse.error() : HttpResponse.json({ status: 503 }, { status: 503 });
         }),
+        http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...updated, cancellationReason: null })),
       );
       server.use(
         http.get("/api/v2/booking-configurations", () =>
@@ -233,9 +234,10 @@ describe("CalendarPage", () => {
       expect(purpose).toHaveValue("Keep my calendar draft");
       finishRead?.();
 
-      expect(await within(card).findByRole("alert")).toMatchTextContent(
-        "RSpace could not confirm whether the booking was saved.",
-      );
+      expect(await within(card).findByText(/^Server interval: /)).toBeVisible();
+      expect(within(card).getByText(/^Your interval: /)).toBeVisible();
+      expect(within(card).getByRole("button", { name: "Save changes" })).toBeDisabled();
+      expect(await within(card).findByText("Server value")).toBeVisible();
       expect(
         queryClient
           .getQueriesData<ApiV2ListResultMapStringObject>({
@@ -245,20 +247,17 @@ describe("CalendarPage", () => {
       ).toContainEqual([expect.objectContaining({ version: 1, start: updated.start, end: updated.end })]);
       expect(within(card).getByRole("textbox", { name: "Purpose" })).toHaveValue("Keep my calendar draft");
       expect(within(card).getByLabelText("Start time")).toHaveValue(originalTime);
-      expect(within(card).getByText("Server value")).toBeVisible();
       expect(within(card).getByRole("heading", { name: "11:00 AM (+1)–01:00 PM (+1)" })).toBeVisible();
       expect(within(card).getByText("08/18/2026")).toBeVisible();
 
+      await user.click(within(card).getByRole("button", { name: "Use my interval against this server version" }));
       await user.click(within(card).getByRole("button", { name: "Save changes" }));
       await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
       expect(saved).toBe(true);
       expect(versions).toEqual(['"0"', '"1"']);
       expect(patches[0]).toEqual({ purpose: "Keep my calendar draft" });
-      expect(patches[1]).toEqual({
-        start: ownBooking.start,
-        end: ownBooking.end,
-        purpose: "Keep my calendar draft",
-      });
+      // A confirmed stale save sends the whole interval, so the server's move is replaced only on purpose.
+      expect(patches[1]).toEqual({ start: ownBooking.start, end: ownBooking.end, purpose: "Keep my calendar draft" });
     },
   );
 
@@ -285,8 +284,9 @@ describe("CalendarPage", () => {
           return HttpResponse.json({ status: 412 }, { status: 412 });
         }
         saved = true;
-        return HttpResponse.json({ ...updated, version: 2 });
+        return HttpResponse.json({ ...updated, version: 2, cancellationReason: null });
       }),
+      http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...updated, cancellationReason: null })),
     );
     await renderCalendar();
     await user.click(await screen.findByRole("button", { name: "Agenda" }));
@@ -296,8 +296,15 @@ describe("CalendarPage", () => {
     await user.type(await within(card).findByRole("textbox", { name: "Purpose" }), " first draft");
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 
-    const purpose = await within(card).findByDisplayValue("Concurrent edit");
+    expect(await within(card).findByRole("alert")).toMatchTextContent(
+      "Someone else changed this booking while you were editing. Review both intervals and confirm yours before saving",
+    );
+    const confirm = await within(card).findByRole("button", { name: "Use my interval against this server version" });
+    expect(within(card).getByRole("button", { name: "Save changes" })).toBeDisabled();
+    const purpose = within(card).getByRole("textbox", { name: "Purpose" });
+    expect(purpose).toHaveValue(`${ownBooking.purpose} first draft`);
     await user.type(purpose, " updated");
+    await user.click(confirm);
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
@@ -524,6 +531,6 @@ describe("CalendarPage", () => {
     await user.clear(search);
     await user.type(search, "No calendar match");
 
-    expect(await screen.findByText("No records found")).toBeVisible();
+    expect(await screen.findByText("No records found", {}, { timeout: 3_000 })).toBeVisible();
   });
 });
