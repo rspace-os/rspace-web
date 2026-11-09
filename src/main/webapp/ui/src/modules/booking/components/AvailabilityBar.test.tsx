@@ -4,9 +4,10 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  RouterContextProvider,
   RouterProvider,
 } from "@tanstack/react-router";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -17,6 +18,7 @@ vi.unmock("react-i18next");
 
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
 const { AvailabilityBar } = await import("./AvailabilityBar");
+const { BookingSummaryAccordion } = await import("./BookingSummaryAccordion");
 
 const resources = { booking: bookingEnglish };
 
@@ -137,6 +139,61 @@ describe("AvailabilityBar", () => {
         name: "Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event",
       }),
     ).toHaveAccessibleName("Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event");
+  });
+
+  it.each([true, false, undefined])(
+    "gates summary item links on configuration access (%s)",
+    async (canViewConfiguration) => {
+      const user = userEvent.setup();
+      const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
+      await renderWithRealI18n(
+        <RouterContextProvider router={router}>
+          <BookingSummaryAccordion
+            accordionName="permissions"
+            heading={item.name}
+            period="09:00–10:00"
+            purpose="Imaging"
+            item={item}
+            canViewConfiguration={canViewConfiguration}
+          />
+        </RouterContextProvider>,
+        { resources, defaultNS: "booking" },
+      );
+      await user.click(await screen.findByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+      if (canViewConfiguration) {
+        expect(screen.getByRole("link", { name: item.name })).toHaveAttribute("href", "/booking/bookable-items/IN123");
+        expect(screen.getByRole("link", { name: "Open inventory record IN123" })).toHaveAttribute(
+          "href",
+          "/globalId/IN123",
+        );
+      } else {
+        expect(screen.queryByRole("link", { name: item.name })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+        expect(screen.getAllByText(item.name)).toHaveLength(2);
+      }
+    },
+  );
+
+  it("renders a booking summary without availability-bar context", async () => {
+    const user = userEvent.setup();
+    await renderWithRealI18n(
+      <BookingSummaryAccordion
+        accordionName="dashboard-bookings"
+        heading="Confocal microscope"
+        period="09:00–10:00"
+        purpose="Cell imaging"
+      />,
+      { resources, defaultNS: "booking" },
+    );
+
+    expect(screen.getByText("Confocal microscope")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Details" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+
+    await user.click(await screen.findByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+
+    expect(screen.getByText("Cell imaging")).toBeVisible();
+    expect(screen.queryByText("None provided")).not.toBeInTheDocument();
   });
 
   it("explains an empty DST display window without drawing a misleading availability bar", async () => {
@@ -334,40 +391,62 @@ describe("AvailabilityBar", () => {
     await expectAccessible(dialog);
   });
 
-  it("expands authorized booking details", async () => {
-    const user = userEvent.setup();
-    await renderRoutedAvailabilityBar({
-      intervals: [
-        sourced("booking:41", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z", "booking", undefined, undefined, {
-          id: 41,
-          kind: "BOOKING",
-          privacy: "full",
-          purpose: "Cell imaging",
-          bookedBy: "Ada Lovelace (ada)",
+  it.each(["BOOKING", "MAINTENANCE"] as const)(
+    "expands authorized %s details and links to the booking page",
+    async (kind) => {
+      const user = userEvent.setup();
+      const { router } = await renderRoutedAvailabilityBar({
+        intervals: [
+          sourced(
+            "booking:41",
+            "2026-08-12T09:00:00.000Z",
+            "2026-08-12T10:00:00.000Z",
+            kind === "BOOKING" ? "booking" : "blockout",
+            undefined,
+            undefined,
+            {
+              id: 41,
+              kind,
+              privacy: "full",
+              canViewConfiguration: true,
+              purpose: "Cell imaging",
+              bookedBy: "Ada Lovelace",
+              createdBy: "Ada Lovelace",
+            },
+          ),
+        ],
+      });
+
+      await user.hover(
+        await screen.findByRole("button", {
+          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Blocked out"}, Aug 12, 2026, 09:00–10:00, 1 event`,
         }),
-      ],
-    });
+      );
+      const dialog = await screen.findByRole("dialog");
+      const disclosure = within(dialog).getByLabelText(
+        `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance blockout"}, 09:00–10:00`,
+      );
+      expect(
+        within(dialog).getByText(kind === "BOOKING" ? "Booked by Ada Lovelace" : "Maintenance blockout"),
+      ).toBeVisible();
+      await user.click(disclosure);
 
-    await user.hover(
-      await screen.findByRole("button", {
-        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event",
-      }),
-    );
-    const dialog = await screen.findByRole("dialog");
-    const disclosure = within(dialog).getByLabelText("Show details for Confocal microscope, 09:00–10:00");
-    await user.click(disclosure);
+      expect(within(dialog).getByRole("link", { name: "Open inventory record IN123" })).toBeVisible();
+      expect(within(dialog).getByRole("link", { name: "Imaging suite" })).toBeVisible();
+      expect(within(dialog).getByText("Ada Lovelace")).toBeVisible();
+      expect(within(dialog).getByText("Cell imaging")).toBeVisible();
+      const details = within(dialog).getByRole("link", { name: "Details" });
+      expect(details).toHaveAttribute("href", "/booking/calendar/bookings/41");
+      await expectAccessible(dialog);
 
-    expect(within(dialog).getByRole("link", { name: "Open inventory record IN123" })).toBeVisible();
-    expect(within(dialog).getByRole("link", { name: "Imaging suite" })).toBeVisible();
-    expect(within(dialog).getByText("Ada Lovelace (ada)")).toBeVisible();
-    expect(within(dialog).getByText("Cell imaging")).toBeVisible();
-    expect(within(dialog).queryByRole("link", { name: "Details" })).not.toBeInTheDocument();
-    await expectAccessible(dialog);
-  });
+      await user.click(details);
+      await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    },
+  );
 
   it("expands full-privacy maintenance details from a blockout source", async () => {
     const user = userEvent.setup();
-    await renderAvailabilityBar({
+    await renderRoutedAvailabilityBar({
       intervals: [
         sourced(
           "maintenance:42",
@@ -388,7 +467,7 @@ describe("AvailabilityBar", () => {
       ],
     });
 
-    await user.click(screen.getByRole("button"));
+    await user.click(await screen.findByRole("button"));
     const dialog = await screen.findByRole("dialog");
     const disclosure = within(dialog).getByLabelText("Show details for Maintenance blockout, 09:00–10:00");
     await user.click(disclosure);
@@ -428,6 +507,37 @@ describe("AvailabilityBar", () => {
     expect(within(dialog).getByText("Maintenance blockout")).toBeVisible();
     expect(screen.queryByText("Private maintenance actor")).not.toBeInTheDocument();
     expect(screen.queryByText("Private maintenance reason")).not.toBeInTheDocument();
+  });
+
+  it("can omit redundant booking context while preserving the reusable detail path", async () => {
+    const user = userEvent.setup();
+    await renderRoutedAvailabilityBar({
+      intervals: [
+        sourced("booking:41", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z", "booking", undefined, undefined, {
+          id: 41,
+          kind: "BOOKING",
+          privacy: "full",
+          purpose: "Cell imaging",
+          bookedBy: "Ada Lovelace",
+        }),
+      ],
+      showBookingContextDetails: false,
+    });
+
+    await user.hover(
+      await screen.findByRole("button", {
+        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event",
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+
+    expect(within(dialog).getByText("Booked by Ada Lovelace")).toBeVisible();
+    expect(within(dialog).getByText("Cell imaging")).toBeVisible();
+    expect(within(dialog).queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Booked by")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "Details" })).toBeVisible();
+    await expectAccessible(dialog);
   });
 
   it("uses an explicitly supplied arbitrary period", async () => {

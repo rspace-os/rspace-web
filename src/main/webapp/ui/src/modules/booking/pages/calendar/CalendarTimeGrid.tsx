@@ -1,15 +1,20 @@
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimeline } from "@/modules/booking/components/DayTimeline";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingEditorsContext } from "./BookingEventsCalendar";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
+  actionsFor,
+  blockoutActionsFor,
   type CalendarView,
   calendarDates,
   eventsOn,
   formatDate,
   scrollCalendarWithArrowKeys,
+  timelineEditorPositions,
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
@@ -34,6 +39,7 @@ export function CalendarTimeGrid({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = calendarDates(date, view);
   const month = date.slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
@@ -45,10 +51,15 @@ export function CalendarTimeGrid({
             <DayTimeline
               date={date}
               timezone={timezone}
-              events={eventsOn(events, date, timezone).map((event) => toTimelineEvent(event, date, timezone))}
+              events={eventsOn(events, date, timezone, editorPositions).map((event) =>
+                toTimelineEvent(event, date, timezone),
+              )}
+              eventPositions={timelineEditorPositions(editorPositions, date, timezone)}
               startWindow={availabilityStartMinute}
               endWindow={availabilityEndMinute}
               showZoomControls={false}
+              renderEventActions={actionsFor(events, timezone)}
+              renderBlockoutActions={blockoutActionsFor(events, timezone)}
             />
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
@@ -80,7 +91,7 @@ export function CalendarTimeGrid({
                   {isLoading ? (
                     <Skeleton aria-hidden="true" className="h-20 w-full" />
                   ) : (
-                    eventsOn(events, day, timezone).map((event) => (
+                    eventsOn(events, day, timezone, editorPositions).map((event) => (
                       <CalendarEventCard
                         key={`${day}-${event.id}`}
                         event={event}

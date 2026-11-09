@@ -1,0 +1,280 @@
+import { beforeAll as beforeBookingCatalog } from "vitest";
+import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import appI18n from "@/modules/common/i18n";
+
+beforeBookingCatalog(async () => {
+  appI18n.addResourceBundle(
+    "en-US",
+    "booking",
+    (await import("@/modules/common/i18n/locales/en-US/booking.json")).default,
+  );
+});
+
+import "@/__tests__/__mocks__/matchMedia";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  type RouterHistory,
+  RouterProvider,
+} from "@tanstack/react-router";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { Suspense } from "react";
+import { beforeEach, describe, expect, it } from "vitest";
+import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
+import { server } from "@/__tests__/mswServer";
+import i18n from "@/modules/common/i18n";
+import { tableViewRouteOptions } from "@/modules/common/table-list/tableViewRoute";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+import { bookingListConfig, myBookingsTable } from "../bookingList";
+import { bookingHandlers, roleLostBooking, upcomingBooking } from "../mocks/bookingMocks";
+import { myBookingsSearch } from "../search";
+import { UserBookingsPage } from "../UserBookingsPage";
+
+const initialColumns = '{ "fields": ["target", "start", "end"] }';
+const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal&my-bookings.where=target.name%3Dcontains%3Dscope&my-bookings.columns=${encodeURIComponent(initialColumns)}&my-bookings.sort=-start`;
+
+let history: RouterHistory;
+const currentSearch = () => new URLSearchParams(history.location.search);
+
+function renderPage(
+  path = initialPath,
+  requesterId = 84,
+  onListRequest: (url: URL) => void = () => undefined,
+  onCountRequest: (url: URL) => void = () => undefined,
+  docs?: readonly unknown[],
+) {
+  server.use(...bookingHandlers(onListRequest, onCountRequest, docs));
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
+  const root = createRootRoute({
+    component: () => (
+      <MemoryHistoryNuqsAdapter>
+        <Outlet />
+      </MemoryHistoryNuqsAdapter>
+    ),
+  });
+  const pageRoute = createRoute({
+    getParentRoute: () => root,
+    path: "/booking/my-bookings/",
+    validateSearch: myBookingsSearch,
+    ...tableViewRouteOptions([myBookingsTable]),
+    component: () => <UserBookingsPage requesterId={requesterId} title="Test user bookings" />,
+  });
+  const detailsRoute = createRoute({
+    getParentRoute: () => root,
+    path: "/booking/bookable-items/$globalId/{-$tab}/",
+    component: Outlet,
+  });
+  history = createMemoryHistory({ initialEntries: [path] });
+  const router = createRouter({ routeTree: root.addChildren([pageRoute, detailsRoute]), history });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  window.localStorage.clear();
+});
+
+describe("My Bookings page", () => {
+  it("keeps the persisted table descriptor in step with its configuration", () => {
+    const config = bookingListConfig("UTC");
+    expect(myBookingsTable).toMatchObject({
+      slug: config.slug,
+      defaultColumns: config.defaultColumns,
+      malformed: "issue",
+    });
+  });
+
+  it("restores the stored table view on entry, keeping the validated period", async () => {
+    window.localStorage.setItem(
+      "rspace.tableList.booking-my-bookings.view",
+      JSON.stringify({ v: 1, search: "confocal", where: null, columns: null, sort: null }),
+    );
+    renderPage("/booking/my-bookings");
+
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("confocal"),
+    );
+    expect(history.location.search).toBe("?period=upcoming&my-bookings.q=confocal");
+  });
+
+  it("keeps TableList URL state while replacing only the period scope", async () => {
+    const requests: URL[] = [];
+    renderPage(initialPath, 84, (url) => requests.push(url));
+    const user = userEvent.setup();
+
+    expect(await screen.findByRole("heading", { name: "Test user bookings" })).toHaveClass("text-2xl", "font-semibold");
+    await waitFor(() =>
+      expect(
+        requests.some((request) => request.searchParams.get("where")?.includes("target.name=contains=scope")),
+      ).toBe(true),
+    );
+    const upcoming = requests.findLast((request) =>
+      request.searchParams.get("where")?.includes("target.name=contains=scope"),
+    );
+    expect(upcoming?.searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted");
+    expect(upcoming?.searchParams.get("where")).toContain("requester.value==84");
+    expect(upcoming?.searchParams.get("where")).toContain("kind==BOOKING");
+    expect(upcoming?.searchParams.get("where")).toContain("state==CONFIRMED");
+    expect(upcoming?.searchParams.get("where")).toContain("end=gt=");
+    expect(upcoming?.searchParams.get("where")).toContain("confocal");
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("confocal"),
+    );
+    await waitFor(() => expect(currentSearch().get("my-bookings.q")).toBe("confocal"));
+    const columnsBeforePeriodChange = currentSearch().get("my-bookings.columns");
+
+    await user.click(screen.getByRole("button", { name: "booking:myBookings.period.past" }));
+    await waitFor(() => expect(currentSearch().get("period")).toBe("past"));
+    const parameters = currentSearch();
+    expect(parameters.get("my-bookings.q")).toBe("confocal");
+    expect(parameters.get("my-bookings.where")).toBe("target.name=contains=scope");
+    expect(parameters.get("my-bookings.columns")).toBe(columnsBeforePeriodChange);
+    expect(parameters.get("my-bookings.sort")).toBe("-start");
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toContain("end=le="));
+    const pastWhere = requests.at(-1)?.searchParams.get("where");
+    expect(pastWhere).toContain("target.name=contains=scope");
+    expect(pastWhere).toContain("confocal");
+    expect(pastWhere).toContain("state==CANCELLED");
+
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" }));
+    await waitFor(() => expect(currentSearch().get("period")).toBe("past"));
+    const current = currentSearch();
+    expect(current.get("my-bookings.q")).toBeNull();
+    expect(current.get("my-bookings.where")).toBeNull();
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toContain("end=le="));
+    expect(requests.at(-1)?.searchParams.get("where")).toContain("requester.value==84");
+  });
+
+  it("shows the full upcoming count independently of list filters and uses the same boundary", async () => {
+    const lists: URL[] = [];
+    const counts: URL[] = [];
+    renderPage(
+      initialPath,
+      84,
+      (url) => lists.push(url),
+      (url) => counts.push(url),
+    );
+
+    expect(await screen.findByLabelText("booking:myBookings.count.accessible")).toHaveTextContent("2");
+    expect(await screen.findAllByText("Confocal microscope")).not.toHaveLength(0);
+    expect(
+      screen
+        .getAllByRole("link", { name: "booking:myBookings.actions.itemCalendar" })
+        .some((link) => link.getAttribute("href") === "/booking/bookable-items/IN123"),
+    ).toBe(true);
+    expect(screen.getAllByRole("link", { name: "booking:myBookings.actions.viewDetails" })[0]).toHaveAttribute(
+      "href",
+      "/booking/calendar/bookings/41",
+    );
+    await waitFor(() => expect(counts).toHaveLength(1));
+    const countWhere = counts[0].searchParams.get("where");
+    expect(countWhere).toMatch(/^requester.value==84;kind==BOOKING;state==CONFIRMED;end=gt=.+Z$/);
+    expect(countWhere).not.toContain("confocal");
+    expect(countWhere).not.toContain("target.name");
+    expect([...counts[0].searchParams.keys()]).toEqual(["where", "max"]);
+    expect(counts[0].searchParams.get("max")).toBe("100");
+    const asOf = countWhere?.match(/end=gt=(.+)$/)?.[1] ?? "";
+    expect(asOf).not.toBe("");
+    expect(Date.parse(upcomingBooking.start)).toBeLessThan(Date.parse(asOf));
+    expect(Date.parse(upcomingBooking.end)).toBeGreaterThan(Date.parse(asOf));
+    expect(
+      lists.findLast((request) => request.searchParams.get("where")?.includes("confocal"))?.searchParams.get("where"),
+    ).toContain(`end=gt=${asOf}`);
+  });
+
+  it("shows the lower-bound upcoming count as 99+", async () => {
+    renderPage();
+    server.use(
+      http.get("/api/v2/bookings/count", () => HttpResponse.json({ totalDocs: 100, totalIsLowerBound: true })),
+    );
+    expect(i18n.t("booking:myBookings.count.lowerBound", { lng: "en-US" })).toBe("99+");
+    expect(await screen.findByLabelText("booking:myBookings.count.lowerBoundAccessible")).toHaveTextContent(
+      "booking:myBookings.count.lowerBound",
+    );
+  });
+
+  it("formats booking times in the resolved display timezone", async () => {
+    renderPage();
+    const expectedStart = new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }).format(new Date(upcomingBooking.start));
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByText(expectedStart)).toBeVisible();
+  });
+
+  it("keeps a role-lost requester's target label read-only without item navigation", async () => {
+    renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByText("Confocal microscope")).toBeVisible();
+    expect(table.getByText("IN123", { exact: true })).toBeVisible();
+    expect(table.getByRole("link", { name: "booking:myBookings.actions.viewDetails" })).toHaveAttribute(
+      "href",
+      "/booking/calendar/bookings/43",
+    );
+    expect(screen.queryByRole("link", { name: "booking:myBookings.actions.itemCalendar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "common:tableList.filters.openRecord" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:myBookings.actions.edit" })).not.toBeInTheDocument();
+    expect(table.getByText("booking:myBookings.roleLoss.readOnly")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
+    // The download endpoint requires the same configuration read the row has lost.
+    expect(screen.queryByRole("button", { name: "booking:calendar.file.accessibleLabel" })).not.toBeInTheDocument();
+  });
+
+  it("keeps page actions accessible by name", async () => {
+    renderPage();
+
+    const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.withCount" });
+    const past = screen.getByRole("button", { name: "booking:myBookings.period.past" });
+    const viewDetails = (await screen.findAllByRole("link", { name: "booking:myBookings.actions.viewDetails" }))[0];
+    const table = within(screen.getByRole("table"));
+    const edit = table.getByRole("link", { name: "booking:myBookings.actions.edit" });
+    const cancel = table.getByRole("button", { name: "booking:bookings.actions.cancel" });
+
+    expect(screen.getByRole("group", { name: "booking:myBookings.period.legend" })).toContainElement(upcoming);
+    expect(screen.queryByRole("heading", { name: "booking:myBookings.plural" })).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:myBookings.description")).not.toBeInTheDocument();
+    expect(within(upcoming).getByText("booking:myBookings.period.upcoming")).toBeVisible();
+    expect(within(past).getByText("booking:myBookings.period.past")).toBeVisible();
+    expect(within(viewDetails).queryByText("booking:myBookings.actions.viewDetails")).not.toBeInTheDocument();
+    expect(within(edit).queryByText("booking:myBookings.actions.edit")).not.toBeInTheDocument();
+    expect(within(cancel).queryByText("booking:bookings.actions.cancel")).not.toBeInTheDocument();
+  });
+
+  it("shows period-specific empty states", async () => {
+    renderPage(initialPath, 84, undefined, undefined, []);
+    const user = userEvent.setup();
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByText("booking:myBookings.empty.upcoming")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "booking:myBookings.period.past" }));
+    expect(await table.findByText("booking:myBookings.empty.past")).toBeVisible();
+  });
+});
+
+it("links the instrument name to its bookable-item page and keeps the Inventory ID link", async () => {
+  await renderPage();
+  expect((await screen.findAllByRole("link", { name: "Confocal microscope" }))[0]).toHaveAttribute(
+    "href",
+    "/booking/bookable-items/IN123",
+  );
+  expect(screen.getAllByRole("link", { name: "common:tableList.filters.openRecord" })[0]).toHaveAttribute(
+    "href",
+    "/globalId/IN123",
+  );
+});
