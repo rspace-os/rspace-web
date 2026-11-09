@@ -72,6 +72,11 @@ public interface ResourceOperations<T, ID> {
   /** Audit-only authorization hook, deliberately independent of generic access-document routes. */
   default void requireAuditAccess(T resource, User subject) {}
 
+  /** Trusted payload fields required to belong to the currently readable resource instance. */
+  default Map<String, String> requiredAuditFields(T entity) {
+    return Map.of();
+  }
+
   /** Whether every audit description for this resource is safe for its readers. */
   default boolean auditDescriptionsSafe() {
     return false;
@@ -121,6 +126,19 @@ public interface ResourceOperations<T, ID> {
   default Optional<Map<Object, Map<String, Object>>> relationshipReadDocuments(
       Set<ID> ids, User subject) {
     return Optional.empty();
+  }
+
+  /** Result of a singular create, including whether it replayed an earlier request. */
+  record CreateResult<T>(T resource, boolean replayed) {}
+
+  /** Whether singular create accepts a creator-scoped Idempotency-Key. */
+  default boolean supportsIdempotentCreate() {
+    return false;
+  }
+
+  /** Header-aware singular create; ordinary resources retain their existing behavior. */
+  default CreateResult<T> create(ParsedDocument document, ApiV2Caller caller, String key) {
+    return new CreateResult<>(create(document, caller), false);
   }
 
   default T create(ParsedDocument document, ApiV2Caller caller) {

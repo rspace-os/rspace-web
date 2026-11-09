@@ -1,6 +1,7 @@
 package com.researchspace.testutils;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,13 +9,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.core.util.CryptoUtils;
+import com.researchspace.featureflags.FeatureFlagResource;
+import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.FeatureFlagManager.Patch;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RoleManager;
@@ -30,11 +36,15 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -65,10 +75,14 @@ public final class ApiV2Fixture {
   private final IContentInitializer contentInitializer;
   private final ContainerApiManager containerManager;
   private final InstrumentEntityApiManager instrumentManager;
+  private final TimeSlotBookingDao bookingDao;
+  private final FeatureFlagManager featureFlagManager;
+  private final PlatformTransactionManager transactionManager;
   private final IPermissionUtils permissionUtils;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final List<Runnable> teardown = new ArrayList<>();
+  private boolean bookingFlagEnabled;
 
   private MockMvc mockMvc;
   private String sysadminKey;
@@ -87,6 +101,9 @@ public final class ApiV2Fixture {
       IContentInitializer contentInitializer,
       ContainerApiManager containerManager,
       InstrumentEntityApiManager instrumentManager,
+      TimeSlotBookingDao bookingDao,
+      FeatureFlagManager featureFlagManager,
+      PlatformTransactionManager transactionManager,
       IPermissionUtils permissionUtils) {
     this.userManager = userManager;
     this.apiKeyManager = apiKeyManager;
@@ -95,6 +112,9 @@ public final class ApiV2Fixture {
     this.contentInitializer = contentInitializer;
     this.containerManager = containerManager;
     this.instrumentManager = instrumentManager;
+    this.bookingDao = bookingDao;
+    this.featureFlagManager = featureFlagManager;
+    this.transactionManager = transactionManager;
     this.permissionUtils = permissionUtils;
   }
 
@@ -117,6 +137,9 @@ public final class ApiV2Fixture {
             context.getBean(IContentInitializer.class),
             context.getBean(ContainerApiManager.class),
             context.getBean(InstrumentEntityApiManager.class),
+            context.getBean(TimeSlotBookingDao.class),
+            context.getBean(FeatureFlagManager.class),
+            context.getBean(PlatformTransactionManager.class),
             context.getBean(IPermissionUtils.class));
     fixture.mockMvc =
         MockMvcBuilders.webAppContextSetup(context)
@@ -288,6 +311,40 @@ public final class ApiV2Fixture {
     return id;
   }
 
+  /** Creates one booking configuration targeting {@code instrumentId} and returns its ID. */
+  public long bookingConfiguration(long instrumentId, String timezone) {
+    return bookingConfiguration(instrumentId, timezone, sysadminKey());
+  }
+
+  /** Creates one booking configuration as the caller identified by {@code apiKey}. */
+  public long bookingConfiguration(long instrumentId, String timezone, String apiKey) {
+    enableBookings();
+    String body =
+        """
+        {"enabled":true,"target":{"relationTo":"instruments","value":%d}}\
+        """
+            .formatted(instrumentId);
+    long id = idOf(postJson("/api/v2/booking-configurations", body, apiKey));
+    teardown.add(() -> deleteBookingConfigurationAsSysadmin(id));
+    return id;
+  }
+
+  /** Creates one confirmed booking through the public endpoint. */
+  public long booking(long instrumentId, Instant start, Instant end) {
+    enableBookings();
+    String body =
+        """
+        {"target":{"relationTo":"instruments","value":%d},"start":"%s","end":"%s"}\
+        """
+            .formatted(instrumentId, start, end);
+    long id = idOf(postJson("/api/v2/bookings", body, userKey()));
+    teardown.add(
+        () ->
+            new TransactionTemplate(transactionManager)
+                .executeWithoutResult(ignored -> bookingDao.remove(id)));
+    return id;
+  }
+
   /** Removes every row this fixture created, most recent first. */
   public void cleanUp() {
     Throwable failure = null;
@@ -339,6 +396,36 @@ public final class ApiV2Fixture {
     return userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
   }
 
+  /** Enables Booking for this fixture and restores the previous baseline during cleanup. */
+  public void enableBookings() {
+    if (bookingFlagEnabled) {
+      return;
+    }
+    bookingFlagEnabled = true;
+    User target = sysadmin();
+    Supplier<IllegalStateException> missingBookingFlag =
+        () -> new IllegalStateException("bookingEnabled feature flag is not registered");
+    FeatureFlagResource original =
+        featureFlagManager
+            .getFeatureFlag(FeatureFlags.BOOKING_ENABLED, target)
+            .orElseThrow(missingBookingFlag);
+    if (original.isValue()) {
+      return;
+    }
+    boolean previousBaseline = original.isBaselineValue();
+    featureFlagManager
+        .updateFeatureFlag(
+            FeatureFlags.BOOKING_ENABLED, new Patch(true, false, null), target, target)
+        .orElseThrow(missingBookingFlag);
+    teardown.add(
+        () ->
+            featureFlagManager.updateFeatureFlag(
+                FeatureFlags.BOOKING_ENABLED,
+                new Patch(previousBaseline, false, null),
+                target,
+                target));
+  }
+
   private String postAsSysadmin(String path, String body) {
     return postJson(path, body, sysadminKey());
   }
@@ -385,6 +472,34 @@ public final class ApiV2Fixture {
     if (status != 404 && (status < 200 || status >= 300)) {
       throw new IllegalStateException(
           "fixture DELETE " + path + " answered " + status + "; the row is still in the database");
+    }
+  }
+
+  /** Permanently removes a versioned booking configuration created by a fixture. */
+  private void deleteBookingConfigurationAsSysadmin(long id) {
+    String path = "/api/v2/booking-configurations/" + id;
+    try {
+      MvcResult current = mockMvc.perform(get(path).header("apiKey", sysadminKey())).andReturn();
+      if (current.getResponse().getStatus() == 404) {
+        return;
+      }
+      String etag = current.getResponse().getHeader(HttpHeaders.ETAG);
+      int deleteStatus =
+          mockMvc
+              .perform(
+                  delete(path)
+                      .queryParam("permanent", "true")
+                      .header("apiKey", sysadminKey())
+                      .header(HttpHeaders.IF_MATCH, etag))
+              .andReturn()
+              .getResponse()
+              .getStatus();
+      if (deleteStatus != 204) {
+        throw new IllegalStateException(
+            "fixture permanent DELETE " + path + " answered " + deleteStatus);
+      }
+    } catch (Exception e) {
+      throw new IllegalStateException("fixture booking configuration cleanup failed", e);
     }
   }
 

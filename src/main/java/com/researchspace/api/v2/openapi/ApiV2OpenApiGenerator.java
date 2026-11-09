@@ -161,16 +161,6 @@ public final class ApiV2OpenApiGenerator {
         .components(Json31.mapper().convertValue(components, Components.class));
   }
 
-  private static Map<String, Object> privateNoStoreHeaders() {
-    return ordered(
-        "Cache-Control",
-        ordered(
-            "description",
-            "Prevents storage of caller-specific subscription state.",
-            "schema",
-            ordered("type", "string", "const", "private, no-store")));
-  }
-
   private void addPaths(
       Map<String, Object> paths,
       ApiV2ResourceRegistration<?, ?> resource,
@@ -320,6 +310,23 @@ public final class ApiV2OpenApiGenerator {
             resourceSchemas,
             resource.registry(),
             runtimeFieldsExtension(resource));
+    if (operation == ResourceOperation.CREATE && resource.supportsIdempotentCreate()) {
+      parameters.add(
+          parameter(
+              "Idempotency-Key",
+              "header",
+              false,
+              ordered(
+                  "type",
+                  "string",
+                  "minLength",
+                  1,
+                  "maxLength",
+                  64,
+                  "pattern",
+                  "^[A-Za-z0-9._:-]+$"),
+              "Creator-scoped request identity, retained for the resource lifetime."));
+    }
     if (resource.isVersioned()
         && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
       parameters.add(
@@ -456,6 +463,17 @@ public final class ApiV2OpenApiGenerator {
             rateLimitHeaders(),
             "content",
             Map.of(JSON, successMedia)));
+    if (operation == ResourceOperation.CREATE && resource.supportsIdempotentCreate()) {
+      responses.put(
+          "200",
+          ordered(
+              "description",
+              "Current resource returned for an identical create retry.",
+              "headers",
+              rateLimitHeaders(),
+              "content",
+              Map.of(JSON, successMedia)));
+    }
     if (operation == ResourceOperation.DELETE && resource.supportsPermanentDelete()) {
       responses.put(
           "204",

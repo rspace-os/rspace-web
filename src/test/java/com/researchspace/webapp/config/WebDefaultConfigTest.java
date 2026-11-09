@@ -26,6 +26,33 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 class WebDefaultConfigTest {
 
   @Test
+  void webConfigCollectsFeatureBodyTypeBeans() {
+    try (var context =
+        new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
+      context.registerBean(
+          com.researchspace.api.v2.json.ApiV2JsonBodyTypes.class,
+          () -> new com.researchspace.api.v2.json.ApiV2JsonBodyTypes(List.of(Detail.class)));
+      context.registerBean(
+          "otherBodyTypes",
+          com.researchspace.api.v2.json.ApiV2JsonBodyTypes.class,
+          () -> new com.researchspace.api.v2.json.ApiV2JsonBodyTypes(List.of(StrictFields.class)));
+      context.refresh();
+      WebConfig config = new WebConfig();
+      config.setJsonBodyTypes(
+          List.copyOf(
+              context
+                  .getBeansOfType(com.researchspace.api.v2.json.ApiV2JsonBodyTypes.class)
+                  .values()));
+      config.defaultConfig = new WebDefaultConfig();
+      config.objectMapper = new WebDefaultConfig().objectMapper();
+      var converter = new MappingJackson2HttpMessageConverter();
+      config.extendMessageConverters(new java.util.ArrayList<>(List.of(converter)));
+      assertTrue(ApiV2JsonMappers.isStrictBody(converter, Detail.class));
+      assertTrue(ApiV2JsonMappers.isStrictBody(converter, StrictFields.class));
+    }
+  }
+
+  @Test
   void boundsJsonDocumentsBeforeTreeMaterializationCanGrowWithoutLimit() {
     ObjectMapper mapper = new WebDefaultConfig().objectMapper();
     StreamReadConstraints constraints = mapper.getFactory().streamReadConstraints();

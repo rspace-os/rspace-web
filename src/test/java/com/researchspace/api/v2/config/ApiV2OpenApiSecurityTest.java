@@ -57,4 +57,28 @@ class ApiV2OpenApiSecurityTest {
       assertTrue(checked > 0);
     }
   }
+
+  @Test
+  void resourceReadSecurityMatchesTheRegisteredAccessPolicies() {
+    try (var context = ApiV2ResourceConfigTest.newContext()) {
+      context.register(ApiV2ResourceConfig.class);
+      context.refresh();
+      var catalog = context.getBean(ApiV2ResourceCatalog.class);
+      var document =
+          Json31.mapper()
+              .valueToTree(new ApiV2OpenApiGenerator(catalog, "API", "2.0.0").generate());
+      for (var resource : catalog.routableResources()) {
+        boolean anonymous =
+            resource.description().schema().access().readAccess().authenticationRequirement()
+                == com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement
+                    .PUBLIC;
+        String root = "/api/v2/" + resource.resourceName();
+        for (String path : List.of(root, root + "/count", root + "/{id}")) {
+          var operation = document.path("paths").path(path).path("get");
+          assertEquals(anonymous, operation.path("security").isEmpty(), path);
+          assertTrue(operation.has("security"), path);
+        }
+      }
+    }
+  }
 }

@@ -20,6 +20,8 @@ A global ID in a relationship filter or write is a prefix and an unversioned ID.
 negative, as in seeded and baseline rows such as `US-3`. The API rejects versioned IDs such as
 `IN12v2`.
 
+For booking domain rules and API examples, see [Booking](Booking.md).
+
 ### Inventory container read constraints
 
 `InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
@@ -258,32 +260,36 @@ Access routes are enabled by the resource's `ResourceAccessSpec`:
 
 The bounded grantee lookup returns `{docs: [...]}` without paging metadata.
 
-Only opted-in resources expose these routes; ordinary collections return `404`. Access documents are
-private and must not be cached. OpenAPI includes the routes only for registered access support.
+Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
+are private and must not be cached. OpenAPI includes the routes only for registered access support.
 
-The shared `ResourceAccessEditor` uses the access document, capabilities, grantee search, and
-concurrency contract. Resource adapters supply translated role labels and notices.
+The shared `ResourceAccessEditor` consumes the access document, capabilities, grantee search,
+and concurrency contract. Resource adapters supply translated role labels and notices.
 
-The editor requires `mutationOptions` with `replaceAccess` and `leaveAccess` factories from the
-resource's generated module. Callers inject these alongside the registry entry, keeping invalidation
-in the generated rules. The common access-operation types depend on the shared generated access
-models, so a collection can opt in at a later layer.
+The editor requires `mutationOptions` with `replaceAccess` and `leaveAccess` factories from
+the resource's generated module. Callers inject these alongside the registry entry, keeping
+invalidation in the generated rules. The common access-operation types depend on the shared
+generated access models, so a collection can opt in at a later layer.
 
-The React `ResourceAccessEditor` keeps its draft within one resource. Changing the resource starts a
-fresh editor. Access documents and grantee search results use generated operation query keys without
-bearer tokens or identity scopes. A failed background or conflict refresh keeps the loaded document,
-unsaved draft and navigation guard mounted. After a stale replacement, Retry loading latest remains
-available and saving stays blocked until recovery succeeds. A successful Leave closes its
-confirmation even if the caller retains inherited access. Its optional navigation callback runs only
-while the editor session that initiated the request remains mounted.
+The React `ResourceAccessEditor` keeps its draft within one resource. Its registry entry supplies
+generated access, replacement, leave and grantee-search operations and query keys. Replacement
+sends the quoted `version` from the draft's original access document as `If-Match`. Generated
+mutation options invalidate the resource list, count, record, access and audit queries.
+Identity scopes and bearer tokens are absent from these keys; an identity change reloads the page
+through the shared token provider. Structured error details come from `ApiV2ProblemError.problem`,
+which may be absent for an unstructured HTTP failure. A stale replacement refreshes the latest
+document and merges the draft, keeping saving blocked until recovery succeeds. Successful Leave
+closes its confirmation, and its optional navigation callback runs only while that editor session
+remains mounted.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
-`AccessDocumentation` with its authentication rule and denial codes.
+`AccessDocumentation` stating its authentication rule and denial codes.
 
 A custom `createAccess` function runs after structural parsing and before relationship resolution
-and persistence. For one create document, `context.requireInput()` returns the complete immutable
-`ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input order.
+and persistence. For one create document, `context.requireInput()` returns the complete
+immutable `ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input
+order.
 
 ```java
 AccessFunction documentedCreateAccess =
@@ -669,3 +675,16 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
+
+## Generated frontend access and relationship clients
+
+Resource-access and relationship-picker requests use registry entries backed by the generated
+Orval client. The shared transport supplies authorization, validates generated request and response
+schemas, and handles HTTP problems. Callers do not supply a token. See
+[the frontend client guide](RestApiV2FrontendClient.md).
+
+Picker sources preserve display-label mapping and bounded selected-ID hydration. Search keys contain
+the source ID and term; option and batch caches contain the source ID and canonical selected IDs.
+These display-option caches are the documented exception to generated operation keys and contain
+no identity scope. Selected display documents retain their 15-second freshness check.

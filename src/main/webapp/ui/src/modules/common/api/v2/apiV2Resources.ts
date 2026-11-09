@@ -1,4 +1,9 @@
 import type { QueryKey } from "@tanstack/react-query";
+import * as bookingcatalogue from "./generated/booking-catalogue/booking-catalogue.ts";
+import * as bookingconfigurationtargets from "./generated/booking-configuration-targets/booking-configuration-targets.ts";
+import * as bookingconfigurations from "./generated/booking-configurations/booking-configurations.ts";
+import * as bookingsettings from "./generated/booking-settings/booking-settings.ts";
+import * as bookings from "./generated/bookings/bookings.ts";
 import * as config from "./generated/config/config.ts";
 import * as containers from "./generated/containers/containers.ts";
 import * as featureflags from "./generated/feature-flags/feature-flags.ts";
@@ -42,6 +47,50 @@ export type ApiV2ResourceEntry<TName extends string, TOperations extends ApiV2Op
 } & TOperations;
 
 export const apiV2Resources = {
+  "booking-configurations": {
+    name: "booking-configurations",
+    list: {
+      request: bookingconfigurations.listBookingConfigurations,
+      queryKey: bookingconfigurations.getListBookingConfigurationsQueryKey,
+    },
+    count: {
+      request: bookingconfigurations.countBookingConfigurations,
+      queryKey: bookingconfigurations.getCountBookingConfigurationsQueryKey,
+    },
+    get: {
+      request: bookingconfigurations.getBookingConfiguration,
+      queryKey: bookingconfigurations.getGetBookingConfigurationQueryKey,
+    },
+    create: bookingconfigurations.createBookingConfiguration,
+    update: bookingconfigurations.updateBookingConfiguration,
+    delete: bookingconfigurations.deleteBookingConfiguration,
+    createMany: bookingconfigurations.createManyBookingConfigurations,
+    updateMany: bookingconfigurations.updateManyBookingConfigurations,
+    deleteMany: bookingconfigurations.deleteManyBookingConfigurations,
+    access: {
+      request: bookingconfigurations.getBookingConfigurationAccess,
+      queryKey: bookingconfigurations.getGetBookingConfigurationAccessQueryKey,
+    },
+    replaceAccess: bookingconfigurations.replaceBookingConfigurationAccess,
+    leaveAccess: bookingconfigurations.leaveBookingConfigurationAccess,
+    grantees: {
+      request: bookingconfigurations.searchBookingConfigurationAccessGrantees,
+      queryKey: bookingconfigurations.getSearchBookingConfigurationAccessGranteesQueryKey,
+    },
+    audit: {
+      request: bookingconfigurations.listBookingConfigurationAuditEvents,
+      queryKey: bookingconfigurations.getListBookingConfigurationAuditEventsQueryKey,
+    },
+  } satisfies ApiV2ResourceEntry<"booking-configurations", ApiV2OperationSet>,
+  bookings: {
+    name: "bookings",
+    list: { request: bookings.listBookings, queryKey: bookings.getListBookingsQueryKey },
+    count: { request: bookings.countBookings, queryKey: bookings.getCountBookingsQueryKey },
+    get: { request: bookings.getBooking, queryKey: bookings.getGetBookingQueryKey },
+    create: bookings.createBooking,
+    update: bookings.updateBooking,
+    audit: { request: bookings.listBookingAuditEvents, queryKey: bookings.getListBookingAuditEventsQueryKey },
+  } satisfies ApiV2ResourceEntry<"bookings", ApiV2OperationSet>,
   containers: {
     name: "containers",
     list: { request: containers.listContainers, queryKey: containers.getListContainersQueryKey },
@@ -97,6 +146,24 @@ export const apiV2Resources = {
     get: { request: users.getUser, queryKey: users.getGetUserQueryKey },
     audit: { request: users.listUserAuditEvents, queryKey: users.getListUserAuditEventsQueryKey },
   } satisfies ApiV2ResourceEntry<"users", ApiV2OperationSet>,
+  "booking-catalogue": {
+    name: "booking-catalogue",
+    list: {
+      request: bookingcatalogue.searchBookingCatalogue,
+      queryKey: bookingcatalogue.getSearchBookingCatalogueQueryKey,
+    },
+  } satisfies ApiV2ResourceEntry<"booking-catalogue", ApiV2OperationSet>,
+  "booking-configuration-targets": {
+    name: "booking-configuration-targets",
+    list: {
+      request: bookingconfigurationtargets.searchBookingConfigurationTargets,
+      queryKey: bookingconfigurationtargets.getSearchBookingConfigurationTargetsQueryKey,
+    },
+  } satisfies ApiV2ResourceEntry<"booking-configuration-targets", ApiV2OperationSet>,
+  "booking-settings": {
+    name: "booking-settings",
+    get: { request: bookingsettings.getBookingSettings, queryKey: bookingsettings.getGetBookingSettingsQueryKey },
+  } satisfies ApiV2ResourceEntry<"booking-settings", ApiV2OperationSet>,
   config: {
     name: "config",
     get: { request: config.getApiV2Config, queryKey: config.getGetApiV2ConfigQueryKey },

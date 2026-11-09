@@ -194,6 +194,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.relatedAuditIdentifierFields();
   }
 
+  Map<String, String> requiredAuditFields(Object entity) {
+    return operations.requiredAuditFields(description.entityType().cast(entity));
+  }
+
   boolean auditBypassesActorDirectory() {
     return operations.auditBypassesActorDirectory();
   }
@@ -342,7 +346,16 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.deleteIsSoft();
   }
 
+  public boolean supportsIdempotentCreate() {
+    return operations.supportsIdempotentCreate();
+  }
+
   public Map<String, Object> create(JsonNode body, ApiV2Caller caller) {
+    return create(body, caller, null).resource();
+  }
+
+  public ResourceOperations.CreateResult<Map<String, Object>> create(
+      JsonNode body, ApiV2Caller caller, String key) {
     User subject = subject(caller);
     requireDocumentedAuthentication(Operation.CREATE, subject);
     AccessContext base = new AccessContext(subject, Operation.CREATE, description.resourceName());
@@ -353,7 +366,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     ApiV2DocumentParser.authorizeFields(
         body, description, WriteOperation.CREATE, spec.createErrorKey(), context);
     document = resolve(document, subject, context, spec.createErrorKey(), false);
-    return crud.create(document, caller, narrowFields(context, FieldSelection.all()));
+    return crud.create(document, caller, narrowFields(context, FieldSelection.all()), key);
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(JsonNode body, ApiV2Caller caller) {

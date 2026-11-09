@@ -8,6 +8,8 @@ Use a concrete controller for an operation outside collection CRUD, such as `/ap
 query compilation, authentication and request limits, see [REST API v2 queries and
 access](RestApiV2QueriesAndAccess.md).
 
+For booking domain rules and API examples, see [Booking](Booking.md).
+
 ## Add a field type
 
 Collection field implementations live in `model.collection.types`. Each implements
@@ -635,20 +637,28 @@ constraint `Pattern` must have no flags, because the published pattern cannot ca
 
 These per-field wire rules do not replace manager enforcement of domain rules.
 
-The read-only `containers` shape exposes `id`, `globalId`, `name`, `containerType` and `deleted`.
-These fields are safe when the caller has only contents-based visibility. Global IDs use `IC` for
-containers and `BE` for workbenches and cannot be queried. Supply `ContainerReadAccess` to
-`ApiV2ContainerResource.description` when registering the resource. Its static description denies
-reads until a deployment supplies the policy.
+The read-only `containers` shape exposes `id`, `globalId`, `name`, `containerType`
+and `deleted`. These fields are safe when the caller has only contents-based
+visibility. Global IDs use `IC` for containers and `BE` for workbenches and cannot
+be queried. Supply `ContainerReadAccess` to `ApiV2ContainerResource.description`
+when registering the resource. Its static description denies reads until a
+deployment supplies the policy.
 
-`CollectionQueryExecutor.count` uses the unpaginated count query without loading an entity. For
-scalar readers that do not need totals, `projectedSlice` returns a `ResourceSlice`. It requests one
-extra row at the original page offset with counting disabled, trims that row, and reports `hasNext`.
-Offsets beyond Blaze's integer limit return an empty slice without querying. `page` and
-`projectedPage` retain their counted-page behavior.
+`CollectionQueryExecutor.count` uses the unpaginated count query without loading an entity.
+For scalar readers that do not need totals, `projectedSlice` returns a `ResourceSlice`.
+It requests one extra row at the original page offset with counting disabled, trims that
+row, and reports `hasNext`. Offsets beyond Blaze's integer limit return an empty slice
+without querying. `page` and `projectedPage` retain their counted-page behavior.
 
-The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is needed to preserve
-sort order.
+Booking and booking-configuration lists retain the counted entity path. Their documents include
+caller-specific privacy, capabilities, role sources and owner health prepared from access
+aggregates. The ordered page query selects IDs, then fetches the selected entities with their
+to-one actors and access aggregate in one ID-scoped query; assignments and instrument targets are resolved in batches. Moving these lists
+to scalar read documents also requires projecting those access inputs and preserving their
+caller-specific preparation. Until then, these lists count internally even without `totals=true`.
+
+The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is
+needed to preserve sort order.
 
 ## Request and response payloads
 
@@ -777,70 +787,99 @@ resource types.
 
 API v2 request bodies accept `application/json` only; other content types receive HTTP 415.
 
-Stack-owned API v2 JSON bodies use copies of the MVC converter's mapper. `ApiV2JsonBody` preserves
-the collection parser's type rules and decimal-node handling while limiting documents to 10 MiB,
-strings to 2 MiB, token counts to 100,000 and nesting depth to 100. The shared MVC mapper and other
-endpoints' `JsonNode` bindings keep their existing configuration.
+Stack-owned API v2 JSON bodies use mapper copies derived from the MVC converter.
+`ApiV2JsonBody` preserves the collection parser's type rules and decimal-node
+handling while limiting documents to 10 MiB, strings to 2 MiB, token counts to
+100,000 and nesting depth to 100. The shared MVC mapper and other endpoints'
+`JsonNode` bindings keep their existing configuration.
 
-Register each fixed-shape request record in the single `ApiV2JsonMappers.register` call in
-`WebConfig.extendMessageConverters` at the layer that introduces it. The error advice reads that
-converter registration to identify strict bodies.
+Contribute each fixed-shape request record in an `ApiV2JsonBodyTypes` bean at the
+layer that introduces it. `WebConfig.extendMessageConverters` collects these beans
+and passes all their types to `ApiV2JsonMappers.register`.
+The error advice reads that converter registration to identify strict bodies.
 
-Fixed-shape request records use strict binding. Unknown fields and scalar coercions fail. This
-includes floating-point tokens such as `15.0` for integral fields. Collection field codecs retain
-their existing numeric rules. Required and nullable fields on HTTP records remain governed by their
-validation annotations, so partial settings updates and validation messages are preserved.
+Fixed-shape request records use strict binding: unknown fields and scalar
+coercions fail, including floating-point tokens such as `15.0` for integral
+fields. Collection field codecs retain their existing numeric rules. Required
+and nullable fields on HTTP records remain governed by their validation
+annotations, so partial settings updates and validation messages are preserved.
 
-Collection lists omit `totalDocs` and `totalPages` unless the request supplies `totals=true`. Use
-`hasNextPage` and `nextPage` to traverse results. Without totals, `prevPage` is available on every
-page after page 1, including pages past the end. Instruments fetch a scalar window plus one row to
-determine whether another page exists; resources without a scalar slice retain their counted query
-internally.
+Collection lists omit `totalDocs` and `totalPages` unless `totals=true` is supplied.
+Use `hasNextPage` and `nextPage` to traverse results. Without totals, `prevPage` is
+available on every page after page 1, including pages past the end. Instruments
+fetch a scalar window plus one row to determine whether another page exists;
+resources without a scalar slice retain their counted query internally.
 
-`/count` and lists with `totals=true` accept `max` from 1 to 10,000. When more rows match,
-`totalDocs` equals `max`, `totalIsLowerBound` is true, and `totalPages` is omitted. Navigation still
-follows the actual page. An exact total reports `totalIsLowerBound: false`. A list without totals
-omits that member too.
+`/count` and lists with `totals=true` accept `max` from 1 to 10,000. When more
+rows match, `totalDocs` equals `max`, `totalIsLowerBound` is true, and `totalPages`
+is omitted. Navigation still follows the actual page. An exact total reports
+`totalIsLowerBound: false`. A list without totals omits that member too.
 
-Access replacements validate the registered resource and `If-Match` before binding assignments to
-`ReplaceResourceAccessRequest`. Malformed fields return `errors.api.v2.invalidRequest` with an
-additive `invalidParams` list using dotted field names and array indices, such as
-`assignments[0].role`. All rows are validated before the named-assignment limit;
-`audience:all-users` does not count toward that limit.
+Access replacements validate the registered resource and `If-Match` before
+binding assignments to `ReplaceResourceAccessRequest`. Malformed fields return
+`errors.api.v2.invalidRequest` with an additive `invalidParams` list using dotted
+field names and array indices, such as `assignments[0].role`. All rows are
+validated before the named-assignment limit; `audience:all-users` does not count
+toward that limit.
 
 The v1 Audit Trail page and v2 audit search share the audit line format, including usernames
-containing `#`, operate-as usernames, empty descriptions, and the legacy `COPY` action. V1 skips
-malformed lines and retains its lenient timestamp parsing in the JVM default zone. V2 rejects
-malformed audit lines and uses strict, zone-aware timestamps.
+containing `#`, operate-as usernames, empty descriptions, and the legacy `COPY` action.
+V1 skips malformed lines and retains its lenient timestamp parsing in the JVM default zone.
+V2 rejects malformed audit lines and uses strict, zone-aware timestamps.
 
-V2 first authorizes access to the requested record, including lifecycle-hidden records only when the
-resource's audit operations allow it. It filters historical payloads to fields the caller can read
-now. Descriptions are omitted by default. A resource may override
-`ResourceOperations.auditDescriptionsSafe()` only when all its historical descriptions are safe for
-every reader. Text search follows the same field and description rules, so hidden values cannot be
-discovered through matching or counts. V1 retains its existing actor-directory search and
-payload/description behavior. V2 exposes only completed UTC days and returns `503` rather than
-silently skipping unreadable or malformed eligible audit lines.
+V2 first authorizes access to the requested record, including lifecycle-hidden records only
+when the resource's audit operations allow it. It filters historical payloads to fields the
+caller can read now. Descriptions are omitted by default. A resource may override
+`ResourceOperations.auditDescriptionsSafe()` only when all its historical descriptions are safe
+for every reader. Text search follows the same field and description rules, so hidden values
+cannot be discovered through matching or counts. V1 retains its existing actor-directory search
+and payload/description behavior. V2 exposes only completed UTC days and returns `503` rather
+than silently skipping unreadable or malformed eligible audit lines.
 
 Both readers use `AuditLogLineFormat` for anchored line syntax, username characters, empty
 descriptions and legacy action names. They deliberately differ in malformed-line and timestamp
-policy. V1's `LogLineParser` skips invalid lines and parses dates leniently in the JVM default zone.
-V2's `ApiV2AuditStrictSearch` rejects clock gaps and malformed audit lines. During a DST overlap it
-checks record, actor, action and visible text first. A matching event returns `503` only if its two
-candidate instants differ on inclusion in the requested interval. Otherwise it uses the earlier
-instant. File boundaries use the earliest first and latest last candidate so an ambiguous boundary
-cannot hide a matching event.
+policy. V1's `LogLineParser` skips invalid lines and parses dates leniently in the JVM default
+zone. V2's `ApiV2AuditStrictSearch` rejects clock gaps and malformed audit lines. During a DST
+overlap it checks record, actor, action and visible text first. A matching event returns `503`
+only if its two candidate instants differ on inclusion in the requested interval. Otherwise it
+uses the earlier instant. File boundaries use the earliest first and latest last candidate so
+an ambiguous boundary cannot hide a matching event.
 
 V2 scans are limited by `api.v2.audit.concurrentScans` with a default of 2; excess requests return
-`503` immediately with `Retry-After: 1` and a WARN log. `api.v2.audit.scansPerUser` defaults to 1
-and is checked before the global bound. Before taking a scan slot, requests certify cached answers
-under a separate limit of four requests. Configure it with `api.v2.audit.concurrentCacheChecks`.
-Scan saturation therefore does not block cache hits. `api.v2.audit.cacheEntries` defaults to 32 and
-`api.v2.audit.cacheSeconds` to 10; either may be zero to disable caching. The cache stores at most
-the bounded scan result per entry, not pages. Keys include the interval, resource audit identity,
-filters, caller, current actor visibility, readable search fields, description permission and file
-manifest. Every request rechecks record and field access and actor visibility before reuse. File
-identity, size or modification-time changes invalidate reuse unless append certification proves that
-every added event is outside the snapshot. This allows reuse after recording the search itself.
-Failed, retried and over-ceiling scans are not cached. Successful searches, including cache hits and
-empty results, emit an audit `SEARCH` event only after snapshot validation succeeds.
+`503` immediately with `Retry-After: 1` and a WARN log. `api.v2.audit.scansPerUser` defaults to 1 and is checked before the global bound. Cached answers are certified under a separate bound of four requests, configurable with `api.v2.audit.concurrentCacheChecks`, before taking a scan slot, so scan saturation does not block cache hits. `api.v2.audit.cacheEntries` defaults to 32 and `api.v2.audit.cacheSeconds` to 10;
+either may be zero to disable caching. The cache stores at most the bounded scan result per entry,
+not pages. Keys include the interval, resource audit identity, filters, caller, current actor
+visibility, readable search fields, description permission and file manifest. Every request
+rechecks record and field access and actor visibility before reuse. File identity, size or
+modification-time changes invalidate reuse unless append certification proves that every added
+event is outside the snapshot. This allows reuse after recording the search itself. Failed, retried and over-ceiling scans are not cached.
+Successful searches, including cache hits and empty results, emit an audit `SEARCH` event only
+after snapshot validation succeeds.
+
+## Adding a feature to v2
+
+Shared `api/v2` code never names a feature; features register errors, endpoint specs,
+JSON body types and docs through the v2 hooks. `WebConfig` follows the same rule.
+`ApiV2FeatureIsolationTest` enforces it against source identifiers and string literals.
+
+Feature controllers live in their feature package. Add that package to the dispatcher
+context's component scan in `dispatcher-servlet.xml`; the root context scan alone does
+not register MVC request mappings.
+
+H1 (errors): scope feature advice with `@ControllerAdvice(basePackages = "<feature package>")`
+and order it ahead of the shared advice. Inherit the shared transport handlers so generic
+binding, authentication and unexpected failures keep the v2 problem contract. For resource
+operations served by the generic CRUD controller, contribute `ApiV2ErrorMapping` entries
+through `ApiV2ResourceSpec`; package-scoped advice cannot handle those operations.
+
+H4 (JSON bodies): expose an `ApiV2JsonBodyTypes` bean containing the feature's strict
+request records. `WebConfig` accepts these beans through Spring injection and registers
+all contributed types on each JSON converter. Do not add feature imports to `WebConfig`.
+
+H5 (docs): document feature routes with `@Operation` and `@ApiResponse` on their
+controllers. The merged `/api/v2/openapi.json` includes those declarations; do not add
+feature paths, error keys or tags to `ApiV2OpenApiGenerator`. Verify the merged document
+and compare its routes and responses when moving controllers or documentation.
+
+Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are
+introduced in the layers that first require them.

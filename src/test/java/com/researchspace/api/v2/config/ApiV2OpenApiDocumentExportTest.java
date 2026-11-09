@@ -7,51 +7,23 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.researchspace.api.v2.openapi.*;
 import com.researchspace.api.v2.resource.*;
-import com.researchspace.dao.ExtraFieldDao;
-import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
-import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.service.*;
 import com.researchspace.service.inventory.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 class ApiV2OpenApiDocumentExportTest {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Test
   void exportFullDocumentWithoutDatabase() throws Exception {
-    try (var context = new AnnotationConfigApplicationContext();
+    try (var context = ApiV2ResourceConfigTest.newContext();
         var handlers = ApiV2TestHandlerMappings.newContext()) {
-      context.registerBean(ResourceMutationManager.class, ResourceMutationManager::new);
-      context.registerBean(UserManager.class, () -> mock(UserManager.class));
-      context.registerBean(MaintenanceManager.class, () -> mock(MaintenanceManager.class));
-      context.registerBean(
-          InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
-      context.registerBean(ExtraFieldDao.class, () -> mock(ExtraFieldDao.class));
-      context.registerBean(
-          InstrumentReadAccess.class,
-          () -> new InstrumentReadAccess(mock(InventoryPermissionUtils.class)));
-      var custom = mock(InstrumentCustomFieldManager.class);
-      when(custom.namespace()).thenReturn("customFields");
-      when(custom.projectsThroughRelationship()).thenReturn(true);
-      context.registerBean(InstrumentCustomFieldManager.class, () -> custom);
-      context.registerBean(ContainerReadManager.class, () -> mock(ContainerReadManager.class));
-      context.registerBean(
-          ContainerReadAccess.class,
-          () -> new ContainerReadAccess(mock(InventoryPermissionUtils.class)));
       context.register(
           ApiV2ResourceConfig.class,
-          MaintenanceResourceOperations.class,
-          com.researchspace.api.v2.user.UserResourceOperations.class,
-          com.researchspace.inventory.api.v2.InstrumentResourceOperations.class,
-          com.researchspace.inventory.api.v2.ContainerResourceOperations.class);
-      context.registerBean(
-          com.researchspace.service.FeatureFlagManager.class,
-          () -> mock(com.researchspace.service.FeatureFlagManager.class));
-      context.register(com.researchspace.featureflags.FeatureFlagResourceOperations.class);
+          com.researchspace.featureflags.FeatureFlagResourceOperations.class);
       context.refresh();
       var document =
           new ApiV2OpenApiDocumentService(
@@ -78,7 +50,6 @@ class ApiV2OpenApiDocumentExportTest {
             json, Files.readString(path), "OpenAPI drift: run regen");
       }
       assertTrue(document.containsKey("paths"));
-      assertTrue(MAPPER.valueToTree(document).path("paths").has("/api/v2/maintenances"));
     }
   }
 

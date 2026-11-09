@@ -75,6 +75,14 @@ public final class ApiV2OpenApiDocumentService {
       if ("query".equals(map.get("in"))
           && map.get("schema") instanceof Map<?, ?> schema
           && "array".equals(schema.get("type"))) map.put("explode", true);
+      if (map.get("type") instanceof java.util.List<?> types
+          && types.contains("null")
+          && map.get("enum") instanceof java.util.List<?> choices
+          && !choices.contains(null)) {
+        var nullableChoices = new java.util.ArrayList<Object>(choices);
+        nullableChoices.add(null);
+        map.put("enum", nullableChoices);
+      }
       if (map.containsKey("$ref") && map.size() > 1) {
         Object reference = map.remove("$ref");
         var branches = new java.util.ArrayList<Object>();
