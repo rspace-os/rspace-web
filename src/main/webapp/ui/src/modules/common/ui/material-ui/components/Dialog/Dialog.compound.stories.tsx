@@ -10,6 +10,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Feedback/Dialog/Composition",
+  tags: ["autodocs"],
   component: Dialog,
   parameters: { a11y: { test: "error" } },
   argTypes: {
