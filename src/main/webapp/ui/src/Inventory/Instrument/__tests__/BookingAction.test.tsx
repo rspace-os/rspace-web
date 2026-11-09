@@ -81,6 +81,7 @@ function configuration({
       canCreateBlockout: false,
       canSubscribeCalendar: false,
       canLeaveConfiguration: false,
+      canManageNotificationSubscription: false,
     },
     createdAt: null,
     createdByName: null,
