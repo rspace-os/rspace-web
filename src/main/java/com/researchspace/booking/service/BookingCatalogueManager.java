@@ -122,6 +122,7 @@ public interface BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller);
@@ -170,6 +171,7 @@ public interface BookingCatalogueManager {
       ResourceRequest events,
       Instant start,
       Instant end,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller);
