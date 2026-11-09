@@ -101,6 +101,8 @@ Every GitHub comment posted or edited by a coding agent must begin with this att
 
 Backend dependencies flow downward: `Controller -> Service (*Manager) -> DAO -> Hibernate/MariaDB`.
 
+Shared `api/v2` code never names a feature; features register errors, endpoint specs, JSON body types and docs through the v2 hooks.
+
 - Controllers validate input and call services, never DAOs.
 - Name transactional Spring services `*Manager` for AOP in `applicationContext-service.xml`.
 - Other services may use `@Transactional`; `TransactionAdviceStartupCheck` verifies advice at startup.

@@ -13,6 +13,13 @@ public interface ResourceAccessManager {
   /** Resolves one aggregate for the represented subject. */
   ResolvedResourceAccess resolve(ResourceAccess access, User subject);
 
+  /**
+   * Re-resolves one aggregate from locked current facts for a mutation. The caller must already
+   * hold the protected resource's lock. A cached aggregate or subject older than the committed row
+   * fails with an optimistic locking exception instead of authorizing from stale state.
+   */
+  ResolvedResourceAccess resolveForMutation(ResourceAccess access, User subject);
+
   /** Resolves a bounded collection without ambient-session identity. */
   Map<Long, ResolvedResourceAccess> resolveAll(Collection<ResourceAccess> accesses, User subject);
 

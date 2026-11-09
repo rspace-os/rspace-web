@@ -9,7 +9,9 @@ import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
@@ -18,8 +20,10 @@ import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +54,60 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public InstrumentDaoHibernateImpl() {
     super(Instrument.class);
+  }
+
+  @Override
+  public Optional<Instrument> lockById(Long id) {
+    // Flush before eviction so pending instrument and child changes remain persisted.
+    getSession().flush();
+    Instrument cached = getSession().get(Instrument.class, id);
+    if (cached != null) {
+      getSession().evict(cached);
+    }
+    // A locking HQL entity read reloads the instrument's current permission columns without
+    // joining eager associations. A locking refresh would also lock owners and containers,
+    // before a batch has acquired all its instrument rows.
+    return getSession()
+        .createQuery(
+            "from Instrument instrument where instrument.id = :id and type(instrument) ="
+                + " Instrument",
+            Instrument.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public boolean hasLockedTransferAuthority(User subject, User owner) {
+    List<UserGroup> subjectMemberships =
+        getSession()
+            .createQuery(
+                "from UserGroup membership "
+                    + "where membership.user.id = :subjectId "
+                    + "and membership.roleInGroup in :transferRoles",
+                UserGroup.class)
+            .setParameter("subjectId", subject.getId())
+            .setParameterList("transferRoles", List.of(RoleInGroup.PI, RoleInGroup.RS_LAB_ADMIN))
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .getResultList();
+    if (subjectMemberships.isEmpty()) {
+      return false;
+    }
+    Set<Long> subjectGroupIds =
+        subjectMemberships.stream()
+            .map(membership -> membership.getGroup().getId())
+            .collect(Collectors.toSet());
+    List<UserGroup> ownerMemberships =
+        getSession()
+            .createQuery(
+                "from UserGroup membership "
+                    + "where membership.user.id = :ownerId and membership.group.id in :groupIds",
+                UserGroup.class)
+            .setParameter("ownerId", owner.getId())
+            .setParameterList("groupIds", subjectGroupIds)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .getResultList();
+    return !ownerMemberships.isEmpty();
   }
 
   @Override

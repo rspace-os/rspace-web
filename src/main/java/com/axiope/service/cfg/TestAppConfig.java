@@ -6,8 +6,15 @@ import com.axiope.userimport.IPostUserCreationSetUp;
 import com.axiope.userimport.NullOpPostUserCreate;
 import com.researchspace.admin.service.IServerlogRetriever;
 import com.researchspace.admin.service.impl.FileLocationBasedLogRetriever;
+import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.core.util.cache.DefaultTimeLimitedMemoryCache;
 import com.researchspace.core.util.cache.TimeLimitedMemoryCache;
+import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.document.importer.MSWordImporter;
 import com.researchspace.documentconversion.spi.CompositeDocumentConvertor;
@@ -22,7 +29,9 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RemoteLicenseService;
+import com.researchspace.service.impl.BookingFixturesAppInitialiser;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.service.impl.DeveloperGroupSetup;
 import com.researchspace.service.impl.DummyConversionService;
@@ -30,6 +39,8 @@ import com.researchspace.service.impl.EcatMediaFactory;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
 import com.researchspace.service.impl.LicenseServerChecker;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
+import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
 import com.researchspace.snapgene.wclient.SnapgeneWSClientImpl;
 import com.researchspace.webapp.filter.MockRemoteUserPolicy;
@@ -40,6 +51,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -124,7 +136,8 @@ public class TestAppConfig extends BaseConfig {
   @Bean
   public GlobalInitManager globalInitManager(
       @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker,
-      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor,
+      @Qualifier("bookingFixtures") IApplicationInitialisor bookingFixtures) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
     inits.add(featureFlagInitialisor);
@@ -135,6 +148,7 @@ public class TestAppConfig extends BaseConfig {
     // must be before devGrpSetup
     inits.add(sampleTemplateAppInitialiser());
     inits.add(devGrpSetup());
+    inits.add(bookingFixtures);
     inits.add(integrationsHandlerInitialisor());
     inits.add(dBDataIntegrityChecker);
     inits.add(systemConfigurationUpdater());
@@ -148,6 +162,33 @@ public class TestAppConfig extends BaseConfig {
   @Bean
   public IApplicationInitialisor devGrpSetup() {
     return new DeveloperGroupSetup();
+  }
+
+  @Bean
+  public IApplicationInitialisor bookingFixtures(
+      @Value("${default.user.password}") String devUserPassword,
+      UserDao userDao,
+      ContainerDao containerDao,
+      InstrumentDao instrumentDao,
+      ContainerApiManager containerManager,
+      InstrumentEntityApiManager instrumentManager,
+      MessageSourceUtils messages,
+      BookingConfigurationManager configurationManager,
+      TimeSlotBookingManager bookingManager,
+      @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao) {
+    return new BookingFixturesAppInitialiser(
+        devUserPassword,
+        userDao,
+        containerDao,
+        instrumentDao,
+        containerManager,
+        instrumentManager,
+        messages,
+        configurationManager,
+        bookingManager,
+        configurationDao,
+        bookingDao);
   }
 
   @Bean
