@@ -17,7 +17,10 @@ export type BookableItemOption = Required<
     | "maxBookingDurationMinutes"
     | "allowDoubleBooking"
   >
-> & { capabilities?: Required<Pick<BookingConfigurationCapabilities, "canCreateBlockout">> };
+> & {
+  capabilities?: Required<Pick<BookingConfigurationCapabilities, "canCreateBlockout">> &
+    Pick<BookingConfigurationCapabilities, "canCreateBooking" | "canEditConfiguration">;
+};
 
 type CompleteBookableItemOptionSource = Omit<
   BookableItemOption,

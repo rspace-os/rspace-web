@@ -1,12 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { detailColumnsClassName } from "@/modules/common/app/detailPageLayout";
+import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { eventPageClassName } from "./BookingEventPage";
 
 export function BookingEventSkeleton() {
   const { t } = useTranslation("common");
   return (
-    <main className={eventPageClassName} aria-busy="true">
+    <main className={detailPageClassName} aria-busy="true">
       <p role="status" className="sr-only">
         {t("loading")}
       </p>

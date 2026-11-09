@@ -10,7 +10,7 @@ import {
   getSearchBookingCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import {
-  deleteManyBookingConfigurations,
+  deleteBookingConfiguration,
   getCountBookingConfigurationsQueryKey,
   getGetBookingCalendarSubscriptionQueryKey,
   getGetBookingConfigurationAccessQueryKey,
@@ -20,7 +20,7 @@ import {
   getSearchBookingConfigurationAccessGranteesQueryKey,
   invalidateListBookingConfigurations,
   listBookingConfigurations,
-  updateManyBookingConfigurations,
+  updateBookingConfiguration as patchBookingConfiguration,
   useDeleteManyBookingConfigurations,
   useUpdateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -49,17 +49,11 @@ import {
   lifecycleErrorKey,
   requiredVersion,
 } from "../bookable-items/bookableItemLifecycleHelpers";
-import {
-  archiveBookingConfiguration,
-  type BookingConfigurationRow,
-  bookingConfigurationConfig,
-  permanentlyDeleteBookingConfiguration,
-  restoreBookingConfiguration,
-} from "../bookable-items/bookingConfiguration";
+import { type BookingConfigurationRow, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { mapBookingConfiguration } from "../bookable-items/bookingConfigurationSchema";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
 
-const bookableItemsProjection = {
+export const bookableItemsProjection = {
   fixed: [
     "id",
     "configurationVersion",
@@ -76,21 +70,23 @@ const bookableItemsProjection = {
   ],
 } as const;
 
-const maximumBookableItemsSelection = 1000;
-const maximumOwnerAttentionCandidates = 1000;
+export const maximumBookableItemsSelection = 1000;
 
-const ownerAttentionParams = {
+export const maximumOwnerAttentionCandidates = 1000;
+
+export const ownerAttentionParams = {
   limit: 100,
   totals: true,
   fields: { "booking-configurations": "id,ownerHealth" },
 } as const;
-async function fetchOwnerAttentionPage(page: number, signal: AbortSignal) {
+
+export async function fetchOwnerAttentionPage(page: number, signal: AbortSignal) {
   const result = await listBookingConfigurations({ ...ownerAttentionParams, page }, { signal });
   if (result.totalDocs === undefined || result.totalIsLowerBound) throw new Error("Owner-health totals are missing");
   return { ...result, totalDocs: result.totalDocs, totalPages: Math.ceil(result.totalDocs / result.limit) };
 }
 
-async function fetchOwnerAttentionIds(signal: AbortSignal): Promise<ReadonlySet<number>> {
+export async function fetchOwnerAttentionIds(signal: AbortSignal): Promise<ReadonlySet<number>> {
   const first = await fetchOwnerAttentionPage(1, signal);
   if (first.totalDocs > maximumOwnerAttentionCandidates) {
     throw new Error(`Owner-health filtering supports at most ${maximumOwnerAttentionCandidates} bookable items`);
@@ -102,12 +98,12 @@ async function fetchOwnerAttentionIds(signal: AbortSignal): Promise<ReadonlySet<
   return new Set(documents.flatMap(({ id, ownerHealth }) => (ownerHealth?.hasEffectiveOwner === false ? [id] : [])));
 }
 
-type BookableItemsBulkMutation = {
+export type BookableItemsBulkMutation = {
   action: BookableItemsBulkAction;
   selectedRowIds: readonly string[];
 };
 
-function bulkParameters(selectedRowIds: readonly string[]) {
+export function bulkParameters(selectedRowIds: readonly string[]) {
   const ids = selectedRowIds.map(Number);
   if (!isNonEmpty(ids)) throw new Error("A bulk booking action requires at least one row ID");
   if (ids.length > maximumBookableItemsSelection) {
@@ -117,13 +113,16 @@ function bulkParameters(selectedRowIds: readonly string[]) {
   return { where: { id: { in: ids } } };
 }
 
-export async function mutateBookableItems(
-  action: BookableItemsBulkAction,
-  selectedRowIds: readonly string[],
-): Promise<void> {
-  const params = bulkParameters(selectedRowIds);
-  if (action === "archive") await deleteManyBookingConfigurations(params);
-  else await updateManyBookingConfigurations({ enabled: action === "enable" }, params);
+export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
+  await deleteBookingConfiguration(id, { "If-Match": `"${version}"` });
+}
+
+export async function restoreBookingConfiguration(id: number, version: number): Promise<void> {
+  await patchBookingConfiguration(id, { state: "ACTIVE" }, { "If-Match": `"${version}"` });
+}
+
+export async function permanentlyDeleteBookingConfiguration(id: number, version: number): Promise<void> {
+  await deleteBookingConfiguration(id, { "If-Match": `"${version}"` }, { permanent: true });
 }
 
 export function AllBookableItemsContent() {
@@ -331,7 +330,7 @@ export function AllBookableItemsContent() {
   );
 }
 
-async function invalidateBookableItemRecords(
+export async function invalidateBookableItemRecords(
   queryClient: QueryClient,
   action: BookableItemsBulkAction,
   docs: readonly { id?: number }[],
