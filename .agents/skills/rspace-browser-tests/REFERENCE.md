@@ -1,7 +1,6 @@
 # RSpace Browser-Mode Tests: Reference
 
-Templates, the full gotcha catalogue, and the Playwright-CT to Vitest Browser
-Mode API translation table. The reference implementation is the stoichiometry
+Templates and the full gotcha catalogue. The reference implementation is the stoichiometry
 suite under `src/main/webapp/ui/src/tinyMCE/stoichiometry/__tests__/`.
 
 ## Artifact templates
@@ -165,24 +164,3 @@ document/page divs, the TinyMCE contenteditable iframe body.
   `include` pre-bundles lazily discovered deps, so no mid-run optimizer reload
   duplicates React/emotion. The browser config has its own `cacheDir`
   (`node_modules/.vite-browser`) so it can run alongside the jsdom suite.
-
-## API translation (Playwright-CT to Vitest Browser Mode)
-
-| Playwright-CT | Vitest Browser Mode |
-| --- | --- |
-| `mount(<Story/>)` | `render(<Story/>)` + `cleanup()` |
-| `router.route()` / `page.route()` | MSW `http`/`HttpResponse` via `worker.use()`; `postData()` to `await request.json()` |
-| `AxeBuilder().analyze()` | `axe.run(document)` / `axe.run(el)` (use `expectNoAxeViolations()`) |
-| `page.emulateMedia({ forcedColors })` | `emulateForcedColors()` / `emulateHighContrast()` (chromium-only) |
-| `page.boundingBox()` | `locator.element().getBoundingClientRect()` in `expect.poll` |
-| `page.waitForEvent('download')` | override `URL.createObjectURL` + suppress anchor click, read `blob.text()` |
-| `page.waitForFunction` | `vi.waitFor(() => { if (!cond) throw })` |
-| `page.waitForTimeout` | `expect.poll` / `vi.waitFor` (no fixed sleeps) |
-| `page.evaluate(fn)` | inline DOM access; `locator.element()` |
-| `page.addInitScript` (matchMedia stub) | patch `window.matchMedia` before `render`, restore in `afterEach` |
-| `Shift+Arrow` keyboard | `userEvent.keyboard("{Shift>}{ArrowRight}{/Shift}")` |
-| modifier click | `userEvent.click(el, { modifiers: ["Shift"] })` (NOT keyboard-hold) |
-| `page.frameLocator(iframe)` | `page.frameLocator(css(".iframe"))` + `css('body[contenteditable="true"]')` |
-| new-tab assertion | assert anchor `target`/`href` and that clicking does not toggle selection |
-| `context.grantPermissions(['clipboard-*'])` | stub `navigator.clipboard.writeText`, assert captured text (chromium) |
-| `toHaveScreenshot()` | none present; not used in this repo |
