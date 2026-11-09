@@ -15,15 +15,40 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.researchspace.api.v2.json.ApiV2JsonBody;
+import com.researchspace.api.v2.json.ApiV2JsonBodyTypes;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
 class WebDefaultConfigTest {
+
+  @Test
+  void webConfigCollectsFeatureBodyTypeBeans() {
+    try (var context = new AnnotationConfigApplicationContext()) {
+      context.registerBean(
+          ApiV2JsonBodyTypes.class, () -> new ApiV2JsonBodyTypes(List.of(Detail.class)));
+      context.registerBean(
+          "otherBodyTypes",
+          ApiV2JsonBodyTypes.class,
+          () -> new ApiV2JsonBodyTypes(List.of(StrictFields.class)));
+      context.refresh();
+      WebConfig config = new WebConfig();
+      config.setJsonBodyTypes(
+          List.copyOf(context.getBeansOfType(ApiV2JsonBodyTypes.class).values()));
+      config.defaultConfig = new WebDefaultConfig();
+      config.objectMapper = new WebDefaultConfig().objectMapper();
+      var converter = new MappingJackson2HttpMessageConverter();
+      config.extendMessageConverters(new ArrayList<>(List.of(converter)));
+      assertTrue(ApiV2JsonMappers.isStrictBody(converter, Detail.class));
+      assertTrue(ApiV2JsonMappers.isStrictBody(converter, StrictFields.class));
+    }
+  }
 
   @Test
   void boundsJsonDocumentsBeforeTreeMaterializationCanGrowWithoutLimit() {

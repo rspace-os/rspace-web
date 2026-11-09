@@ -1,9 +1,13 @@
 package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.BaseDaoTestCase;
+import com.researchspace.model.booking.BookingDefaultAccessGrantee;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.metamodel.EntityType;
 import jakarta.persistence.metamodel.Metamodel;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.junit.jupiter.api.Test;
@@ -39,5 +43,13 @@ public class HibernateConfigurationTest extends BaseDaoTestCase {
     } finally {
       //	session.close();
     }
+  }
+
+  @Test
+  public void resourceAccessEntitiesAreMapped() {
+    Metamodel model = emf.getMetamodel();
+
+    List.of(ResourceAccess.class, ResourceRoleAssignment.class, BookingDefaultAccessGrantee.class)
+        .forEach(model::entity);
   }
 }
