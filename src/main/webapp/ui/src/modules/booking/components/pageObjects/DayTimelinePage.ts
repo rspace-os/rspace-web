@@ -8,8 +8,8 @@ export class DayTimelinePage {
     });
   }
 
-  get outsideButton(): Locator {
-    return page.getByRole("button", { name: "Outside timeline" });
+  get outsideInput(): Locator {
+    return page.getByRole("textbox", { name: "Outside timeline" });
   }
 
   trigger(title: string): Locator {

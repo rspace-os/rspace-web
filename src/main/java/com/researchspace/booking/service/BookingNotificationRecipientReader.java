@@ -54,7 +54,7 @@ public class BookingNotificationRecipientReader {
    *
    * <p>For cancellations or time changes by somebody other than the requester, the requester is
    * added when they are active, Booking-enabled, and can still read the target. The requester is
-   * selected without their event preference because the cancellation is about their booking.
+   * selected without their event preference because the event is about their booking.
    *
    * <p>Eligibility uses the booking transaction's snapshot. Notification rows are persisted on the
    * same connection and roll back with the booking.
