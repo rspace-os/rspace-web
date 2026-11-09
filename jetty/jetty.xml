@@ -13,7 +13,7 @@
 <Property name="jetty.secure.port" default="8443"/>
 </Set>
 <Set name="outputBufferSize">32768</Set>
-<Set name="requestHeaderSize">8192</Set>
+<Set name="requestHeaderSize">32768</Set>
 <Set name="responseHeaderSize">8192</Set>
 <Set name="sendServerVersion">true</Set>
 <Set name="sendDateHeader">false</Set>
