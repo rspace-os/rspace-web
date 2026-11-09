@@ -58,7 +58,12 @@ public class BookingCatalogueController {
   public BookingCatalogueManager.Page search(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(required = false) String target,
-      @RequestParam(required = false) String where,
+      @io.swagger.v3.oas.annotations.Parameter(
+              description =
+                  "RSQL item filters, including targetOwner==me (equality only, outside OR groups)."
+                      + " The effective subject is resolved on every request.")
+          @RequestParam(required = false)
+          String where,
       @RequestParam(name = "type", required = false) List<String> targetTypes,
       @RequestParam(name = "location", required = false) List<String> locations,
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,
@@ -108,7 +113,12 @@ public class BookingCatalogueController {
   public BookingCatalogueManager.AvailabilityCounts countAvailability(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(required = false) String target,
-      @RequestParam(required = false) String where,
+      @io.swagger.v3.oas.annotations.Parameter(
+              description =
+                  "RSQL item filters, including targetOwner==me (equality only, outside OR groups)."
+                      + " The effective subject is resolved on every request.")
+          @RequestParam(required = false)
+          String where,
       @RequestParam(name = "type", required = false) List<String> targetTypes,
       @RequestParam(name = "location", required = false) List<String> locations,
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,

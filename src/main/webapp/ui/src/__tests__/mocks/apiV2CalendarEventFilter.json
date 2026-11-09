@@ -52,6 +52,10 @@
       "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
       "wildcards" : false
     },
+    "targetOwner" : {
+      "operators" : [ "==" ],
+      "wildcards" : false
+    },
     "timezone" : {
       "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
       "wildcards" : true

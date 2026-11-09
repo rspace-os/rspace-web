@@ -180,7 +180,7 @@ export const UsersUpdate = v.object({})
 export const SearchCalendarEventsQueryParams = v.object({
   start: v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.')),
   end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
-  where: v.optional(v.string()),
+  where: v.optional(v.pipe(v.string(), v.description('RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.'))),
   q: v.optional(v.string()),
   mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
@@ -199,7 +199,7 @@ export const SearchCalendarEventsResponse = ApiV2ListResultMapStringObject
 export const SearchBookingCatalogueQueryParams = v.object({
   q: v.optional(v.string()),
   target: v.optional(v.string()),
-  where: v.optional(v.string()),
+  where: v.optional(v.pipe(v.string(), v.description('RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.'))),
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(v.picklist(['CREATE_BOOKING', 'CREATE_BLOCKOUT'])),
@@ -222,7 +222,7 @@ export const SearchBookingCatalogueResponse = Page
 export const CountBookingCatalogueAvailabilityQueryParams = v.object({
   q: v.optional(v.string()),
   target: v.optional(v.string()),
-  where: v.optional(v.string()),
+  where: v.optional(v.pipe(v.string(), v.description('RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.'))),
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(v.picklist(['CREATE_BOOKING', 'CREATE_BLOCKOUT'])),
@@ -242,8 +242,8 @@ export const CountBookingCatalogueAvailabilityResponse = AvailabilityCounts
 export const SearchCalendarCatalogueQueryParams = v.object({
   start: v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.')),
   end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
-  where: v.optional(v.string()),
-  eventWhere: v.optional(v.string()),
+  where: v.optional(v.pipe(v.string(), v.description('RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.'))),
+  eventWhere: v.optional(v.pipe(v.string(), v.description('RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups.'))),
   q: v.optional(v.string()),
   mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
@@ -287,7 +287,7 @@ export const SearchBookingConfigurationTargetsResponse = TargetDirectoryDocument
  */;
 
 export const DeleteManyBookingConfigurationsQueryParams = v.object({
-  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))
+  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))
 })
 
 export const DeleteManyBookingConfigurationsResponse = v.object({
@@ -296,12 +296,12 @@ export const DeleteManyBookingConfigurationsResponse = v.object({
 
 
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */;
 
 export const ListBookingConfigurationsQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -343,7 +343,7 @@ export const ListBookingConfigurationsResponse = v.object({
  */;
 
 export const UpdateManyBookingConfigurationsQueryParams = v.object({
-  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))
+  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))
 })
 
 export const UpdateManyBookingConfigurationsBody = BookingConfigurationsUpdate;
@@ -382,7 +382,7 @@ export const CreateManyBookingConfigurationsResponse = v.object({
 
 export const CountBookingConfigurationsQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.')))
 })
 
 export const CountBookingConfigurationsResponse = ApiV2CountResult
@@ -650,7 +650,7 @@ export const PatchAdminBookingSettingsResponse = AdminSettingsDocument
  */;
 
 export const ListBookingsQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -707,7 +707,7 @@ export const CreateBookingResponse = BookingsRead
 
 export const CountBookingsQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.')))
 })
 
 export const CountBookingsResponse = ApiV2CountResult
@@ -819,7 +819,7 @@ export const GetApiV2ConfigResponse = ApiV2Config
  */;
 
 export const ListContainersQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -856,7 +856,7 @@ export const ListContainersResponse = v.object({
 
 export const CountContainersQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.')))
 })
 
 export const CountContainersResponse = ApiV2CountResult
@@ -927,7 +927,7 @@ export const ListContainerAuditEventsResponse = v.object({
  */;
 
 export const ListFeatureFlagsQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -964,7 +964,7 @@ export const ListFeatureFlagsResponse = v.object({
 
 export const CountFeatureFlagsQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.')))
 })
 
 export const CountFeatureFlagsResponse = ApiV2CountResult
@@ -1049,7 +1049,7 @@ export const ListFeatureFlagAuditEventsResponse = v.object({
  */;
 
 export const ListInstrumentsQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -1088,7 +1088,7 @@ export const ListInstrumentsResponse = v.object({
 
 export const CountInstrumentsQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.')))
 })
 
 export const CountInstrumentsResponse = ApiV2CountResult;
@@ -1174,7 +1174,7 @@ export const ListInstrumentAuditEventsResponse = v.object({
  */;
 
 export const DeleteManyMaintenancesQueryParams = v.object({
-  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))
+  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))
 })
 
 export const DeleteManyMaintenancesResponse = v.object({
@@ -1188,7 +1188,7 @@ export const DeleteManyMaintenancesResponse = v.object({
  */;
 
 export const ListMaintenancesQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -1224,7 +1224,7 @@ export const ListMaintenancesResponse = v.object({
  */;
 
 export const UpdateManyMaintenancesQueryParams = v.object({
-  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))
+  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))
 })
 
 export const UpdateManyMaintenancesBody = MaintenancesUpdate;
@@ -1263,7 +1263,7 @@ export const CreateManyMaintenancesResponse = v.object({
 
 export const CountMaintenancesQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.')))
 })
 
 export const CountMaintenancesResponse = ApiV2CountResult
@@ -1381,7 +1381,7 @@ export const GetApiV2OpenApiDocumentResponse = v.record(v.string(), v.unknown())
  */;
 
 export const ListUsersQueryParams = v.object({
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))),
   sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
@@ -1418,7 +1418,7 @@ export const ListUsersResponse = v.object({
 
 export const CountUsersQueryParams = v.object({
   max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalIsLowerBound is true and totalPages is omitted. On list routes, requires totals=true.'))),
-  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me.')))
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.')))
 })
 
 export const CountUsersResponse = ApiV2CountResult

@@ -11,6 +11,7 @@ export type SearchCalendarEventsParams = {
   start: string;
   /** Exclusive interval end. */
   end: string;
+  /** RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request. */
   where?: string;
   q?: string;
   mine: boolean;

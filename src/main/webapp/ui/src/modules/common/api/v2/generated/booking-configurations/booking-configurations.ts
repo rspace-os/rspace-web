@@ -238,7 +238,7 @@ export const useDeleteManyBookingConfigurations = <TError = ErrorType<BadRequest
 }
 
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export const listBookingConfigurations = async (params?: ListBookingConfigurationsParams, options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<ListBookingConfigurations200> => {
@@ -287,7 +287,7 @@ export type ListBookingConfigurationsQueryError = ErrorType<BadRequestResponse |
 
 
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -301,7 +301,7 @@ export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof l
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -315,7 +315,7 @@ export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof l
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -323,7 +323,7 @@ export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof l
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurations<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -377,7 +377,7 @@ export type ListBookingConfigurationsSuspenseQueryError = ErrorType<BadRequestRe
 
 
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -385,7 +385,7 @@ export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -393,7 +393,7 @@ export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
@@ -401,7 +401,7 @@ export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.
  * @summary List booking-configurations
  */
 export function useListBookingConfigurationsSuspense<TData = Awaited<ReturnType<typeof listBookingConfigurations>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(

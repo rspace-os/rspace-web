@@ -35,6 +35,7 @@ class ApiV2ConventionsTest {
                         path.getValue().path("parameters").forEach(parameters::add);
                         operation.getValue().path("parameters").forEach(parameters::add);
                         boolean ifMatch = false;
+                        boolean requiredIfMatch = false;
                         for (JsonNode entry : parameters) {
                           JsonNode parameter = resolve(document, entry);
                           String name = parameter.path("name").asText();
@@ -46,10 +47,15 @@ class ApiV2ConventionsTest {
                             failures.add(label + ": parameter " + name);
                           }
                           ifMatch |= name.equalsIgnoreCase("If-Match");
+                          requiredIfMatch |=
+                              name.equalsIgnoreCase("If-Match")
+                                  && parameter.path("required").asBoolean();
                         }
                         JsonNode responses = operation.getValue().path("responses");
-                        if (ifMatch && !(responses.has("412") && responses.has("428")))
-                          failures.add(label + ": If-Match requires 412 and 428");
+                        if (ifMatch
+                            && (!responses.has("412")
+                                || (requiredIfMatch && !responses.has("428"))))
+                          failures.add(label + ": If-Match requires 412 and, when mandatory, 428");
                         responses
                             .fields()
                             .forEachRemaining(

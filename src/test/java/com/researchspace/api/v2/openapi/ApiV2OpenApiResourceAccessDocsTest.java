@@ -45,6 +45,7 @@ class ApiV2OpenApiResourceAccessDocsTest {
         mock(ProtectedResourceAccess.class);
     when(resource.resourceAccess()).thenReturn(Optional.of(new ResourceAccessSpec<>(access)));
     when(resource.resourceName()).thenReturn("maintenances");
+    when(resource.singularOverride()).thenReturn("");
     when(resource.description()).thenReturn(ApiV2MaintenanceResource.DESCRIPTION);
     Map<String, Object> paths = new LinkedHashMap<>();
     new ApiV2OpenApiResourceAccessDocs().addResourceAccessPaths(paths, resource, "Maintenances");

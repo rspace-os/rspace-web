@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 import { bookableItemHeading } from "../../bookable-items/pageObjects/bookableItemLocators";
 
@@ -42,6 +43,7 @@ export class CalendarPage {
     await this.viewMenu.click();
     await this.viewOption(name).click();
     await userEvent.keyboard("{Escape}");
+    await vi.waitUntil(() => page.getByRole("menu", { includeHidden: true }).query() === null);
   }
 
   /** A quick filter switch in the open Filters menu. */

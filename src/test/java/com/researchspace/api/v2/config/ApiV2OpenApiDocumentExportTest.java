@@ -47,8 +47,9 @@ class ApiV2OpenApiDocumentExportTest {
     Map<Path, String> fixtures =
         Map.of(
             Path.of("src/main/webapp/ui/src/modules/common/api/v2/openapi.json"),
-                generatedDocument(),
-            MOCKS.resolve("apiV2CalendarEventFilter.json"), calendarEventFilter());
+            generatedDocument(),
+            MOCKS.resolve("apiV2CalendarEventFilter.json"),
+            calendarEventFilter());
     for (Map.Entry<Path, String> fixture : fixtures.entrySet()) {
       if (Boolean.getBoolean(UPDATE_PROPERTY)) {
         Files.createDirectories(fixture.getKey().getParent());

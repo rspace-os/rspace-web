@@ -10,6 +10,7 @@ import type { CountBookingCatalogueAvailabilityCapability } from './countBooking
 export type CountBookingCatalogueAvailabilityParams = {
   q?: string;
   target?: string;
+  /** RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request. */
   where?: string;
   type?: string[];
   location?: string[];

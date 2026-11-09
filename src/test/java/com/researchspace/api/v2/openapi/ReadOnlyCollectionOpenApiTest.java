@@ -106,6 +106,7 @@ class ReadOnlyCollectionOpenApiTest {
       @SuppressWarnings("unchecked")
       ResourceOperations<User, Long> operations = mock(ResourceOperations.class);
       if (versioned) {
+        when(operations.versionField()).thenReturn(Optional.of("version"));
         when(operations.ifMatchRequiredCode()).thenReturn(Optional.of(requiredCode));
         when(operations.deleteRequiresIfMatch()).thenReturn(true);
       }

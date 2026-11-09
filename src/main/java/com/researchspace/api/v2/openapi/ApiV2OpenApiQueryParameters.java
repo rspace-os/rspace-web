@@ -236,10 +236,10 @@ final class ApiV2OpenApiQueryParameters {
             required,
             ordered("type", "string", "maxLength", CollectionQueryLimits.MAX_WHERE_LENGTH),
             "Bounded RSQL filter expression. Available selectors and operators are provided in"
-                + " x-rspace-filter."
-                + " For ID selectors on relationships whose targets are all users, exact me"
-                + " resolves to the authenticated effective subject's numeric ID; for example,"
-                + " createdBy.value==me."
+                + " x-rspace-filter. For ID selectors on relationships whose targets are all users,"
+                + " exact me resolves to the authenticated effective subject's numeric ID; for"
+                + " example, createdBy.value==me. Scalar user-id selectors may explicitly opt into"
+                + " the same alias."
                 + (runtimeFields.isEmpty()
                     ? ""
                     : " Further per-caller selectors are listed by the catalog named in"

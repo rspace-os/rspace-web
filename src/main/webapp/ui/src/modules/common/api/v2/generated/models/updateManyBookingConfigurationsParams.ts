@@ -8,7 +8,7 @@
 
 export type UpdateManyBookingConfigurationsParams = {
   /**
-   * Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.
+   * Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.
    * @maxLength 32768
    */
   where: string;

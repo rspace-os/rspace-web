@@ -11,7 +11,9 @@ export type SearchCalendarCatalogueParams = {
   start: string;
   /** Exclusive interval end. */
   end: string;
+  /** RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request. */
   where?: string;
+  /** RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups. */
   eventWhere?: string;
   q?: string;
   mine: boolean;
