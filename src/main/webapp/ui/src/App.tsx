@@ -20,7 +20,7 @@ export function App(): React.ReactNode {
 
   useEffect(() => {
     void (async () => {
-      await authStore.synchronizeWithSessionStorage();
+      await authStore.refreshAuthentication();
       if (!authStore.isAuthenticated) {
         setLoadingDone(true);
       } else {
@@ -31,7 +31,10 @@ export function App(): React.ReactNode {
           await currentUser.getBench();
         }
       }
-    })();
+    })().catch((error: unknown) => {
+      console.error("Application initialization failed", error);
+      setLoadingDone(true);
+    });
   }, []);
 
   return (

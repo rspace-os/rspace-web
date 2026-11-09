@@ -55,7 +55,7 @@ public final class RsqlFilterParser {
   }
 
   /**
-   * Parses filters that can also name a runtime field, such as {@code customFields.SF104}.
+   * Parses filters that can also name a runtime field, such as {@code <namespace>.<field>}.
    *
    * <p>Resolution happens here rather than after parsing because the value is parsed with the
    * resolved type. A caller who may not see a definition therefore gets the unknown-field answer

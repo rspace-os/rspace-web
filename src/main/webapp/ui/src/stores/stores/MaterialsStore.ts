@@ -71,7 +71,7 @@ export default class MaterialsStore {
    */
   setup(): Promise<void> {
     if (this.setupPromise) return this.setupPromise;
-    this.setupPromise = this.rootStore.authStore.synchronizeWithSessionStorage().then(() => {
+    this.setupPromise = this.rootStore.authStore.refreshAuthentication().then(() => {
       void this.rootStore.peopleStore.fetchCurrentUser();
       void this.rootStore.unitStore.fetchUnits();
     });

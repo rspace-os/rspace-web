@@ -16,7 +16,7 @@ replacing the previous ESLint + Prettier setup.
 ## Notes
 - Native `fetch` calls to APIs authenticated with a browser UI token should use
   `fetchWithUiToken` from `modules/common/utils/fetchWithUiToken`. A rejected
-  token triggers a session-token refresh and validation. For the same user,
+  token mints a new session-bound API v2 token and validates it. For the same user,
   GET requests retry once and later requests use the stored replacement even
   if their hook or query still holds the expired token. A changed identity
   reloads the tab to discard the previous Operate As user's caches and UI state.
@@ -125,3 +125,7 @@ is also a feature that doens't have any guardrails. Which components are lazily
 loaded must be carefully evaluated to minimise the risk that the additional
 complexity in the code results in no change to page load performance simply
 because the lazy loading is just not happening.
+
+REST API v2 calls use the generated client and its token provider. See
+[REST API v2 frontend client](../RestApiV2FrontendClient.md). Keep
+`fetchWithUiToken` and token hooks for API v1 callers.

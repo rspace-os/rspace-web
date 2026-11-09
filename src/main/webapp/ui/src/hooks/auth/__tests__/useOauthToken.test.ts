@@ -3,10 +3,11 @@ import { HttpResponse, http } from "msw";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import useOauthToken from "../useOauthToken";
 
 const NOW = 1_700_000_000_000;
-const TOKEN_URL = "/userform/ajax/inventoryOauthToken";
+const TOKEN_URL = "/public/publicView/userform/ajax/inventoryOauthToken";
 
 const fakeJwt = (secondsToExpiry: number) => {
   const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, "");
@@ -21,10 +22,14 @@ const serveTokens = (secondsToExpiry: number) => {
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
+  document.body.appendChild(Object.assign(document.createElement("div"), { id: "public_document_view" }));
+  resetUiTokenForTests();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  document.getElementById("public_document_view")?.remove();
 });
 
 describe("useOauthToken", () => {
@@ -63,7 +68,7 @@ describe("useOauthToken", () => {
     server.use(http.get(TOKEN_URL, () => new HttpResponse(null, { status: 403 })));
     await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
 
-    const tokenEndpoint = serveTokens(3600);
+    const tokenEndpoint = serveTokens(7200);
     await result.current.getToken();
     await vi.advanceTimersByTimeAsync(60 * 1000);
     expect(tokenEndpoint).toHaveBeenCalledTimes(1);
@@ -95,6 +100,6 @@ describe("useOauthToken", () => {
 
     await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
 
-    expect(tokenEndpoint).toHaveBeenCalledTimes(1);
+    expect(tokenEndpoint).toHaveBeenCalledTimes(2);
   });
 });
