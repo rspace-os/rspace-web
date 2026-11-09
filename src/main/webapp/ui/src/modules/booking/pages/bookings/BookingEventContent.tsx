@@ -107,6 +107,11 @@ export function BookingEventContent() {
       invalidateCountBookings(queryClient),
       invalidateGetBooking(queryClient, bookingId),
     ]);
+    await Promise.all([
+      invalidateListBookings(queryClient),
+      invalidateCountBookings(queryClient),
+      invalidateGetBooking(queryClient, bookingId),
+    ]);
   };
   const _location = target?.value.parentContainer;
   const eventName = target?.value.name ?? t("common:values.unknownItem");
@@ -190,9 +195,8 @@ export function BookingEventContent() {
                 preferences.timeFormat,
               )}
               eventKind={document.kind}
-              onDeleted={() => {
-                requestAnimationFrame(() => stateBadgeRef.current?.focus());
-              }}
+              finalFocus={stateBadgeRef}
+              onDeleted={() => undefined}
             />
           ) : null}
         </div>
@@ -220,9 +224,9 @@ export function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={editing ? "grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_30rem]" : detailColumnsClassName}>
+        <div className={editing ? "grid gap-6 @4xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)]" : detailColumnsClassName}>
           {editing && bookingItem.data ? (
-            <div className="hidden @4xl:col-start-2 @4xl:row-start-1 @4xl:block">
+            <div className="hidden min-w-0 @4xl:col-start-2 @4xl:row-start-1 @4xl:block">
               <BookingItemInformationCard
                 item={bookingItem.data}
                 displayTimezone={preferences.timeZone}

@@ -1,6 +1,5 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
-import { bookingConfigurationTargetQuery } from "../bookingConfigurationApi";
 
 beforeBookingCatalog(async () => {
   appI18n.addResourceBundle(
@@ -11,13 +10,14 @@ beforeBookingCatalog(async () => {
 });
 
 import "@/__tests__/__mocks__/matchMedia";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-
+import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import type { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";
 
@@ -134,25 +134,36 @@ describe("BookableItemPage", () => {
     expect(screen.queryByText("booking:allBookableItems.fields.updatedAt")).not.toBeInTheDocument();
   });
 
-  it("reformats existing events after a configuration timezone refresh without refetching events", async () => {
-    let timezone = "UTC";
+  it("reformats existing events after a display timezone refresh without refetching events", async () => {
     let eventRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(collectionPage([{ ...configuration, timezone }], 2)),
-      ),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
       http.get("/api/v2/bookings", () => {
         eventRequests += 1;
         return HttpResponse.json(collectionPage([booking], 10));
       }),
     );
     const { queryClient } = renderPage();
+    act(() => {
+      queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "UTC",
+        overridden: true,
+      });
+    });
 
     const times = await screen.findAllByRole("time");
     const utcText = times[0].textContent;
     expect(eventRequests).toBe(4);
-    timezone = "Europe/Berlin";
-    await queryClient.invalidateQueries({ queryKey: bookingConfigurationTargetQuery("IN123").queryKey });
+    act(() => {
+      queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "Europe/Berlin",
+        overridden: true,
+      });
+    });
 
     await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
     expect(eventRequests).toBe(4);

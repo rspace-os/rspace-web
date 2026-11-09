@@ -18,6 +18,8 @@ import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.resource.VersionPolicy;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.service.BookingBufferConflictException;
+import com.researchspace.booking.service.BookingCancellationReasonLengthException;
+import com.researchspace.booking.service.BookingCancellationReasonRequiresCancelException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingCreateExecutor;
 import com.researchspace.booking.service.BookingDurationException;
@@ -202,6 +204,19 @@ public final class TimeSlotBookingResourceOperations
                             "errors.api.v2.booking.state.transition",
                             "The requested state transition is invalid.")
                         .build(),
+                    ApiV2ErrorMapping.forException(BookingCancellationReasonLengthException.class)
+                        .status(HttpStatus.BAD_REQUEST)
+                        .documentedError(
+                            "errors.api.v2.booking.cancellationReason.length",
+                            "The cancellation reason must not exceed 500 characters.")
+                        .build(),
+                    ApiV2ErrorMapping.forException(
+                            BookingCancellationReasonRequiresCancelException.class)
+                        .status(HttpStatus.BAD_REQUEST)
+                        .documentedError(
+                            "errors.api.v2.booking.cancellationReason.requiresCancel",
+                            "A cancellation reason can only be supplied when cancelling a booking.")
+                        .build(),
                     ApiV2ErrorMapping.forException(BookingConcurrentModificationException.class)
                         .status(HttpStatus.PRECONDITION_FAILED)
                         .documentedError(
@@ -266,9 +281,11 @@ public final class TimeSlotBookingResourceOperations
             OpenApiOperationDocumentation.builder()
                 .problemSchema(400, ApiV2Problem.class)
                 .problemSchema(409, ApiV2Problem.class)
-                .description(
-                    "Partially updates one booking and returns the updated document. "
-                        + BOOKING_PROBLEM_EXTENSIONS)
+                .description("Updates or cancels one booking. " + BOOKING_PROBLEM_EXTENSIONS)
+                .requestExample(
+                    Map.of(
+                        "state", "CANCELLED",
+                        "cancellationReason", "Instrument needs recalibration"))
                 .build())
         .errorMappings(ResourceOperation.CREATE, createErrors)
         .errorMappings(ResourceOperation.UPDATE, updateErrors)
@@ -368,7 +385,8 @@ public final class TimeSlotBookingResourceOperations
         BookingDocumentValues.value(document, "end", Date.class),
         document.changed("purpose"),
         BookingDocumentValues.value(document, "purpose", String.class),
-        BookingDocumentValues.value(document, "state", BookingState.class));
+        BookingDocumentValues.value(document, "state", BookingState.class),
+        BookingDocumentValues.value(document, "cancellationReason", String.class));
   }
 
   private boolean enabled(User subject) {

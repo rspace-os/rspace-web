@@ -1,4 +1,4 @@
-import { CalendarCheck2Icon } from "lucide-react";
+import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -142,6 +142,7 @@ export function BookingEventsCalendar({
   myItemsOnly?: boolean;
   onMyItemsChange?: (myItemsOnly: boolean) => void;
   creationDisabled?: boolean;
+  /** Starts a booking for a range chosen on a Resources row or on the single-item Time grid day view. */
   onResourceRangeSelect?: (
     resource: BookableItemOption,
     range: { startMinute: number; endMinute: number },
@@ -401,6 +402,8 @@ export function BookingEventsCalendar({
                     onViewChange("day");
                   }}
                   schedule={timeGridSchedule}
+                  creationDisabled={creationDisabled}
+                  onRangeSelect={onResourceRangeSelect}
                   isLoading={isLoading}
                 />
               )}

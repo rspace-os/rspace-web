@@ -66,7 +66,7 @@ describe("BookingPreferencesPage", () => {
   });
 
   it("saves one complete preference and replaces the shared query cache", async () => {
-    let body: BookingDisplayPreferencesControllerReplacement | undefined;
+    let body: unknown;
     let writes = 0;
     server.use(
       oauthTokenHandler(true),
@@ -80,8 +80,7 @@ describe("BookingPreferencesPage", () => {
           body = await request.json();
           return HttpResponse.json({
             ...inheritedBrowserBookingPreferences,
-            ...body,
-            timeFormat: body.timeFormat ?? "AUTOMATIC",
+            ...(body as BookingDisplayPreferencesControllerReplacement),
             overridden: true,
           });
         },
@@ -92,7 +91,9 @@ describe("BookingPreferencesPage", () => {
 
     const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
     expect(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" })).toBeChecked();
-    expect(screen.getByRole("combobox", { name: "booking:preferences.timezone.customLabel" })).toBeDisabled();
+    expect(
+      screen.queryByRole("combobox", { name: "booking:preferences.timezone.customLabel" }),
+    ).not.toBeInTheDocument();
     await user.clear(start);
     await user.type(start, "09:00");
     await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
@@ -122,7 +123,7 @@ describe("BookingPreferencesPage", () => {
   });
 
   it("saves an explicit time format, keeping the other preferences", async () => {
-    let body: BookingDisplayPreferencesControllerReplacement | undefined;
+    let body: unknown;
     server.use(
       oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
@@ -134,8 +135,7 @@ describe("BookingPreferencesPage", () => {
           body = await request.json();
           return HttpResponse.json({
             ...customNewYorkBookingPreferences,
-            ...body,
-            timeFormat: body.timeFormat ?? "AUTOMATIC",
+            ...(body as BookingDisplayPreferencesControllerReplacement),
             overridden: true,
           });
         },
@@ -169,8 +169,53 @@ describe("BookingPreferencesPage", () => {
     expect(screen.getByRole("radio", { name: "booking:preferences.timeFormat.twentyFourHour" })).toBeChecked();
   });
 
+  it("shows the custom timezone field only in Custom mode and restores the last custom zone", async () => {
+    const bodies: unknown[] = [];
+    server.use(
+      oauthTokenHandler(true),
+      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
+        HttpResponse.json(customNewYorkBookingPreferences),
+      ),
+      http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-preferences",
+        async ({ request }) => {
+          const body = await request.json();
+          bodies.push(body);
+          return HttpResponse.json({
+            ...customNewYorkBookingPreferences,
+            ...(body as BookingDisplayPreferencesControllerReplacement),
+            overridden: true,
+          });
+        },
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    const customName = { name: "booking:preferences.timezone.customLabel" };
+
+    expect(await screen.findByRole("combobox", customName)).toHaveValue("America/New_York");
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.browser" }));
+    expect(screen.queryByRole("combobox", customName)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.custom" }));
+    const custom = screen.getByRole("combobox", customName);
+    expect(custom).toHaveValue("America/New_York");
+    expect(custom).toBeEnabled();
+
+    // An invalid custom zone blocks Save; leaving Custom mode clears the error with the hidden field.
+    await user.clear(custom);
+    await user.type(custom, "Not/A-Timezone");
+    expect(custom).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ timezoneMode: "INSTITUTION", customTimezone: null });
+  });
+
   it("uses 00:00 for end of day while storing 24:00", async () => {
-    let body: BookingDisplayPreferencesControllerReplacement | undefined;
+    let body: unknown;
     server.use(
       oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
@@ -182,8 +227,7 @@ describe("BookingPreferencesPage", () => {
           body = await request.json();
           return HttpResponse.json({
             ...inheritedBrowserBookingPreferences,
-            ...body,
-            timeFormat: body.timeFormat ?? "AUTOMATIC",
+            ...(body as BookingDisplayPreferencesControllerReplacement),
             overridden: true,
           });
         },

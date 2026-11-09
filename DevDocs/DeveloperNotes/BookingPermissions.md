@@ -101,6 +101,8 @@ to the UI; server authorization remains authoritative on every request.
 Creation and lifecycle rules are in [Booking](Booking.md#configuration-lifecycle);
 maintenance exemptions are in [Scheduling](Booking.md#scheduling).
 
+Cancellation and restoration are in [Booking cancellation reasons](Booking.md#booking-cancellation-reasons).
+
 Personal notification subscription PUT takes the shared gate before instrument locks.
 Its final access check uses the existing scalar current-access DAO in the caller's
 transaction and connection. Account, role, membership, community and sharing checks

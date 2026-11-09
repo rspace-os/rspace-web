@@ -36,7 +36,19 @@ public interface TimeSlotBookingManager {
   TimeSlotBooking createBooking(Create create, String key, User subject, User actor);
 
   /** Values accepted when a caller changes one booking. */
-  record Patch(Date start, Date end, boolean purposeSupplied, String purpose, BookingState state) {}
+  record Patch(
+      Date start,
+      Date end,
+      boolean purposeSupplied,
+      String purpose,
+      BookingState state,
+      String cancellationReason) {
+
+    public Patch(
+        Date start, Date end, boolean purposeSupplied, String purpose, BookingState state) {
+      this(start, end, purposeSupplied, purpose, state, null);
+    }
+  }
 
   /** One immutable, privacy-shaped booking event for calendar serialization. */
   record CalendarEvent(
