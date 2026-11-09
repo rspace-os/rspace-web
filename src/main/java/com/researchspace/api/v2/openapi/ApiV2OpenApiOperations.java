@@ -14,6 +14,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.RESPONSES;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitHeaders;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.SCHEMAS;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.bulkResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.listResult;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -169,7 +170,9 @@ final class ApiV2OpenApiOperations {
         switch (operation) {
           case LIST -> listResult(ref(component + "Read"), text);
           case COUNT -> ref("ApiV2CountResult");
-          case BULK_CREATE, BULK_UPDATE, BULK_DELETE -> bulkResult(ref(component + "Read"));
+          case BULK_CREATE, BULK_UPDATE, BULK_DELETE ->
+              components.reference(
+                  SCHEMAS, component + "BulkResult", bulkResult(ref(component + "Read")));
           default -> ref(component + "Read");
         };
     Map<String, Object> successMedia = new LinkedHashMap<>();

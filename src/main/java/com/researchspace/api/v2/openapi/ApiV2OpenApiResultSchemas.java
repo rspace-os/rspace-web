@@ -8,6 +8,8 @@ import java.util.Map;
 
 /** Schemas for collection result envelopes. */
 final class ApiV2OpenApiResultSchemas {
+  static final String SCHEMAS = "schemas";
+
   private ApiV2OpenApiResultSchemas() {}
 
   static Map<String, Object> listResult(Map<String, Object> item, ApiV2OpenApiText text) {
