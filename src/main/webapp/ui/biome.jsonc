@@ -11,8 +11,10 @@
       "**/*.ts",
       "**/*.tsx",
       "**/*.css",
+      "src/routes/**",
       "scripts/api-v2-valibot/**/*.mjs",
       "scripts/api-v2-invalidation/**/*.mjs",
+      "!!src/routeTree.gen.ts",
       "!!src/modules/common/api/v2/generated"
     ]
   },
@@ -68,6 +70,19 @@
         "rules": {
           "style": {
             "useComponentExportOnlyModules": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/routes/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": { "match": "(?:index|route|__root)[.]tsx" }
+            }
           }
         }
       }
