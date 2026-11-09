@@ -203,7 +203,10 @@ public final class CollectionQueryExecutor<T> {
       ResourceRequest request,
       Predicate restriction,
       RelationshipReadAccess targets) {
-    return totalMatching(query(factory, session, request, restriction, targets));
+    var query = query(factory, session, request, restriction, targets);
+    return request.countMax() == null
+        ? totalMatching(query)
+        : query.getCountQuery((long) request.countMax() + 1).getSingleResult();
   }
 
   /**

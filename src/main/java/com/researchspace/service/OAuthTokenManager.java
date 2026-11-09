@@ -6,6 +6,7 @@ import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Manager for OAuth tokens issued by RSpace for other apps. Issues and receives two kinds of tokens
@@ -63,6 +64,18 @@ public interface OAuthTokenManager {
    */
   ServiceOperationResult<NewOAuthTokenResponse> createNewJwtToken(
       String clientId, String clientSecret, User user, OAuthTokenType tokenType);
+
+  /** Creates a UI OAuth access token for an authenticated browser user. */
+  String createUiToken(User user);
+
+  /** Creates a session-bound UI token, including actor identity when it is delegated. */
+  String createUiToken(User subject, User actor, String sessionContextId);
+
+  /** Verifies and reads the session-binding claims of a REST API v2 UI token. */
+  Optional<UiTokenContext> getUiTokenContext(String accessToken);
+
+  /** Signed identity and browser-session binding carried by a REST API v2 UI token. */
+  record UiTokenContext(long subjectId, Optional<Long> actorId, String sessionContextId) {}
 
   List<OAuthToken> getTokensForUser(User user);
 

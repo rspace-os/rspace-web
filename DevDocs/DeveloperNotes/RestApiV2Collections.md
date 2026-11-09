@@ -304,3 +304,9 @@ without a filesort, taking 0.22 ms. Without the index it scanned 100,000 rows an
 sorted 90,002 active rows, taking 92.40 ms. These single warm-query measurements
 justify the access path, rather than a latency guarantee. The temporary benchmark
 index was removed after measurement.
+
+## OpenAPI tags
+
+Feature resource specs supply `.tagDocumentation(description, group)`; annotated controllers supply a Swagger `@Tag` description and an `x-tag-group` extension. The document lists exactly the tags used by operations, grouped through `x-tagGroups`, and rejects missing metadata.
+
+For OpenAPI 3.2, replace `x-tagGroups` with `Tag.parent` and a `kind: "nav"` parent tag per group once swagger-core supports 3.2 (swagger-api/swagger-core#5326).
