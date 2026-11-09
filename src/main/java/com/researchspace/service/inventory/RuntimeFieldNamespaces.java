@@ -1,4 +1,4 @@
-package com.researchspace.model.collection;
+package com.researchspace.service.inventory;
 
 /**
  * The published runtime-field namespaces, named once.
