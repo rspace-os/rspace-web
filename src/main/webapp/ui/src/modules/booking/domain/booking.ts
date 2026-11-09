@@ -1,3 +1,4 @@
+import { skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { type ApiV2Selected, apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
@@ -5,6 +6,7 @@ import {
   createBooking as generatedCreateBooking,
   updateBooking as generatedUpdateBooking,
   getBooking,
+  getGetBookingQueryOptions,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
@@ -212,6 +214,21 @@ export async function fetchBooking(id: number, signal?: AbortSignal): Promise<Bo
 function selectedMutation(document: BookingsRead): BookingMutation {
   assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
   return mapBookingMutation(document);
+}
+export function bookingQueryOptions(id: number | undefined) {
+  return getGetBookingQueryOptions<BookingDetails>(id ?? 0, readParameters, {
+    query: {
+      queryFn: id === undefined ? skipToken : ({ signal }) => getBooking(id, readParameters, { signal }),
+      enabled: id !== undefined,
+      select: mapBookingDetails,
+      retry: (failureCount, error) =>
+        failureCount < 2 &&
+        !(
+          error instanceof BookingUnavailableError ||
+          (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500)
+        ),
+    },
+  });
 }
 export async function createBooking(input: BookingsCreate): Promise<BookingMutation> {
   return selectedMutation(await generatedCreateBooking(input));
