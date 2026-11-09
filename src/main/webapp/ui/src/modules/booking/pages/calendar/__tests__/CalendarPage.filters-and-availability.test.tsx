@@ -19,7 +19,7 @@ beforeEach(() => setupCalendarBookableItems());
 afterAll(() => restoreCalendarScrollTo());
 
 describe("CalendarPage", () => {
-  it("keeps viewer events visible without resource creation controls", async () => {
+  it("keeps viewer events visible while disabling resource creation", async () => {
     const item = bookableItemFixtures[0];
     server.use(
       oauthTokenHandler(),
@@ -36,7 +36,11 @@ describe("CalendarPage", () => {
               globalId: item.target.globalId,
               name: item.target.value.name,
               location: null,
-              capabilities: { ...item.capabilities, canCreateBooking: false },
+              capabilities: {
+                ...item.capabilities,
+                canCreateBooking: false,
+                canEditConfiguration: false,
+              },
               effectiveRole: "VIEWER",
             },
           ],
@@ -49,7 +53,8 @@ describe("CalendarPage", () => {
     );
     await renderCalendar();
     expect(await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Add booking for Confocal microscope" })).not.toBeInTheDocument();
-    expect(screen.getByTestId("day-timeline-canvas")).not.toHaveAttribute("data-creation-disabled");
+    expect(screen.getByRole("button", { name: "Add booking for Confocal microscope" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "Edit configuration" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("day-timeline-canvas")).toHaveAttribute("data-creation-disabled", "true");
   });
 });

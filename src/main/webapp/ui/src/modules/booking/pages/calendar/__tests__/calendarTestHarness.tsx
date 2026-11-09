@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -9,32 +8,14 @@ import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/gene
 
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import { ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { bookingTarget, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createCalendarRouter } from "../calendarRouter";
-
-const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
-  relationTo: "instruments" as const,
-  globalId: `IN${id}`,
-  value: {
-    id,
-    name,
-    deleted: false,
-    parentContainer:
-      location === null
-        ? null
-        : {
-            relationTo: "containers" as const,
-            globalId: location?.globalId ?? `IC${id}`,
-            value: { id, name: location?.name ?? `${name} room`, globalId: location?.globalId ?? `IC${id}` },
-          },
-  },
-});
 
 export const noParentBooking: BookingListDocument = {
   ...ownBooking,
   id: 44,
-  target: target(125, "Mass spectrometer", null),
+  target: bookingTarget(125, "Mass spectrometer", null),
   start: "2026-08-20T08:00:00Z",
   end: "2026-08-20T09:00:00Z",
 };
@@ -49,11 +30,9 @@ export async function renderCalendar(initialEntry = "/booking/calendar?date=2026
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>,
     { wrapper },
   );
