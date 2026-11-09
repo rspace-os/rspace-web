@@ -285,11 +285,39 @@ export function createApiV2FilterFields<TDocument>({
   const configuredSourceFields = sourceConfig.fields.map((field) => {
     const selector = metadata.filtering.selectors[String(field.name)];
     if (localFields.includes(field.name)) return field;
+    let sourceField = field;
+    const structured = metadata.structuredFields?.[field.name];
+    if ((field.type === "array" || field.type === "object") && metadata.structuredFields !== undefined) {
+      if (!structured) throw new Error(`OpenAPI field ${field.name} must declare x-rspace-fields`);
+      if (structured.type !== field.type)
+        throw new Error(`OpenAPI field ${field.name} has a different structured type`);
+      sourceField = {
+        ...field,
+        ...structured,
+        readOnly: field.readOnly || structured.readOnly,
+        fields: structured.fields.map((child) => {
+          const configured = field.fields.find((candidate) => candidate.name === child.name);
+          return configured &&
+            (configured.label !== undefined ||
+              configured.derivedLabel !== undefined ||
+              configured.labelKey.includes(":"))
+            ? {
+                ...child,
+                labelKey: configured.labelKey,
+                label: configured.label,
+                derivedLabel: configured.derivedLabel,
+              }
+            : child;
+        }),
+      };
+    } else if (structured && field.type !== "relationship") {
+      throw new Error(`Collection config field ${field.name} must use type ${structured.type}`);
+    }
     const picker = selector?.picker;
     return {
-      ...field,
+      ...sourceField,
       ...(picker === undefined ? {} : { filterPicker: picker }),
-      capabilities: capabilitiesForSelector(field, metadata, selector),
+      capabilities: capabilitiesForSelector(sourceField, metadata, selector),
     };
   });
   const identityFields = derivedIdentityFields(sourceConfig, metadata);
