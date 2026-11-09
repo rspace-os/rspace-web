@@ -33,7 +33,8 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
-import { apiV2BlobFetch, apiV2Fetch } from "../../apiV2Fetch.ts";
+import { apiV2Fetch } from "../../apiV2Fetch.ts";
+import { apiV2BlobFetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import { getSearchCalendarEventsQueryKey } from "../booking-calendar/booking-calendar.ts";
 import {
@@ -926,13 +927,12 @@ export const getDownloadBookingCalendarFileQueryKey = (bookingId: number) => {
 
 export const getDownloadBookingCalendarFileQueryOptions = <
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -960,9 +960,12 @@ export const getDownloadBookingCalendarFileQueryOptions = <
 export type DownloadBookingCalendarFileQueryResult = NonNullable<
   Awaited<ReturnType<typeof downloadBookingCalendarFile>>
 >;
-export type DownloadBookingCalendarFileQueryError = ErrorType<
-  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
->;
+export type DownloadBookingCalendarFileQueryError =
+  | UnauthenticatedResponse
+  | NotFoundResponse
+  | NotAcceptableResponse
+  | TooManyRequestsResponse
+  | UnexpectedErrorResponse;
 
 /**
  * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
@@ -970,13 +973,12 @@ export type DownloadBookingCalendarFileQueryError = ErrorType<
  */
 export function useDownloadBookingCalendarFile<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options: {
@@ -999,13 +1001,12 @@ export function useDownloadBookingCalendarFile<
  */
 export function useDownloadBookingCalendarFile<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -1028,13 +1029,12 @@ export function useDownloadBookingCalendarFile<
  */
 export function useDownloadBookingCalendarFile<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -1049,13 +1049,12 @@ export function useDownloadBookingCalendarFile<
  */
 export function useDownloadBookingCalendarFile<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -1088,13 +1087,12 @@ export const invalidateDownloadBookingCalendarFile = async (
 
 export const getDownloadBookingCalendarFileSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -1121,9 +1119,12 @@ export const getDownloadBookingCalendarFileSuspenseQueryOptions = <
 export type DownloadBookingCalendarFileSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof downloadBookingCalendarFile>>
 >;
-export type DownloadBookingCalendarFileSuspenseQueryError = ErrorType<
-  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
->;
+export type DownloadBookingCalendarFileSuspenseQueryError =
+  | UnauthenticatedResponse
+  | NotFoundResponse
+  | NotAcceptableResponse
+  | TooManyRequestsResponse
+  | UnexpectedErrorResponse;
 
 /**
  * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
@@ -1131,13 +1132,12 @@ export type DownloadBookingCalendarFileSuspenseQueryError = ErrorType<
  */
 export function useDownloadBookingCalendarFileSuspense<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options: {
@@ -1152,13 +1152,12 @@ export function useDownloadBookingCalendarFileSuspense<
  */
 export function useDownloadBookingCalendarFileSuspense<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -1173,13 +1172,12 @@ export function useDownloadBookingCalendarFileSuspense<
  */
 export function useDownloadBookingCalendarFileSuspense<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
@@ -1194,13 +1192,12 @@ export function useDownloadBookingCalendarFileSuspense<
  */
 export function useDownloadBookingCalendarFileSuspense<
   TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   bookingId: number,
   options?: {
