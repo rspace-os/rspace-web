@@ -314,8 +314,8 @@ return isValidEmptyIntegration(integrationName)
 
 ### `locales/en-US/server.system.json`
 
-Inside `system.property.description`, add an entry beside the other
-`*Available` descriptions (for example `egnyteAvailable`):
+Inside `system.property.description`, add an entry alphabetically among the
+other `*Available` descriptions (for example `egnyteAvailable`):
 
 ```json
 "<name>Available": "Makes <Name> integration available.",
@@ -434,6 +434,9 @@ Insert alphabetically inside `help`:
 "<name>": "TODO_<NAME>_DOC_ID",
 ```
 
+`IntegrationCard`'s `docLink` is typed from the generated `resources.d.ts`, so
+run `pnpm run i18n:types` after adding the key; `pnpm run tsc` fails until then.
+
 ### `WEB-INF/pages/system/settings_ajax.jsp`
 
 Add inside the block of `<div id="*.available.description">` siblings:
@@ -516,7 +519,7 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 
 1. Replace placeholder strings in `<Name>.tsx`: `explanatoryText`,
    `usageText`, `helpLinkText`, `website`.
-2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs short ID.
+2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs article slug (for example `vkd8mt2ffb-argos-integration`).
 3. Hand-tune `LOGO_COLOR` in `branding/<name>/index.ts` to match the real brand.
 4. Replace the placeholder `branding/<name>/logo.svg` with a real
    100×100 logo per the conventions in

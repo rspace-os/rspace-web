@@ -65,7 +65,8 @@ pnpm run lint
 ```
 
 Iterate in Chromium only. For the final pass before finishing, run the changed
-file in all three engines and repeat it 2–3 times to check for flakes. CI's `browser-tests` job in
+file in all three engines and repeat it 2–3 times to check for flakes.
+CI's `browser-tests` job in
 `.github/workflows/lint-and-test.yml` installs browsers with `--with-deps`,
 sets `VITEST_BROWSERS` per matrix job, and writes per-engine JUnit results.
 Every spec file runs in every engine.

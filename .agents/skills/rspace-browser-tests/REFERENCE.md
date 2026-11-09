@@ -1,7 +1,7 @@
 # RSpace Browser-Mode Tests: Reference
 
-Templates and the full gotcha catalogue. The reference implementation is the stoichiometry
-suite under `src/main/webapp/ui/src/tinyMCE/stoichiometry/__tests__/`.
+Templates and the full gotcha catalogue. The reference implementation is the
+stoichiometry suite under `src/main/webapp/ui/src/tinyMCE/stoichiometry/__tests__/`.
 
 ## Artifact templates
 
@@ -164,3 +164,14 @@ document/page divs, the TinyMCE contenteditable iframe body.
   `include` pre-bundles lazily discovered deps, so no mid-run optimizer reload
   duplicates React/emotion. The browser config has its own `cacheDir`
   (`node_modules/.vite-browser`) so it can run alongside the jsdom suite.
+- **Clipboard.** Browser Mode cannot grant clipboard permissions. Stub
+  `navigator.clipboard.writeText`, capture the written text, and restore the
+  original in `afterEach` (see `eln/gallery/components/MainPanel.spec.tsx`).
+- **New tabs.** Browser Mode cannot inspect a tab a link opens. Assert the
+  link's `target="_blank"` and `href` instead (see
+  `tinyMCE/pubchem/ImportDialog.spec.tsx`).
+- **`matchMedia`.** Patch `window.matchMedia` before `render` and restore it in
+  `afterEach` (see `components/ValidatingSubmitButton.spec.tsx`).
+- **Waiting.** Never use fixed sleeps. Wait with `expect.poll` or
+  `vi.waitFor(() => { if (!cond) throw ... })`; read geometry with
+  `locator.element().getBoundingClientRect()` inside `expect.poll`.

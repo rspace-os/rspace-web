@@ -59,12 +59,12 @@ The skill / human implementer needs four pieces of data:
 | `src/main/java/com/researchspace/service/IntegrationsHandler.java`                         | Insert `String <NAME>_APP_NAME = "<NAME>";` constant in alphabetical order.                                           |
 | `src/main/java/com/researchspace/service/SystemPropertyName.java`                          | Add `<NAME>_AVAILABLE("<name>.available"),` enum entry. Without this, `SystemPropertyManagerImpl`'s `@Cacheable(key = "#name.propertyName")` resolves on a null and throws `EL1007E: Property or field 'propertyName' cannot be found on null`, breaking `/integration/allIntegrations`. |
 | `src/main/java/com/researchspace/service/impl/IntegrationsHandlerImpl.java`                | Add a new `isValidEmptyIntegration()` private method with `case <NAME>_APP_NAME: return true;`, and update `isAppConfigIntegration()` to delegate to it. Without this, `isValidIntegration()` returns false and the Apps page crashes. |
-| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.system.json`              | Add `"<name>Available": "Makes <Name> integration available."` inside `system.property.description`.                 |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.system.json`              | Add `"<name>Available": "Makes <Name> integration available."` alphabetically inside `system.property.description`.   |
 | `src/main/resources/sqlUpdates/liquibase-master.xml`                                       | Register the new changeset.                                                                                            |
 | `src/main/webapp/ui/src/eln/apps/CardListing.tsx`                                          | Add import, `<name>Update` `useCallback`, and conditional render block (alphabetical).                                |
 | `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts`                               | Add `IntegrationStates` entry, decoder, encoder branch, two switch arms.                                              |
 | `src/main/webapp/ui/src/eln/apps/__tests__/allIntegrationsAreDisabled.json`                | Insert `"<NAME>": { … }` fixture object.                                                                              |
-| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/common.json`                     | Add `"<name>": "TODO_<NAME>_DOC_ID",` inside `help`.                                                                 |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/common.json`                     | Add `"<name>": "TODO_<NAME>_DOC_ID",` inside `help`, then run `pnpm run i18n:types`.                                   |
 | `src/main/webapp/WEB-INF/pages/system/settings_ajax.jsp`                                   | Add `<div id="<name>.available.description">…</div>`.                                                                 |
 | `src/main/webapp/scripts/pages/system/settings_mod.js`                                     | Add `_printSettings(['<name>.available']);` under an existing category.                                               |
 | `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const, plus an `if (<name>Enabled) { ... }` block containing both `localTinymcesetup.external_plugins["<name>"] = "..."` AND `addToToolbarIfNotPresent(localTinymcesetup, " | <name>")` (the second line is required for the toolbar button to appear). |
@@ -140,8 +140,8 @@ The empty-integration skill **does not** modify any of:
 
 1. Replace placeholder strings in `<Name>.tsx`
    (`explanatoryText`, `usageText`, `helpLinkText`, `website`).
-2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs short
-   ID once the help page exists.
+2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs article
+   slug (for example `vkd8mt2ffb-argos-integration`) once the help page exists.
 3. Hand-tune `LOGO_COLOR` in `branding/<name>/index.ts` to match the real
    service's brand.
 4. Replace the placeholder `branding/<name>/logo.svg` with the real

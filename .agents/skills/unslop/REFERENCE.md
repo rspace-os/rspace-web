@@ -1,8 +1,9 @@
 ## Patterns to detect and fix
 
-Synced from [pstack's unslop skill](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop)
-at commit `bc697d0a5a` (MIT License, see [LICENSE](LICENSE)). Rule numbers match upstream,
-where other pstack skills cite them; gaps are rules upstream removed.
+Rules synced from [pstack's unslop skill](https://github.com/cursor/plugins/tree/bc697d0a5a/pstack/skills/unslop)
+at commit `bc697d0a5a` (MIT License, see [LICENSE](LICENSE)); the process in
+`SKILL.md` is local. Rule numbers match upstream, where other pstack skills
+cite them; gaps are rules upstream removed.
 
 ### Content
 

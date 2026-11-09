@@ -23,9 +23,13 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
    and entries; refuse to overwrite them. Verify each insertion with `rg`.
 4. Run `pnpm run build`. The dialog loads `tinymce<Name>.js`; without the bundle,
    it opens blank with a failed resource request.
-5. Run the frontend checks from the root:
+5. Run the frontend checks from the root. Regenerate the i18n types first:
+   `docLink="<name>"` is typed from the generated `resources.d.ts`, so `tsc`
+   fails until the new `help` key is in it.
 
    ```bash
+   pnpm run i18n:types
+   pnpm run i18n:lint
    pnpm run tsc
    pnpm run lint
    pnpm run test src/tinyMCE/<name>/__tests__/<Name>.test.tsx
