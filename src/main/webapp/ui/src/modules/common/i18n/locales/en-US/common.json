@@ -1098,6 +1098,8 @@
       "labelWithSource": "{label} ({source})",
       "location": "Location",
       "parentContainer": "Parent container",
+      "requester": "Requester",
+      "target": "Bookable item",
       "updatedBy": "Updated by"
     },
     "filters": {

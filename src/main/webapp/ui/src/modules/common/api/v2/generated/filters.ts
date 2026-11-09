@@ -2,6 +2,98 @@
 import type { Temporal } from "@js-temporal/polyfill";
 /** Filterable selectors per REST API v2 filter, with their allowed RSQL operators and value types. */
 export interface ApiV2FilterFields {
+  BookingConfigurations: {
+    allowDoubleBooking: { operators: "!=" | "==" | "=exists="; value: boolean };
+    bufferAfterMinutes: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: number;
+    };
+    bufferBeforeMinutes: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: number;
+    };
+    configurationVersion: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: number;
+    };
+    createdAt: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Temporal.Instant;
+    };
+    "createdBy.createdAt": { operators: "==" | "=in="; value: string | Temporal.Instant };
+    "createdBy.email": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "createdBy.firstName": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "createdBy.id": { operators: "==" | "=in="; value: number };
+    "createdBy.lastName": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "createdBy.username": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "createdBy.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
+    enabled: { operators: "!=" | "==" | "=exists="; value: boolean };
+    id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
+    incrementUnit: { operators: "!=" | "==" | "=exists="; value: "MINUTES" | "HOURS" | "DAYS" };
+    maxBookingDurationMinutes: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: number;
+    };
+    slotGranularityMinutes: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: number;
+    };
+    state: { operators: "!=" | "==" | "=exists="; value: "ACTIVE" | "ARCHIVED" };
+    target: { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: string };
+    "target.deleted": { operators: "=="; value: boolean };
+    "target.id": { operators: "==" | "=in="; value: number };
+    "target.name": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "target.relationTo": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: "instruments" };
+    "target.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
+    targetOwner: { operators: "=="; value: string };
+    timezone: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
+    updatedAt: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Temporal.Instant;
+    };
+    "updatedBy.createdAt": { operators: "==" | "=in="; value: string | Temporal.Instant };
+    "updatedBy.email": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "updatedBy.firstName": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "updatedBy.id": { operators: "==" | "=in="; value: number };
+    "updatedBy.lastName": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "updatedBy.username": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "updatedBy.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
+  };
+  Bookings: {
+    createdAt: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Temporal.Instant;
+    };
+    end: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Temporal.Instant;
+    };
+    id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
+    kind: { operators: "!=" | "==" | "=exists="; value: "BOOKING" | "MAINTENANCE" };
+    purpose: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
+    "requester.createdAt": { operators: "==" | "=in="; value: string | Temporal.Instant };
+    "requester.email": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "requester.firstName": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "requester.id": { operators: "==" | "=in="; value: number };
+    "requester.lastName": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "requester.username": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "requester.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
+    start: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Temporal.Instant;
+    };
+    state: { operators: "!=" | "==" | "=exists="; value: "CONFIRMED" | "CANCELLED" };
+    target: { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: string };
+    "target.deleted": { operators: "=="; value: boolean };
+    "target.id": { operators: "==" | "=in="; value: number };
+    "target.name": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "target.relationTo": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: "instruments" };
+    "target.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
+    updatedAt: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Temporal.Instant;
+    };
+  };
   Containers: {
     containerType: { operators: "!=" | "==" | "=exists="; value: "LIST" | "GRID" | "IMAGE" | "WORKBENCH" };
     deleted: { operators: "!=" | "==" | "=exists="; value: boolean };

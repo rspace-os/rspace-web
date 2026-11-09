@@ -16,26 +16,63 @@ include.
 
 ## Static development seed
 
-[`changeLog-rsdev-booking-dev-seed.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml)
-runs only with the `dev-test` Liquibase context. It marks itself ran when any
-Booking configuration already exists, so it populates only a fresh development
-database. Its
-[`booking-dev-seed.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
-creates nine instruments, eight Booking configurations and 50 events. One
-instrument has no configuration and one configuration permits double booking.
+The SQL seed runs only in `dev-test` and skips databases that already have Booking data. It
+uses reserved IDs and bypasses Envers, so it creates no audit revisions. See its
+[changelog](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml) for the
+execution guard, and its [original SQL](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
+and [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql) for fixture values.
+The legacy `ResourceAccess` and role rows in the static SQL seed do not grant current Booking access.
+## Service-created development fixtures
 
-Liquibase calculates event dates from `CURRENT_DATE` when it runs. The seed
-creates events three days before that date, on that date and seven days after it
-for `sysadmin1`, `user1a`, `user2b` and `user3c`. The instruments belong to `user1a`
-and use Inventory's `OWNER_GROUPS` sharing mode. The trusted development-only SQL
-also inserts `ResourceAccess` and `ResourceRoleAssignment` rows, including
-`BOOKER` grants for the `ALL_USERS` audience, and attributes configuration
-creation to sysadmin `-12`. IDs in the `910100001` to `910100009` range keep these
-rows separate from generated inventory data.
+[`BookingFixturesAppInitialiser`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java)
+is registered in the `run` profile's
+[`TestAppConfig`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java).
+It requires `user1a`, `user2b`, `user3c` and `sysadmin1` and their fixture credentials.
+It finds instruments and containers by stable names plus the fixture description,
+creates missing inventory through managers, creates or updates configurations
+through `BookingConfigurationManager`, and creates events through
+`TimeSlotBookingManager`. Booking dates use the following calendar date in
+Europe/Berlin, so new examples start in the future even after a late-day startup.
+Its stable-key checks prevent duplicate fixtures on repeat startup.
 
-The same changeset then runs
-[`booking-dev-seed-edge-cases.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql),
-which turns seven configurations into scheduling edge cases and adds four events
-on closed days, across two all-day weekdays and ending at closing time. See it
-for the fixture values. Both SQL files bypass Envers and write no audit
-revisions.
+Keep service-created fixtures for data that depends on ownership, sharing,
+validation or audit behavior. Raw SQL has to supply those effects itself. See
+[the Docker quick start](../../docker/dev/README.md#quick-start) for local setup.
+
+## Catalogue search and SQL fixtures
+
+The static SQL instruments have no parent location because the seed inserts no
+`ContainerLocation` rows. Service-created Inventory instruments normally start
+on their owner's workbench, although the Booking fixture also creates a
+parentless example.
+
+Booking catalogue text search uses database `LIKE` queries rather than a search
+index. Its name, description and readable parent-name matching lives in
+[`BookingInstrumentQueryDaoHibernate.searchBookingCatalogueTargetIds`](../../src/main/java/com/researchspace/dao/hibernate/BookingInstrumentQueryDaoHibernate.java).
+SQL-inserted data therefore does not require reindexing for that search path.
+When changing its joins, check parentless instruments as well as located ones.
+Path expressions through a parent can introduce implicit inner joins that
+exclude parentless rows. The existing
+[`InstrumentBookingCatalogueSearchTest`](../../src/test/java/com/researchspace/dao/InstrumentBookingCatalogueSearchTest.java)
+checks literal `LIKE` characters.
+
+Inventory's own search uses Hibernate Search instead. It sees SQL-inserted rows
+only after reindexing. `rs.indexOnstartup=true` is the deployment default. The
+Docker stack disables it unless `RSPACE_INDEX_ON_STARTUP=true`.
+
+## Permanent user deletion
+
+Permanent user deletion removes live Booking rows through
+[`UserDeletionDaoHibernate.table2UserIdColumn`](../../src/main/java/com/researchspace/dao/hibernate/UserDeletionDaoHibernate.java),
+keyed by `TimeSlotBooking.requester_id`. Keep that cleanup mapping aligned if the
+requester column or table changes. Booking audit history is retained.
+
+## Instrument locking
+
+`InstrumentDao.lockById` flushes pending changes, evicts a cached instrument and uses a
+locking HQL entity read to obtain current instrument columns. Eager associations load
+without locks. Do not replace this with a pessimistic refresh: Hibernate joins owners,
+containers and other eager associations into the locking statement. That can lock an
+owner before a batch has acquired all its instrument rows and deadlock against a
+single-instrument writer for the same owner. Lock instrument rows in id order before
+explicit owner locks. `InstrumentLockConcurrencyIT` pins this interleaving with latches.

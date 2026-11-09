@@ -298,7 +298,7 @@ describe("runtime custom fields", () => {
       responseField: "target.customFields",
       id: "SF104",
     });
-    expect(field.origin?.via).toEqual({ name: "target", label: { text: "target" } });
+    expect(field.origin?.via).toEqual({ name: "target", label: { key: "common:tableList.fields.target" } });
   });
 
   it("validates typed runtime values and carries descriptors for each projected column", () => {

@@ -66,6 +66,6 @@ public final class ApiV2ProblemFactory {
       Map<String, Object> extensions) {
     return ResponseEntity.status(status)
         .contentType(ApiV2Problem.PROBLEM_JSON)
-        .body(new ApiV2Problem(title, status.value(), code, detail, invalidParams));
+        .body(new ApiV2Problem(title, status.value(), code, detail, invalidParams, extensions));
   }
 }
