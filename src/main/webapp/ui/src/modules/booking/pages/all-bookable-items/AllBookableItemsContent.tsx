@@ -44,11 +44,7 @@ import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
-import {
-  type BookableItemsBulkAction,
-  lifecycleErrorKey,
-  requiredVersion,
-} from "../bookable-items/bookableItemLifecycleHelpers";
+import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "../bookable-items/bookableItemLifecycleHelpers";
 import { type BookingConfigurationRow, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { mapBookingConfiguration } from "../bookable-items/bookingConfigurationSchema";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";

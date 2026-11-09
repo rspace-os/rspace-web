@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { storyUser } from "../bookable-items/BookableItemPage.story";
-import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
+import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
 
 const pageObj = new AllBookableItemsPage();
