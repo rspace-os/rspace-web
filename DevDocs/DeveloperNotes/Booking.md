@@ -23,7 +23,8 @@ every target before saving; a mixed authorized/unauthorized batch is rejected
 without saving any configuration.
 
 Booking configurations use `ACTIVE` and `ARCHIVED` states. Archiving and restoring use the
-configuration-edit capability, held by Booking Owners, Managers and implicit sysadmin Owners.
+configuration-edit capability, held by the target Inventory item's
+owner or a sysadmin acting as themselves, as described in [Booking permissions](BookingPermissions.md).
 There is no separate archive capability or deletion flag.
 
 Ordinary `DELETE /api/v2/booking-configurations/{id}` archives the configuration.
@@ -39,44 +40,13 @@ one configuration in either lifecycle state. Only a sysadmin acting as themselve
 may do this. It removes live operational data and retains audit history. Bulk
 permanent deletion is not supported.
 
-Booking settings have a separate sysadmin-only grantee directory at
-`GET /api/v2/booking-settings/access-grantees` for creation defaults.
+The `booking-drop-default-sharing` changeset permanently drops stored default-sharing settings and their audit history.
 
 ## Access
 
-Booking uses independent resource-role assignments. A configuration's access governs its
-events, calendar, audit history and subscription eligibility, and grants no Inventory access.
-Every reader of a configuration sees full event details; there is no busy-only Viewer role.
-The generic assignment and effective-role rules are in
-[Security and permissions](SecurityAndPermissions.md#resource-role-permissions).
-
-| Role | Booking capabilities |
-| --- | --- |
-| Owner | Configuration, all events, role assignments, archive and restore |
-| Manager | Configuration, all events, Manager/Booker/Viewer assignments, archive and restore; no Owner changes |
-| Booker | Create bookings and change or cancel their own eligible bookings |
-| Viewer | Read the configuration/calendar and create a personal calendar subscription |
-
-At least one persisted Owner assignment to a user or supported group must remain.
-Disabled users, deleted-group snapshots and groups without enabled members still count
-structurally but grant no effective access. Their assignments remain removable and auditable.
-Implicit sysadmin Owner access does not satisfy the persisted-owner invariant.
-Run-as uses the represented subject's rights; the original actor supplies audit attribution.
-Controllers pass both identities into services, which do not inspect Shiro or thread-local identity.
-
-Creation copies default sharing: All users, selected users/groups, or nobody beyond the
-creator, who becomes Owner. A new instance starts with All users. The All users audience
-also covers subsequently created accounts. The highest direct, group or audience role wins;
-a weaker direct role cannot reduce it. Leaving removes only one's direct assignment,
-preserves group/audience access, and cannot remove the final persisted Owner.
-
-The capability-protected access directory offers ordinary Owners and Managers their groups
-and fellow group members. Sysadmins can select any active user or valid lab, collaboration
-or project group. Communities are not selectable. The settings directory is sysadmin-only.
-The implicit sysadmin Owner role permits repairing configurations with no effective persisted
-Owner. After losing a role, a requester retains read-only access to their own past and future
-bookings through the requester relationship, with no departure marker or configuration,
-calendar, audit, assignment or subscription rights.
+Booking derives authorization from current Inventory permissions; see
+[Booking permissions](BookingPermissions.md) for capabilities, requester retention,
+run-as, access migration and transaction locking.
 
 ## Scheduling
 
@@ -113,7 +83,8 @@ booking and maintenance event. Maintenance requires `CREATE_BLOCKOUT`, exposed a
 `capabilities.canCreateBlockout`, and whole-minute endpoints. It bypasses opening hours,
 closed weekdays, increment/alignment and the item maximum, but retains the absolute cap.
 
-Booking Owners and Managers hold the maintenance capability.
+The instrument owner and a direct sysadmin subject hold the maintenance capability;
+Inventory editors and readers do not.
 
 Booking target references name the Inventory `instruments` resource, with stored kind
 `INSTRUMENT` and global-ID prefix `IN`. Inventory read access and soft deletion apply
@@ -130,15 +101,14 @@ parsing accepts known compression-proxy tag alterations.
 When Booking is disabled, settings writes and configuration and booking writes
 return 404, as do the feature-specific directory and catalogue reads.
 
-The bounded `booking-configuration-targets` and `booking-settings/access-grantees`
-lookups return `{docs: [...]}` without paging metadata. Catalogue lists retain
+The bounded `booking-configuration-targets` lookup returns `{docs: [...]}` without paging metadata. Catalogue lists retain
 `docs` and their existing paging members.
 
 ## Audit scope
 
-Configuration audit history requires the current target type and ID in each audit payload.
-Rows for another target, or rows without a target, are excluded before applying limits
-and caching results.
+Configuration audit history requires the current target type and ID in direct audit payloads.
+Related booking rows without a target are included only from the configuration creation time.
+Unknown creation time disables that fallback. Mismatched targets are excluded before limits and caching.
 
 ## Scheduling timezone writes
 
@@ -154,6 +124,53 @@ Booking creation requires a start strictly in the future and an end after the st
 Interval-changing edits use the same validation; edits to an already-started booking are
 rejected as state transitions. Client draft and uncertain-write handling are documented in
 [Booking frontend](BookingFrontend.md#booking-window-reconciliation).
+
+## Booking Calendar query scope
+
+`GET /api/v2/booking-catalogue/calendar` accepts `start` (inclusive), `end` (exclusive),
+`where` for item predicates, `eventWhere` for event predicates, `q`, `page`, and `limit`.
+It resolves runtime fields through the same registered resource contexts as ordinary
+collections. A correlated event EXISTS applies visibility, confirmed/nondeleted state,
+half-open interval overlap and the complete event expression before resource counts and
+pagination. Several matching events count the resource once.
+
+`GET /api/v2/booking-calendar/events` accepts `start`, `end`, combined item/event `where`,
+`q`, `page`, and `limit`. It applies the same mandatory event scope before pagination,
+orders by start then ID, and renders the safe booking target projection. Both endpoints
+require start before end and limit pages to 100 rows. Search matches name, exact inventory
+ID, inventory-readable description, or visible booking purpose/requester name and username.
+Description text is used only under the instrument read policy and is not added to the booking
+target payload.
+
+Calendar text search uses the compiler's `LikeEscaper` and `RsqlSqlFragments.like` helpers.
+Instrument and location lookups also declare `!` as their SQL escape character to match
+`LikeEscaper`. This makes `%`, `_`, and `!` literal search text. Calendar SQL lowercases both
+operands for case-insensitive matching.
+
+### Requester privacy
+
+Bookings expose `requester` as a nullable, read-only relationship to `users`. Identity filters use
+`requester.value`, including `requester.value==me`. The Calendar `bookedBy` text facet matches the
+requester username, first name or last name.
+
+A busy event exposes no requester reference. The referenced user must also pass the existing users
+resource read policy, so `requester` can be null even when other booking details are visible.
+
+Filtering must not reveal who booked an event that the caller sees as busy. An event shows its
+requester details when the caller can read its Inventory item or requested it.
+`BookingRequesterFilters` pairs requester comparisons with that rule, so a busy event never matches
+a requester comparison, positive or negative. The caller's own events always satisfy the rule.
+`TimeSlotBookingResourceOperations` applies the guard to list and count. `BookingCalendarQuery`
+applies it to Calendar event filters, including `bookedBy`, and to the Calendar `q` search over
+purpose and requester names. The read policy grants no busy-only rows today, and the guard does not
+depend on that.
+
+### Booking target runtime fields
+
+`booking-instruments` delegates to `instruments`: `target.customFields` supports filters and
+projection; `target.extraFields` supports filters only. The catalogue preserves resolved runtime
+bindings and trusted constraints while owning its paging, sorting and DTO projection. See
+[relationship queries](RestApiV2QueriesAndAccess.md#relationships) for the shared contract.
 
 ### Retrying booking creation
 

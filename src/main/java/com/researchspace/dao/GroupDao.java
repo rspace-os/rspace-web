@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.List;
 
 public interface GroupDao extends GenericDao<Group, Long> {
+  /** Updates only the publication flag; the service must authorize the PI first. */
+  void setPublicationAllowed(Long groupId, boolean allowed);
 
   ISearchResults<Group> list(PaginationCriteria<Group> pagCrit);
 

@@ -8,7 +8,6 @@ import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
-import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.Group;
@@ -40,8 +39,6 @@ import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -73,9 +70,7 @@ public final class ApiV2Fixture {
   private final IContentInitializer contentInitializer;
   private final ContainerApiManager containerManager;
   private final InstrumentEntityApiManager instrumentManager;
-  private final TimeSlotBookingDao bookingDao;
   private final FeatureFlagManager featureFlagManager;
-  private final PlatformTransactionManager transactionManager;
   private final IPermissionUtils permissionUtils;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -99,9 +94,7 @@ public final class ApiV2Fixture {
       IContentInitializer contentInitializer,
       ContainerApiManager containerManager,
       InstrumentEntityApiManager instrumentManager,
-      TimeSlotBookingDao bookingDao,
       FeatureFlagManager featureFlagManager,
-      PlatformTransactionManager transactionManager,
       IPermissionUtils permissionUtils) {
     this.userManager = userManager;
     this.apiKeyManager = apiKeyManager;
@@ -110,9 +103,7 @@ public final class ApiV2Fixture {
     this.contentInitializer = contentInitializer;
     this.containerManager = containerManager;
     this.instrumentManager = instrumentManager;
-    this.bookingDao = bookingDao;
     this.featureFlagManager = featureFlagManager;
-    this.transactionManager = transactionManager;
     this.permissionUtils = permissionUtils;
   }
 
@@ -135,9 +126,7 @@ public final class ApiV2Fixture {
             context.getBean(IContentInitializer.class),
             context.getBean(ContainerApiManager.class),
             context.getBean(InstrumentEntityApiManager.class),
-            context.getBean(TimeSlotBookingDao.class),
             context.getBean(FeatureFlagManager.class),
-            context.getBean(PlatformTransactionManager.class),
             context.getBean(IPermissionUtils.class));
     fixture.mockMvc =
         MockMvcBuilders.webAppContextSetup(context)
@@ -325,18 +314,18 @@ public final class ApiV2Fixture {
 
   /** Creates one confirmed booking through the public endpoint. */
   public long booking(long instrumentId, Instant start, Instant end) {
+    return booking(instrumentId, start, end, userKey());
+  }
+
+  /** Creates one confirmed booking as the caller identified by {@code apiKey}. */
+  public long booking(long instrumentId, Instant start, Instant end, String apiKey) {
     enableBookings();
     String body =
         """
         {"target":{"relationTo":"instruments","value":%d},"start":"%s","end":"%s"}\
         """
             .formatted(instrumentId, start, end);
-    long id = idOf(postJson("/api/v2/bookings", body, userKey()));
-    teardown.add(
-        () ->
-            new TransactionTemplate(transactionManager)
-                .executeWithoutResult(ignored -> bookingDao.remove(id)));
-    return id;
+    return idOf(postJson("/api/v2/bookings", body, apiKey));
   }
 
   /** Restores the in-memory state this fixture changed, most recent first. */
