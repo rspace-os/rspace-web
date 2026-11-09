@@ -1,42 +1,58 @@
-import { screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import {
-  createBookingSettingsFixture,
-  renderBookingSettingsPage,
-  serveBookingSettings,
-} from "./bookingSettingsTestHarness";
-
-const settings = createBookingSettingsFixture({
-  slotGranularityMinutes: 15,
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-});
+import { server } from "@/__tests__/mswServer";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
+import BookingSettingsPage from "../BookingSettingsPage";
+import { bookingSettingsFixture as settings } from "./bookingSettingsFixture";
 
 function serve(initial: Partial<typeof settings> = {}, saveSucceeds: () => boolean = () => true) {
-  return serveBookingSettings({ ...settings, ...initial }, saveSucceeds);
+  const submitted: Record<string, unknown>[] = [];
+  let current = { ...settings, ...initial };
+  server.use(
+    http.get("/api/v2/booking-settings/admin", () =>
+      HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+    ),
+    http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+      if (!request.headers.has("If-Match")) return new HttpResponse(null, { status: 428 });
+      expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
+      const body = (await request.json()) as Record<string, unknown>;
+      expect(body).not.toHaveProperty("configurationVersion");
+      submitted.push(body);
+      if (!saveSucceeds())
+        return HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", code: "errors.api.v2.unexpected", status: 500 },
+          { status: 500 },
+        );
+      current = { ...current, ...body, configurationVersion: current.configurationVersion + 1 };
+      return HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } });
+    }),
+  );
+  return submitted;
+}
+
+function renderPage() {
+  return render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <Suspense fallback={null}>
+        <BookingSettingsPage />
+      </Suspense>
+    </QueryClientProvider>,
+  );
 }
 
 type User = ReturnType<typeof userEvent.setup>;
 
-const sharedHours = () => screen.getByRole("group", { name: "Monday" });
-const findSharedHours = () => screen.findByRole("group", { name: "Monday" });
-const dayRow = (day: string) => {
-  const row = within(screen.getByRole("list", { name: "booking:bookableItemDetails.fields.openingHours" }))
-    .getAllByRole("listitem")
-    .find((item) => within(item).queryByText(day, { exact: true }));
-  if (!row) throw new Error(`No ${day} row`);
-  return row;
-};
-const dayHours = (day: string) => within(dayRow(day)).getByRole("group", { name: day });
+const mondayHours = () => screen.getByRole("group", { name: "Monday" });
+const findMondayHours = () => screen.findByRole("group", { name: "Monday" });
+const dayHours = (day: string) => screen.getByRole("group", { name: day });
 const controls = (group: HTMLElement) => ({
-  get start() {
-    return within(group).getByLabelText("booking:settings.fields.openingStart");
-  },
-  get end() {
-    return within(group).getByLabelText("booking:settings.fields.openingEnd");
-  },
+  start: within(group).getByLabelText("booking:settings.fields.openingStart"),
+  end: within(group).getByLabelText("booking:settings.fields.openingEnd"),
   allDay: within(group).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" }),
 });
 const save = () => screen.getByRole("button", { name: "booking:settings.actions.save" });
@@ -55,28 +71,17 @@ function expectHours(group: HTMLElement, start: string, end: string) {
 }
 
 describe("Open all day", () => {
-  it("describes midnight only for a custom interval ending at midnight", async () => {
-    const user = userEvent.setup();
-    serve({ openingHours: [{ dayOfWeek: 1, start: "08:00", end: "18:00" }] });
-    renderBookingSettingsPage();
-    const group = await findSharedHours();
-    expect(within(group).queryByText("booking:settings.openingHours.midnightEnd")).not.toBeInTheDocument();
-    const end = controls(group).end;
-    await user.clear(end);
-    await user.type(end, "00:00");
-    expect(end).toHaveAccessibleDescription("booking:settings.openingHours.midnightEnd");
-  });
-
   it("follows the 00:00 to 24:00 pair and falls back to 09:00-17:00", async () => {
     const user = userEvent.setup();
     serve({ openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) });
-    const { container } = renderBookingSettingsPage();
+    const { container } = renderPage();
 
-    const group = await findSharedHours();
-    const allDay = within(group).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" });
+    const { start, end, allDay } = controls(await findMondayHours());
     expect(allDay).toBeChecked();
-    expect(within(group).queryByLabelText("booking:settings.fields.openingStart")).not.toBeInTheDocument();
-    expect(within(group).queryByLabelText("booking:settings.fields.openingEnd")).not.toBeInTheDocument();
+    expect(start).toBeDisabled();
+    expect(end).toBeDisabled();
+    expect(end).toHaveValue("00:00");
+    expect(end).toHaveAccessibleDescription("booking:settings.openingHours.midnightEnd");
     await expectAccessible(container);
 
     // Keyboard operation keeps focus on the checkbox; an all-day baseline has no custom hours to restore.
@@ -84,29 +89,28 @@ describe("Open all day", () => {
     await user.keyboard(" ");
     expect(allDay).not.toBeChecked();
     expect(allDay).toHaveFocus();
-    expectHours(sharedHours(), "09:00", "17:00");
-    expect(controls(group).start).toBeEnabled();
+    expectHours(mondayHours(), "09:00", "17:00");
+    expect(start).toBeEnabled();
     await user.keyboard(" ");
     expect(allDay).toBeChecked();
   });
 
-  it("keeps typed midnight controls focused and restores the remembered custom hours", async () => {
+  it("selects the whole day when typed, moves focus to the checkbox and restores the typed hours", async () => {
     const user = userEvent.setup();
     serve({ openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "01:00", end: "24:00" })) });
-    renderBookingSettingsPage();
+    renderPage();
 
-    const { start, allDay } = controls(await findSharedHours());
+    const { start, allDay } = controls(await findMondayHours());
     expect(allDay).not.toBeChecked();
     await user.clear(start);
     await user.type(start, "00:00");
     expect(allDay).toBeChecked();
-    expect(start).toBeInTheDocument();
-    expect(start).toBeEnabled();
-    expect(start).toHaveFocus();
+    expect(start).toBeDisabled();
+    await waitFor(() => expect(allDay).toHaveFocus());
     expect(screen.getByText("booking:settings.openingHours.openAllDaySelected")).toBeInTheDocument();
 
     await user.click(allDay);
-    expectHours(sharedHours(), "01:00", "00:00");
+    expectHours(mondayHours(), "01:00", "00:00");
     expect(allDay).toHaveFocus();
     expect(screen.queryByText("booking:settings.openingHours.openAllDaySelected")).not.toBeInTheDocument();
   });
@@ -114,31 +118,31 @@ describe("Open all day", () => {
   it("remembers custom hours from typing and the checkbox, never blank or invalid drafts", async () => {
     const user = userEvent.setup();
     serve();
-    renderBookingSettingsPage();
+    renderPage();
 
-    await setHours(user, await findSharedHours(), "10:00", "16:00");
-    const { allDay } = controls(sharedHours());
+    await setHours(user, await findMondayHours(), "10:00", "16:00");
+    const { start, allDay } = controls(mondayHours());
     await user.click(allDay);
     await user.click(allDay);
-    expectHours(sharedHours(), "10:00", "16:00");
+    expectHours(mondayHours(), "10:00", "16:00");
 
-    await user.clear(controls(sharedHours()).start);
-    await user.type(controls(sharedHours()).start, "17:00");
+    await user.clear(start);
+    await user.type(start, "17:00");
     await user.click(allDay);
     await user.click(allDay);
-    expectHours(sharedHours(), "10:00", "16:00");
+    expectHours(mondayHours(), "10:00", "16:00");
 
-    await user.clear(controls(sharedHours()).start);
+    await user.clear(start);
     await user.click(allDay);
     await user.click(allDay);
-    expectHours(sharedHours(), "10:00", "16:00");
+    expectHours(mondayHours(), "10:00", "16:00");
   });
 
   it("keeps each weekday's history and closed-day draft independent", async () => {
     const user = userEvent.setup();
     const submitted = serve({ openingHours: settings.openingHours.filter((entry) => entry.dayOfWeek !== 7) });
-    renderBookingSettingsPage();
-    await findSharedHours();
+    renderPage();
+    await findMondayHours();
 
     await setHours(user, dayHours("Tuesday"), "10:00", "16:00");
     await user.click(controls(dayHours("Tuesday")).allDay);
@@ -148,9 +152,7 @@ describe("Open all day", () => {
 
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
-    expect(
-      within(dayHours("Tuesday")).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" }),
-    ).toBeChecked();
+    expect(controls(dayHours("Tuesday")).allDay).toBeChecked();
     await user.click(controls(dayHours("Tuesday")).allDay);
     expectHours(dayHours("Tuesday"), "10:00", "16:00");
     expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
@@ -168,22 +170,22 @@ describe("Open all day", () => {
     const user = userEvent.setup();
     let succeed = false;
     const submitted = serve({}, () => succeed);
-    renderBookingSettingsPage();
+    renderPage();
 
-    await setHours(user, await findSharedHours(), "10:00", "16:00");
+    await setHours(user, await findMondayHours(), "10:00", "16:00");
     await setHours(user, dayHours("Tuesday"), "11:00", "15:00");
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
-    await user.click(controls(sharedHours()).allDay);
+    await user.click(controls(mondayHours()).allDay);
     await user.click(save());
     expect(await screen.findByText("booking:settings.errors.save")).toBeVisible();
-    await user.click(controls(sharedHours()).allDay);
-    expectHours(sharedHours(), "10:00", "16:00");
+    await user.click(controls(mondayHours()).allDay);
+    expectHours(mondayHours(), "10:00", "16:00");
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
     expectHours(dayHours("Tuesday"), "11:00", "15:00");
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
 
     succeed = true;
-    await user.click(controls(sharedHours()).allDay);
+    await user.click(controls(mondayHours()).allDay);
     await user.click(save());
     expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
     expect(submitted.at(-1)).toMatchObject({
@@ -191,19 +193,17 @@ describe("Open all day", () => {
         .filter((entry) => entry.dayOfWeek !== 2)
         .map((entry) => (entry.dayOfWeek === 1 ? { ...entry, start: "00:00", end: "24:00" } : entry)),
     });
-    await user.click(controls(sharedHours()).allDay);
-    expectHours(sharedHours(), "09:00", "17:00");
+    await user.click(controls(mondayHours()).allDay);
+    expectHours(mondayHours(), "09:00", "17:00");
     await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
-    expect(
-      within(dayHours("Tuesday")).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" }),
-    ).toBeChecked();
+    expect(controls(dayHours("Tuesday")).allDay).toBeChecked();
   });
 
   it("restores a closed day's unsaved hours and requires at least one open day", async () => {
     const user = userEvent.setup();
     const submitted = serve({ openingHours: settings.openingHours.filter((entry) => entry.dayOfWeek === 1) });
-    const { container } = renderBookingSettingsPage();
-    await setHours(user, await findSharedHours(), "10:00", "16:00");
+    const { container } = renderPage();
+    await setHours(user, await findMondayHours(), "10:00", "16:00");
     const monday = screen.getByRole("checkbox", { name: "Monday" });
 
     await user.click(monday);
@@ -214,7 +214,7 @@ describe("Open all day", () => {
     await expectAccessible(container);
 
     await user.click(monday);
-    expectHours(sharedHours(), "10:00", "16:00");
+    expectHours(mondayHours(), "10:00", "16:00");
     await user.click(save());
     expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
     expect(submitted[0]).toMatchObject({ openingHours: [{ dayOfWeek: 1, start: "10:00", end: "16:00" }] });

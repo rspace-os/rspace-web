@@ -1,35 +1,52 @@
-import { QueryClient } from "@tanstack/react-query";
-import { act, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { getGetAdminBookingSettingsQueryKey } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
-import { bookingSettingsFixture, renderBookingSettingsPage } from "./bookingSettingsTestHarness";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
+import BookingSettingsPage from "../BookingSettingsPage";
+import { bookingSettingsFixture } from "./bookingSettingsFixture";
 
-const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
+const settings = {
+  ...bookingSettingsFixture,
+  bufferBeforeMinutes: 3,
+  bufferAfterMinutes: 7,
+  state: "ACTIVE" as const,
+};
+
+function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>
+        <BookingSettingsPage />
+      </Suspense>
+    </QueryClientProvider>,
+  );
+}
 
 describe("BookingSettingsPage", () => {
   it("keeps the draft's ETag after a background settings refresh", async () => {
     const user = userEvent.setup();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let current = settings;
     let submitted: unknown;
     server.use(
       http.get("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json(current, {
-          headers: { ETag: `"${current.configurationVersion}"` },
-        }),
+        HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
       ),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         expect(request.headers.get("If-Match")).toBe('"0"');
         submitted = await request.json();
-        return HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 });
+        return HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", status: 412, code: "errors.api.v2.bookingConfiguration.stale" },
+          { status: 412 },
+        );
       }),
     );
-    renderBookingSettingsPage(queryClient);
+    renderPage(queryClient);
     const doubleBooking = await screen.findByRole("checkbox", {
       name: "booking:settings.fields.allowDoubleBooking",
     });
@@ -37,16 +54,9 @@ describe("BookingSettingsPage", () => {
     current = {
       ...settings,
       configurationVersion: 1,
-      openingHours: settings.openingHours.map((entry) => ({
-        ...entry,
-        end: "20:00",
-      })),
+      openingHours: settings.openingHours.map((entry) => ({ ...entry, end: "20:00" })),
     };
-    await act(() =>
-      queryClient.refetchQueries({
-        queryKey: getGetAdminBookingSettingsQueryKey(),
-      }),
-    );
+    await act(() => queryClient.refetchQueries({ queryKey: getGetAdminBookingSettingsQueryKey() }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
@@ -55,6 +65,22 @@ describe("BookingSettingsPage", () => {
       allowDoubleBooking: true,
     });
     expect(doubleBooking).toBeChecked();
+  });
+
+  it("offers every supported time increment", async () => {
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
+    );
+    renderPage();
+
+    const granularity = await screen.findByRole("combobox", {
+      name: "booking:settings.fields.granularity",
+    });
+    expect(
+      within(granularity)
+        .getAllByRole("option")
+        .map((option) => option.getAttribute("value")),
+    ).toEqual(["1", "5", "10", "15"]);
   });
 
   it("does not submit an invalid maximum duration", async () => {
@@ -67,16 +93,14 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json(settings, { headers: { ETag: '"0"' } });
       }),
     );
-    renderBookingSettingsPage();
+    renderPage();
 
     const maximum = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.maximumDuration",
     });
     await user.clear(maximum);
     await user.type(maximum, "7");
-    expect(maximum).toHaveAccessibleDescription(
-      "booking:settings.fields.maximumDurationDescription booking:settings.errors.maximumDuration",
-    );
+    expect(maximum).toHaveAccessibleDescription("booking:settings.fields.maximumDurationDescription");
     expect(screen.getByText("booking:settings.errors.maximumDuration")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
@@ -98,25 +122,20 @@ describe("BookingSettingsPage", () => {
         );
       }),
     );
-    renderBookingSettingsPage();
+    renderPage();
 
     const buffer = await screen.findByRole("spinbutton", {
-      name: "booking:settings.fields.bufferBefore",
+      name: "booking:settings.fields.buffer",
     });
-    expect(buffer).toHaveValue(3);
-    expect(buffer).toBeRequired();
-    expect(screen.getByRole("spinbutton", { name: "booking:settings.fields.bufferAfter" })).toHaveValue(7);
-    await user.click(
-      screen.getByRole("checkbox", {
-        name: "booking:settings.fields.allowDoubleBooking",
-      }),
-    );
+    expect(buffer).toHaveValue(null);
+    expect(buffer).not.toBeRequired();
+    expect(screen.getByText("booking:settings.fields.bufferMixed")).toBeVisible();
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
     expect(body).toEqual({
       slotGranularityMinutes: 5,
-      incrementUnit: "MINUTES",
       openingHours: settings.openingHours,
       bufferBeforeMinutes: 3,
       bufferAfterMinutes: 7,
@@ -129,7 +148,7 @@ describe("BookingSettingsPage", () => {
     });
   });
 
-  it("edits the before gap independently of the after gap", async () => {
+  it("writes one entered buffer value to both stored directions", async () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
@@ -139,20 +158,16 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 }, { headers: { ETag: '"1"' } });
       }),
     );
-    renderBookingSettingsPage();
+    renderPage();
 
     const buffer = await screen.findByRole("spinbutton", {
-      name: "booking:settings.fields.bufferBefore",
+      name: "booking:settings.fields.buffer",
     });
-    await user.clear(buffer);
     await user.type(buffer, "12");
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByRole("status")).toBeVisible();
-    expect(body).toMatchObject({
-      bufferBeforeMinutes: 12,
-      bufferAfterMinutes: 7,
-    });
+    expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
     expect(body).not.toHaveProperty("configurationVersion");
   });
 
@@ -161,17 +176,13 @@ describe("BookingSettingsPage", () => {
     server.use(
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
       http.patch("/api/v2/booking-settings/admin", () =>
-        HttpResponse.json(
-          {
-            status: 412,
-            code: "errors.api.v2.bookingConfiguration.stale",
-            detail: "stale",
-          },
+        HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", status: 412, code: "errors.api.v2.bookingConfiguration.stale", detail: "stale" },
           { status: 412 },
         ),
       ),
     );
-    renderBookingSettingsPage();
+    renderPage();
 
     await user.click(
       await screen.findByRole("checkbox", {
