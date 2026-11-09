@@ -255,8 +255,8 @@ Access routes are enabled by the resource's `ResourceAccessSpec`:
 
 The bounded grantee lookup returns `{docs: [...]}` without paging metadata.
 
-Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
-are private and must not be cached. OpenAPI includes the routes only for registered access support.
+Only opted-in resources expose these routes; ordinary collections return `404`. Access documents are
+private and must not be cached. OpenAPI includes the routes only for registered access support.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
@@ -418,14 +418,13 @@ protected WidgetManager(
 }
 ```
 
-The provider avoids a construction cycle while the resource catalog starts. The registry discovers
-each one-hop public scalar target filter from the declared relationship. A standard manager needs
-no override when a new relationship is added.
+The provider prevents a construction cycle during resource catalog startup. The registry discovers
+each one-hop public scalar target filter from the declared relationship. Adding a relationship needs
+no override in a standard manager.
 
-At startup, the registry validates the target resource, entity type, ID type, and query fields.
-The HTTP boundary checks access to the source relationship and each target field.
-The standard declaration and registry supply the permission checks; no collection-specific target
-map is needed.
+At startup, the registry validates the target resource, entity type, ID type, and query fields. The
+HTTP boundary checks access to the source relationship and each target field. The standard
+declaration and registry supply the permission checks; no collection-specific target map is needed.
 
 A custom manager that does not extend `AbstractCollectionManager` must pass
 `RelationshipReadAccess.forActor(registry, subject)` to its DAO. Mutation filters reuse the read
@@ -589,6 +588,6 @@ Run focused unit tests:
 mvn test -Dtest=MyResourceTest,MyResourceOperationsTest -Dfast=true
 ```
 
-A DAO test extends `SpringTransactionalTest`. See
-[Creating transactions](Transactions.md#creating-transactions) for service transaction declarations
-and advice naming rules.
+A DAO test extends `SpringTransactionalTest`. See [Creating
+transactions](Transactions.md#creating-transactions) for service transaction declarations and advice
+naming rules.

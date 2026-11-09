@@ -86,11 +86,11 @@ System administrators can read all rows and run writes. `MaintenanceManager` own
 and authorization. Clients format the stored ISO-8601 dates themselves.
 
 Maintenance creation accepts `startDate`, `endDate`, optional `stopUserLoginDate`, and `message`.
-The manager validates the complete resulting window after a patch, including unchanged fields.
-A non-null login cutoff must be at or before the start, or at or before the validation time while
-the window has not ended. The latter permits the legacy "Stop user login" action during maintenance.
-A cutoff at or after the end is always invalid. An omitted cutoff defaults to ten minutes before
-the start; an explicit null uses the start as the effective login cutoff.
+The manager validates the complete resulting window after a patch, including unchanged fields. A
+non-null login cutoff must be at or before the start. While the window has not ended, it may instead
+be at or before the validation time. The latter permits the legacy "Stop user login" action during
+maintenance. A cutoff at or after the end is always invalid. An omitted cutoff defaults to ten
+minutes before the start; an explicit null uses the start as the effective login cutoff.
 
 The computed `canUserLoginNow` field is neither filterable nor sortable. It is evaluated at request
 time and must not be reused from a cached maintenance document.
@@ -166,7 +166,9 @@ Sorting by ID last makes the result stable.
 
 ### 2. Add the operations class and the resource spec
 
-See `MaintenanceResourceOperations` for the spec bean, error mappings, document conversion and CRUD delegation. Resources that audit who acted on another user's behalf also pass `caller.actor()` to their manager.
+See `MaintenanceResourceOperations` for the spec bean, error mappings, document conversion and CRUD
+delegation. Resources that audit who acted on another user's behalf also pass `caller.actor()` to
+their manager.
 
 Spring finds each `ApiV2ResourceSpec` bean below `com.researchspace`. Do not add a central registry
 entry. At startup, `ApiV2ResourceCatalog` validates all definitions and fails if any is invalid.
@@ -199,34 +201,34 @@ validates this text against the public resource definition.
 
 ### 4. Use the REST API v2 collection standard in application code
 
-Use REST API v2 collection types throughout HTTP code, managers, scheduled jobs, event handlers,
-and other services.
+Use REST API v2 collection types throughout HTTP code, managers, scheduled jobs, event handlers, and
+other services.
 
-A conventional mutable collection manager must implement `CollectionManager<T, ID>`. Extend
+A standard mutable collection manager must implement `CollectionManager<T, ID>`. Extend
 `AbstractCollectionManager<T, ID>` when its persistence rules fit the default implementation. Use
 `ResourceRequest` for selection, `ResourcePage` for paged results, and `ParsedDocument` for a
 validated update. This common contract removes resource-specific paging, filtering, and bulk CRUD
 code.
 
-Keep domain authorization, validation, transactions, audit events, and lifecycle effects in the
-manager. Override the default manager hooks for these rules. Do not copy the standard collection
+The manager owns domain authorization, validation, transactions, audit events, and lifecycle
+effects. Override the default manager hooks for these rules. Do not copy the standard collection
 pipeline into a resource-specific service.
 
-Every read receives the caller. Caller-independent collections can ignore it; caller-specific
-calculations must use the supplied user, never a browser session or implicit security context.
-Managers must apply the resource read policy and row constraint before returning data, including
-outside the HTTP registration pipeline.
+Every read receives the caller. Caller-independent collections can ignore it. Caller-specific
+calculations must use the supplied user. They must not use a browser session or implicit security
+context. Managers must apply the resource read policy and row constraint before returning data,
+including outside the HTTP registration pipeline.
 
-For a REST API v2 request, the user supplied to a read is the effective subject. A write receives
-an `ApiV2Caller`, which contains the effective subject and the originating actor. The manager must
+For a REST API v2 request, the user supplied to a read is the effective subject. A write receives an
+`ApiV2Caller`, which contains the effective subject and the originating actor. The manager must
 authorize the subject. An audit event must use the actor and retain the subject when they differ.
 
 Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
 adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
 
 Use an escape hatch only for domain actions the standard operations cannot express, such as a
-command changing several aggregate types or a non-CRUD action. Keep normal collection routes on
-the standard contract. Document each escape hatch's reason near its public interface.
+command changing several aggregate types or a non-CRUD action. Keep normal collection routes on the
+standard contract. Document each escape hatch's reason near its public interface.
 
 ## Add a read-only collection
 
@@ -279,7 +281,8 @@ access checks, parses JSON, resolves relationships, and renders the response. It
 resource operations class.
 
 Inject the concrete operations class because unqualified `ResourceOperations<?, ?>` injection is
-ambiguous. Alternatively, inject a qualified `ApiV2ResourceSpec<T, ID>` and call `spec.operations()`.
+ambiguous. Alternatively, inject a qualified `ApiV2ResourceSpec<T, ID>` and call
+`spec.operations()`.
 
 Direct calls to `ResourceOperations` skip the registration layer and these tasks:
 
@@ -293,15 +296,14 @@ Direct calls to `ResourceOperations` skip the registration layer and these tasks
 | 6. | Sparse field and expanded relationship rendering. |
 | 7. | HTTP operation exposure checks. |
 
-Do not use direct operations calls to bypass REST registration. The caller
-must supply a validated `ResourceRequest`. For a write, the caller must supply a validated
-`ParsedDocument` with resolved relationships and an `ApiV2Caller`. Construct
-`ApiV2Caller.direct(user)` only when there is no delegated identity. The caller must also perform
-the required access checks.
+Do not use direct operations calls to bypass REST registration. The caller must supply a validated
+`ResourceRequest`. For a write, the caller must supply a validated `ParsedDocument` with resolved
+relationships and an `ApiV2Caller`. Construct `ApiV2Caller.direct(user)` only when there is no
+delegated identity. The caller must also perform the required access checks.
 
-Most services must call the concrete standard collection manager instead of the operations class. This shared boundary for
-collection commands keeps transaction, authorization, validation, and audit behavior consistent
-across REST, scheduled jobs, event handlers, and other services.
+Most services must call the concrete standard collection manager instead of the operations class.
+This keeps transaction, authorization, validation, and audit behavior consistent across REST,
+scheduled jobs, event handlers, and other services.
 
 Use the operations class in these cases:
 
@@ -649,9 +651,8 @@ The request object must contain only a non-empty `docs` array. The endpoint vali
 all documents before it calls the manager. The manager must process one batch in one transaction.
 The result order must match the input order.
 
-A validation error identifies the array position, such as `docs[1].name`, and prevents creation
-of the entire batch. A successful request returns status `201` and the standard
-bulk result.
+A validation error identifies the array position, such as `docs[1].name`, and prevents creation of
+the entire batch. A successful request returns status `201` and the standard bulk result.
 
 ### Patch
 
@@ -756,9 +757,8 @@ internally.
 follows the actual page. An exact total reports `totalIsLowerBound: false`. A list without totals
 omits that member too.
 
-Access replacements validate the registered resource and `If-Match` before
-binding assignments to `ReplaceResourceAccessRequest`. Malformed fields return
-`errors.api.v2.invalidRequest` with an additive `invalidParams` list using dotted
-field names and array indices, such as `assignments[0].role`. All rows are
-validated before the named-assignment limit; `audience:all-users` does not count
-toward that limit.
+Access replacements validate the registered resource and `If-Match` before binding assignments to
+`ReplaceResourceAccessRequest`. Malformed fields return `errors.api.v2.invalidRequest` with an
+additive `invalidParams` list using dotted field names and array indices, such as
+`assignments[0].role`. All rows are validated before the named-assignment limit;
+`audience:all-users` does not count toward that limit.
