@@ -619,11 +619,10 @@ class WidgetContractMVCIT {
 }
 ```
 
-Use `@ApiV2WebIntegrationTest` with `ApiV2Fixture` for API v2 integration tests. `MVCTestBase`
-extends the JUnit Jupiter `RealTransactionSpringTestBase` and supports MVC tests, but lacks the
-API v2 fixture's authenticated `MockMvc` and disposable rows. The fixture
-creates system-administrator and ordinary-user credentials and installs the production servlet
-filters.
+Use this annotation and fixture together for API v2 integration tests. `MVCTestBase` extends the
+JUnit Jupiter `RealTransactionSpringTestBase` and supports MVC tests, but lacks the API v2 fixture's
+authenticated `MockMvc` and disposable rows. The fixture creates system-administrator and
+ordinary-user credentials and installs the production servlet filters.
 
 Follow these harness rules:
 
@@ -632,8 +631,8 @@ Follow these harness rules:
 | 1. | **Work commits.** The annotation omits `TransactionalTestExecutionListener`, so nothing rolls back. The annotation registers `DatabaseCleaner` before each test and cleans committed rows after the outer class and all its nested classes finish. `ApiV2Fixture.cleanUp()` still runs after each test to check delete routes and restore in-memory state. |
 | 2. | **Collections are shared.** Another test's rows are in the same table. Never assert a raw `totalDocs` against a whole collection. Tag rows with `fixture.marker()` and scope every query to it, for example `?where=message==<marker>`. |
 
-Build the `MockMvc` yourself only for a test that must not have the fixture's filters, such as one
-asserting what happens without `LocaleFilter`.
+Build `MockMvc` yourself only when the test needs to omit the fixture's filters. For example, a test
+may check behavior without `LocaleFilter`.
 
 ## Checklist
 
