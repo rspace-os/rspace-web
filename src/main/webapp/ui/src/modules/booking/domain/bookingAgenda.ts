@@ -1,4 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { BookingListDocument } from "./booking";
 import { resolveWallClock } from "./bookingTime";
 
@@ -62,6 +63,7 @@ export function formatBookingAgendaTimeRange(start: string, end: string, timeZon
     timeZone,
     hour: "numeric",
     minute: "2-digit",
+    hourCycle: bookingHourCycle(),
     ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
   const range = `${formatter.format(startDate)}–${formatter.format(endDate)}`;
@@ -88,7 +90,12 @@ export function formatBookingAgendaDateTime(
   const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
   const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
   if (!needsOffset(startZoned, endZoned, timeZone)) {
-    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(date);
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      hourCycle: bookingHourCycle(),
+      timeZone,
+    }).format(date);
   }
   return new Intl.DateTimeFormat(locale, {
     timeZone,
@@ -97,6 +104,7 @@ export function formatBookingAgendaDateTime(
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    hourCycle: bookingHourCycle(),
     timeZoneName: "shortOffset",
   }).format(date);
 }

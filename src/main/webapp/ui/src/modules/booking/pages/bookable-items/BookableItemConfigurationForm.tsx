@@ -1,6 +1,7 @@
 import { Form, isDirty, useForm } from "@formisch/react";
 import { pick } from "es-toolkit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -33,7 +34,6 @@ const bookableItemConfigurationFormSchema = v.intersect([
 function configurationInput(configuration: BookingConfiguration) {
   return {
     ...pick(configuration, ["enabled", ...schedulingSettingsFieldNames]),
-    openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
   };
 }
 
@@ -46,6 +46,7 @@ export function BookableItemConfigurationForm({
   staleEdit,
   failed,
   onSubmit,
+  onSaveBlockedChange,
 }: {
   configuration: BookingConfiguration;
   globalId: string;
@@ -54,6 +55,8 @@ export function BookableItemConfigurationForm({
   staleEdit: boolean;
   failed: boolean;
   onSubmit: (input: BookingConfigurationsUpdate, version: number) => Promise<unknown>;
+  /** True until a field changes; the owner disables Save. */
+  onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [version] = useState(configuration.configurationVersion);
@@ -66,10 +69,14 @@ export function BookableItemConfigurationForm({
     schema: bookableItemConfigurationFormSchema,
     initialInput: configurationInput(configuration),
   });
+  const dirty = isDirty(form);
+  useEffect(() => {
+    onSaveBlockedChange?.(!dirty);
+  }, [dirty, onSaveBlockedChange]);
   return (
     <>
       <DirtyNavigationGuard
-        dirty={isDirty(form)}
+        dirty={dirty}
         shouldBlockNavigation={({ current, next }) =>
           current.pathname !== next.pathname &&
           (next.routeId !== "/booking/bookable-items/$globalId/{-$tab}/" ||
@@ -82,6 +89,7 @@ export function BookableItemConfigurationForm({
         of={form}
         className="min-w-0 space-y-4"
         onSubmit={(input) => {
+          if (!dirty) return;
           if (openedEnabled && !input.enabled) {
             setPendingDisable({ input, version });
             return;

@@ -25,3 +25,10 @@ export function auditPage(docs: readonly unknown[], options: AuditPageOptions = 
     snapshotFingerprint,
   };
 }
+
+// Timestamp serialized by BookingAuditTrailTest.permanentDeleteSnapshotSerializesItsTimestampForTheAuditLog.
+export const permanentDeleteEvent = {
+  action: "DELETE",
+  description: null,
+  payload: { target: { type: "INSTRUMENT", id: 7 }, state: "ARCHIVED", deletedAt: "2026-09-01T12:00:00Z" },
+};
