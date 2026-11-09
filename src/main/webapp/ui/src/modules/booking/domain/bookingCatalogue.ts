@@ -96,7 +96,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
 }
 
 export type BookingCatalogueSearch = Partial<
-  Pick<SearchBookingCatalogueParams, "q" | "where" | "target" | "capability" | "page">
+  Pick<SearchBookingCatalogueParams, "q" | "where" | "target" | "capability" | "page" | "mine">
 > & {
   start?: string;
   end?: string;
@@ -117,7 +117,7 @@ function parameters(search: BookingCatalogueSearch) {
     capability: search.capability,
     type: search.types ? [...search.types] : undefined,
     location: search.locations ? [...search.locations] : undefined,
-    mine: false,
+    mine: search.mine ?? false,
     page: search.page ?? 1,
     limit: search.pageSize ?? 20,
   };
@@ -129,7 +129,7 @@ function calendarParameters(search: BookingCatalogueSearch) {
     eventWhere: search.eventWhere,
     where: search.where,
     q: search.q?.trim() || undefined,
-    mine: false,
+    mine: search.mine ?? false,
     page: search.page ?? 1,
     limit: search.pageSize ?? 20,
   };
