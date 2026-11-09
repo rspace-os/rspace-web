@@ -29,6 +29,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +69,8 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 @ControllerAdvice(
     basePackageClasses = ApiV2ControllerAdvice.class,
     assignableTypes = ApiV2OpenApiController.class)
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Primary
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @Slf4j
 public class ApiV2ControllerAdvice {
 
@@ -160,15 +162,15 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(ThrottlingException.class)
+  public ResponseEntity<ApiV2Problem> handleThrottling() {
+    return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
+  }
+
   @ExceptionHandler(ApiV2AuditUnavailableException.class)
   public ResponseEntity<ApiV2Problem> handleAuditUnavailable(ApiV2AuditUnavailableException ex) {
     log.warn("REST API v2 audit snapshot is unavailable", ex.getCause());
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "errors.api.v2.audit.unavailable");
-  }
-
-  @ExceptionHandler(ThrottlingException.class)
-  public ResponseEntity<ApiV2Problem> handleThrottling() {
-    return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
   }
 
   @ExceptionHandler(ApiV2ResourceException.class)
