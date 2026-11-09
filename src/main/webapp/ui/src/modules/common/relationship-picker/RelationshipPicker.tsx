@@ -110,7 +110,6 @@ export function RelationshipPicker({
   const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && trimmedTerm.length < minimumSearchLength;
   const showsOptions = hasSearchTerm || browseWhenEmpty;
   const labels = {
-    idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
     unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
     failedLabel: (value: string) => t("relationshipPicker.restoreFailed", { value }),
     compact,

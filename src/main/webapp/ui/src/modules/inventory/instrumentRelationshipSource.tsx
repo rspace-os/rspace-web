@@ -7,7 +7,12 @@ import type {
   listInstruments,
 } from "@/modules/common/api/v2/generated/instruments/instruments";
 import { InstrumentsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
-import { databaseIdFromGlobalId, type RelationshipSource } from "@/modules/common/relationship-picker/sources";
+import {
+  databaseIdFromGlobalId,
+  type RelationshipOptionContext,
+  type RelationshipSource,
+} from "@/modules/common/relationship-picker/sources";
+import type { RelationshipOption } from "@/modules/common/relationship-picker/types";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { isNonEmpty } from "@/util/ArrayUtils";
 
@@ -17,6 +22,20 @@ function instrumentDocument(document: unknown) {
     throw new Error("Relationship option response contains an incomplete instrument");
   }
   return { ...instrument, name: instrument.name, globalId: instrument.globalId };
+}
+
+export function instrumentRelationshipOption(
+  document: unknown,
+  context: RelationshipOptionContext,
+): RelationshipOption {
+  const instrument = instrumentDocument(document);
+  return {
+    value: instrument.globalId,
+    label: instrument.name,
+    content: (
+      <InventoryItem name={instrument.name} globalId={instrument.globalId} compact={context.compact} size="xs" />
+    ),
+  };
 }
 
 export function instrumentRelationshipSource(
@@ -76,23 +95,7 @@ export function instrumentRelationshipSource(
       );
     },
     ownsValue: (value) => databaseIdFromGlobalId(value, "IN") !== null,
-    toOption: (document, context) => {
-      const instrument = instrumentDocument(document);
-      return {
-        value: instrument.globalId,
-        label: instrument.name,
-        content: (
-          <InventoryItem
-            name={instrument.name}
-            globalId={instrument.globalId}
-            href={`/globalId/${instrument.globalId}`}
-            idLinkLabel={context.idLinkLabel(instrument.globalId)}
-            compact={context.compact}
-            size="xs"
-          />
-        ),
-      };
-    },
+    toOption: instrumentRelationshipOption,
   };
 }
 

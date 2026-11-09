@@ -28,6 +28,7 @@ describe("booking response intervals", () => {
       state: "CONFIRMED",
       kind: "BOOKING",
       canViewConfiguration: false,
+      location: null,
       privacy: "full",
       purpose: "Retained requester details",
       bookedBy: "Ada Lovelace",
@@ -73,6 +74,7 @@ describe("booking response intervals", () => {
       ...summary,
       version: 1,
       canViewConfiguration: true,
+      location: null,
       purpose: null,
       bookedBy: null,
       createdBy: null,
@@ -82,7 +84,7 @@ describe("booking response intervals", () => {
       createdAt: "2026-08-01T10:00:00Z",
       updatedAt: "2026-08-01T10:00:00Z",
     };
-    expect(mapBookingSummary(document)).toEqual(summary);
+    expect(mapBookingSummary(document)).toEqual({ ...summary, location: null });
 
     expect(() => mapBookingSummary({ ...document, end: document.start })).toThrow("Booking end must follow start");
   });
@@ -90,7 +92,7 @@ describe("booking response intervals", () => {
 
 it("requests the booking read fields in a fixed order", () => {
   expect(apiV2Fields(BOOKING_READ_FIELDS)).toBe(
-    "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+    "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
   );
 });
 

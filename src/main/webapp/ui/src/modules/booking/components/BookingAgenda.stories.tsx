@@ -38,6 +38,13 @@ function booking(
   return bookingListDocument({
     id,
     target,
+    location: location
+      ? {
+          relationTo: "containers",
+          value: { id: id + 200, globalId: `IC${id + 200}`, name: location },
+          globalId: `IC${id + 200}`,
+        }
+      : null,
     start,
     end,
     privacy,

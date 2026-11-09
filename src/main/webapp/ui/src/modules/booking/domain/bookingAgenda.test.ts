@@ -26,6 +26,7 @@ function booking(id: number, start: string, end: string) {
     start,
     end,
     canViewConfiguration: false,
+    location: null,
   });
 }
 

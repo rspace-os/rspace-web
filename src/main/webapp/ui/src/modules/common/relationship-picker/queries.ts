@@ -1,5 +1,6 @@
 import { type QueryClient, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { chunk, clamp, uniq } from "es-toolkit";
+import { useQueryKeyScope } from "@/modules/common/queries/queryIdentityScope";
 import {
   canonicalValue,
   type RelationshipOptionContext,
@@ -38,7 +39,7 @@ export function useRelationshipOptions({
   labels: RelationshipOptionContext;
   enabled?: boolean;
 }) {
-  const scope = authScope ?? null;
+  const scope = useQueryKeyScope(authScope);
   const queryClient = useQueryClient();
   // Plain useQueries: options load under the open picker input and report failures per source.
   const sourceQueries = useQueries({
@@ -86,7 +87,7 @@ export function useRelationshipOptionAvailability({
   availabilitySource: RelationshipOptionAvailabilitySource | undefined;
   authScope?: string | number;
 }) {
-  const scope = authScope ?? null;
+  const scope = useQueryKeyScope(authScope);
   const values = uniq(options.map((option) => String(option.value))).sort();
   const query = useQuery<Readonly<Record<string, UnavailableRelationshipOption>>>({
     queryKey: [...(availabilitySource?.queryKey ?? []), sourceId, scope, ...values],
@@ -122,7 +123,7 @@ function failedRestoreLabel(labels: RelationshipOptionContext, value: string) {
  * identify remain visible as raw values instead of causing a request to every source.
  */
 export function useSelectedRelationshipOptions({
-  sources: candidates,
+  sources,
   values,
   labels,
   authScope,
@@ -132,14 +133,14 @@ export function useSelectedRelationshipOptions({
   authScope?: string | number;
   labels: RelationshipOptionContext;
 }): RelationshipOptionWithSource[] {
-  const scope = authScope ?? null;
+  const scope = useQueryKeyScope(authScope);
   const queryClient = useQueryClient();
   const selections = values.map((value) => {
-    const owner = candidates.find((candidate) => candidate.ownsValue(value));
+    const owner = sources.find((candidate) => candidate.ownsValue(value));
     const canonical = owner === undefined ? null : canonicalValue(owner, value);
     const malformed =
       owner === undefined &&
-      candidates.some(
+      sources.some(
         (candidate) =>
           candidate.globalIdPrefix !== undefined &&
           candidate.normalizeValue?.(value) === null &&
@@ -162,7 +163,7 @@ export function useSelectedRelationshipOptions({
     run: (signal: AbortSignal) => Promise<Readonly<Record<string, unknown | null>>>;
   };
   const resolveQueries: ResolveQuery[] = [];
-  for (const candidate of candidates) {
+  for (const candidate of sources) {
     const uniqueValues = [...(canonicalValuesBySource.get(candidate) ?? [])].sort();
 
     if (candidate.resolveMany !== undefined) {
@@ -216,7 +217,7 @@ export function useSelectedRelationshipOptions({
       queryFn: ({ signal }: { signal: AbortSignal }) => resolveQuery.run(signal),
     })),
   });
-  const cacheSubscriptions = candidates.flatMap((candidate) => {
+  const cacheSubscriptions = sources.flatMap((candidate) => {
     const canonicalValues = [...(canonicalValuesBySource.get(candidate) ?? [])];
     return canonicalValues.map((canonical) => ({ candidate, canonical }));
   });

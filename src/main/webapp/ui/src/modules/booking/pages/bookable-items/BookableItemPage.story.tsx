@@ -11,9 +11,9 @@ import {
 import { Suspense } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
-import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
+import BookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
+import { allBookableItemsTable } from "@/modules/booking/pages/all-bookable-items/allBookableItemsTableConfig";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import { bookableItemsTable } from "@/modules/booking/pages/bookable-items/bookingConfigurationTable";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import {
@@ -78,9 +78,9 @@ export function BookableItemPageStory({
         }),
         createRoute({
           getParentRoute: () => bookingRoute,
-          path: "/config/bookable-items/",
-          ...tableViewRouteOptions([bookableItemsTable]),
-          component: AllBookableItemsPage,
+          path: "/all-items/",
+          ...tableViewRouteOptions([allBookableItemsTable]),
+          component: BookableItemsPage,
         }),
       ]),
     ]),

@@ -3598,6 +3598,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {

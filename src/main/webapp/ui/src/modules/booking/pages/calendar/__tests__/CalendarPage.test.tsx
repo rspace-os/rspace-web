@@ -384,6 +384,7 @@ describe("CalendarPage", () => {
       target: null,
       timezone: null,
       canViewConfiguration: false,
+      location: null,
       canEdit: false,
       canCancel: false,
     };

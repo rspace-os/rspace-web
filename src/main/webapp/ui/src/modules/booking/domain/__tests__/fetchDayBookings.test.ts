@@ -24,6 +24,7 @@ const busy: BookingsRead = {
   createdAt: bounds.start,
   updatedAt: bounds.start,
   canViewConfiguration: true,
+  location: null,
   createdBy: null,
 };
 const pageEnvelope = (docs: readonly BookingsRead[], page = 1, hasNextPage = false): ListBookings200 => ({
