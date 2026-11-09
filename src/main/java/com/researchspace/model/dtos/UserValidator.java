@@ -86,7 +86,15 @@ public class UserValidator implements Validator {
   public void validate(Object target, Errors errors) {
 
     User user = (User) target;
+    validateForAdminCreation(user, errors);
+    validateSignupCode(user.getSignupCode(), errors);
+  }
 
+  /**
+   * Validates account fields without the public signup code. Callers must authorize trusted
+   * administrator creation before using this method.
+   */
+  public void validateForAdminCreation(User user, Errors errors) {
     validateUsername(user.getUsername(), errors);
     validateEmail(user.getEmail(), errors);
     if (!properties.isSSO()) {
@@ -97,7 +105,6 @@ public class UserValidator implements Validator {
     validateFirstName(user.getFirstName(), errors);
     validateLastName(user.getLastName(), errors);
     validateAffiliation(user.getAffiliation(), errors);
-    validateSignupCode(user.getSignupCode(), errors);
   }
 
   private void validateSignupCode(String signupCode, Errors errors) {
