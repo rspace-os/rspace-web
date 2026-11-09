@@ -6,6 +6,9 @@ These instructions are for anyone wanting to run RSpace from source code, on the
 
 ## Initial Setup
 
+For agent-driven browser testing, see [Browser MCP quick setup](BrowserMCP.md)
+for Playwright Chrome/Firefox and Chrome DevTools commands for Codex and Claude Code.
+
 ### Recommended hardware
 
 For production setup we recommend a Linux-based server with at least 8GB RAM. More details: 
