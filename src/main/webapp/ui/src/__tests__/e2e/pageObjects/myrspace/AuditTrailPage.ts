@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { BasePage } from "../BasePage";
 
-export type AuditDomain = "ELN" | "Inventory" | "Requests" | "Other";
+export type AuditDomain = "ELN" | "Inventory" | "Requests" | "Bookings" | "Other";
 
 export type AuditAction =
   | "CREATE"
@@ -77,7 +77,7 @@ export class AuditTrailPage extends BasePage {
   async setDomains(domains: AuditDomain[]): Promise<void> {
     const first = this.page.getByRole("checkbox", { name: "ELN", exact: true });
     await this.openSection("Activity areas", first);
-    for (const domain of ["ELN", "Inventory", "Requests", "Other"] as const) {
+    for (const domain of ["ELN", "Inventory", "Requests", "Bookings", "Other"] as const) {
       const checkbox = this.page.getByRole("checkbox", { name: domain, exact: true });
       if (domains.includes(domain)) {
         await checkbox.check();

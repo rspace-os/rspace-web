@@ -177,6 +177,13 @@ The `target` picker names `booking-instruments`, uses `globalId` identity and th
 The shared picker metadata, traversal limits and runtime catalog allowlist rules are documented
 in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-reached-through-a-relationship).
 
+## Audit formatting
+
+See [Booking audit events](Logging.md#booking-audit-events) for snapshot rendering and historical
+schedule handling.
+
+The audit display ignores obsolete `defaultSharedWith` entries in historical defaults snapshots.
+
 ### Retrying booking creation
 
 `POST /api/v2/bookings` accepts an optional `Idempotency-Key` containing 1–64 ASCII
