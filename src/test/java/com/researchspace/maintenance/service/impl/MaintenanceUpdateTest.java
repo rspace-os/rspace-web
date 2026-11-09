@@ -10,21 +10,32 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.maintenance.dao.MaintenanceDao;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.maintenance.service.MaintenanceManagerImpl;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Date;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 class MaintenanceUpdateTest {
   @Mock MaintenanceDao dao;
   @Mock User admin;
-  @InjectMocks MaintenanceManagerImpl manager;
+  @Mock ApplicationEventPublisher events;
+  @Mock MessageSourceUtils messages;
+  @Mock ObjectProvider<ResourceRegistry> registry;
+
+  private MaintenanceManagerImpl manager() {
+    return new MaintenanceManagerImpl(dao, events, messages, registry);
+  }
 
   @Test
   void copiesEditableFieldsOntoLoadedEntity() {
@@ -35,9 +46,9 @@ class MaintenanceUpdateTest {
     patch.setId(42L);
     patch.setStopUserLoginDate(new Date(2500));
     patch.setMessage("updated");
-    when(dao.get(42L)).thenReturn(existing);
+    when(dao.lockCurrent(42L)).thenReturn(Optional.of(existing));
 
-    assertSame(existing, manager.updateScheduledMaintenance(patch, admin));
+    assertSame(existing, manager().updateScheduledMaintenance(patch, admin));
     assertEquals(patch, existing);
     verify(dao, never()).save(any());
   }
@@ -47,12 +58,11 @@ class MaintenanceUpdateTest {
     when(admin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     ScheduledMaintenance patch = new ScheduledMaintenance(new Date(1000), new Date(2000));
     patch.setId(42L);
-    when(dao.get(42L))
-        .thenThrow(new ObjectRetrievalFailureException(ScheduledMaintenance.class, 42L));
+    when(dao.lockCurrent(42L)).thenReturn(Optional.empty());
 
     assertThrows(
         ObjectRetrievalFailureException.class,
-        () -> manager.updateScheduledMaintenance(patch, admin));
+        () -> manager().updateScheduledMaintenance(patch, admin));
     verify(dao, never()).save(any());
   }
 }
