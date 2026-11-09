@@ -7,6 +7,7 @@ import {
   getGetApiV2OpenApiDocumentQueryOptions,
 } from "@/modules/common/api/v2/generated/openapi/openapi";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import type { ApiV2CollectionFetchOptions } from "./fetcher";
 import { type ApiV2CollectionMetadata, apiV2CollectionMetadataFromOpenApi } from "./metadata";
 import type { RuntimeFieldCatalogForNamespace } from "./runtimeFieldCatalog";
@@ -51,7 +52,8 @@ export function useApiV2RuntimeFields<
   const metadata = suppliedMetadata ?? metadataQuery.data;
   if (metadataQuery.error && !suppliedMetadata) throw metadataQuery.error;
   if (!metadata) throw queryClient.ensureQueryData(getGetApiV2OpenApiDocumentQueryOptions());
-  const scope = String(request?.authScope ?? "");
+  const identityScope = useQueryIdentityScope(request?.authScope);
+  const scope = JSON.stringify([identityScope, request?.authScope ?? null]);
   // Only namespaces whose catalog route a registered resource publishes offer runtime-field selectors.
   const namespaces = (metadata.runtimeFields ?? []).flatMap((namespace) => {
     const catalogResource = runtimeFieldCatalogResource(namespace);

@@ -713,26 +713,26 @@
     "layout": {
       "agenda": "Agenda",
       "legend": "Layout",
-      "resources": "Resources",
+      "resources": "By Item",
       "time-grid": "Time grid",
       "availability": "Availability"
     },
     "loading": "Loading booking events.",
     "nextDay": "Next day",
-    "nextPeriod": "Next {period}",
+    "nextPeriod": "{period, select, day {Next day} week {Next week} month {Next month} other {Next period}}",
     "period": {
       "day": "Day",
       "legend": "Period",
       "month": "Month",
-      "monthUnavailableInResources": "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
-      "monthUnavailableShort": "Not available in Resources",
+      "monthUnavailableInResources": "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
+      "monthUnavailableShort": "Not available in the By Item view",
       "week": "Week",
       "dayOnlyAvailability": "Availability is available for Day only.",
       "dayOnlyShort": "Day only"
     },
     "periodNavigation": "Calendar period navigation",
     "previousDay": "Previous day",
-    "previousPeriod": "Previous {period}",
+    "previousPeriod": "{period, select, day {Previous day} week {Previous week} month {Previous month} other {Previous period}}",
     "privacy": {
       "busy": "Busy only",
       "full": "Full details"
@@ -771,8 +771,7 @@
       "end": "Change booking end time",
       "move": "Move booking time",
       "start": "Change booking start time"
-    },
-    "displayControls": "Calendar display controls"
+    }
   },
   "dashboard": {
     "agenda": {

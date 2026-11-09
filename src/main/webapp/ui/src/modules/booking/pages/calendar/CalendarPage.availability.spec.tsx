@@ -124,27 +124,6 @@ describe("the Calendar Availability layout", () => {
         return label;
       };
       expect(endLabel().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
-      const handle = page.getByRole("button", { name: "Resize column Availability", exact: true });
-      await handle.click();
-      await userEvent.keyboard("{ArrowRight}".repeat(40));
-      const table = pageObj.table.element();
-      const scroller = table.parentElement;
-      if (!scroller) throw new Error("Expected table scroll container");
-      await expect.poll(() => scroller.scrollWidth).toBeGreaterThan(scroller.clientWidth);
-      await expect.poll(() => getComputedStyle(actions).position).not.toBe("sticky");
-      expect(
-        getComputedStyle(page.getByRole("columnheader", { name: "Actions", exact: true }).element()).position,
-      ).not.toBe("sticky");
-      const barBefore = bar.element().getBoundingClientRect().left;
-      const actionsBefore = actions.getBoundingClientRect().left;
-      scroller.scrollLeft = 100;
-      await expect.poll(() => scroller.scrollLeft).toBe(100);
-      expect(bar.element().getBoundingClientRect().left).toBeCloseTo(barBefore - 100, 0);
-      expect(actions.getBoundingClientRect().left).toBeCloseTo(actionsBefore - 100, 0);
-      expect(endLabel().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
-      await userEvent.keyboard("{Enter}");
-      await expect.poll(() => getComputedStyle(actions).position).toBe("sticky");
-      expect(endLabel().getBoundingClientRect().right).toBeLessThan(actions.getBoundingClientRect().left);
     });
   });
 

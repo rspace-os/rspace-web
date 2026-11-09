@@ -1,17 +1,17 @@
+import { queryOptions } from "@tanstack/react-query";
 import type { GenericSchema, InferOutput } from "valibot";
-import { getApiV2OpenApiDocument } from "@/modules/common/api/v2/generated/openapi/openapi";
+import { getGetApiV2OpenApiDocumentQueryOptions } from "@/modules/common/api/v2/generated/openapi/openapi";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import type { FieldConfig, FieldName, SortRule } from "@/modules/common/collection/config";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { sortRuleFromToken } from "../utils/queryString";
 import { validateRuntimeFieldCatalog } from "./runtimeFieldCatalog";
 import {
+  type ApiV2MetadataChild,
   type ApiV2ParsedFilterMetadata,
   type ApiV2ParsedSelector,
   type ApiV2RuntimeFieldNamespace,
   metadataAllowedFieldsSchema,
-  metadataChildrenSchema,
-  metadataChildSchema,
   metadataDocumentSchema,
   metadataFilterSchema,
   metadataLimitSchema,
@@ -24,11 +24,7 @@ import {
   metadataWhereSchema,
 } from "./schema";
 
-export type {
-  ApiV2FilterOperator,
-  ApiV2PrimitiveFieldType,
-  ApiV2RuntimeFieldNamespace,
-} from "./schema";
+export type { ApiV2FilterOperator, ApiV2RuntimeFieldNamespace } from "./schema";
 
 export type ApiV2FilterLimits = Omit<ApiV2ParsedFilterMetadata, "selectors"> & {
   maximumWhereLength: InferOutput<typeof metadataWhereSchema>["maxLength"];
@@ -79,19 +75,12 @@ function parseAt<TSchema extends GenericSchema>(schema: TSchema, input: unknown,
 }
 
 function declaredChildren(
-  input: unknown,
+  children: readonly ApiV2MetadataChild[],
   parent: string,
-  ancestors = new Set<unknown>(),
 ): FieldConfig<Record<string, unknown>>[] {
-  const names = new Set<string>();
-  return parseAt(metadataChildrenSchema, input, `${parent} child fields`).map((value, index) => {
-    const child = parseAt(metadataChildSchema, value, `${parent}[${index}]`);
+  return children.map((child) => {
     const { name, type: schema, writeConstraints, openApi } = child;
     const path = `${parent}.${name}`;
-    if (names.has(name)) throw new Error(`OpenAPI ${parent} has duplicate child field ${name}`);
-    names.add(name);
-    // Keep raw identities: Valibot returns parsed copies, while fields still hold the raw children.
-    if (ancestors.has(value)) throw new Error(`OpenAPI ${path} has cyclic child fields`);
     const common = {
       name,
       labelKey: name,
@@ -103,10 +92,11 @@ function declaredChildren(
       writeConstraints,
     };
     if (schema.jsonType === "array" || schema.jsonType === "object") {
+      if (child.fields.length === 0) throw new Error(`OpenAPI ${path} child fields: at least one child is required`);
       return {
         ...common,
         type: schema.jsonType,
-        fields: declaredChildren(child.fields, path, new Set(ancestors).add(value)),
+        fields: declaredChildren(child.fields, path),
         ...(schema.jsonType === "array" ? parseAt(metadataRowBoundsSchema, writeConstraints, path) : {}),
       };
     }
@@ -203,11 +193,6 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   );
   const fields = allowedFields[resourceName];
   if (fields === undefined) throw new Error(`OpenAPI has no allowed fields for ${resourceName}`);
-  for (const [name, selector] of Object.entries(selectors)) {
-    if (selector.picker && !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
-      throw new Error(`OpenAPI filter selector ${name} has an invalid picker`);
-    }
-  }
   const item = operation.responses["200"].content["application/json"].schema.properties.docs.items;
   const component = item.$ref.slice("#/components/schemas/".length);
   const definition = root.components.schemas[component];
@@ -228,10 +213,12 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   };
 }
 
-export async function fetchApiV2CollectionMetadata<TDocument>(
-  resourceName: string,
-  options: { signal?: AbortSignal } = {},
-): Promise<ApiV2CollectionMetadata<TDocument>> {
-  const document = await getApiV2OpenApiDocument({ signal: options.signal });
-  return apiV2CollectionMetadataFromOpenApi<TDocument>(document, resourceName);
+export const apiV2OpenApiOptions = () =>
+  getGetApiV2OpenApiDocumentQueryOptions({ query: { staleTime: Infinity, gcTime: Infinity } });
+
+export function apiV2MetadataOptions<T>(resource: string, options: { metadata?: ApiV2CollectionMetadata<T> } = {}) {
+  return queryOptions({
+    ...apiV2OpenApiOptions(),
+    select: (document) => options.metadata ?? apiV2CollectionMetadataFromOpenApi<T>(document, resource),
+  });
 }
