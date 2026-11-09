@@ -6,6 +6,10 @@
  * OpenAPI spec version: 2.0.0
  */
 
+export * from './apiV2AuditEvent.ts';
+export * from './apiV2AuditEventAction.ts';
+export * from './apiV2AuditEventDomain.ts';
+export * from './apiV2AuditEventPayload.ts';
 export * from './apiV2Config.ts';
 export * from './apiV2CountResult.ts';
 export * from './apiV2CurrentUser.ts';
@@ -47,12 +51,24 @@ export * from './instrumentsReadParentContainer.ts';
 export * from './instrumentsReference.ts';
 export * from './instrumentsUpdate.ts';
 export * from './invalidParam.ts';
+export * from './listContainerAuditEvents200.ts';
+export * from './listContainerAuditEventsActionsItem.ts';
+export * from './listContainerAuditEventsParams.ts';
 export * from './listContainers200.ts';
 export * from './listContainersParams.ts';
+export * from './listInstrumentAuditEvents200.ts';
+export * from './listInstrumentAuditEventsActionsItem.ts';
+export * from './listInstrumentAuditEventsParams.ts';
 export * from './listInstruments200.ts';
 export * from './listInstrumentsParams.ts';
+export * from './listMaintenanceAuditEvents200.ts';
+export * from './listMaintenanceAuditEventsActionsItem.ts';
+export * from './listMaintenanceAuditEventsParams.ts';
 export * from './listMaintenances200.ts';
 export * from './listMaintenancesParams.ts';
+export * from './listUserAuditEvents200.ts';
+export * from './listUserAuditEventsActionsItem.ts';
+export * from './listUserAuditEventsParams.ts';
 export * from './listUsers200.ts';
 export * from './listUsersParams.ts';
 export * from './liveChat.ts';

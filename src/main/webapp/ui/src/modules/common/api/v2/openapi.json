@@ -225,6 +225,46 @@
       }
     },
     "schemas" : {
+      "ApiV2AuditEvent" : {
+        "properties" : {
+          "action" : {
+            "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "domain" : {
+            "enum" : [ "MESSAGING", "RECORD", "FOLDER", "NOTEBOOK", "MEDIA", "USER", "GROUP", "COMMUNITY", "FORM", "AUDIT", "INV_SAMPLE", "INV_SUBSAMPLE", "INV_CONTAINER", "INV_INSTRUMENT", "REQUEST", "WORKSPACE", "UNKNOWN" ],
+            "type" : "string"
+          },
+          "eventId" : {
+            "maxLength" : 64,
+            "minLength" : 64,
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : [ "string", "null" ]
+          },
+          "payload" : {
+            "additionalProperties" : { },
+            "type" : "object"
+          },
+          "target" : {
+            "description" : "Stable audited resource identifier",
+            "type" : [ "string", "null" ]
+          },
+          "timestamp" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "username" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "action", "domain", "eventId", "payload", "timestamp", "username" ],
+        "type" : "object"
+      },
       "ApiV2Config" : {
         "properties" : {
           "branding" : {
@@ -1936,6 +1976,289 @@
         "x-rspace-operation" : "READ"
       }
     },
+    "/api/v2/containers/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listContainerAuditEvents",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Inclusive earliest event time. The server limits the range to 183 days.",
+          "in" : "query",
+          "name" : "start",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+          "in" : "query",
+          "name" : "end",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 255,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Audit actions to include.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "actions",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.",
+          "in" : "query",
+          "name" : "snapshotDate",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.",
+          "in" : "query",
+          "name" : "snapshotFingerprint",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 64,
+            "minLength" : 64,
+            "pattern" : "^[0-9a-f]{64}$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "One-based page number.",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 1,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Maximum events per page.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "maximum" : 1E+2,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/ApiV2AuditEvent"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "hasPrevPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "nextPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "pagingCounter" : {
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "prevPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "snapshotDate" : {
+                      "format" : "date",
+                      "type" : "string"
+                    },
+                    "snapshotFingerprint" : {
+                      "maxLength" : 64,
+                      "minLength" : 64,
+                      "pattern" : "^[0-9a-f]{64}$",
+                      "type" : "string"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
+                    "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
+                      "type" : "integer"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Audit event page.",
+            "headers" : {
+              "X-Rate-Limit-Limit" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-day" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-hour" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-Remaining" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-day" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-hour" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.results.tooMany",
+                  "detail" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range.",
+                  "status" : 400,
+                  "title" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.snapshot.changed",
+                  "detail" : "The bounded audit result changed; restart pagination.",
+                  "status" : 409,
+                  "title" : "The bounded audit result changed; restart pagination."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The bounded audit result changed; restart pagination."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.unavailable",
+                  "detail" : "The server could not read a consistent audit snapshot and returned no partial data.",
+                  "status" : 503,
+                  "title" : "The server could not read a consistent audit snapshot and returned no partial data."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The server could not read a consistent audit snapshot and returned no partial data."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one containers resource",
+        "tags" : [ "containers" ],
+        "x-rspace-access" : {
+          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+          "description" : "Authenticated callers who can read the resource."
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
     "/api/v2/instruments" : {
       "get" : {
         "description" : "Returns a paginated view of instruments. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
@@ -2783,6 +3106,289 @@
           "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
         },
         "x-rspace-operation" : "READ"
+      }
+    },
+    "/api/v2/instruments/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listInstrumentAuditEvents",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Inclusive earliest event time. The server limits the range to 183 days.",
+          "in" : "query",
+          "name" : "start",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+          "in" : "query",
+          "name" : "end",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 255,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Audit actions to include.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "actions",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.",
+          "in" : "query",
+          "name" : "snapshotDate",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.",
+          "in" : "query",
+          "name" : "snapshotFingerprint",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 64,
+            "minLength" : 64,
+            "pattern" : "^[0-9a-f]{64}$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "One-based page number.",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 1,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Maximum events per page.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "maximum" : 1E+2,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/ApiV2AuditEvent"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "hasPrevPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "nextPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "pagingCounter" : {
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "prevPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "snapshotDate" : {
+                      "format" : "date",
+                      "type" : "string"
+                    },
+                    "snapshotFingerprint" : {
+                      "maxLength" : 64,
+                      "minLength" : 64,
+                      "pattern" : "^[0-9a-f]{64}$",
+                      "type" : "string"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
+                    "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
+                      "type" : "integer"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Audit event page.",
+            "headers" : {
+              "X-Rate-Limit-Limit" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-day" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-hour" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-Remaining" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-day" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-hour" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.results.tooMany",
+                  "detail" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range.",
+                  "status" : 400,
+                  "title" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.snapshot.changed",
+                  "detail" : "The bounded audit result changed; restart pagination.",
+                  "status" : 409,
+                  "title" : "The bounded audit result changed; restart pagination."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The bounded audit result changed; restart pagination."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.unavailable",
+                  "detail" : "The server could not read a consistent audit snapshot and returned no partial data.",
+                  "status" : 503,
+                  "title" : "The server could not read a consistent audit snapshot and returned no partial data."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The server could not read a consistent audit snapshot and returned no partial data."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one instruments resource",
+        "tags" : [ "instruments" ],
+        "x-rspace-access" : {
+          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+          "description" : "Authenticated callers who can read the resource."
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
       }
     },
     "/api/v2/maintenances" : {
@@ -4230,6 +4836,289 @@
         "x-rspace-operation" : "UPDATE"
       }
     },
+    "/api/v2/maintenances/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listMaintenanceAuditEvents",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Inclusive earliest event time. The server limits the range to 183 days.",
+          "in" : "query",
+          "name" : "start",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+          "in" : "query",
+          "name" : "end",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 255,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Audit actions to include.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "actions",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.",
+          "in" : "query",
+          "name" : "snapshotDate",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.",
+          "in" : "query",
+          "name" : "snapshotFingerprint",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 64,
+            "minLength" : 64,
+            "pattern" : "^[0-9a-f]{64}$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "One-based page number.",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 1,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Maximum events per page.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "maximum" : 1E+2,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/ApiV2AuditEvent"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "hasPrevPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "nextPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "pagingCounter" : {
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "prevPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "snapshotDate" : {
+                      "format" : "date",
+                      "type" : "string"
+                    },
+                    "snapshotFingerprint" : {
+                      "maxLength" : 64,
+                      "minLength" : 64,
+                      "pattern" : "^[0-9a-f]{64}$",
+                      "type" : "string"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
+                    "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
+                      "type" : "integer"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Audit event page.",
+            "headers" : {
+              "X-Rate-Limit-Limit" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-day" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-hour" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-Remaining" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-day" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-hour" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.results.tooMany",
+                  "detail" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range.",
+                  "status" : 400,
+                  "title" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.snapshot.changed",
+                  "detail" : "The bounded audit result changed; restart pagination.",
+                  "status" : 409,
+                  "title" : "The bounded audit result changed; restart pagination."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The bounded audit result changed; restart pagination."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.unavailable",
+                  "detail" : "The server could not read a consistent audit snapshot and returned no partial data.",
+                  "status" : 503,
+                  "title" : "The server could not read a consistent audit snapshot and returned no partial data."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The server could not read a consistent audit snapshot and returned no partial data."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one maintenances resource",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+          "description" : "Authenticated callers who can read the resource."
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
     "/api/v2/oauth/tokens" : {
       "post" : {
         "description" : "Creates an OAuth token from the authenticated browser session.",
@@ -5020,6 +5909,289 @@
           "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
         },
         "x-rspace-operation" : "READ"
+      }
+    },
+    "/api/v2/users/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listUserAuditEvents",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Inclusive earliest event time. The server limits the range to 183 days.",
+          "in" : "query",
+          "name" : "start",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+          "in" : "query",
+          "name" : "end",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 255,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Audit actions to include.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "actions",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.",
+          "in" : "query",
+          "name" : "snapshotDate",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.",
+          "in" : "query",
+          "name" : "snapshotFingerprint",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 64,
+            "minLength" : 64,
+            "pattern" : "^[0-9a-f]{64}$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "One-based page number.",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 1,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Maximum events per page.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "maximum" : 1E+2,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/ApiV2AuditEvent"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "hasPrevPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "nextPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "pagingCounter" : {
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "prevPage" : {
+                      "type" : [ "integer", "null" ]
+                    },
+                    "snapshotDate" : {
+                      "format" : "date",
+                      "type" : "string"
+                    },
+                    "snapshotFingerprint" : {
+                      "maxLength" : 64,
+                      "minLength" : 64,
+                      "pattern" : "^[0-9a-f]{64}$",
+                      "type" : "string"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    },
+                    "totalPages" : {
+                      "description" : "Present only when totals=true and the total is exact.",
+                      "type" : "integer"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page", "snapshotDate", "snapshotFingerprint" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Audit event page.",
+            "headers" : {
+              "X-Rate-Limit-Limit" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-day" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-hour" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-Limit-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitLimit"
+              },
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-Remaining" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-day" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-hour" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-Remaining-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitRemaining"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              },
+              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.results.tooMany",
+                  "detail" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range.",
+                  "status" : 400,
+                  "title" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The range or snapshot parameters are invalid, or the result exceeds the configured ceiling and requires a narrower date range."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.snapshot.changed",
+                  "detail" : "The bounded audit result changed; restart pagination.",
+                  "status" : 409,
+                  "title" : "The bounded audit result changed; restart pagination."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The bounded audit result changed; restart pagination."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.audit.unavailable",
+                  "detail" : "The server could not read a consistent audit snapshot and returned no partial data.",
+                  "status" : 503,
+                  "title" : "The server could not read a consistent audit snapshot and returned no partial data."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The server could not read a consistent audit snapshot and returned no partial data."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one users resource",
+        "tags" : [ "users" ],
+        "x-rspace-access" : {
+          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+          "description" : "Authenticated callers who can read the resource."
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
       }
     }
   },

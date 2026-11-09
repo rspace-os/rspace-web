@@ -7,6 +7,8 @@
  */
 import * as v from 'valibot';
 
+export const ApiV2AuditEvent = v.object({action: v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE']), description: v.nullish(v.string()), domain: v.picklist(['MESSAGING', 'RECORD', 'FOLDER', 'NOTEBOOK', 'MEDIA', 'USER', 'GROUP', 'COMMUNITY', 'FORM', 'AUDIT', 'INV_SAMPLE', 'INV_SUBSAMPLE', 'INV_CONTAINER', 'INV_INSTRUMENT', 'REQUEST', 'WORKSPACE', 'UNKNOWN']), eventId: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64')), fullName: v.nullish(v.string()), payload: v.record(v.string(), v.unknown()), target: v.nullish(v.pipe(v.string(), v.description('Stable audited resource identifier'))), timestamp: v.pipe(v.string(), v.isoTimestamp()), username: v.string()});
+
 export const Branding = v.object({bannerImageUrl: v.pipe(v.string(), v.description('Root-relative URL of the deployment banner image.'))});
 
 export const HelpLink = v.object({label: v.pipe(v.string(), v.description('Link label shown to users.')), url: v.pipe(v.string(), v.description('Configured help URL.'))});
@@ -169,6 +171,43 @@ export const GetContainerResponse = ContainersRead
 
 
 /**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */;
+
+export const ListContainerAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListContainerAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.'))),
+  snapshotDate: v.optional(v.pipe(v.string(), v.isoDate(), v.description('Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.'))),
+  snapshotFingerprint: v.optional(v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$')), v.description('Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum events per page.')), 20)
+})
+
+export const ListContainerAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  hasNextPage: v.optional(v.boolean()),
+  hasPrevPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  nextPage: v.nullish(v.pipe(v.number(), v.integer())),
+  page: v.pipe(v.number(), v.integer()),
+  pagingCounter: v.optional(v.pipe(v.number(), v.integer())),
+  prevPage: v.nullish(v.pipe(v.number(), v.integer())),
+  snapshotDate: v.pipe(v.string(), v.isoDate()),
+  snapshotFingerprint: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$'))),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))),
+  totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))
+})
+
+
+/**
  * Returns a paginated view of instruments. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
  * @summary List instruments
  */;
@@ -254,6 +293,43 @@ export const GetInstrumentQueryParams = v.object({
 })
 
 export const GetInstrumentResponse = InstrumentsRead
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */;
+
+export const ListInstrumentAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListInstrumentAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.'))),
+  snapshotDate: v.optional(v.pipe(v.string(), v.isoDate(), v.description('Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.'))),
+  snapshotFingerprint: v.optional(v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$')), v.description('Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum events per page.')), 20)
+})
+
+export const ListInstrumentAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  hasNextPage: v.optional(v.boolean()),
+  hasPrevPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  nextPage: v.nullish(v.pipe(v.number(), v.integer())),
+  page: v.pipe(v.number(), v.integer()),
+  pagingCounter: v.optional(v.pipe(v.number(), v.integer())),
+  prevPage: v.nullish(v.pipe(v.number(), v.integer())),
+  snapshotDate: v.pipe(v.string(), v.isoDate()),
+  snapshotFingerprint: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$'))),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))),
+  totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))
+})
 
 
 /**
@@ -411,6 +487,43 @@ export const UpdateMaintenanceResponse = MaintenancesRead
 
 
 /**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one maintenances resource
+ */;
+
+export const ListMaintenanceAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListMaintenanceAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.'))),
+  snapshotDate: v.optional(v.pipe(v.string(), v.isoDate(), v.description('Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.'))),
+  snapshotFingerprint: v.optional(v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$')), v.description('Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum events per page.')), 20)
+})
+
+export const ListMaintenanceAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  hasNextPage: v.optional(v.boolean()),
+  hasPrevPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  nextPage: v.nullish(v.pipe(v.number(), v.integer())),
+  page: v.pipe(v.number(), v.integer()),
+  pagingCounter: v.optional(v.pipe(v.number(), v.integer())),
+  prevPage: v.nullish(v.pipe(v.number(), v.integer())),
+  snapshotDate: v.pipe(v.string(), v.isoDate()),
+  snapshotFingerprint: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$'))),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))),
+  totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))
+})
+
+
+/**
  * Creates an OAuth token from the authenticated browser session.
  * @summary Create a UI OAuth token
  */;
@@ -502,5 +615,28 @@ export const GetUserQueryParams = v.object({
 }), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[users]=id,name.')))
 })
 
-export const GetUserResponse = UsersRead;
+export const GetUserResponse = UsersRead
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one users resource
+ */;
+
+export const ListUserAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListUserAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is midnight after snapshotDate, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.'))),
+  snapshotDate: v.optional(v.pipe(v.string(), v.isoDate(), v.description('Completed UTC snapshot day returned by page one. Supply it together with snapshotFingerprint on later pages.'))),
+  snapshotFingerprint: v.optional(v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$')), v.description('Fingerprint returned by page one. Supply it unchanged together with snapshotDate on later pages.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum events per page.')), 20)
+})
+
+export const ListUserAuditEventsResponse = v.object({docs: v.array(ApiV2AuditEvent), hasNextPage: v.optional(v.boolean()), hasPrevPage: v.optional(v.boolean()), limit: v.pipe(v.number(), v.integer()), nextPage: v.nullish(v.pipe(v.number(), v.integer())), page: v.pipe(v.number(), v.integer()), pagingCounter: v.optional(v.pipe(v.number(), v.integer())), prevPage: v.nullish(v.pipe(v.number(), v.integer())), snapshotDate: v.pipe(v.string(), v.isoDate()), snapshotFingerprint: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64'), v.regex(new RegExp('^[0-9a-f]{64}$'))), totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))), totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))), totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))});
 

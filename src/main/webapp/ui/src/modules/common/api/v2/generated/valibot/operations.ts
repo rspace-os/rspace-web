@@ -6,10 +6,12 @@ export const apiV2Operations: Record<string, { public?: true; session?: true; re
 ["listContainers"]: {responses: {["200"]: {["application/json"]: native.ListContainersResponse}}},
 ["countContainers"]: {responses: {["200"]: {["application/json"]: native.CountContainersResponse}}},
 ["getContainer"]: {responses: {["200"]: {["application/json"]: native.GetContainerResponse}}},
+["listContainerAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListContainerAuditEventsResponse}}},
 ["listInstruments"]: {responses: {["200"]: {["application/json"]: native.ListInstrumentsResponse}}},
 ["countInstruments"]: {responses: {["200"]: {["application/json"]: native.CountInstrumentsResponse}}},
 ["getInstrumentRuntimeFields"]: {responses: {["200"]: {["application/json"]: native.GetInstrumentRuntimeFieldsResponse}}},
 ["getInstrument"]: {responses: {["200"]: {["application/json"]: native.GetInstrumentResponse}}},
+["listInstrumentAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListInstrumentAuditEventsResponse}}},
 ["deleteManyMaintenances"]: {responses: {["200"]: {["application/json"]: native.DeleteManyMaintenancesResponse}}},
 ["listMaintenances"]: {public: true, responses: {["200"]: {["application/json"]: native.ListMaintenancesResponse}}},
 ["updateManyMaintenances"]: {request: native.UpdateManyMaintenancesBody, responses: {["200"]: {["application/json"]: native.UpdateManyMaintenancesResponse}}},
@@ -19,11 +21,13 @@ export const apiV2Operations: Record<string, { public?: true; session?: true; re
 ["deleteMaintenance"]: {responses: {}},
 ["getMaintenance"]: {public: true, responses: {["200"]: {["application/json"]: native.GetMaintenanceResponse}}},
 ["updateMaintenance"]: {request: native.UpdateMaintenanceBody, responses: {["200"]: {["application/json"]: native.UpdateMaintenanceResponse}}},
+["listMaintenanceAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListMaintenanceAuditEventsResponse}}},
 ["createUiOAuthToken"]: {session: true, responses: {["200"]: {["application/json"]: native.CreateUiOAuthTokenResponse}}},
 ["getApiV2OpenApiDocument"]: {public: true, responses: {["200"]: {["application/json"]: native.GetApiV2OpenApiDocumentResponse}}},
 ["listUsers"]: {responses: {["200"]: {["application/json"]: native.ListUsersResponse}}},
 ["countUsers"]: {responses: {["200"]: {["application/json"]: native.CountUsersResponse}}},
 ["getCurrentUser"]: {responses: {["200"]: {["application/json"]: native.GetCurrentUserResponse}}},
 ["getCurrentUserProfileImage"]: {responses: {}},
-["getUser"]: {responses: {["200"]: {["application/json"]: native.GetUserResponse}}}
+["getUser"]: {responses: {["200"]: {["application/json"]: native.GetUserResponse}}},
+["listUserAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListUserAuditEventsResponse}}}
 };

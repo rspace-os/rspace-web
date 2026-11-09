@@ -27,11 +27,14 @@ import type {
 
 import type {
   ApiV2CountResult,
+  ApiV2Problem,
   BadRequestResponse,
   ContainersRead,
   CountContainersParams,
   ForbiddenResponse,
   GetContainerParams,
+  ListContainerAuditEvents200,
+  ListContainerAuditEventsParams,
   ListContainers200,
   ListContainersParams,
   NotAcceptableResponse,
@@ -686,6 +689,227 @@ export function useGetContainerSuspense<TData = Awaited<ReturnType<typeof getCon
  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetContainerSuspenseQueryOptions(id,params,options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getListContainerAuditEventsUrl = (id: number,
+    params?: ListContainerAuditEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["actions"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/containers/${id}/audit?${stringifiedParams}` : `/api/v2/containers/${id}/audit`
+}
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export const listContainerAuditEvents = async (id: number,
+    params?: ListContainerAuditEventsParams, options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<ListContainerAuditEvents200> => {
+
+  return apiV2Fetch<ListContainerAuditEvents200>(getListContainerAuditEventsUrl(id,params),
+  {
+      ...options,
+    operationId: 'listContainerAuditEvents',
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListContainerAuditEventsQueryKey = (id: number,
+    params?: ListContainerAuditEventsParams,) => {
+    return [
+    `/api/v2/containers/${id}/audit`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListContainerAuditEventsQueryOptions = <TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContainerAuditEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContainerAuditEvents>>> = ({ signal }) => listContainerAuditEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListContainerAuditEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listContainerAuditEvents>>>
+export type ListContainerAuditEventsQueryError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params: undefined |  ListContainerAuditEventsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContainerAuditEvents>>,
+          TError,
+          Awaited<ReturnType<typeof listContainerAuditEvents>>
+        > , 'initialData'
+      >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContainerAuditEvents>>,
+          TError,
+          Awaited<ReturnType<typeof listContainerAuditEvents>>
+        > , 'initialData'
+      >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListContainerAuditEventsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useListContainerAuditEvents} query
+ */
+export const invalidateListContainerAuditEvents = async (
+ queryClient: QueryClient, id: number,
+    params?: ListContainerAuditEventsParams, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getListContainerAuditEventsQueryKey(id,params) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getListContainerAuditEventsSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContainerAuditEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContainerAuditEvents>>> = ({ signal }) => listContainerAuditEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type ListContainerAuditEventsSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof listContainerAuditEvents>>>
+export type ListContainerAuditEventsSuspenseQueryError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params: undefined |  ListContainerAuditEventsParams, options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. A resource without audit metadata returns an empty result. The search range is limited to 183 elapsed days. List requests use one-based pagination and a daily bounded-consistency snapshot over the exact half-open interval from start inclusive to midnight after snapshotDate exclusive in UTC. The first page selects the latest completed UTC day. Send snapshotDate and snapshotFingerprint together on every later page. A 409 means the result set changed and pagination must restart; a 503 means the server refused to return partial audit data. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<ApiV2Problem | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListContainerAuditEventsSuspenseQueryOptions(id,params,options)
 
   const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
