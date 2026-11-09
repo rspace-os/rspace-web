@@ -45,11 +45,7 @@ import { isNonEmpty } from "@/util/ArrayUtils";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
-import {
-  type BookableItemsBulkAction,
-  lifecycleErrorKey,
-  requiredVersion,
-} from "../bookable-items/bookableItemLifecycleHelpers";
+import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "../bookable-items/bookableItemLifecycleHelpers";
 import {
   archiveBookingConfiguration,
   type BookingConfigurationRow,
