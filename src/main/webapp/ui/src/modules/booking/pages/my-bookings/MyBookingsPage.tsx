@@ -4,6 +4,7 @@ import { CalendarClockIcon, EyeIcon, HistoryIcon, PencilIcon, RefreshCwIcon } fr
 import { useQueryState } from "nuqs";
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import {
   type BookingListDocument,
   BookingListDocumentTableValidation,
@@ -236,6 +237,14 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                 </TooltipTrigger>
                 <TooltipContent role="tooltip">{editLabel}</TooltipContent>
               </Tooltip>
+            ) : null}
+            {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+              <BookingCalendarFileButton
+                bookingId={row.id}
+                itemName={row.target.value.name}
+                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
+                iconOnly
+              />
             ) : null}
             {row.canCancel ? (
               <DeleteBookingDialog

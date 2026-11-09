@@ -67,6 +67,7 @@ import { BookingEventList } from "./BookingEventList";
 import { type BookingConfiguration, bookingConfigurationFields } from "./bookingConfiguration";
 import { bookingConfigurationTargetQuery } from "./bookingConfigurationApi";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
+import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 
 const bookableItemConfigurationFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsUpdateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
@@ -595,6 +596,9 @@ function LoadedBookableItemPage({
                       lockTarget
                       disabled={!configuration.enabled}
                     />
+                  ) : null}
+                  {configuration.capabilities.canSubscribeCalendar ? (
+                    <CalendarSubscriptionPopover configurationId={configuration.id} archived={!active} />
                   ) : null}
                   {active && configuration.capabilities.canLeaveConfiguration ? (
                     <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>

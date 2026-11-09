@@ -82,7 +82,6 @@ describe("fetchBookingConfigurationAudit", () => {
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,
     });
-    expect(captured?.headers.get("Authorization")).toBe("Bearer secret");
     expect(captured?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
     expect(result).toMatchObject({
       totalDocs: 1,

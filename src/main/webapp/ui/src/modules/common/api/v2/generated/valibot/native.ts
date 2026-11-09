@@ -45,6 +45,10 @@ export const ApiV2RuntimeFieldCatalog = v.object({fields: v.optional(v.array(Ent
 
 export const ApiV2UiToken = v.object({accessToken: v.pipe(v.string(), v.description('OAuth bearer token for REST API requests.'))});
 
+export const BookingCalendarSubscriptionCreated = v.object({active: v.boolean(), subscriptionUrl: v.pipe(v.string()), updatedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp()))});
+
+export const BookingCalendarSubscriptionStatus = v.object({active: v.boolean(), subscriptionUrl: v.nullable(v.pipe(v.string())), updatedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp()))});
+
 export const BookingConfigurationCapabilities = v.object({canCreateBlockout: v.optional(v.boolean()), canCreateBooking: v.optional(v.boolean()), canEditConfiguration: v.optional(v.boolean()), canLeaveConfiguration: v.optional(v.boolean()), canManageAllEvents: v.optional(v.boolean()), canManageAssignments: v.optional(v.boolean()), canManageOwnBookings: v.optional(v.boolean()), canManageOwners: v.optional(v.boolean()), canSubscribeCalendar: v.optional(v.boolean()), canViewAccess: v.optional(v.boolean()), canViewAudit: v.optional(v.boolean())});
 
 export const BookingConfigurationTarget = v.object({deleted: v.optional(v.boolean()), globalId: v.optional(v.string()), id: v.optional(v.pipe(v.number(), v.integer())), name: v.optional(v.string())});
@@ -298,6 +302,42 @@ export const CountBookingConfigurationsQueryParams = v.object({
 })
 
 export const CountBookingConfigurationsResponse = ApiV2CountResult
+
+
+/**
+ * @summary Revoke a calendar subscription
+ */;
+
+export const RevokeBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer())
+})
+
+
+/**
+ * Returns the caller's current subscription URL when one exists.
+ * @summary Get calendar subscription status
+ */
+export const GetBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer())
+})
+
+export const GetBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionStatus
+
+
+/**
+ * Requires the current status ETag in If-Match and returns a new subscription URL.
+ * @summary Create or replace a calendar subscription
+ */;
+
+export const CreateOrReplaceBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer())
+})
+
+export const CreateOrReplaceBookingCalendarSubscriptionHeader = v.object({
+  'If-Match': v.pipe(v.string(), v.description('Strong ETag from the latest subscription status.'))
+})
+
+export const CreateOrReplaceBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
 
 
 /**
@@ -566,10 +606,19 @@ export const CountBookingsResponse = ApiV2CountResult
 
 
 /**
- * Returns one visible bookings. A resource that is absent or not readable is reported as not found.
- * @summary Get one bookings
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
  */;
 
+export const DownloadBookingCalendarFileParams = v.object({
+  bookingId: v.pipe(v.number(), v.integer())
+})
+
+
+/**
+ * Returns one visible bookings. A resource that is absent or not readable is reported as not found.
+ * @summary Get one bookings
+ */
 export const GetBookingParams = v.object({
   id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
 })
@@ -1273,6 +1322,24 @@ export const CountUsersResponse = ApiV2CountResult
  */;
 
 export const GetCurrentUserResponse = ApiV2CurrentUser
+
+
+/**
+ * @summary Get the caller's booking calendar subscription
+ */;
+
+export const GetUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionStatus
+
+
+/**
+ * @summary Create or replace the caller's booking calendar subscription
+ */;
+
+export const CreateOrReplaceUserBookingCalendarSubscriptionHeader = v.object({
+  'If-Match': v.pipe(v.string(), v.description('Strong ETag from the latest subscription status.'))
+})
+
+export const CreateOrReplaceUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
 
 
 /**

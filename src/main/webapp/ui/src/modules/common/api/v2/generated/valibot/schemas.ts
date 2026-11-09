@@ -10,6 +10,8 @@ export const ApiV2CurrentUserSchema = native.ApiV2CurrentUser;
 export const ApiV2ProblemSchema = native.ApiV2Problem;
 export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
+export const BookingCalendarSubscriptionCreatedSchema = native.BookingCalendarSubscriptionCreated;
+export const BookingCalendarSubscriptionStatusSchema = native.BookingCalendarSubscriptionStatus;
 export const BookingConfigurationCapabilitiesSchema = native.BookingConfigurationCapabilities;
 export const BookingConfigurationTargetSchema = native.BookingConfigurationTarget;
 export const BookingConfigurationsCreateSchema = native.BookingConfigurationsCreate;
@@ -84,6 +86,8 @@ export type SchemaModelTypeChecks = {
   ApiV2Problem: [Assert<Extends<v.InferOutput<typeof ApiV2ProblemSchema>, Models.ApiV2Problem>>, Assert<Extends<Models.ApiV2Problem, v.InferOutput<typeof ApiV2ProblemSchema>>>];
   ApiV2RuntimeFieldCatalog: [Assert<Extends<v.InferOutput<typeof ApiV2RuntimeFieldCatalogSchema>, Models.ApiV2RuntimeFieldCatalog>>, Assert<Extends<Models.ApiV2RuntimeFieldCatalog, v.InferOutput<typeof ApiV2RuntimeFieldCatalogSchema>>>];
   ApiV2UiToken: [Assert<Extends<v.InferOutput<typeof ApiV2UiTokenSchema>, Models.ApiV2UiToken>>, Assert<Extends<Models.ApiV2UiToken, v.InferOutput<typeof ApiV2UiTokenSchema>>>];
+  BookingCalendarSubscriptionCreated: [Assert<Extends<v.InferOutput<typeof BookingCalendarSubscriptionCreatedSchema>, Models.BookingCalendarSubscriptionCreated>>, Assert<Extends<Models.BookingCalendarSubscriptionCreated, v.InferOutput<typeof BookingCalendarSubscriptionCreatedSchema>>>];
+  BookingCalendarSubscriptionStatus: [Assert<Extends<v.InferOutput<typeof BookingCalendarSubscriptionStatusSchema>, Models.BookingCalendarSubscriptionStatus>>, Assert<Extends<Models.BookingCalendarSubscriptionStatus, v.InferOutput<typeof BookingCalendarSubscriptionStatusSchema>>>];
   BookingConfigurationCapabilities: [Assert<Extends<v.InferOutput<typeof BookingConfigurationCapabilitiesSchema>, Models.BookingConfigurationCapabilities>>, Assert<Extends<Models.BookingConfigurationCapabilities, v.InferOutput<typeof BookingConfigurationCapabilitiesSchema>>>];
   BookingConfigurationTarget: [Assert<Extends<v.InferOutput<typeof BookingConfigurationTargetSchema>, Models.BookingConfigurationTarget>>, Assert<Extends<Models.BookingConfigurationTarget, v.InferOutput<typeof BookingConfigurationTargetSchema>>>];
   BookingConfigurationsCreate: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsCreateSchema>, Models.BookingConfigurationsCreate>>, Assert<Extends<Models.BookingConfigurationsCreate, v.InferOutput<typeof BookingConfigurationsCreateSchema>>>];

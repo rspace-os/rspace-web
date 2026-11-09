@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import type { BookingMutation } from "@/modules/booking/domain/booking";
 import { createBooking } from "@/modules/booking/domain/booking";
+import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { ApiV2ProblemError } from "@/modules/common/api/v2";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -90,9 +91,17 @@ export function useCreateBooking() {
           (error.code === "errors.api.v2.booking.overlap" ||
             error.code === "errors.api.v2.booking.concurrentModification"));
       if (invalidateBookings)
-        void Promise.all([invalidateListBookings(queryClient), invalidateCountBookings(queryClient)]);
+        void Promise.all([
+          invalidateListBookings(queryClient),
+          invalidateCountBookings(queryClient),
+          invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "locations"),
+        ]);
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        void invalidateListBookingConfigurations(queryClient);
+        void Promise.all([
+          invalidateListBookingConfigurations(queryClient),
+          invalidateBookingListOperation(queryClient, "catalogue"),
+        ]);
       }
     },
   });
