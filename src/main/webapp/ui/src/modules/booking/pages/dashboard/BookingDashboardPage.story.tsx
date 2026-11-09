@@ -38,11 +38,13 @@ function Destination({ title }: { title: string }) {
 export function BookingDashboardPageStory({
   history = createMemoryHistory({ initialEntries: [bookingDashboardStoryUrl] }),
   preferences = mapBookingDisplayPreferences(inheritedBrowserBookingPreferences),
+  queryClient: providedQueryClient,
 }: {
   history?: RouterHistory;
   preferences?: BookingDisplayPreferencesDocument;
+  queryClient?: QueryClient;
 } = {}) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = providedQueryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), preferences);
   queryClient.setQueryData(getGetCurrentUserQueryKey(), currentUser);
   queryClient.setQueryData(getGetApiV2OpenApiDocumentQueryKey(), bookingsOpenApi);
