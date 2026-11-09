@@ -563,25 +563,16 @@ function TagsComboboxContent<
     );
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 300): () => void {
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-      setDebounceTimeout(setTimeout(() => func(), timeout));
-    };
-  }
-
   useEffect(() => {
-    debounce(() => {
+    const timer = setTimeout(() => {
       // this assumes that the code that called `setFilter` also reset `page` to 0
       void loadPage().then(({ lastPage, tags: newPageOfTags }) => {
         setTags(newPageOfTags);
         setPage(1);
         setReachedEnd(lastPage);
       });
-    })();
+    }, 300);
+    return () => clearTimeout(timer);
   }, [filter]);
 
   useEffect(() => {
