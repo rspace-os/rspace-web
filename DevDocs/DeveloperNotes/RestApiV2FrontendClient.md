@@ -186,7 +186,9 @@ object and the equivalent `RsqlWhere` are cached separately; prefix invalidation
 
 Use Orval's keys with the shape `[path, params?]`. Use a full path such as `/api/v2/instruments/42`.
 Suspense and ordinary hooks share keys. Do not add resource-root key factories or identity scopes.
-Identity changes reload the page through the provider.
+Identity changes reload the page through the provider. Current-user identity still supplies Table
+List `dataScope` metadata and runtime-field selection resets; those values are not query-key
+members.
 
 `orval.config.ts` builds `mutationInvalidates` rules through `scripts/api-v2-invalidation/`. Every
 non-GET operation invalidates its resource's list and count queries across all parameter sets by
@@ -221,16 +223,33 @@ Reads prefer Suspense: use the generated `use…Suspense` hooks, or `useSuspense
 only with a one-line comment giving the reason, such as polling, an optional read that waits for its
 input, or an input that stays interactive while its results load.
 
+`apiV2Resources` in `src/modules/common/api/v2/apiV2Resources.ts` maps resource names to entries
+with `name` and supported generated operations and query-key getters. Optional keys are `list`,
+`count`, `get`, `create`, `update`, `delete`, `createMany`, `updateMany`, `deleteMany`, `access`,
+`replaceAccess`, `leaveAccess`, `grantees`, `audit`, `runtimeFields` and `runtimeFieldSearch`.
+Unsupported capabilities
+are absent.
+
 The registry is generated from each operation's tag and `x-rspace-operation` by
 `scripts/api-v2-valibot/resources.ts`, run by `pnpm generate:api-v2` after Orval and the
 Valibot adapter. The handwritten module keeps the registry types and re-exports generated
 `apiV2Resources`; tags with only `CUSTOM` operations have no entry. Read operations expose
 `request` and `queryKey`; writes expose their request function. Runtime-field endpoints use
-`RUNTIME_FIELDS`, with no route-name inference. Unknown kinds, duplicate kinds within a tag,
+`RUNTIME_FIELDS` (one catalog) and `RUNTIME_FIELD_SEARCH` (several catalogs in one request, typed
+with the `RUNTIME_FIELDS` namespaces), with no route-name inference. Unknown kinds, duplicate kinds within a tag,
 and missing Orval exports fail generation. To add a kind, register its backend metadata,
 add its slot and read/write classification to `resources.ts`, extend `ApiV2OperationSet`
 if needed, and update the focused mapping test. Regenerate the client and golden slots.
 The generated entries retain literal tag names through `satisfies ApiV2ResourceEntry`.
+
+Generic modules take a registry entry instead of constructing URLs from a resource-name string.
+Tests and stories can inject fake entries for resources such as `widgets`, `records` and
+`test-collections`. Continue fetching filter and field metadata from `/api/v2/openapi.json` at
+runtime through the shared fetch function. The document publishes repeated parameters, responses
+and extension values once under `components`, so readers pass it through `dereferenceApiV2OpenApi`
+before looking up a parameter or extension. The table list builds its own `where` with
+`serializeRsql` and `filterFields`, checked against the same filter metadata; generated collection
+operations take typed `where` objects instead (see [Filtering with `where`](#filtering-with-where)).
 
 ## Validation rules
 
@@ -241,7 +260,8 @@ Invalid requests throw `ApiV2ProblemError` with status 400, code `errors.api.v2.
 
 Validation checks values. The transport returns the original parsed JSON unchanged. Open
 dictionaries, runtime metadata and problem extensions keep their values. Read schemas require only
-`id`, so projected responses using `fields`, `exclude` or `depth` pass.
+`id`, so projected responses using `fields`, `exclude` or `depth` pass. Table List keeps its
+stronger selected-field check with `v.required(v.pick(schema, selected))` on the generated schema.
 Generated fieldset types exclude `null`; adapters omit empty selections. The mutator does not
 sanitize fieldsets.
 
@@ -332,7 +352,8 @@ restore();
 Restore the provider in teardown or `finally` so it is restored even if an assertion fails. Register
 endpoint handlers with `server.use(...)`, importing `server` from `src/__tests__/mswServer.ts`.
 Return success bodies typed with generated models. Keep malformed bodies and problem fixtures
-available for failure tests. There are no generated Faker mocks.
+available for failure tests. There are no generated Faker mocks. Shared component tests and stories
+use the registry injection seam for fake resources.
 
 Collection list envelopes expose `docs`, `page`, `limit` and `hasNextPage`, plus optional
 `totalDocs` and `totalIsLowerBound`. Request `page + 1` when `hasNextPage` is true; derive

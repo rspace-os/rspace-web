@@ -28,6 +28,7 @@ import { apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import type {
   ApiV2RuntimeFieldCatalog,
+  ApiV2RuntimeFieldSearch,
   AuditEventsResponse,
   AuditInvalidRequestResponse,
   AuditUnavailableResponse,
@@ -43,6 +44,7 @@ import type {
   ListInstrumentsParams,
   NotAcceptableResponse,
   NotFoundResponse,
+  SearchInstrumentRuntimeFieldsParams,
   TooManyRequestsResponse,
   UnauthenticatedResponse,
   UnexpectedErrorResponse,
@@ -721,6 +723,373 @@ export function useCountInstrumentsSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getCountInstrumentsSuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSearchInstrumentRuntimeFieldsUrl = (params: SearchInstrumentRuntimeFieldsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["namespace"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? "null" : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v2/instruments/fields?${stringifiedParams}`
+    : `/api/v2/instruments/fields`;
+};
+
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export const searchInstrumentRuntimeFields = async (
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: Parameters<typeof apiV2Fetch>[1],
+): Promise<ApiV2RuntimeFieldSearch> => {
+  return apiV2Fetch<ApiV2RuntimeFieldSearch>(getSearchInstrumentRuntimeFieldsUrl(params), {
+    operationId: "searchInstrumentRuntimeFields",
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getSearchInstrumentRuntimeFieldsQueryKey = (params?: SearchInstrumentRuntimeFieldsParams) => {
+  return [`/api/v2/instruments/fields`, ...(params ? [params] : [])] as const;
+};
+
+export const getSearchInstrumentRuntimeFieldsQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSearchInstrumentRuntimeFieldsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>> = ({ signal }) =>
+    searchInstrumentRuntimeFields(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SearchInstrumentRuntimeFieldsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>
+>;
+export type SearchInstrumentRuntimeFieldsQueryError = ErrorType<
+  | BadRequestResponse
+  | UnauthenticatedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | NotAcceptableResponse
+  | TooManyRequestsResponse
+  | UnexpectedErrorResponse
+>;
+
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFields<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+          TError,
+          Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFields<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+          TError,
+          Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFields<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFields<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSearchInstrumentRuntimeFieldsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+/**
+ * @summary Invalidates the {@link useSearchInstrumentRuntimeFields} query
+ */
+export const invalidateSearchInstrumentRuntimeFields = async (
+  queryClient: QueryClient,
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries({ queryKey: getSearchInstrumentRuntimeFieldsQueryKey(params) }, options);
+
+  return queryClient;
+};
+
+export const getSearchInstrumentRuntimeFieldsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSearchInstrumentRuntimeFieldsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>> = ({ signal }) =>
+    searchInstrumentRuntimeFields(params, { signal, ...requestOptions });
+
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } };
+};
+
+export type SearchInstrumentRuntimeFieldsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>
+>;
+export type SearchInstrumentRuntimeFieldsSuspenseQueryError = ErrorType<
+  | BadRequestResponse
+  | UnauthenticatedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | NotAcceptableResponse
+  | TooManyRequestsResponse
+  | UnexpectedErrorResponse
+>;
+
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFieldsSuspense<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options: {
+    query: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFieldsSuspense<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFieldsSuspense<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export function useSearchInstrumentRuntimeFieldsSuspense<
+  TData = Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>,
+  TError = ErrorType<
+    | BadRequestResponse
+    | UnauthenticatedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | NotAcceptableResponse
+    | TooManyRequestsResponse
+    | UnexpectedErrorResponse
+  >,
+>(
+  params: SearchInstrumentRuntimeFieldsParams,
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchInstrumentRuntimeFields>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSearchInstrumentRuntimeFieldsSuspenseQueryOptions(params, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

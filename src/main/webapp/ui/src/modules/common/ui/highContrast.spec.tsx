@@ -1,8 +1,10 @@
 import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, describe, expect, test } from "vitest";
 import { page, server, userEvent } from "vitest/browser";
 import { emulateForcedColors, emulateHighContrast } from "@/__tests__/pageObjects/accessibility";
+import { Alert, AlertDescription, AlertTitle } from "./alert";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "./alert-dialog";
 import { Button } from "./button";
 import { Card } from "./card";
@@ -291,6 +293,54 @@ describe.skipIf(server.browser !== "chromium")("high contrast", () => {
     expect(Number.parseFloat(getComputedStyle(sidebarPanel as HTMLElement).borderTopWidth)).toBeGreaterThan(0);
     expect(getComputedStyle(activeButton as HTMLElement).outlineStyle).not.toBe("none");
     expect(getComputedStyle(activeSubButton as HTMLElement).outlineStyle).not.toBe("none");
+  });
+
+  test("keeps alert text readable on every tone, in both themes and in high contrast", async () => {
+    const tones = ["default", "destructive", "success", "warning"] as const;
+    render(
+      <div>
+        {tones.map((tone) => (
+          <Alert key={tone} variant={tone} aria-label={tone}>
+            <AlertTitle>{labels.summary}</AlertTitle>
+            <AlertDescription>{labels.popoverDescription}</AlertDescription>
+          </Alert>
+        ))}
+      </div>,
+    );
+    // For this normal-size text, axe's `color-contrast` rule requires 4.5:1 and `color-contrast-enhanced` 7:1. Each
+    // title and description must pass every rule, and text axe cannot measure fails. axe rejects overlapping runs, so
+    // the alerts are checked in turn.
+    const expectReadable = async (rules: (tone: (typeof tones)[number]) => string[]) => {
+      for (const tone of tones) {
+        const alert = page.getByRole("alert", { name: tone }).element();
+        const results = await axe.run(alert, { runOnly: { type: "rule", values: rules(tone) }, elementRef: true });
+        expect(results.violations, `${tone} violations`).toEqual([]);
+        expect(results.incomplete, `${tone} unmeasured text`).toEqual([]);
+        const passed = (rule: string) => results.passes.find((result) => result.id === rule)?.nodes ?? [];
+        for (const slot of ["alert-title", "alert-description"]) {
+          const text = alert.querySelector(`[data-slot="${slot}"]`);
+          for (const rule of rules(tone)) {
+            expect(
+              passed(rule).some((node) => node.element === text),
+              `${tone} ${slot} ${rule}`,
+            ).toBe(true);
+          }
+        }
+      }
+    };
+    const aa = () => ["color-contrast"];
+
+    await expectReadable(aa);
+    document.documentElement.classList.add("dark");
+    await expectReadable(aa);
+
+    // Raising destructive to 7:1 under high contrast changes every destructive consumer; it is a follow-up.
+    await emulateHighContrast();
+    const highContrast = (tone: string) =>
+      tone === "destructive" ? ["color-contrast"] : ["color-contrast", "color-contrast-enhanced"];
+    await expectReadable(highContrast);
+    document.documentElement.classList.remove("dark");
+    await expectReadable(highContrast);
   });
 
   test("overrides the light contrast tokens without forced colors", async () => {

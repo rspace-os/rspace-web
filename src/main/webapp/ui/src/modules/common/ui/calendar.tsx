@@ -1,8 +1,16 @@
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
-import { DateLib, type DayButton, DayPicker, getDefaultClassNames, type Locale } from "react-day-picker";
+import {
+  DateLib,
+  type DateLibOptions,
+  type DayButton,
+  DayPicker,
+  getDefaultClassNames,
+  type Locale,
+} from "react-day-picker";
 import { useTranslation } from "react-i18next";
 
+import { firstDayOfWeek } from "@/modules/common/i18n/localeFormat";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 
@@ -12,7 +20,8 @@ function Calendar({
   showOutsideDays = true,
   captionLayout = "label",
   buttonVariant = "ghost",
-  locale: suppliedLocale,
+  locale,
+  weekStartsOn,
   labels,
   formatters,
   components,
@@ -22,8 +31,11 @@ function Calendar({
 }) {
   const { t, i18n } = useTranslation("common");
   const language = i18n.resolvedLanguage ?? i18n.language;
-  // Add explicit imports here as the app ships more catalog languages; callers can also supply a locale.
-  const locale = suppliedLocale;
+  // Without a supplied date-fns locale, words come from Intl in the UI language instead of date-fns' English default.
+  const intl = (date: Date, options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(language, { ...options, timeZone: props.timeZone }).format(date);
+  const fullDate = (date: Date, options?: DateLibOptions, dateLib?: DateLib) =>
+    locale ? (dateLib ?? new DateLib(options)).format(date, "PPPP") : intl(date, { dateStyle: "full" });
   const dateLabel = (date: string, today = false, selected = false) =>
     t("calendar.day", {
       date,
@@ -43,6 +55,13 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       locale={locale}
+      // The week start is a regional convention, like the clock, so it follows the browser region.
+      weekStartsOn={
+        weekStartsOn ??
+        (locale
+          ? undefined
+          : ((firstDayOfWeek(new Intl.DateTimeFormat().resolvedOptions().locale) % 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6))
+      }
       labels={{
         labelNext: () => t("calendar.nextMonth"),
         labelPrevious: () => t("calendar.previousMonth"),
@@ -54,16 +73,26 @@ function Calendar({
         labelWeekNumber: (week) => t("calendar.weekNumber", { week }),
         labelWeekNumberHeader: () => t("calendar.weekNumberHeader"),
         labelDayButton: (date, modifiers, options, dateLib) =>
-          dateLabel((dateLib ?? new DateLib(options)).format(date, "PPPP"), modifiers.today, modifiers.selected),
+          dateLabel(fullDate(date, options, dateLib), modifiers.today, modifiers.selected),
         labelGridcell: (date, modifiers, options, dateLib) =>
-          dateLabel((dateLib ?? new DateLib(options)).format(date, "PPPP"), modifiers?.today),
+          dateLabel(fullDate(date, options, dateLib), modifiers?.today),
+        ...(locale
+          ? {}
+          : {
+              labelGrid: (date: Date) => intl(date, { month: "long", year: "numeric" }),
+              labelWeekday: (date: Date) => intl(date, { weekday: "long" }),
+            }),
         ...labels,
       }}
       formatters={{
-        formatMonthDropdown: (date) =>
-          new Intl.DateTimeFormat(language, { month: "short", timeZone: props.timeZone }).format(date),
-        formatDay: (date) =>
-          new Intl.DateTimeFormat(language, { day: "numeric", timeZone: props.timeZone }).format(date),
+        formatMonthDropdown: (date) => intl(date, { month: "short" }),
+        formatDay: (date) => intl(date, { day: "numeric" }),
+        ...(locale
+          ? {}
+          : {
+              formatCaption: (date: Date) => intl(date, { month: "long", year: "numeric" }),
+              formatWeekdayName: (date: Date) => intl(date, { weekday: "short" }),
+            }),
         ...formatters,
       }}
       classNames={{

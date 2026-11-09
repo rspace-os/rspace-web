@@ -180,6 +180,10 @@ export const ApiV2RuntimeFieldCatalog = v.object({
   totalFields: v.optional(v.pipe(v.number(), v.integer())),
 });
 
+export const ApiV2RuntimeFieldSearch = v.object({
+  catalogs: v.record(v.string(), ApiV2RuntimeFieldCatalog),
+});
+
 export const ApiV2UiToken = v.object({
   accessToken: v.pipe(v.string(), v.description("OAuth bearer token for REST API requests.")),
 });
@@ -1047,6 +1051,25 @@ export const CountInstrumentsQueryParams = v.object({
 });
 
 export const CountInstrumentsResponse = ApiV2CountResult;
+
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export const SearchInstrumentRuntimeFieldsQueryParams = v.object({
+  namespace: v.pipe(
+    v.array(v.picklist(["customFields", "extraFields"])),
+    v.minLength(1),
+    v.description("Distinct runtime field namespaces to search. Repeat the parameter for each namespace."),
+  ),
+  q: v.pipe(v.string(), v.minLength(1), v.description("Search text. Must not be blank.")),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(200), v.description("Page size for each namespace.")),
+    50,
+  ),
+});
+
+export const SearchInstrumentRuntimeFieldsResponse = ApiV2RuntimeFieldSearch;
 
 export const GetInstrumentRuntimeFieldsParams = v.object({
   namespace: v.pipe(v.picklist(["customFields", "extraFields"]), v.description("Runtime field namespace.")),

@@ -1465,6 +1465,21 @@ export default interface Resources {
         "singular": "Record"
       }
     },
+    "relationshipPicker": {
+      "availabilityChecking": "Checking whether this item can be added.",
+      "availabilityFailed": "RSpace could not check this item. Search again.",
+      "clear": "Clear the selection",
+      "empty": "No matching records found",
+      "enterSearchTerm": "Enter a search term",
+      "failed": "Search is unavailable. Try again.",
+      "openOptions": "Show matching records",
+      "openRecord": "Open record {globalId}",
+      "remove": "Remove {item}",
+      "restoreFailed": "{value} — Could not restore this saved selection. Try again.",
+      "search": "Search by name or global ID",
+      "searchTooShort": "Type at least {count, plural, one {# character} other {# characters}} to search.",
+      "unavailable": "{value} (unavailable)"
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
@@ -1685,6 +1700,206 @@ export default interface Resources {
         "columns": "Columns",
         "exportToCsv": "Export to CSV"
       }
+    },
+    "tableList": {
+      "actions": {
+        "addFilter": "Add filter",
+        "addSort": "Add sort",
+        "applyFilters": "Apply filters",
+        "clearAll": "Clear all",
+        "closeColumns": "Close columns",
+        "closeFilters": "Close filters",
+        "closeSorting": "Close sorting",
+        "hideColumn": "Hide {column} column",
+        "moveColumn": "Drag {column} column",
+        "moveFilter": "Drag filter {number, number}",
+        "moveSort": "Drag sort rule {number, number}",
+        "nextPage": "Next page",
+        "previousPage": "Previous page",
+        "removeFilter": "Remove filter {number, number}",
+        "removeSort": "Remove {column} from sorting",
+        "resetColumns": "Reset columns",
+        "resetToDefaults": "Reset filters, sorting, and columns to defaults",
+        "resizeColumn": "Resize column",
+        "sortBy": "Sort by {column}"
+      },
+      "alerts": {
+        "dismiss": "Dismiss",
+        "label": "Recent changes",
+        "undo": "Undo",
+        "undoFailed": "This change could not be undone.",
+        "undoing": "Undoing…"
+      },
+      "cardView": "{collection} cards",
+      "columns": {
+        "customised": "Columns, {count, number} of {total, number} shown",
+        "hidden": "Hidden",
+        "hiddenEmpty": "Drag a shown column here to hide it",
+        "shown": "Shown",
+        "shownEmpty": "Drop a hidden column here",
+        "title": "Arrange columns"
+      },
+      "dragAndDrop": {
+        "cancelled": "Dragging was cancelled. {item} was dropped.",
+        "dropped": "{item} was dropped.",
+        "droppedOver": "{item} was dropped over {target}.",
+        "filterRule": "Filter {number, number}",
+        "instructions": "To pick up an item, press Space or Enter. While dragging, use the arrow keys to move the item. Press Space or Enter again to drop the item in its new position, or press Escape to cancel.",
+        "movedOver": "{item} was moved over {target}.",
+        "notOver": "{item} is no longer over a drop area.",
+        "pickedUp": "Picked up {item}."
+      },
+      "empty": {
+        "description": "Try changing the search or filter criteria.",
+        "title": "No records found"
+      },
+      "error": {
+        "customFieldColumnLimit": "A table can show at most {limit, number} custom field columns.",
+        "description": "The records could not be loaded.",
+        "title": "Something went wrong"
+      },
+      "fieldGroups": {
+        "customFields": "Custom fields",
+        "relationshipFields": "Related record fields"
+      },
+      "fields": {
+        "createdBy": "Created by",
+        "hierarchicalLabel": "{owner} → {field}",
+        "labelWithSource": "{label} ({source})",
+        "location": "Location",
+        "parentContainer": "Parent container",
+        "updatedBy": "Updated by"
+      },
+      "filters": {
+        "alsoShowAsColumn": "Show as column",
+        "applied": "Filters {count, plural, one {# rule applied} other {# rules applied}}",
+        "customField": {
+          "noMatch": "No matching custom field.",
+          "option": "Custom field…",
+          "optionVia": "Custom field on {via}…",
+          "searchFailed": "Custom fields could not be searched.",
+          "searchLabel": "Search custom fields for filter {number, number}",
+          "searchLabelVia": "Search {via} custom fields for filter {number, number}",
+          "searchPlaceholder": "Search custom fields by name or ID",
+          "sourceAndId": "{source} · {id}",
+          "types": {
+            "choice": "Multiple choice",
+            "date": "Date",
+            "number": "Number",
+            "radio": "Radio choice",
+            "text": "Text",
+            "time": "Time"
+          }
+        },
+        "field": "Field for filter {number, number}",
+        "fieldSearch": {
+          "clear": "Clear the field search",
+          "noMatch": "No matching field.",
+          "placeholder": "Search fields",
+          "trigger": "Show fields"
+        },
+        "matchAll": "Records must match every rule.",
+        "missing": "is missing",
+        "multiSelect": {
+          "customPlaceholder": "Type a value and press Enter",
+          "empty": "No matching values found",
+          "enterValue": "Enter a value",
+          "remove": "Remove {value}"
+        },
+        "noneApplied": "Filters, none applied",
+        "openRecord": "Open {globalId}",
+        "operator": "Operator for filter {number, number}",
+        "operatorSearch": {
+          "clear": "Clear the operator search",
+          "noMatch": "No matching operator.",
+          "placeholder": "Search operators",
+          "trigger": "Show operators"
+        },
+        "operators": {
+          "contains": "contains",
+          "equals": "equals",
+          "exists": "exists",
+          "greaterThan": "is greater than",
+          "greaterThanOrEqual": "is at least",
+          "in": "is one of",
+          "lessThan": "is less than",
+          "lessThanOrEqual": "is at most",
+          "matches": "matches pattern",
+          "notEquals": "does not equal",
+          "notIn": "is not one of"
+        },
+        "placeholders": {
+          "pattern": "Use * as a wildcard",
+          "value": "Enter a value"
+        },
+        "present": "is present",
+        "savedGroup": "Saved filter group",
+        "suggestions": {
+          "loading": "Searching…",
+          "minimumLength": "Type {count, plural, one {# character} other {# characters}} to search"
+        },
+        "title": "Filter records",
+        "value": "Value for filter {number, number}",
+        "valueSearch": {
+          "clear": "Clear the value",
+          "noMatch": "No matching value.",
+          "trigger": "Show values"
+        }
+      },
+      "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
+      "page": "Page {page, number} of {pages, number}",
+      "pageUnknown": "Page {page, number}",
+      "refreshing": "Refreshing records",
+      "results": "{first, number}–{last, number} of {total, plural, one {# record} other {# records}}",
+      "resultsUnknown": "{first, number}–{last, number} of many",
+      "rows": "Rows",
+      "rowsPerPage": "Rows per page",
+      "savedView": {
+        "invalid": "The saved view contains an invalid or unavailable field. Reset the view to continue.",
+        "loadFailed": "The saved view could not be loaded. Retry to keep its filters.",
+        "reset": "Reset saved view",
+        "retry": "Retry"
+      },
+      "search": {
+        "clear": "Clear search",
+        "label": "Search {collection}"
+      },
+      "selection": {
+        "clear": "Clear selection",
+        "count": "{count, plural, one {# row selected} other {# rows selected}}",
+        "limit": "You can select up to {count, plural, one {# row} other {# rows}}.",
+        "regionLabel": "Selected rows actions",
+        "selectAllPage": "Select all rows on this page",
+        "selectRow": "Select {row}"
+      },
+      "sorting": {
+        "applied": "Sort {count, plural, one {# rule active} other {# rules active}}",
+        "ascending": "Ascending",
+        "descending": "Descending",
+        "direction": "Direction for {column}",
+        "empty": "Add a sort rule, or select a column header.",
+        "title": "Sort priority"
+      },
+      "targetFields": {
+        "containerType": "Container type",
+        "createdAt": "Created at",
+        "deleted": "Deleted",
+        "email": "Email",
+        "firstName": "First name",
+        "globalId": "Global ID",
+        "id": "ID",
+        "lastName": "Last name",
+        "name": "Name",
+        "updatedAt": "Updated at",
+        "username": "Username"
+      },
+      "toolbar": {
+        "columns": "Columns",
+        "filters": "Filters",
+        "sorting": "Sort"
+      },
+      "tooltip": "About {column}",
+      "view": "{collection} table"
     },
     "tags": {
       "addTag": "Add Tag",
@@ -5839,6 +6054,14 @@ export default interface Resources {
             "namespace": "Runtime field namespace.",
             "page": "Page number.",
             "search": "Search text.",
+            "searchRoute": {
+              "description": "Searches several runtime field catalogs of {0} with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.",
+              "limit": "Page size for each namespace.",
+              "namespaces": "Distinct runtime field namespaces to search. Repeat the parameter for each namespace.",
+              "search": "Search text. Must not be blank.",
+              "success": "Caller-specific runtime field catalogs keyed by namespace.",
+              "summary": "Search runtime fields of {0}"
+            },
             "success": "Caller-specific runtime field catalog."
           },
           "schemas": {
@@ -6277,6 +6500,10 @@ export default interface Resources {
               "limit": "A request must not name more than {0} custom fields.",
               "limitTitle": "The custom field limit was exceeded."
             },
+            "namespaces": {
+              "invalid": "Name one or more distinct custom field namespaces from: {0}.",
+              "invalidTitle": "The custom field namespaces are invalid."
+            },
             "page": {
               "invalid": "The page number is out of range."
             },
@@ -6287,6 +6514,10 @@ export default interface Resources {
             "query": {
               "invalid": "The custom field request is invalid. The page size must be between 1 and {0}.",
               "invalidTitle": "The custom field request is invalid."
+            },
+            "search": {
+              "required": "The {0} parameter must contain search text.",
+              "requiredTitle": "Search text is required."
             }
           },
           "tooManyRequests": "Too many requests. Please try again later.",
@@ -11438,6 +11669,26 @@ export default interface Resources {
         "onlyOneUser": "Only one user can be unlocked at a time."
       }
     }
+  },
+  "tableListExamples": {
+    "description": "Find notebooks, protocols, and datasets across your workspace.",
+    "fields": {
+      "collaborators": "Collaborators",
+      "draft": "Draft",
+      "enabled": "Enabled",
+      "id": "ID",
+      "modified": "Modified",
+      "notes": "Notes",
+      "owner": "Owner",
+      "published": "Published",
+      "score": "Score",
+      "status": "Status",
+      "targetName": "Bookable item name",
+      "title": "Title",
+      "titleDescription": "The human-readable name of the record."
+    },
+    "record": "Research record",
+    "records": "Research records"
   },
   "workspace": {
     "export": {

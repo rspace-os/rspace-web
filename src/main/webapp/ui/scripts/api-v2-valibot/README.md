@@ -1,7 +1,7 @@
 # API v2 Valibot adapter
 
 `pnpm generate:api-v2` generates the HTTP client, then Orval's reusable Valibot
-output, then runs `generate.ts`, `resources.ts` and `filters.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
+output, then runs `generate.ts`, `resources.ts`, `filters.ts` and `tableMetadata.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
 OpenAPI document. The adapter reads `generated/valibot/native.ts` unchanged
 and writes `schemas.ts` and `operations.ts` beside it. Biome then checks and formats all three
 files, as Orval does for its own output. No schema translator is retained.
@@ -28,6 +28,15 @@ RSQL operators and value type. It then narrows each Orval `<Name>Parameter = str
 model for a `where` parameter that carries `x-rspace-filter` to `ApiV2Where<"<Filter>">`, and fails if Orval's model shape
 changes. This is the adapter's only rewrite of Orval output. `orval.config.ts` gives the same
 operations `apiV2SerializeQuery` as Orval's `paramsSerializer`, so a `where` object reaches the server as RSQL.
+
+The table metadata step (`tableMetadata.ts`) reads each LIST operation's sort, filter, limit, field and runtime-field
+extensions, validates them with the Valibot schemas in `src/modules/common/table-list/api-v2/metadataSchemas.ts`, and writes
+`generated/tableListMetadata.ts` for the table list, so the browser never fetches or parses the OpenAPI document for
+it. It fails generation on metadata the table list cannot use, such as an unknown operator, a non-positive limit, a
+default sort on an unsortable field, or a runtime-field catalog that is not a RUNTIME_FIELDS route. Like every step,
+it imports only relative `.ts` modules, bare packages and types, because plain `node` does not resolve `@/`. The
+modules it shares with the app (`metadataSchemas.ts`, `schemaPrimitives.ts`, `utils/sortRuleFromToken.ts` and
+`collection/relationshipFilterPicker.ts`) follow the same rule.
 
 The schema-only preflight rejects unsupported keywords, formats, references and
 inline schemas, including errors and headers. New schema constructs require an

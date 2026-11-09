@@ -10,6 +10,7 @@ import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
+import com.researchspace.api.v2.model.ApiV2RuntimeFieldSearch;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
@@ -28,7 +29,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -121,16 +124,66 @@ public class ApiV2CrudController {
         requireResource(resource, ResourceOperation.LIST);
     requireNamespace(registration, namespace);
     RuntimeFieldCatalogQuery query = catalogQuery(q, ids, page, limit);
-    RuntimeFieldCatalogPage catalog =
-        registration.runtimeFieldCatalog(subject(caller), namespace, query);
-    ApiV2RuntimeFieldCatalog body =
-        new ApiV2RuntimeFieldCatalog(
-            catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList(),
-            catalog.hasMore(),
-            catalog.total(),
-            query.page(),
-            query.limit());
+    ApiV2RuntimeFieldCatalog body = catalog(registration, subject(caller), namespace, query);
     return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate()).body(body);
+  }
+
+  /**
+   * The first page of several runtime catalogs of this collection, searched with one term.
+   *
+   * <p>The whole request is validated before any catalog is read, so a refused search costs no
+   * lookup. {@code namespace} is read as repeated parameters: Spring would split {@code a,b}.
+   */
+  @GetMapping("/{resource}/fields")
+  public ResponseEntity<ApiV2RuntimeFieldSearch> searchRuntimeFields(
+      @PathVariable String resource,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
+      @RequestParam(name = "q", required = false) String q,
+      @RequestParam(defaultValue = "" + RuntimeFieldCatalogQuery.DEFAULT_LIMIT) int limit,
+      HttpServletRequest request) {
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.LIST);
+    List<String> namespaces =
+        searchNamespaces(registration, request.getParameterValues("namespace"));
+    if (q == null || q.isBlank()) {
+      throw ApiV2ResourceException.badRequest("errors.api.v2.runtimeFields.search.required", "q");
+    }
+    RuntimeFieldCatalogQuery query = catalogQuery(q, null, 1, limit);
+    User user = subject(caller);
+    Map<String, ApiV2RuntimeFieldCatalog> catalogs = new LinkedHashMap<>();
+    for (String namespace : namespaces) {
+      catalogs.put(namespace, catalog(registration, user, namespace, query));
+    }
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore().cachePrivate())
+        .body(new ApiV2RuntimeFieldSearch(catalogs));
+  }
+
+  private static List<String> searchNamespaces(
+      ApiV2ResourceRegistration<?, ?> registration, String[] requested) {
+    List<String> published = registration.runtimeNamespaces();
+    if (requested == null
+        || requested.length == 0
+        || Arrays.stream(requested).distinct().count() != requested.length
+        || !published.containsAll(Arrays.asList(requested))) {
+      throw ApiV2ResourceException.badRequest(
+          "errors.api.v2.runtimeFields.namespaces.invalid", String.join(", ", published));
+    }
+    return List.of(requested);
+  }
+
+  private static ApiV2RuntimeFieldCatalog catalog(
+      ApiV2ResourceRegistration<?, ?> registration,
+      User user,
+      String namespace,
+      RuntimeFieldCatalogQuery query) {
+    RuntimeFieldCatalogPage catalog = registration.runtimeFieldCatalog(user, namespace, query);
+    return new ApiV2RuntimeFieldCatalog(
+        catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList(),
+        catalog.hasMore(),
+        catalog.total(),
+        query.page(),
+        query.limit());
   }
 
   private static void requireNamespace(

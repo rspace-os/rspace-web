@@ -113,6 +113,90 @@ final class ApiV2OpenApiRuntimeFieldDocs {
                         text.get(Key.RUNTIME_FIELDS_LIMIT))))));
   }
 
+  /**
+   * Documents {@code GET /api/v2/{resource}/fields}, which searches several of the collection's own
+   * catalogs at once and returns each one's first page.
+   */
+  void addRuntimeFieldSearchPath(
+      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource) {
+    List<RuntimeCollectionFields<?>> namespaces = catalog.runtimeFieldsOf(resource.resourceName());
+    if (namespaces.isEmpty()) {
+      return;
+    }
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            text.get(Key.RUNTIME_FIELD_SEARCH_SUCCESS),
+            "headers",
+            Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
+            "content",
+            content(APPLICATION_JSON_VALUE, ref("ApiV2RuntimeFieldSearch"))));
+    putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
+    Map<String, Object> namespace =
+        parameter(
+            "namespace",
+            "query",
+            true,
+            ordered(
+                "type",
+                "array",
+                "minItems",
+                1,
+                "items",
+                ordered(
+                    "type",
+                    "string",
+                    "enum",
+                    namespaces.stream().map(n -> n.namespace()).toList())),
+            text.get(Key.RUNTIME_FIELD_SEARCH_NAMESPACES));
+    namespace.put("style", "form");
+    namespace.put("explode", true);
+    paths.put(
+        "/api/v2/" + resource.resourceName() + "/fields",
+        Map.of(
+            "get",
+            ordered(
+                "operationId",
+                "search" + ApiV2OpenApiNames.singularName(resource) + "RuntimeFields",
+                "x-rspace-operation",
+                ResourceOperation.RUNTIME_FIELD_SEARCH.name(),
+                "summary",
+                text.get(Key.RUNTIME_FIELD_SEARCH_SUMMARY, resource.resourceName()),
+                "description",
+                text.get(Key.RUNTIME_FIELD_SEARCH_DESCRIPTION, resource.resourceName()),
+                "tags",
+                List.of(resource.resourceName()),
+                "security",
+                AUTHENTICATED_SECURITY,
+                "responses",
+                responses,
+                "parameters",
+                List.of(
+                    namespace,
+                    parameter(
+                        "q",
+                        "query",
+                        true,
+                        ordered("type", "string", "minLength", 1),
+                        text.get(Key.RUNTIME_FIELD_SEARCH_TERM)),
+                    parameter(
+                        "limit",
+                        "query",
+                        false,
+                        Map.of(
+                            "type",
+                            "integer",
+                            "minimum",
+                            1,
+                            "maximum",
+                            RuntimeFieldCatalogQuery.MAX_LIMIT,
+                            "default",
+                            RuntimeFieldCatalogQuery.DEFAULT_LIMIT),
+                        text.get(Key.RUNTIME_FIELD_SEARCH_LIMIT))))));
+  }
+
   void applyRuntimeProjectionSchemas(
       Map<String, Object> schemas, ApiV2ResourceRegistration<?, ?> resource, String component) {
     Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));

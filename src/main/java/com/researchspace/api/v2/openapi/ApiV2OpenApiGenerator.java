@@ -10,6 +10,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHea
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 
 import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
+import com.researchspace.api.v2.model.ApiV2RuntimeFieldSearch;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
@@ -85,6 +86,8 @@ public final class ApiV2OpenApiGenerator {
 
     addStandardSchemas(schemas);
     addResourceAccessSchemas(schemas);
+    // The search response references the catalog; its normalised schema is written second.
+    ApiV2OpenApiSchemas.responseSchemaFor(ApiV2RuntimeFieldSearch.class, schemas);
     ApiV2OpenApiSchemas.responseSchemaFor(ApiV2RuntimeFieldCatalog.class, schemas);
 
     catalog
@@ -170,6 +173,7 @@ public final class ApiV2OpenApiGenerator {
           operations.operation(resource, operation, component, resourceSchemas, referenced));
     }
     runtimeFields.addRuntimeFieldsPath(paths, resource);
+    runtimeFields.addRuntimeFieldSearchPath(paths, resource);
     ApiV2OpenApiAuditDocs.addAuditPaths(paths, resource, component, text, referenced);
     new ApiV2OpenApiResourceAccessDocs(text, referenced)
         .addResourceAccessPaths(paths, resource, component);

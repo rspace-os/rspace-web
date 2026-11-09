@@ -54,6 +54,21 @@ class ApiV2RuntimeProjectionOpenApiTest {
         openApi
             .at("/paths/~1api~1v2~1sources~1fields~1{namespace}/get/x-rspace-operation")
             .asText());
+    JsonNode search = openApi.at("/paths/~1api~1v2~1sources~1fields/get");
+    assertEquals("RUNTIME_FIELD_SEARCH", search.path("x-rspace-operation").asText());
+    JsonNode namespaces = search.path("parameters").path(0);
+    assertEquals("namespace", namespaces.path("name").asText());
+    assertTrue(namespaces.path("explode").asBoolean());
+    assertEquals(1, namespaces.path("schema").path("minItems").asInt());
+    assertEquals(
+        List.of("customFields"),
+        Json31.mapper().convertValue(namespaces.at("/schema/items/enum"), List.class));
+    assertEquals(
+        "#/components/schemas/ApiV2RuntimeFieldCatalog",
+        openApi
+            .at(
+                "/components/schemas/ApiV2RuntimeFieldSearch/properties/catalogs/additionalProperties/$ref")
+            .asText());
     JsonNode readSchema = openApi.at("/components/schemas/SourcesRead");
     JsonNode properties = readSchema.path("properties");
 

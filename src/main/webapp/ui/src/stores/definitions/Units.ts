@@ -1,3 +1,4 @@
+import { formatRelativeTime } from "@/modules/common/i18n/localeFormat";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { match } from "../../util/Util";
@@ -231,27 +232,7 @@ export function todaysDate(): Date {
  * @param targetDate The date in the future.
  */
 export function getRelativeTime(targetDate: Date): string {
-  const now = new Date();
-  const futureDate = targetDate;
-  const diffInSeconds = Math.floor((futureDate.getTime() - now.getTime()) / 1000);
-
-  const units: Array<{ name: Intl.RelativeTimeFormatUnit; seconds: number }> = [
-    { name: "year", seconds: 60 * 60 * 24 * 365 },
-    { name: "month", seconds: 60 * 60 * 24 * 30 },
-    { name: "day", seconds: 60 * 60 * 24 },
-    { name: "hour", seconds: 60 * 60 },
-    { name: "minute", seconds: 60 },
-    { name: "second", seconds: 1 },
-  ];
-
-  for (const unit of units) {
-    if (Math.abs(diffInSeconds) >= unit.seconds) {
-      const value = Math.floor(diffInSeconds / unit.seconds);
-      return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(value, unit.name);
-    }
-  }
-
-  return "now";
+  return formatRelativeTime(targetDate, "en");
 }
 
 /**

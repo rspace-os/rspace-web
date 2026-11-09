@@ -1,0 +1,20 @@
+{
+  "description": "Find notebooks, protocols, and datasets across your workspace.",
+  "fields": {
+    "collaborators": "Collaborators",
+    "draft": "Draft",
+    "enabled": "Enabled",
+    "id": "ID",
+    "modified": "Modified",
+    "notes": "Notes",
+    "owner": "Owner",
+    "published": "Published",
+    "score": "Score",
+    "status": "Status",
+    "targetName": "Bookable item name",
+    "title": "Title",
+    "titleDescription": "The human-readable name of the record."
+  },
+  "record": "Research record",
+  "records": "Research records"
+}

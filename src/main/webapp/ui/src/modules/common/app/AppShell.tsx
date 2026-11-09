@@ -4,6 +4,7 @@ import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import { navigationProgressQueryFilters } from "@/modules/common/queries/navigationProgress";
+import { TableListPageRegistryProvider } from "@/modules/common/table-list/TableListPageRegistry";
 import {
   Sidebar,
   SidebarContent,
@@ -96,9 +97,11 @@ export default function AppShell() {
         )}
         <SidebarInset>
           <NuqsAdapter>
-            <React.Suspense fallback={<ContentLoadingSpinner />}>
-              <Outlet />
-            </React.Suspense>
+            <TableListPageRegistryProvider>
+              <React.Suspense fallback={<ContentLoadingSpinner />}>
+                <Outlet />
+              </React.Suspense>
+            </TableListPageRegistryProvider>
           </NuqsAdapter>
         </SidebarInset>
       </div>

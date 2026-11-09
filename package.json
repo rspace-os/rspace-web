@@ -49,7 +49,7 @@
     "build-storybook": "pnpm run storybook:build",
     "test-storybook": "pnpm run storybook:test",
     "lint:routes": "ls-lint --config .ls-lint.yml --workdir src/main/webapp/ui/src/routes && cd src/main/webapp/ui && biome lint --only=style/useFilenamingConvention src/routes",
-    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.ts && node scripts/api-v2-valibot/resources.ts && node scripts/api-v2-valibot/filters.ts"
+    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.ts && node scripts/api-v2-valibot/resources.ts && node scripts/api-v2-valibot/filters.ts && node scripts/api-v2-valibot/tableMetadata.ts"
   },
   "devDependencies": {
     "@storybook/tanstack-react": "10.6.2",
@@ -152,6 +152,7 @@
     "@stomp/stompjs": "7.3.0",
     "@tanstack/query-core": "5.101.4",
     "@tanstack/react-form": "1.33.5",
+    "@tanstack/react-pacer": "0.24.1",
     "@tanstack/react-query": "5.101.4",
     "@tanstack/react-router": "1.170.46",
     "@tinymce/tinymce-react": "6.3.0",
@@ -209,7 +210,12 @@
     "tinymce": "8.9.3",
     "valibot": "1.4.2",
     "zustand": "5.1.0",
-    "@tanstack/react-devtools": "0.10.14"
+    "@tanstack/react-devtools": "0.10.14",
+    "@dnd-kit/modifiers": "9.0.0",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
+    "@rsql/parser": "1.6.0",
+    "@tanstack/react-table": "9.3.1"
   },
   "intent": {
     "skills": [

@@ -27,6 +27,9 @@ export const apiV2Operations: Record<
   },
   listInstruments: { responses: { "200": { "application/json": native.ListInstrumentsResponse } } },
   countInstruments: { responses: { "200": { "application/json": native.CountInstrumentsResponse } } },
+  searchInstrumentRuntimeFields: {
+    responses: { "200": { "application/json": native.SearchInstrumentRuntimeFieldsResponse } },
+  },
   getInstrumentRuntimeFields: {
     responses: { "200": { "application/json": native.GetInstrumentRuntimeFieldsResponse } },
   },

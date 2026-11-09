@@ -76,6 +76,7 @@ describe("collection resource registry emitter", () => {
       ACCESS_GRANTEE_SEARCH: "grantees",
       AUDIT_LIST: "audit",
       RUNTIME_FIELDS: "runtimeFields",
+      RUNTIME_FIELD_SEARCH: "runtimeFieldSearch",
     };
     const namespace = { in: "path", name: "namespace", schema: { type: "string", enum: ["custom"] } };
     const paths = Object.fromEntries(
@@ -136,12 +137,12 @@ describe("collection resource registry emitter", () => {
     ]);
   });
   it("emits the list filter and runtime-field namespaces with operation assertions, omitting an absent filter", () => {
-    const source = ["example", "getExampleQueryKey", "fields", "getFieldsQueryKey"]
+    const source = ["example", "getExampleQueryKey", "fields", "getFieldsQueryKey", "search", "getSearchQueryKey"]
       .map((name) => `export const ${name} = 1;`)
       .join("\n");
     const where = { $ref: "#/components/parameters/ExamplesWhere" };
     const namespace = (schema: object) => ({ in: "path", name: "namespace", schema });
-    const documentWith = (list: object, runtimeFields?: object) => ({
+    const documentWith = (list: object, runtimeFields?: object, search = false) => ({
       components: {
         parameters: {
           ExamplesWhere: {
@@ -157,22 +158,29 @@ describe("collection resource registry emitter", () => {
         ...(runtimeFields && {
           "/api/v2/examples/fields/{namespace}": { get: { ...op("RUNTIME_FIELDS", "fields"), ...runtimeFields } },
         }),
+        ...(search && { "/api/v2/examples/fields": { get: op("RUNTIME_FIELD_SEARCH", "search") } }),
       },
     });
-    const [filtered, unfiltered, invalidNamespace] = invokeMany<string>(
+    const [filtered, unfiltered, invalidNamespace, searchOnly] = invokeMany<string>(
       [
-        documentWith({ parameters: [where] }, { parameters: [namespace({ type: "string", enum: ["a", "b"] })] }),
+        documentWith({ parameters: [where] }, { parameters: [namespace({ type: "string", enum: ["a", "b"] })] }, true),
         documentWith({}),
         documentWith({}, { parameters: [namespace({ type: "string" })] }),
+        documentWith({}, undefined, true),
       ].map((document): Case => ({ document, mode: "generate", source })),
     );
     expect(filtered.value).toContain('filterResource: "Examples",');
     expect(filtered.value).toContain('runtimeFieldNamespaces: ["a", "b"] as const,');
     expect(filtered.value).toMatch(/ApiV2ListOperation<\s*\(typeof apiV2Resources\)\["examples"\]\["filterResource"\]/);
     expect(filtered.value).toMatch(/ApiV2RuntimeFieldsOperation<\s*\(typeof apiV2Resources\)\["examples"\]/);
+    expect(filtered.value).toContain(
+      "runtimeFieldSearch: { request: resource0.search, queryKey: resource0.getSearchQueryKey },",
+    );
+    expect(filtered.value).toMatch(/ApiV2RuntimeFieldSearchOperation<\s*\(typeof apiV2Resources\)\["examples"\]/);
     expect(unfiltered.error).toBeUndefined();
     expect(unfiltered.value).not.toContain("filterResource");
     expect(unfiltered.value).not.toContain("ApiV2ResourceOperationChecks");
     expect(invalidNamespace.error).toContain("RUNTIME_FIELDS operation needs one path parameter with a string enum");
+    expect(searchOnly.error).toContain("RUNTIME_FIELD_SEARCH operation needs a RUNTIME_FIELDS operation");
   });
 });

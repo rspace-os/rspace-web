@@ -120,6 +120,12 @@ public final class ApiV2OpenApiText {
     RUNTIME_FIELDS_IDS("runtimeFields.ids"),
     RUNTIME_FIELDS_PAGE("runtimeFields.page"),
     RUNTIME_FIELDS_LIMIT("runtimeFields.limit"),
+    RUNTIME_FIELD_SEARCH_SUMMARY("runtimeFields.searchRoute.summary"),
+    RUNTIME_FIELD_SEARCH_DESCRIPTION("runtimeFields.searchRoute.description"),
+    RUNTIME_FIELD_SEARCH_SUCCESS("runtimeFields.searchRoute.success"),
+    RUNTIME_FIELD_SEARCH_NAMESPACES("runtimeFields.searchRoute.namespaces"),
+    RUNTIME_FIELD_SEARCH_TERM("runtimeFields.searchRoute.search"),
+    RUNTIME_FIELD_SEARCH_LIMIT("runtimeFields.searchRoute.limit"),
 
     ACCESS_READ_SUMMARY("resourceAccess.read.summary"),
     ACCESS_REPLACE_SUMMARY("resourceAccess.replace.summary"),

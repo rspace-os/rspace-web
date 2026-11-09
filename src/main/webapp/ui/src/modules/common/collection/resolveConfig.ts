@@ -1,0 +1,123 @@
+import type {
+  CollectionConfig,
+  FieldName,
+  ResolvedCollectionConfig,
+  ResolvedFieldConfig,
+  SearchSelector,
+} from "./config";
+import { fieldTypeRules, isFilterOperatorCompatible } from "./fieldTypes";
+
+function assertKnownField<TDocument>(
+  name: FieldName<TDocument>,
+  fields: ReadonlyMap<FieldName<TDocument>, ResolvedFieldConfig<TDocument>>,
+  role: string,
+): ResolvedFieldConfig<TDocument> {
+  const field = fields.get(name);
+  if (!field) throw new Error(`Unknown ${role} field: ${name}`);
+  return field;
+}
+
+function directSearchField<TDocument>(
+  name: SearchSelector<TDocument>,
+  fields: ReadonlyMap<FieldName<TDocument>, ResolvedFieldConfig<TDocument>>,
+): ResolvedFieldConfig<TDocument> | null {
+  const selector = String(name);
+  const dot = selector.indexOf(".");
+  if (dot < 0) return assertKnownField(name as FieldName<TDocument>, fields, "searchable");
+  if (dot === 0 || dot === selector.length - 1 || selector.indexOf(".", dot + 1) >= 0) {
+    throw new Error(`Searchable relationship selector must have one hop: ${selector}`);
+  }
+  const relationship = fields.get(selector.slice(0, dot) as FieldName<TDocument>);
+  if (relationship?.type !== "relationship") {
+    throw new Error(`Searchable selector root must be a relationship: ${selector}`);
+  }
+  return null;
+}
+
+export function resolveCollectionConfig<
+  TDocument,
+  TId extends FieldName<TDocument> = FieldName<TDocument>,
+  TTitle extends FieldName<TDocument> = FieldName<TDocument>,
+>(config: CollectionConfig<TDocument, TId, TTitle>): ResolvedCollectionConfig<TDocument, TId, TTitle> {
+  if (config.slug.trim() === "") throw new Error("Collection slug must not be empty");
+  if (config.fields.length === 0) throw new Error("A collection must define at least one field");
+
+  const resolvedFieldsByName = new Map<FieldName<TDocument>, ResolvedFieldConfig<TDocument>>();
+  for (const field of config.fields) {
+    if (resolvedFieldsByName.has(field.name)) throw new Error(`Duplicate field: ${field.name}`);
+    if (field.labelKey === undefined && field.label === undefined && field.derivedLabel === undefined) {
+      throw new Error(`Field needs a labelKey, label or derivedLabel: ${field.name}`);
+    }
+    const defaults = fieldTypeRules[field.type].capabilities;
+    const capabilities = {
+      sortable: field.capabilities?.sortable ?? defaults.sortable,
+      filterOperators: field.capabilities?.filterOperators ?? defaults.filterOperators,
+      supportsWildcards: field.capabilities?.supportsWildcards ?? defaults.supportsWildcards,
+    };
+    resolvedFieldsByName.set(field.name, { ...field, capabilities });
+  }
+
+  assertKnownField(config.idField, resolvedFieldsByName, "ID");
+  const titleField = assertKnownField(config.useAsTitle, resolvedFieldsByName, "title");
+  if (titleField.list === false) throw new Error("The title field must be visible in lists");
+
+  const defaultColumns = new Set<FieldName<TDocument>>();
+  for (const name of config.defaultColumns) {
+    const field = assertKnownField(name, resolvedFieldsByName, "default column");
+    if (field.list === false) throw new Error(`Default column is not listable: ${name}`);
+    if (defaultColumns.has(name)) throw new Error(`Duplicate default column: ${name}`);
+    defaultColumns.add(name);
+  }
+
+  for (const field of resolvedFieldsByName.values()) {
+    const { capabilities } = field;
+    for (const operator of capabilities.filterOperators) {
+      if (!isFilterOperatorCompatible(field.type, operator)) {
+        throw new Error(`Operator ${operator} is not compatible with ${field.type} field ${field.name}`);
+      }
+    }
+    if (capabilities.supportsWildcards && !fieldTypeRules[field.type].textual) {
+      throw new Error(`Wildcards are not compatible with ${field.type} field ${field.name}`);
+    }
+  }
+
+  const searchableFields = new Set<string>();
+  for (const name of config.listSearchableFields ?? []) {
+    if (searchableFields.has(name)) throw new Error(`Duplicate searchable field: ${name}`);
+    searchableFields.add(name);
+    const field = directSearchField(name, resolvedFieldsByName);
+    // API adapters add a field for a published relationship selector. A form-only resolution has
+    // no API metadata, so the adapter validates the target field when it creates its configuration.
+    if (!field) continue;
+    if (!fieldTypeRules[field.type].textual) {
+      throw new Error(`Searchable field must be text or select: ${name}`);
+    }
+    if (field.list === false) throw new Error(`Searchable field is not listable: ${name}`);
+    if (!field.capabilities.filterOperators.includes("contains")) {
+      throw new Error(`Searchable field does not support contains: ${name}`);
+    }
+  }
+  for (const field of resolvedFieldsByName.values()) {
+    const list = field.list;
+    if (!list) continue;
+    for (const dependency of list.dependencies ?? []) {
+      assertKnownField(dependency, resolvedFieldsByName, `renderer dependency for ${field.name}`);
+    }
+  }
+  for (const rule of config.defaultSort ?? []) {
+    const field = assertKnownField(rule.field, resolvedFieldsByName, "default sort");
+    if (!field.capabilities.sortable) throw new Error(`Default sort field is not sortable: ${rule.field}`);
+  }
+
+  const pagination = config.pagination;
+  if (pagination) {
+    if (pagination.defaultLimit <= 0 || pagination.limits.some((limit) => limit <= 0)) {
+      throw new Error("Pagination limits must be positive");
+    }
+    if (!pagination.limits.includes(pagination.defaultLimit)) {
+      throw new Error("Pagination limits must include the default limit");
+    }
+  }
+
+  return { ...config, fields: [...resolvedFieldsByName.values()] };
+}
