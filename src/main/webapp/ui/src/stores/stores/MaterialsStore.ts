@@ -72,7 +72,7 @@ export default class MaterialsStore {
   setup(): Promise<void> {
     if (this.setupPromise) return this.setupPromise;
     this.setupPromise = this.rootStore.authStore
-      .synchronizeWithSessionStorage()
+      .refreshAuthentication()
       .then(async () => {
         await Promise.all([this.rootStore.peopleStore.fetchCurrentUser(), this.rootStore.unitStore.fetchUnits()]);
       })

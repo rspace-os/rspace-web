@@ -165,7 +165,6 @@ function mockNetwork() {
     });
   };
   server.use(
-    http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: "test-token" })),
     http.get("/api/v1/stoichiometry", async ({ request }) => {
       await recordRequest(request);
       return HttpResponse.json(mockResponse);

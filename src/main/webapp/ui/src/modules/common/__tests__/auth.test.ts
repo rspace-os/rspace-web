@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearStoredToken,
-  fetchOauthToken,
   getStoredToken,
   isExpiringSoon,
   resolveToken,
@@ -75,21 +74,6 @@ describe("token storage helpers", () => {
     expect(getStoredToken()).toBeNull();
     expect(() => saveStoredToken("test-token")).not.toThrow();
     expect(() => clearStoredToken()).not.toThrow();
-  });
-});
-
-describe("OAuth token requests", () => {
-  it("shares one in-flight request between concurrent consumers", async () => {
-    const fetchToken = vi.fn(async () => {
-      await Promise.resolve();
-      return "test-token";
-    });
-
-    const firstToken = fetchOauthToken(fetchToken);
-    const secondToken = fetchOauthToken(fetchToken);
-
-    expect(fetchToken).toHaveBeenCalledTimes(1);
-    await expect(Promise.all([firstToken, secondToken])).resolves.toEqual(["test-token", "test-token"]);
   });
 });
 

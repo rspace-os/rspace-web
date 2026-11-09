@@ -6,7 +6,6 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import type React from "react";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
@@ -165,7 +164,7 @@ function stubCommonEndpoints({
 beforeEach(() => {
   mockAxios.reset();
   stubCommonEndpoints();
-  server.use(oauthTokenHandler(), raidIntegrationInfoHandler(), emptyShareListingHandler());
+  server.use(raidIntegrationInfoHandler(), emptyShareListingHandler());
 });
 
 afterEach(() => {

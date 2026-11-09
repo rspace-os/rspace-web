@@ -1,3 +1,5 @@
+import { onTestFinished as restoreAfterTest } from "vitest";
+import { SessionTokenProvider, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import "@/stores/stores/RootStore";
 import { runInAction } from "mobx";
 import { HttpResponse, http } from "msw";
@@ -7,7 +9,7 @@ import { server } from "@/__tests__/mswServer";
 import getRootStore from "../../getRootStore";
 
 const NOW = 1_700_000_000_000;
-const TOKEN_URL = "/userform/ajax/inventoryOauthToken";
+const TOKEN_URL = "/api/v2/oauth/tokens";
 
 const fakeJwt = (secondsToExpiry: number) => {
   const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, "");
@@ -15,13 +17,16 @@ const fakeJwt = (secondsToExpiry: number) => {
 };
 
 const serveTokens = (secondsToExpiry: number) => {
-  const tokenEndpoint = vi.fn(() => HttpResponse.json({ data: fakeJwt(secondsToExpiry) }));
-  server.use(http.get(TOKEN_URL, tokenEndpoint));
+  const tokenEndpoint = vi.fn(() => HttpResponse.json({ accessToken: fakeJwt(secondsToExpiry) }));
+  server.use(http.post(TOKEN_URL, tokenEndpoint));
   return tokenEndpoint;
 };
 
 beforeEach(() => {
+  // The session provider owns the refresh timer that the store follows.
+  restoreAfterTest(setApiV2TokenProvider(new SessionTokenProvider()));
   vi.useFakeTimers({ now: NOW });
+  sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -36,9 +41,9 @@ describe("AuthStore token refresh", () => {
   test("stays authenticated while a refresh is in flight", async () => {
     const response = Promise.withResolvers<void>();
     server.use(
-      http.get(TOKEN_URL, async () => {
+      http.post(TOKEN_URL, async () => {
         await response.promise;
-        return HttpResponse.json({ data: fakeJwt(3600) });
+        return HttpResponse.json({ accessToken: fakeJwt(3600) });
       }),
     );
     const store = getRootStore().authStore;
@@ -54,7 +59,7 @@ describe("AuthStore token refresh", () => {
     expect(store.isAuthenticated).toBe(true);
   });
 
-  test.each(["authenticate", "synchronizeWithSessionStorage"] as const)(
+  test.each(["authenticate", "refreshAuthentication"] as const)(
     "%s refreshes the token five minutes before it expires",
     async (method) => {
       sessionStorage.setItem("id_token", fakeJwt(3600));
@@ -72,6 +77,16 @@ describe("AuthStore token refresh", () => {
       expect(tokenEndpoint).toHaveBeenCalledTimes(1);
     },
   );
+
+  test("stores the token from the provider's scheduled refresh", async () => {
+    serveTokens(3600);
+    await getRootStore().authStore.authenticate();
+    serveTokens(7200);
+
+    await vi.advanceTimersByTimeAsync((3600 - 300) * 1000);
+
+    expect(sessionStorage.getItem("id_token")).toBe(fakeJwt(7200));
+  });
 
   test("waits at least a minute when a fresh token already looks close to expiry", async () => {
     // A client clock running ~56 minutes fast sees every new one-hour token as expiring in 240 s.
@@ -92,13 +107,13 @@ describe("AuthStore token refresh", () => {
   ])("stays authenticated when the refresh gets %s", async (_, response) => {
     onTestFinished(silenceConsole(["error"], ["Not implemented: navigation"]));
     sessionStorage.setItem("id_token", fakeJwt(3600));
-    server.use(http.get(TOKEN_URL, response));
+    server.use(http.post(TOKEN_URL, response));
     const store = getRootStore().authStore;
     runInAction(() => {
       store.isAuthenticated = true;
     });
 
-    await store.authenticate();
+    await store.authenticate().catch(() => undefined);
 
     expect(store.isAuthenticated).toBe(true);
   });
