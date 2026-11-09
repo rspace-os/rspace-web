@@ -12,14 +12,17 @@ type DrawerTabProps = {
   label: React.ReactNode;
   index: number;
   selected: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
   tabIndex: number;
   badge?: React.ReactNode;
 };
 const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
-  ({ icon, label, index, selected, onClick, tabIndex, badge, drawerOpen }, ref) => (
+  ({ icon, label, index, selected, onClick, href, tabIndex, badge, drawerOpen }, ref) => (
     <ListItem disablePadding sx={{ position: "static" }}>
       <ListItemButton
+        component={href ? "a" : "div"}
+        href={href}
         selected={selected}
         onClick={onClick}
         tabIndex={tabIndex}
