@@ -4,6 +4,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator.AUTHENTICAT
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.PARAMETERS;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.idParameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.ifMatchParameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameter;
@@ -22,7 +23,7 @@ import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccessRequest;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -74,14 +75,16 @@ final class ApiV2OpenApiResourceAccessDocs {
   static void addResourceAccessSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.responseSchemaFor(ResourceAccessDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
+    ApiV2OpenApiSchemas.responseSchemaFor(ResourceGranteeDirectoryDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ReplaceResourceAccessRequest.class, schemas);
   }
 
   private final ApiV2OpenApiText text;
+  private final ApiV2OpenApiComponents components;
 
-  ApiV2OpenApiResourceAccessDocs(ApiV2OpenApiText text) {
+  ApiV2OpenApiResourceAccessDocs(ApiV2OpenApiText text, ApiV2OpenApiComponents components) {
     this.text = text;
+    this.components = components;
   }
 
   void addResourceAccessPaths(
@@ -132,7 +135,9 @@ final class ApiV2OpenApiResourceAccessDocs {
     List<Map<String, Object>> parameters = new ArrayList<>();
     parameters.add(idParameter(resource.description().schema(), text));
     if (operationKind == ResourceAccessOperation.REPLACE) {
-      parameters.add(ifMatchParameter(text.get(Key.ACCESS_IF_MATCH)));
+      parameters.add(
+          components.reference(
+              PARAMETERS, "IfMatch", ifMatchParameter(text.get(Key.PARAMETER_IF_MATCH))));
       operation.put(
           "requestBody",
           ordered(
@@ -144,7 +149,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     if (operationKind == ResourceAccessOperation.SEARCH) {
       parameters.add(
           parameter(
-              "query",
+              "q",
               "query",
               true,
               ordered("type", "string", "minLength", 2),
@@ -170,7 +175,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     } else {
       Map<String, Object> schema =
           operationKind == ResourceAccessOperation.SEARCH
-              ? ordered("type", "array", "items", ref("ResourceGranteeDirectoryEntry"))
+              ? ref("ResourceGranteeDirectoryDocument")
               : ref("ResourceAccessDocument");
       Map<String, Object> success =
           ordered(
