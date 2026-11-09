@@ -65,6 +65,23 @@ test.describe("Document editor menus and history", () => {
     }
   });
 
+  test("As a user, File Save keeps the document editor fullscreen", async ({ pageWorkspace, clientDocuments }) => {
+    const document = await clientDocuments.create({ name: uniqueName("e2e-fullscreen-save") });
+    try {
+      const view = await pageWorkspace.openDocument(document.id);
+      const field = await view.editField("", 0);
+      await field.fill("Fullscreen save regression");
+      await field.openMenu("View");
+      await field.menuItem("Fullscreen editing").click();
+      const fullscreen = field.container.getByRole("button", { name: "Fullscreen editing", exact: true });
+      await expect(fullscreen).toHaveAttribute("aria-pressed", "true");
+      await field.saveFromFileMenu();
+      await expect(fullscreen).toHaveAttribute("aria-pressed", "true");
+    } finally {
+      await clientDocuments.deleteById(document.id);
+    }
+  });
+
   test("As a user, the molarity calculator opens the intended external tool", async ({ pageWorkspace, context }) => {
     await context.route("https://www.sigmaaldrich.com/**", (route) =>
       route.fulfill({ status: 200, body: "Calculator boundary" }),
