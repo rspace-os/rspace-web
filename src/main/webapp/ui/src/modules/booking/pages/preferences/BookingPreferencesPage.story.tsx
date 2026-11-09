@@ -11,14 +11,18 @@ import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
+import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
 import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
 import { getGetApiV2OpenApiDocumentQueryKey } from "@/modules/common/api/v2/generated/openapi-json/openapi-json";
 import { getGetCurrentUserQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import AllBookableItemsPage from "../all-bookable-items/AllBookableItemsPage";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
 
-/** Fetches preferences so reload persistence is observable. */
+const storyClock = () => new Date("2026-08-28T16:00:00Z");
+
+/** A multi-route story that deliberately fetches preferences so reload persistence is observable. */
 export function BookingPreferencesPageStory() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -37,6 +41,12 @@ export function BookingPreferencesPageStory() {
           path: "/calendar/",
           validateSearch: bookingFormSearch,
           component: CalendarPage,
+        }),
+        createRoute({
+          getParentRoute: () => booking,
+          path: "/all-items/",
+          validateSearch: allBookableItemsSearch,
+          component: () => <AllBookableItemsPage clock={storyClock} />,
         }),
       ]),
     ]),
