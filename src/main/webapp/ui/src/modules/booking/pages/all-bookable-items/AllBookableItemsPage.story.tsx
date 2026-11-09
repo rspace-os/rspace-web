@@ -47,7 +47,7 @@ export function AllBookableItemsStory({
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
           validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage clock={storyClock} userTimeZone="UTC" />,
+          component: () => <AllBookableItemsPage clock={storyClock} />,
         }),
         createRoute({
           getParentRoute: () => bookingRoute,

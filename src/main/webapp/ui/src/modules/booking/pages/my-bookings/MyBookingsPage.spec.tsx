@@ -1,3 +1,4 @@
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -32,6 +33,7 @@ let history: RouterHistory;
 let browserUrl: string;
 
 beforeEach(() => {
+  worker.use(oauthTokenHandler(true));
   history = createMemoryHistory({ initialEntries: [myBookingsStoryUrl] });
   browserUrl = window.location.href;
   registerHandlers();

@@ -2,6 +2,14 @@ import { type Locator, page, userEvent } from "vitest/browser";
 import { bookableItemHeading } from "../../bookable-items/pageObjects/bookableItemLocators";
 
 export class CalendarPage {
+  get inlineSave(): Locator {
+    return page.getByRole("dialog").getByRole("button", { name: "Save changes", exact: true });
+  }
+
+  async closeWithEscape(): Promise<void> {
+    await userEvent.keyboard("{Escape}");
+  }
+
   readonly bookableItemDetailsHeading: Locator = bookableItemHeading("Electron microscope");
   readonly heading: Locator = page.getByRole("heading", { name: "Calendar" });
   readonly toolbar: Locator = page.getByRole("toolbar", { name: "Calendar", exact: true });
