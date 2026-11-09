@@ -174,14 +174,14 @@ public final class BookingSettingsController {
               nullable = true)
           Boolean allowDoubleBooking,
       @Pattern(
-              regexp = "(?:[01]\\d|2[0-3]):[0-5]\\d",
+              regexp = BookingDisplaySettings.AVAILABILITY_WINDOW_START_PATTERN,
               message = "{errors.api.v2.bookingDisplayPreferences.availabilityWindow.invalid}")
           @Schema(
               types = {"string", "null"},
               nullable = true)
           String availabilityWindowStart,
       @Pattern(
-              regexp = "(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)",
+              regexp = BookingDisplaySettings.AVAILABILITY_WINDOW_END_PATTERN,
               message = "{errors.api.v2.bookingDisplayPreferences.availabilityWindow.invalid}")
           @Schema(
               types = {"string", "null"},
