@@ -1,5 +1,7 @@
 import { jwtDecode } from "jwt-decode";
-import { clearStoredToken, getStoredToken, saveStoredToken } from "./auth";
+import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { createUiOAuthToken } from "@/modules/common/api/v2/generated/oauth/oauth";
+import { clearStoredToken, getStoredToken, replaceUiToken, saveStoredToken } from "./auth";
 
 const recoveries = new Map<string, Promise<string | undefined>>();
 
@@ -49,25 +51,18 @@ async function recoverSession(authorization: string, identityRejected: boolean):
     return;
   }
 
-  const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken", {
-    headers: { "X-Requested-With": "XMLHttpRequest" },
-  });
-  if (tokenResponse.status === 401 || tokenResponse.status === 403) {
-    clearStoredToken();
-    globalThis.location.assign("/login");
-    return;
-  }
-  if (!tokenResponse.ok) return;
-  // A successful HTML response is the login page reached by a redirect; error pages are not.
-  if (tokenResponse.headers.get("Content-Type")?.includes("text/html")) {
-    clearStoredToken();
-    globalThis.location.assign("/login");
-    return;
-  }
-  const { data: token } = (await tokenResponse.json()) as { data?: unknown };
-  if (typeof token !== "string" || !token) {
-    clearStoredToken();
-    globalThis.location.assign("/login");
+  let token: string;
+  try {
+    token = (await createUiOAuthToken()).accessToken;
+  } catch (error) {
+    if (
+      (error instanceof ApiV2ProblemError && (error.status === 401 || error.status === 403)) ||
+      (error instanceof TypeError && error.message.startsWith("Unregistered API v2 response")) ||
+      (error instanceof Error && error.name === "ValiError")
+    ) {
+      clearStoredToken();
+      globalThis.location.assign("/login");
+    }
     return;
   }
 
@@ -78,6 +73,7 @@ async function recoverSession(authorization: string, identityRejected: boolean):
   if (!response.ok) return;
   clearStoredToken();
   saveStoredToken(token);
+  replaceUiToken(token);
   // The server keeps one refresh token per user, so a matching hash means the old token
   // merely expired and requests can safely keep using the page's identity.
   const previousHash = refreshTokenHash(authorization.slice("Bearer ".length));

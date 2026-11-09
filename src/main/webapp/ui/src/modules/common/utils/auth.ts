@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 
 export type TokenParams = {
   token?: string;
@@ -7,6 +8,9 @@ export type TokenParams = {
 
 export const ID_TOKEN_KEY = "id_token";
 export const TOKEN_EXPIRY_BUFFER_SECONDS = 300;
+
+/* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
+export const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
 
 const JWT_TOKEN_PATTERN = /^.+\..+\..+$/;
 let pendingOauthTokenRequest: Promise<string> | null = null;
@@ -51,6 +55,22 @@ export function fetchOauthToken(fetchToken: () => Promise<string>): Promise<stri
     pendingOauthTokenRequest = null;
   });
   return pendingOauthTokenRequest;
+}
+
+/** Replaces the page token after a deliberate recovery mint. */
+export function replaceUiToken(token: string): void {
+  saveStoredToken(token);
+}
+
+/** Gets the page's session-bound token from the shared provider. */
+/** Mints or reuses the page's UI token; aborting the signal rejects this caller only, never the shared mint. */
+export function mintUiToken(signal?: AbortSignal): Promise<string> {
+  return getApiV2TokenProvider().getToken(signal);
+}
+
+/** Clears page-local state between tests. */
+export function resetUiTokenForTests(): void {
+  pendingOauthTokenRequest = null;
 }
 
 export function secondsToExpiry(token: string): number {

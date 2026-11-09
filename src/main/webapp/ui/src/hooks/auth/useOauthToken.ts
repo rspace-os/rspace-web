@@ -1,6 +1,12 @@
 import React from "react";
 import axios from "@/common/axios";
-import { fetchOauthToken, getStoredToken, saveStoredToken, tokenRefreshDelayMs } from "@/modules/common/utils/auth";
+import {
+  fetchOauthToken,
+  isPublicDocumentView,
+  mintUiToken,
+  saveStoredToken,
+  tokenRefreshDelayMs,
+} from "@/modules/common/utils/auth";
 
 /**
  * This custom hook allows us to get a token for making calls to the API
@@ -9,10 +15,10 @@ import { fetchOauthToken, getStoredToken, saveStoredToken, tokenRefreshDelayMs }
  * increasingly used for more and more of the product as we aim to expose more
  * of the functionality to third-parties via an open API.
  *
- * This code makes a request to the aforementioned endpoint using the user's
- * already established authenticated session based on cookies and in return
- * gets a token that can thereafter be used to make requests to the API
- * endpoints that expect an API key. To do so, do something akin to the
+ * Authenticated pages mint a REST API v2 UI token from the user's existing
+ * browser session. Public document pages retain the legacy token endpoint.
+ * The returned token can then be used to make requests to API endpoints that
+ * expect a bearer token. To do so, do something akin to the
  * following:
  *
  *   const api = axios.create({
@@ -23,19 +29,15 @@ import { fetchOauthToken, getStoredToken, saveStoredToken, tokenRefreshDelayMs }
  *   });
  *   await api.get(ENDPOINT);
  *
- * Don't worry about making execessive calls to `getToken` as the value is both
- * cached by this custom hook and by the session storage so that even on page
- * refresh calls will not be made to the endpoint. If several calls are made
- * whilst an initial network request is in flight then multiple API calls will
- * be made but this isn't generally an issue.
+ * Don't worry about making excessive calls to `getToken`: the value is cached
+ * by this hook, and overlapping initial requests are coalesced.
  *
  * This hook also automatically refreshes the token shortly before it expires, so be sure
  * to not cache the value returned by `getToken` in the components or hooks
  * that use this hook as otherwise they will fail to work when the token
- * elapses.  If the page is loaded and there is a valid token in the session
- * storage then it is used and a timer is set up to refresh the token before it
- * expires just as if the token and been fetched directly. The timer is
- * cancelled when the component using this hook unmounts.
+ * elapses. Authenticated pages mint a fresh token on each page load so run-as
+ * changes cannot reuse an earlier browser-session context. The refresh timer
+ * is cancelled when the component using this hook unmounts.
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
   /*
@@ -70,18 +72,17 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
   }, []);
 
   /*
-   * As part of fetching a new token, we save it into session storage so that
-   * after the page is reloaded we can just get it from there. This is mostly
-   * for performance: the reasoning being that the content of the page cannot
-   * be loaded until we have a token so rather than having all of the content
-   * wait on a single blocking network call we can just persist the value
-   * across page loads and only incur that penalty on the first page load.
+   * Each page context mints a token after load so a public page cannot reuse an
+   * authenticated page's session-bound token from shared session storage.
    */
   async function fetchToken(): Promise<string> {
-    const response = await axios.get<{ data: string }>("/userform/ajax/inventoryOauthToken");
-    const newToken = response.data.data;
-    saveStoredToken(newToken);
-    return newToken;
+    if (isPublicDocumentView()) {
+      const response = await axios.get<{ data: string }>("/public/publicView/userform/ajax/inventoryOauthToken");
+      const newToken = response.data.data;
+      saveStoredToken(newToken);
+      return newToken;
+    }
+    return mintUiToken();
   }
 
   /*
@@ -90,7 +91,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * token so that subsequent calls to `getToken` will use the new one.
    */
   async function refreshToken(): Promise<void> {
-    const newToken = await fetchOauthToken(fetchToken);
+    const newToken = await (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken());
     if (unmountedRef.current) return;
     tokenRef.current = newToken;
     scheduleRefresh(newToken);
@@ -98,8 +99,8 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
 
   /*
    * If a refresh fails, usually because the session has ended, the token is
-   * forgotten so that the next call to `getToken` starts again from session
-   * storage or the endpoint and sets up a new timer.
+   * forgotten so that the next call to `getToken` mints a fresh token
+   * from the endpoint and sets up a new timer.
    */
   function scheduleRefresh(token: string): void {
     clearTimeout(refreshTimerRef.current);
@@ -113,35 +114,21 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
   const getToken = React.useCallback(async () => {
     /*
      * If this hook has been called previously and we've either already
-     * fetched a token or pulled it from the session storage, then we can
+     * fetched a token for this page context, then we can
      * just return it; thereby ensuring that we don't setup a new
      * `setTimeout` with each call to `getToken`.
      */
-    if (tokenRef.current) return tokenRef.current;
+    if (tokenRef.current) return isPublicDocumentView() ? tokenRef.current : mintUiToken();
 
     /*
-     * If this hook has not been previously called then we preferably get the
-     * token from session storage or else get it from the API endpoint.
+     * Mint a token for the current page context instead of reusing the shared
+     * session-storage token, which may belong to another browser-session context.
      */
-    let savedToken = getStoredToken();
-    if (!savedToken) {
-      savedToken = await fetchOauthToken(fetchToken);
-      // The component may have unmounted while the token was being fetched.
-      if (unmountedRef.current) return savedToken;
-    }
-    tokenRef.current = savedToken;
-
-    /*
-     * Whether the token is fetched from the API or got from the session
-     * storage, we set up a timer to trigger the continuous refreshing of the
-     * token. As the user navigates around and refreshes the page throughout
-     * the window in which the token is valid, we want to keep setting up the
-     * refresh logic so that before the token expires we get a new one, put it
-     * in session storage, and the current page and all subsequent ones in
-     * the next temporal window will continue to work.
-     */
-    scheduleRefresh(savedToken);
-    return savedToken;
+    const initialToken = await (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken());
+    if (unmountedRef.current) return initialToken;
+    tokenRef.current = initialToken;
+    scheduleRefresh(initialToken);
+    return initialToken;
   }, []);
 
   return {

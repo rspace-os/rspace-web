@@ -9,7 +9,7 @@ it("can retry setup after authentication fails", async () => {
   const fetchCurrentUser = vi.fn().mockResolvedValue(undefined);
   const fetchUnits = vi.fn().mockResolvedValue(undefined);
   const store = new MaterialsStore({
-    authStore: { synchronizeWithSessionStorage: authenticate },
+    authStore: { refreshAuthentication: authenticate },
     peopleStore: { fetchCurrentUser },
     unitStore: { fetchUnits },
   } as unknown as RootStore);

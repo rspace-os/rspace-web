@@ -7,8 +7,14 @@ import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect } from "vitest";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
+
+// Generated REST API v2 calls get a stable token; token provider tests install their own.
+setApiV2TokenProvider({ getToken: async () => OAUTH_TOKEN, recover: async () => OAUTH_TOKEN });
 
 await i18n.loadNamespaces([
   "about",
@@ -83,6 +89,8 @@ afterEach(() => {
   cleanup();
   globalThis.localStorage?.clear?.();
   globalThis.sessionStorage?.clear?.();
+  // The page-wide UI token is module state; each test starts without one, like a fresh page.
+  resetUiTokenForTests();
   server.resetHandlers();
 });
 

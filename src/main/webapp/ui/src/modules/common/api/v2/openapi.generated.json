@@ -878,14 +878,6 @@
         "required" : [ "accessToken" ],
         "type" : "object"
       },
-      "ContainersCreate" : {
-        "additionalProperties" : false,
-        "properties" : { },
-        "type" : "object",
-        "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/Never"
-        }
-      },
       "ContainersRead" : {
         "additionalProperties" : false,
         "properties" : {
@@ -947,22 +939,6 @@
         },
         "required" : [ "relationTo", "value" ],
         "type" : "object"
-      },
-      "ContainersUpdate" : {
-        "additionalProperties" : false,
-        "properties" : { },
-        "type" : "object",
-        "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/Never"
-        }
-      },
-      "InstrumentsCreate" : {
-        "additionalProperties" : false,
-        "properties" : { },
-        "type" : "object",
-        "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/Never"
-        }
       },
       "InstrumentsRead" : {
         "additionalProperties" : false,
@@ -1070,14 +1046,6 @@
         "required" : [ "relationTo", "value" ],
         "type" : "object"
       },
-      "InstrumentsUpdate" : {
-        "additionalProperties" : false,
-        "properties" : { },
-        "type" : "object",
-        "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/Never"
-        }
-      },
       "ResourceAccessAssignmentDocument" : {
         "properties" : {
           "grantee" : {
@@ -1174,8 +1142,7 @@
             "type" : "string"
           },
           "kind" : {
-            "enum" : [ "USER", "GROUP", "AUDIENCE" ],
-            "type" : "string"
+            "$ref" : "#/components/schemas/ResourceGranteeKind"
           },
           "name" : {
             "type" : "string"
@@ -1215,14 +1182,17 @@
             "type" : "string"
           },
           "kind" : {
-            "enum" : [ "USER", "GROUP", "AUDIENCE" ],
-            "type" : "string"
+            "$ref" : "#/components/schemas/ResourceGranteeKind"
           },
           "name" : {
             "type" : "string"
           }
         },
         "type" : "object"
+      },
+      "ResourceGranteeKind" : {
+        "enum" : [ "USER", "GROUP", "AUDIENCE" ],
+        "type" : "string"
       },
       "ResourceRoleSource" : {
         "properties" : {
@@ -1231,8 +1201,7 @@
             "type" : [ "object", "null" ]
           },
           "kind" : {
-            "enum" : [ "DIRECT", "GROUP", "AUDIENCE", "IMPLICIT" ],
-            "type" : "string"
+            "$ref" : "#/components/schemas/ResourceRoleSourceKind"
           },
           "role" : {
             "type" : "string"
@@ -1240,13 +1209,9 @@
         },
         "type" : "object"
       },
-      "UsersCreate" : {
-        "additionalProperties" : false,
-        "properties" : { },
-        "type" : "object",
-        "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/Never"
-        }
+      "ResourceRoleSourceKind" : {
+        "enum" : [ "DIRECT", "GROUP", "AUDIENCE", "IMPLICIT" ],
+        "type" : "string"
       },
       "UsersRead" : {
         "additionalProperties" : false,
@@ -1325,14 +1290,6 @@
         },
         "required" : [ "relationTo", "value" ],
         "type" : "object"
-      },
-      "UsersUpdate" : {
-        "additionalProperties" : false,
-        "properties" : { },
-        "type" : "object",
-        "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/Never"
-        }
       }
     },
     "securitySchemes" : {
@@ -1362,11 +1319,6 @@
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
         "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
-      },
-      "Never" : {
-        "authentication" : "AUTHENTICATED",
-        "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-        "description" : "This action is not permitted."
       },
       "SysadminOrSelf" : {
         "authentication" : "AUTHENTICATED",
