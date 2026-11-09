@@ -22,7 +22,7 @@ import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccessRequest;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -74,7 +74,7 @@ final class ApiV2OpenApiResourceAccessDocs {
   static void addResourceAccessSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.responseSchemaFor(ResourceAccessDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
+    ApiV2OpenApiSchemas.responseSchemaFor(ResourceGranteeDirectoryDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ReplaceResourceAccessRequest.class, schemas);
   }
 
@@ -144,7 +144,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     if (operationKind == ResourceAccessOperation.SEARCH) {
       parameters.add(
           parameter(
-              "query",
+              "q",
               "query",
               true,
               ordered("type", "string", "minLength", 2),
@@ -170,7 +170,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     } else {
       Map<String, Object> schema =
           operationKind == ResourceAccessOperation.SEARCH
-              ? ordered("type", "array", "items", ref("ResourceGranteeDirectoryEntry"))
+              ? ref("ResourceGranteeDirectoryDocument")
               : ref("ResourceAccessDocument");
       Map<String, Object> success =
           ordered(

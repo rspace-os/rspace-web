@@ -123,7 +123,8 @@
           "tooManyRequests": "The request was throttled.",
           "unauthenticated": "Authentication is required.",
           "unexpectedError": "An unexpected server error occurred.",
-          "unsupportedMediaType": "The request media type is unsupported."
+          "unsupportedMediaType": "The request media type is unsupported.",
+          "versionChanged": "The resource version changed."
         },
         "runtimeFields": {
           "ids": "Comma-separated field identifiers.",
