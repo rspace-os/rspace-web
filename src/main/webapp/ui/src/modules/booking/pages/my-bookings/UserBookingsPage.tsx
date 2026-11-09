@@ -10,7 +10,6 @@ import {
 } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
-import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
@@ -23,6 +22,7 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
+import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
@@ -75,21 +75,18 @@ export type UserBookingsPageProps = {
   title: string;
 };
 
-function upcomingBookingWhere(requesterId: number, asOf: Date): ApiV2WhereObject<"Bookings"> {
-  return {
-    "requester.value": requesterId,
-    kind: "BOOKING",
-    state: "CONFIRMED",
-    end: { greaterThan: asOf.toISOString() },
-  };
-}
-
 export async function fetchUpcomingBookingCount(
   requesterId: number,
   asOf: Date,
   signal?: AbortSignal,
 ): Promise<ApiV2CountResult & { totalDocs: number }> {
-  const result = await countBookings({ where: upcomingBookingWhere(requesterId, asOf), max: 100 }, { signal });
+  const result = await countBookings(
+    {
+      where: upcomingBookingWhere(requesterId, asOf.toISOString()),
+      max: 100,
+    },
+    { signal },
+  );
   if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
   return { ...result, totalDocs: result.totalDocs };
 }
@@ -159,7 +156,10 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   // Plain useQuery: the optional upcoming count must not hide the bookings table.
   const upcomingCount = useQuery(
     getCountBookingsQueryOptions(
-      { where: upcomingBookingWhere(requesterId, asOfDate), max: 100 },
+      {
+        where: upcomingBookingWhere(requesterId, asOfDate.toISOString()),
+        max: 100,
+      },
       {
         query: {
           select: (result) => {
