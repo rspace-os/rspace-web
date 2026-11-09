@@ -83,9 +83,10 @@ same way.
 
 ### Per-actor fields
 
-A collection can publish caller-specific runtime fields. Each field kind has a namespace, provider,
-identity scheme, and catalog route: `/api/v2/{resource}/fields/{namespace}`. Use `q` for free-text
-catalog search. Clients must use the published catalog routes instead of constructing them.
+A collection can publish caller-specific fields that cannot appear in OpenAPI. Each field kind has a
+namespace, provider, identity scheme, and catalog route: `/api/v2/{resource}/fields/{namespace}`.
+Use `q` for free-text catalog search. The document publishes these namespaces and routes in
+`x-rspace-runtime-fields`. Clients must use the published routes instead of constructing them.
 
 Instruments publish two:
 
@@ -116,6 +117,38 @@ Hibernate Search. `=contains=` matches a substring anywhere. `=like=` splits on 
 requires every word as a substring, in any order, including partial words. For example, `=like=lab
 BSL-2` matches `Level BSL-2 lab`. See `InstrumentCustomFieldTextSearchIT` for examples.
 
+### Fields reached through a relationship
+
+Declaring a relationship publishes every field of every destination it can reach, under
+`x-rspace-relationship-fields` on the `where` parameter and keyed by `<relationship>.<field>`:
+
+```json
+"x-rspace-relationship-fields": {
+  "target.name":     {"schema": {"type": "string"}, "operators": ["==", "=contains=", "=like="],
+                      "wildcards": true, "title": "Name"},
+  "target.globalId": {"schema": {"type": "string"}, "operators": [], "wildcards": false,
+                      "title": "Global ID"}
+}
+```
+
+A relationship declaration makes its target fields available as optional table columns. Fields with
+operators are also available as filters.
+
+Keep wildcard equality and `=like=` as separate operations. Wildcard equality anchors the complete
+value. `=like=` finds words anywhere in the value. Client labels must show this difference.
+
+`operators` is empty for a field with no backing column, such as a global ID derived from an ID. The
+API publishes the field so clients can display it, but `where` rejects it as unsupported.
+`x-rspace-relationship-fields` lists fields available through a relationship. `x-rspace-filter`
+lists fields that a filter expression can use.
+
+A polymorphic relationship publishes only fields shared by every destination with the same schema
+and the intersection of their operators. This avoids columns empty for half the rows and filters
+whose meaning depends on the destination.
+
+The API publishes only scalar fields from one relationship hop. It does not publish a target's own
+relationships because the query language compiles one hop and depth 1 expands one target level.
+
 ### Scalar read documents
 
 Collections may declare a `ScalarReader` on the spec (`.scalarReader(reader)`); its `read` and
@@ -134,6 +167,11 @@ policy even at depth zero, and renders unreadable targets as `null`. Selected ex
 target field access and global IDs. Container relationship reads also project scalar rows, avoiding
 hydration of the Inventory aggregate. Entity reads remain available to internal domain callers and
 write-side relationship resolution.
+
+OpenAPI read schemas declare optional object maps for projected runtime namespaces, including
+eligible relationship prefixes. The document root stays closed. The maps accept caller-specific
+field IDs without publishing them in the cached schema. Runtime projection properties are excluded
+from create and update schemas.
 
 ## Access control
 
@@ -207,6 +245,10 @@ the capability and Owner-health read fields they support. Use the trusted
 `ResourceRoleMembershipConstraint` for collection selection; resolve capability fields for the page
 in batches. A missing or unreadable protected resource returns the same `404`.
 
+Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
+matching collection operation's documentation. Every other access function must include
+`AccessDocumentation` with its authentication rule and denial codes.
+
 A custom `createAccess` function runs after structural parsing and before relationship resolution
 and persistence. For one create document, `context.requireInput()` returns the complete immutable
 `ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input order.
@@ -253,7 +295,8 @@ Starting and ending legacy Shiro run-as rotates the opaque browser authenticatio
 from before either transition therefore fail immediately, even if their JWT expiry has not passed.
 The UI mints a fresh v2 token after each page load. It does not trust a token retained in session
 storage across a run-as redirect. Authenticated responses default to `Cache-Control: no-store,
-private, no-transform`. Public configuration responses keep their explicit cache policies.
+private, no-transform`. Public configuration and OpenAPI responses keep their explicit cache
+policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 validates
 session-bound REST API v2 UI tokens against the matching live browser session. AuthStore keeps the
@@ -424,3 +467,54 @@ callers. Relationship fallback lookups split larger ID sets into pages of at mos
 the readable results before applying read overrides. `PageOffsets` shares overflow-safe arithmetic
 for one-based pages. Collection requests, runtime-field catalogs and response metadata retain
 separate validation, limits, and pagination contracts.
+
+## OpenAPI
+
+The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
+and its schemas. Relationships refer to registered resources and their schemas.
+
+The document service merges Swagger annotations from concrete controllers. It validates the complete
+document before returning it.
+
+Production creates the document after a context refresh, caches it privately for one hour, and
+supplies an `ETag`. A matching `If-None-Match` request returns 304.
+
+Development creates and validates the document for each request. Responses use `Cache-Control:
+no-store`.
+
+Use `OpenApiOperationDocumentation` for resource-specific descriptions and examples:
+
+```java
+Map.of(
+    ResourceOperation.CREATE,
+    OpenApiOperationDocumentation.builder()
+        .description("Creates one widget in the selected workspace.")
+        .requestExample(Map.of("name", "Centrifuge rotor", "enabled", true))
+        .build())
+```
+
+Declare each non-standard error in the resource spec. Each mapping:
+
+| # | Requirement |
+| --- | --- |
+| 1. | Converts the domain exception to the specified HTTP response for that operation. |
+| 2. | Resolves a stable title and optional occurrence detail from catalog keys. |
+| 3. | Adds the error response to OpenAPI. |
+
+`ApiV2ErrorMapping.forException(type).status(status).documentedError(code, description)` starts a
+typed builder. The optional `arguments` extractor customizes the mapping before `build()`.
+Keep runtime translation and the documented response on the same mapping.
+
+When exception classes overlap, the most specific matching class applies. An unmapped exception
+continues through the normal controller-advice chain. Startup fails if a mapping refers to an
+operation that the resource does not expose.
+
+For a concrete controller, use the standard Swagger annotations. These include `@Operation`,
+`@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`. Every `/api/v2/**` handler must declare
+`@Operation` or be explicitly `@Hidden` on its method or controller. The merger rejects undocumented
+handlers. The generic CRUD controller is hidden because the resource catalog generates its concrete
+paths. `ApiV2OperationCoverageTest` checks the production handler map without loading service or
+database dependencies.
+
+The public OpenAPI endpoint uses the same problem format for invalid supplied credentials and
+exceeded request limits.

@@ -62,7 +62,8 @@ final class AnnotatedCollectionDescriptionFactory {
         definition.id(),
         defaultSort,
         accessPolicy,
-        internalFilters);
+        internalFilters,
+        definition.singular());
   }
 
   private static <T> ResourceMember<T> memberFrom(
