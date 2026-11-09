@@ -134,7 +134,8 @@ public final class ApiV2OpenApiText {
     ACCESS_GRANTEES("resourceAccess.grantees"),
     ACCESS_DOCUMENT("resourceAccess.document"),
     ACCESS_OWNER_REQUIRED("resourceAccess.ownerRequired"),
-    ACCESS_STALE("resourceAccess.stale");
+    ACCESS_STALE("resourceAccess.stale"),
+    RESPONSE_VERSION_CHANGED("responses.versionChanged");
 
     static final String PREFIX = "api.v2.openapi.";
 
