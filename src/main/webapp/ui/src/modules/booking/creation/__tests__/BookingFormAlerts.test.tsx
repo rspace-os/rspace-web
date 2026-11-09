@@ -1,4 +1,15 @@
-import { render, screen } from "@testing-library/react";
+import { beforeAll as beforeBookingCatalog } from "vitest";
+import appI18n from "@/modules/common/i18n";
+
+beforeBookingCatalog(async () => {
+  appI18n.addResourceBundle(
+    "en-US",
+    "booking",
+    (await import("@/modules/common/i18n/locales/en-US/booking.json")).default,
+  );
+});
+
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { BookingFormAlerts } from "../BookingFormAlerts";
 
@@ -24,9 +35,37 @@ describe("BookingFormAlerts", () => {
     expect(alert).toHaveClass("bg-red-100");
   });
 
+  it("lists buffer-only conflicts as within the buffer rather than as overlaps", () => {
+    render(
+      <BookingFormAlerts
+        conflicts={[
+          { ...conflict, id: 43, purpose: null, bufferOnly: true },
+          { ...conflict, bufferOnly: false },
+        ]}
+        displayTimezone="UTC"
+      />,
+    );
+
+    const alert = screen.getByRole("alert");
+    const [overlaps, buffered] = within(alert).getAllByRole("list");
+    expect(alert).toMatchTextContent(
+      /booking:bookings\.errors\.overlapSummary.*booking:bookings\.errors\.bufferSummary/,
+    );
+    expect(overlaps).toMatchTextContent("Cell imaging");
+    expect(buffered).toMatchTextContent("booking:bookings.errors.overlapBooking");
+    expect(buffered).not.toMatchTextContent("Cell imaging");
+  });
+
+  it("omits the overlap heading when every conflict is buffer-only", () => {
+    render(<BookingFormAlerts conflicts={[{ ...conflict, bufferOnly: true }]} displayTimezone="UTC" />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
+    expect(alert).not.toMatchTextContent("booking:bookings.errors.overlapSummary");
+  });
+
   it("keeps allowed conflicts visible as warnings", () => {
     render(<BookingFormAlerts conflicts={[conflict]} displayTimezone="UTC" conflictSeverity="warning" />);
-
     const alert = screen.getByRole("status");
     expect(alert).toMatchTextContent("Cell imaging");
     expect(alert).toHaveClass("bg-amber-100");

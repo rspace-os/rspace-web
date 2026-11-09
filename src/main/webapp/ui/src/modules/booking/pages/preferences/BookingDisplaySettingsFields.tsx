@@ -6,6 +6,7 @@ import {
   isValidTimeZone,
   minuteOfDay,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import type { BookingTimezoneMode } from "@/modules/common/api/v2/generated/models/bookingTimezoneMode";
 import { BookingDisplayPreferencesReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
@@ -121,7 +122,7 @@ export function BookingDisplaySettingsFields({
               }
             />
             <p id={endTimeDescriptionId} className="text-sm text-muted-foreground">
-              {t("preferences.availabilityWindow.endOfDay", { midnight: "00:00" })}
+              {t("preferences.availabilityWindow.endOfDay", { midnight: formatWallClockTime("00:00") })}
             </p>
           </div>
         </div>

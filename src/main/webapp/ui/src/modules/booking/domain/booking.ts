@@ -2,7 +2,6 @@ import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
 import {
   ApiV2Error,
-  ApiV2ProblemError,
   ApiV2SessionEndedError,
   ApiV2UnexpectedResponseError,
 } from "@/modules/common/api/v2/ApiV2ProblemError";
@@ -303,15 +302,14 @@ export function bookingQueryOptions(id: number | undefined) {
     retry: retryBookingRead,
   });
 }
-export async function createBooking(input: BookingsCreate): Promise<BookingMutation> {
-  return selectedMutation(await generatedCreateBooking(input));
+export async function createBooking(input: BookingsCreate, idempotencyKey?: string): Promise<BookingMutation> {
+  return selectedMutation(
+    await generatedCreateBooking(input, idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined),
+  );
 }
 export async function updateBooking(id: number, version: number, input: BookingsUpdate): Promise<BookingMutation> {
   return selectedMutation(await generatedUpdateBooking(id, input, { "If-Match": `"${version}"` }));
 }
 export function cancelBooking(id: number, version: number): Promise<BookingMutation> {
   return updateBooking(id, version, { state: "CANCELLED" });
-}
-export function isBookingOverlapError(error: unknown): boolean {
-  return error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.overlap";
 }

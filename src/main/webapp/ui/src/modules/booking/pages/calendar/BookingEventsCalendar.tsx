@@ -11,7 +11,12 @@ import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
-import { CalendarFilterIssue, type CalendarFilterIssueState } from "./CalendarFilterPanels";
+import {
+  CalendarFilterIssue,
+  type CalendarFilterIssueState,
+  CalendarTargetFilterChip,
+  type CalendarTargetFilterState,
+} from "./CalendarFilterPanels";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
 import { CalendarTimeGrid } from "./CalendarTimeGrid";
 import type { BookingCalendarResource, CalendarLayout, CalendarView } from "./calendarLayoutUtils";
@@ -59,7 +64,6 @@ export function BookingEventsCalendar({
   onRetry,
   onDateChange,
   onControlsReset,
-  hasTargetFilter = false,
   onViewChange,
   onLayoutChange,
   creationAction,
@@ -71,6 +75,7 @@ export function BookingEventsCalendar({
   eventFilterExpression = null,
   itemFilterIssue,
   eventFilterIssue,
+  targetFilter,
   eventRuntimeFields,
   eventAuthScope,
   onEventFilterChange,
@@ -98,7 +103,6 @@ export function BookingEventsCalendar({
   onRetry: () => void;
   onDateChange: (date: string) => void;
   onControlsReset: () => void;
-  hasTargetFilter?: boolean;
   onViewChange: (view: CalendarView) => void;
   onLayoutChange: (layout: CalendarLayout) => void;
   /** Production creation action rendered without replacing the calendar controls. */
@@ -111,6 +115,8 @@ export function BookingEventsCalendar({
   eventFilterExpression?: FilterExpression<BookingListDocument> | null;
   itemFilterIssue?: CalendarFilterIssueState;
   eventFilterIssue?: CalendarFilterIssueState;
+  /** The route's bookable-item focus, shown as a removable chip so the filtering is never silent. */
+  targetFilter?: CalendarTargetFilterState;
   eventRuntimeFields?: TableListRuntimeFields;
   eventAuthScope?: string | number;
   onEventFilterChange?: (expression: FilterExpression<BookingListDocument> | null) => void;
@@ -163,6 +169,18 @@ export function BookingEventsCalendar({
     myItemsOnly ||
     (eventFiltering !== false &&
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
+  // A single row on a later page is not the complete schedule scope.
+  // The Time grid shades closures only for one bookable item in scope: the route target, or the only
+  // resource row the item filter (or the dataset) leaves. A single row on a later page is not in scope.
+  const resourceRowCount =
+    resourceTableProps?.features.pagination === false || resourceTableProps === undefined
+      ? resourceConfigurations?.length
+      : resourceTableProps.features.pagination.rowCount;
+  const timeGridSchedule = targetFilter
+    ? resourceConfigurations?.find((configuration) => configuration.globalId === targetFilter.globalId)
+    : resourceConfigurations?.length === 1 && resourceRowCount === 1
+      ? resourceConfigurations[0]
+      : undefined;
   const filterControls = (
     <CalendarFilterControls
       date={date}
@@ -215,10 +233,10 @@ export function BookingEventsCalendar({
           controlsOnSeparateRow: true,
           controls: filterControls,
           hasChanges:
-            hasTargetFilter ||
             date !== todayValue ||
             view !== "day" ||
             layout !== "resources" ||
+            targetFilter !== undefined ||
             itemFilterExpression !== null ||
             eventFilterExpression !== null ||
             mineOnly ||
@@ -265,6 +283,7 @@ export function BookingEventsCalendar({
           );
           return (
             <BookingEditorsContext.Provider value={editorContext}>
+              {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
               {eventFilterIssue ? <CalendarFilterIssue {...eventFilterIssue} /> : null}
               {layout === "resources" && resourceTableProps?.status !== "loading" && extraEventResourceCount > 0 ? (
@@ -281,6 +300,11 @@ export function BookingEventsCalendar({
                   today={todayValue}
                   availabilityStartMinute={availabilityStartMinute}
                   availabilityEndMinute={availabilityEndMinute}
+                  onShowDay={(day) => {
+                    onDateChange(day);
+                    onViewChange("day");
+                  }}
+                  schedule={timeGridSchedule}
                   isLoading={isLoading}
                 />
               )}
