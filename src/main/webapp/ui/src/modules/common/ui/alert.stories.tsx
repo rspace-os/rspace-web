@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
-import { AlertTriangleIcon, InfoIcon } from "lucide-react";
+import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon } from "lucide-react";
 import { expect, within } from "storybook/test";
 import { Alert, AlertDescription, AlertTitle } from "./alert";
 
@@ -48,6 +48,16 @@ export const AllVariants: Story = {
         <AlertTriangleIcon />
         <AlertTitle>Something went wrong</AlertTitle>
         <AlertDescription>Your session has expired. Please sign in again.</AlertDescription>
+      </Alert>
+      <Alert variant="success">
+        <CheckCircle2Icon />
+        <AlertTitle>Booking saved</AlertTitle>
+        <AlertDescription>The booking is on the calendar.</AlertDescription>
+      </Alert>
+      <Alert variant="warning">
+        <AlertTriangleIcon />
+        <AlertTitle>Some items were skipped</AlertTitle>
+        <AlertDescription>Two items could not be updated. Try them again later.</AlertDescription>
       </Alert>
     </div>
   ),

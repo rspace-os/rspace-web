@@ -3,6 +3,7 @@ import type {
   ApiV2ListOperation,
   ApiV2OperationSet,
   ApiV2ResourceEntry,
+  ApiV2RuntimeFieldSearchOperation,
   ApiV2RuntimeFieldsOperation,
 } from "../apiV2Resources";
 import * as resource0 from "./containers/containers.ts";
@@ -40,6 +41,10 @@ export const apiV2Resources = {
     runtimeFields: {
       request: resource2.getInstrumentRuntimeFields,
       queryKey: resource2.getGetInstrumentRuntimeFieldsQueryKey,
+    },
+    runtimeFieldSearch: {
+      request: resource2.searchInstrumentRuntimeFields,
+      queryKey: resource2.getSearchInstrumentRuntimeFieldsQueryKey,
     },
   } satisfies ApiV2ResourceEntry<"instruments", ApiV2OperationSet>,
   maintenances: {
@@ -95,6 +100,12 @@ export type ApiV2ResourceOperationChecks = {
       Extends<
         (typeof apiV2Resources)["instruments"]["runtimeFields"],
         ApiV2RuntimeFieldsOperation<(typeof apiV2Resources)["instruments"]["runtimeFieldNamespaces"][number]>
+      >
+    >,
+    Assert<
+      Extends<
+        (typeof apiV2Resources)["instruments"]["runtimeFieldSearch"],
+        ApiV2RuntimeFieldSearchOperation<(typeof apiV2Resources)["instruments"]["runtimeFieldNamespaces"][number]>
       >
     >,
   ];

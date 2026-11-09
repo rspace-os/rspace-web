@@ -75,6 +75,10 @@
             "limit": "A request must not name more than {0} custom fields.",
             "limitTitle": "The custom field limit was exceeded."
           },
+          "namespaces": {
+            "invalid": "Name one or more distinct custom field namespaces from: {0}.",
+            "invalidTitle": "The custom field namespaces are invalid."
+          },
           "query": {
             "invalid": "The custom field request is invalid. The page size must be between 1 and {0}.",
             "invalidTitle": "The custom field request is invalid."
@@ -85,6 +89,10 @@
           "projection": {
             "limit": "A request must not select more than {0} custom field values.",
             "limitTitle": "Too many custom fields were selected."
+          },
+          "search": {
+            "required": "The {0} parameter must contain search text.",
+            "requiredTitle": "Search text is required."
           }
         },
         "where": {

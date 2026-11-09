@@ -1210,6 +1210,18 @@
         "required" : [ "id", "label" ],
         "type" : "object"
       },
+      "ApiV2RuntimeFieldSearch" : {
+        "properties" : {
+          "catalogs" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/ApiV2RuntimeFieldCatalog"
+            },
+            "type" : "object"
+          }
+        },
+        "required" : [ "catalogs" ],
+        "type" : "object"
+      },
       "ApiV2UiToken" : {
         "properties" : {
           "accessToken" : {
@@ -3149,6 +3161,96 @@
           "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
         },
         "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/instruments/fields" : {
+      "get" : {
+        "description" : "Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.",
+        "operationId" : "searchInstrumentRuntimeFields",
+        "parameters" : [ {
+          "description" : "Distinct runtime field namespaces to search. Repeat the parameter for each namespace.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "namespace",
+          "required" : true,
+          "schema" : {
+            "items" : {
+              "enum" : [ "customFields", "extraFields" ],
+              "type" : "string"
+            },
+            "minItems" : 1,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Search text. Must not be blank.",
+          "in" : "query",
+          "name" : "q",
+          "required" : true,
+          "schema" : {
+            "minLength" : 1,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Page size for each namespace.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 50,
+            "maximum" : 2E+2,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2RuntimeFieldSearch"
+                }
+              }
+            },
+            "description" : "Caller-specific runtime field catalogs keyed by namespace.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search runtime fields of instruments",
+        "tags" : [ "instruments" ],
+        "x-rspace-operation" : "RUNTIME_FIELD_SEARCH"
       }
     },
     "/api/v2/instruments/fields/{namespace}" : {

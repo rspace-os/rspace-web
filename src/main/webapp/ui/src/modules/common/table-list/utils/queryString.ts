@@ -1,0 +1,117 @@
+import { hashKey } from "@tanstack/react-query";
+import * as v from "valibot";
+import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/config";
+import type { StaleFieldPolicy } from "../rsql";
+import type { FilterExpression, FilterState, FilterValue } from "../types";
+import { sortRuleFromToken } from "./sortRuleFromToken";
+
+type SerializedDate = { readonly $date: string };
+
+const columnSelectorsSchema = v.pipe(v.string(), v.parseJson(), v.object({ fields: v.array(v.unknown()) }));
+const columnsSchema = v.pipe(v.string(), v.parseJson(), v.object({ fields: v.array(v.string()) }));
+
+function serializeValue(value: FilterValue): unknown {
+  if (value instanceof Date) return { $date: value.toISOString() } satisfies SerializedDate;
+  if (Array.isArray(value)) return value.map(serializeValue);
+  return value;
+}
+
+function serializeExpression<TDocument>(expression: FilterExpression<TDocument>): unknown {
+  if (expression.kind === "comparison") {
+    return { ...expression, value: serializeValue(expression.value) };
+  }
+  return { kind: expression.kind, children: expression.children.map(serializeExpression) };
+}
+
+/**
+ * An in-memory equality fingerprint of the filter state, for effect dependencies and refs; not a URL or storage
+ * format. Object keys are sorted, and a `Date` stays distinct from its ISO string.
+ */
+export function serializeFilters<TDocument>(filters: FilterState<TDocument>): string {
+  return hashKey([
+    {
+      search: filters.search,
+      expression: filters.expression ? serializeExpression(filters.expression) : null,
+    },
+  ]);
+}
+
+export function serializeColumns<TDocument>(columns: readonly FieldName<TDocument>[]): string {
+  // TanStack Router treats a top-level JSON array as repeated query parameters.
+  // The object keeps the column list as one value for the nuqs adapter.
+  return JSON.stringify({ fields: columns });
+}
+
+export function parseColumns<TDocument>(
+  serialized: string,
+  config: ResolvedCollectionConfig<TDocument>,
+  stale?: StaleFieldPolicy,
+): readonly FieldName<TDocument>[] | null {
+  const result = v.safeParse(columnsSchema, serialized);
+  if (!result.success) return null;
+  const raw = result.output.fields;
+  const listableFields = new Set(config.fields.filter((field) => field.list !== false).map((field) => field.name));
+  let dropped = false;
+  const value = stale
+    ? raw.filter((field) => {
+        if (listableFields.has(field as FieldName<TDocument>) || !stale.isStale(field)) return true;
+        stale.onDropped?.(field);
+        dropped = true;
+        return false;
+      })
+    : raw;
+  if (dropped && value.length === 0) return null;
+  if (
+    new Set(value).size !== value.length ||
+    !value.every((field) => listableFields.has(field as FieldName<TDocument>))
+  ) {
+    return null;
+  }
+  return value as FieldName<TDocument>[];
+}
+
+export function serializeSorting<TDocument>(sorting: readonly SortRule<TDocument>[]): string {
+  return sorting.map((rule) => `${rule.direction === "desc" ? "-" : ""}${rule.field}`).join(",");
+}
+
+export function parseSorting<TDocument>(
+  serialized: string,
+  config: ResolvedCollectionConfig<TDocument>,
+): readonly SortRule<TDocument>[] | null {
+  if (serialized === "") return [];
+  const values = serialized.split(",");
+  const sortableFields = new Set(
+    config.fields.filter((field) => field.capabilities.sortable).map((field) => field.name),
+  );
+  const rules = values.map(sortRuleFromToken<TDocument>);
+  if (
+    rules.some((rule) => rule.field === "" || !sortableFields.has(rule.field)) ||
+    new Set(rules.map((rule) => rule.field)).size !== rules.length
+  ) {
+    return null;
+  }
+  return rules;
+}
+
+export function columnSelectors(serialized: string): readonly string[] {
+  const result = v.safeParse(columnSelectorsSchema, serialized);
+  if (!result.success) return [];
+  const raw = result.output.fields;
+  return raw.filter((name): name is string => typeof name === "string");
+}
+
+export function nonDefaultColumns<TDocument>(
+  columns: readonly FieldName<TDocument>[],
+  defaults: readonly FieldName<TDocument>[],
+): string | null {
+  const serialized = serializeColumns(columns);
+  return serialized === serializeColumns(defaults) ? null : serialized;
+}
+
+export function nonDefaultSorting<TDocument>(
+  sorting: readonly SortRule<TDocument>[],
+  defaults: readonly SortRule<TDocument>[],
+): string | null {
+  const serialized = serializeSorting(sorting);
+  return serialized === serializeSorting(defaults) ? null : serialized;
+}

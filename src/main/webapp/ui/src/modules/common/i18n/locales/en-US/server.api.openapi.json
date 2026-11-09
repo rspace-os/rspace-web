@@ -131,6 +131,14 @@
           "namespace": "Runtime field namespace.",
           "page": "Page number.",
           "search": "Search text.",
+          "searchRoute": {
+            "description": "Searches several runtime field catalogs of {0} with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.",
+            "limit": "Page size for each namespace.",
+            "namespaces": "Distinct runtime field namespaces to search. Repeat the parameter for each namespace.",
+            "search": "Search text. Must not be blank.",
+            "success": "Caller-specific runtime field catalogs keyed by namespace.",
+            "summary": "Search runtime fields of {0}"
+          },
           "success": "Caller-specific runtime field catalog."
         },
         "schemas": {

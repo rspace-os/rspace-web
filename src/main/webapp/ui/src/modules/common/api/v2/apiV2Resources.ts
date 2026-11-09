@@ -24,6 +24,7 @@ export interface ApiV2OperationSet {
   deleteMany?: ApiV2AsyncFunction;
   audit?: ApiV2ReadOperation;
   runtimeFields?: ApiV2ReadOperation;
+  runtimeFieldSearch?: ApiV2ReadOperation;
 }
 
 /** The fetch options every generated request function accepts last. */
@@ -58,6 +59,15 @@ export type ApiV2RuntimeFieldParams = { q?: string; ids?: string; limit?: number
 export interface ApiV2RuntimeFieldsOperation<N extends string> {
   request: (namespace: N, params?: ApiV2RuntimeFieldParams, options?: ApiV2RequestOptions) => Promise<unknown>;
   queryKey: (namespace: N, params?: ApiV2RuntimeFieldParams) => QueryKey;
+}
+
+/** Query parameters a runtime-field search accepts: repeated namespaces and a required search term. */
+export type ApiV2RuntimeFieldSearchParams<N extends string> = { namespace: N[]; q: string; limit?: number };
+
+/** A search over several of a resource's runtime-field catalogs; `N` is the literal union of its namespaces. */
+export interface ApiV2RuntimeFieldSearchOperation<N extends string> {
+  request: (params: ApiV2RuntimeFieldSearchParams<N>, options?: ApiV2RequestOptions) => Promise<unknown>;
+  queryKey: (params: ApiV2RuntimeFieldSearchParams<N>) => QueryKey;
 }
 
 export type ApiV2ResourceEntry<TName extends string, TOperations extends ApiV2OperationSet> = {
