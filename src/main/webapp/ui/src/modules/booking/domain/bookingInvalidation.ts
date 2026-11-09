@@ -8,7 +8,7 @@ import {
 
 const window = { start: "1970-01-01T00:00:00Z", end: "1970-01-02T00:00:00Z", mine: false, page: 1, limit: 1 };
 const operationPaths = {
-  catalogue: getSearchBookingCatalogueQueryKey({ page: 1, limit: 1 })[0],
+  catalogue: getSearchBookingCatalogueQueryKey({ mine: false, page: 1, limit: 1 })[0],
   locations: getSearchBookingCatalogueLocationsQueryKey({ page: 1, limit: 1 })[0],
   calendarCatalogue: getSearchCalendarCatalogueQueryKey(window)[0],
   calendarEvents: getSearchCalendarEventsQueryKey(window)[0],

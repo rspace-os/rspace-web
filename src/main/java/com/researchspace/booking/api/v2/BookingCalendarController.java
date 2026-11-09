@@ -114,6 +114,7 @@ public class BookingCalendarController {
           @RequestParam(required = false)
           String eventWhere,
       @RequestParam(required = false) @Size(max = 255) String q,
+      @RequestParam(defaultValue = "false") boolean mine,
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
@@ -125,6 +126,7 @@ public class BookingCalendarController {
         filteredCalendarEvents(eventWhere, new ApiV2FieldsetQuery(), caller),
         start,
         end,
+        mine,
         page,
         limit,
         caller.subject());
@@ -154,6 +156,7 @@ public class BookingCalendarController {
           @RequestParam(required = false)
           String where,
       @RequestParam(required = false) @Size(max = 255) String q,
+      @RequestParam(defaultValue = "false") boolean mine,
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "100") @Min(1) @Max(100) int limit,
       @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets,
@@ -172,7 +175,7 @@ public class BookingCalendarController {
             IncludeTree.toDepth(description, resources.registry(), 1),
             parsed.runtime());
     ResourcePage<TimeSlotBooking> result =
-        calendar.events(request, start, end, q, caller.subject());
+        calendar.events(request, start, end, q, mine, caller.subject());
     Set<Object> targetIds =
         result.resources().stream()
             .map(TimeSlotBooking::getVisibleTarget)
