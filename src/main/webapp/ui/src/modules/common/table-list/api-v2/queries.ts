@@ -8,6 +8,7 @@ import {
   getGetApiV2OpenApiDocumentQueryOptions,
 } from "@/modules/common/api/v2/generated/openapi-json/openapi-json";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import type { ApiV2CollectionFetchOptions } from "./fetcher";
 import { type ApiV2CollectionMetadata, apiV2CollectionMetadataFromOpenApi } from "./metadata";
 import type { RuntimeFieldCatalogForNamespace } from "./runtimeFieldCatalog";
@@ -47,7 +48,8 @@ export function useApiV2RuntimeFields<
   const metadata = suppliedMetadata ?? metadataQuery.data;
   if (metadataQuery.error && !suppliedMetadata) throw metadataQuery.error;
   if (!metadata) throw queryClient.ensureQueryData(getGetApiV2OpenApiDocumentQueryOptions());
-  const scope = String(request?.authScope ?? "");
+  const identityScope = useQueryIdentityScope(request?.authScope);
+  const scope = JSON.stringify([identityScope, request?.authScope ?? null]);
   const namespaces = metadata.runtimeFields ?? [];
   const catalogResource = resource.runtimeFields ? resource : apiV2Resources.instruments;
   const namespaceKeys = namespaces.map(({ namespace, catalog }) => [namespace, catalog]);

@@ -9,13 +9,10 @@ import { resolveCollectionConfig } from "@/modules/common/collection/resolveConf
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import type { CollectionPage, CollectionQueryState } from "../types";
-import {
-  createApiV2FilterFields,
-  isRelationshipWireSelector,
-  type RuntimeFieldCatalogForNamespace,
-} from "./filterFields";
+import { createApiV2FilterFields, isRelationshipWireSelector } from "./filterFields";
 import type { ApiV2CollectionMetadata } from "./metadata";
 import { collectionQueryParams, selectedFields } from "./queryParams";
+import type { RuntimeFieldCatalogForNamespace } from "./runtimeFieldCatalog";
 import { type ApiV2DocumentMapping, type ApiV2DocumentSchema, createApiV2ResponseSchema, objectInput } from "./schema";
 
 export type { ApiV2DocumentMapping, ApiV2DocumentSchema } from "./schema";

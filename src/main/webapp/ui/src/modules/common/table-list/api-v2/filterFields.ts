@@ -10,18 +10,8 @@ import type {
 } from "@/modules/common/collection/config";
 import { isFilterOperatorCompatible, resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { filterOperatorsByToken as semanticOperators } from "@/modules/common/collection/schema";
-import type {
-  ApiV2CollectionMetadata,
-  ApiV2FilterOperator,
-  ApiV2PrimitiveFieldType,
-  ApiV2RuntimeFieldNamespace,
-} from "./metadata";
-import type { RuntimeFieldDefinition } from "./runtimeFieldCatalog";
-
-export type RuntimeFieldCatalogForNamespace = {
-  namespace: string;
-  definitions: readonly RuntimeFieldDefinition[];
-};
+import type { ApiV2CollectionMetadata, ApiV2FilterOperator, ApiV2RuntimeFieldNamespace } from "./metadata";
+import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
 export type ApiV2FilterFieldsDefinition<TDocument> = {
   config: CollectionConfig<TDocument>;
@@ -72,12 +62,16 @@ function capabilitiesForSelector<TDocument>(
 ): NonNullable<FieldConfig<TDocument>["capabilities"]> {
   return {
     sortable: metadata.sorting.fields.includes(field.name),
-    filterOperators:
-      selector?.operators
-        .map((operator) => semanticOperators[operator])
-        .filter((operator) => isFilterOperatorCompatible(field.type, operator)) ?? [],
+    filterOperators: filterOperatorsFor(field.type, selector?.operators ?? []),
     supportsWildcards: selector?.wildcards ?? false,
   };
+}
+
+/** The published wire operators as filter operators that suit the field type. */
+function filterOperatorsFor(type: FieldConfig<unknown>["type"], wire: readonly ApiV2FilterOperator[]) {
+  return wire
+    .map((operator) => semanticOperators[operator])
+    .filter((operator) => isFilterOperatorCompatible(type, operator));
 }
 
 /** `<relationship>.value` and `<relationship>.relationTo` address the reference itself, not a target field. */
@@ -130,35 +124,15 @@ function relationshipIndex<TDocument>(
   );
 }
 
-function primitiveField<TDocument>(
-  common: Pick<FieldConfig<TDocument>, "name" | "labelKey" | "label" | "derivedLabel" | "origin"> & {
-    list: false;
-    form: false;
-  },
-  fieldType: ApiV2PrimitiveFieldType,
-): FieldConfig<TDocument> {
-  switch (fieldType) {
-    case "number":
-      return { ...common, type: "number" };
-    case "boolean":
-      return { ...common, type: "boolean" };
-    case "dateTime":
-      return { ...common, type: "dateTime" };
-    default:
-      return { ...common, type: "text" };
-  }
-}
-
 function runtimeVia<TDocument>(relationships: ReturnType<typeof relationshipIndex<TDocument>>, via: string) {
   if (via === "") return undefined;
   return relationships.get(via)?.via ?? { name: via, label: { text: via } };
 }
 
 function derivedIdentityFields<TDocument>(
-  sourceConfig: CollectionConfig<TDocument>,
+  declared: ReadonlySet<string>,
   metadata: ApiV2CollectionMetadata<TDocument>,
 ): FieldConfig<TDocument>[] {
-  const declared = new Set(sourceConfig.fields.map((field) => String(field.name)));
   return Object.entries(metadata.filtering.selectors).flatMap(([selector, published]) => {
     const picker = published?.picker;
     if (!picker || selector.includes(".") || declared.has(selector)) return [];
@@ -180,11 +154,10 @@ function derivedIdentityFields<TDocument>(
 }
 
 function derivedTargetFields<TDocument>(
-  sourceConfig: CollectionConfig<TDocument>,
+  declared: ReadonlySet<string>,
   relationships: ReturnType<typeof relationshipIndex<TDocument>>,
   metadata: ApiV2CollectionMetadata<TDocument>,
 ): ApiV2RelationshipFilterField<TDocument>[] {
-  const declared = new Set<string>(sourceConfig.fields.map((field) => String(field.name)));
   return Object.entries(metadata.filtering.selectors).flatMap(([selector, published]) => {
     const dot = selector.indexOf(".");
     const ownerName = selector.slice(0, dot);
@@ -208,7 +181,7 @@ function derivedTargetFields<TDocument>(
       list: false as const,
       form: false as const,
     };
-    const base = primitiveField(common, published.fieldType);
+    const base: FieldConfig<TDocument> = { ...common, type: published.fieldType };
     const field = { ...base, capabilities: capabilitiesForSelector(base, metadata, published) };
     return [{ field, owner, targetField }];
   });
@@ -220,10 +193,10 @@ function derivedRuntimeFields<TDocument>(
   relationships: ReturnType<typeof relationshipIndex<TDocument>>,
 ): ApiV2RuntimeFilterField<TDocument>[] {
   const namespaces = new Map((metadata.runtimeFields ?? []).map((namespace) => [namespace.namespace, namespace]));
-  return catalog.flatMap((entry) =>
-    entry.definitions.flatMap((definition) => {
-      const namespace = namespaces.get(entry.namespace);
-      if (!namespace) return [];
+  return catalog.flatMap((entry) => {
+    const namespace = namespaces.get(entry.namespace);
+    if (!namespace) return [];
+    return entry.definitions.flatMap((definition) => {
       const responseField = namespace.responseField as FieldName<TDocument>;
       const name = (
         namespace.via === "" ? definition.selector : `${namespace.via}.${definition.selector}`
@@ -252,9 +225,7 @@ function derivedRuntimeFields<TDocument>(
             : { ...common, type: "text" as const }
       ) satisfies FieldConfig<TDocument>;
       const wireOperators = namespace.filterable ? definition.operators : [];
-      const operators = wireOperators
-        .map((operator) => semanticOperators[operator])
-        .filter((operator) => isFilterOperatorCompatible(base.type, operator));
+      const operators = filterOperatorsFor(base.type, wireOperators);
       const field = {
         ...base,
         capabilities: {
@@ -272,8 +243,8 @@ function derivedRuntimeFields<TDocument>(
           wireOperators,
         },
       ];
-    }),
-  );
+    });
+  });
 }
 
 export function createApiV2FilterFields<TDocument>({
@@ -282,9 +253,10 @@ export function createApiV2FilterFields<TDocument>({
   runtimeFields = [],
   localFields = [],
 }: ApiV2FilterFieldsDefinition<TDocument>): ApiV2FilterFields<TDocument> {
+  const declared = new Set(sourceConfig.fields.map((field) => String(field.name)));
   const configuredSourceFields = sourceConfig.fields.map((field) => {
-    const selector = metadata.filtering.selectors[String(field.name)];
     if (localFields.includes(field.name)) return field;
+    const selector = metadata.filtering.selectors[String(field.name)];
     let sourceField = field;
     const structured = metadata.structuredFields?.[field.name];
     if ((field.type === "array" || field.type === "object") && metadata.structuredFields !== undefined) {
@@ -320,19 +292,12 @@ export function createApiV2FilterFields<TDocument>({
       capabilities: capabilitiesForSelector(sourceField, metadata, selector),
     };
   });
-  const identityFields = derivedIdentityFields(sourceConfig, metadata);
+  const identityFields = derivedIdentityFields(declared, metadata);
   const sourceFields = [...configuredSourceFields, ...identityFields];
-  const identityConfig: CollectionConfig<TDocument> = {
-    ...sourceConfig,
-    fields: [...sourceConfig.fields, ...identityFields],
-  };
-  const relationships = relationshipIndex(identityConfig.fields);
-  const relationshipFields = derivedTargetFields(identityConfig, relationships, metadata);
+  const relationships = relationshipIndex([...sourceConfig.fields, ...identityFields]);
+  const relationshipFields = derivedTargetFields(declared, relationships, metadata);
   const runtimeDerivedFields = derivedRuntimeFields(metadata, runtimeFields, relationships);
-  const occupiedNames = new Set([
-    ...sourceConfig.fields.map((field) => String(field.name)),
-    ...Object.keys(metadata.filtering.selectors),
-  ]);
+  const occupiedNames = new Set([...declared, ...Object.keys(metadata.filtering.selectors)]);
   for (const { field } of runtimeDerivedFields) {
     const name = String(field.name);
     if (occupiedNames.has(name)) {
