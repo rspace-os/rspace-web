@@ -14,6 +14,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Data Display/Table/Composition",
+  tags: ["autodocs"],
   component: Table,
   parameters: { a11y: { test: "error" } },
   argTypes: { size: { control: "select", options: ["small", "medium"] } },

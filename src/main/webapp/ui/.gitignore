@@ -20,3 +20,6 @@ node_modules/
 
 # Vitest browser-mode JUnit output (CI)
 /browser-junit-*.xml
+
+# Storybook build output
+/storybook-static

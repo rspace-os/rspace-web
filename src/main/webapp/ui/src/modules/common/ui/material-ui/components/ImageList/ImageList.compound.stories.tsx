@@ -6,6 +6,7 @@ import type { ComponentProps } from "react";
 
 const meta = {
   title: "Material UI/Data Display/ImageList/Composition",
+  tags: ["autodocs"],
   component: ImageList,
   parameters: { a11y: { test: "error" } },
   argTypes: {
