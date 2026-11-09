@@ -1,3 +1,4 @@
+import type { Status } from "@/modules/common/api/v2/generated/models/status";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,8 +11,10 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
@@ -36,8 +39,25 @@ export const configuration = {
 export const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
 
 export function setupPage() {
+  let notificationSubscription = {
+    configurationId: 7,
+    enabled: false,
+    version: 0,
+    createdEnabled: true,
+    cancelledEnabled: true,
+    emailEnabled: false,
+  };
+  server.use(
+    http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+      HttpResponse.json<Status>(notificationSubscription),
+    ),
+    http.put("/api/v2/booking-configurations/7/notification-subscription", () => {
+      notificationSubscription = { ...notificationSubscription, enabled: true, version: 1 };
+      return HttpResponse.json<Status>(notificationSubscription);
+    }),
+  );
   mockedUseCurrentUserQuery.mockReturnValue({
-    data: { hasSysAdminRole: true, session: { operatedAs: false } },
+    data: { id: 1, hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
 }
 

@@ -56,6 +56,8 @@ final class BookingConfigurationManagerTestFixtures {
   final BookingItemPermissions itemPermissions = mock(BookingItemPermissions.class);
   final BookingNotificationService bookingNotificationService =
       mock(BookingNotificationService.class);
+  final BookingNotificationSubscriptionManager notificationSubscriptions =
+      mock(BookingNotificationSubscriptionManager.class);
   final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
   final BookingCalendarPermissionGateDao permissionGate =
       mock(BookingCalendarPermissionGateDao.class);
@@ -73,6 +75,7 @@ final class BookingConfigurationManagerTestFixtures {
           calendarSubscriptions,
           timeSlotBookings,
           bookingNotificationService,
+          notificationSubscriptions,
           permissionGate);
 
   void setUp() {
@@ -86,6 +89,8 @@ final class BookingConfigurationManagerTestFixtures {
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults(5, "00:00", "24:00", 0, 0, 0, false)));
     when(instrumentDao.lockById(any()))
+        .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
+    when(instrumentDao.getSafeNull(any()))
         .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
     when(resourceRegistry.getObject())
         .thenReturn(

@@ -55,6 +55,7 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
     canCreateBlockout: false,
     canSubscribeCalendar: false,
     canLeaveConfiguration: false,
+    canManageNotificationSubscription: false,
   },
 });
 
@@ -102,6 +103,7 @@ function catalogueItem(configurationId: number, globalId: string): BookingCatalo
       canCreateBlockout: false,
       canSubscribeCalendar: false,
       canLeaveConfiguration: false,
+      canManageNotificationSubscription: false,
     },
     location: null,
   };

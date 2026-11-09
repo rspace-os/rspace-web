@@ -36,6 +36,28 @@ public class FeatureFlagDaoHibernate implements FeatureFlagDao {
   }
 
   @Override
+  public java.util.Optional<Boolean> getCurrentBaseline(String flagName) {
+    return getSession()
+        .createNativeQuery(
+            "select enabled from FeatureFlagBaseline where flag_name = :flag lock in share mode",
+            Boolean.class)
+        .setParameter("flag", flagName)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public java.util.Optional<Boolean> getCurrentOverride(String flagName, Long userId) {
+    return getSession()
+        .createNativeQuery(
+            "select enabled from FeatureFlagUserOverride where flag_name = :flag"
+                + " and user_id = :userId lock in share mode",
+            Boolean.class)
+        .setParameter("flag", flagName)
+        .setParameter("userId", userId)
+        .uniqueResultOptional();
+  }
+
+  @Override
   public void upsertBaseline(String flagName, boolean enabled) {
     FeatureFlagBaseline baseline = getSession().get(FeatureFlagBaseline.class, flagName);
     if (baseline == null) {
@@ -81,6 +103,21 @@ public class FeatureFlagDaoHibernate implements FeatureFlagDao {
                 FeatureFlagUserOverride::isEnabled,
                 (existing, replacement) -> replacement,
                 LinkedHashMap::new));
+  }
+
+  @Override
+  public Map<Long, Boolean> getOverridesForUsers(String flagName, java.util.Set<Long> userIds) {
+    if (userIds.isEmpty()) return Map.of();
+    return getSession()
+        .createQuery(
+            "select o.user.id, o.enabled from FeatureFlagUserOverride o where o.flagName = :flag"
+                + " and o.user.id in :ids",
+            Object[].class)
+        .setParameter("flag", flagName)
+        .setParameterList("ids", userIds)
+        .setCacheMode(org.hibernate.CacheMode.IGNORE)
+        .getResultStream()
+        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Boolean) row[1]));
   }
 
   @Override

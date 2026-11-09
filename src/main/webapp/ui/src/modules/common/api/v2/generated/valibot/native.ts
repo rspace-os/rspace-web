@@ -49,7 +49,7 @@ export const BookingCalendarSubscriptionCreated = v.object({active: v.boolean(),
 
 export const BookingCalendarSubscriptionStatus = v.object({active: v.boolean(), subscriptionUrl: v.nullable(v.pipe(v.string())), updatedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp()))});
 
-export const BookingConfigurationCapabilities = v.object({canCreateBlockout: v.optional(v.boolean()), canCreateBooking: v.optional(v.boolean()), canEditConfiguration: v.optional(v.boolean()), canLeaveConfiguration: v.optional(v.boolean()), canManageAllEvents: v.optional(v.boolean()), canManageAssignments: v.optional(v.boolean()), canManageOwnBookings: v.optional(v.boolean()), canManageOwners: v.optional(v.boolean()), canSubscribeCalendar: v.optional(v.boolean()), canViewAccess: v.optional(v.boolean()), canViewAudit: v.optional(v.boolean())});
+export const BookingConfigurationCapabilities = v.object({canCreateBlockout: v.optional(v.boolean()), canCreateBooking: v.optional(v.boolean()), canEditConfiguration: v.optional(v.boolean()), canLeaveConfiguration: v.optional(v.boolean()), canManageAllEvents: v.optional(v.boolean()), canManageAssignments: v.optional(v.boolean()), canManageNotificationSubscription: v.optional(v.boolean()), canManageOwnBookings: v.optional(v.boolean()), canManageOwners: v.optional(v.boolean()), canSubscribeCalendar: v.optional(v.boolean()), canViewAccess: v.optional(v.boolean()), canViewAudit: v.optional(v.boolean())});
 
 export const BookingConfigurationTarget = v.object({deleted: v.optional(v.boolean()), globalId: v.optional(v.string()), id: v.optional(v.pipe(v.number(), v.integer())), name: v.optional(v.string())});
 
@@ -111,6 +111,8 @@ export const Item = v.object({allowDoubleBooking: v.optional(v.boolean()), buffe
 
 export const LocationPage = v.object({items: v.optional(v.array(Location)), page: v.optional(v.pipe(v.number(), v.integer())), pageSize: v.optional(v.pipe(v.number(), v.integer())), total: v.optional(v.pipe(v.number(), v.integer()))});
 
+export const Lookup = v.object({configurationIds: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.gtValue(0))), v.minLength(1), v.maxLength(100))});
+
 export const MaintenancesCreate = v.object({endDate: v.pipe(v.string(), v.isoTimestamp(), v.description('End of the maintenance window.')), message: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('User-facing maintenance message.'))), startDate: v.pipe(v.string(), v.isoTimestamp(), v.description('Beginning of the maintenance window.')), stopUserLoginDate: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time after which ordinary users may no longer log in.')))});
 
 export const MaintenancesRead = v.object({canUserLoginNow: v.optional(v.pipe(v.boolean(), v.description('Whether ordinary users can log in at the current server time.'))), endDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('End of the maintenance window.'))), id: v.pipe(v.number(), v.integer(), v.description('Stable maintenance identifier.')), message: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('User-facing maintenance message.'))), startDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Beginning of the maintenance window.'))), stopUserLoginDate: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time after which ordinary users may no longer log in.'))), version: v.optional(v.pipe(v.number(), v.integer(), v.description('Version for conditional updates and deletes.')))});
@@ -120,6 +122,10 @@ export const MaintenancesReference = v.object({relationTo: v.literal('maintenanc
 export const MaintenancesUpdate = v.object({endDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('End of the maintenance window.'))), message: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('User-facing maintenance message.'))), startDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Beginning of the maintenance window.'))), stopUserLoginDate: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time after which ordinary users may no longer log in.')))});
 
 export const Page = v.object({facets: v.optional(Facets), items: v.optional(v.array(Item)), page: v.optional(v.pipe(v.number(), v.integer())), pageSize: v.optional(v.pipe(v.number(), v.integer())), total: v.optional(v.pipe(v.number(), v.integer()))});
+
+export const PreferenceReplacement = v.object({autoSubscribeOwnedItems: v.boolean(), notifyOwnActions: v.boolean()});
+
+export const Preferences = v.object({autoSubscribeOwnedItems: v.optional(v.boolean()), notifyOwnActions: v.optional(v.boolean())});
 
 export const Replacement = v.object({availabilityWindowEnd: v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$'))), availabilityWindowStart: v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$'))), customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.'))), timezoneMode: v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM'])});
 
@@ -147,7 +153,15 @@ export const SettingsDocument = v.object({allowDoubleBooking: v.optional(v.boole
 
 export const SettingsPatch = v.object({allowDoubleBooking: v.nullish(v.boolean()), availabilityWindowEnd: v.nullish(v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$')))), availabilityWindowStart: v.nullish(v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$')))), bufferAfterMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))), bufferBeforeMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))), customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'))), customTimezoneValid: v.optional(v.boolean()), maxBookingDurationMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(527040))), openingHours: v.nullish(v.pipe(v.array(BookingOpeningHoursEntry), v.minLength(1), v.maxLength(7), v.description('Independent opening interval for each listed ISO weekday; omitted days are closed.'))), slotGranularityMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(15))), timezoneMode: v.nullish(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))});
 
+export const Status = v.object({cancelledEnabled: v.optional(v.boolean()), configurationId: v.optional(v.pipe(v.number(), v.integer())), createdEnabled: v.optional(v.boolean()), emailEnabled: v.optional(v.boolean()), enabled: v.optional(v.boolean()), version: v.optional(v.pipe(v.number(), v.integer()))});
+
+export const StatusList = v.object({docs: v.optional(v.array(Status))});
+
+export const SubscriptionReplacement = v.object({enabled: v.boolean(), version: v.pipe(v.number(), v.integer(), v.minValue(-1))});
+
 export const TargetDirectoryDocument = v.object({docs: v.array(BookingConfigurationTarget)});
+
+export const UnsubscribeResult = v.object({updatedCount: v.optional(v.pipe(v.number(), v.integer()))});
 
 export const UsersCreate = v.object({});
 
@@ -531,6 +545,30 @@ export const ListBookingConfigurationAuditEventsResponse = v.object({
   totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.'))),
   totalPages: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true and the total is exact.')))
 })
+
+
+/**
+ * @summary Get the caller's personal subscription and effective event delivery
+ */;
+
+export const GetMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer())
+})
+
+export const GetMyBookingNotificationSubscriptionResponse = Status
+
+
+/**
+ * @summary Update the caller's personal subscription with optimistic concurrency
+ */;
+
+export const ReplaceMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer())
+})
+
+export const ReplaceMyBookingNotificationSubscriptionBody = SubscriptionReplacement;
+
+export const ReplaceMyBookingNotificationSubscriptionResponse = Status
 
 
 /**
@@ -1366,6 +1404,38 @@ export const CreateOrReplaceUserBookingCalendarSubscriptionHeader = v.object({
 })
 
 export const CreateOrReplaceUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
+
+
+/**
+ * @summary Get the caller's booking notification preferences
+ */;
+
+export const GetMyBookingNotificationPreferencesResponse = Preferences
+
+
+/**
+ * @summary Change personal notification preferences without changing existing subscriptions
+ */;
+
+export const ReplaceMyBookingNotificationPreferencesBody = PreferenceReplacement;
+
+export const ReplaceMyBookingNotificationPreferencesResponse = Preferences
+
+
+/**
+ * @summary Unsubscribe from all instruments without changing the automatic subscription default
+ */;
+
+export const UnsubscribeMyBookingNotificationsResponse = UnsubscribeResult
+
+
+/**
+ * @summary Read personal subscriptions for up to 100 readable instruments
+ */;
+
+export const LookupMyBookingNotificationSubscriptionsBody = Lookup;
+
+export const LookupMyBookingNotificationSubscriptionsResponse = StatusList
 
 
 /**

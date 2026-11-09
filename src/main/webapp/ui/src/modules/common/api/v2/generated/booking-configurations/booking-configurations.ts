@@ -82,6 +82,8 @@ import type {
   ResourceAccessReplacement,
   ResourceGranteeDirectoryDocument,
   SearchBookingConfigurationAccessGranteesParams,
+  Status,
+  SubscriptionReplacement,
   TooManyRequestsResponse,
   UnauthenticatedResponse,
   UnexpectedErrorResponse,
@@ -2452,3 +2454,263 @@ export function useListBookingConfigurationAuditEventsSuspense<TData = Awaited<R
 
 
 
+export const getGetMyBookingNotificationSubscriptionUrl = (id: number,) => {
+
+
+
+
+  return `/api/v2/booking-configurations/${id}/notification-subscription`
+}
+
+/**
+ * @summary Get the caller's personal subscription and effective event delivery
+ */
+export const getMyBookingNotificationSubscription = async (id: number, options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<Status> => {
+
+  return apiV2Fetch<Status>(getGetMyBookingNotificationSubscriptionUrl(id),
+  {
+      ...options,
+    operationId: 'getMyBookingNotificationSubscription',
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBookingNotificationSubscriptionQueryKey = (id: number,) => {
+    return [
+    `/api/v2/booking-configurations/${id}/notification-subscription`
+    ] as const;
+    }
+
+
+export const getGetMyBookingNotificationSubscriptionQueryOptions = <TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBookingNotificationSubscriptionQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>> = ({ signal }) => getMyBookingNotificationSubscription(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyBookingNotificationSubscriptionQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>>
+export type GetMyBookingNotificationSubscriptionQueryError = ErrorType<unknown>
+
+
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscription<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
+          TError,
+          Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>
+        > , 'initialData'
+      >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscription<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
+          TError,
+          Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>
+        > , 'initialData'
+      >, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscription<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscription<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyBookingNotificationSubscriptionQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useGetMyBookingNotificationSubscription} query
+ */
+export const invalidateGetMyBookingNotificationSubscription = async (
+ queryClient: QueryClient, id: number, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getGetMyBookingNotificationSubscriptionQueryKey(id) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getGetMyBookingNotificationSubscriptionSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(id: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBookingNotificationSubscriptionQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>> = ({ signal }) => getMyBookingNotificationSubscription(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type GetMyBookingNotificationSubscriptionSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>>
+export type GetMyBookingNotificationSubscriptionSuspenseQueryError = ErrorType<unknown>
+
+
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscriptionSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscriptionSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscriptionSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get the caller's personal subscription and effective event delivery */
+export function useGetMyBookingNotificationSubscriptionSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>, TError, TData>>, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyBookingNotificationSubscriptionSuspenseQueryOptions(id,options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getReplaceMyBookingNotificationSubscriptionUrl = (id: number,) => {
+
+
+
+
+  return `/api/v2/booking-configurations/${id}/notification-subscription`
+}
+
+/**
+ * @summary Update the caller's personal subscription with optimistic concurrency
+ */
+export const replaceMyBookingNotificationSubscription = async (id: number,
+    subscriptionReplacement: SubscriptionReplacement, options?: Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">): Promise<Status> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiV2Fetch<Status>(getReplaceMyBookingNotificationSubscriptionUrl(id),
+  {
+      ...options,
+    operationId: 'replaceMyBookingNotificationSubscription',
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(subscriptionReplacement)
+  }
+);}
+
+
+
+
+
+export const getReplaceMyBookingNotificationSubscriptionMutationKey = () => ['replaceMyBookingNotificationSubscription'] as const;
+
+export const getReplaceMyBookingNotificationSubscriptionMutationOptions = <TError = ErrorType<ApiV2Problem>,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>, TError,ReplaceMyBookingNotificationSubscriptionMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+): UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>, TError,ReplaceMyBookingNotificationSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getReplaceMyBookingNotificationSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>, ReplaceMyBookingNotificationSubscriptionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  replaceMyBookingNotificationSubscription(id,data,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>, variables: ReplaceMyBookingNotificationSubscriptionMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id)].some((queryKey) => matchQuery({ queryKey }, query)) });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type ReplaceMyBookingNotificationSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>>
+    export type ReplaceMyBookingNotificationSubscriptionMutationBody = BodyType<SubscriptionReplacement>
+    export type ReplaceMyBookingNotificationSubscriptionMutationError = ErrorType<ApiV2Problem>
+    export type ReplaceMyBookingNotificationSubscriptionMutationVariables = {id: number;data: BodyType<SubscriptionReplacement>}
+
+    /** @summary Update the caller's personal subscription with optimistic concurrency */
+export const useReplaceMyBookingNotificationSubscription = <TError = ErrorType<ApiV2Problem>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>, TError,ReplaceMyBookingNotificationSubscriptionMutationVariables, TContext>, skipInvalidation?: boolean, request?: Omit<NonNullable<SecondParameter<typeof apiV2Fetch>>, "operationId">}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>,
+        TError,
+        ReplaceMyBookingNotificationSubscriptionMutationVariables,
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getReplaceMyBookingNotificationSubscriptionMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }

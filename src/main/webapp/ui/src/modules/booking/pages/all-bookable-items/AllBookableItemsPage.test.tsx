@@ -213,6 +213,22 @@ describe("AllBookableItemsPage", () => {
     expect(await screen.findByRole("link", { name: "Add" })).toHaveAttribute("href", "/booking/bookable-items/add");
   });
 
+  it("does not offer notification selection or bulk subscription actions", async () => {
+    server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get<never, never, ListBookings200 | ApiV2Problem>("/api/v2/bookings", () =>
+        HttpResponse.json({ ...collectionPage([]), hasNextPage: false }),
+      ),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage();
+    await screen.findAllByRole("link", { name: "Confocal microscope" });
+    expect(screen.queryByRole("checkbox", { name: "Select Confocal microscope" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Subscribe" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Unsubscribe" })).not.toBeInTheDocument();
+  });
+
   it("combines Owned Items with catalogue and availability requests", async () => {
     const requests: URL[] = [];
     server.use(
