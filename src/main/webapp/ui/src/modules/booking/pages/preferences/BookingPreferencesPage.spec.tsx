@@ -1,7 +1,7 @@
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
 import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";

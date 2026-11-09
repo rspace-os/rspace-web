@@ -123,8 +123,7 @@ public record ApiV2BookingConfigurationResource(
     @ApiV2ResourceMember(factory = "createdByNameField") String createdByName,
     @ApiV2ResourceMember(factory = "effectiveRoleField") String effectiveRole,
     @ApiV2ResourceMember(factory = "roleSourcesField") List<ResourceRoleSource> roleSources,
-    @ApiV2ResourceMember(factory = "capabilitiesField")
-        BookingConfigurationCapabilities capabilities,
+    @ApiV2ResourceMember(factory = "capabilitiesField") BookingConfigurationCapabilities capabilities,
     @ApiV2ResourceMember(factory = "ownerHealthField") BookingOwnerHealth ownerHealth) {
 
   public static final CollectionMutationLimits MUTATION_LIMITS =

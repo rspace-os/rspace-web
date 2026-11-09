@@ -1,7 +1,8 @@
 import { type Locator, page } from "vitest/browser";
+import { bookableItemHeading } from "./bookableItemLocators";
 
 export class BookableItemPage {
-  readonly heading: Locator = page.getByRole("heading", { level: 1, name: "Confocal microscope" });
+  readonly heading: Locator = bookableItemHeading("Confocal microscope", 1);
   readonly bookingsTab: Locator = page.getByRole("tab", { name: "Bookings" });
   readonly detailsTab: Locator = page.getByRole("tab", { name: "Details" });
   readonly auditTab: Locator = page.getByRole("tab", { name: "Audit log" });

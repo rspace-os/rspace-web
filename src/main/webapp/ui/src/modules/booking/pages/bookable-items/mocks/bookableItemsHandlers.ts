@@ -4,9 +4,9 @@ import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import type { ApiV2RuntimeFieldCatalog } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalog";
 import type { BookingCatalogueManagerLocationPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerLocationPage";
 import type { BookingCatalogueManagerPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerPage";
-import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 
 const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   ...booking,
