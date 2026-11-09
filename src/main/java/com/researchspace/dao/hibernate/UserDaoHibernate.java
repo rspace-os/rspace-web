@@ -25,6 +25,7 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
+import com.researchspace.model.UserSavedEvent;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -66,6 +67,7 @@ import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
 import org.hibernate.type.StandardBasicTypes;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Repository;
 
@@ -184,6 +186,8 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
 
+  @Autowired private ApplicationEventPublisher events;
+
   /** Constructor that sets the entity to User.class. */
   public UserDaoHibernate() {
     super(User.class);
@@ -214,6 +218,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       user.setVersion(saved.getVersion());
       user.setRoles(new HashSet<>(saved.getRoles()));
     }
+    events.publishEvent(new UserSavedEvent(saved));
     return saved;
   }
 
