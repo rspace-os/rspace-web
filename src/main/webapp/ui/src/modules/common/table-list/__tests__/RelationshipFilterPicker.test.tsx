@@ -1,0 +1,84 @@
+import "@/__tests__/__mocks__/matchMedia";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { listInstruments } from "@/modules/common/relationship-picker/__tests__/fixtures/relationshipPicker";
+import { TableList } from "@/modules/common/table-list/TableList";
+
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: () => ({ data: "test-token" }),
+}));
+
+type BookableItem = { id: string; target: string };
+
+const config = resolveCollectionConfig<BookableItem>({
+  slug: "bookable-items",
+  idField: "id",
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+  useAsTitle: "target",
+  defaultColumns: ["target"],
+  fields: [
+    { name: "id", labelKey: "tableList.examples.fields.id", type: "text", list: false },
+    {
+      name: "target",
+      labelKey: "tableList.examples.fields.title",
+      type: "relationship",
+      relationTo: "instruments",
+      hasMany: false,
+    },
+  ],
+});
+
+function renderFilters(onChange: (value: unknown) => void) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <TableList
+        queryString={false}
+        config={config}
+        rows={[]}
+        getRowId={(row) => row.id}
+        features={{
+          filtering: { value: { search: "", expression: null }, onChange },
+          sorting: false,
+          pagination: false,
+          columns: false,
+        }}
+      />
+    </QueryClientProvider>,
+  );
+}
+
+describe("relationship filter picker", () => {
+  it("searches by name and applies the selected global ID", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const requests: URL[] = [];
+    listInstruments((url) => requests.push(url));
+    renderFilters(onChange);
+
+    await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
+    await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.value" }), "Conf");
+
+    const option = await screen.findByRole("option", {
+      name: "Confocal microscopecommon:relationshipPicker.openRecord",
+    });
+    expect(within(option).getByRole("link", { name: "common:relationshipPicker.openRecord" })).toHaveAttribute(
+      "href",
+      "/globalId/IN123",
+    );
+    await user.click(option);
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.applyFilters" }));
+
+    expect(onChange).toHaveBeenCalledWith({
+      search: "",
+      expression: { kind: "comparison", field: "target", operator: "equals", value: "IN123" },
+    });
+    expect(requests.map((url) => url.searchParams.get("where"))).toContain("name=contains=Conf");
+    expect(requests[0]?.searchParams.get("fields[instruments]")).toBe("id,name,globalId");
+    expect(requests[0]?.searchParams.get("limit")).toBe("20");
+  });
+});
