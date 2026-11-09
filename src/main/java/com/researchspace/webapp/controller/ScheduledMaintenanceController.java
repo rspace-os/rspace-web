@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +15,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
 /** Controller for managing scheduled maintenances. */
@@ -107,6 +110,10 @@ public class ScheduledMaintenanceController extends BaseController {
     }
   }
 
+  @ExceptionHandler(NotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public void handleMissingMaintenance() {}
+
   @PostMapping("/ajax/update")
   @ResponseBody
   public String updateScheduledMaintenance(
@@ -156,6 +163,11 @@ public class ScheduledMaintenanceController extends BaseController {
     }
 
     User user = userManager.getAuthenticatedUserInSession();
+    // Completed windows must have a cutoff no later than their start.
+    if (scheduledMaintenance.getStopUserLoginDate() != null
+        && scheduledMaintenance.getStopUserLoginDate().after(scheduledMaintenance.getStartDate())) {
+      scheduledMaintenance.setStopUserLoginDate(scheduledMaintenance.getStartDate());
+    }
     scheduledMaintenance.setEndDate(new Date());
     maintenanceManager.saveScheduledMaintenance(scheduledMaintenance, user);
     return OK_RESPONSE;
