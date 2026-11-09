@@ -46,7 +46,7 @@ public record ApiV2Config(
           String label,
       @Schema(
               requiredMode = Schema.RequiredMode.REQUIRED,
-              description = "Absolute or root-relative help URL.",
+              description = "Configured help URL.",
               format = "uri-reference")
           String url) {}
 }
