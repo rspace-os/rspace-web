@@ -1,6 +1,6 @@
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -39,16 +39,14 @@ function registerHandlers() {
       stored = inheritedBrowserBookingPreferences;
       return new HttpResponse(null, { status: 204 });
     }),
-    http.get<never, never, BookingNotificationPreferences | ApiV2Problem>(
-      "/api/v2/users/me/booking-notification-preferences",
-      () =>
-        HttpResponse.json({
-          autoSubscribeOwnedItems: true,
-          notifyOwnActions: true,
-          notifyOnCreated: true,
-          notifyOnCancelled: true,
-          emailDelivery: false,
-        }),
+    http.get<never, never, BookingNotificationPreferences | ApiV2Problem>("/api/v2/users/me/booking-notification-preferences", () =>
+      HttpResponse.json({
+        autoSubscribeOwnedItems: true,
+        notifyOwnActions: true,
+        notifyOnCreated: true,
+        notifyOnCancelled: true,
+        emailDelivery: false,
+      }),
     ),
   );
 }

@@ -1,3 +1,5 @@
+import type { QueryClient } from "@tanstack/react-query";
+import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
   getSearchBookingConfigurationTargetsQueryOptions,
@@ -13,7 +15,6 @@ import {
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { isNonEmpty } from "@/util/ArrayUtils";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
   await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
@@ -144,17 +145,11 @@ export async function fetchBookingOwnershipCandidates(
   ).docs.map(mapBookingConfiguration);
 }
 
-export function bookingRouteTargetQuery(globalId: string | undefined) {
-  return getSearchBookingConfigurationTargetsQueryOptions(
-    { q: globalId ?? "", limit: 20 },
-    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
-  );
-}
-
-/** The route-target search for a known target, read with `useSuspenseQuery`; it shares `bookingRouteTargetQuery`'s key. */
-export function bookingRouteTargetSuspenseQuery(globalId: string) {
-  return getSearchBookingConfigurationTargetsSuspenseQueryOptions(
-    { q: globalId, limit: 20 },
-    { query: { select: mapBookingTargetDirectory } },
-  );
+export async function invalidateBookingCatalogueQueries(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    invalidateBookingListOperation(queryClient, "catalogue"),
+    invalidateBookingListOperation(queryClient, "locations"),
+    invalidateBookingListOperation(queryClient, "calendarCatalogue"),
+    invalidateBookingListOperation(queryClient, "availabilityCounts"),
+  ]);
 }

@@ -5,8 +5,8 @@ import { test as base } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN, USERS } from "@/__tests__/e2e/users";
-import type { ApiV2RuntimeFieldCatalogEntry } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalogEntry";
 import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
+import type { ApiV2RuntimeFieldCatalogEntry } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalogEntry";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 
 type CreatedInstrument = { id: number; globalId: string; name: string; sharingMode?: string };

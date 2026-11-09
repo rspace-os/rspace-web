@@ -238,6 +238,7 @@ export function useCreateBooking() {
           invalidateListBookings(queryClient),
           invalidateCountBookings(queryClient),
           invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "availabilityCounts"),
           invalidateBookingListOperation(queryClient, "locations"),
           invalidateBookingListOperation(queryClient, "calendarCatalogue"),
           invalidateBookingListOperation(queryClient, "calendarEvents"),
@@ -252,6 +253,7 @@ export function useCreateBooking() {
           invalidateGetBookingConfigurationAccess(queryClient, id),
           invalidateListBookingConfigurationAuditEvents(queryClient, id),
           invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "availabilityCounts"),
           invalidateBookingListOperation(queryClient, "calendarCatalogue"),
         ]);
       }
