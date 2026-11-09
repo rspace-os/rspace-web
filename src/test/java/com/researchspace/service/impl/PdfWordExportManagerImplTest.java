@@ -2,27 +2,46 @@ package com.researchspace.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.export.pdf.ExportFormat;
 import com.researchspace.export.pdf.ExportOperationDetails;
+import com.researchspace.export.pdf.ExportProcessor;
+import com.researchspace.export.pdf.ExportProcessorInput;
 import com.researchspace.export.pdf.ExportToFileConfig;
+import com.researchspace.export.pdf.HTMLStringGenerator;
+import com.researchspace.files.service.FileStore;
+import com.researchspace.model.FileProperty;
+import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.FolderManager;
+import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.TestFactory;
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -36,6 +55,13 @@ public class PdfWordExportManagerImplTest {
   RecordFactory recordFactory;
   ExportToFileConfig config;
   @Mock IPermissionUtils permissions;
+  @Mock CommunicationManager commMgr;
+  @Mock FolderManager fMger;
+  @Mock RecordManager recordManager;
+  @Mock IMediaFactory ecatDocumentFactory;
+  @Mock ExportProcessor processor;
+  @Mock HTMLStringGenerator htmlStringGenerator;
+  @Mock FileStore fileStore;
   @InjectMocks PdfWordExportManagerImpl pdfExporter;
 
   @BeforeEach
@@ -116,6 +142,63 @@ public class PdfWordExportManagerImplTest {
 
     config.setExportName("name with ?\"<> chars");
     assertExportName("name_with______chars");
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void failedExportNotifiesExporterWithoutCreatingGalleryFile(boolean mergeFailure)
+      throws Exception {
+    otherUser = TestFactory.createAnyUser("exporter");
+    config.setExportName("empty <folder>");
+    config.setExportFormat("PDF");
+    config.setExportScope(ExportScope.SELECTION);
+    Folder folder = TestFactory.createAFolder("empty", anyUser);
+    folder.setId(1L);
+    when(fMger.getFolder(1L, anyUser, SearchDepth.INFINITE)).thenReturn(folder);
+    when(permissions.isPermitted(folder, PermissionType.READ, anyUser)).thenReturn(true);
+    ReflectionTestUtils.setField(pdfExporter, "exportProcessors", List.of(processor));
+    if (mergeFailure) {
+      StructuredDocument doc = TestFactory.createAnySD();
+      doc.setOwner(anyUser);
+      doc.setId(2L);
+      folder.addChild(doc, anyUser);
+      when(recordManager.getRecordWithFields(2L, anyUser)).thenReturn(doc);
+      when(permissions.isPermitted(doc, PermissionType.READ, anyUser)).thenReturn(true);
+      when(htmlStringGenerator.extractHtmlStr(doc, config))
+          .thenReturn(new ExportProcessorInput("content", List.of(), null, List.of(), Set.of()));
+      when(processor.supportsFormat(ExportFormat.PDF)).thenReturn(true);
+      when(processor.concatenateExportedFilesIntoOne(
+              any(File.class), anyList(), same(fileStore), any(FileProperty.class), same(config)))
+          .thenThrow(new IOException("merge failed"));
+    }
+
+    var result =
+        pdfExporter.doExport(
+            anyUser,
+            new Long[] {1L},
+            new String[] {"empty"},
+            new String[] {"FOLDER"},
+            config,
+            otherUser);
+
+    assertNull(result.getEcatDocumentFile());
+    String detail =
+        mergeFailure
+            ? "Export could not be generated"
+            : "Export cancelled because the selection contains no data";
+    verify(commMgr)
+        .systemNotify(
+            eq(NotificationType.PROCESS_COMPLETED),
+            argThat(
+                message -> message.contains("empty &lt;folder&gt;") && message.contains(detail)),
+            eq(otherUser.getUsername()),
+            eq(true));
+    verifyNoMoreInteractions(commMgr);
+    verifyNoInteractions(ecatDocumentFactory);
+    verify(recordManager, never()).getGalleryMediaFolderForUser(anyString(), any(User.class));
+    if (!mergeFailure) {
+      verifyNoInteractions(processor, htmlStringGenerator, fileStore);
+    }
   }
 
   private void assertExportName(String expected) throws IOException {
