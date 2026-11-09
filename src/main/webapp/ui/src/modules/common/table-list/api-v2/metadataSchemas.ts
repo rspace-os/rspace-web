@@ -100,6 +100,7 @@ export const runtimeNamespaceSchema = v.object({
   catalogMaximumLimit: positiveInteger,
   catalogMaximumIds: positiveInteger,
   via: v.string(),
+  /** The resource the `via` relationship points at, when the namespace is reached through one. */
   viaResource: v.optional(v.string()),
 });
 export const metadataRuntimeFieldsSchema = v.optional(
