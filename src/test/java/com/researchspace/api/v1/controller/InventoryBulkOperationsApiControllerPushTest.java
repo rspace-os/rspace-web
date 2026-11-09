@@ -13,6 +13,7 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler.InventoryBulkOperationException;
@@ -41,6 +42,7 @@ public class InventoryBulkOperationsApiControllerPushTest {
   @Mock private InstrumentsApiController instrumentsApiController;
   @Mock private SmartValidator mvcValidator;
   @Mock private ApiControllerAdvice apiControllerAdvice;
+  @Mock private UserManager userManager;
 
   @InjectMocks private InventoryBulkOperationsApiController controller;
 

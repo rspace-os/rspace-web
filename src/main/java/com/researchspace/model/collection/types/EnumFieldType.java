@@ -25,7 +25,8 @@ public record EnumFieldType<E extends Enum<E>>(Class<E> javaType)
         "string",
         null,
         null,
-        Map.of("enum", Arrays.stream(javaType.getEnumConstants()).map(Enum::name).toList()));
+        Map.of("enum", Arrays.stream(javaType.getEnumConstants()).map(Enum::name).toList()),
+        javaType);
   }
 
   @Override
