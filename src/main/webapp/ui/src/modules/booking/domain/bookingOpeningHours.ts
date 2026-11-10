@@ -9,7 +9,7 @@ const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
 export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);
 
-export type OpeningHoursEntry = { dayOfWeek: number; start: string; end: string };
+export type OpeningHoursEntry = BookingOpeningHoursEntry;
 
 /** Check schedule policy and sort without mutating the wire response. */
 export function mapOpeningHours(entries: readonly BookingOpeningHoursEntry[]): OpeningHoursEntry[] {
@@ -33,7 +33,7 @@ export function mapOpeningHours(entries: readonly BookingOpeningHoursEntry[]): O
   return mapped.toSorted((left, right) => left.dayOfWeek - right.dayOfWeek);
 }
 
-export type OpeningInterval = { start: string; end: string };
+export type OpeningInterval = Pick<BookingOpeningHoursEntry, "start" | "end">;
 
 /** A localized weekday name; 2024-01-01 is a Monday. */
 export function formatIsoWeekday(dayOfWeek: number, width: "long" | "short" = "long", locale = "en-US"): string {
