@@ -20,7 +20,9 @@
 
         <property name="loginUrl" value="/login" />
         <property name="successUrl" value="/workspace" />
-        <property name="unauthorizedUrl" value="login?error=true" />
+        <!-- Leave unauthorizedUrl unset: role denials then get a 403 through /403.jsp.
+             The old relative "login?error=true" resolved under nested restricted paths
+             (/system/x -> /system/login), which was denied again and looped. -->
 
         <!-- Custom filters used in the chain definitions must be listed here; Shiro 3
              no longer auto-discovers Filter beans (we deliberately do not register its

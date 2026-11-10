@@ -1,6 +1,9 @@
+import robotoNormal from "@fontsource-variable/roboto/wght.css?inline";
+import robotoItalic from "@fontsource-variable/roboto/wght-italic.css?inline";
 import { Editor } from "@tinymce/tinymce-react";
 import type React from "react";
 import type { RawEditorOptions } from "tinymce";
+import { fontFamily } from "@/fonts";
 
 /*
  * The Inventory rich-text editor uses a self-hosted TinyMCE 8 build that is
@@ -38,7 +41,7 @@ const TINYMCE_SCRIPT_SRC = `${__TINYMCE_BASE__}tinymce.min.js${TINYMCE_CACHE_SUF
 
 const customStyles =
   `.mce-content-body {
-    font-family: "Roboto", "Helvetica", sans-serif;
+    font-family: ${fontFamily};
   }` +
   `.mce-content-body:not(.mce-content-readonly) {
   border-radius: 4px;
@@ -87,7 +90,8 @@ export default function StyledTinyMceEditor({
 
         branding: false,
         content_css: false,
-        content_style: [init.content_style || "", customStyles].join("\n"),
+        // The editor iframe has its own document and cannot use parent font faces.
+        content_style: [robotoNormal, robotoItalic, init.content_style || "", customStyles].join("\n"),
       }}
       {...props}
     />

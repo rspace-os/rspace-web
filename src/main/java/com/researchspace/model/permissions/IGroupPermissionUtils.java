@@ -49,6 +49,17 @@ public interface IGroupPermissionUtils {
    */
   User assertLeaveGroupPermissions(String leaveCandidateUsername, User subject, Group grp);
 
+  /**
+   * Whether <code>subject</code> is removing themselves from <code>grp</code> in a setting that
+   * allows self-service leaving (RSPAC-1662): any group on Community, or a project group.
+   *
+   * @param leaveCandidateUsername the user leaving
+   * @param subject the user making the request
+   * @param grp the group
+   * @return <code>true</code> if this is a self-service leave
+   */
+  boolean isSelfServiceLeave(String leaveCandidateUsername, User subject, Group grp);
+
   /** Whether PI can edit all work in labGroup */
   boolean piCanEditAllWorkInLabGroup(Group group);
 }

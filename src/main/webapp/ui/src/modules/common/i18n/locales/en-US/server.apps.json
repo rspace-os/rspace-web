@@ -30,7 +30,8 @@
     },
     "dmpOnline": {
       "errors": {
-        "connect": "Error connecting to DMPonline."
+        "connect": "Error connecting to DMPonline.",
+        "invalidPlanUrl": "The plan identifier is not a DMPonline plan URL."
       }
     },
     "dmpTool": {
@@ -81,7 +82,8 @@
       "errors": {
         "authenticationFailed": "Couldn't authenticate with provided credentials.",
         "credentialsRequired": "Egnyte username and password must be provided.",
-        "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials."
+        "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials.",
+        "invalidDomainUrl": "Egnyte Domain URL must be an http:// or https:// address."
       }
     },
     "fieldmark": {
@@ -253,6 +255,7 @@
       "invalidCredentials": "Invalid user credentials.",
       "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
       "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+      "serverBusy": "The server is busy; retry after the Retry-After interval.",
       "tokenCreationFailed": "OAuth token could not be created.",
       "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
       "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",

@@ -9,6 +9,7 @@ import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -64,6 +65,22 @@ public interface UserDao extends GenericDao<User, Long> {
   Optional<User> getUserByUsernameAlias(String usernameAlias);
 
   /**
+   * Looks up users by username in one query.
+   *
+   * @return the users that exist, in no particular order; unknown usernames are skipped
+   */
+  List<User> getUsersByUsernames(Collection<String> usernames);
+
+  /**
+   * Spellings the {@code User.username} collation treats as equal give the same key. The key is for
+   * in-memory locks only and is never stored.
+   *
+   * @param name a username or alias; trimmed first
+   * @return the collation weight of the name, or {@code ""} for a null or blank name
+   */
+  String usernameLockKey(String name);
+
+  /**
    * Gets a paginated list of users and returns an {@link ISearchResults}
    *
    * @param pgCrit
@@ -88,6 +105,14 @@ public interface UserDao extends GenericDao<User, Long> {
    * @return
    */
   TokenBasedVerification getByToken(String token);
+
+  /**
+   * Marks an unused token as used in a single conditional update, so that of two concurrent
+   * requests with the same token exactly one succeeds. Must run inside the caller's transaction.
+   *
+   * @return 1 for the request that claimed the token, 0 if it was already used
+   */
+  int claimTokenBasedVerification(String token);
 
   /**
    * Gets a list of users with the given email

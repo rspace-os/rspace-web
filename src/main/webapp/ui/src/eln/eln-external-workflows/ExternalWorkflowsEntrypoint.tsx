@@ -1,0 +1,52 @@
+import { createRoot, type Root } from "react-dom/client";
+import ExternalWorkflowInvocations from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
+
+const externalWorkflowRoots = new WeakMap<Element, Root>();
+
+function getExternalWorkflowRoot(container: Element): Root {
+  const existingRoot = externalWorkflowRoots.get(container);
+  if (existingRoot) {
+    return existingRoot;
+  }
+
+  const root = createRoot(container);
+  externalWorkflowRoots.set(container, root);
+  return root;
+}
+
+/**
+ * ExternalWorkflows (eg Galaxy) represents remote computation. RSpace will display a data table
+ * of external workflows that have used data attached to an RSpace Document and subsequently uploaded to a remote server
+ * then used in remote computation.
+ */
+
+/**
+ * invoked on page load of a notebook page by journal.js event dispatch
+ */
+
+window.addEventListener("extWorkFlows-init", () => {
+  loadUIOnPageLoad(true);
+});
+/**
+ * notebook pages and structured doc pages require different positioning for the Workflow Button
+ * @param isForNotebookPage
+ */
+const loadUIOnPageLoad = (isForNotebookPage = false) => {
+  document.querySelectorAll<HTMLElement>(".ext-workflows-textfield").forEach((wrapperDiv) => {
+    const fieldId = wrapperDiv.getAttribute("data-field-id");
+    if (isForNotebookPage) {
+      wrapperDiv.style.position = "relative";
+    }
+    const root = getExternalWorkflowRoot(wrapperDiv);
+    root.render(
+      <I18nRoot namespaces={["apps"]}>
+        <ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId} />
+      </I18nRoot>,
+    );
+  });
+};
+/**
+ * invoked when Structured Doc page loads (but not when a Notebook page loads)
+ */
+loadUIOnPageLoad();

@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import type React from "react";
 import axios from "@/common/axios";
+import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 import NavigateContext from "../../../../stores/contexts/Navigate";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -12,12 +15,23 @@ import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import Sidebar from "../Sidebar";
 
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   useIntegrationIsAllowedAndEnabled: () => ({
     tag: "success",
     value: false,
   }),
 }));
+
+// Defaults to DENIED so the two pre-existing tests below are unaffected; the Requests-visibility
+// tests further down set this explicitly for each case.
+function deploymentProperties(sampleRequestsAvailable: "ALLOWED" | "DENIED" = "DENIED") {
+  return new Map<string, unknown>([["inventory.sampleRequests.available", sampleRequestsAvailable]]);
+}
 
 const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
@@ -40,13 +54,15 @@ describe("Sidebar", () => {
         },
       },
     });
-    const { container } = render(
+    const { container } = renderWithProviders(
       <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <storesContext.Provider value={rootStore}>
-            <Sidebar id="foo" />
-          </storesContext.Provider>
-        </LandmarksProvider>
+        <DeploymentPropertyContext.Provider value={deploymentProperties()}>
+          <LandmarksProvider>
+            <storesContext.Provider value={rootStore}>
+              <Sidebar id="foo" />
+            </storesContext.Provider>
+          </LandmarksProvider>
+        </DeploymentPropertyContext.Provider>
       </ThemeProvider>,
     );
 
@@ -79,26 +95,28 @@ describe("Sidebar", () => {
         },
       },
     });
-    render(
+    renderWithProviders(
       <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <storesContext.Provider value={rootStore}>
-            <NavigateContext.Provider
-              value={{
-                useNavigate: () => navFn,
-                useLocation: () => ({
-                  hash: "",
-                  pathname: "",
-                  search: "",
-                  state: {},
-                  key: "",
-                }),
-              }}
-            >
-              <Sidebar id="foo" />
-            </NavigateContext.Provider>
-          </storesContext.Provider>
-        </LandmarksProvider>
+        <DeploymentPropertyContext.Provider value={deploymentProperties()}>
+          <LandmarksProvider>
+            <storesContext.Provider value={rootStore}>
+              <NavigateContext.Provider
+                value={{
+                  useNavigate: () => navFn,
+                  useLocation: () => ({
+                    hash: "",
+                    pathname: "",
+                    search: "",
+                    state: {},
+                    key: "",
+                  }),
+                }}
+              >
+                <Sidebar id="foo" />
+              </NavigateContext.Provider>
+            </storesContext.Provider>
+          </LandmarksProvider>
+        </DeploymentPropertyContext.Provider>
       </ThemeProvider>,
     );
 
@@ -108,5 +126,36 @@ describe("Sidebar", () => {
     const [url] = navFn.mock.calls[0];
     expect(url).toMatch(/^\/inventory\/search\?/);
     expect(setVisiblePanel).not.toHaveBeenCalled();
+  });
+
+  function renderSidebar(sampleRequestsAvailable: "ALLOWED" | "DENIED") {
+    mockAxios.onGet("livechatProperties").reply(200, { livechatEnabled: false });
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    return renderWithProviders(
+      <ThemeProvider theme={materialTheme}>
+        <DeploymentPropertyContext.Provider value={deploymentProperties(sampleRequestsAvailable)}>
+          <LandmarksProvider>
+            <storesContext.Provider value={rootStore}>
+              <Sidebar id="foo" />
+            </storesContext.Provider>
+          </LandmarksProvider>
+        </DeploymentPropertyContext.Provider>
+      </ThemeProvider>,
+    );
+  }
+
+  test("hides the Requests nav item when inventory.sampleRequests.available is not ALLOWED.", () => {
+    renderSidebar("DENIED");
+
+    expect(screen.queryByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeNull();
+  });
+
+  test("shows the Requests nav item when inventory.sampleRequests.available is ALLOWED.", () => {
+    renderSidebar("ALLOWED");
+
+    expect(screen.getByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeInTheDocument();
   });
 });

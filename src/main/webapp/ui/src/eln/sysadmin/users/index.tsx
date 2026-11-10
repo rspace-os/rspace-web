@@ -21,6 +21,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import Chip, { chipClasses } from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -39,7 +40,6 @@ import Popover from "@mui/material/Popover";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
-import { ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
@@ -48,7 +48,7 @@ import { tablePaginationClasses } from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import {
   ColumnsPanelTrigger,
   DataGrid,
@@ -60,15 +60,12 @@ import {
   GridToolbarExportContainer,
   useGridApiContext,
 } from "@mui/x-data-grid";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { delay } from "es-toolkit";
+import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import axios from "@/common/axios";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import createAccentedTheme from "../../../accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import Alerts from "../../../components/Alerts/Alerts";
 import Analytics from "../../../components/Analytics";
 import CustomTooltip from "../../../components/CustomTooltip";
@@ -76,15 +73,14 @@ import ErrorBoundary from "../../../components/ErrorBoundary";
 import ExportMenuItem from "../../../components/ExportMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SecretField from "../../../components/Inputs/SecretField";
-import LoaderCircular from "../../../components/LoadingCircular";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ExportDialog from "../../../Export/ExportDialog";
 import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerificationPasswordNeeded";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
-import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/useUiPreference";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
 import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
-import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { getErrorMessage } from "../../../util/error";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
 import type { Optional } from "../../../util/optional";
@@ -745,6 +741,22 @@ const DeleteAction = ({
     .flatMap(Parsers.isTrue)
     .mapError(() => new Error(t("usersPage.deleteDialog.disabledByDeployment")))
     .flatMap(() => selectedUser.mapError(() => new Error(t("usersPage.deleteDialog.onlyOneUser"))));
+  const userId = allowedToDelete.map((u) => u.id).orElse(null);
+  const formsAndTemplatesUsage = useQuery({
+    queryKey: ["system", "formsAndTemplatesUsage", userId],
+    queryFn: async () => {
+      const { data } = await axios.get<{ formsUsedByOtherUsers: boolean; templatesUsedByOtherUsers: boolean }>(
+        "/system/ajax/removeUserAccount/formsAndTemplatesUsage",
+        { params: { userId } },
+      );
+      return data;
+    },
+    enabled: open && userId !== null,
+    // a failure only changes the dialog's wording, so don't keep the sysadmin waiting on retries
+    retry: false,
+  });
+  const formsTransferred = formsAndTemplatesUsage.data?.formsUsedByOtherUsers ?? false;
+  const anythingTransferred = formsTransferred || (formsAndTemplatesUsage.data?.templatesUsedByOtherUsers ?? false);
   return (
     <>
       <MenuItem
@@ -816,7 +828,14 @@ const DeleteAction = ({
                     mb: 2,
                   }}
                 >
-                  {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
+                  {formsAndTemplatesUsage.isError && (
+                    <Alert severity="warning" sx={{ mb: 1 }}>
+                      <Typography variant="body2">
+                        {t("usersPage.deleteDialog.formsAndTemplatesCheckFailed")}
+                      </Typography>
+                    </Alert>
+                  )}
+                  {anythingTransferred && (
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
                         <TransRichText i18nKey="system:usersPage.deleteDialog.formsAndTemplatesNotice" />
@@ -831,7 +850,7 @@ const DeleteAction = ({
                   >
                     {t("usersPage.deleteDialog.irreversible")}
                   </Typography>
-                  {user.hasFormsUsedByOtherUsers && (
+                  {formsTransferred && (
                     <Typography
                       variant="body2"
                       sx={{
@@ -883,10 +902,11 @@ const DeleteAction = ({
                 </Button>
                 <SubmitSpinnerButton
                   type="submit"
-                  loading={false}
-                  disabled={false}
+                  loading={formsAndTemplatesUsage.isPending}
+                  disabled={formsAndTemplatesUsage.isPending}
                   label={
-                    user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers
+                    // if the check failed, the server may still transfer on deletion
+                    anythingTransferred || formsAndTemplatesUsage.isError
                       ? t("usersPage.deleteDialog.transferAndDelete")
                       : t("common:actions.delete")
                   }
@@ -1215,6 +1235,8 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
   const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
   const [tags, setTags] = React.useState<Array<string>>([]);
+  const [exportingAll, setExportingAll] = React.useState(false);
+  const { addAlert } = React.useContext(AlertContext);
   const apiRef = useGridApiContext();
 
   /*
@@ -1224,24 +1246,35 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
    * table to a valid state.
    */
   const exportAllRows = async () => {
-    // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-    let priorSearchParameters;
-    const newListing: UserListing = await FetchingData.match(userListing, {
-      loading: () => Promise.reject(new Error("loading")),
-      error: () => Promise.reject(new Error("error")),
-      success: (listing) => {
-        priorSearchParameters = listing.getSearchParameters();
-        return listing.allUsers();
-      },
-    });
-    await delay(2000); // wait for the table to be re-rendered
-    apiRef.current?.exportDataAsCsv({
-      getRowsToExport: () => newListing.users.map((u) => u.id),
-      allColumns: true,
-    });
-    await delay(2000); // wait for download to be done
-    if (priorSearchParameters) {
-      await newListing.setSearchParameters(priorSearchParameters);
+    setExportingAll(true);
+    let restorePriorListing = () => Promise.resolve();
+    try {
+      const newListing: UserListing = await FetchingData.match(userListing, {
+        loading: () => Promise.reject(new Error("loading")),
+        error: () => Promise.reject(new Error("error")),
+        success: (listing) => {
+          const priorSearchParameters = listing.getSearchParameters();
+          restorePriorListing = () => listing.setSearchParameters(priorSearchParameters);
+          return listing.allUsers();
+        },
+      });
+      // the grid only gets the new rows on its next render, so hand them over now
+      apiRef.current?.setRows([...newListing.users]);
+      apiRef.current?.exportDataAsCsv({
+        getRowsToExport: () => newListing.users.map((u) => u.id),
+        allColumns: true,
+      });
+    } catch (error) {
+      addAlert(
+        mkAlert({
+          title: t("usersPage.export.allRowsFailed"),
+          message: getErrorMessage(error, t("common:apiErrors.unknown")),
+          variant: "error",
+        }),
+      );
+    } finally {
+      await restorePriorListing();
+      setExportingAll(false);
     }
   };
   const exportVisibleRows = () => {
@@ -1382,15 +1415,29 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         <ViewColumnIcon sx={{ fontSize: 18, mr: 1 }} />
         {t("usersPage.columns.button")}
       </ColumnsPanelTrigger>
-      <GridToolbarExportContainer>
+      <Box role="status" sx={visuallyHidden}>
+        {exportingAll ? t("usersPage.export.allRowsInProgress") : ""}
+      </Box>
+      <GridToolbarExportContainer
+        slotProps={{
+          button: {
+            // while exporting the listing is loading too; aria-disabled keeps focus when the menu closes
+            disabled: !exportingAll && FetchingData.getSuccessValue(userListing).isError,
+            ...(exportingAll ? { "aria-disabled": true, startIcon: <CircularProgress size={16} aria-hidden /> } : {}),
+          },
+        }}
+      >
         <ExportMenuItem
-          onClick={async () => {
-            await exportAllRows();
+          disabled={exportingAll}
+          onClick={() => {
+            // not awaited, so the menu closes and the button shows progress instead
+            void exportAllRows();
           }}
         >
           {t("usersPage.export.allRows")}
         </ExportMenuItem>
         <ExportMenuItem
+          disabled={exportingAll}
           onClick={() => {
             exportVisibleRows();
           }}
@@ -1971,21 +2018,3 @@ export const UsersPage = (): React.ReactNode => {
     </Analytics>
   );
 };
-const queryClient = new QueryClient();
-const wrapperDiv = document.getElementById("sysadminUsers");
-if (wrapperDiv) {
-  const root = createRoot(wrapperDiv);
-  root.render(
-    <I18nRoot namespaces={["system", "common"]} fallback={<LoaderCircular />}>
-      <QueryClientProvider client={queryClient}>
-        <StyledEngineProvider injectFirst enableCssLayer>
-          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-            <UiPreferences>
-              <UsersPage />
-            </UiPreferences>
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </QueryClientProvider>
-    </I18nRoot>,
-  );
-}

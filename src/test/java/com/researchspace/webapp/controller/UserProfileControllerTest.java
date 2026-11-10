@@ -7,14 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
@@ -26,15 +32,21 @@ import com.researchspace.model.frontend.PublicOAuthAppInfo;
 import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.ReauthenticationResult;
+import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.testutils.TestFactory;
+import com.researchspace.webapp.controller.UserProfileController.ApiKeyInfo;
 import com.researchspace.webapp.controller.UserProfileController.UserGroupInfo;
 import java.io.IOException;
 import java.security.Principal;
@@ -44,6 +56,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.shiro.authz.AuthorizationException;
+import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,6 +77,8 @@ public class UserProfileControllerTest {
   @Mock AnalyticsManager analMgr;
   @Mock OAuthAppManager oAuthAppManager;
   @Mock OAuthTokenManager oAuthTokenManager;
+  @Mock IReauthenticator reauthenticator;
+  @Mock UserApiKeyManager apiKeyMgr;
 
   @InjectMocks UserProfileController userProfileController;
   User anyUser, sessionUser;
@@ -75,6 +91,73 @@ public class UserProfileControllerTest {
     sessionUser = TestFactory.createAnyUser("session");
     sessionUser.setId(3L);
     this.mockRequest = new MockHttpServletRequest();
+  }
+
+  @Test
+  public void anonymousGuestCannotCreateInventoryOauthToken() {
+    User anonymousGuest = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
+    assertTrue(anonymousGuest.isLoginDisabled());
+    when(usrMgr.getUserByUsername(anonymousGuest.getUsername())).thenReturn(anonymousGuest);
+    when(messages.getMessage("errors.authorization.inventoryOauthToken.loginRequired"))
+        .thenReturn("Login required");
+
+    AuthorizationException refused =
+        assertThrows(
+            AuthorizationException.class,
+            () -> userProfileController.getInventoryOauthToken(anonymousGuest::getUsername));
+
+    assertEquals("Login required", refused.getMessage());
+    verifyNoInteractions(oAuthTokenManager);
+  }
+
+  @Test
+  public void signedInUserCanCreateInventoryOauthToken() {
+    userProfileController.init();
+    NewOAuthTokenResponse tokenResponse = new NewOAuthTokenResponse();
+    tokenResponse.setAccessToken("inventory-token");
+    when(usrMgr.getUserByUsername(anyUser.getUsername())).thenReturn(anyUser);
+    when(oAuthTokenManager.createNewJwtToken(
+            "rsInventoryWebClient", "rsInventoryPublicSecret", anyUser, OAuthTokenType.UI_TOKEN))
+        .thenReturn(new ServiceOperationResult<>(tokenResponse, true));
+
+    AjaxReturnObject<String> result =
+        userProfileController.getInventoryOauthToken(anyUser::getUsername);
+
+    assertEquals("inventory-token", result.getData());
+  }
+
+  @Test
+  public void busyPasswordCheckOnApiKeyCreationSaysBusyAndCreatesNoKey() {
+    Subject subject = mock(Subject.class);
+    ShiroTestUtils shiro = new ShiroTestUtils();
+    shiro.setSubject(subject);
+    try {
+      when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
+      when(reauthenticator.reauthenticate(sessionUser, "pw"))
+          .thenReturn(ReauthenticationResult.BUSY);
+      when(messages.getMessage("errors.reauthentication.busy")).thenReturn("busy");
+
+      AjaxReturnObject<ApiKeyInfo> aro = userProfileController.generateApiKey("pw", mockRequest);
+
+      assertEquals(List.of("busy"), aro.getErrorMsg().getErrorMessages());
+      verify(apiKeyMgr, never()).createKeyForUser(any());
+    } finally {
+      shiro.clearSubject();
+    }
+  }
+
+  @Test
+  public void busyPasswordCheckOnEmailChangeSaysBusyAndChangesNothing() {
+    when(usrMgr.getUserByUsername("session", true)).thenReturn(sessionUser);
+    when(reauthenticator.reauthenticate(sessionUser, "pw")).thenReturn(ReauthenticationResult.BUSY);
+    when(messages.getMessage("errors.reauthentication.busy")).thenReturn("busy");
+
+    AjaxReturnObject<String> aro =
+        userProfileController.changeEmail(
+            "new@x.com", "new@x.com", "pw", mockRequest, null, () -> "session");
+
+    assertEquals(List.of("busy"), aro.getErrorMsg().getErrorMessages());
+    verify(usrMgr, never()).save(any(User.class));
   }
 
   @Test

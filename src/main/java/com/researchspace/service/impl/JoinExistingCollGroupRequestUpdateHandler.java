@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -44,6 +45,15 @@ public class JoinExistingCollGroupRequestUpdateHandler extends AbstractRSpaceReq
 
     GroupMessageOrRequest grReq = (GroupMessageOrRequest) mor;
     if (grReq.getGroup() != null) {
+      Group collabGroup = groupMgr.getGroup(grReq.getGroup().getId());
+      User inviter = grReq.getOriginator();
+      if (!(inviter.isPiOrLabAdminOfGroup(collabGroup) || inviter.hasRole(Role.SYSTEM_ROLE))) {
+        logger.warn(
+            "Ignoring invitation to collab group {} from {}, who is no longer its PI or lab admin",
+            collabGroup.getId(),
+            inviter.getUsername());
+        return;
+      }
       try {
         Group group =
             groupMgr.addUserToGroup(

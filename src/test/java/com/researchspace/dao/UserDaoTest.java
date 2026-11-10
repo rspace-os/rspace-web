@@ -62,6 +62,14 @@ public class UserDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void getUsersByUsernamesSkipsUnknownUsernames() {
+    assertThat(userDao.getUsersByUsernames(List.of("user1a", "user2b", "noSuchUser")))
+        .extracting(User::getUsername)
+        .containsExactlyInAnyOrder("user1a", "user2b");
+    assertThat(userDao.getUsersByUsernames(List.of())).isEmpty();
+  }
+
+  @Test
   public void testGetUserBasicInfoWithRole() throws Exception {
 
     List<UserRoleView> users = userDao.getUsersBasicInfoWithRoles();
@@ -312,6 +320,24 @@ public class UserDaoTest extends BaseDaoTestCase {
     assertNotNull(retrieved);
     assertEquals(retrieved, upc);
     assertNull(userDao.getByToken("anytoken"));
+  }
+
+  /**
+   * Two concurrent claims cannot be shown in one test transaction; the conditional update itself is
+   * what lets exactly one of them match the row.
+   */
+  @Test
+  public void tokenCanBeClaimedOnlyOnce() {
+    TokenBasedVerification upc =
+        userDao.saveTokenBasedVerification(
+            new TokenBasedVerification(
+                "a@b.com", null, TokenBasedVerificationType.PASSWORD_CHANGE));
+    flushDatabaseState();
+
+    assertEquals(1, userDao.claimTokenBasedVerification(upc.getToken()));
+    assertEquals(0, userDao.claimTokenBasedVerification(upc.getToken()));
+    sessionFactory.getCurrentSession().clear();
+    assertTrue(userDao.getByToken(upc.getToken()).isResetCompleted());
   }
 
   @Test
@@ -754,5 +780,30 @@ public class UserDaoTest extends BaseDaoTestCase {
     User user = createAndSaveRandomUser();
     UserView userView = userDao.getUserViewByUsername(user.getUsername());
     assertEquals(user.getEmail(), userView.getEmail());
+  }
+
+  @Test
+  void usernameLockKeyIsEqualForSpellingsTheUsernameCollationTreatsAsEqual() {
+    assertEquals(userDao.usernameLockKey("jose"), userDao.usernameLockKey("José"));
+    assertEquals(userDao.usernameLockKey("jose"), userDao.usernameLockKey("JOSE "));
+    assertEquals(userDao.usernameLockKey("strasse"), userDao.usernameLockKey("Straße"));
+    assertNotEquals(userDao.usernameLockKey("alice"), userDao.usernameLockKey("alicf"));
+    assertEquals("", userDao.usernameLockKey("  "));
+    assertEquals("", userDao.usernameLockKey(null));
+  }
+
+  @Test
+  void usernameCollationIsTheOneUsernameLockKeyHardcodes() {
+    Object collation =
+        sessionFactory
+            .getCurrentSession()
+            .createNativeQuery(
+                "select collation_name from information_schema.columns where table_schema ="
+                    + " database() and table_name = 'User' and column_name = 'username'")
+            .uniqueResult();
+    assertEquals(
+        "utf8mb4_unicode_ci",
+        collation,
+        "usernameLockKey hardcodes this collation; change both together");
   }
 }

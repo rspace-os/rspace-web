@@ -2720,7 +2720,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(Integer.valueOf(1), newNotifications.getHits());
     Notification htmlNotification = newNotifications.getFirstResult();
     String htmlExportNotificationMsg = htmlNotification.getNotificationMessage();
-    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("-html-");
+    assertThat(htmlExportNotificationMsg)
+        .as(htmlExportNotificationMsg)
+        .contains("<a href='http://www.google.com'>" + file.getName() + "</a>");
+    assertThat(file.getName()).contains("-html-").endsWith(".zip");
     assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("/export/report/");
     assertThat(htmlExportNotificationMsg)
         .as(htmlExportNotificationMsg)

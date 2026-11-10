@@ -22,6 +22,7 @@
     }
   },
   "errors": {
+    "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
     "upload": {
       "imageContentMismatch": "File {0} was rejected: its content does not match the {1} type claimed by its file extension."
     },
@@ -101,6 +102,9 @@
         "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account",
         "viewComments": "Unauthorized attempt by {0} to view comments"
       },
+      "inventoryOauthToken": {
+        "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+      },
       "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
       "signing": "Only the record owner can sign the record.",
       "sysadminApiOnly": "Only sysadmin can use this API",
@@ -156,6 +160,7 @@
       "adminLogin": {
         "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
       },
+      "busy": "The server is busy and could not check your password. Please try again in a moment.",
       "credentials": {
         "wrong": "Invalid username or password, please try again."
       },
@@ -185,6 +190,12 @@
       }
     },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
+    "passwordReset": {
+      "rateLimited": "Too many password resets are being processed right now. Please try again in a moment."
+    },
+    "signup": {
+      "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
+    },
     "composedId": {
       "missing": "No id to retrieve",
       "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''"
@@ -214,6 +225,7 @@
       "notEqualUsername": "Please use a password other than your username."
     },
     "reauthentication": {
+      "busy": "The server is busy and could not check your password. Please try again in a moment. Nothing has been changed.",
       "failed": "Reauthentication failed, please try again."
     },
     "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",
@@ -347,7 +359,7 @@
       "invalidIgsn": "Invalid IGSN format: [{0}]",
       "invalidNumber": "Invalid number: {0}",
       "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
-      "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+      "invalidForLatestTemplate": "Field ''{0}'' has the value ''{1}'', which the latest template no longer allows. Change the value before updating to the latest template.",
       "mandatoryContentMissing": "Field [{0}] is mandatory, but no content is provided",
       "mandatoryInLatestTemplate": "Field [{0}] is empty, but is mandatory in latest template field definition",
       "noConnectedTemplate": "Field [{0}] has no connected template field",

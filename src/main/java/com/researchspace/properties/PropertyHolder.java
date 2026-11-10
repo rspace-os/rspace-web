@@ -40,6 +40,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${netfilestores.s3.delete.window.minutes}")
   private int s3DeleteWindowMinutes;
 
+  @Value("${search.minTermLength.user}")
+  private int userMinSearchTermLength;
+
+  @Value("${search.minTermLength.sysadmin}")
+  private int sysadminMinSearchTermLength;
+
   @Value("${netfilestores.export.enabled}")
   private String netFileStoresExportEnabled;
 
@@ -181,6 +187,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   @Value("${importArchiveFromServer.enabled}")
   private String importArchiveFromServerEnabled;
+
+  @Value("${importArchiveFromServer.folder:}")
+  private String importArchiveFromServerFolder;
 
   @Value("${rs.filestore}")
   private String fileStoreType;
@@ -497,6 +506,16 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   @Override
+  public int getUserMinSearchTermLength() {
+    return userMinSearchTermLength;
+  }
+
+  @Override
+  public int getSysadminMinSearchTermLength() {
+    return sysadminMinSearchTermLength;
+  }
+
+  @Override
   public String getNetFileStoresExportEnabled() {
     return netFileStoresExportEnabled;
   }
@@ -773,6 +792,21 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public boolean isImportArchiveFromServerEnabled() {
     return Boolean.parseBoolean(importArchiveFromServerEnabled);
+  }
+
+  @Override
+  public void setImportArchiveFromServerEnabled(String enabled) {
+    this.importArchiveFromServerEnabled = enabled;
+  }
+
+  @Override
+  public String getImportArchiveFromServerFolder() {
+    return importArchiveFromServerFolder;
+  }
+
+  @Override
+  public void setImportArchiveFromServerFolder(String folder) {
+    this.importArchiveFromServerFolder = folder;
   }
 
   @Override

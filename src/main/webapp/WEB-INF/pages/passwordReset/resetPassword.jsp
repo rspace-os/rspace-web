@@ -17,13 +17,14 @@
         <form:form action="${(passwordType == PasswordType.VERIFICATION_PASSWORD) ?
         '/vfpwd/verificationPasswordResetReply' : '/signup/passwordResetReply'}"
                    modelAttribute="passwordResetCommand">
+            <form:errors cssClass="text-danger" element="p" htmlEscape="true" role="alert"></form:errors>
             <form:errors class="rs-tooltip error" path="password"></form:errors>
             <div>
                 <label for="password"><spring:message code="resetPassword.newPasswordLabel" arguments="${passwordType.toString()}"/></label>
-                <form:password path="password" pattern="[ -~]{8,50}" style="width: 100%" title="${resetPasswordCharsTitle}" />
+                <form:password path="password" pattern="[ -~]{8,128}" style="width: 100%" title="${resetPasswordCharsTitle}" />
                 <p class="form-text"><spring:message code="resetPassword.passwordCharsHint"/></p>
                 <label for="confirmPassword"><spring:message code="resetPassword.confirmPasswordLabel" arguments="${passwordType.toString()}"/></label>
-                <form:password path="confirmPassword" style="width: 100%" pattern="[ -~]{8,50}" />
+                <form:password path="confirmPassword" style="width: 100%" pattern="[ -~]{8,128}" />
                 <form:hidden path="token"/>
             </div>
             <div class="bootstrap-custom-flat" style="margin-top: 10px;">

@@ -6,6 +6,7 @@ import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -122,6 +123,8 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
       if (!permitted && properties.isCloud()) {
         permitted = toJoin.hasMember(user);
       }
+    } else if (MessageType.REQUEST_JOIN_EXISTING_COLLAB_GROUP.equals(reqCmnd.getMessageType())) {
+      permitted = permitted && canInvitePiToCollabGroup(reqCmnd.getGroupId(), user);
     }
 
     if (!permitted) {
@@ -130,6 +133,15 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
               "errors.authorization.failure.createRequest",
               new Object[] {user.getUsername(), reqCmnd.getMessageType()}));
     }
+  }
+
+  private boolean canInvitePiToCollabGroup(Long groupId, User user) {
+    if (groupId == null) {
+      return false;
+    }
+    Group collabGroup = grpDao.get(groupId);
+    return collabGroup.isCollaborationGroup()
+        && (user.isPiOrLabAdminOfGroup(collabGroup) || user.hasRole(Role.SYSTEM_ROLE));
   }
 
   private boolean isJoinGroupRequest(MsgOrReqstCreationCfg reqCmnd) {

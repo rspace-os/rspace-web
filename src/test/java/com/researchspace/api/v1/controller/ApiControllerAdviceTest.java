@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
@@ -8,25 +9,35 @@ import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.apiutils.BindErrorList;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.LocalizedUnsupportedOperationException;
+import com.researchspace.model.inventory.field.FieldValueInvalidForLatestTemplateException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
+import java.sql.SQLException;
 import java.util.List;
+import org.hibernate.exception.GenericJDBCException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.context.request.ServletWebRequest;
 
 class ApiControllerAdviceTest {
 
@@ -57,6 +68,35 @@ class ApiControllerAdviceTest {
     assertEquals(
         "Error fetching notebooks due to the Fieldmark server",
         errorList.getValidationErrors().get(1).getMessage());
+  }
+
+  @Test
+  void busyPasswordCheckMapsTo503WithRetryAfterTheVerifierWait() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    advice.passwordWaitSeconds = 7;
+
+    ResponseEntity<Object> response =
+        advice.handlePasswordCheckBusy(new LoginVerificationBusyException("busy"), null);
+
+    assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+    assertEquals("7", response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
+    assertEquals(
+        "The server is busy; retry after the Retry-After interval.",
+        ((ApiError) response.getBody()).getMessage());
+  }
+
+  @Test
+  void busyPasswordCheckNeverAsksForAnImmediateRetryAndListsNoEmptyError() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    advice.passwordWaitSeconds = 0;
+
+    ResponseEntity<Object> response =
+        advice.handlePasswordCheckBusy(new LoginVerificationBusyException("busy"), null);
+
+    assertEquals("1", response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
+    assertEquals(List.of(), ((ApiError) response.getBody()).getErrors());
   }
 
   @Test
@@ -196,6 +236,49 @@ class ApiControllerAdviceTest {
   }
 
   @Test
+  void snapshotConflictMapsTo409() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleDataAccess(
+            jdbcFailure(1020), new ServletWebRequest(new MockHttpServletRequest()));
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(ApiErrorCodes.EDIT_CONFLICT.getCode(), error.getInternalCode());
+    assertEquals(
+        "This was changed by someone else at the same time. Reload and try again.",
+        error.getMessage());
+  }
+
+  @Test
+  void deadlockMapsTo409() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleDataAccess(
+            jdbcFailure(1213), new ServletWebRequest(new MockHttpServletRequest()));
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(
+        ApiErrorCodes.EDIT_CONFLICT.getCode(), ((ApiError) response.getBody()).getInternalCode());
+  }
+
+  @Test
+  void otherDataAccessFailuresStayServerErrors() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleDataAccess(
+            jdbcFailure(1146), new ServletWebRequest(new MockHttpServletRequest()));
+
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+  }
+
+  @Test
   void localizedModelExceptionIsResolvedAtApiBoundary() {
     ApiControllerAdvice advice = new ApiControllerAdvice();
     advice.messages = new MessageSourceUtils(new JsonMessageSource());
@@ -248,5 +331,60 @@ class ApiControllerAdviceTest {
         "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
         error.getMessage());
     assertEquals(List.of(error.getMessage()), error.getErrors());
+  }
+
+  @Test
+  void rejectedLatestTemplateValueMapsTo422() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    ResponseEntity<Object> response =
+        advice.handleFieldValueInvalidForLatestTemplate(
+            new FieldValueInvalidForLatestTemplateException("choice", "old value"), null);
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+    assertEquals(
+        "Field 'choice' has the value 'old value', which the latest template no longer allows."
+            + " Change the value before updating to the latest template.",
+        error.getMessage());
+    assertEquals(List.of(error.getMessage()), error.getErrors());
+  }
+
+  /** As Hibernate and Spring wrap a MariaDB error. */
+  private static HibernateJdbcException jdbcFailure(int errorCode) {
+    return new HibernateJdbcException(
+        new GenericJDBCException("failed", new SQLException("failed", "HY000", errorCode)));
+  }
+
+  @Test
+  void unexpectedPersistenceErrorsDoNotExposeDatabaseDetails() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    String internalDetails = "Deadlock executing update Container set schema = 'private'";
+
+    ResponseEntity<Object> response =
+        advice.handleAll(new DataAccessResourceFailureException(internalDetails), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertEquals("An error occurred on the server.", error.getMessage());
+    assertEquals(List.of("An error occurred on the server."), error.getErrors());
+    assertFalse(error.toString().contains(internalDetails));
+  }
+
+  @Test
+  void exportFailureKeepsLocalizedBatchMessageWithoutInternalDetails() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleUnsupported(new ExportFailureException("private export path"), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertEquals(ApiErrorCodes.BATCH_LAUNCH.getCode(), error.getInternalCode());
+    assertEquals(
+        advice.messages.getMessage("export.errors.batchLaunchFailure"), error.getMessage());
+    assertEquals(List.of("An error occurred on the server."), error.getErrors());
+    assertFalse(error.toString().contains("private export path"));
   }
 }

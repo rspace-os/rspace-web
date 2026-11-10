@@ -251,8 +251,8 @@ public class DMPOnlineController extends BaseOAuth2Controller {
   @GetMapping("/plans")
   @ResponseBody
   public AjaxReturnObject<JsonNode> listDMPs(
-      @RequestParam(name = "page") String page,
-      @RequestParam(name = "per_page") String per_page,
+      @RequestParam(name = "page") int page,
+      @RequestParam(name = "per_page") int per_page,
       Model model,
       Principal principal) {
     try {
@@ -276,7 +276,14 @@ public class DMPOnlineController extends BaseOAuth2Controller {
     User user = userManager.getAuthenticatedUserInSession();
     String accessToken = getExistingAccessToken(model, principal);
 
-    DMPList dmpList = dmpOnlineProvider.getPlanByUrlId(id, accessToken);
+    DMPList dmpList;
+    try {
+      dmpList = dmpOnlineProvider.getPlanByUrlId(id, accessToken);
+    } catch (IllegalArgumentException e) {
+      log.warn("Rejected DMPonline plan import: {}", e.getMessage());
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("apps.dmpOnline.errors.invalidPlanUrl")));
+    }
 
     ObjectMapper objectMapper = new ObjectMapper();
     String json = objectMapper.writeValueAsString(dmpList);

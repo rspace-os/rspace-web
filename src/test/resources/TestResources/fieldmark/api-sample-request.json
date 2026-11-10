@@ -39,6 +39,7 @@
   "expiryDate": null,
   "templateId": 65536,
   "template": false,
+  "requestable": null,
   "fields": [
     {
       "id": 65536,

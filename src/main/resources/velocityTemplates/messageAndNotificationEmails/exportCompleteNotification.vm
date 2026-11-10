@@ -5,6 +5,6 @@ $msg.format("email.notification.exportCompleteNotification.moreDetails", [$expor
 <br/><br/>
 $msg.getMessage("email.notification.exportCompleteNotification.clickOrCopy")
 <br/>
-<a href='$link'>$linkText</a>.
+<a href='$link'>$archiveFileName</a>.
 <br/>$removalPolicyMessage
 <p/>

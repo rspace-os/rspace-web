@@ -29,6 +29,8 @@ import Source from "./Fields/Source";
 import StorageTemperature from "./Fields/StorageTemperature";
 import TemplateField from "./Fields/Template/Template";
 import Fields from "./Fields/TemplateFields/Fields";
+import RequestableSwitch from "./RequestableSwitch";
+import RequestMaterialSection from "./RequestMaterialSection";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation("inventory");
@@ -45,6 +47,8 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
       formSectionError={formSectionError}
       recordType="sample"
     >
+      <RequestableSwitch activeResult={activeResult} />
+      <RequestMaterialSection key={activeResult.globalId} activeResult={activeResult} />
       <NameField
         fieldOwner={activeResult}
         record={activeResult}

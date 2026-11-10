@@ -84,6 +84,15 @@ public interface UserManager extends GenericManager<User, Long> {
   String findUsernameByUsernameOrAlias(String usernameOrAlias);
 
   /**
+   * Key for in-memory login locks: every spelling and alias the lookup treats as one account gives
+   * the same key, whether or not the account exists.
+   *
+   * @param submittedUsername the username or alias as submitted
+   * @return the lock key
+   */
+  String loginLockKey(String submittedUsername);
+
+  /**
    * Variant method to retrieve user based on username, with option to force a fresh reload from the
    * database.
    *
@@ -162,10 +171,19 @@ public interface UserManager extends GenericManager<User, Long> {
 
   TokenBasedVerification getUserVerificationToken(String token);
 
-  /** Applies a password change from the 'Forgot password' scenario */
+  /**
+   * Applies a password change from the 'Forgot password' scenario, marking the token used in the
+   * same transaction.
+   *
+   * @return the token, or {@code null} for a missing, used, expired or unknown token, and for the
+   *     loser of two concurrent submits
+   */
   TokenBasedVerification applyLoginPasswordChange(String newPassword, String token);
 
-  /** Applies a password change from the 'Forgot verification password' scenario */
+  /**
+   * Applies a password change from the 'Forgot verification password' scenario; see {@link
+   * #applyLoginPasswordChange(String, String)}.
+   */
   TokenBasedVerification applyVerificationPasswordChange(String newPassword, String token);
 
   List<User> getAvailableAdminUsers();

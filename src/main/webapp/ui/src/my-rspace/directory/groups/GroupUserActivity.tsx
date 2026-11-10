@@ -3,12 +3,9 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React, { useEffect } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { getSorting } from "@/util/table";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import UserDetails from "./../../../components/UserDetails";
@@ -97,13 +94,3 @@ function GroupActivity({ groupId }: GroupActivityProps) {
 }
 
 export default GroupActivity;
-
-const domContainer = document.getElementById("groupActivity");
-const root = createRoot(domContainer as HTMLElement);
-root.render(
-  <I18nRoot namespaces={["common"]}>
-    <MuiCssLayerProvider>
-      <GroupActivity groupId={domContainer?.dataset.groupid as string} />
-    </MuiCssLayerProvider>
-  </I18nRoot>,
-);

@@ -5,6 +5,7 @@ import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import * as PersonMocking from "../../../../stores/models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../../stores/models/PersonModel";
 import getRootStore from "../../../../stores/stores/getRootStore";
+import RsSet from "../../../../util/set";
 import Alerts from "../../Alerts";
 import PeopleField from "../PeopleField";
 
@@ -42,9 +43,39 @@ describe("PeopleField", () => {
           <PeopleField onSelection={() => {}} label="foo" recipient={null} />
         </Alerts>,
       );
+      expect(screen.getByRole("combobox", { name: "foo" })).toBeVisible();
       expect(await screen.findByRole("alert")).toMatchTextContent("some error message");
     } finally {
       restoreConsole();
     }
+  });
+
+  test("Every known person (group members and current user) is selectable.", async () => {
+    const { peopleStore } = getRootStore();
+    const currentUser = new PersonModel(
+      PersonMocking.personAttrs({ id: 1, username: "owner", firstName: "Olive", lastName: "Owner" }),
+    );
+    const otherGroupMember = new PersonModel(
+      PersonMocking.personAttrs({ id: 2, username: "other", firstName: "Oscar", lastName: "Other" }),
+    );
+    runInAction(() => {
+      peopleStore.currentUser = currentUser;
+      peopleStore.groupMembers = new RsSet([currentUser, otherGroupMember]);
+    });
+
+    render(
+      <Alerts>
+        <PeopleField onSelection={() => {}} recipient={null} />
+      </Alerts>,
+    );
+    // No explicit opening needed: the field autofocuses on mount and openOnFocus is always true,
+    // so the listbox is already open.
+    const options = await screen.findAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(currentUser.label),
+        expect.stringContaining(otherGroupMember.label),
+      ]),
+    );
   });
 });
