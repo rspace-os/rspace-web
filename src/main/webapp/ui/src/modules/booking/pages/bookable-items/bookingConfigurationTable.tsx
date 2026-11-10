@@ -1,17 +1,17 @@
 import { createElement } from "react";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { INCREMENT_UNITS } from "@/modules/booking/domain/bookingIncrement";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
-import { instrumentRelationshipSources } from "@/modules/inventory/instrumentRelationshipSource";
 import type { BookingConfiguration } from "./bookingConfigurationSchema";
 
 export const bookingConfigurationConfig = {
   slug: "bookable-items",
-  relationshipSources: instrumentRelationshipSources,
+  relationshipSources: bookingRelationshipSources,
   idField: "id",
   labels: {
     singularKey: "booking:bookableItems.singular",
