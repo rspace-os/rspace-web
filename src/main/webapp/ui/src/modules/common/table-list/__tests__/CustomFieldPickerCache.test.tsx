@@ -12,36 +12,31 @@ import { CustomFieldPicker } from "@/modules/common/table-list/components/Custom
 
 const searchLabel = "Search custom fields";
 
-function source(catalog: string): RuntimeNamespaceSummary {
-  return {
-    namespace: "customFields",
-    via: { name: "instrument", label: { text: "Instrument" } },
-    catalog,
-    maximumLimit: 200,
-    filterable: true,
-    columnSelectable: true,
-  };
-}
-
-function definition(id: string, label: string): RuntimeFieldDefinition {
-  return {
-    id,
-    selector: `customFields.${id}`,
-    label,
-    type: "text",
-    jsonType: "string",
-    operators: ["=="],
-    supportsWildcards: false,
-    columnSelectable: true,
-    sortable: false,
-    source: { id: "template", label: "Template" },
-    options: [],
-  };
-}
-
-function catalogPage(field: RuntimeFieldDefinition) {
-  return { fields: [field], hasMore: false, page: 1, limit: 20 };
-}
+const catalogA: RuntimeNamespaceSummary = {
+  namespace: "customFields",
+  via: { name: "instrument", label: { text: "Instrument" } },
+  catalog: "/api/v2/instruments/fields/customFields",
+  maximumLimit: 200,
+  filterable: true,
+  columnSelectable: true,
+};
+const catalogB: RuntimeNamespaceSummary = { ...catalogA, catalog: "/api/v2/instruments/fields/extraFields" };
+const fieldA: RuntimeFieldDefinition = {
+  id: "A1",
+  selector: "customFields.A1",
+  label: "Catalog A field",
+  type: "text",
+  jsonType: "string",
+  operators: ["=="],
+  supportsWildcards: false,
+  columnSelectable: true,
+  sortable: false,
+  source: { id: "template", label: "Template" },
+  options: [],
+};
+const fieldB: RuntimeFieldDefinition = { ...fieldA, id: "B1", selector: "customFields.B1", label: "Catalog B field" };
+const pageA = { fields: [fieldA], hasMore: false, page: 1, limit: 20 };
+const pageB = { fields: [fieldB], hasMore: false, page: 1, limit: 20 };
 
 function picker(queryClient: QueryClient, sources: readonly RuntimeNamespaceSummary[]) {
   return (
@@ -59,16 +54,10 @@ function picker(queryClient: QueryClient, sources: readonly RuntimeNamespaceSumm
   );
 }
 
-function createQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 describe("CustomFieldPicker catalog cache", () => {
   it("loads the new catalog for the same namespace without showing old options while it is pending", async () => {
     const user = userEvent.setup();
-    const client = createQueryClient();
-    const catalogA = source("/api/v2/instruments/fields/customFields");
-    const catalogB = source("/api/v2/instruments/fields/extraFields");
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let allowCatalogBResponse: () => void = () => {};
     const catalogBPending = new Promise<void>((resolve) => {
       allowCatalogBResponse = resolve;
@@ -76,10 +65,10 @@ describe("CustomFieldPicker catalog cache", () => {
 
     server.use(
       oauthTokenHandler(true),
-      http.get(catalogA.catalog, () => HttpResponse.json(catalogPage(definition("A1", "Catalog A field")))),
+      http.get(catalogA.catalog, () => HttpResponse.json(pageA)),
       http.get(catalogB.catalog, async () => {
         await catalogBPending;
-        return HttpResponse.json(catalogPage(definition("B1", "Catalog B field")));
+        return HttpResponse.json(pageB);
       }),
     );
 

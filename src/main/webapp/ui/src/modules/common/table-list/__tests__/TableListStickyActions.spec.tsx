@@ -4,7 +4,7 @@ import { useState } from "react";
 import { afterEach, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { TableList } from "../TableList";
-import { config, records } from "./fixtures/tableList";
+import { config } from "./fixtures/tableList";
 
 afterEach(() => cleanup());
 
@@ -15,7 +15,7 @@ function StickyActions() {
     <TableList
       queryString={false}
       config={config}
-      rows={records.slice(0, 2)}
+      rows={[{ id: "1", title: "Alpha", owner: "Ada", score: 8, enabled: true, modifiedAt: "2026-08-01T10:00:00Z" }]}
       getRowId={(row) => row.id}
       features={{ filtering: false, sorting: false, pagination: false, columns: false }}
       rowActions={{
