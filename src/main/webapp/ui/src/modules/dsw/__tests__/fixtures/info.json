@@ -1,0 +1,11 @@
+{
+  "name": "Engine Wizard",
+  "releaseVersion": "5.0.0",
+  "version": "v5.0.0~f3c60c086",
+  "builtAt": "2026-11-05T16:47:38Z",
+  "metamodelVersions": [
+    { "name": "Knowledge Model", "version": "20" },
+    { "name": "Document Template", "version": "19.0" }
+  ],
+  "components": []
+}

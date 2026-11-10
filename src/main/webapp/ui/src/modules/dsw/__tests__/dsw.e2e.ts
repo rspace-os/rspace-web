@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
+import { DSW_MOCK_PATH } from "./mock";
 
 const INTEGRATION_MODE = env.integrationMode;
 const DSW_ALIAS = INTEGRATION_MODE === "real" ? "real" : "mock";
@@ -10,7 +11,7 @@ const DSW_ALIAS = INTEGRATION_MODE === "real" ? "real" : "mock";
  * provides that state. Distinct aliases keep the menu-item locators unambiguous.
  */
 const DSW_SECOND_ALIAS = `${DSW_ALIAS}-2`;
-const DSW_SERVER_URL = INTEGRATION_MODE === "real" ? env.dswServerUrl : env.mockBackendBaseUrl;
+const DSW_SERVER_URL = INTEGRATION_MODE === "real" ? env.dswServerUrl : `${env.mockBackendBaseUrl}${DSW_MOCK_PATH}`;
 const DSW_API_KEY = INTEGRATION_MODE === "real" ? env.dswApiKey : "mock-dsw-token";
 
 test.describe(`DSW / FAIR Wizard integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
