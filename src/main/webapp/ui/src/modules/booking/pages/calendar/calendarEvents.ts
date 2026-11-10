@@ -9,15 +9,14 @@ import {
   searchCalendarEvents,
 } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import type { ApiV2ListResultMapStringObject } from "@/modules/common/api/v2/generated/models/apiV2ListResultMapStringObject";
+import type { SearchCalendarEventsParams } from "@/modules/common/api/v2/generated/models/searchCalendarEventsParams";
 import { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 
 export const CALENDAR_BOOKING_FIELDS =
   "id,version,target,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
-export type CalendarEventFilterScope = { where?: string; q?: string };
-type CalendarEventRequest = {
-  start: string;
-  end: string;
+export type CalendarEventFilterScope = Pick<SearchCalendarEventsParams, "where" | "q">;
+type CalendarEventRequest = Pick<SearchCalendarEventsParams, "start" | "end"> & {
   signal: AbortSignal;
   targetGlobalIds?: readonly string[];
   scope?: CalendarEventFilterScope;
