@@ -134,7 +134,9 @@ immediate fallback deltas and clears, rather than overwriting it with a stale re
 Login queries also run outside the lock. They preserve newer notification counts,
 and retry up to three queries when message or special-message versions change.
 Login always installs the latest queried message baselines, since a concurrent
-pre-commit delta alone may not include existing database messages.
+pre-commit delta alone may not include existing database messages. As before this change,
+a message delta whose transaction has not committed yet can still be overwritten by the
+login baseline.
 Message and notification increments share that user's lock and advance the corresponding
 count's version.
 Thus one user's query cannot block another user's login or a connection-owning
