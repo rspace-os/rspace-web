@@ -28,6 +28,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleInfoWithSampleInfo;
@@ -1247,6 +1248,10 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertNotNull(subSampleInfoAsSeenByOtherUser.getBarcodes());
     assertNotNull(subSampleInfoAsSeenByOtherUser.getParentContainers());
     assertNull(subSampleInfoAsSeenByOtherUser.getModifiedBy()); // unavailable in limited view
+    assertTrue(
+        ((ApiSubSampleInfoWithSampleInfo) subSampleInfoAsSeenByOtherUser)
+            .getSampleInfo()
+            .isClearedForLimitedView());
 
     // as otherUser try retrieving the subSample
     ApiSubSample subSampleAsSeenByOtherUser =
@@ -1261,6 +1266,20 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertNull(subSampleAsSeenByOtherUser.getExtraFields());
     assertNull(subSampleAsSeenByOtherUser.getNotes());
 
+    // the parent sample is only limited-readable too, so it is embedded in its limited view
+    ApiSampleWithoutSubSamples sampleAsSeenByOtherUser = subSampleAsSeenByOtherUser.getSampleInfo();
+    assertNotNull(sampleAsSeenByOtherUser.getName());
+    assertNull(sampleAsSeenByOtherUser.getExtraFields());
+    assertNull(sampleAsSeenByOtherUser.getFields());
+    assertNull(sampleAsSeenByOtherUser.getAttachments());
+    assertNull(sampleAsSeenByOtherUser.getQuantity());
+    assertNull(sampleAsSeenByOtherUser.getSharingMode());
+    assertNull(sampleAsSeenByOtherUser.getSharedWith());
+    assertTrue(sampleAsSeenByOtherUser.isClearedForLimitedView());
+    // the subsample page links to the parent sample using these
+    assertNotNull(sampleAsSeenByOtherUser.getSubSampleAlias());
+    assertNotNull(sampleAsSeenByOtherUser.getSubSamplesCount());
+
     // compare with subcontainer as seen by the owner
     ApiSubSample subSampleAsSeenByTestUser =
         subSampleApiMgr.getApiSubSampleById(apiSubSample.getId(), testUser);
@@ -1268,5 +1287,6 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertNotNull(subSampleAsSeenByTestUser.getModifiedBy());
     assertNotNull(subSampleAsSeenByTestUser.getExtraFields());
     assertNotNull(subSampleAsSeenByTestUser.getNotes());
+    assertNotNull(subSampleAsSeenByTestUser.getSampleInfo().getExtraFields());
   }
 }
