@@ -1,6 +1,8 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
+import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -8,19 +10,27 @@ import static org.mockito.Mockito.when;
 import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.protocolsio.Protocol;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +43,7 @@ public class ProtocolsIOControllerTest {
   private @Mock RecordManager recordManager;
   private @Mock SharingHandler recordShareHandler;
   private @Mock PermissionUtils permissionUtils;
+  private @Mock IntegrationsHandler integrationsHandler;
   private @InjectMocks ProtocolsIOController ctrller;
   private User subject = TestFactory.createAnyUser("any");
   private Folder workspaceRootFolder = TestFactory.createAFolder("workspaceRoot", subject);
@@ -49,15 +60,29 @@ public class ProtocolsIOControllerTest {
     sharedNotebook.setId(4L);
     workspaceRootFolder.setId(5L);
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
+    ctrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
+  }
+
+  private void stubProtocolsIOEnabled(boolean available, boolean enabled) {
+    IntegrationInfo info = new IntegrationInfo();
+    info.setAvailable(available);
+    info.setEnabled(enabled);
+    when(integrationsHandler.getIntegration(subject, PROTOCOLS_IO_APP_NAME)).thenReturn(info);
+  }
+
+  private void stubImportAllowed() {
+    stubProtocolsIOEnabled(true, true);
     when(folderMgr.getImportsFolder(subject)).thenReturn(importsFolder);
   }
 
   private void stubImportIntoImportsFolder() {
+    stubImportAllowed();
     when(converter.generateFromProtocol(protocol, subject, importsFolder.getId()))
         .thenReturn(anyDoc);
   }
 
   private void stubImportIntoSharedNotebook() {
+    stubImportAllowed();
     when(converter.generateFromProtocol(protocol, subject, sharedNotebook.getId()))
         .thenReturn(anyDoc);
   }
@@ -134,6 +159,22 @@ public class ProtocolsIOControllerTest {
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());
     assertEquals(importsFolder.getId(), rc.getData().getImportFolderId());
     verifyNoInteractions(recordShareHandler);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false,true", "true,false"})
+  public void importRefusedWhenProtocolsIONotAvailableOrNotEnabled(
+      boolean available, boolean enabled) {
+    stubProtocolsIOEnabled(available, enabled);
+    List<Protocol> protocols = TransformerUtils.toList(protocol);
+
+    AuthorizationException e =
+        assertThrows(AuthorizationException.class, () -> ctrller.importExternalData(protocols));
+    assertEquals("protocols.io is not enabled.", e.getMessage());
+    assertThrows(
+        AuthorizationException.class,
+        () -> ctrller.importExternalData(workspaceRootFolder.getId(), null, protocols));
+    verifyNoInteractions(converter, folderMgr);
   }
 
   private Protocol getAProtocol() {

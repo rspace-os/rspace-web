@@ -136,6 +136,11 @@
         "unknownServer": "RSpace is configured for an OMERO server named \"{0}\", which this OMERO instance does not offer. Please contact an administrator."
       }
     },
+    "protocolsio": {
+      "errors": {
+        "disabled": "protocols.io is not enabled."
+      }
+    },
     "raid": {
       "errors": {
         "associateGroup": "Not able to associate RAiD to group: {0}",

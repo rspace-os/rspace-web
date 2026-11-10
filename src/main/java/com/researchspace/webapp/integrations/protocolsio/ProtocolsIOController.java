@@ -71,11 +71,12 @@ public class ProtocolsIOController extends BaseController {
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       @RequestBody List<Protocol> protocols) {
 
+    User subject = userManager.getAuthenticatedUserInSession();
+    assertProtocolsIOEnabled(subject);
     log.info("Importing {} protocols", protocols.size());
     List<RecordInformation> results = new ArrayList<>();
 
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
-    User subject = userManager.getAuthenticatedUserInSession();
     Folder targetFolder = getTargetFolder(parentFolderId, subject);
     for (Protocol protocol : protocols) {
       if (protocol.getSteps() != null) {

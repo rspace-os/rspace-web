@@ -427,6 +427,15 @@ public abstract class BaseController implements ServletContextAware {
     return info.isAvailable() && info.isEnabled();
   }
 
+  /**
+   * @throws AuthorizationException unless protocols.io is available and the user has enabled it
+   */
+  protected void assertProtocolsIOEnabled(User subject) {
+    if (!isProtocolsIOEnabled(subject)) {
+      throw new AuthorizationException(getText("apps.protocolsio.errors.disabled"));
+    }
+  }
+
   protected Boolean isAsposeEnabled() {
     return properties.isAsposeEnabled();
   }

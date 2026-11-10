@@ -5733,6 +5733,11 @@ export default interface Resources {
           "notConfigured": "ownCloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
         }
       },
+      "protocolsio": {
+        "errors": {
+          "disabled": "protocols.io is not enabled."
+        }
+      },
       "raid": {
         "errors": {
           "associateGroup": "Not able to associate RAiD to group: {0}",
