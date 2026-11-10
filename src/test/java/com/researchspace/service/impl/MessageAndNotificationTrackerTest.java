@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -113,6 +115,78 @@ public class MessageAndNotificationTrackerTest {
       publish.countDown();
       executor.shutdownNow();
     }
+  }
+
+  @Test
+  void refreshStopsAfterThreeConflictsAndPreservesDeltasAndClears() {
+    AtomicInteger calls = new AtomicInteger();
+    tracker.refreshNotificationCount(
+        1L,
+        () -> {
+          int call = calls.incrementAndGet();
+          if (call == 2) {
+            tracker.clearUserNotificationCount(1L);
+          } else {
+            tracker.changeUserNotificationCount(1L, 1);
+          }
+          return 99;
+        });
+    assertEquals(3, calls.get());
+    assertEquals(1, tracker.getNotificationCountFor(1L));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 1})
+  void loginRetriesMessageBaselinesAfterOverlappingDeltas(int delta) throws Exception {
+    CountDownLatch queried = new CountDownLatch(1);
+    CountDownLatch publish = new CountDownLatch(1);
+    AtomicInteger calls = new AtomicInteger();
+    var executor = Executors.newSingleThreadExecutor();
+    try {
+      var login =
+          executor.submit(
+              () ->
+                  tracker.initCount(
+                      1L,
+                      () -> {
+                        if (calls.incrementAndGet() == 1) {
+                          queried.countDown();
+                          await(publish);
+                          return new NotificationStatus(0, 4, 6);
+                        }
+                        return new NotificationStatus(0, 4 + delta, 6 + delta);
+                      }));
+      assertTrue(queried.await(5, TimeUnit.SECONDS));
+      tracker.updateMessageCount(1L, delta, MessageType.SIMPLE_MESSAGE);
+      tracker.updateMessageCount(1L, delta, MessageType.REQUEST_CREATE_LAB_GROUP);
+      publish.countDown();
+      login.get(5, TimeUnit.SECONDS);
+      assertEquals(2, calls.get());
+      assertEquals(4 + delta, tracker.getMessageCountFor(1L));
+      assertEquals(6 + delta, tracker.getSpecialMessageCountFor(1L));
+      Mockito.verify(messagingTemplate)
+          .convertAndSend(
+              "/topic/notifications/1", new NotificationMessage(0, 4 + delta, 6 + delta));
+    } finally {
+      publish.countDown();
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void loginPublishesLatestMessageBaselineAfterThreeConflicts() {
+    AtomicInteger calls = new AtomicInteger();
+    tracker.initCount(
+        1L,
+        () -> {
+          int call = calls.incrementAndGet();
+          tracker.updateMessageCount(1L, 1, MessageType.SIMPLE_MESSAGE);
+          tracker.updateMessageCount(1L, -1, MessageType.REQUEST_CREATE_LAB_GROUP);
+          return new NotificationStatus(0, 4 + call, 6 - call);
+        });
+    assertEquals(3, calls.get());
+    assertEquals(7, tracker.getMessageCountFor(1L));
+    assertEquals(3, tracker.getSpecialMessageCountFor(1L));
   }
 
   @Test

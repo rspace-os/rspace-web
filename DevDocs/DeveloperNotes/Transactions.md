@@ -128,16 +128,22 @@ Without synchronization, delivery and count increments remain immediate.
 
 Tracker publication uses a short per-user lock; no database query or connection
 acquisition runs under it. A version check retries a committed recount in a fresh
-transaction if a concurrent publication invalidated its snapshot. Login queries
-also run outside the lock and preserve each count that changed while the query ran.
+transaction if a concurrent publication invalidated its snapshot, with at most three
+queries per refresh. After three conflicts it keeps the newer publication, including
+immediate fallback deltas and clears, rather than overwriting it with a stale result.
+Login queries also run outside the lock. They preserve newer notification counts,
+and retry up to three queries when message or special-message versions change.
+Login always installs the latest queried message baselines, since a concurrent
+pre-commit delta alone may not include existing database messages.
 Message and notification increments share that user's lock and advance the corresponding
 count's version.
 Thus one user's query cannot block another user's login or a connection-owning
 message publisher. Recounts normally run once per user per transaction; concurrent
-tracker changes can require an additional query to avoid publishing stale data.
+tracker changes can require up to two additional queries to avoid publishing stale data.
 
 Each broadcast and each recipient refresh catches delivery failures and logs a
-WARN without message contents or recipient details. A delivery failure cannot
+WARN with the stage, notification or user id, and exception stack trace. No
+notification content or message text is added to the log. A delivery failure cannot
 fail the committed request or prevent other recipients or later callbacks from
 running. `NotificationAfterCommitIT` covers commit, rollback, intervening reads
 and login, and failure-notification persistence.

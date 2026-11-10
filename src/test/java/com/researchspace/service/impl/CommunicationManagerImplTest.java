@@ -8,6 +8,7 @@ import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.Communication;
+import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
@@ -69,7 +70,7 @@ public class CommunicationManagerImplTest {
     Mockito.when(userDao.getUserByUsername("recipient")).thenReturn(recipient);
     for (long id = 1; id <= 5; id++) {
       Notification notification = new Notification();
-      var target = new com.researchspace.model.comms.CommunicationTarget();
+      var target = new CommunicationTarget();
       target.setRecipient(recipient);
       notification.setRecipients(Set.of(target));
       Mockito.when(commDao.get(id)).thenReturn(notification);

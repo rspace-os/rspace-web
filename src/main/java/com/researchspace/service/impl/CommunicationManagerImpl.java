@@ -417,8 +417,12 @@ public class CommunicationManagerImpl implements CommunicationManager {
       if (shouldBroadcast) {
         batch.broadcasts.add(
             () ->
-                notificationPostCommitExecutor.execute(
-                    () -> broadcast(notification, notificationTargets)));
+                safelyDeliver(
+                    "broadcast",
+                    notification.getId(),
+                    () ->
+                        notificationPostCommitExecutor.execute(
+                            () -> broadcast(notification, notificationTargets))));
       }
       for (CommunicationTarget target : notificationTargets) {
         batch.userIds.add(target.getRecipient().getId());
@@ -482,10 +486,10 @@ public class CommunicationManagerImpl implements CommunicationManager {
           public void afterCommit() {
             // New delivery transactions must collect their own effects.
             for (Runnable broadcast : batch.broadcasts) {
-              safelyDeliver(broadcast);
+              broadcast.run();
             }
             for (Long userId : batch.userIds) {
-              safelyDeliver(() -> refreshCommittedNotificationCount(userId));
+              safelyDeliver("recount", userId, () -> refreshCommittedNotificationCount(userId));
             }
           }
 
@@ -498,12 +502,11 @@ public class CommunicationManagerImpl implements CommunicationManager {
     return batch;
   }
 
-  private void safelyDeliver(Runnable action) {
+  private void safelyDeliver(String stage, Long id, Runnable action) {
     try {
       action.run();
     } catch (Exception e) {
-      // Exception messages may contain notification content or recipient details.
-      log.warn("Notification delivery failed after commit ({})", e.getClass().getSimpleName());
+      log.warn("Notification delivery failed after commit: stage={}, id={}", stage, id, e);
     }
   }
 

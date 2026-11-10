@@ -21,6 +21,8 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
 
   @Autowired private SimpMessagingTemplate messagingTemplate;
 
+  private static final int MAX_QUERY_ATTEMPTS = 3;
+
   private static class UserUpdates {
     long notificationVersion;
     long messageVersion;
@@ -62,7 +64,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   @Override
   public void refreshNotificationCount(Long userId, IntSupplier committedCount) {
     UserUpdates state = updatesFor(userId);
-    while (true) {
+    for (int attempt = 0; attempt < MAX_QUERY_ATTEMPTS; attempt++) {
       long version;
       synchronized (state) {
         version = state.notificationVersion;
@@ -70,7 +72,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
       int count = committedCount.getAsInt();
       synchronized (state) {
         if (state.notificationVersion != version) {
-          // Retry with a new committed snapshot after a concurrent publication.
+          // Preserve newer publications, including immediate deltas and clears.
           continue;
         }
         userToNotification.put(userId, count);
@@ -178,29 +180,35 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   public void initCount(Long userId, Supplier<NotificationStatus> statusQuery) {
     UserUpdates state = updatesFor(userId);
     long notificationVersion;
-    long messageVersion;
-    long specialMessageVersion;
     synchronized (state) {
       notificationVersion = state.notificationVersion;
-      messageVersion = state.messageVersion;
-      specialMessageVersion = state.specialMessageVersion;
     }
-    NotificationStatus notificationStatus = statusQuery.get();
-    synchronized (state) {
-      // Keep any counts published since this login query started.
-      if (state.notificationVersion == notificationVersion) {
-        userToNotification.put(userId, notificationStatus.getNotificationCount());
-        state.notificationVersion++;
+    for (int attempt = 0; attempt < MAX_QUERY_ATTEMPTS; attempt++) {
+      long messageVersion;
+      long specialMessageVersion;
+      synchronized (state) {
+        messageVersion = state.messageVersion;
+        specialMessageVersion = state.specialMessageVersion;
       }
-      if (state.messageVersion == messageVersion) {
+      NotificationStatus notificationStatus = statusQuery.get();
+      synchronized (state) {
+        if ((state.messageVersion != messageVersion
+                || state.specialMessageVersion != specialMessageVersion)
+            && attempt < MAX_QUERY_ATTEMPTS - 1) {
+          continue;
+        }
+        if (state.notificationVersion == notificationVersion) {
+          userToNotification.put(userId, notificationStatus.getNotificationCount());
+          state.notificationVersion++;
+        }
+        // Message deltas may have no baseline yet; always install the latest query result.
         userToMessage.put(userId, notificationStatus.getMessageCount());
         state.messageVersion++;
-      }
-      if (state.specialMessageVersion == specialMessageVersion) {
         userToSpecialMessage.put(userId, notificationStatus.getSpecialMessageCount());
         state.specialMessageVersion++;
+        sendNotificationUpdate(userId);
+        return;
       }
-      sendNotificationUpdate(userId);
     }
   }
 
