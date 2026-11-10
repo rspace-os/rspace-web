@@ -25,12 +25,15 @@ import com.researchspace.service.impl.DiskSpaceCheckerImpl;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -442,5 +445,37 @@ public class ArchiveParseTest {
     assertEquals("9ac5c918248cc7aa", aewf.getExtId());
     assertEquals("RNA-seq for Paired-end fastqs (release v1.1)", aewf.getName());
     assertEquals(1, aewf.getId());
+  }
+
+  @Test
+  public void parseFailsValidationWhenDocumentNamesFileOutsideArchive(@TempDir Path temp)
+      throws IOException {
+    File archive = temp.resolve("archive").toFile();
+    FileUtils.copyDirectory(V018, archive);
+    Path docXml = archive.toPath().resolve("doc_Experiment1-298/doc_Experiment1-298.xml");
+    String xml = Files.readString(docXml);
+    Files.writeString(
+        docXml,
+        xml.replaceFirst(
+            "<attachList/>",
+            "<attachList><attach-info><linkFile>../../secret.txt</linkFile></attach-info>"
+                + "</attachList>"));
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        "archiveImport.errors.fileOutsideArchive", Locale.getDefault(), "outside {0}");
+    MessageSourceUtils messages = new MessageSourceUtils();
+    messages.setMessageSource(source);
+    ArchiveParserImpl realparser = new ArchiveParserImpl();
+    ReflectionTestUtils.setField(realparser, "messages", messages);
+    ImportArchiveReport report = new ImportArchiveReport();
+
+    realparser.parse(archive, report);
+    report.setValidationComplete(true);
+
+    assertFalse(report.isValidationSuccessful());
+    assertRuleValidationResult(
+        report, ImportValidationRule.FILE_NAMES_INSIDE_ARCHIVE, ValidationTestResult.FAIL);
+    assertThat(report.getErrorList().getAllErrorMessagesAsStringsSeparatedBy("\n"))
+        .contains("outside doc_Experiment1-298");
   }
 }

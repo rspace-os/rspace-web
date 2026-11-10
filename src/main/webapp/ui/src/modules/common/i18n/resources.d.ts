@@ -6773,6 +6773,7 @@ export default interface Resources {
         "extractionEntryCountExceeded": "The archive could not be imported because it contains more than {0} files and folders.",
         "extractionExpandedSizeExceeded": "The archive could not be imported because its contents expand to more than {0} MB.",
         "extractionInsufficientDiskSpace": "The archive could not be imported because extracting it would leave the server with less than {0} MB of free disk space.",
+        "fileOutsideArchive": "The archive could not be imported because folder {0} refers to a file outside the archive.",
         "invalidDocumentFolder": "{0} folder does not contain a valid document.",
         "itemFailed": "Archive item {0} could not be imported: {1}",
         "missingDocumentXml": "Missing XML file for document: {0}",

@@ -22,6 +22,7 @@ import com.researchspace.archive.ArchiveCommentItem;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
+import com.researchspace.core.util.InvalidArchiveException;
 import com.researchspace.core.util.imageutils.ImageProcessingFailureException;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.dao.FolderDao;
@@ -74,10 +75,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -315,6 +316,7 @@ abstract class AbstractImporterStrategyImpl {
       ArchivalImportConfig iconfig)
       throws IOException, URISyntaxException {
 
+    ArchiveRecordFolder recordFolder = new ArchiveRecordFolder(ref.getArchiveRoot(), ref.getPath());
     ArchivalForm archiveForm = ref.getArchivalForm();
     Long olderId = archiveForm.getFormId();
     RSForm formToImport = null;
@@ -351,7 +353,7 @@ abstract class AbstractImporterStrategyImpl {
     if (newDoc != null) {
       linkRecord.addOldIdToNewIdMapping(archivalDoc.getDocId(), newDoc.getId());
       convertStructureDocument(
-          archivalDoc, newDoc, importingUser, ref.getPath(), linkRecord, oldIdToNewGalleryItem);
+          archivalDoc, newDoc, importingUser, recordFolder, linkRecord, oldIdToNewGalleryItem);
       if (isTemplate(archivalDoc)) {
         newDoc.addType(RecordType.TEMPLATE);
       }
@@ -410,7 +412,7 @@ abstract class AbstractImporterStrategyImpl {
       ArchivalDocument archivalDoc,
       StructuredDocument strucDoc,
       User user,
-      File pth,
+      ArchiveRecordFolder recordFolder,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException, URISyntaxException {
@@ -451,7 +453,7 @@ abstract class AbstractImporterStrategyImpl {
           afd,
           archivalDoc.getLastModifiedDate(),
           user,
-          pth,
+          recordFolder,
           linkRecord,
           oldIdToNewGalleryItem);
     }
@@ -465,7 +467,7 @@ abstract class AbstractImporterStrategyImpl {
       ArchivalField archivalField,
       Date archivalDocModifiedDate,
       User user,
-      File pth,
+      ArchiveRecordFolder recordFolder,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException, URISyntaxException {
@@ -475,7 +477,7 @@ abstract class AbstractImporterStrategyImpl {
           archivalDocModifiedDate.getTime()); // RSPAC-2761, that's better than new Date()
       fld.setFieldData(archivalField.getFieldData());
       clearRevisionFromGalleryLinks(fld);
-      setFieldAssociates(fld, archivalField, user, pth, linkRecord, oldIdToNewGalleryItem);
+      setFieldAssociates(fld, archivalField, user, recordFolder, linkRecord, oldIdToNewGalleryItem);
       fieldManager.save(fld, user);
     } catch (IllegalArgumentException ex) {
       log.warn(ex.getMessage(), ex);
@@ -493,7 +495,7 @@ abstract class AbstractImporterStrategyImpl {
       Field fld,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException, URISyntaxException {
@@ -552,7 +554,7 @@ abstract class AbstractImporterStrategyImpl {
       Field fld,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> imgMeta = archiveFld.getImgMeta();
@@ -568,9 +570,9 @@ abstract class AbstractImporterStrategyImpl {
         // different files
         if (image == null) {
           ImportOverride importOverride = getGalleryMetaImportOverride(agm);
-          File fx = new File(recordFolder, agm.getLinkFile());
-          if (fx.exists()) {
-            try (FileInputStream fis = new FileInputStream(fx)) {
+          Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+          if (linkedFile.isPresent()) {
+            try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
               String newName =
                   StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
               image = mediaManager.saveNewImage(newName, fis, user, null, importOverride);
@@ -598,7 +600,7 @@ abstract class AbstractImporterStrategyImpl {
       Field fld,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> audioMeta = archiveFld.getAudioMeta();
@@ -610,9 +612,9 @@ abstract class AbstractImporterStrategyImpl {
         // this will be the case when we're importing a selection.
         if (audio == null) {
           ImportOverride importOverride = getGalleryMetaImportOverride(agm);
-          File fx = new File(recordFolder, agm.getLinkFile());
-          if (fx.exists()) {
-            try (FileInputStream fis = new FileInputStream(fx)) {
+          Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+          if (linkedFile.isPresent()) {
+            try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
               String newName =
                   StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
               audio = mediaManager.saveNewAudio(newName, fis, user, null, importOverride);
@@ -633,7 +635,7 @@ abstract class AbstractImporterStrategyImpl {
       Field fld,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException {
     List<ArchivalGalleryMetadata> videoMeta = archiveFld.getVideoMeta();
@@ -645,9 +647,9 @@ abstract class AbstractImporterStrategyImpl {
         // this will be the case when we're importing a selection.
         if (video == null) {
           ImportOverride importOverride = getGalleryMetaImportOverride(agm);
-          File fx = new File(recordFolder, agm.getLinkFile());
-          if (fx.exists()) {
-            try (FileInputStream fis = new FileInputStream(fx)) {
+          Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+          if (linkedFile.isPresent()) {
+            try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
               String newName =
                   StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
               video = mediaManager.saveNewVideo(newName, fis, user, null, importOverride);
@@ -668,7 +670,7 @@ abstract class AbstractImporterStrategyImpl {
       Field field,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException {
     List<ArchivalGalleryMetadata> attachMeta = archiveFld.getAttachMeta();
@@ -680,9 +682,9 @@ abstract class AbstractImporterStrategyImpl {
             getFromIdToMediaFileMap(oldIdToNewGalleryItem, agm.getId(), agm.getModificationDate());
         // this will be the case when we're importing a selection.
         if (ecatDocument == null) {
-          File fx = new File(recordFolder, agm.getLinkFile());
-          if (fx.exists()) {
-            try (FileInputStream fis = new FileInputStream(fx)) {
+          Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+          if (linkedFile.isPresent()) {
+            try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
               String newName =
                   StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
               ecatDocument = mediaManager.saveNewDocument(newName, fis, user, null, importOverride);
@@ -708,15 +710,16 @@ abstract class AbstractImporterStrategyImpl {
     return field;
   }
 
-  private Field importSketches(Field fld, ArchivalField archiveFld, File recordFolder)
+  private Field importSketches(
+      Field fld, ArchivalField archiveFld, ArchiveRecordFolder recordFolder)
       throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> sktchMeta = archiveFld.getSktchMeta();
     if (sktchMeta != null && sktchMeta.size() > 0) {
       int cnt = 0;
       for (ArchivalGalleryMetadata agm : sktchMeta) {
-        File fx = new File(recordFolder, agm.getLinkFile());
-        if (fx.exists()) {
-          try (FileInputStream fis = new FileInputStream(fx)) {
+        Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+        if (linkedFile.isPresent()) {
+          try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
             EcatImageAnnotation sktch =
                 mediaManager.importSketch(
                     fis, agm.getAnnotation(), fld.getId(), fld.getStructuredDocument());
@@ -734,7 +737,11 @@ abstract class AbstractImporterStrategyImpl {
   }
 
   private void importLinkedRecords(
-      Field fld, ArchivalField archiveFld, File recordFolder, ArchivalLinkRecord linkRecord) {
+      Field fld,
+      ArchivalField archiveFld,
+      ArchiveRecordFolder recordFolder,
+      ArchivalLinkRecord linkRecord)
+      throws InvalidArchiveException {
     List<ArchivalGalleryMetadata> linkMeta = archiveFld.getLinkMeta();
     if (linkMeta != null && linkMeta.size() > 0) {
       for (ArchivalGalleryMetadata agm : linkMeta) {
@@ -744,18 +751,12 @@ abstract class AbstractImporterStrategyImpl {
           continue;
         }
 
-        String pathStr = recordFolder.getAbsolutePath();
-        int pos = FilenameUtils.indexOfLastSeparator(pathStr);
-        pathStr = pathStr.substring(0, pos + 1);
-
-        String pathx = pathStr + agm.getLinkFile() + File.separator + agm.getLinkFile() + ".xml";
-        File fx = new File(pathx);
-        if (fx.exists()) {
+        if (recordFolder.linkedRecordXml(agm.getLinkFile()).isPresent()) {
           linkRecord.addSourceFieldId(Long.toString(fld.getId()));
         } else {
           log.warn(
               "linked document: {} could  not be found for linked record {}",
-              fx.getAbsolutePath(),
+              agm.getLinkFile(),
               agm.getId());
         }
       }
@@ -815,7 +816,7 @@ abstract class AbstractImporterStrategyImpl {
   private Field importImageAnnotation(
       Field fld,
       ArchivalField archiveFld,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> annotMeta = archiveFld.getAnnotMeta();
@@ -831,9 +832,9 @@ abstract class AbstractImporterStrategyImpl {
           cnt++;
           continue;
         }
-        File fx = new File(recordFolder, agm.getLinkFile());
-        if (fx.exists()) {
-          try (FileInputStream fis = new FileInputStream(fx)) {
+        Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+        if (linkedFile.isPresent()) {
+          try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
             EcatImage newImage =
                 (EcatImage) getFromIdToMediaFileMap(oldIdToNewGalleryItem, originalImageID, null);
             if (newImage == null) {
@@ -872,7 +873,7 @@ abstract class AbstractImporterStrategyImpl {
       Field fld,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException {
     List<ArchivalGalleryMetadata> chemMeta = archiveFld.getChemElementMeta();
@@ -883,8 +884,8 @@ abstract class AbstractImporterStrategyImpl {
       int cnt = 0;
       for (ArchivalGalleryMetadata agm : chemMeta) {
         RSChemElement currentChem = null;
-        File dataImageFile = new File(recordFolder, agm.getLinkFile());
-        if (dataImageFile.exists()) {
+        Optional<File> dataImageFile = recordFolder.file(agm.getLinkFile());
+        if (dataImageFile.isPresent()) {
           String chemAnnotation = agm.getAnnotation();
           ChemElementsFormat format = null;
           if (!StringUtils.isBlank(agm.getChemElementsFormat())) {
@@ -905,7 +906,7 @@ abstract class AbstractImporterStrategyImpl {
                     ? ChemElementsFormat.MRV
                     : ChemElementsFormat.MOL;
           }
-          try (FileInputStream fis = new FileInputStream(dataImageFile)) {
+          try (FileInputStream fis = new FileInputStream(dataImageFile.get())) {
             Long ecatChemFieldId = null;
             if (oldIdToNewGalleryItem.get(agm.getEcatChemFieldId() + "-null") != null) {
               ecatChemFieldId =
@@ -928,12 +929,10 @@ abstract class AbstractImporterStrategyImpl {
             cnt++;
           }
         }
-        if (StringUtils.isNotBlank(agm.getLinkToOriginalFile())) {
-          File previewImageFile = new File(recordFolder, agm.getLinkToOriginalFile());
-          if (previewImageFile.exists() && currentChem != null) {
-            try (FileInputStream fis = new FileInputStream(previewImageFile)) {
-              rsChemElementManager.saveChemImagePng(currentChem, fis, user);
-            }
+        Optional<File> previewImageFile = recordFolder.file(agm.getLinkToOriginalFile());
+        if (previewImageFile.isPresent() && currentChem != null) {
+          try (FileInputStream fis = new FileInputStream(previewImageFile.get())) {
+            rsChemElementManager.saveChemImagePng(currentChem, fis, user);
           }
         }
       }
@@ -950,7 +949,7 @@ abstract class AbstractImporterStrategyImpl {
       Field field,
       ArchivalField archiveFld,
       User user,
-      File recordFolder,
+      ArchiveRecordFolder recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException {
     List<ArchivalGalleryMetadata> attachMeta = archiveFld.getChemFileMeta();
@@ -962,9 +961,9 @@ abstract class AbstractImporterStrategyImpl {
             getFromIdToMediaFileMap(oldIdToNewGalleryItem, agm.getId(), agm.getModificationDate());
         // this will be the case when we're importing a selection.
         if (ecatMediaFile == null) {
-          File fx = new File(recordFolder, agm.getLinkFile());
-          if (fx.exists()) {
-            try (FileInputStream fis = new FileInputStream(fx)) {
+          Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+          if (linkedFile.isPresent()) {
+            try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
               String newName =
                   StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
               ecatMediaFile =
@@ -991,21 +990,23 @@ abstract class AbstractImporterStrategyImpl {
     return field;
   }
 
-  private Field importMath(Field fld, ArchivalField archiveFld, File recordFolder)
+  private Field importMath(Field fld, ArchivalField archiveFld, ArchiveRecordFolder recordFolder)
       throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> mathMeta = archiveFld.getMathMeta();
     if (mathMeta != null && mathMeta.size() > 0) {
       int cnt = 0;
       for (ArchivalGalleryMetadata agm : mathMeta) {
-        File fx = new File(recordFolder, agm.getLinkFile());
-        if (fx.exists()) {
-          FileInputStream fis = new FileInputStream(fx);
-          RSMath importedMath =
-              mediaManager.importMathElement(
-                  fis, agm.getAnnotation(), fld.getId(), fld.getStructuredDocument());
-          Map<String, String> mp = rtu.makeMathAttributes(importedMath.getId());
-          fld = rtu.changeDataForImportedField(fld, importedMath.getId(), mp, MATH_CLASSNAME, cnt);
-          cnt++;
+        Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
+        if (linkedFile.isPresent()) {
+          try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
+            RSMath importedMath =
+                mediaManager.importMathElement(
+                    fis, agm.getAnnotation(), fld.getId(), fld.getStructuredDocument());
+            Map<String, String> mp = rtu.makeMathAttributes(importedMath.getId());
+            fld =
+                rtu.changeDataForImportedField(fld, importedMath.getId(), mp, MATH_CLASSNAME, cnt);
+            cnt++;
+          }
         }
       }
     }

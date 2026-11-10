@@ -19,6 +19,7 @@ public enum ImportValidationRule {
       "The checksum of the archive must equal the checksum at the time of archive creation.", true),
   XMLSCHEMA("XML files must conform to their XML schemas", true),
   GENERAL_ARCHIVE_STRUCTURE("The archive should contain all required resources.", true),
+  FILE_NAMES_INSIDE_ARCHIVE("Files named in the archive must be inside the archive.", true),
   USER_SCHEMA_VERSION_RANGE_OK(
       " The User schema is incompatible with the current database version", true),
   USER_FILE_READABLE("The users.xml  file could not be parsed", true),
