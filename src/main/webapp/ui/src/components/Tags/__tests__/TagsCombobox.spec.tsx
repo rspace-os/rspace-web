@@ -22,15 +22,18 @@ afterEach(() => {
 
 describe("TagsCombobox (ontologies, paginated)", () => {
   test("cancels the pending filter request when unmounted", async () => {
+    const requestedFilters: Array<string> = [];
+    worker.use(ontologyTagsHandler({ allTags: makeTags(50), pageSize: 40, requestedPositions, requestedFilters }));
     const { unmount } = render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
     await pageObj.open();
     await expect.element(pageObj.option("tag-000")).toBeVisible();
 
+    pageObj.filter("tag-04");
+    // Let React commit the new filter, which starts its 300 ms debounce, then unmount before it fires.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
     unmount();
-    const requestsAtUnmount = requestedPositions.length;
-    // Observe beyond the 300 ms debounce to detect requests from the unmounted component.
     await new Promise((resolve) => setTimeout(resolve, 400));
-    expect(requestedPositions).toHaveLength(requestsAtUnmount);
+    expect(requestedFilters).not.toContain("tag-04");
   });
 
   test("renders virtualised tag options when opened", async () => {
