@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
-import type { BookingDisplayPreferencesTimezoneMode } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesTimezoneMode";
 import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesTimezoneMode } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesTimezoneMode";
 import {
   getGetMyBookingPreferencesQueryKey,
   getGetMyBookingPreferencesSuspenseQueryOptions,
@@ -13,14 +13,7 @@ import {
 import { requireBookingValue } from "./bookingMapping";
 import { validOpeningHours } from "./bookingOpeningHours";
 
-export type BookingDisplayPreferencesDocument = {
-  availabilityWindowStart: string;
-  availabilityWindowEnd: string;
-  timezoneMode: BookingDisplayPreferencesTimezoneMode;
-  customTimezone: string | null;
-  institutionTimezone: string;
-  overridden: boolean;
-};
+export type BookingDisplayPreferencesDocument = Required<BookingDisplayPreferences>;
 export type ResolvedBookingDisplayPreferences = {
   availabilityWindow: { start: string; end: string; startMinute: number; endMinute: number };
   timeZone: string;
@@ -46,7 +39,10 @@ export function hasValidCustomTimezone({
 }
 
 export function checkBookingDisplayPreferences(
-  input: Pick<BookingDisplayPreferencesControllerReplacement, "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone">,
+  input: Pick<
+    BookingDisplayPreferencesControllerReplacement,
+    "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone"
+  >,
 ): void {
   if (
     !hasValidAvailabilityWindow(input) ||
@@ -80,7 +76,9 @@ export function bookingDisplayPreferencesQueryOptions() {
 export async function fetchBookingDisplayPreferences(signal?: AbortSignal): Promise<BookingDisplayPreferencesDocument> {
   return mapBookingDisplayPreferences(await getMyBookingPreferences({ signal }));
 }
-export async function replaceBookingDisplayPreferences(input: BookingDisplayPreferencesControllerReplacement): Promise<BookingDisplayPreferencesDocument> {
+export async function replaceBookingDisplayPreferences(
+  input: BookingDisplayPreferencesControllerReplacement,
+): Promise<BookingDisplayPreferencesDocument> {
   checkBookingDisplayPreferences(input);
   return mapBookingDisplayPreferences(await replaceMyBookingPreferences(input));
 }
@@ -141,7 +139,11 @@ export function useBookingDisplayPreferences(): ResolvedBookingDisplayPreference
 
 export function useReplaceBookingDisplayPreferences() {
   const options = useQueryClient();
-  return useMutation<BookingDisplayPreferencesDocument, ErrorType<unknown>, BookingDisplayPreferencesControllerReplacement>({
+  return useMutation<
+    BookingDisplayPreferencesDocument,
+    ErrorType<unknown>,
+    BookingDisplayPreferencesControllerReplacement
+  >({
     mutationFn: replaceBookingDisplayPreferences,
     onSuccess: (data) => options.setQueryData(getGetMyBookingPreferencesQueryKey(), data),
   });
