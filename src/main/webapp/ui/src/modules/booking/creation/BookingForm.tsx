@@ -15,6 +15,7 @@ import {
   currentWallClock,
   wallClockDraftFromInstants,
 } from "@/modules/booking/domain/bookingTime";
+import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import type { BookingsReadKind } from "@/modules/common/api/v2/generated/models/bookingsReadKind";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
@@ -33,7 +34,7 @@ import {
   ZonedBookingWindowFields,
 } from "./ZonedBookingWindowFields";
 
-type PurposeInput = { purpose: string };
+type PurposeInput = { purpose: NonNullable<BookingsCreate["purpose"]> };
 
 function purposeFields(eventKind: BookingsReadKind) {
   const labelKey = eventKind === "MAINTENANCE" ? "booking:bookings.form.notes" : "booking:bookings.form.purpose";
