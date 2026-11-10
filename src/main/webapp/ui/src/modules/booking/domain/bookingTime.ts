@@ -1,4 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
+import type { BookingDisplayPreferencesTimeFormat } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesTimeFormat";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 
@@ -228,7 +229,7 @@ export function bookingLocale(): string {
 }
 
 /** The Booking "Time format" preference: the browser region's clock, or an explicit 12- or 24-hour one. */
-export type BookingTimeFormat = "AUTOMATIC" | "H12" | "H24";
+export type BookingTimeFormat = BookingDisplayPreferencesTimeFormat;
 
 /**
  * The browser's regional format with the clock of `format`: the region's own for Automatic, otherwise a `-u-hc-`
