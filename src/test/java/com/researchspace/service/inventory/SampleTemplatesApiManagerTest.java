@@ -1085,6 +1085,21 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void duplicateRejectsAnIdOfTheOtherKind() throws Exception {
+    ApiSampleWithFullSubSamples sample = createBasicSampleTemplateAndSample(testUser);
+    Long sampleId = sample.getId();
+    Long templateId = sample.getTemplateId();
+    Long sampleCount = getCountOfEntityTable("Sample");
+    Long templateCount = getCountOfEntityTable("SampleTemplate");
+
+    assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(sampleId, testUser));
+    assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(templateId, testUser));
+
+    assertEquals(sampleCount, getCountOfEntityTable("Sample"));
+    assertEquals(templateCount, getCountOfEntityTable("SampleTemplate"));
+  }
+
+  @Test
   public void nonOwnerCanDuplicateDefaultSampleTemplate() {
     User nonOwner = createInitAndLoginAnyUser();
     SampleTemplate defaultTemplate =

@@ -969,22 +969,17 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSampleWithFullSubSamples duplicate(Long sampleId, User user) {
-    SampleEntity copy = copyDbSample(sampleId, user);
-    // cast is safe: copyDbSample persists and returns a Sample for non-template ids (controller
-    // guards the endpoint)
-    return new ApiSampleWithFullSubSamples((Sample) copy);
+    Sample copy = (Sample) copyDbSample(getSampleOrThrowNotFound(sampleId), user);
+    return new ApiSampleWithFullSubSamples(copy);
   }
 
   @Override
-  public ApiSampleTemplate duplicateTemplate(Long sampleId, User user) {
-    SampleEntity copy = copyDbSample(sampleId, user);
-    // cast is safe: copyDbSample persists and returns a SampleTemplate for template ids (controller
-    // guards the endpoint)
-    return new ApiSampleTemplate((SampleTemplate) copy);
+  public ApiSampleTemplate duplicateTemplate(Long templateId, User user) {
+    SampleTemplate copy = (SampleTemplate) copyDbSample(getIfExists(templateId, true), user);
+    return new ApiSampleTemplate(copy);
   }
 
-  private SampleEntity copyDbSample(Long sampleId, User user) {
-    SampleEntity dbSample = getIfExists(sampleId);
+  private SampleEntity copyDbSample(SampleEntity dbSample, User user) {
     invPermissions.assertUserCanFullReadInventoryRecord(dbSample, user);
     SampleEntity copy;
     if (dbSample.isSample()) {
