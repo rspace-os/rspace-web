@@ -1,4 +1,4 @@
-# Backend dev image: Maven + JetBrains Runtime (JBR) 17 + HotswapAgent.
+# Backend dev image: Maven + JetBrains Runtime (JBR) 21 + HotswapAgent.
 #
 # The image contains NO application source: the worktree is bind-mounted at
 # /rspace at runtime. The base image provides Maven; on top of it we install the
@@ -6,12 +6,12 @@
 # DCEVM-derived "enhanced class redefinition" that, together with HotswapAgent,
 # allows hot-reloading far more than plain HotSpot (new methods/fields/classes,
 # many Spring bean changes) without restarting the JVM. See README "Debugging".
-ARG MAVEN_IMAGE=maven:3.9-eclipse-temurin-17
+ARG MAVEN_IMAGE=maven:3.9-eclipse-temurin-21
 FROM ${MAVEN_IMAGE}
 
 # Pinned versions (update together; both are vetted third-party artifacts).
-ARG JBR_VERSION=17.0.14
-ARG JBR_BUILD=b1367.22
+ARG JBR_VERSION=21.0.11
+ARG JBR_BUILD=b1163.125
 ARG HOTSWAP_AGENT_VERSION=2.0.1
 # Provided automatically by BuildKit (amd64 / arm64).
 ARG TARGETARCH
@@ -38,7 +38,7 @@ RUN set -eux; \
 ENV JAVA_HOME=/opt/jbr
 ENV PATH="/opt/jbr/bin:${PATH}"
 
-# The maven-toolchains-plugin needs a JDK-17 toolchain; point it at JBR. (JBR is
+# The maven-toolchains-plugin needs a JDK-21 toolchain; point it at JBR. (JBR is
 # OpenJDK-based, so vendor=openjdk is correct.)
 RUN mkdir -p /root/.m2 && \
     printf '%s\n' \
@@ -47,7 +47,7 @@ RUN mkdir -p /root/.m2 && \
       '  <toolchain>' \
       '    <type>jdk</type>' \
       '    <provides>' \
-      '      <version>17</version>' \
+      '      <version>21</version>' \
       '      <vendor>openjdk</vendor>' \
       '    </provides>' \
       '    <configuration>' \

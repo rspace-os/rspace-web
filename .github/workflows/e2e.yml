@@ -14,7 +14,7 @@ on:
       java_version:
         description: "Java version Maven toolchain"
         type: string
-        default: "17"
+        default: "21"
 
 permissions:
   contents: read

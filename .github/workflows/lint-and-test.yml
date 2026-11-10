@@ -30,7 +30,7 @@ on:
         description: 'Java version for the Java jobs'
         type: choice
         options: ['17', '21']
-        default: '17'
+        default: '21'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -86,7 +86,7 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: ["${{ inputs.java_version || '21' }}"]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.fast_java_tests ||
@@ -194,7 +194,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: ["${{ inputs.java_version || '21' }}"]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
@@ -583,7 +583,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: ["${{ inputs.java_version || '21' }}"]
         mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
@@ -680,7 +680,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: ["${{ inputs.java_version || '21' }}"]
         mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
@@ -806,7 +806,7 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ inputs.java_version || '17' }}
+          java-version: ${{ inputs.java_version || '21' }}
           cache: maven
 
       - name: Configure MariaDB
@@ -832,7 +832,7 @@ jobs:
           CHEMISTRY_URL: http://localhost:8090
           JDBC_DB: rspace
           JDBC_URL: jdbc:mysql://localhost:3306/rspace
-          MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
+          MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '21' }}
           MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
         run: scripts/run-chemistry-tests.sh
 
@@ -862,7 +862,7 @@ jobs:
       needs.changed-files.outputs.java == 'true'
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: ["${{ inputs.java_version || '21' }}"]
     steps:
       - uses: actions/checkout@v7.0.0
         with:

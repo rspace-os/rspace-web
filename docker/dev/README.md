@@ -395,7 +395,7 @@ HotSpot HotSwap). The existing bean runs the new code; it is not re-created.
 > - HotswapAgent's **Spring, Hibernate, and Proxy plugins are disabled** (see
 >   `hotswap-agent.properties`). On RSpace's large XML/AOP context they break:
 >   the Hibernate plugin breaks transaction binding at startup, the Spring plugin
->   throws mid-reload, and the Proxy plugin hits a Java 17 module error. So
+>   throws mid-reload, and the Proxy plugin hits a JDK module-access error. So
 >   **code** in existing beans reloads, but **bean definitions/wiring** do not.
 > - There is **no in-container "recompile" command**: Maven's incremental build
 >   does not work over the bind mount (a one-line edit recompiles ~2000 classes),

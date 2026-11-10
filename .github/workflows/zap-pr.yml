@@ -30,7 +30,7 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: maven
 
       - name: Set up Node + pnpm
@@ -45,7 +45,7 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR
-        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=17 -Djava-vendor=temurin -Dtimestamp=${{ github.run_id }}
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=21 -Djava-vendor=temurin -Dtimestamp=${{ github.run_id }}
 
       - name: Stage WAR
         run: |

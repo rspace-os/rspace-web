@@ -27,7 +27,7 @@ fi
 ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url="${CHEMISTRY_URL}" \
-  -Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION:-17}" \
+  -Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION:-21}" \
   -Djava-vendor="${MAVEN_TOOLCHAIN_JAVA_VENDOR:-openjdk}" \
   -Djavax.xml.accessExternalDTD=all \
   -Dlog4j2.configurationFile=log4j2-dev.xml \

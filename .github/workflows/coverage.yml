@@ -35,7 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [21]
+        # Java 17 nightly while customers still run 17; pull requests test on 21.
+        java-version: [17]
     services:
       db:
         image: mariadb:10.11
@@ -147,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [21]
+        java-version: [17]
     services:
       db:
         image: mariadb:10.11
@@ -261,7 +262,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        java-version: [21]
+        java-version: [17]
     steps:
       - uses: actions/checkout@v7.0.0
         with:
