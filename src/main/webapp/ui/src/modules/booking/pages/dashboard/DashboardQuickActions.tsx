@@ -39,7 +39,7 @@ export function DashboardQuickActions({ today }: { today: string }) {
       label: t("dashboard.quickActions.allItems.label"),
       description: t("dashboard.quickActions.allItems.description"),
       icon: MicroscopeIcon,
-      link: linkOptions({ to: "/booking/all-items", search: { date: today } }),
+      link: linkOptions({ to: "/booking/all-items" }),
     },
     {
       key: "my-bookings",

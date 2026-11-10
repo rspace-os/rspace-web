@@ -287,6 +287,10 @@ fields retain their `relationTo` lookup. An unregistered source retains typed in
 Register sources in `src/modules/common/relationship-picker/sources.tsx`,
 or provide a collection's `relationshipSources` override keyed by resource name.
 
+A source that answers an empty term with a useful first page sets `browsable: true`. The filter
+value picker then lists choices on opening, without typing. Leave the flag unset for a source
+that needs a term, such as a grantee directory.
+
 See the [RelationshipSource type](../../src/main/webapp/ui/src/modules/common/relationship-picker/sources.tsx)
 for source operations and their signatures. Keep option content noninteractive inside the listbox;
 show global IDs as plain text so choosing an option cannot navigate away from an unsaved selection.
@@ -296,9 +300,8 @@ The source's batch limit must not exceed its endpoint's page or argument limits.
 Instrument restoration uses the collection's typed-ID `in` filter and sparse display
 fields. Deduplicate canonical values before chunking. Query keys include the source,
 caller scope, token, and selected values; never share cached options across callers.
-Search results, selected-value labels, batched and single-value restores, and availability
-checks all include the caller scope.
-Keep the older optional `resolve` for callers that have not migrated to batch restore.
+Search results, selected-value labels, restores, and availability checks all include the
+caller scope and query identity.
 
 A saved predicate stays present while restoration loads, fails, or cannot find its
 value. Restoring a label must never remove part of a filter. The `equals` and

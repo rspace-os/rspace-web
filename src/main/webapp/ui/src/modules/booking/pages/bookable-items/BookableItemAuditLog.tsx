@@ -92,7 +92,7 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
       type: "text",
       labelKey: "booking:bookableItemDetails.audit.fields.domain" satisfies CollectionTranslationKey,
     },
-    { name: "target", type: "text", labelKey: "booking:bookableItems.fields.id" satisfies CollectionTranslationKey },
+    { name: "target", type: "text", labelKey: "booking:allBookableItems.fields.id" satisfies CollectionTranslationKey },
     {
       name: "payload",
       type: "text",

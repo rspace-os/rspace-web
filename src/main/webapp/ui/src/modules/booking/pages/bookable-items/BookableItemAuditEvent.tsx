@@ -58,7 +58,7 @@ function RecordedValues({ row }: { row: AuditRow }) {
     yes: t("bookableItemDetails.yes"),
     no: t("bookableItemDetails.no"),
     values: {
-      ACTIVE: t("bookableItems.states.active"),
+      ACTIVE: t("allBookableItems.states.active"),
       ARCHIVED: t("bookableItemDetails.archived"),
       CONFIRMED: t("bookings.details.confirmed"),
       CANCELLED: t("bookings.details.cancelled"),
@@ -173,7 +173,7 @@ export function AuditEventItem({ row }: { row: AuditRow }) {
                 </dd>
               </div>
               <div className="flex min-w-0 items-center gap-2">
-                <dt className="shrink-0 text-muted-foreground">{t("booking:bookableItems.fields.id")}</dt>
+                <dt className="shrink-0 text-muted-foreground">{t("booking:allBookableItems.fields.id")}</dt>
                 <dd className="min-w-0 truncate">
                   <AuditTarget target={row.target} />
                 </dd>

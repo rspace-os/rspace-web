@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   availabilityEnvelope,
-  bookingInterval,
   type CalendarAvailabilityRow,
-  closedIntervals,
+  rowAvailabilityIntervals,
   type SourcedAvailabilityInterval,
 } from "@/modules/booking/domain/availability";
 import { BOOKING_READ_FIELDS, type Booking } from "@/modules/booking/domain/booking";
@@ -19,21 +18,19 @@ type AvailabilityRowInterval = {
 };
 
 function mapAvailability(rowIntervals: readonly AvailabilityRowInterval[], bookings: readonly Booking[]) {
-  const result = new Map<string, SourcedAvailabilityInterval[]>();
-  const rowIntervalById = new Map<string, AvailabilityRowInterval>();
-  for (const rowInterval of rowIntervals) {
-    const { row, interval } = rowInterval;
-    result.set(row.globalId, closedIntervals(row, interval));
-    rowIntervalById.set(row.globalId, rowInterval);
-  }
+  const bookingsByTarget = new Map<string, Booking[]>();
   for (const booking of bookings) {
-    if (booking.state !== "CONFIRMED" || booking.target === null) continue;
-    const rowInterval = rowIntervalById.get(booking.target.globalId);
-    if (!rowInterval || (rowInterval.row.allowDoubleBooking && booking.kind === "BOOKING")) continue;
-    const clipped = bookingInterval(booking, rowInterval.row, rowInterval.interval);
-    if (clipped) result.get(rowInterval.row.globalId)?.push(clipped);
+    if (booking.target === null) continue;
+    const targetBookings = bookingsByTarget.get(booking.target.globalId);
+    if (targetBookings) targetBookings.push(booking);
+    else bookingsByTarget.set(booking.target.globalId, [booking]);
   }
-  return result;
+  return new Map(
+    rowIntervals.map(({ row, interval }) => [
+      row.globalId,
+      rowAvailabilityIntervals(row, interval, bookingsByTarget.get(row.globalId) ?? []),
+    ]),
+  );
 }
 
 export async function loadCalendarAvailability(
