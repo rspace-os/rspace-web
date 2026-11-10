@@ -34,6 +34,7 @@ public interface RaIDServiceClientAdapter extends MultiInstanceClient<RaIDServer
    * @return true if the doiLink has been correctly added to the RelatedObjects
    * @throws URISyntaxException
    * @throws JsonProcessingException
+   * @throws RaIDDoiNotFoundException if RAiD refuses the doiLink because it cannot resolve it
    */
   boolean addRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
       throws URISyntaxException, JsonProcessingException;

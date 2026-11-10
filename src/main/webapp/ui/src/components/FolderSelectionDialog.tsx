@@ -54,7 +54,7 @@ export default function FolderSelectionDialog({
     <Dialog open={open} onClose={handleCancel} maxWidth="md" fullWidth>
       <DialogTitle>{title ?? t("folderSelectionDialog.title")}</DialogTitle>
       <DialogContent>
-        <Box sx={{ minHeight: 300, maxHeight: 500 }}>
+        <Box sx={{ minHeight: 300, maxHeight: 500, overflowY: "auto" }}>
           <FolderTree onFolderSelect={handleFolderSelect} rootFolderId={rootFolderId} />
         </Box>
         {selectedFolder && (

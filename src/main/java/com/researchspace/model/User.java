@@ -87,13 +87,10 @@ public class User extends AbstractUserOrGroupImpl
 
   public static final int MIN_PWD_LENGTH = 8;
   /*
-   * This is limited by our use of BCrypt for validation password encoding. This doesn't strictly affect our main
-   * password field, which is still using salted SHA256, but for consistency in the frontend we set the limits to be
-   * the same.
-   *
-   * TODO: RSDEV-894 Remove this limit when we migrate to Argon2
+   * Bounds the input hashed for both the login and the verification password. Also the longest
+   * input the verifier will check; keep the two in step.
    */
-  public static final int MAX_PWD_LENGTH = 50;
+  public static final int MAX_PWD_LENGTH = 128;
 
   /** Core regex for dis-allowed username characters */
   public static final String DISALLOWED_USERNAME_CHARS_REGEXP = "[^" + ALLOWED_USERNAME_CHARS + "]";

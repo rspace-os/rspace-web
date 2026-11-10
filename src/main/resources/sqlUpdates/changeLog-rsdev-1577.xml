@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-04-clear-verification-passwords" context="run"
+    author="matthias">
+    <comment>Clear verification passwords (used in some setups, e.g. SSO), as they were
+      potentially printed into server logs (RSDEV-1577). Users will be asked to set a
+      new one before the next operation that needs it. Irreversible.</comment>
+    <update tableName="User">
+      <column name="verificationPassword" valueComputed="NULL"/>
+      <where>verificationPassword IS NOT NULL</where>
+    </update>
+  </changeSet>
+
+</databaseChangeLog>

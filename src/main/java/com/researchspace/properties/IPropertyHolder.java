@@ -122,6 +122,19 @@ public interface IPropertyHolder extends Versionable {
    */
   int getS3DeleteWindowMinutes();
 
+  /**
+   * Minimum length, in characters, of a text search term for every searcher but a sysadmin
+   * (deployment property search.minTermLength.user). 0 or less disables the check.
+   */
+  int getUserMinSearchTermLength();
+
+  /**
+   * Minimum length, in characters, of a text search term for a sysadmin, whose search spans every
+   * user's content (deployment property search.minTermLength.sysadmin). 0 or less disables the
+   * check.
+   */
+  int getSysadminMinSearchTermLength();
+
   String getNetFileStoresExportEnabled();
 
   String getUserSignup();
@@ -226,6 +239,9 @@ public interface IPropertyHolder extends Versionable {
    * @return
    */
   boolean isImportArchiveFromServerEnabled();
+
+  /** Folder that archives imported by server path must sit inside; blank means none is set. */
+  String getImportArchiveFromServerFolder();
 
   /**
    * Filestore implementation used by this RSpace instance.

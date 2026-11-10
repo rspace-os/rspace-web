@@ -190,6 +190,7 @@ export type CoreFetcherArgs = {
   owner?: Person | null;
   deletedItems?: DeletedItems;
   benchOwner?: Person | null;
+  requestable?: boolean | null;
 };
 
 /**
@@ -295,6 +296,13 @@ export interface CoreFetcher {
    */
   deletedItems: DeletedItems;
   setDeletedItems(value: DeletedItems): void;
+
+  /*
+   * Filter Samples by whether they are requestable by other users. When set to
+   * `true`, this is an instance-wide search, unscoped by owner or group.
+   */
+  requestable: boolean | null;
+  setRequestable(value: boolean | null): void;
 
   /*
    * Searches can be saved, enabling the user to replay a particular search.
@@ -414,6 +422,7 @@ export interface Search {
   setBench(user: Person | null, doSearch?: boolean): void;
   setDeletedItems(deletedItems: DeletedItems, doSearch?: boolean): void;
   setParentGlobalId(parentGlobalId: GlobalId | null, doSearch?: boolean): void;
+  setRequestable(value: boolean | null, doSearch?: boolean): void;
 
   /*
    * These setters MUST update the state of the staticFetcher (the only with

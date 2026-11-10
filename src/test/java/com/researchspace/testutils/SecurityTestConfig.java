@@ -33,6 +33,7 @@ public class SecurityTestConfig extends SecurityBaseConfig {
     realms.add(ssoRealm());
     realms.add(apiRealm());
     realms.add(externalOAuthRealm());
+    realms.add(anonymousGuestRealm());
     rc.setRealms(realms);
     rc.setCacheManager(shiroCacheManager());
     return rc;
@@ -50,7 +51,7 @@ public class SecurityTestConfig extends SecurityBaseConfig {
   }
 
   @Bean
-  public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
+  public static LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
     return new LifecycleBeanPostProcessor();
   }
 

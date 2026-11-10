@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,6 +20,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.AuditManager;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.hibernate.HibernateException;
 import org.junit.jupiter.api.AfterEach;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class FileDownloadControllerMVCIT extends MVCTestBase {
 
@@ -46,6 +49,10 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
   public void testDownloadSignedHashHappyCase() throws Exception {
     User any = createInitAndLoginAnyUser();
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(any, "any");
+    // the post-signing exports only run when signRecord's own transaction commits
+    assertFalse(
+        TransactionSynchronizationManager.isActualTransactionActive(),
+        "transaction leaked from an earlier test");
     SigningResult signResult =
         signingManager.signRecord(doc.getId(), any, new String[] {"NoWitnesses"}, "statement");
     assertTrue(signResult.isSuccessful());
@@ -54,7 +61,11 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
           List<SignatureHash> hashes2;
           try {
             hashes2 = getSignatureHashesForSignature(signResult.getSignature().get());
-            return hashes2.stream().filter(h -> h.getFile() != null).findAny().get().getFile();
+            return hashes2.stream()
+                .map(SignatureHash::getFile)
+                .filter(Objects::nonNull)
+                .findAny()
+                .orElse(null);
           } catch (Exception e) {
             return fail("Invokable threw internal exception", e);
           }

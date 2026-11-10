@@ -68,40 +68,48 @@ associated with the branding of the organisation.
 ## Step 2: Define a new TinyMCE plugin
 
 ### Step 2.1: Registering a plugin
-Lets define a script in `src/main/webapp/ui/tinyMCE/plugins/newPlugin/index.js`,
-inside of which we will call `tinymce.PluginManager.add("newPlugin", NewPlugin);`,
-where `NewPlugin` is a class. This class doesn't need to have any particular
-methods, it just needs to have a constructor that takes as its argument a
-reference to the editor. The class will be instantiated and the constructor
-called when the user goes to edit the rich text field and a new instance of
+Let's define the plugin's bundle entry in
+`src/main/webapp/ui/src/tinyMCE/newPlugin/NewPluginEntrypoint.tsx`, inside of
+which we will call `tinymce.PluginManager.add("newPlugin", NewPlugin);`, where
+`NewPlugin` is a class. This class doesn't need to have any particular methods,
+it just needs to have a constructor that takes as its argument a reference to
+the editor, typed as `TinyMcePluginEditor` from
+[/src/main/webapp/ui/src/tinyMCE/types.ts](/src/main/webapp/ui/src/tinyMCE/types.ts).
+[PubchemEntrypoint.tsx](/src/main/webapp/ui/src/tinyMCE/pubchem/PubchemEntrypoint.tsx)
+is a complete example of everything in this step and the next. The class will
+be instantiated and the constructor called when the user goes to edit the rich
+text field and a new instance of
 TinyMCE is created, so whilst `tinymce.PluginManager.add("newPlugin", NewPlugin);`
 is to be called on page-load the class will be instantiated for each text field
 as it transitions from the viewing to editing modes.
 
 Inside this constructor, we want to set up handles for the insert menu, toolbar
-icon, and the slash menu. To do this we call the following code
-```
-editor.ui.registry.addMenuItem('optNewPlugin', {
-  text: 'New Plugin',
-  icon: 'newPlugin',
+icon, and the slash menu. User-visible text goes through i18next (see
+[/DevDocs/DeveloperNotes/i18n.md](/DevDocs/DeveloperNotes/i18n.md)), so
+`newPlugin.title` below stands for a key you add to the frontend catalogs. To do
+this we call the following code
+```tsx
+editor.ui.registry.addMenuItem("optNewPlugin", {
+  text: i18n.t("common:newPlugin.title"),
+  icon: "newPlugin",
   onAction: () => {
     // do something
-  }
+  },
 });
-editor.ui.registry.addButton('newPlugin', {
-  tooltip: 'New Plugin',
-  icon: 'newPlugin',
+editor.ui.registry.addButton("newPlugin", {
+  tooltip: i18n.t("common:newPlugin.title"),
+  icon: "newPlugin",
   onAction: () => {
     // do something
-  }
+  },
 });
 if (!window.insertActions) window.insertActions = new Map();
-window.insertActions.set('optNewPlugin', {
-  text: 'New Plugin',
-  icon: 'newPlugin',
+window.insertActions.set("optNewPlugin", {
+  text: i18n.t("common:newPlugin.title"),
+  icon: "newPlugin",
   action: () => {
     // do something
-  }
+  },
 });
 ```
 In each case, the `onAction` or `action` callback is where the actual logic for
@@ -113,22 +121,35 @@ steps to take care of.
      We load the plugin through a separate entry point so that it is only downloaded
      when the plugin is enabled.
     ```json
-      "tinymceNewPlugin": "src/tinyMCE/newPlugin/index.js",
+      "tinymceNewPlugin": "src/tinyMCE/newPlugin/NewPluginEntrypoint.tsx",
     ```
+     Keep the entry file mount-only (plugin registration and `createRoot` calls)
+     and put the plugin's React components in separate modules; see
+     [the frontend README](/src/main/webapp/ui/README.md).
   2. In [/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js](/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js),
      we need to add the following code:
      * Check whether the plugin is enabled with
         ```
         const newPluginEnabled = integrations.NEW_PLUGIN.enabled && integrations.NEW_PLUGIN.available;
         ```
-     * Register the new plugin's source file and to tell TinyMCE to show the
-       toolbar button and menu item when they are registered.
+     * Ask for the plugin's bundle, and tell TinyMCE to load the plugin and show
+       the toolbar button and menu item when they are registered.
         ```
         if (newPluginEnabled) {
-          localTinymcesetup.external_plugins["newPlugin"] = "/ui/dist/tinymceNewPlugin.js";
+          requiredVitePlugins.push("newPlugin");
+          addPluginIfNotPresent(localTinymcesetup, "newPlugin");
           addToToolbarIfNotPresent(localTinymcesetup, " | newPlugin");
           addToMenuIfNotPresent(localTinymcesetup, " | optNewPlugin");
         }
+        ```
+     * Map the TinyMCE plugin name to its bundle key, both in
+       `defaultTinymceVitePluginBundles` in the same file and in the
+       `window.RSTinyMCEPluginBundles` list in
+       [/src/main/webapp/WEB-INF/pages/workspace/editor/structuredDocument.jsp](/src/main/webapp/WEB-INF/pages/workspace/editor/structuredDocument.jsp).
+       The editor loads the bundles in `requiredVitePlugins` through
+       `/scripts/viteBundleLoader.mjs` before it initialises TinyMCE.
+        ```
+        newPlugin: "tinymceNewPlugin",
         ```
   3. A simple SVG needs to be added to [/src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js](/src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js).
 
@@ -147,22 +168,21 @@ consistently provide a link to the documentation for the integration.
 In the constructor of our new plugin, we want to define a generator function
 that with each call re-renders the react component, allowing us to change the
 `open` state.
-```
-function* renderNewPlugin(domContainer) {
+```tsx
+function* renderNewPlugin(
+  domContainer: HTMLElement,
+): Generator<void, void, Partial<React.ComponentProps<typeof NewPluginDialog>>> {
   const root = createRoot(domContainer);
   while (true) {
     const newProps = yield;
     root.render(
-      <StyledEngineProvider injectFirst>
-        <ThemeProvider theme={createAccentedTheme(COLOR)}>
-          <NewPluginDialog
-            editor={editor}
-            open={false}
-            onClose={() => {}}
-            {...newProps}
-          />
-        </ThemeProvider>
-      </StyledEngineProvider>
+      <I18nRoot namespaces={["common"]}>
+        <StyledEngineProvider injectFirst enableCssLayer>
+          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <NewPluginDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </I18nRoot>,
     );
   }
 }
@@ -171,13 +191,20 @@ function* renderNewPlugin(domContainer) {
 We then want to add this dialog to the DOM, but initially hidden. The
 conditional logic is to make sure the dialog isn't added repeatedly every time
 the plugin is instantiated.
-```
+The first `next()` only starts the generator: it runs up to the first `yield`
+and its argument is discarded, so the initial props go in the second call.
+```tsx
 if (!document.getElementById("tinymce-new-plugin")) {
   const div = document.createElement("div");
   div.id = "tinymce-new-plugin";
   document.body.appendChild(div);
 }
-const newPluginRenderer = renderNewPlugin(document.getElementById("tinymce-new-plugin"));
+const container = document.getElementById("tinymce-new-plugin");
+if (!container) {
+  throw new Error("tinymce-new-plugin container not found");
+}
+const newPluginRenderer = renderNewPlugin(container);
+newPluginRenderer.next();
 newPluginRenderer.next({ open: false });
 ```
 
@@ -192,26 +219,35 @@ newPluginRenderer.next({
 ```
 
 Note that the imports required at this point are
-```
-import React from "react";
+```tsx
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import type React from "react";
 import { createRoot } from "react-dom/client";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/newPlugin";
+import type { TinyMcePluginEditor } from "../types";
+import NewPluginDialog from "./NewPluginDialog";
 ```
 
-Now we just have two things to define `COLOR` and `NewPluginDialog`.
+Now we just have two things to define, `ACCENT_COLOR` and `NewPluginDialog`.
+Both live outside the entry file, which stays mount-only.
 
 ### Step 2.3: Setting the colour of the accented theme
 This is much the same colour as set on the apps page, but with a few variations
 to be able to style all of the possible UI elements. There are five colours
 which need defining `main`, `darker`, `contrastText`, `background`, and
 `backgroundContrastText`. To find out more about how each is used, check out
-[/src/main/webapp/ui/src/accentedTheme.js](/src/main/webapp/ui/src/accentedTheme.js). For a initial value, start by using
-this defining as a template, setting the hue to the same value used on the apps
-page, above.
-```
-const COLOR = {
+[/src/main/webapp/ui/src/accentedTheme.ts](/src/main/webapp/ui/src/accentedTheme.ts). The colours live in
+`src/main/webapp/ui/src/assets/branding/newPlugin/index.ts`, alongside the
+organisation's logo, as in
+[the PubChem branding](/src/main/webapp/ui/src/assets/branding/pubchem/index.ts).
+For a initial value, start by using this definition as a template, setting the
+hue to the same value used on the apps page, above.
+```ts
+export const ACCENT_COLOR = {
   main: {
     hue: HUE,
     saturation: 46,
@@ -250,8 +286,9 @@ contrast mode that stips out all of the superfluous colour, should the user wish
 to enable it (this is mentioned in the section titled "Accented Theme").
 
 ### Step 2.4: Displaying a dialog
-Now we just need to define `NewPluginDialog`, the UI that will actually be shown
-when the user triggers the plugin. This component needs to accept the three
+Now we just need to define `NewPluginDialog`, in
+`src/main/webapp/ui/src/tinyMCE/newPlugin/NewPluginDialog.tsx`, the UI that will
+actually be shown when the user triggers the plugin. This component needs to accept the three
 props that we're passing
   * `editor`, a reference the current TinyMCE editor.
   * `open`, a boolean indicating whether the dialog should be shown or not.
@@ -263,18 +300,18 @@ We want `NewPluginDialog` to return something like this:
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
         <AppBar
           variant="dialog"
-          currentPage="New Plugin"
+          currentPage={t("common:newPlugin.title")}
           helpPage={{
-            docLink: docLinks.newPlugin,
-            title: "New Plugin help",
+            docLink: helpDocsArticleUrl("newPlugin"),
+            title: t("common:newPlugin.helpTitle"),
           }}
         />
-        <DialogTitle>Insert from New Plugin</DialogTitle>
+        <DialogTitle>{t("common:newPlugin.dialogTitle")}</DialogTitle>
         <DialogContent>
           {/* TODO: Implement the dialog content here. */}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
+          <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
           <Button
             color="callToAction"
             variant="contained"
@@ -287,7 +324,7 @@ We want `NewPluginDialog` to return something like this:
               onClose();
             }}
           >
-            Insert
+            {t("common:newPlugin.insert")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -295,7 +332,9 @@ We want `NewPluginDialog` to return something like this:
   ```
   This gives us a few things
   1. A header, utilising the branding colours as previously defined
-  2. A link to the help docs (once created the link will need to be added to [/src/main/webapp/ui/assets/DocLinks.js](/src/main/webapp/ui/assets/DocLinks.js)).
+  2. A link to the help docs (once the article exists, add its ID under `help` in
+     [the common catalog](/src/main/webapp/ui/src/modules/common/i18n/locales/en-US/common.json)
+     and pass that key to `helpDocsArticleUrl`).
   3. A title, briefly describing the purpose of the dialog. This may seem
      superlfuous but in principle a single plugin, or any other integrations,
      could provide multiple actions with multiple dialogs.
@@ -312,15 +351,18 @@ We want `NewPluginDialog` to return something like this:
   6. An insertion button that actually inserts some HTML content into the editor
      and closes the dialog.
 
-The imports required for the dialog are as follows:
-```
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+The dialog gets `t` from `const { t } = useTranslation("common");`, and its
+imports are as follows:
+```tsx
 import Button from "@mui/material/Button";
-import AppBar from "../../components/AppBar";
-import docLinks from "../../assets/DocLinks";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import { useTranslation } from "react-i18next";
+import AppBar from "@/components/AppBar";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
+import type { TinyMcePluginEditor } from "../types";
 ```
 
 ## Step 3: Testing

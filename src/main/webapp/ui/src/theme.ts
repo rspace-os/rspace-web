@@ -7,6 +7,7 @@ import {
   type PaletteColorOptions,
   type Transitions,
 } from "@mui/material/styles";
+import { fontFamily } from "@/fonts";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -17,6 +18,16 @@ export type RecordPalette = {
   bg: string;
   fg: string;
   lighter?: string;
+};
+
+/**
+ * The colours for one of the Requests detail panel's action buttons: its text/icon colour,
+ * border, and resting background (the hover background is computed from these, not stored here).
+ */
+export type ActionButtonColors = {
+  color: string;
+  borderColor: string;
+  backgroundColor: string;
 };
 
 declare module "@mui/material/styles" {
@@ -96,6 +107,24 @@ declare module "@mui/material/styles" {
         badge: string;
       };
     };
+    // Specific to the Sample Requests feature's status chip backgrounds - not shared with any
+    // other feature's colour scheme, unlike `warning`/`success`/`error`/`info` above, whose
+    // auto-derived `.light` shades are both a different colour and not vetted for the WCAG AA
+    // text contrast these were hand-picked for (see RequestsStatusChip.tsx).
+    sampleRequestStatus: {
+      pending: string;
+      approved: string;
+      fulfilled: string;
+      rejected: string;
+    };
+    // The Requests detail panel's own approve/reject/fulfil action buttons - also specific to
+    // this feature, not shared with the generic `warning`/`success`/`error`/`info` palette.
+    sampleRequestActions: {
+      reject: ActionButtonColors;
+      approve: ActionButtonColors;
+      approvedDisabled: ActionButtonColors;
+      markAsFulfilled: ActionButtonColors;
+    };
   }
   interface PaletteOptions {
     callToAction: PaletteColorOptions;
@@ -125,6 +154,18 @@ declare module "@mui/material/styles" {
         bg: string;
         badge: string;
       };
+    };
+    sampleRequestStatus: {
+      pending: string;
+      approved: string;
+      fulfilled: string;
+      rejected: string;
+    };
+    sampleRequestActions: {
+      reject: ActionButtonColors;
+      approve: ActionButtonColors;
+      approvedDisabled: ActionButtonColors;
+      markAsFulfilled: ActionButtonColors;
     };
     lightestGrey: string;
     menuIconGrey: string;
@@ -311,6 +352,18 @@ const baseTheme = createTheme({
         badge: "#f7f7f7",
       },
     },
+    sampleRequestStatus: {
+      pending: "#FDF0DF",
+      approved: "#E7EEF2",
+      fulfilled: "#E6F1E8",
+      rejected: "#FBEAE8",
+    },
+    sampleRequestActions: {
+      reject: { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" },
+      approve: { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" },
+      approvedDisabled: { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" },
+      markAsFulfilled: { color: "#3A4A52", borderColor: "#7D8D95", backgroundColor: "white" },
+    },
 
     // the lightest grey on a white background that has AA contrast
     lightestGrey: "#949494",
@@ -345,6 +398,7 @@ const baseTheme = createTheme({
     filterToggle: "filter .2s ease-in-out, opacity .2s ease-in-out",
   },
   typography: {
+    fontFamily,
     h6: {
       fontSize: "1.1rem",
     },

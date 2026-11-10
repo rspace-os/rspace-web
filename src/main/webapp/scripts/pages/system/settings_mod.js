@@ -81,6 +81,7 @@ function printSettingsList() {
     _printCategory(RS.msg("legacyjs.system.settingsCategory.scientificToolsAndSpecializedData"));
     _printSettings([ 'inventory.available' ]);
     _printSettings([ 'inventory.operations.available' ]);
+    _printSettings([ 'inventory.sampleRequests.available' ]);
     _printSettings([ 'chemistry.available' ]);
     _printSettings([ 'clustermarket.available' ]);
     _printSettings([ 'fieldmark.available' ]);

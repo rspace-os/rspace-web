@@ -28,8 +28,6 @@ export default function ChooseToEdit({ checked, onChange, ariaControls }: Choose
         borderRadius: theme.spacing(0.5),
         letterSpacing: theme.typography.letterSpacing.spaced,
         ml: "auto",
-        position: "absolute",
-        right: 0,
       })}
     >
       {t("inputs.chooseToEdit.label")}

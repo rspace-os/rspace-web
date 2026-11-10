@@ -36,6 +36,14 @@ vi.mock("../../../../../common/InvApiService", () => ({
   },
 }));
 describe("search", () => {
+  test.each([{ pageSize: 0 }, { loading: false }, { query: "" }, { pageSize: undefined }])(
+    "keeps explicitly supplied falsey parameters: %j",
+    (params) => {
+      const fetcher = new CoreFetcher(mockFactory(), null);
+      expect(fetcher.applySearchParams(params)).toMatchObject(params);
+    },
+  );
+
   describe("When a new search is performed,", () => {
     test("a new factory should be created.", async () => {
       const mockNewFactory = vi.fn().mockReturnValue({});

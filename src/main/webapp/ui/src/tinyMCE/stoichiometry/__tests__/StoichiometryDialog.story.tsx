@@ -1,5 +1,5 @@
 import React from "react";
-import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
+import StoichiometryDialogRoot from "../StoichiometryDialogRoot";
 
 export const StoichiometryDialogWithCalculateButtonStory = ({
   onTableCreated,
@@ -17,7 +17,7 @@ export const StoichiometryDialogWithCalculateButtonStory = ({
   };
 
   return (
-    <StoichiometryDialogEntrypoint
+    <StoichiometryDialogRoot
       open={open}
       onClose={() => setOpen(false)}
       chemId={12345}
@@ -45,7 +45,7 @@ export const StoichiometryDialogWithTableStory = ({
   };
 
   return (
-    <StoichiometryDialogEntrypoint
+    <StoichiometryDialogRoot
       open={open}
       onClose={() => setOpen(false)}
       chemId={12345}
@@ -70,7 +70,7 @@ export const StoichiometryDialogClosedStory = () => {
   return (
     <>
       <div>{"Dialog is closed"}</div>
-      <StoichiometryDialogEntrypoint
+      <StoichiometryDialogRoot
         open={false}
         onClose={() => {}}
         chemId={12345}

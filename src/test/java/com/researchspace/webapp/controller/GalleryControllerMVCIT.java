@@ -57,7 +57,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
@@ -74,9 +73,6 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   private @Autowired RecordManager recordManager;
   @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
-
-  @Value("${publishing.anonymousGuest.password}")
-  private String anonymousPassword;
 
   private User owner;
   private PaginationCriteria<BaseRecord> pgcrit = null;
@@ -900,7 +896,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     publishAndRegisterForCleanup(setup.user, doc.getId());
 
     logoutCurrentUser();
-    PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+    PublicDocumentsUtilities.loginAnonymousUser();
 
     // sanity: the guest really can READ the media file through the published document, so the
     // refusal below cannot be a plain missing-READ denial — deleting the guest guard from

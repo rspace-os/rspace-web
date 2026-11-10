@@ -53,6 +53,7 @@ let PreviewInfoModule: typeof import("../PreviewInfo");
 
 beforeAll(async () => {
   PreviewInfoModule = await import("../PreviewInfo");
+  await import("../PreviewInfoEntrypoint");
 });
 
 describe("PreviewInfo event handlers", () => {

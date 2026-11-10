@@ -118,7 +118,6 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
         <FieldLabel disabled id={labelId}>
           {label}
         </FieldLabel>
-        <NoValue label={noValueLabel ?? t("values.noValue")} />
         {canChooseWhichToEdit ? (
           <ChooseToEdit
             ariaControls={controlledId}
@@ -128,6 +127,7 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
             }}
           />
         ) : null}
+        <NoValue label={noValueLabel ?? t("values.noValue")} />
       </FormControl>
     );
   }

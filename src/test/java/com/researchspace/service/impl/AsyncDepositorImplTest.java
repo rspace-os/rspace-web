@@ -18,6 +18,7 @@ import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
@@ -35,7 +36,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
 public class AsyncDepositorImplTest {
@@ -220,6 +223,114 @@ public class AsyncDepositorImplTest {
         .systemNotify(
             Mockito.any(NotificationType.class),
             (Mockito.contains(expectedDoiLink)),
+            Mockito.eq(anyUser.getUsername()),
+            Mockito.eq(true));
+    RaidUpdateResult actualRaidUpdateResult = futureRaidUpdateResult.get();
+    assertEquals(expectedRaidUpdateResult, actualRaidUpdateResult);
+  }
+
+  @Test
+  public void testMessageDoiLinkWhenRaidUpdateFails()
+      throws MalformedURLException,
+          URISyntaxException,
+          JsonProcessingException,
+          ExecutionException,
+          InterruptedException {
+    // GIVEN
+    String repoName = "Zenodo";
+    String expectedResultUrl = "https://zenodo.org/records/18663592";
+    String expectedDoiLink = "https://doi.org/10.5281/zenodo.18663592";
+    String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
+    String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
+    String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
+    RaIDReferenceDTO expectedRaidReference =
+        new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
+    when(mockRaidServiceClientAdapter.addRaIDRelatedObject(
+            anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
+        .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+
+    RepoDepositConfig raidDepositConfig = new RepoDepositConfig();
+    raidDepositConfig.setExportToRaid(true);
+    raidDepositConfig.setAppName(APP_ZENODO);
+    raidDepositConfig.setRaidAssociated(
+        new RaidGroupAssociationDTO(1L, "RSpaceProjectName", expectedRaidReference));
+
+    RaidUpdateResult expectedRaidUpdateResult =
+        new RaidUpdateResult(
+            false, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
+    Future<RepositoryOperationResult> futureRepoOperationResult =
+        new AsyncResult<>(
+            new RepositoryOperationResult(
+                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
+
+    // WHEN
+    Future<RaidUpdateResult> futureRaidUpdateResult =
+        underTest.reportDoiToRaid(
+            new App(APP_ZENODO, repoName, true),
+            futureRepoOperationResult,
+            anyUser,
+            raidDepositConfig);
+
+    // THEN
+    Mockito.verify(comm)
+        .systemNotify(
+            Mockito.any(NotificationType.class),
+            (Mockito.contains(expectedDoiLink)),
+            Mockito.eq(anyUser.getUsername()),
+            Mockito.eq(true));
+    RaidUpdateResult actualRaidUpdateResult = futureRaidUpdateResult.get();
+    assertEquals(expectedRaidUpdateResult, actualRaidUpdateResult);
+  }
+
+  @Test
+  public void testMessageExplainsRefusedDoiWhenRaidCannotFindIt()
+      throws MalformedURLException,
+          URISyntaxException,
+          JsonProcessingException,
+          ExecutionException,
+          InterruptedException {
+    // GIVEN
+    String repoName = "Zenodo";
+    String expectedResultUrl = "https://zenodo.org/records/18663592";
+    String expectedDoiLink = "https://doi.org/10.5281/zenodo.18663592";
+    String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
+    String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
+    String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
+    RaIDReferenceDTO expectedRaidReference =
+        new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
+    when(mockRaidServiceClientAdapter.addRaIDRelatedObject(
+            anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
+        .thenThrow(
+            new RaIDDoiNotFoundException(
+                "uri not found", new HttpClientErrorException(HttpStatus.BAD_REQUEST)));
+
+    RepoDepositConfig raidDepositConfig = new RepoDepositConfig();
+    raidDepositConfig.setExportToRaid(true);
+    raidDepositConfig.setAppName(APP_ZENODO);
+    raidDepositConfig.setRaidAssociated(
+        new RaidGroupAssociationDTO(1L, "RSpaceProjectName", expectedRaidReference));
+
+    RaidUpdateResult expectedRaidUpdateResult =
+        new RaidUpdateResult(
+            false, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink, true);
+    Future<RepositoryOperationResult> futureRepoOperationResult =
+        new AsyncResult<>(
+            new RepositoryOperationResult(
+                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
+
+    // WHEN
+    Future<RaidUpdateResult> futureRaidUpdateResult =
+        underTest.reportDoiToRaid(
+            new App(APP_ZENODO, repoName, true),
+            futureRepoOperationResult,
+            anyUser,
+            raidDepositConfig);
+
+    // THEN
+    Mockito.verify(comm)
+        .systemNotify(
+            Mockito.any(NotificationType.class),
+            (Mockito.contains("RAiD refused the DOI because it could not find it")),
             Mockito.eq(anyUser.getUsername()),
             Mockito.eq(true));
     RaidUpdateResult actualRaidUpdateResult = futureRaidUpdateResult.get();

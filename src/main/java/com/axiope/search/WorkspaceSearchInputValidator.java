@@ -26,8 +26,9 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
   private static final Set<String> SELECTABLE_RECORD_PREFIXES =
       new HashSet<>(Arrays.asList("SD", "NB", "FL"));
 
-  public WorkspaceSearchInputValidator(User subject) {
-    super(subject);
+  public WorkspaceSearchInputValidator(
+      User subject, int userMinTermLength, int sysadminMinTermLength) {
+    super(subject, userMinTermLength, sysadminMinTermLength);
   }
 
   @Override

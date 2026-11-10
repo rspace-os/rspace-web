@@ -531,6 +531,7 @@
         <label><input type="radio" name="role" id="roleOptionAdmin" value="RS_LAB_ADMIN"> <spring:message code="groups.view.role.labAdmin"/></label>
       </fieldset>
         <p/>
+        <c:if test="${group.labGroup == true}">
         <div id="adminPermissions" style="display:none">
           <fieldset>
             <legend><spring:message code="groups.view.labAdminPermissions.legend"/></legend>
@@ -538,6 +539,7 @@
             <label><input type="radio" name="isAuthorized" id="adminViewOptionAll" value="true"> <spring:message code="groups.view.labAdminPermissions.viewAll"/></label>
           </fieldset>
         </div>
+        </c:if>
     </c:otherwise>
   </c:choose>
 </div>

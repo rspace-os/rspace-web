@@ -4,12 +4,56 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
-# Unreleased
+# 2.28.0 2026-11-06
 
 ### Server
 
-- RSDEV-1348 archive import now stops, and removes what it extracted, when an uploaded archive expands past `archive.maxExpandedSizeMB` (default 10000 MB), would leave less than `archive.minSpaceRequiredToStartMB` free on the temp partition, contains more than `archive.import.maxEntries` files and folders (default 500000), or expands more than `archive.import.maxCompressionRatio` times its compressed size once past 10 MB (default 100). 0 disables each limit. The default for `archive.minSpaceRequiredToStartMB` rises from 1000 to 2000 MB, so exports now also need 2 GB free to start; sites that lowered `archive.maxExpandedSizeMB` to limit exports now limit imports too.
-- RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct. With a valid client, the grant now answers a username with the ordinary invalid-credentials response, at the cost of one password check, after `oauth.passwordGrant.maxFailures` wrong passwords (default 5) within `oauth.passwordGrant.failureWindowSeconds` (default 600), until the window passes. Administrators see a block in the security log. The count is held in memory and does not touch the account's login-page lockout. Unknown usernames are answered after one password check, so for ordinary accounts their response time is close to that of a wrong password.
+Some changes in this release affect existing deployments:
+
+- RSDEV-894 passwords are now hashed with Argon2id; on first startup after the upgrade all stored password hashes are re-hashed
+- RSDEV-1577 verification passwords (used in SSO setups) are cleared on upgrade; users will be asked to set new ones
+- RSDEV-1588 importing archives from a server path now also requires the new `importArchiveFromServer.folder` property
+
+### ELN Features
+
+- RSDEV-1525 integration credentials are now stored encrypted, and masked in the UI
+- RSDEV-1553 option to update a document through 'Import from Word' is restored
+- RSDEV-1348 archive import now has configurable limits on extracted size and number of files
+- ISSUE-1135 minimum search term length is now configurable (e.g. for CJK languages)
+
+### ELN Bugfix
+
+- RSDEV-1333, RSDEV-1617 hardening of user search and autocomplete inputs
+- RSDEV-1607 fix Project Group deletion by group owners other than the creator
+- RSDEV-1345 self-service group creation is blocked when disabled in settings
+- RSDEV-1411 collaboration group members can no longer change group roles
+- RSDEV-1172 top navigation bar is no longer printed with documents
+- RSDEV-1469 fix S3 download link in export-complete notification
+- RSDEV-913 fix long folder trees overlapping in Share dialog
+- RSDEV-1375 fix Auditing page errors for non-admin users
+- RSDEV-1618 fix List of Materials button hidden behind editor toolbar
+- RSDEV-1646 fix DOI shown in failed RAiD update notification
+- RSDEV-1619 speed up System -> Users listing and its CSV export
+
+### Inventory Features
+
+- RSDEV-1231, RSDEV-1259 new Operations wizard (aliquot, passage, pool, derive, cryopreserve, revive, destroy)
+- RSDEV-1309, RSDEV-1310 new Sample Requests workflow
+- RSDEV-1520 changing item access permissions now requires ownership control
+- RSDEV-1604 descriptions no longer display embedded forms or external images
+- RSDEV-1236 descriptions can now hold up to 2000 characters
+- RSDEV-1530 links pinned to a non-existent version are refused, and existing ones flagged
+- RSDEV-1518 PIDINST import now searches both DataCite and B2INST registries
+- RSDEV-1555 keyboard selection of non-adjacent grid locations
+- ISSUE-1214 Access Permissions section is now visible in Instrument details view
+
+### Inventory Bugfix
+
+- RSDEV-1540 instrument owner's email is no longer published on B2INST
+- RSDEV-1603, RSDEV-1537, RSDEV-1538 fixes around CSV import of Instruments and Subsamples
+- RSDEV-1542, RSDEV-1556, RSDEV-1576 fixes around PIDINST registry search
+- RSDEV-1621, RSDEV-1479 fixes for search results and batch edit layout
+- RSDEV-1539 fix screen reader labels in search results
 
 # 2.27.0 2026-10-02
 
