@@ -13,8 +13,9 @@ import useAutocomplete, {
   type AutocompleteCloseReason,
   type AutocompleteGroupedOption,
 } from "@mui/material/useAutocomplete";
+import { debounce } from "es-toolkit";
 import type React from "react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
 import type { Tag } from "../../stores/definitions/Tag";
@@ -563,16 +564,19 @@ function TagsComboboxContent<
     );
   }, [value]);
 
+  const loadFilteredPage = useEffectEvent(() => {
+    // this assumes that the code that called `setFilter` also reset `page` to 0
+    void loadPage().then(({ lastPage, tags: newPageOfTags }) => {
+      setTags(newPageOfTags);
+      setPage(1);
+      setReachedEnd(lastPage);
+    });
+  });
+  const debouncedLoadFilteredPage = useMemo(() => debounce(() => loadFilteredPage(), 300), []);
+  useEffect(() => () => debouncedLoadFilteredPage.cancel(), [debouncedLoadFilteredPage]);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // this assumes that the code that called `setFilter` also reset `page` to 0
-      void loadPage().then(({ lastPage, tags: newPageOfTags }) => {
-        setTags(newPageOfTags);
-        setPage(1);
-        setReachedEnd(lastPage);
-      });
-    }, 300);
-    return () => clearTimeout(timer);
+    debouncedLoadFilteredPage();
   }, [filter]);
 
   useEffect(() => {
