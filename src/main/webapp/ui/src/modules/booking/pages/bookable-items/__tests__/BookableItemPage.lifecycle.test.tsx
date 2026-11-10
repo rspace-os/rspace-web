@@ -195,7 +195,7 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(deleteRequest).toBeDefined());
     expect(new URL(deleteRequest?.url ?? "http://localhost").searchParams.get("permanent")).toBe("true");
     expect(deleteRequest?.headers.get("If-Match")).toBe('"2"');
-    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/config/bookable-items"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/all-items"));
   });
 
   it("does not offer permanent deletion while a sysadmin is operating as another user", async () => {

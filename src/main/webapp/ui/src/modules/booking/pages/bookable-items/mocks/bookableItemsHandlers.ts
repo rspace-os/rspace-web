@@ -12,9 +12,9 @@ import type { ApiV2RuntimeFieldCatalog } from "@/modules/common/api/v2/generated
 import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import type { BookingCatalogueManagerLocationPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerLocationPage";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
-import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 
 const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   ...booking,
@@ -120,9 +120,24 @@ const requiresTraining = [
 
 const definitions = [...hazardClass, ...requiresTraining];
 
+/** An unconfigured instrument the story user could set up, so Administration offers Add. */
+const eligibleBookingTargetFixture = {
+  id: 950,
+  globalId: "IN950",
+  name: "Unconfigured spectrometer",
+  deleted: false,
+};
+
 export function bookableItemsHandlers(onCollectionRequest: (request: Request) => void): RequestHandler[] {
   return [
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
+    http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+      if (new URL(request.url).searchParams.has("query")) return new HttpResponse(null, { status: 400 });
+      return HttpResponse.json({ docs: [eligibleBookingTargetFixture] });
+    }),
+    http.get("/api/v2/booking-configurations/count", () =>
+      HttpResponse.json({ totalDocs: 1, totalIsLowerBound: true }),
+    ),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
@@ -173,6 +188,9 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
     http.get(/\/api\/v2\/booking-catalogue(?:\/calendar)?$/, ({ request }) => {
       onCollectionRequest(request);
       const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^(availability|calendar)(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
       const target = url.searchParams.get("target");
       const where = url.searchParams.get("where");
@@ -225,9 +243,14 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       }));
       return HttpResponse.json(bookingCataloguePage(items, page, pageSize, matching.length));
     }),
-    http.get("/api/v2/booking-catalogue/availability-counts", () =>
-      HttpResponse.json({ availableNow: 0, freeLaterToday: 0 }),
-    ),
+    // Pages with events of their own classify items; these fixtures have none to count.
+    http.get("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
+      const url = new URL(request.url);
+      if (Array.from(url.searchParams.keys()).some((key) => /^availability(Start|End)$/.test(key))) {
+        return new HttpResponse(null, { status: 400 });
+      }
+      return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
+    }),
     http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
       const url = new URL(request.url);
       const page = Number(url.searchParams.get("page") ?? "1");

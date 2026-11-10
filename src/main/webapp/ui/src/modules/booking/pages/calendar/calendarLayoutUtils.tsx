@@ -10,10 +10,16 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { BookingActions } from "./BookingEventActions";
 
-export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
+export const calendarLayouts = ["time-grid", "resources", "agenda", "availability"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
 export const calendarViews = ["day", "week", "month"] as const;
 export type CalendarView = (typeof calendarViews)[number];
+export const allowedViews: Record<CalendarLayout, readonly CalendarView[]> = {
+  "time-grid": calendarViews,
+  resources: ["day", "week"],
+  agenda: calendarViews,
+  availability: ["day"],
+};
 export type BookingCalendarResource = NonNullable<BookingListDocument["target"]> & {
   location?: { name: string; globalId: string } | null;
 };

@@ -1,28 +1,30 @@
 import { Suspense } from "react";
-import { PageSkeleton } from "@/modules/common/app/PageSkeleton";
+import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { AllBookableItemsAvailabilityPanel } from "./AllBookableItemsAvailabilityPanel";
 import { AllBookableItemsContent } from "./AllBookableItemsContent";
 
-export default function AllBookableItemsPage() {
+function AllItemsSkeleton() {
+  const { t } = useTranslation("common");
   return (
-    <Suspense fallback={<BookableItemsSkeleton />}>
-      <AllBookableItemsAvailabilityPanel />
-      <AllBookableItemsContent />
-    </Suspense>
+    <main className="space-y-5 p-4 sm:p-8" aria-busy="true">
+      <p role="status" className="sr-only">
+        {t("loading")}
+      </p>
+      <div aria-hidden="true" className="space-y-5">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-24 w-full" />
+        {[0, 1, 2, 3].map((row) => (
+          <Skeleton key={row} className="h-20 w-full" />
+        ))}
+      </div>
+    </main>
   );
 }
 
-function BookableItemsSkeleton() {
+export default function AllBookableItemsPage() {
   return (
-    <PageSkeleton rowCount={4} rowClassName="h-16">
-      {(rows) => (
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-56" />
-          <Skeleton className="h-24 w-full" />
-          {rows}
-        </div>
-      )}
-    </PageSkeleton>
+    <Suspense fallback={<AllItemsSkeleton />}>
+      <AllBookableItemsContent />
+    </Suspense>
   );
 }

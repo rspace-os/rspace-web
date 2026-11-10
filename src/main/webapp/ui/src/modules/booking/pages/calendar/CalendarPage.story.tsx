@@ -44,3 +44,17 @@ export function CalendarPageStory({
     </QueryClientProvider>
   );
 }
+
+export function CalendarAvailabilityStory({
+  history = createMemoryHistory({ initialEntries: ["/booking/calendar?layout=availability&date=2026-08-17"] }),
+  containerWidth = 1500,
+}: {
+  history?: RouterHistory;
+  containerWidth?: number;
+} = {}) {
+  return (
+    <div style={{ width: containerWidth, maxWidth: "100%" }}>
+      <CalendarPageStory history={history} />
+    </div>
+  );
+}

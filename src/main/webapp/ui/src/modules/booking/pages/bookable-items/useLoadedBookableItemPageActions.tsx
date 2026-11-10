@@ -1,8 +1,14 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import {
+  getCountBookingCatalogueAvailabilityQueryKey,
+  getSearchBookingCatalogueLocationsQueryKey,
+  getSearchBookingCatalogueQueryKey,
+  getSearchCalendarCatalogueQueryKey,
+} from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import {
   invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
@@ -71,7 +77,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+        joinBookingCatalogueRefresh(queryClient),
       ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
@@ -96,7 +102,7 @@ export function useLoadedBookableItemPageActions({
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+        joinBookingCatalogueRefresh(queryClient),
         invalidateGetBookingCalendarSubscription(queryClient, configuration.id, { cancelRefetch: false }),
       ]);
       setArchiveOpen(false);
@@ -121,7 +127,7 @@ export function useLoadedBookableItemPageActions({
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+        joinBookingCatalogueRefresh(queryClient),
         invalidateGetBookingCalendarSubscription(queryClient, configuration.id, { cancelRefetch: false }),
       ]);
       setSaveAnnouncement("restored");
@@ -144,7 +150,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
       setPermanentDeleteOpen(false);
-      void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+      void navigate({ to: "/booking/all-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
@@ -159,7 +165,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+        joinBookingCatalogueRefresh(queryClient),
       ]);
       void navigate({ to: "/booking", ignoreBlocker: true });
     },
@@ -241,4 +247,15 @@ export function useLoadedBookableItemPageActions({
     rulesSaveBlocked,
     setRulesSaveBlocked,
   };
+}
+
+function joinBookingCatalogueRefresh(queryClient: QueryClient) {
+  return Promise.all(
+    [
+      getSearchBookingCatalogueQueryKey(),
+      getSearchBookingCatalogueLocationsQueryKey(),
+      getSearchCalendarCatalogueQueryKey(),
+      getCountBookingCatalogueAvailabilityQueryKey(),
+    ].map((queryKey) => queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })),
+  );
 }

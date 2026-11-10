@@ -4,7 +4,7 @@ import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayP
 import { INCREMENT_UNITS } from "@/modules/booking/domain/bookingIncrement";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
-import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/config";
+import type { CollectionConfig, CollectionRow, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
@@ -16,20 +16,26 @@ export const bookingConfigurationConfig = {
   relationshipSources: bookingRelationshipSources,
   idField: "id",
   labels: {
-    singularKey: "booking:bookableItems.singular",
-    pluralKey: "booking:bookableItems.plural",
+    singularKey: "booking:allBookableItems.singular" satisfies CollectionTranslationKey,
+    pluralKey: "booking:allBookableItems.plural" satisfies CollectionTranslationKey,
   },
   useAsTitle: "target",
   defaultColumns: ["target", "state", "updatedAt"],
   listSearchableFields: ["target.name", "target.globalId"],
   fields: [
-    { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
+    {
+      name: "id",
+      type: "number",
+      labelKey: "booking:allBookableItems.fields.id" satisfies CollectionTranslationKey,
+      list: false,
+      form: false,
+    },
     {
       name: "target",
       type: "relationship",
       relationTo: "instruments",
       hasMany: false,
-      labelKey: "booking:bookableItems.fields.target",
+      labelKey: "booking:allBookableItems.fields.target" satisfies CollectionTranslationKey,
       list: {
         renderCell: ({ row }) => {
           if (row.target === null) return createElement(UnknownItem, { size: "xs" });
@@ -49,20 +55,34 @@ export const bookingConfigurationConfig = {
     {
       name: "enabled",
       type: "boolean",
-      labelKey: "booking:bookableItems.fields.enabled",
+      labelKey: "booking:allBookableItems.fields.enabled" satisfies CollectionTranslationKey,
       // Shown through the combined Status column; still filterable on its own.
       list: false,
     },
     {
       name: "state",
       type: "select",
-      options: ["ACTIVE", "ARCHIVED"],
-      labelKey: "booking:bookableItems.fields.state",
+      options: [
+        {
+          value: "ACTIVE",
+          get label() {
+            return i18n.t("booking:allBookableItems.states.active");
+          },
+        },
+        {
+          value: "ARCHIVED",
+          get label() {
+            return i18n.t("booking:bookableItemDetails.archived");
+          },
+        },
+      ],
+      // The column header and the columns panel both read this label.
+      labelKey: "booking:allBookableItems.fields.status" satisfies CollectionTranslationKey,
       form: false,
       list: {
         dependencies: ["enabled"],
         // One status column: an archived item is Archived; an active one is Enabled or Disabled.
-        renderHeader: () => i18n.t("booking:bookableItems.fields.status"),
+        renderHeader: () => i18n.t("booking:allBookableItems.fields.status"),
         renderCell: ({ row }) =>
           row.state === "ARCHIVED"
             ? i18n.t("booking:bookableItemDetails.archived")
@@ -73,16 +93,18 @@ export const bookingConfigurationConfig = {
       name: "timezone",
       type: "select",
       options: bookingTimeZoneOptions(),
-      labelKey: "booking:bookableItems.fields.timezone",
+      labelKey: "booking:allBookableItems.fields.timezone" satisfies CollectionTranslationKey,
       required: true,
       list: false,
       // Create-only: the API rejects timezone changes, so edit forms filter this field out.
-      form: { descriptionKey: "booking:bookableItems.fields.timezoneDescription" },
+      form: {
+        descriptionKey: "booking:allBookableItems.fields.timezoneDescription" satisfies CollectionTranslationKey,
+      },
     },
     {
       name: "updatedAt",
       type: "dateTime",
-      labelKey: "booking:bookableItems.fields.updatedAt",
+      labelKey: "booking:allBookableItems.fields.updatedAt" satisfies CollectionTranslationKey,
       form: false,
       list: {
         renderCell: ({ row }) =>
