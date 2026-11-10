@@ -8,6 +8,7 @@ import {
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import type { Item } from "@/modules/common/api/v2/generated/models/item";
 import type { Page } from "@/modules/common/api/v2/generated/models/page";
+import type { SearchBookingCatalogueParams } from "@/modules/common/api/v2/generated/models/searchBookingCatalogueParams";
 import { requireBookingValue as required } from "./bookingMapping";
 
 export function mapBookingCatalogueItem(input: Item) {
@@ -91,12 +92,9 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
   };
 }
 
-type CatalogueSearch = {
-  q?: string;
-  target?: string;
+type CatalogueSearch = Partial<Pick<SearchBookingCatalogueParams, "q" | "target" | "page">> & {
   types?: readonly string[];
   locations?: readonly string[];
-  page?: number;
   pageSize?: number;
 };
 function parameters(search: CatalogueSearch) {

@@ -36,7 +36,7 @@ export function mapOpeningHours(entries: readonly BookingOpeningHoursEntry[]): O
 
 export type OpeningInterval = Pick<BookingOpeningHoursEntry, "start" | "end">;
 
-export type OpeningSchedule = { openingHours: readonly OpeningHoursEntry[] };
+export type OpeningSchedule = { openingHours: readonly BookingOpeningHoursEntry[] };
 
 /** The absolute duration cap also bounds date enumeration. */
 export const MAX_BOOKING_DURATION_MINUTES = 527_040;
