@@ -2,8 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { resizeDisabledReason } from "@/modules/booking/creation/timelineEditText";
-import type { TimelinePolicy } from "@/modules/booking/creation/timelineRange";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
@@ -39,8 +38,8 @@ export type VerticalDayTimelineSchedule =
 
 export type VerticalDayTimelineEditing = {
   draft: BookingWindowDraft;
-  /** The item's rules for this event kind; every adjustment is a complete valid interval. */
-  policy: TimelinePolicy;
+  schedulingTimeZone: string;
+  slotGranularityMinutes: number;
   onChange: (draft: BookingWindowDraft) => void;
   onInteractionChange?: (active: boolean) => void;
   disabledReason?: string;
@@ -95,6 +94,7 @@ export function VerticalDayTimeline({
   const { t, i18n } = useTranslation("booking");
   const now = useBookingNow();
   const pastMinute = elapsedNowMinute(now, date, timezone);
+  const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
   const dateHeadingId = `${instanceId}-date-heading`;
@@ -115,11 +115,17 @@ export function VerticalDayTimeline({
     startInteraction,
     updateInteraction,
     finishInteraction,
+    cancelCapturedPointer,
     onDraftHandleKeyDown,
-    abortInteraction,
-    adjuster,
-    commitRange,
-  } = useVerticalDayTimelineInteraction({ date, timezone, dayMinutes, editing, schedule, setExpandedEventId });
+  } = useVerticalDayTimelineInteraction({
+    date,
+    timezone,
+    dayMinutes,
+    timeFormat,
+    editing,
+    schedule,
+    setExpandedEventId,
+  });
   const lastAutoScrollContext = React.useRef("");
   const openSegments = React.useMemo(
     () => openingSegments(date, timezone, scheduleWindow),
@@ -300,6 +306,7 @@ export function VerticalDayTimeline({
               date={date}
               timezone={timezone}
               dayMinutes={dayMinutes}
+              timeFormat={timeFormat}
               dateHeadingId={dateHeadingId}
               instructionsId={instructionsId}
               canvasRef={canvasRef}
@@ -321,10 +328,7 @@ export function VerticalDayTimeline({
               startInteraction={startInteraction}
               updateInteraction={updateInteraction}
               finishInteraction={finishInteraction}
-              abortInteraction={abortInteraction}
-              editing={editing}
-              adjuster={adjuster}
-              commitRange={commitRange}
+              cancelCapturedPointer={cancelCapturedPointer}
               onDraftHandleKeyDown={onDraftHandleKeyDown}
             />
           ) : null}
@@ -353,7 +357,7 @@ export function VerticalDayTimeline({
           {editing && !draftVisible && editingRange ? (
             <p className="text-xs text-muted-foreground">
               {t("dayTimeline.vertical.draftOutsideDay", {
-                period: timeRange(editingRange, date, timezone),
+                period: timeRange(editingRange, date, timezone, timeFormat),
               })}
             </p>
           ) : null}
@@ -370,16 +374,6 @@ export function VerticalDayTimeline({
       <p id={instructionsId} className="sr-only">
         {t("dayTimeline.vertical.keyboardInstructions")}
       </p>
-      {adjuster && editing
-        ? (["start", "end"] as const).map((edge) => {
-            const reason = adjuster.visible[edge] ? resizeDisabledReason(edge, adjuster, editing.policy, t) : undefined;
-            return reason ? (
-              <p key={edge} id={`${instructionsId}-${edge}-reason`} className="sr-only">
-                {reason}
-              </p>
-            ) : null;
-          })
-        : null}
     </section>
   );
 }
