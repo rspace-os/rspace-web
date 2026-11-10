@@ -102,6 +102,9 @@
         "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account",
         "viewComments": "Unauthorized attempt by {0} to view comments"
       },
+      "inventoryOauthToken": {
+        "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+      },
       "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
       "signing": "Only the record owner can sign the record.",
       "sysadminApiOnly": "Only sysadmin can use this API",
