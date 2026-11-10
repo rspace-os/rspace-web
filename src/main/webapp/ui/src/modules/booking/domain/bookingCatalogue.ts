@@ -105,7 +105,7 @@ type CatalogueSearch = Partial<
   totals?: boolean;
 };
 export type CatalogueAvailability = "available-now" | "free-later-today";
-export type CatalogueAvailabilityWindow = { start: string; end: string; now: string };
+export type CatalogueAvailabilityWindow = Required<Pick<SearchBookingCatalogueParams, "start" | "end" | "now">>;
 function itemParameters(search: CatalogueSearch) {
   return {
     q: search.q?.trim() || undefined,
