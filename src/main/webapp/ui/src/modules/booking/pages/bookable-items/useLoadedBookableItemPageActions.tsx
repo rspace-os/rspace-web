@@ -25,7 +25,7 @@ export const bookableItemConfigurationFormSchema = v.intersect([
   SchedulingSettingsSchema,
 ]);
 
-export type BookableItemTab = "details" | "audit" | "access";
+export type BookableItemTab = "bookings" | "details" | "audit" | "access";
 
 export function configurationInput(configuration: BookingConfiguration) {
   return {
@@ -86,7 +86,7 @@ export function useLoadedBookableItemPageActions({
   const setTab = (next: BookableItemTab) =>
     void navigate({
       to: "/booking/bookable-items/$globalId/{-$tab}",
-      params: { globalId, tab: next },
+      params: { globalId, tab: next === "bookings" ? undefined : next },
       search: edit ? { edit: true } : {},
       replace: true,
       resetScroll: false,
@@ -219,7 +219,7 @@ export function useLoadedBookableItemPageActions({
       (tab === "audit" && !configuration.capabilities.canViewAudit) ||
       (tab === "access" && !configuration.capabilities.canViewAccess)
     ) {
-      setTab("details");
+      setTab("bookings");
     }
   }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
 

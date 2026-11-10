@@ -13,6 +13,18 @@ Booking keeps presentation choices separate from scheduling rules:
   the process timezone. This agrees with legacy RSpace code paths when their browser/session zone
   is absent; a valid legacy session zone can still differ.
 
+Day timelines position events and drag selections by elapsed minutes from midnight in the display
+timezone. Clock-change days therefore have 23 or 25 hours, with UTC offsets distinguishing repeated
+local times. Availability-window preferences remain wall-clock values and are converted to the
+timeline's coordinates. Converting a selection back to a booking draft preserves its DST occurrence.
+
+Horizontal day-timeline scrolling stays outside React state. Related timelines share
+`useDayTimelineScrollSync`, which aligns their elapsed-minute centers once per animation
+frame and ignores scroll events from its own writes. `viewState` / `onViewStateChange`
+remain for explicit positioning and zoom; scrolling does not call the state callback.
+Keep new synchronized timeline callers on the shared scroll hook, not a per-scroll
+React state update. Hour labels and day bounds are cached by date and timezone.
+
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one
 versioned JSON document stored under `BOOKING_DISPLAY_PREFERENCES` in the existing
