@@ -82,7 +82,7 @@ pipeline {
                 sh '''
                     echo "PATH = ${PATH}"
                     echo "M2_HOME = ${M2_HOME}"
-                    echo "Using Java: `java -version`"
+                    ./mvnw -v
                 '''
                 echo 'Cleaning out filestore'
                 sh "rm -rf $RS_FILE_BASE"
