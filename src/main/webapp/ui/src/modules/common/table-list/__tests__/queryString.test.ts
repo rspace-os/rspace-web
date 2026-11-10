@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { parseColumns, parseSorting, serializeColumns, serializeSorting } from "../utils/queryString";
-import { config, type TestRecord } from "./fixtures/tableList";
+
+type TestRecord = { id: string; title: string; owner: string; modifiedAt: string };
+const config = resolveCollectionConfig<TestRecord>({
+  slug: "records",
+  idField: "id",
+  useAsTitle: "title",
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+  defaultColumns: ["title"],
+  fields: [
+    { name: "id", type: "text", labelKey: "tableList.examples.fields.id", list: false },
+    { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
+    { name: "owner", type: "text", labelKey: "tableList.examples.fields.owner" },
+    { name: "modifiedAt", type: "dateTime", labelKey: "tableList.examples.fields.modified" },
+  ],
+});
 
 describe("table-list query string state", () => {
   it("round-trips only unique, listable columns", () => {
