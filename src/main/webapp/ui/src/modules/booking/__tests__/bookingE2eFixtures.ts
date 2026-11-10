@@ -1,12 +1,11 @@
 import { type APIRequestContext, expect } from "@playwright/test";
+import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
+import type { BookingOpeningHoursEntry } from "@/modules/common/api/v2/generated/models/bookingOpeningHoursEntry";
 
-export type OpeningHoursEntry = { dayOfWeek: number; start: string; end: string };
-export type BookingConfiguration = {
-  id: number;
-  configurationVersion: number;
-  timezone: string;
-  openingHours: OpeningHoursEntry[];
-};
+export type OpeningHoursEntry = BookingOpeningHoursEntry;
+export type BookingConfiguration = Required<
+  Pick<BookingConfigurationsRead, "id" | "configurationVersion" | "timezone">
+> & { openingHours: OpeningHoursEntry[] };
 
 export async function createBookingConfiguration(
   apiContext: APIRequestContext,
