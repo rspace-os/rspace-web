@@ -11,28 +11,28 @@ type FieldLabelInput = {
 };
 
 export function useFieldLabels() {
-  const { t: commonT } = useTranslation<Namespace>("common");
+  const { t } = useTranslation<Namespace>("common");
 
   const text = useCallback(
     (label: LabelText): string => {
       if ("text" in label) return label.text;
       const key = label.key as never;
       const options = { defaultValue: label.key };
-      return commonT(key, options);
+      return t(key, options);
     },
-    [commonT],
+    [t],
   );
   const relationshipLabel = useCallback(
     (via: RelationshipLabel, label: string) => {
       const owner = text(via.label);
       return owner === ""
         ? label
-        : commonT("tableList.fields.hierarchicalLabel", {
+        : t("tableList.fields.hierarchicalLabel", {
             owner,
             field: label,
           });
     },
-    [commonT, text],
+    [t, text],
   );
 
   const fieldLabel = useCallback(
@@ -50,9 +50,9 @@ export function useFieldLabels() {
     (field: FieldLabelInput): string => {
       const label = fieldLabel(field);
       const source = field.origin?.sourceLabel;
-      return source ? commonT("tableList.fields.labelWithSource", { label, source }) : label;
+      return source ? t("tableList.fields.labelWithSource", { label, source }) : label;
     },
-    [commonT, fieldLabel],
+    [t, fieldLabel],
   );
 
   return { text, fieldLabel, fieldOptionLabel };
