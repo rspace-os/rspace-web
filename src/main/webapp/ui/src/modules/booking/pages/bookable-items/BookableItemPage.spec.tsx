@@ -73,13 +73,7 @@ function bookableItemAccessHandlers() {
       ),
     ),
     http.get("/api/v2/booking-configurations/7/access/grantees", () =>
-      HttpResponse.json({
-        docs: [{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }],
-        totalDocs: 1,
-        limit: 20,
-        page: 1,
-        hasNextPage: false,
-      }),
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
     ),
   ];
 }
@@ -186,7 +180,7 @@ describe("BookableItemPage", () => {
       render(<BookableItemPageStory history={history} />);
       await expect.element(pageObj.heading).toBeVisible();
       const headingRow = pageObj.heading.element().closest("section");
-      const tabList = pageObj.detailsTab.element().parentElement;
+      const tabList = pageObj.bookingsTab.element().parentElement;
       const facts = page.getByRole("complementary", { name: "About this item" }).element();
       expect(headingRow).not.toBeNull();
       expect(tabList).not.toBeNull();
@@ -221,6 +215,23 @@ describe("BookableItemPage", () => {
     };
     let archiveRequest: Request | undefined;
     let restoreRequest: Request | undefined;
+    let eventsAvailable = true;
+    const futureBooking = {
+      id: 47,
+      version: 0,
+      target: bookableItemFixtures[0].target,
+      timezone: bookableItemFixtures[0].timezone,
+      start: "2099-01-01T09:00:00Z",
+      end: "2099-01-01T10:00:00Z",
+      state: "CONFIRMED" as const,
+      privacy: "full" as const,
+      purpose: "Future calibration",
+      bookedBy: "Ada Lovelace",
+      canEdit: true,
+      canCancel: false,
+      createdAt: "2026-08-01T09:00:00Z",
+      updatedAt: "2026-08-01T09:00:00Z",
+    };
     worker.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const where = new URL(request.url).searchParams.get("where") ?? "";
@@ -235,9 +246,21 @@ describe("BookableItemPage", () => {
             })
           : undefined;
       }),
+      http.get("/api/v2/bookings", ({ request }) => {
+        const where = new URL(request.url).searchParams.get("where") ?? "";
+        const docs = eventsAvailable && where.includes("end=gt=") ? [futureBooking] : [];
+        return HttpResponse.json({
+          docs,
+          totalDocs: docs.length,
+          limit: 10,
+          page: 1,
+          hasNextPage: false,
+        });
+      }),
       http.delete("/api/v2/booking-configurations/7", ({ request }) => {
         archiveRequest = request;
         current = { ...current, state: "ARCHIVED", configurationVersion: 1 };
+        eventsAvailable = false;
         return new HttpResponse(null, { status: 204 });
       }),
       http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
@@ -248,6 +271,14 @@ describe("BookableItemPage", () => {
     );
     render(<BookableItemPageStory history={history} />);
     await expect.element(pageObj.heading).toBeVisible();
+    await expect
+      .poll(() =>
+        page
+          .getByText("Future calibration", { exact: true })
+          .all()
+          .some((candidate) => candidate.element().getClientRects().length > 0),
+      )
+      .toBe(true);
 
     const triggerBox = pageObj.lifecycleActions.element().getBoundingClientRect();
     expect(triggerBox.width).toBeGreaterThanOrEqual(44);
@@ -263,6 +294,7 @@ describe("BookableItemPage", () => {
     expect(archiveRequest?.headers.get("If-Match")).toBe('"0"');
     await expect.element(page.getByText("Archived", { exact: true })).toBeVisible();
     await expect.element(page.getByText("Enabled", { exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByText("Future calibration", { exact: true }).first()).not.toBeInTheDocument();
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
 
     await pageObj.lifecycleActions.click();
@@ -272,6 +304,7 @@ describe("BookableItemPage", () => {
     await expect.poll(() => restoreRequest !== undefined).toBe(true);
     expect(restoreRequest?.headers.get("If-Match")).toBe('"1"');
     await expect(restoreRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
+    await expect.element(page.getByText("Future calibration", { exact: true }).first()).not.toBeInTheDocument();
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
     const enabled = page.getByText("Enabled", { exact: true });
     await expect.element(enabled).toBeVisible();
@@ -356,11 +389,16 @@ describe("BookableItemPage", () => {
     render(<BookableItemPageStory history={history} />);
 
     await expect.element(pageObj.heading).toBeVisible();
-    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(pageObj.bookingsTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(page.getByRole("heading", { name: "Upcoming events" })).toBeVisible();
+    await expect.element(page.getByRole("heading", { name: "Past events" })).toBeVisible();
     expect(auditRequests).toBe(0);
     expect(history.location.pathname).toBe("/booking/bookable-items/IN123");
 
+    await pageObj.detailsTab.click();
+    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
     await expect.element(page.getByText("Booking rules")).toBeVisible();
+    await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123/details");
 
     await pageObj.auditTab.click();
     await expect
@@ -384,9 +422,9 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.accessTab).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123/access");
 
-    await pageObj.detailsTab.click();
-    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
-    await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123/details");
+    await pageObj.bookingsTab.click();
+    await expect.element(pageObj.bookingsTab).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
   test("expands audit recorded values and keeps Changed by beside ID", async () => {
@@ -456,7 +494,7 @@ describe("BookableItemPage", () => {
       await pageObj.auditTab.click();
 
       const alert = page.getByRole("alert");
-      await expect.element(alert.getByText(title, { exact: true })).toBeVisible();
+      await expect.element(alert).toHaveTextContent(title);
       await expect.element(alert).not.toHaveTextContent("Do not display");
       await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
       await expectNoAxeViolations();
@@ -489,19 +527,23 @@ describe("BookableItemPage", () => {
     render(<BookableItemPageStory history={history} />);
     await expect.element(pageObj.heading).toBeVisible();
 
+    expect(pageObj.bookingsTab.element().getAttribute("aria-controls")).toBe(pageObj.bookingsPanel.element().id);
     expect(pageObj.detailsTab.element().getAttribute("aria-controls")).toBe(pageObj.detailsPanel.element().id);
+    expect(pageObj.bookingsPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.bookingsTab.element().id);
     expect(pageObj.detailsPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.detailsTab.element().id);
 
-    await pageObj.detailsTab.click();
+    await pageObj.bookingsTab.click();
     await userEvent.keyboard("{ArrowRight}");
-    await expect.element(pageObj.auditTab).toHaveFocus();
+    await expect.element(pageObj.detailsTab).toHaveFocus();
     await userEvent.keyboard("{Enter}");
-    await expect.element(pageObj.auditTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
+    await expect.element(page.getByRole("tabpanel", { name: "Bookings" })).not.toBeInTheDocument();
+    await expect.element(pageObj.detailsPanel).toBeVisible();
+
+    await pageObj.auditTab.click();
+    expect(pageObj.auditTab.element().getAttribute("aria-controls")).toBe(pageObj.auditPanel.element().id);
     await expect.element(pageObj.detailsPanel).not.toBeVisible();
     await expect.element(pageObj.auditPanel).toBeVisible();
-
-    expect(pageObj.auditTab.element().getAttribute("aria-controls")).toBe(pageObj.auditPanel.element().id);
-    expect(pageObj.auditPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.auditTab.element().id);
   });
 
   test("mounts the access editor at 320 CSS pixels with keyboard navigation and no overflow", async () => {
@@ -556,8 +598,8 @@ describe("BookableItemPage", () => {
     await userEvent.fill(pageObj.maximumDuration, "60");
     await pageObj.save.click();
 
+    await expect.element(pageObj.bookingsTab).toBeDisabled();
     await expect.element(pageObj.detailsTab).toBeDisabled();
-    await expect.element(pageObj.accessTab).toBeDisabled();
     await expect.element(pageObj.auditTab).toBeDisabled();
     await expect.element(page.getByRole("status")).toHaveTextContent("Saving booking configuration.");
     await expect.poll(() => releasePatch !== undefined).toBe(true);
