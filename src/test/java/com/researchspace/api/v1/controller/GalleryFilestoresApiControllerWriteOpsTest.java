@@ -16,11 +16,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreLinkedDocument;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
@@ -29,9 +31,12 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.DeletableTarget;
@@ -45,6 +50,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -56,6 +62,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -85,6 +92,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   @Mock private NfsFactory nfsFactory;
   @Mock private IPropertyHolder propertyHolder;
   @Mock private S3SidecarFileService s3SidecarFileService;
+  @Mock private NfsFieldLinkManager nfsFieldLinkManager;
   @Mock private User user;
 
   private final Long validFilestorePathId = 1L;
@@ -119,6 +127,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.setNfsFactory(nfsFactory);
     controller.properties = propertyHolder;
     controller.s3SidecarFileService = s3SidecarFileService;
+    controller.nfsFieldLinkManager = nfsFieldLinkManager;
     controller.metadataSidecarFileEnabled = true;
     controller.messages = mock(com.researchspace.service.MessageSourceUtils.class);
 
@@ -799,5 +808,38 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         UnsupportedOperationException.class, () -> controller.previewSidecarFile(1L, req, user));
     assertThrows(
         UnsupportedOperationException.class, () -> controller.saveSidecarFile(1L, req, user));
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_mapsReadableRowsAndOwnerOnlyPlaceholders() {
+    RecordInformation readable = new RecordInformation();
+    readable.setId(11L);
+    readable.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
+    readable.setName("Doc one");
+    readable.setOwnerFullName("Ada Lovelace");
+    RecordInformation hidden = new RecordInformation();
+    hidden.setOwnerFullName("Grace Hopper");
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user))
+        .thenReturn(List.of(readable, hidden));
+
+    List<ApiGalleryFilestoreLinkedDocument> result =
+        controller.getFilestoreItemLinkedDocuments(1L, "/XRD/run.dat", user);
+
+    assertEquals(2, result.size());
+    assertEquals("SD11", result.get(0).getGlobalId());
+    assertEquals("Doc one", result.get(0).getName());
+    assertNull(result.get(1).getId());
+    assertNull(result.get(1).getGlobalId());
+    assertEquals("Grace Hopper", result.get(1).getOwnerFullName());
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_refusedWhenFilestoresDisabled() {
+    when(propertyHolder.isNetFileStoresEnabled()).thenReturn(false);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
+    verifyNoInteractions(nfsFieldLinkManager);
   }
 }

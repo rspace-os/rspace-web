@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreAuditInfo;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreLinkedDocument;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
@@ -26,6 +27,7 @@ import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.FilestoreWriteManager;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.metadata.GeneratedSidecarFile;
@@ -69,6 +71,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Autowired RecordDeletionManager deletionManager;
   @Autowired FilestoreWriteManager filestoreWriteManager;
   @Autowired S3SidecarFileService s3SidecarFileService;
+  @Autowired NfsFieldLinkManager nfsFieldLinkManager;
 
   @Value("${gallery.actions.metadata.sidecarFile.enabled}")
   boolean metadataSidecarFileEnabled;
@@ -110,6 +113,18 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     return new ApiGalleryFilestoreAuditInfo(
         filestoreWriteManager.getAuditMetadata(filestoreId, remotePath, user));
+  }
+
+  @Override
+  public List<ApiGalleryFilestoreLinkedDocument> getFilestoreItemLinkedDocuments(
+      @PathVariable Long filestoreId,
+      @RequestParam("remotePath") String remotePath,
+      @RequestAttribute(name = "user") User user) {
+
+    assertFilestoresApiEnabled(user);
+    return nfsFieldLinkManager.getLinkedDocuments(filestoreId, remotePath, user).stream()
+        .map(ApiGalleryFilestoreLinkedDocument::new)
+        .toList();
   }
 
   /**

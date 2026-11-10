@@ -71,6 +71,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1326.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1236.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1577.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1659.xml"/>
 
     <include relativeToChangelogFile="true" file="changeLog-user-preference-unique.xml"/>
 
