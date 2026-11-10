@@ -81,7 +81,6 @@ pipeline {
                 echo "Building branch - ${BRANCH_NAME}"
                 sh '''
                     echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
                     ./mvnw -v
                 '''
                 echo 'Cleaning out filestore'

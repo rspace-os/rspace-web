@@ -30,8 +30,7 @@ pipeline {
                 echo "Analysing branch"
                 sh '''
                     echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
-                    echo "Using Java: `java -version`"
+                    mvn -v
                     echo "App version: ${APP_VERSION}"
                 '''
                 /* we build the package, to figure actually-bundled runtime Java deps (WEB-INF/lib)
