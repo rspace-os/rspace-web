@@ -9,11 +9,11 @@ export function BookableItemSkeleton() {
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
-      <div className="@container" aria-hidden="true">
+      <div className="@container space-y-6" aria-hidden="true">
+        <Skeleton className="h-11 w-full" />
+        <Skeleton className="h-10 w-full" />
         <div className={itemColumnsClassName}>
-          <div className="min-w-0 space-y-6">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-10 w-full" />
+          <div className="min-w-0">
             <Skeleton className="h-90 w-full" />
           </div>
           <div data-slot="bookable-item-facts" className="space-y-4">
