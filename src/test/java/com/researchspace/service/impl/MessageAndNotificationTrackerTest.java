@@ -5,14 +5,27 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.comms.MessageType;
+import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.webapp.messaging.NotificationMessage;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 public class MessageAndNotificationTrackerTest {
@@ -20,6 +33,127 @@ public class MessageAndNotificationTrackerTest {
   @Mock SimpMessagingTemplate messagingTemplate;
 
   @InjectMocks MessageAndNotificationTracker tracker;
+
+  @Test
+  void refreshWaitingForConnectionDoesNotBlockConnectionOwningPublisher() throws Exception {
+    Semaphore pool = new Semaphore(1);
+    CountDownLatch querying = new CountDownLatch(1);
+    AtomicInteger acquisitions = new AtomicInteger();
+    DataSource dataSource = Mockito.mock(DataSource.class);
+    Mockito.when(dataSource.getConnection())
+        .thenAnswer(
+            invocation -> {
+              if (acquisitions.incrementAndGet() > 1) {
+                querying.countDown();
+              }
+              if (!pool.tryAcquire(5, TimeUnit.SECONDS)) {
+                throw new SQLException("Connection acquisition timed out");
+              }
+              Connection connection = Mockito.mock(Connection.class);
+              Mockito.doAnswer(
+                      close -> {
+                        pool.release();
+                        return null;
+                      })
+                  .when(connection)
+                  .close();
+              return connection;
+            });
+    TransactionTemplate transaction =
+        new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+    AtomicReference<Future<?>> refresh = new AtomicReference<>();
+    var executor = Executors.newSingleThreadExecutor();
+    try {
+      transaction.executeWithoutResult(
+          status -> {
+            refresh.set(
+                executor.submit(
+                    () ->
+                        tracker.refreshNotificationCount(
+                            1L, () -> transaction.execute(query -> 1))));
+            await(querying);
+            // This transaction owns the sole connection needed by the pending refresh.
+            tracker.updateMessageCount(1L, 1, MessageType.SIMPLE_MESSAGE);
+          });
+      refresh.get().get(5, TimeUnit.SECONDS);
+      assertEquals(1, tracker.getMessageCountFor(1L));
+      assertEquals(1, tracker.getNotificationCountFor(1L));
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void olderRefreshRetriesAfterNewerPublication() throws Exception {
+    CountDownLatch queried = new CountDownLatch(1);
+    CountDownLatch publish = new CountDownLatch(1);
+    AtomicInteger calls = new AtomicInteger();
+    var executor = Executors.newSingleThreadExecutor();
+    try {
+      var older =
+          executor.submit(
+              () ->
+                  tracker.refreshNotificationCount(
+                      1L,
+                      () -> {
+                        if (calls.incrementAndGet() == 1) {
+                          queried.countDown();
+                          await(publish);
+                          return 1;
+                        }
+                        return 2;
+                      }));
+      assertTrue(queried.await(5, TimeUnit.SECONDS));
+      tracker.refreshNotificationCount(1L, () -> 2);
+      publish.countDown();
+      older.get(5, TimeUnit.SECONDS);
+      assertEquals(2, tracker.getNotificationCountFor(1L));
+      assertEquals(2, calls.get());
+    } finally {
+      publish.countDown();
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void loginQueryDoesNotBlockOtherUsersOrOverwriteNewerCount() throws Exception {
+    CountDownLatch queried = new CountDownLatch(1);
+    CountDownLatch publish = new CountDownLatch(1);
+    var executor = Executors.newSingleThreadExecutor();
+    try {
+      var login =
+          executor.submit(
+              () ->
+                  tracker.initCount(
+                      1L,
+                      () -> {
+                        queried.countDown();
+                        await(publish);
+                        return new NotificationStatus(1, 4, 5);
+                      }));
+      assertTrue(queried.await(5, TimeUnit.SECONDS));
+      tracker.initCount(2L, () -> new NotificationStatus(3, 0, 0));
+      tracker.refreshNotificationCount(1L, () -> 2);
+      publish.countDown();
+      login.get(5, TimeUnit.SECONDS);
+      assertEquals(2, tracker.getNotificationCountFor(1L));
+      assertEquals(3, tracker.getNotificationCountFor(2L));
+      assertEquals(4, tracker.getMessageCountFor(1L));
+      assertEquals(5, tracker.getSpecialMessageCountFor(1L));
+    } finally {
+      publish.countDown();
+      executor.shutdownNow();
+    }
+  }
+
+  private static void await(CountDownLatch latch) {
+    try {
+      assertTrue(latch.await(5, TimeUnit.SECONDS));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(e);
+    }
+  }
 
   @Test
   public void testChangeUserMessageCount() {

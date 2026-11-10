@@ -18,8 +18,8 @@ public interface IMessageAndNotificationTracker {
   int changeUserNotificationCount(Long userId, Integer incrementAmount);
 
   /**
-   * Replaces the unread count from a fresh database query, serialized with other tracker updates.
-   * The supplier must query committed data in a new transaction.
+   * Replaces the unread count from committed data without holding a lock during the query. The
+   * supplier must open a new transaction on each call: concurrent publications require a retry.
    */
   void refreshNotificationCount(Long userId, IntSupplier committedCount);
 
@@ -84,7 +84,7 @@ public interface IMessageAndNotificationTracker {
    * Method to init the number of notifications, messages and special messages.
    *
    * @param userId
-   * @param notificationStatus queries current counts while tracker updates are serialized
+   * @param notificationStatus queries current counts outside the per-user publication lock
    */
   void initCount(Long userId, Supplier<NotificationStatus> notificationStatus);
 

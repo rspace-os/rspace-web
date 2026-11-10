@@ -117,23 +117,30 @@ through the helper.
 
 ## Notification delivery
 
-`CommunicationManager.notify` saves notifications in the caller's transaction.
-With transaction synchronization active, broadcasts and unread-count updates run
-only after commit. Broadcasts run through `NotificationPostCommitExecutor` in a
-`REQUIRES_NEW` transaction. Each recipient's unread count is then refreshed from
-committed data in another new transaction, serialized with tracker updates.
-Marking notifications read also refreshes the count after commit. These refreshes
-avoid applying a delayed increment after a recipient reads the notification or
-initializes their count at login. Login also queries its initial counts while
-tracker updates are serialized, so an older query cannot overwrite a refresh.
-Rollback suppresses both effects. Without synchronization, delivery remains
-immediate. `NotificationAfterCommitIT` exercises commit, rollback, and
-persistence of a failure notification when a broadcaster throws.
+`CommunicationManager.notify` and `doCreateNotification` save notifications in the
+caller's transaction. With synchronization active, a transaction-bound batch
+collects broadcasts and distinct recipient ids. Commit runs each broadcast in a
+`REQUIRES_NEW` transaction, then recounts each affected recipient once using a
+single `count(distinct n.id)` query in another new transaction. Mark-read operations
+join the same batch. Rollback suppresses all delivery effects. Batches detach on
+suspension and reattach on resume so nested transactions deliver independently.
+Without synchronization, delivery and count increments remain immediate.
 
-Because the unread-count update now runs after commit, a notification tracker
-failure surfaces to the caller after the notification has already been saved;
-it no longer rolls the notification back. `doCreateNotification` still delivers
-immediately.
+Tracker publication uses a short per-user lock; no database query or connection
+acquisition runs under it. A version check retries a committed recount in a fresh
+transaction if a concurrent publication invalidated its snapshot. Login queries
+also run outside the lock and preserve each count that changed while the query ran.
+Message and notification increments share that user's lock and advance the corresponding
+count's version.
+Thus one user's query cannot block another user's login or a connection-owning
+message publisher. Recounts normally run once per user per transaction; concurrent
+tracker changes can require an additional query to avoid publishing stale data.
+
+Each broadcast and each recipient refresh catches delivery failures and logs a
+WARN without message contents or recipient details. A delivery failure cannot
+fail the committed request or prevent other recipients or later callbacks from
+running. `NotificationAfterCommitIT` covers commit, rollback, intervening reads
+and login, and failure-notification persistence.
 
 ## Transactions in tests
 

@@ -21,34 +21,73 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
 
   @Autowired private SimpMessagingTemplate messagingTemplate;
 
+  private static class UserUpdates {
+    long notificationVersion;
+    long messageVersion;
+    long specialMessageVersion;
+  }
+
+  private final Map<Long, UserUpdates> updates = new ConcurrentHashMap<>();
+
+  private UserUpdates updatesFor(Long userId) {
+    return updates.computeIfAbsent(userId, ignored -> new UserUpdates());
+  }
+
   private Map<Long, Integer> userToNotification = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToMessage = new ConcurrentHashMap<>();
   private Map<Long, Integer> userToSpecialMessage = new ConcurrentHashMap<>();
 
-  public synchronized void sendNotificationUpdate(Long userId) {
-    NotificationMessage notification =
-        new NotificationMessage(
-            getNotificationCountFor(userId),
-            getMessageCountFor(userId),
-            getSpecialMessageCountFor(userId));
-    sendNotificationUpdate(userId, notification);
+  public void sendNotificationUpdate(Long userId) {
+    UserUpdates state = updatesFor(userId);
+    synchronized (state) {
+      NotificationMessage notification =
+          new NotificationMessage(
+              getNotificationCountFor(userId),
+              getMessageCountFor(userId),
+              getSpecialMessageCountFor(userId));
+      sendNotificationUpdate(userId, notification);
+    }
   }
 
-  public synchronized int changeUserNotificationCount(Long userId, Integer incrementAmount) {
-    int newCount = doChangeCount(userId, incrementAmount, userToNotification);
-    sendNotificationUpdate(userId);
-    return newCount;
+  public int changeUserNotificationCount(Long userId, Integer incrementAmount) {
+    UserUpdates state = updatesFor(userId);
+    synchronized (state) {
+      state.notificationVersion++;
+      int newCount = doChangeCount(userId, incrementAmount, userToNotification);
+      sendNotificationUpdate(userId);
+      return newCount;
+    }
   }
 
   @Override
-  public synchronized void refreshNotificationCount(Long userId, IntSupplier committedCount) {
-    userToNotification.put(userId, committedCount.getAsInt());
-    sendNotificationUpdate(userId);
+  public void refreshNotificationCount(Long userId, IntSupplier committedCount) {
+    UserUpdates state = updatesFor(userId);
+    while (true) {
+      long version;
+      synchronized (state) {
+        version = state.notificationVersion;
+      }
+      int count = committedCount.getAsInt();
+      synchronized (state) {
+        if (state.notificationVersion != version) {
+          // Retry with a new committed snapshot after a concurrent publication.
+          continue;
+        }
+        userToNotification.put(userId, count);
+        state.notificationVersion++;
+        sendNotificationUpdate(userId);
+        return;
+      }
+    }
   }
 
-  public synchronized void clearUserNotificationCount(Long userId) {
-    userToNotification.put(userId, 0);
-    sendNotificationUpdate(userId);
+  public void clearUserNotificationCount(Long userId) {
+    UserUpdates state = updatesFor(userId);
+    synchronized (state) {
+      state.notificationVersion++;
+      userToNotification.put(userId, 0);
+      sendNotificationUpdate(userId);
+    }
   }
 
   public Boolean userHasNewNotifications(Long userId) {
@@ -86,15 +125,23 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   }
 
   private int changeUserSpecialMsgCount(Long userId, Integer incrementAmount) {
-    int newCount = doChangeCount(userId, incrementAmount, userToSpecialMessage);
-    sendNotificationUpdate(userId);
-    return newCount;
+    UserUpdates state = updatesFor(userId);
+    synchronized (state) {
+      state.specialMessageVersion++;
+      int newCount = doChangeCount(userId, incrementAmount, userToSpecialMessage);
+      sendNotificationUpdate(userId);
+      return newCount;
+    }
   }
 
   private int changeUserMessageCount(Long userId, int incrementAmount) {
-    int newCount = doChangeCount(userId, incrementAmount, userToMessage);
-    sendNotificationUpdate(userId);
-    return newCount;
+    UserUpdates state = updatesFor(userId);
+    synchronized (state) {
+      state.messageVersion++;
+      int newCount = doChangeCount(userId, incrementAmount, userToMessage);
+      sendNotificationUpdate(userId);
+      return newCount;
+    }
   }
 
   private int doChangeCount(Long userId, int incrementAmount, Map<Long, Integer> userToCount) {
@@ -128,12 +175,33 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
   }
 
   @Override
-  public synchronized void initCount(Long userId, Supplier<NotificationStatus> statusQuery) {
+  public void initCount(Long userId, Supplier<NotificationStatus> statusQuery) {
+    UserUpdates state = updatesFor(userId);
+    long notificationVersion;
+    long messageVersion;
+    long specialMessageVersion;
+    synchronized (state) {
+      notificationVersion = state.notificationVersion;
+      messageVersion = state.messageVersion;
+      specialMessageVersion = state.specialMessageVersion;
+    }
     NotificationStatus notificationStatus = statusQuery.get();
-    userToNotification.put(userId, notificationStatus.getNotificationCount());
-    userToMessage.put(userId, notificationStatus.getMessageCount());
-    userToSpecialMessage.put(userId, notificationStatus.getSpecialMessageCount());
-    sendNotificationUpdate(userId);
+    synchronized (state) {
+      // Keep any counts published since this login query started.
+      if (state.notificationVersion == notificationVersion) {
+        userToNotification.put(userId, notificationStatus.getNotificationCount());
+        state.notificationVersion++;
+      }
+      if (state.messageVersion == messageVersion) {
+        userToMessage.put(userId, notificationStatus.getMessageCount());
+        state.messageVersion++;
+      }
+      if (state.specialMessageVersion == specialMessageVersion) {
+        userToSpecialMessage.put(userId, notificationStatus.getSpecialMessageCount());
+        state.specialMessageVersion++;
+      }
+      sendNotificationUpdate(userId);
+    }
   }
 
   public void sendNotificationUpdate(Long userId, NotificationMessage notification) {

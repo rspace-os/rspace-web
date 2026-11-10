@@ -72,6 +72,48 @@ public class NotificationAfterCommitIT extends RealTransactionSpringTestBase {
     checkDelivery(false, false, InterveningAction.LOGIN);
   }
 
+  @Test
+  void legacyCreationReconcilesAfterAnotherTransactionCommits() throws Exception {
+    setUpLoginAsPIUserAndCreateADocument();
+    User recipient = createAndSaveUser("legacy" + System.nanoTime());
+    tracker.clearUserNotificationCount(recipient.getId());
+    CommunicationManagerImpl manager = AopTestUtils.getUltimateTargetObject(communicationMgr);
+    Object previous = ReflectionTestUtils.getField(manager, "broadcasters");
+    Broadcaster broadcaster = mock(Broadcaster.class);
+    manager.setBroadcasters(List.of(broadcaster));
+    try {
+      new TransactionTemplate(getTxMger())
+          .executeWithoutResult(
+              status -> {
+                communicationMgr.doCreateNotification(
+                    NotificationType.NOTIFICATION_REQUEST_STATUS_CHANGE,
+                    piUser.getUsername(),
+                    null,
+                    Set.of(recipient),
+                    null,
+                    "first transaction");
+                assertEquals(0, tracker.getNotificationCountFor(recipient.getId()));
+                verifyNoInteractions(broadcaster);
+                TransactionTemplate second = new TransactionTemplate(getTxMger());
+                second.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                second.executeWithoutResult(
+                    inner ->
+                        communicationMgr.doCreateNotification(
+                            NotificationType.NOTIFICATION_REQUEST_STATUS_CHANGE,
+                            piUser.getUsername(),
+                            null,
+                            Set.of(recipient),
+                            null,
+                            "second transaction"));
+                assertEquals(1, tracker.getNotificationCountFor(recipient.getId()));
+              });
+      assertEquals(2, tracker.getNotificationCountFor(recipient.getId()));
+      assertEquals(2, getNewNotificationCount(recipient));
+    } finally {
+      ReflectionTestUtils.setField(manager, "broadcasters", previous);
+    }
+  }
+
   private enum InterveningAction {
     NONE,
     READ,

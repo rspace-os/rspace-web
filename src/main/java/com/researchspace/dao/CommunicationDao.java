@@ -146,6 +146,9 @@ public interface CommunicationDao extends GenericDao<Communication, Long> {
    */
   NotificationStatus getNotificationStatus(User user);
 
+  /** Counts distinct unread notifications for a recipient in the current transaction. */
+  int getUnreadNotificationCount(Long userId);
+
   /**
    * Gets a communication with eagerly loaded targets
    *
