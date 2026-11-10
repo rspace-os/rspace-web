@@ -20,6 +20,7 @@
 }
 
 table { page-break-inside:auto }
+.attachmentDiv, .attachmentChemDiv { break-inside: avoid; }
 thead { display:table-header-group }
 tfoot { display:table-footer-group }
 
