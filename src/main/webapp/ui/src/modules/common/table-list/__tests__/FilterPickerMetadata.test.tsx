@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import type { ListInstruments200 } from "@/modules/common/api/v2/generated/models/listInstruments200";
-import type { RelationshipFilterPicker } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { FilterValueInput } from "../components/FilterValueInput";
 
@@ -15,16 +14,14 @@ vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),
 }));
 
-function fieldWithPicker(picker: RelationshipFilterPicker) {
-  return resolveCollectionConfig<{ target: string }>({
-    slug: "metadata-picker",
-    idField: "target",
-    useAsTitle: "target",
-    labels: { singularKey: "item", pluralKey: "items" },
-    defaultColumns: ["target"],
-    fields: [{ name: "target", labelKey: "target", type: "text", filterPicker: picker }],
-  }).fields[0];
-}
+const identityField = resolveCollectionConfig<{ target: string }>({
+  slug: "metadata-picker",
+  idField: "target",
+  useAsTitle: "target",
+  labels: { singularKey: "item", pluralKey: "items" },
+  defaultColumns: ["target"],
+  fields: [{ name: "target", labelKey: "target", type: "text" }],
+}).fields[0];
 
 describe("metadata-selected relationship filter controls", () => {
   it.each([
@@ -68,7 +65,10 @@ describe("metadata-selected relationship filter controls", () => {
         }),
       ),
     );
-    const field = fieldWithPicker({ resource: "instruments", identity: "globalId", globalIdPrefix: "IN" });
+    const field = {
+      ...identityField,
+      filterPicker: { resource: "instruments", identity: "globalId" as const, globalIdPrefix: "IN" },
+    };
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <FilterValueInput field={field} operator="equals" value="" number={1} onChange={onChange} />
@@ -86,7 +86,7 @@ describe("metadata-selected relationship filter controls", () => {
     { resource: "unregistered", identity: "globalId" as const, globalIdPrefix: "IN" },
     { resource: "instruments", identity: "globalId" as const, globalIdPrefix: "XX" },
   ])("keeps typed saved values when the source is unavailable or incompatible: $resource/$globalIdPrefix", (picker) => {
-    const field = fieldWithPicker(picker);
+    const field = { ...identityField, filterPicker: picker };
     render(<FilterValueInput field={field} operator="equals" value="IN123" number={1} onChange={vi.fn()} />);
     expect(screen.getByRole("textbox", { name: "common:tableList.filters.value" })).toHaveValue("IN123");
     expect(screen.queryByRole("button", { name: "common:relationshipPicker.openOptions" })).not.toBeInTheDocument();

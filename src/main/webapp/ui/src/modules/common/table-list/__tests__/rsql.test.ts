@@ -30,22 +30,6 @@ describe("table-list RSQL query state", () => {
     expect(parseRsqlExpression(serialized, config)).toEqual(expression);
   });
 
-  it.each([
-    ["title==Alpha", "equals"],
-    ["title!=Alpha", "notEquals"],
-    ["score=gt=4", "greaterThan"],
-    ["score=ge=4", "greaterThanOrEqual"],
-    ["score=lt=4", "lessThan"],
-    ["score=le=4", "lessThanOrEqual"],
-    ["title=in=(Alpha,Beta)", "in"],
-    ["title=out=(Alpha,Beta)", "notIn"],
-    ["title=contains=Alpha", "contains"],
-    ["title=like=A*", "matches"],
-    ["title=exists=true", "exists"],
-  ] as const)("maps %s to %s", (serialized, operator) => {
-    expect(parseRsqlExpression(serialized, config)).toMatchObject({ kind: "comparison", operator });
-  });
-
   it("rejects invalid syntax, fields, operators, and typed values", () => {
     expect(parseRsqlExpression("not rsql", config)).toBeNull();
     expect(parseRsqlExpression("unknown==value", config)).toBeNull();

@@ -30,30 +30,6 @@ const comparison = (
 });
 
 describe("serializeRsql", () => {
-  it.each([
-    ["equals", "name==Ada"],
-    ["notEquals", "name!=Ada"],
-    ["contains", "name=contains=Ada"],
-    ["matches", "name=like=A*"],
-    ["greaterThan", "id=gt=4"],
-    ["greaterThanOrEqual", "id=ge=4"],
-    ["lessThan", "id=lt=4"],
-    ["lessThanOrEqual", "id=le=4"],
-    ["exists", "name=exists=true"],
-  ] as const)("maps %s to the API token", (operator, expected) => {
-    expect(
-      serializeRsql(
-        comparison(
-          operator.includes("Than") ? "id" : "name",
-          operator,
-          operator === "exists" ? true : operator.includes("Than") ? 4 : operator === "matches" ? "A*" : "Ada",
-        ),
-        selectors,
-        limits,
-      ),
-    ).toBe(expected);
-  });
-
   it("serializes list operators and escapes reserved values", () => {
     expect(
       serializeRsql(

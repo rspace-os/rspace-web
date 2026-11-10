@@ -2,7 +2,7 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { runtimeDocumentSchema as documentSchema } from "../../__tests__/fixtures/schema";
-import { definition } from "../../__tests__/fixtures/tableList";
+import { hazardClassDefinition } from "../../__tests__/fixtures/tableList";
 import type { CollectionQueryState } from "../../types";
 import { RuntimeFieldProjectionLimitError } from "../../utils/errors";
 import { createApiV2CollectionAdapter } from "../adapter";
@@ -61,7 +61,8 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
   pagination: { defaultLimit: 20, maximumLimit: 100 },
 };
 
-const temperature = definition({
+const temperature: RuntimeFieldDefinition = {
+  ...hazardClassDefinition,
   id: "SF108",
   selector: "customFields.SF108",
   label: "Preservation temperature",
@@ -69,7 +70,7 @@ const temperature = definition({
   jsonType: "number",
   operators: ["==", "=ge=", "=le=", "=exists="],
   source: { id: "IT9", label: "Cell line template" },
-});
+};
 
 function adapter(definitions: readonly RuntimeFieldDefinition[]) {
   return createApiV2CollectionAdapter<Instrument>({
@@ -103,7 +104,7 @@ describe("runtime custom fields", () => {
   });
 
   it("derives one filterable, optional column per catalog definition", () => {
-    const field = adapter([definition()]).config.fields.find(
+    const field = adapter([hazardClassDefinition]).config.fields.find(
       (candidate) => String(candidate.name) === "customFields.SF104",
     );
 
@@ -114,12 +115,13 @@ describe("runtime custom fields", () => {
   });
 
   it("carries the definition source so duplicate labels stay distinguishable", () => {
-    const other = definition({
+    const other: RuntimeFieldDefinition = {
+      ...hazardClassDefinition,
       id: "SF204",
       selector: "customFields.SF204",
       source: { id: "IT11", label: "Bacterial template" },
-    });
-    const fields = adapter([definition(), other]).config.fields.filter(
+    };
+    const fields = adapter([hazardClassDefinition, other]).config.fields.filter(
       (candidate) => candidate.origin?.kind === "runtimeField",
     );
 
@@ -140,26 +142,29 @@ describe("runtime custom fields", () => {
   });
 
   it("retains Inventory runtime types for their specialised value controls", () => {
-    const date = definition({
+    const date: RuntimeFieldDefinition = {
+      ...hazardClassDefinition,
       id: "SF109",
       selector: "customFields.SF109",
       type: "date",
       operators: ["==", "=ge=", "=le=", "=exists="],
-    });
-    const time = definition({
+    };
+    const time: RuntimeFieldDefinition = {
+      ...hazardClassDefinition,
       id: "SF110",
       selector: "customFields.SF110",
       type: "time",
       operators: ["==", "=ge=", "=le=", "=exists="],
-    });
-    const choice = definition({
+    };
+    const choice: RuntimeFieldDefinition = {
+      ...hazardClassDefinition,
       id: "SF111",
       selector: "customFields.SF111",
       type: "choice",
       jsonType: "array",
       options: ["Brightfield", "Fluorescence"],
       operators: ["=contains=", "=in=", "=exists="],
-    });
+    };
 
     const fields = adapter([date, time, choice]).config.fields.filter(
       (candidate) => candidate.origin?.kind === "runtimeField",
@@ -171,7 +176,7 @@ describe("runtime custom fields", () => {
 
   it("projects only the visible custom columns", () => {
     const parameters = apiV2CollectionRequestParams(
-      adapter([definition(), temperature]),
+      adapter([hazardClassDefinition, temperature]),
       state(["name", "customFields.SF104"]),
     );
 
@@ -191,27 +196,34 @@ describe("runtime custom fields", () => {
         },
       },
     };
-    const parameters = apiV2CollectionRequestParams(adapter([definition()]), filtered);
+    const parameters = apiV2CollectionRequestParams(adapter([hazardClassDefinition]), filtered);
 
     expect(parameters.get("fields[instruments]")).toBe("id,name");
     expect(parameters.get("where")).toBe("customFields.SF104==BSL-2");
   });
 
   it("does not add a predicate for a custom column with no filter", () => {
-    const parameters = apiV2CollectionRequestParams(adapter([definition()]), state(["name", "customFields.SF104"]));
+    const parameters = apiV2CollectionRequestParams(
+      adapter([hazardClassDefinition]),
+      state(["name", "customFields.SF104"]),
+    );
 
     expect(parameters.get("where")).toBeNull();
   });
 
   it("does not raise the relationship expansion depth for a custom column", () => {
-    expect(adapter([definition()]).requiredDepth(state(["name", "customFields.SF104"]))).toBe(0);
+    expect(adapter([hazardClassDefinition]).requiredDepth(state(["name", "customFields.SF104"]))).toBe(0);
   });
 
   it("refuses more custom columns than the server accepts", () => {
     let error: unknown;
     try {
       apiV2CollectionRequestParams(
-        adapter([definition(), temperature, definition({ id: "SF9", selector: "customFields.SF9" })]),
+        adapter([
+          hazardClassDefinition,
+          temperature,
+          { ...hazardClassDefinition, id: "SF9", selector: "customFields.SF9" },
+        ]),
         state(["customFields.SF104", "customFields.SF108", "customFields.SF9"]),
       );
     } catch (caught) {
@@ -242,7 +254,7 @@ describe("runtime custom fields", () => {
       config,
       documentSchema,
       metadata: withHop,
-      runtimeFields: [{ namespace: "customFields", definitions: [definition()] }],
+      runtimeFields: [{ namespace: "customFields", definitions: [hazardClassDefinition] }],
     });
 
     expect(() => apiV2CollectionRequestParams(built, state(["name", "customFields.SF104"]))).not.toThrow();
@@ -267,7 +279,7 @@ describe("runtime custom fields", () => {
       config,
       documentSchema,
       metadata: withHop,
-      runtimeFields: [{ namespace: "target.customFields", definitions: [definition()] }],
+      runtimeFields: [{ namespace: "target.customFields", definitions: [hazardClassDefinition] }],
     });
     const hopped = "target.customFields.SF104";
 
@@ -287,7 +299,7 @@ describe("runtime custom fields", () => {
   });
 
   it("validates typed runtime values and carries descriptors for each projected column", () => {
-    const built = adapter([definition(), temperature]);
+    const built = adapter([hazardClassDefinition, temperature]);
     const page = built.parseResponse(
       {
         ...v2ListEnvelope([
@@ -309,7 +321,11 @@ describe("runtime custom fields", () => {
   });
 
   it("offers a definition's published options as a picker instead of free text", () => {
-    const hazard = definition({ type: "radio", options: ["BSL-1", "BSL-2", "BSL-3"] });
+    const hazard: RuntimeFieldDefinition = {
+      ...hazardClassDefinition,
+      type: "radio",
+      options: ["BSL-1", "BSL-2", "BSL-3"],
+    };
 
     const field = adapter([hazard]).config.fields.find((candidate) => String(candidate.name) === "customFields.SF104");
 
@@ -318,7 +334,7 @@ describe("runtime custom fields", () => {
   });
 
   it("preserves a runtime definition's wildcard support", () => {
-    const built = adapter([definition({ supportsWildcards: true })]);
+    const built = adapter([{ ...hazardClassDefinition, supportsWildcards: true }]);
     const field = built.config.fields.find((candidate) => String(candidate.name) === "customFields.SF104");
     const withWildcard = state(["name"]);
     withWildcard.filters.expression = {
@@ -348,7 +364,7 @@ describe("runtime custom fields", () => {
       createApiV2FilterFields({
         config,
         metadata: withShadow,
-        runtimeFields: [{ namespace: "customFields", definitions: [definition()] }],
+        runtimeFields: [{ namespace: "customFields", definitions: [hazardClassDefinition] }],
       }),
     ).toThrow("Runtime field selector shadows an existing selector: customFields.SF104");
   });
@@ -370,7 +386,7 @@ it("reuses runtime filter fields without advertising catalogue value columns", (
   const enriched = enrichApiV2FilterConfig({
     config,
     metadata,
-    runtimeFields: [{ namespace: "customFields", definitions: [definition()] }],
+    runtimeFields: [{ namespace: "customFields", definitions: [hazardClassDefinition] }],
   });
   expect(enriched.defaultColumns).toEqual(config.defaultColumns);
   expect(enriched.fields.find((field) => String(field.name) === "customFields.SF104")).toMatchObject({

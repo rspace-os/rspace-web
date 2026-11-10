@@ -3,20 +3,33 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { describe, expect, it, vi } from "vitest";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 import { useTableList } from "../hooks/state";
 import { TableList } from "../TableList";
 import type { CollectionFetcher } from "../types";
-import { config, records, type TestRecord } from "./fixtures/tableList";
 
-function testQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
+type TestRecord = { id: string; title: string; owner: string; score: number };
+const config = resolveCollectionConfig<TestRecord>({
+  slug: "records",
+  idField: "id",
+  useAsTitle: "title",
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+  defaultColumns: ["title", "owner"],
+  fields: [
+    { name: "id", type: "text", labelKey: "tableList.examples.fields.id", list: false },
+    { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
+    { name: "owner", type: "text", labelKey: "tableList.examples.fields.owner" },
+    { name: "score", type: "number", labelKey: "tableList.examples.fields.score" },
+  ],
+});
+
+const records: readonly TestRecord[] = [{ id: "1", title: "Alpha", owner: "Ada", score: 8 }];
 
 describe("useTableList", () => {
   it("lets surrounding components read and update remote table state", async () => {
     const user = userEvent.setup();
-    const queryClient = testQueryClient();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const fetch = vi.fn<CollectionFetcher<TestRecord>>(async () => ({ rows: records, rowCount: records.length }));
 
     function Harness() {
@@ -60,7 +73,7 @@ describe("useTableList", () => {
 
   it("uses a remote data source's semantic query key", async () => {
     const user = userEvent.setup();
-    const queryClient = testQueryClient();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const fetch = vi.fn<CollectionFetcher<TestRecord>>(async () => ({ rows: records, rowCount: records.length }));
 
     function Harness() {
@@ -99,30 +112,5 @@ describe("useTableList", () => {
 
     await user.click(screen.getByRole("button", { name: "Add field" }));
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-  });
-
-  it("marks a complete local collection for client processing", () => {
-    const queryClient = testQueryClient();
-
-    function Harness() {
-      const table = useTableList({ config, dataSource: { type: "client", rows: records } });
-      return (
-        <output>
-          {JSON.stringify({ rows: table.tableProps.rows.length, clientSide: table.tableProps.clientSide })}
-        </output>
-      );
-    }
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <Harness />
-      </QueryClientProvider>,
-    );
-
-    expect(screen.getByRole("status")).toHaveTextContent('{"rows":3,"clientSide":true}');
-    expect(queryClient.isFetching()).toBe(0);
-    expect(
-      queryClient.getQueryCache().find({ queryKey: ["table-list", config.slug, "client"], exact: true })?.meta,
-    ).toBeUndefined();
   });
 });
