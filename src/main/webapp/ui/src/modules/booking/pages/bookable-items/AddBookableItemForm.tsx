@@ -9,13 +9,19 @@ import {
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
+import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import {
+  getSearchBookingConfigurationTargetsQueryKey,
+  searchBookingConfigurationTargets,
+} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
   useCreateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
+import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
 import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
@@ -31,7 +37,12 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
-import { searchBookingTargets } from "./bookingConfigurationTargets";
+
+async function searchBookingTargets(query: string, signal?: AbortSignal) {
+  return (await searchBookingConfigurationTargets({ q: query.trim(), limit: 20 }, { signal })).docs.map(
+    requireEligibleBookingTarget,
+  );
+}
 
 const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
@@ -134,7 +145,10 @@ export function AddBookableItemForm({
   const createMutation = useMutation({
     mutationFn: (input: BookingConfigurationsCreate) => createOperation.mutateAsync({ data: input }),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+      ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
@@ -220,4 +234,14 @@ export function AddBookableItemForm({
       </Form>
     </main>
   );
+}
+
+function requireEligibleBookingTarget(target: BookingConfigurationTarget) {
+  if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
+  return {
+    ...target,
+    id: requireBookingValue(target.id, "id"),
+    globalId: requireBookingValue(target.globalId, "globalId"),
+    name: requireBookingValue(target.name, "name"),
+  };
 }

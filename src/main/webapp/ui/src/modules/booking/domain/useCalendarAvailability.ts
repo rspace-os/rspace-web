@@ -9,6 +9,7 @@ import {
 import { BOOKING_READ_FIELDS, type Booking, mapBooking } from "@/modules/booking/domain/booking";
 import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import { type ApiV2WhereObject, apiV2WhereToRsql } from "@/modules/common/api/v2/apiV2Where";
 import {
   getListBookingsQueryKey,
@@ -191,7 +192,7 @@ function mapAvailability(rowIntervals: readonly AvailabilityRowInterval[], booki
     rowIntervalById.set(row.globalId, rowInterval);
   }
   for (const booking of bookings) {
-    if (booking.state !== "CONFIRMED") continue;
+    if (booking.state !== "CONFIRMED" || booking.target === null) continue;
     const rowInterval = rowIntervalById.get(booking.target.globalId);
     if (!rowInterval || (rowInterval.row.allowDoubleBooking && booking.kind === "BOOKING")) continue;
     const clipped = bookingInterval(booking, rowInterval.row, rowInterval.interval);
@@ -269,6 +270,7 @@ export async function loadCalendarAvailability(
 export function useCalendarAvailability(
   rows: readonly CalendarAvailabilityRow[],
   intervalOrDate: AbsoluteDisplayInterval | string,
+  _authScope?: string | number,
 ) {
   const interval =
     typeof intervalOrDate === "string"
@@ -277,7 +279,7 @@ export function useCalendarAvailability(
   const envelope =
     rows.length > 0 ? availabilityEnvelope(rows, interval) : { start: interval.start, end: interval.end };
   // Plain useQuery: availability waits for visible rows and overlays a mounted calendar.
-  return useQuery({
+  return useQuery<Booking[], ErrorType<unknown>, ReadonlyMap<string, readonly SourcedAvailabilityInterval[]>>({
     queryKey: [
       ...getListBookingsQueryKey(
         availabilityRequest(
