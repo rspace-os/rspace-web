@@ -1,6 +1,6 @@
 import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 import { TableListReorderingPage } from "./pageObjects/TableListReorderingPage";
 import { reorderingStorageKey, reorderingWhere, TableListReorderingStory } from "./TableListReordering.story";
 
@@ -13,6 +13,11 @@ function storedView(): { columns: string | null; sort: string | null; where: str
 }
 
 async function renderStory(persist = false): Promise<TableListReorderingPage> {
+  if (persist) {
+    const search = new URLSearchParams({ "reordering-browser.where": reorderingWhere });
+    window.history.replaceState({}, "", `/?${search}`);
+    localStorage.removeItem(reorderingStorageKey);
+  }
   render(<TableListReorderingStory persist={persist} />);
   const table = new TableListReorderingPage();
   await expect.element(table.filterState).toHaveTextContent(initialFilters);
@@ -21,12 +26,6 @@ async function renderStory(persist = false): Promise<TableListReorderingPage> {
   await expect.element(table.commitCounts).toHaveTextContent("0,0,0");
   return table;
 }
-
-beforeEach(() => {
-  const search = new URLSearchParams({ "reordering-browser.where": reorderingWhere });
-  window.history.replaceState({}, "", `/?${search}`);
-  localStorage.removeItem(reorderingStorageKey);
-});
 
 afterEach(() => {
   cleanup();

@@ -5,7 +5,6 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
 import { TableListControlPanel } from "../components/TableListControlPanel";
 import { TableList } from "../TableList";
@@ -47,25 +46,18 @@ describe("TableList control panel", () => {
     const user = userEvent.setup();
     const onColumnsChange = vi.fn();
     const onSelectRuntimeField = vi.fn();
-    const definition: RuntimeFieldDefinition = {
-      id: "SF104",
-      selector: "customFields.SF104",
-      label: "Hazard class",
+    const extraDefinition: RuntimeFieldDefinition = {
+      id: "XFt436162696e6574",
+      selector: "extraFields.XFt436162696e6574",
+      label: "Cabinet",
       type: "text",
       jsonType: "string",
       operators: ["==", "=contains="],
       supportsWildcards: false,
       columnSelectable: true,
       sortable: false,
-      source: { id: "IT9", label: "Cell line template" },
-      options: [],
-    };
-    const extraDefinition: RuntimeFieldDefinition = {
-      ...definition,
-      id: "XFt436162696e6574",
-      selector: "extraFields.XFt436162696e6574",
-      label: "Cabinet",
       source: { id: "", label: "" },
+      options: [],
     };
     const runtimeConfig = {
       ...config,
@@ -88,7 +80,6 @@ describe("TableList control panel", () => {
       ],
     } as unknown as typeof config;
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    queryClient.setQueryData(queryKeys.oauthToken(true), "test-token");
     server.use(
       http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
         expect(new URL(request.url).searchParams.get("q")).toBe("cab");
