@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.protocolsio;
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,12 +13,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.File;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +80,32 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     assertEquals(2, getImagesInFieldDataCount(docContentString));
     // should be a folder created to hold images
     assertEquals(initialFolderCount + 1, getCountOfEntityTable("Folder").intValue());
+  }
+
+  @Test
+  public void importRefusedWhenProtocolsIODisabledBySysadmin() throws Exception {
+    createInitAndLoginAnyUser();
+    String protocol = readFileToString(RSpaceTestUtils.getResource("p_io_8163.json"), "UTF-8");
+    long initialDocCount = getCountOfEntityTable("StructuredDocument");
+    // the setting is cached, and the cache survives this test's rollback
+    String original = sysPropMgr.findByName(SystemPropertyName.PROTOCOLS_IO_AVAILABLE).getValue();
+    sysPropMgr.save(
+        SystemPropertyName.PROTOCOLS_IO_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+    try {
+      MvcResult result =
+          mockMvc
+              .perform(
+                  post("/importer/generic/protocols_io")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content("[" + protocol + "]"))
+              .andReturn();
+      assertInstanceOf(AuthorizationException.class, result.getResolvedException());
+    } finally {
+      sysPropMgr.save(SystemPropertyName.PROTOCOLS_IO_AVAILABLE, original, getSysAdminUser());
+    }
+    assertEquals(initialDocCount, getCountOfEntityTable("StructuredDocument").longValue());
   }
 
   private int getImagesInFieldDataCount(String docContentString) throws Exception {
