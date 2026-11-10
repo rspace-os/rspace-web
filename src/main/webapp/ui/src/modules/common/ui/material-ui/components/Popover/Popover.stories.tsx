@@ -378,7 +378,7 @@ export function VirtualElement() {
       }}
       role="button"
       tabIndex={0}
-      aria-label="Open popover at a position"
+      aria-label="Click anywhere in this box to open a popover there"
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();

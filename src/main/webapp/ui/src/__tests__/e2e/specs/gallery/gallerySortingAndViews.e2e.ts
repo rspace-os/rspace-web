@@ -32,10 +32,9 @@ test.describe("Gallery sorting and views", { tag: tags.MOBILE }, () => {
     const image = tree
       .getByRole("treeitem")
       .filter({ has: page.getByText(name, { exact: true }), hasNot: page.getByRole("group") });
-    await expect(image).not.toBeChecked();
+    await expect(image).not.toHaveAttribute("aria-selected", "true");
     await image.click();
-    // The multi-select tree exposes selection as aria-checked.
-    await expect(image).toBeChecked();
+    await expect(image).toHaveAttribute("aria-selected", "true");
     await pageGallery.infoPanel.waitUntilSelected(name);
   });
 

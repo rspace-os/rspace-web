@@ -84,6 +84,7 @@ describe("CallableImagePreview", () => {
       await preview.clickOpenImageWithCaption();
       await expect.element(preview.caption).toBeVisible();
       expect(preview.caption.element().textContent).toBe("Test Image Caption: cells & <media>\n\ntest image.png");
+      // biome-ignore lint/performance/useDomNodeTextContent: the rendered line breaks are under test
       const lines = (preview.caption.element() as HTMLElement).innerText.split("\n").filter((line) => line !== "");
       expect(lines).toEqual(["Test Image Caption: cells & <media>", "test image.png"]);
     });
@@ -92,6 +93,7 @@ describe("CallableImagePreview", () => {
       render(<CallableImagePreviewStory />);
       await preview.clickOpenImageWithoutDescription();
       await expect.element(preview.caption).toBeVisible();
+      // biome-ignore lint/performance/useDomNodeTextContent: the rendered caption is under test
       expect((preview.caption.element() as HTMLElement).innerText).toBe("no description.png");
     });
 

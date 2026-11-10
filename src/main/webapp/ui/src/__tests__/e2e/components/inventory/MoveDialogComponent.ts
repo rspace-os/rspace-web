@@ -48,7 +48,7 @@ export class MoveDialogComponent {
     const item = this.destinationTree.getByRole("treeitem", { name }).first();
     await expect(async () => {
       await item.click({ timeout: 3_000 }).catch(() => {});
-      await expect(item).toHaveAttribute("aria-checked", "true", { timeout: 3_000 });
+      await expect(item).toHaveAttribute("aria-selected", "true", { timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
   }
 

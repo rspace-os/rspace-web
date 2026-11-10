@@ -28,14 +28,14 @@ export const Composed: Story = {
       <>
         <Card {...args} sx={{ maxWidth: 360 }}>
           <CardHeader title="Sample A" subheader="Refrigerated storage" />
-          <CardActionArea onClick={() => setOpened(true)} aria-label="Open sample A">
+          <CardActionArea onClick={() => setOpened(true)}>
             <CardMedia
               component="img"
               height="100"
               image="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='100'%3E%3Crect width='360' height='100' fill='%23ddd'/%3E%3C/svg%3E"
               alt=""
             />
-            <CardContent>View the sample and its storage details.</CardContent>
+            <CardContent>Open sample A to view its storage details.</CardContent>
           </CardActionArea>
           <CardActions>
             <Button onClick={() => setSaved(!saved)}>{saved ? "Unsave" : "Save"}</Button>
@@ -47,7 +47,7 @@ export const Composed: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: "Open sample A" }));
+    await userEvent.click(canvas.getByRole("button", { name: /^Open sample A/ }));
     await expect(canvas.getByRole("status")).toHaveTextContent("Sample A opened");
     await userEvent.click(canvas.getByRole("button", { name: "Save" }));
     await expect(canvas.getByRole("button", { name: "Unsave" })).toBeVisible();
