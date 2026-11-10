@@ -147,7 +147,7 @@ tinymce.PluginManager.add('<name>', function (editor, url) {
   editor.addCommand("cmd<Name>", function () {
     editor.windowManager.openUrl({
       title: "<Name>",
-      url: url + "/dialog.html",
+      url: RS.withCacheVersion(url + "/dialog.html"),
       width: 1000,
       height: 600,
       buttons: [
@@ -166,15 +166,19 @@ tinymce.PluginManager.add('<name>', function (editor, url) {
 });
 ```
 
-### 6. `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.html`
+### 6. `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.jsp`
 
-```html
+TinyMCE requests `dialog.html`; the `urlrewrite.xml` rule below serves this
+JSP. `<rst:bundle>` resolves the hashed Vite output from the build manifest.
+
+```jsp
+<%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
-  <title><Name></title>
-  <script src="/ui/dist/runtime.js"></script>
-  <script src="/ui/dist/tinymce<Name>.js"></script>
+  <title><spring:message code="apps.dialogTitles.<name>"/></title>
+  <rst:viteClient />
+  <rst:bundle bundle="tinymce<Name>" />
 </head>
 <body>
   <div id="tinymce-<name>"></div>
@@ -323,6 +327,15 @@ other `*Available` descriptions (for example `egnyteAvailable`):
 "<name>Available": "Makes <Name> integration available.",
 ```
 
+### `locales/en-US/server.apps.json`
+
+Insert alphabetically inside `apps.dialogTitles`, for the dialog JSP's
+`<title>`:
+
+```json
+"<name>": "<Name>",
+```
+
 ### `sqlUpdates/liquibase-master.xml`
 
 Append (or insert at the appropriate position) inside `<databaseChangeLog>`:
@@ -465,6 +478,17 @@ Add inside the block of `<div id="*.available.description">` siblings:
 <div id="<name>.available.description"><spring:message code="system.property.description.<name>Available"/></div>
 ```
 
+### `WEB-INF/urlrewrite.xml`
+
+Add next to the other `externalTinymcePlugins/*/dialog.html` rules:
+
+```xml
+<rule>
+    <from>/scripts/externalTinymcePlugins/<name>/dialog.html</from>
+    <to>/scripts/externalTinymcePlugins/<name>/dialog.jsp</to>
+</rule>
+```
+
 ### `scripts/pages/system/settings_mod.js`
 
 Add under an existing `_printCategory(...)` block (default to `'Other'` and let
@@ -538,9 +562,9 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 5. Replace the TinyMCE icon SVG in `icons.js` with a properly-designed icon.
 6. Move the `_printSettings(['<name>.available']);` line in `settings_mod.js`
    under the correct sysadmin-settings category (default placement is `'Other'`).
-7. Run `pnpm run build` from the repo root to produce the
-   `ui/dist/tinymce<Name>.js` bundle. Without this, the TinyMCE dialog opens
-   blank (the React component fails to load). This was already done in step 5
+7. Run `pnpm run build` from the repo root to produce the `tinymce<Name>`
+   bundle and its manifest entry. Without them, `<rst:bundle>` in
+   `dialog.jsp` fails and the TinyMCE dialog does not load. This was already done in step 5
    of the skill workflow; include it here as a reminder for manual runs.
 8. Run a clean rebuild and confirm the integration appears in the Apps page,
    the sysadmin settings page, and the TinyMCE toolbar of a structured

@@ -19,10 +19,10 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
 2. Confirm `pom.xml` exists and `<NAME>` is absent from `IntegrationStates` in
    `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts`. Stop if it exists.
 3. Follow [REFERENCE.md](REFERENCE.md) to create all nine files and modify all
-   sixteen listed files. Preserve alphabetical ordering. Detect existing files
+   eighteen listed files. Preserve alphabetical ordering. Detect existing files
    and entries; refuse to overwrite them. Verify each insertion with `rg`.
-4. Run `pnpm run build`. The dialog loads `tinymce<Name>.js`; without the bundle,
-   it opens blank with a failed resource request.
+4. Run `pnpm run build`. `dialog.jsp` loads the `tinymce<Name>` bundle through
+   the Vite manifest; without the build, the dialog does not load.
 5. Run the frontend checks from the root. Regenerate the i18n types first:
    the card's `t()` keys and `docLink="<name>"` are typed from the generated
    `resources.d.ts`, so `tsc` fails until the new `apps` and `help` keys are
