@@ -31,6 +31,8 @@ echo 'Building rspace-web'
  Builds use the Java 21 toolchain by default; the bytecode still targets 17 (<release> in pom.xml), and 17 can
  still be picked per build. MAVEN_TOOLCHAIN_JAVA_VENDOR must match the <vendor> label of
  the agent's toolchains.xml entry (openjdk today), whatever distribution is installed.
+ Maven itself runs on the agent's JAVA_HOME (Jenkins Global properties); the toolchain picks the JDK that
+ compiles and runs the tests.
 */
 
 pipeline {
@@ -50,12 +52,6 @@ pipeline {
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
-
-    //tools {
-    //    // this is the JDK used to run maven itself
-    //    // the toolchain settings just affect compilation
-    //    jdk 'OPEN-JDK-17'
-    //}
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
