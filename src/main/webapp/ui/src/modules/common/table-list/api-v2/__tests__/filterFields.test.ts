@@ -91,20 +91,17 @@ function state(overrides: Partial<CollectionQueryState<Booking>> = {}): Collecti
 }
 
 describe("filter selectors derived from published relationship targets", () => {
-  const getAdapter = () =>
-    createApiV2CollectionAdapter<Booking>({
-      config,
-      documentSchema,
-      metadata,
-    });
-  // A derived selector is not a key of the document, which is why its name is read as a string.
-  const getDerived = () =>
-    getAdapter()
-      .config.fields.map((field) => ({ ...field, name: String(field.name) }))
-      .filter((field) => field.name.includes("."));
+  const adapter = createApiV2CollectionAdapter<Booking>({
+    config,
+    documentSchema,
+    metadata,
+  });
+  const derived = adapter.config.fields
+    .map((field) => ({ ...field, name: String(field.name) }))
+    .filter((field) => field.name.includes("."));
 
   it("offers every target's fields without a declaration for each relationship", () => {
-    expect(getDerived().map((field) => field.name)).toEqual([
+    expect(derived.map((field) => field.name)).toEqual([
       "target.name",
       "target.deleted",
       "target.globalId",
@@ -114,14 +111,14 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it("keeps relationship and target labels as key or literal descriptors", () => {
-    expect(getDerived().map((field) => field.derivedLabel)).toEqual([
+    expect(derived.map((field) => field.derivedLabel)).toEqual([
       { key: "common:tableList.targetFields.name" },
       { key: "common:tableList.targetFields.deleted" },
       { key: "common:tableList.targetFields.globalId" },
       { text: "Room label" },
       { text: "floor" },
     ]);
-    expect(getDerived().map((field) => field.origin?.via)).toEqual([
+    expect(derived.map((field) => field.origin?.via)).toEqual([
       { name: "target", label: { key: "target" } },
       { name: "target", label: { key: "target" } },
       { name: "target", label: { key: "target" } },
@@ -142,19 +139,19 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it("offers them as optional columns but keeps them out of forms and defaults", () => {
-    expect(getDerived().every((field) => field.list !== false && field.form === false)).toBe(true);
-    expect(getAdapter().config.defaultColumns).toEqual(["target", "room"]);
+    expect(derived.every((field) => field.list !== false && field.form === false)).toBe(true);
+    expect(adapter.config.defaultColumns).toEqual(["target", "room"]);
   });
 
   it("offers a field that cannot be filtered on as a column anyway", () => {
-    const globalId = getDerived().find((field) => field.name === "target.globalId");
+    const globalId = derived.find((field) => field.name === "target.globalId");
 
     expect(globalId?.list).not.toBe(false);
     expect(globalId?.capabilities.filterOperators).toEqual([]);
   });
 
   it("restores target fields from expanded response data", () => {
-    const page = getAdapter().parseResponse(
+    const page = adapter.parseResponse(
       {
         ...v2ListEnvelope([
           {
@@ -170,7 +167,7 @@ describe("filter selectors derived from published relationship targets", () => {
       },
       ["id", "target", "room"] as never[],
     );
-    const field = getAdapter().config.fields.find((candidate) => String(candidate.name) === "target.globalId");
+    const field = adapter.config.fields.find((candidate) => String(candidate.name) === "target.globalId");
     if (!field || typeof field.list !== "object") throw new Error("Missing target.globalId column metadata");
 
     expect(field.list.valueSource).toEqual({
@@ -182,17 +179,17 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it("takes the operators and wildcard rule from the published selector", () => {
-    const room = getDerived().find((field) => field.name === "room.label");
+    const room = derived.find((field) => field.name === "room.label");
     expect(room?.capabilities.filterOperators).toEqual(["equals", "contains"]);
     expect(room?.capabilities.supportsWildcards).toBe(false);
-    expect(getDerived().find((field) => field.name === "target.name")?.capabilities.supportsWildcards).toBe(true);
+    expect(derived.find((field) => field.name === "target.name")?.capabilities.supportsWildcards).toBe(true);
   });
 
   it.each([
     ["target.deleted", "boolean"],
     ["room.floor", "number"],
   ])("uses the published primitive type of %s", (name, type) => {
-    expect(getDerived().find((field) => field.name === name)?.type).toBe(type);
+    expect(derived.find((field) => field.name === name)?.type).toBe(type);
   });
 
   it("derives and serializes relationship filters whose owners are not configured", () => {
@@ -531,7 +528,6 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it("selects owner relationships instead of dotted virtual fields", () => {
-    const adapter = getAdapter();
     const state = {
       filters: { search: "", expression: null },
       sorting: [],
@@ -544,7 +540,6 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it("keeps request identity when a fixed-depth relationship already covers a virtual field", () => {
-    const adapter = getAdapter();
     const state = {
       filters: { search: "", expression: null },
       sorting: [],
@@ -559,7 +554,6 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it("carries the expanded target field as a raw value source", () => {
-    const adapter = getAdapter();
     const field = adapter.config.fields.find((candidate) => String(candidate.name) === "target.deleted");
     if (!field || typeof field.list !== "object") throw new Error("Missing target.deleted column metadata");
 

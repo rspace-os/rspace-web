@@ -44,9 +44,14 @@ describe("Sort priority", () => {
     render(
       <TableListSorting
         config={config}
-        sorting={config.fields
-          .filter((field) => field.capabilities.sortable)
-          .map((field) => ({ field: field.name, direction: "asc" }))}
+        sorting={[
+          { field: "id", direction: "asc" },
+          { field: "title", direction: "asc" },
+          { field: "owner", direction: "asc" },
+          { field: "score", direction: "asc" },
+          { field: "enabled", direction: "asc" },
+          { field: "modifiedAt", direction: "asc" },
+        ]}
         onChange={vi.fn()}
         onClose={vi.fn()}
       />,

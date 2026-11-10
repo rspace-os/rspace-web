@@ -1,7 +1,3 @@
-import { fakeCollectionResource } from "./fixtures/apiV2Resources";
-
-const resource = fakeCollectionResource("instruments");
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
@@ -9,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { type ComponentProps, Suspense, useState } from "react";
+import * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
@@ -17,9 +14,12 @@ import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
 import { useApiV2RuntimeFields } from "../api-v2/queries";
 import { useApiV2TableList } from "../hooks/apiV2TableList";
 import { TableList } from "../TableList";
-import { tableListDocumentSchema as documentSchema } from "./fixtures/schema";
-import { definition } from "./fixtures/tableList";
+import { fakeCollectionResource } from "./fixtures/apiV2Resources";
+import { hazardClassDefinition } from "./fixtures/tableList";
 
+const resource = fakeCollectionResource("instruments");
+
+const documentSchema = v.object({ id: v.number(), name: v.string(), target: v.optional(v.string()) });
 type Instrument = {
   id: number;
   name: string;
@@ -124,7 +124,7 @@ function collectionHandler(requests: string[]) {
     });
   });
 }
-const catalog = (fields = [definition()]) => HttpResponse.json({ fields, hasMore: false, page: 1, limit: 50 });
+const catalog = (fields = [hazardClassDefinition]) => HttpResponse.json({ fields, hasMore: false, page: 1, limit: 50 });
 const where = "customFields.SF104==hazardous";
 const invalidTarget = "target==XX43";
 const params = (rule: string) => new URLSearchParams({ "instruments.where": rule }).toString();
@@ -252,7 +252,7 @@ describe("API v2 saved views", () => {
           <button
             type="button"
             onClick={() => {
-              fields.selectRuntimeField("customFields", definition());
+              fields.selectRuntimeField("customFields", hazardClassDefinition);
               setSelected(true);
             }}
           >
@@ -371,7 +371,7 @@ describe("API v2 saved views", () => {
       collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
         const id = new URL(request.url).searchParams.get("ids") ?? "";
-        return catalog([definition({ id, selector: `customFields.${id}` })]);
+        return catalog([{ ...hazardClassDefinition, id, selector: `customFields.${id}` }]);
       }),
     );
     const history = createMemoryHistory({ initialEntries: [`/?${params(where)}`, `/?${params(second)}`] });

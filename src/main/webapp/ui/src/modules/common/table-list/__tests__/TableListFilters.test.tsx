@@ -8,8 +8,27 @@ import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
 import { TableListFilters } from "../components/TableListFilters";
 import { TableList } from "../TableList";
-import { config, emptyFilters, records } from "./fixtures/tableList";
+import type { FilterState } from "../types";
 import { chooseFilterField, chooseFilterOperator, chooseFilterValue } from "./tableListTestHelpers";
+
+type TestRecord = { id: string; title: string; owner: string; modifiedAt: string };
+const config = resolveCollectionConfig<TestRecord>({
+  slug: "records",
+  idField: "id",
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+  useAsTitle: "title",
+  defaultColumns: ["title", "owner", "modifiedAt"],
+  listSearchableFields: ["title", "owner"],
+  defaultSort: [{ field: "modifiedAt", direction: "desc" }],
+  fields: [
+    { name: "id", labelKey: "tableList.examples.fields.id", type: "text", list: false },
+    { name: "title", labelKey: "tableList.examples.fields.title", type: "text" },
+    { name: "owner", labelKey: "tableList.examples.fields.owner", type: "text" },
+    { name: "modifiedAt", labelKey: "tableList.examples.fields.modified", type: "dateTime" },
+  ],
+});
+const records: readonly TestRecord[] = [];
+const emptyFilters: FilterState<TestRecord> = { search: "", expression: null };
 
 type StatusRecord = { id: string; title: string; status: string };
 
@@ -31,10 +50,7 @@ const statusConfig = resolveCollectionConfig<StatusRecord>({
   ],
 });
 
-const statusRecords: readonly StatusRecord[] = [
-  { id: "1", title: "First", status: "Draft" },
-  { id: "2", title: "Second", status: "Published" },
-];
+const statusRecords: readonly StatusRecord[] = [];
 
 describe("TableList filters", () => {
   it("groups related fields and their custom-field picker and defaults new selections to equals", async () => {

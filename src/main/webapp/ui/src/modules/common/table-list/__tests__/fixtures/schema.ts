@@ -31,8 +31,6 @@ export const ownerlessDocumentSchema = v.object({ id: v.string(), title: v.strin
 
 export const runtimeDocumentSchema = v.object({ id: v.number(), name: v.string() });
 
-export const tableListDocumentSchema = v.object({ id: v.number(), name: v.string(), target: v.optional(v.string()) });
-
 export const expandedTargetDocumentSchema = v.object({
   id: v.string(),
   target: v.object({

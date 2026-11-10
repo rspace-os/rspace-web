@@ -79,21 +79,19 @@ function whereParameter(document: typeof openApi) {
   return parameter as Record<string, unknown>;
 }
 
-function runtimeNamespace(): Record<string, unknown> {
-  return {
-    namespace: "customFields",
-    catalog: "/api/v2/instruments/fields/customFields",
-    responseField: "customFields",
-    filterable: true,
-    columnSelectable: true,
-    sortable: false,
-    maximumProjections: 50,
-    catalogDefaultLimit: 50,
-    catalogMaximumLimit: 200,
-    catalogMaximumIds: 100,
-    via: "",
-  };
-}
+const runtimeNamespace: Record<string, unknown> = {
+  namespace: "customFields",
+  catalog: "/api/v2/instruments/fields/customFields",
+  responseField: "customFields",
+  filterable: true,
+  columnSelectable: true,
+  sortable: false,
+  maximumProjections: 50,
+  catalogDefaultLimit: 50,
+  catalogMaximumLimit: 200,
+  catalogMaximumIds: 100,
+  via: "",
+};
 
 function selectors(document: typeof openApi) {
   return (whereParameter(document)["x-rspace-filter"] as { selectors: Record<string, Record<string, unknown>> })
@@ -139,7 +137,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
     "catalogMaximumIds",
   ])("requires the runtime descriptor's %s", (field) => {
     const document = structuredClone(openApi);
-    const namespace = runtimeNamespace();
+    const namespace = { ...runtimeNamespace };
     delete namespace[field];
     whereParameter(document)["x-rspace-runtime-fields"] = [namespace];
     expect(() => apiV2CollectionMetadataFromOpenApi(document, "records")).toThrow(`0.${field}`);
@@ -147,7 +145,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
 
   it("rejects malformed runtime flags and catalog limits", () => {
     const document = structuredClone(openApi);
-    const namespace = runtimeNamespace();
+    const namespace = { ...runtimeNamespace };
     whereParameter(document)["x-rspace-runtime-fields"] = [namespace];
     namespace.filterable = "true";
     expect(() => apiV2CollectionMetadataFromOpenApi(document, "records")).toThrow("0.filterable");
@@ -411,7 +409,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   it("rejects duplicate runtime namespaces", () => {
     const duplicate = structuredClone(openApi);
     const where = whereParameter(duplicate);
-    const namespace = runtimeNamespace();
+    const namespace = { ...runtimeNamespace };
     where["x-rspace-runtime-fields"] = [namespace, namespace];
 
     expect(() => apiV2CollectionMetadataFromOpenApi<TestRecord>(duplicate, "records")).toThrow(

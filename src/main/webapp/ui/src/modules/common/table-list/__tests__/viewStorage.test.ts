@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { parseTableViewState, serializeTableViewState } from "../utils/viewStorage";
-import { config } from "./fixtures/tableList";
+
+type TestRecord = { id: string; title: string; owner: string; score: number; enabled: boolean; modifiedAt: string };
+const config = resolveCollectionConfig<TestRecord>({
+  slug: "records",
+  idField: "id",
+  useAsTitle: "title",
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+  defaultColumns: ["title", "owner", "score", "enabled", "modifiedAt"],
+  defaultSort: [{ field: "modifiedAt", direction: "desc" }],
+  fields: [
+    { name: "id", type: "text", labelKey: "tableList.examples.fields.id", list: false },
+    { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
+    { name: "owner", type: "text", labelKey: "tableList.examples.fields.owner" },
+    { name: "score", type: "number", labelKey: "tableList.examples.fields.score" },
+    { name: "enabled", type: "boolean", labelKey: "tableList.examples.fields.enabled" },
+    { name: "modifiedAt", type: "dateTime", labelKey: "tableList.examples.fields.modified" },
+  ],
+});
 
 describe("table-list persisted view state", () => {
   it("round-trips non-default filters, columns, and sorting", () => {
@@ -125,7 +143,6 @@ describe("a saved column selection when the configured defaults change", () => {
   });
 
   it("shows a default column added since the view was saved, after the default before it", () => {
-    // The view predates "score" becoming a default, so the saved selection never chose to hide it.
     const values = parseTableViewState(view(["title", "enabled"], ["title", "owner", "enabled", "modifiedAt"]), config);
 
     expect(values?.columns).toEqual(["title", "score", "enabled"]);

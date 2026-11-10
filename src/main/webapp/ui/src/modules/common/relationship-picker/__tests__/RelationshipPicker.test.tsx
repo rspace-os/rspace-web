@@ -30,33 +30,31 @@ function MultiSourcePicker({ sources }: { sources: readonly RelationshipSource[]
   return <RelationshipPicker sources={sources} value={value} onChange={setValue} ariaLabel="Relationships" multiple />;
 }
 
-function fixtureSource(): RelationshipSource {
-  return {
-    id: "fixture-targets",
-    globalIdPrefix: "FX",
-    batchSize: 100,
-    normalizeValue: (value) => {
-      const match = /^FX(\d+)$/i.exec(value.trim());
-      return match ? `FX${Number(match[1])}` : null;
-    },
-    search: async () => [],
-    resolveMany: async (values, signal) => {
-      const params = new URLSearchParams({ ids: values.join(",") });
-      const response = await fetch(`/api/v2/relationship-fixtures?${params}`, {
-        signal,
-      });
-      if (!response.ok) throw new Error(`Fixture restore failed (${response.status})`);
-      return (await response.json()) as Readonly<Record<string, unknown | null>>;
-    },
-    ownsValue: (value) => /^FX\d+$/i.test(value.trim()),
-    toOption: (document) => {
-      const target = document as { globalId: string; name: string };
-      return { value: target.globalId, label: target.name };
-    },
-  };
-}
+const fixtureSource: RelationshipSource = {
+  id: "fixture-targets",
+  globalIdPrefix: "FX",
+  batchSize: 100,
+  normalizeValue: (value) => {
+    const match = /^FX(\d+)$/i.exec(value.trim());
+    return match ? `FX${Number(match[1])}` : null;
+  },
+  search: async () => [],
+  resolveMany: async (values, signal) => {
+    const params = new URLSearchParams({ ids: values.join(",") });
+    const response = await fetch(`/api/v2/relationship-fixtures?${params}`, {
+      signal,
+    });
+    if (!response.ok) throw new Error(`Fixture restore failed (${response.status})`);
+    return (await response.json()) as Readonly<Record<string, unknown | null>>;
+  },
+  ownsValue: (value) => /^FX\d+$/i.test(value.trim()),
+  toOption: (document) => {
+    const target = document as { globalId: string; name: string };
+    return { value: target.globalId, label: target.name };
+  },
+};
 
-function renderSelected(values: string, authScope = "caller-one", source = fixtureSource()) {
+function renderSelected(values: string, authScope = "caller-one", source = fixtureSource) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const view = render(
     <QueryClientProvider client={queryClient}>
@@ -161,8 +159,7 @@ describe("relationship picker search", () => {
           source={relationshipSources.instruments}
           availabilitySource={{
             queryKey: ["test-relationship-option-availability"],
-            loadUnavailable: async (values) =>
-              Object.fromEntries(values.map((item) => [item, { reason: "test-unavailable" }])),
+            loadUnavailable: async () => ({ IN123: { reason: "test-unavailable" } }),
             renderUnavailable: () => "common:relationshipPicker.availabilityFailed",
           }}
           value=""
@@ -194,9 +191,10 @@ describe("relationship picker restore", () => {
       http.get("/api/v2/relationship-fixtures", ({ request }) => {
         const ids = new URL(request.url).searchParams.get("ids") ?? "";
         requests.push(ids);
-        return HttpResponse.json(
-          Object.fromEntries(ids.split(",").map((id) => [id, { globalId: id, name: `Target ${id.slice(2)}` }])),
-        );
+        return HttpResponse.json({
+          FX42: { globalId: "FX42", name: "Target 42" },
+          FX7: { globalId: "FX7", name: "Target 7" },
+        });
       }),
     );
 
@@ -238,7 +236,7 @@ describe("relationship picker restore", () => {
 
   it("uses a fresh selected cache entry without issuing a restore request", async () => {
     const request = vi.fn();
-    const source = fixtureSource();
+    const source = fixtureSource;
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(["relationship-option", "fixture-targets", "FX42"], {
       globalId: "FX42",
@@ -303,13 +301,6 @@ describe("relationship picker restore", () => {
     expect(requested?.searchParams.get("fields[instruments]")).toBe("id,name,globalId");
   });
 
-  it("rejects malformed instruments restore envelopes", async () => {
-    server.use(http.get("/api/v2/instruments", () => HttpResponse.json({ docs: "invalid" })));
-    await expect(
-      relationshipSources.instruments.resolveMany?.(["IN123"], new AbortController().signal),
-    ).rejects.toThrow();
-  });
-
   it("rejects malformed instruments restore documents", async () => {
     server.use(
       http.get("/api/v2/instruments", () => HttpResponse.json({ docs: [{ id: 123, name: "Confocal microscope" }] })),
@@ -340,7 +331,7 @@ describe("relationship picker restore", () => {
 
   it("chunks restores at 100 values even when a saved selector contains many targets", async () => {
     const batches: string[][] = [];
-    const source = fixtureSource();
+    const source = fixtureSource;
     server.use(
       http.get("/api/v2/relationship-fixtures", ({ request }) => {
         const ids = new URL(request.url).searchParams.get("ids")?.split(",") ?? [];

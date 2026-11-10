@@ -34,7 +34,6 @@ function RowActions({
       <button
         type="button"
         onClick={() => {
-          // The control that acted goes with its row, as after a real cancellation.
           onRemove(row.id);
           alerts.push(removed(row.id, row.title));
         }}
@@ -44,7 +43,6 @@ function RowActions({
       <button
         type="button"
         onClick={() => {
-          // As after a server action: the alert first, the row only once its list has refetched.
           alerts.push(removed(row.id, row.title));
           window.setTimeout(() => onRemove(row.id), 50);
         }}
