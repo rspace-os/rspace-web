@@ -27,6 +27,7 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.NfsDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
@@ -54,6 +55,7 @@ import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
@@ -74,6 +76,7 @@ import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
 import com.researchspace.service.impl.TemplateTransferService;
 import com.researchspace.service.inventory.SampleRequestApiManager;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestFactory;
@@ -108,6 +111,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired CloudNotificationManager cloudNotificationManager;
   private @Autowired MessageOrRequestCreatorManager requestCreatorManager;
   private @Autowired NfsManager nfsManager;
+  private @Autowired NfsDao nfsDao;
   private @Autowired UserAppConfigManager userAppConfigManager;
   private @Autowired RecordFavoritesManager favMgr;
   private @Autowired UserConnectionManager userConn;
@@ -559,6 +563,43 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
     assertEquals(false, report.isSucceeded());
+  }
+
+  @Test
+  public void removeUserWhoseFilestoreIsLinkedFromDocuments() throws Exception {
+    final User toDelete = createAndSaveUser(getRandomAlphabeticString("fsOwner"));
+    final User other = createAndSaveUser(getRandomAlphabeticString("fsOther"));
+    initUsers(toDelete, other);
+    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsManager.saveNfsFileSystem(fileSystem);
+    NfsFileStore storeOfDeleted =
+        GalleryFilestoreTestUtils.createFileStore("mine", toDelete, fileSystem);
+    nfsManager.saveNfsFileStore(storeOfDeleted);
+    NfsFileStore storeOfOther =
+        GalleryFilestoreTestUtils.createFileStore("theirs", other, fileSystem);
+    nfsManager.saveNfsFileStore(storeOfOther);
+    logoutAndLoginAs(toDelete);
+    StructuredDocument ownDoc = createBasicDocumentInRootFolderWithText(toDelete, "any");
+    logoutAndLoginAs(other);
+    StructuredDocument othersDoc = createBasicDocumentInRootFolderWithText(other, "any");
+    Field ownField = ownDoc.getFields().get(0);
+    Field othersField = othersDoc.getFields().get(0);
+    // own document via own filestore, own document via other's filestore, other's document via own
+    // filestore: each is removed by a different user-deletion statement
+    openTransaction();
+    nfsDao.saveFieldLink(new NfsFieldLink(ownField, storeOfDeleted, "/run.dat"));
+    nfsDao.saveFieldLink(new NfsFieldLink(ownField, storeOfOther, "/run.dat"));
+    nfsDao.saveFieldLink(new NfsFieldLink(othersField, storeOfDeleted, "/run.dat"));
+    commitTransaction();
+
+    final User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(toDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
+    openTransaction();
+    assertThat(nfsDao.getFieldLinks(othersField.getId())).isEmpty();
+    commitTransaction();
   }
 
   @Test

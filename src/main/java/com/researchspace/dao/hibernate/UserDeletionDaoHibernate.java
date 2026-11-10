@@ -633,6 +633,8 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
 
     executeDeleteByRecordOwner(userId, session, "RecordAttachment", RECORD_ID);
     executeDeleteByRecordOwner(
+        userId, session, "NfsFieldLink", "field_id", FIELD, "id", STRUCTURED_DOCUMENT_ID);
+    executeDeleteByRecordOwner(
         userId, session, "FieldAttachment", "field_id", FIELD, "id", STRUCTURED_DOCUMENT_ID);
     executeDeleteByRecordOwner(
         userId, session, "FieldAutosaveLog", "fieldId", FIELD, "id", STRUCTURED_DOCUMENT_ID);
@@ -722,6 +724,13 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
   }
 
   private void deleteSimpleTables(Long userId, Session session) {
+    // the user's filestores go in the loop below, so the index rows through them must go first,
+    // whoever owns the linking document
+    execute(
+        userId,
+        session,
+        "delete from NfsFieldLink where fileStore_id in"
+            + " (select id from NfsFileStore where user_id = :id)");
     for (Entry<String, String> entry : table2UserIdColumn.entrySet()) {
       session
           .createNativeQuery(
