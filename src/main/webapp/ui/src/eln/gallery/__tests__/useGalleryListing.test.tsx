@@ -380,6 +380,11 @@ describe("LocalGalleryFile.transformFilename", () => {
     const file = makeLocalGalleryFile({ name: "README" });
     expect(file.transformFilename(() => "renamed")).toBe("renamed");
   });
+
+  test("does not append the name of a file ending in a dot", () => {
+    const file = makeLocalGalleryFile({ name: "notes." });
+    expect(file.transformFilename(() => "renamed")).toBe("renamed");
+  });
 });
 
 describe("LocalGalleryFile.canMoveToIrods", () => {
