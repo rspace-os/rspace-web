@@ -495,6 +495,73 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void testIndividualShareEditNotifiesOwner() throws Exception {
+    StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
+    User sharee = createAndSaveUser(getRandomName(NAME_LENGTH));
+    initUser(sharee);
+    createGroupForUsersWithDefaultPi(piUser, sharee);
+    logoutAndLoginAs(piUser);
+    doInTransaction(
+        () -> {
+          for (User user : List.of(piUser, sharee)) {
+            User refreshed = userMgr.get(user.getId());
+            refreshed.setPreference(
+                new UserPreference(
+                    Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, refreshed, "true"));
+            userMgr.save(refreshed);
+          }
+          ShareConfigElement share = new ShareConfigElement();
+          share.setUserId(sharee.getId());
+          share.setOperation("write");
+          sharingMgr.shareRecord(piUser, doc.getId(), new ShareConfigElement[] {share});
+        });
+
+    logoutAndLoginAs(sharee);
+    doInTransaction(
+        () -> {
+          recordMgr.requestRecordEdit(doc.getId(), sharee, anySessionTracker());
+          recordMgr.saveStructuredDocument(doc.getId(), sharee.getUsername(), true, null);
+        });
+    doInTransaction(
+        () -> {
+          Notification notification =
+              sessionFactory
+                  .getCurrentSession()
+                  .createQuery(
+                      "from Notification where record.id = :recordId"
+                          + " and notificationType = :type and originator.id = :originatorId",
+                      Notification.class)
+                  .setParameter("recordId", doc.getId())
+                  .setParameter("type", NotificationType.NOTIFICATION_DOCUMENT_EDITED)
+                  .setParameter("originatorId", sharee.getId())
+                  .getSingleResult();
+          assertThat(notification.getRecipientsAsUsers()).containsExactly(piUser);
+        });
+
+    logoutAndLoginAs(piUser);
+    doInTransaction(
+        () -> {
+          recordMgr.requestRecordEdit(doc.getId(), piUser, anySessionTracker());
+          recordMgr.saveStructuredDocument(doc.getId(), piUser.getUsername(), true, null);
+        });
+    doInTransaction(
+        () -> {
+          Notification notification =
+              sessionFactory
+                  .getCurrentSession()
+                  .createQuery(
+                      "from Notification where record.id = :recordId"
+                          + " and notificationType = :type and originator.id = :originatorId",
+                      Notification.class)
+                  .setParameter("recordId", doc.getId())
+                  .setParameter("type", NotificationType.NOTIFICATION_DOCUMENT_EDITED)
+                  .setParameter("originatorId", piUser.getId())
+                  .getSingleResult();
+          assertThat(notification.getRecipientsAsUsers()).containsExactly(sharee);
+        });
+  }
+
+  @Test
   public void testNotificationsOnlySentOnce() throws Exception {
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
     User other = createAndSaveUser(getRandomName(NAME_LENGTH));
