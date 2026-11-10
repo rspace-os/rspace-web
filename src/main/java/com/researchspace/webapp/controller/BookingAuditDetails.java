@@ -48,6 +48,7 @@ final class BookingAuditDetails {
           entry("availabilityWindowEnd", "availabilityWindowEnd"),
           entry("timezoneMode", "timezoneMode"),
           entry("customTimezone", "customTimezone"),
+          entry("timeFormat", "timeFormat"),
           entry("configurationVersion", "configurationVersion"),
           entry("removedBookings", "removedBookings"),
           entry("removedSubscriptions", "removedSubscriptions"),
