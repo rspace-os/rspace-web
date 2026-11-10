@@ -289,6 +289,8 @@ The source's batch limit must not exceed its endpoint's page or argument limits.
 Instrument restoration uses the collection's typed-ID `in` filter and sparse display
 fields. Deduplicate canonical values before chunking. Query keys include the source,
 caller scope, token, and selected values; never share cached options across callers.
+Search results, selected-value labels, batched and single-value restores, and availability
+checks all include the caller scope.
 Keep the older optional `resolve` for callers that have not migrated to batch restore.
 
 A saved predicate stays present while restoration loads, fails, or cannot find its

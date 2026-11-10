@@ -6,7 +6,7 @@ import { HttpResponse, http } from "msw";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
+import { optionBatchCacheKey, optionCacheKey, useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
 import { type RelationshipSource, relationshipSources } from "@/modules/common/relationship-picker/sources";
 import { listInstruments } from "./fixtures/relationshipPicker";
@@ -72,6 +72,38 @@ function renderSelected(values: string, authScope = "caller-one", source = fixtu
 }
 
 describe("relationship picker search", () => {
+  it("isolates searches and selected-value restores across caller scopes", async () => {
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const search = vi.fn(async () => []);
+    const resolveMany = vi.fn(async () => ({ FX42: { globalId: "FX42", name: "Target 42" } }));
+    const source = { ...fixtureSource, search, resolveMany };
+    const picker = (authScope: string, value: string) => (
+      <QueryClientProvider client={queryClient}>
+        <RelationshipPicker
+          sources={[source]}
+          authScope={authScope}
+          value={value}
+          onChange={vi.fn()}
+          ariaLabel="Scoped relationship"
+          multiple
+        />
+      </QueryClientProvider>
+    );
+    const view = render(picker("caller-one", ""));
+    await user.type(screen.getByRole("combobox", { name: "Scoped relationship" }), "t");
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(1));
+    view.rerender(picker("caller-two", ""));
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(2));
+
+    view.rerender(picker("caller-one", "FX42"));
+    expect(await within(screen.getByRole("toolbar")).findByText("Target 42")).toBeVisible();
+    expect(resolveMany).toHaveBeenCalledTimes(1);
+    view.rerender(picker("caller-two", "FX42"));
+    await waitFor(() => expect(resolveMany).toHaveBeenCalledTimes(2));
+    expect(await within(screen.getByRole("toolbar")).findByText("Target 42")).toBeVisible();
+  });
+
   it("searches and merges multiple source collections without collapsing equal values", async () => {
     const user = userEvent.setup();
     const calls: string[] = [];
@@ -218,7 +250,7 @@ describe("relationship picker restore", () => {
 
     expect(await screen.findByText("Target 42")).toBeVisible();
     act(() => {
-      queryClient.setQueryData(["relationship-option", "fixture-targets", "FX42"], {
+      queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", "caller-one"), {
         globalId: "FX42",
         name: "Updated target 42",
       });
@@ -227,7 +259,7 @@ describe("relationship picker restore", () => {
 
     await act(async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["relationship-option-batch", "fixture-targets", "FX42"],
+        queryKey: optionBatchCacheKey(fixtureSource, ["FX42"], "caller-one"),
       });
     });
     expect(await screen.findByText("Refreshed target 42")).toBeVisible();
@@ -238,7 +270,7 @@ describe("relationship picker restore", () => {
     const request = vi.fn();
     const source = fixtureSource;
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    queryClient.setQueryData(["relationship-option", "fixture-targets", "FX42"], {
+    queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", "caller-one"), {
       globalId: "FX42",
       name: "Cached target 42",
     });

@@ -18,6 +18,7 @@ export function useRelationshipOptions({
   sources,
   term,
   labels,
+  authScope,
   enabled = true,
 }: {
   source?: RelationshipSource;
@@ -31,14 +32,14 @@ export function useRelationshipOptions({
   const candidates = sourceList(source, sources);
   const sourceQueries = useQueries({
     queries: candidates.map((candidate) => ({
-      queryKey: ["relationship-options", candidate.id, term.trim()],
+      queryKey: ["relationship-options", candidate.id, authScope ?? null, term.trim()],
       enabled,
       queryFn: async ({ signal }: { signal: AbortSignal }) => {
         const documents = await candidate.search(term.trim(), signal);
         for (const document of documents) {
           const option = candidate.toOption(document, labels);
           queryClient.setQueryData(
-            optionCacheKey(candidate, canonicalValue(candidate, String(option.value)) ?? String(option.value)),
+            optionCacheKey(candidate, canonicalValue(candidate, String(option.value)) ?? String(option.value), authScope ?? null),
             document,
           );
         }
@@ -63,6 +64,7 @@ export function useRelationshipOptionAvailability({
   sourceId,
   options,
   availabilitySource,
+  authScope,
 }: {
   sourceId: string;
   options: readonly RelationshipOption[];
@@ -71,7 +73,7 @@ export function useRelationshipOptionAvailability({
 }) {
   const values = [...new Set(options.map((option) => String(option.value)))].sort();
   const query = useQuery<Readonly<Record<string, UnavailableRelationshipOption>>>({
-    queryKey: [...(availabilitySource?.queryKey ?? []), sourceId, ...values],
+    queryKey: [...(availabilitySource?.queryKey ?? []), sourceId, authScope ?? null, ...values],
     enabled: availabilitySource !== undefined && values.length > 0,
     staleTime: 15_000,
     gcTime: 5 * 60_000,
@@ -91,12 +93,16 @@ export function sourceList(source: RelationshipSource | undefined, sources: read
   return source === undefined ? [] : [source];
 }
 
-export function optionCacheKey(source: RelationshipSource | undefined, value: string) {
-  return ["relationship-option", source?.id ?? "unknown", value] as const;
+export function optionCacheKey(source: RelationshipSource | undefined, value: string, scope: string | number | null) {
+  return ["relationship-option", source?.id ?? "unknown", scope, value] as const;
 }
 
 export function canonicalValue(source: RelationshipSource, value: string): string | null {
   return source.normalizeValue === undefined ? value : source.normalizeValue(value);
+}
+
+export function optionBatchCacheKey(source: RelationshipSource, values: readonly string[], scope: string | number | null) {
+  return ["relationship-option-batch", source.id, scope, ...values] as const;
 }
 
 const MAX_RESOLVE_BATCH_SIZE = 100;
@@ -119,6 +125,7 @@ export function useSelectedRelationshipOptions({
   sources,
   values,
   labels,
+  authScope,
 }: {
   source?: RelationshipSource;
   sources?: readonly RelationshipSource[];
@@ -163,7 +170,7 @@ export function useSelectedRelationshipOptions({
         ? Math.min(MAX_RESOLVE_BATCH_SIZE, Math.max(1, Math.floor(requestedSize)))
         : MAX_RESOLVE_BATCH_SIZE;
       for (const batch of chunk(uniqueValues, batchSize)) {
-        const queryKey = ["relationship-option-batch", candidate.id, ...batch] as const;
+        const queryKey = optionBatchCacheKey(candidate, batch, authScope ?? null);
         resolveQueries.push({
           owner: candidate,
           values: batch,
@@ -173,12 +180,12 @@ export function useSelectedRelationshipOptions({
             const forceRefresh = state?.isInvalidated === true && state.dataUpdatedAt > 0;
             const valuesToResolve = forceRefresh
               ? batch
-              : batch.filter((canonical) => !cacheEntryIsFresh(queryClient, optionCacheKey(candidate, canonical)));
+              : batch.filter((canonical) => !cacheEntryIsFresh(queryClient, optionCacheKey(candidate, canonical, authScope ?? null)));
             if (valuesToResolve.length > 0) {
               const documents = await resolveMany(valuesToResolve, signal);
               for (const canonical of valuesToResolve) {
                 queryClient.setQueryData(
-                  optionCacheKey(candidate, canonical),
+                  optionCacheKey(candidate, canonical, authScope ?? null),
                   Object.hasOwn(documents, canonical) ? (documents[canonical] ?? null) : null,
                 );
               }
@@ -186,7 +193,7 @@ export function useSelectedRelationshipOptions({
             return Object.fromEntries(
               batch.map((canonical) => [
                 canonical,
-                queryClient.getQueryData(optionCacheKey(candidate, canonical)) ?? null,
+                queryClient.getQueryData(optionCacheKey(candidate, canonical, authScope ?? null)) ?? null,
               ]),
             );
           },
@@ -195,13 +202,13 @@ export function useSelectedRelationshipOptions({
     } else if (candidate.resolve !== undefined) {
       const resolve = candidate.resolve;
       for (const canonical of uniqueValues) {
-        const queryKey = ["relationship-option-restore", candidate.id, canonical] as const;
+        const queryKey = ["relationship-option-restore", candidate.id, authScope ?? null, canonical] as const;
         resolveQueries.push({
           owner: candidate,
           values: [canonical],
           queryKey,
           run: async (signal) => {
-            const cacheKey = optionCacheKey(candidate, canonical);
+            const cacheKey = optionCacheKey(candidate, canonical, authScope ?? null);
             const state = queryClient.getQueryState(queryKey);
             const forceRefresh = state?.isInvalidated === true && state.dataUpdatedAt > 0;
             if (forceRefresh || !cacheEntryIsFresh(queryClient, cacheKey)) {
@@ -236,7 +243,7 @@ export function useSelectedRelationshipOptions({
   });
   const cacheQueries = useQueries({
     queries: cacheSubscriptions.map(({ candidate, canonical }) => ({
-      queryKey: optionCacheKey(candidate, canonical),
+      queryKey: optionCacheKey(candidate, canonical, authScope ?? null),
       enabled: false,
     })),
   });
@@ -271,7 +278,7 @@ export function useSelectedRelationshipOptions({
     const document =
       cacheQuery?.data !== undefined
         ? cacheQuery.data
-        : (query?.data?.[canonical] ?? queryClient.getQueryData(optionCacheKey(owner, canonical)));
+        : (query?.data?.[canonical] ?? queryClient.getQueryData(optionCacheKey(owner, canonical, authScope ?? null)));
     const failedRestore = (): RelationshipOptionWithSource => ({
       value,
       label: failedRestoreLabel(labels, value),
