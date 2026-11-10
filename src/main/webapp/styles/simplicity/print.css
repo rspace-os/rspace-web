@@ -20,7 +20,6 @@
 }
 
 table { page-break-inside:auto }
-div   { page-break-inside:avoid; } /* This is the key */
 thead { display:table-header-group }
 tfoot { display:table-footer-group }
 
