@@ -1,3 +1,6 @@
+import type { ListBookingConfigurationAuditEvents200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEvents200";
+import type { ListBookingConfigurationAuditEventsParams } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEventsParams";
+
 const AUDIT_EVENT_ID = /^[0-9a-f]{64}$/;
 
 import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
@@ -9,7 +12,9 @@ const SNAPSHOT_FINGERPRINT = /^[0-9a-f]{64}$/;
 const DAY_MILLISECONDS = 86_400_000;
 const MAX_AUDIT_DAYS = 183;
 
-export type AuditSnapshot = { snapshotDate: string; snapshotFingerprint: string };
+export type AuditSnapshot = Required<
+  Pick<ListBookingConfigurationAuditEventsParams, "snapshotDate" | "snapshotFingerprint">
+>;
 // The mapped form only lets the generated interface satisfy useTableList's Record<string, unknown> row constraint.
 export type AuditRow = { [K in keyof ApiV2AuditEvent]: ApiV2AuditEvent[K] } & { rowId: string };
 export type AuditDateRange = { from: string; to: string };
@@ -69,23 +74,21 @@ export function auditRangeToQuery(range: AuditDateRange): { start: string; end: 
   };
 }
 
-export async function fetchBookingConfigurationAudit(input: {
-  configurationId: number;
-  q?: string;
-  start?: string;
-  end?: string;
-  page: number;
-  snapshot?: AuditSnapshot;
-  signal?: AbortSignal;
-}): Promise<{
-  rows: AuditRow[];
-  totalDocs: number;
-  totalPages: number;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-  snapshotDate: string;
-  snapshotFingerprint: string;
-}> {
+export async function fetchBookingConfigurationAudit(
+  input: Pick<ListBookingConfigurationAuditEventsParams, "q" | "start" | "end"> &
+    Required<Pick<ListBookingConfigurationAuditEventsParams, "page">> & {
+      configurationId: number;
+      snapshot?: AuditSnapshot;
+      signal?: AbortSignal;
+    },
+): Promise<
+  Required<
+    Pick<
+      ListBookingConfigurationAuditEvents200,
+      "totalDocs" | "totalPages" | "hasPrevPage" | "hasNextPage" | "snapshotDate" | "snapshotFingerprint"
+    >
+  > & { rows: AuditRow[] }
+> {
   const result = await listBookingConfigurationAuditEvents(
     input.configurationId,
     {
