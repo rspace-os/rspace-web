@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
+import type { InstrumentsRead } from "@/modules/common/api/v2/generated/models/instrumentsRead";
 import { runtimeDocumentSchema as documentSchema } from "../../__tests__/fixtures/schema";
 import { hazardClassDefinition } from "../../__tests__/fixtures/tableList";
 import type { CollectionQueryState } from "../../types";
@@ -11,9 +12,7 @@ import { createApiV2FilterFields, enrichApiV2FilterConfig } from "../filterField
 import type { ApiV2CollectionMetadata } from "../metadata";
 import type { RuntimeFieldDefinition } from "../runtimeFieldCatalog";
 
-type Instrument = {
-  id: number;
-  name: string;
+type Instrument = Required<Pick<InstrumentsRead, "id" | "name">> & {
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
 
