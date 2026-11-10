@@ -1453,18 +1453,33 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void limitedReadIsNotEnoughToDuplicateInstrumentOrTemplate() {
+  public void copyingInstrumentOrTemplateNeedsFullRead() throws Exception {
     User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
     initialiseContentWithEmptyContent(pi);
     Group group = createGroup("group-" + getRandomName(5), pi);
     addUsersToGroup(pi, group, testUser);
 
     ApiInstrument instrument = createBasicInstrumentForUser(pi, "limited-read");
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(pi);
+
+    // a groupmate has full read through the default group sharing, so can duplicate
+    assertEquals(
+        testUser.getUsername(),
+        instrumentApiMgr
+            .duplicateInstrument(instrument.getId(), testUser)
+            .getOwner()
+            .getUsername());
+    assertEquals(
+        testUser.getUsername(),
+        instrumentApiMgr
+            .duplicateInstrumentTemplate(template.getId(), testUser)
+            .getOwner()
+            .getUsername());
+
     ApiInstrument restrictInstrument = new ApiInstrument();
     restrictInstrument.setId(instrument.getId());
     restrictInstrument.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
     instrumentApiMgr.updateApiInstrument(restrictInstrument, pi);
-    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(pi);
     ApiInstrumentTemplate restrictTemplate = new ApiInstrumentTemplate();
     restrictTemplate.setId(template.getId());
     restrictTemplate.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
@@ -1483,6 +1498,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(template.getOid(), testUser));
     assertFalse(invPermissionUtils.canUserReadInventoryRecord(template.getOid(), testUser));
 
+    Long instrumentCount = getCountOfEntityTable("Instrument");
+    Long templateCount = getCountOfEntityTable("InstrumentTemplate");
     Long instrumentId = instrument.getId();
     assertThrows(
         NotFoundException.class,
@@ -1491,5 +1508,13 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertThrows(
         NotFoundException.class,
         () -> instrumentApiMgr.duplicateInstrumentTemplate(templateId, testUser));
+    ApiInstrument fromLimitedReadTemplate = new ApiInstrument();
+    fromLimitedReadTemplate.setName("from limited-read template");
+    fromLimitedReadTemplate.setTemplateId(templateId);
+    assertThrows(
+        NotFoundException.class,
+        () -> instrumentApiMgr.createNewApiInstrument(fromLimitedReadTemplate, testUser));
+    assertEquals(instrumentCount, getCountOfEntityTable("Instrument"));
+    assertEquals(templateCount, getCountOfEntityTable("InstrumentTemplate"));
   }
 }

@@ -72,8 +72,9 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Limited read** — a cut-down view of an inventory item the user has no full
   read of: a few basic details and none of its contents. It comes from reading
   something that points at the item: a container holding it, an ELN document whose
-  List of Materials lists it, or, for a template, a sample made from it. It opens
-  the item but is not enough to link to it, duplicate it or transfer it.
+  List of Materials lists it, for a sample, one of its subsamples, or, for a
+  template, a sample made from it. It opens the item but is not enough to link to
+  it, duplicate it, transfer it or create a new item from it.
   _Avoid_: "read" on its own when the difference matters; say full read or
   limited read
 - **Only the Owner** — the access permission that restricts the item to its owner;

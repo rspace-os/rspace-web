@@ -267,13 +267,14 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       ApiSampleWithFullSubSamples apiSample, User user) {
     Long templateId = apiSample.getTemplateId();
     // templateId is null when creating a sample with no template; when provided, the caller must
-    // have read access to it (enforced, not just existence-checked)
+    // have full read of it, because the new sample copies the template's whole content
     if (templateId == null) {
       return null;
     }
-    SampleTemplate template = assertUserCanReadSampleTemplate(templateId, user);
+    SampleTemplate template = getSampleTemplateOrThrowNotFound(templateId);
+    invPermissions.assertUserCanFullReadInventoryRecord(template, user);
     // Soft deletion means a trashed template is still readable, so the checks above do not reject
-    // it. Checked here rather than in assertUserCanReadSampleTemplate, whose other callers (the
+    // it. Checked here rather than in getSampleTemplateOrThrowNotFound, whose other callers (the
     // template's own GET, its image and thumbnail, export) must keep reading trashed templates.
     if (template.isDeleted()) {
       throw new IllegalArgumentException(

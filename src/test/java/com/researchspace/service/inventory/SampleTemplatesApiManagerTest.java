@@ -4,7 +4,6 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -170,7 +169,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkTemplatePermissionsAndLimitedView() {
+  public void checkTemplatePermissionsAndLimitedView() throws Exception {
 
     // create a pi and other user
     User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
@@ -223,8 +222,19 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertTrue(templateRetrievedByOtherUser.isClearedForLimitedView());
 
     Long templateId = createdTemplate.getId();
+    Long templateCount = getCountOfEntityTable("SampleTemplate");
     assertThrows(
         NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(templateId, otherUser));
+    assertEquals(templateCount, getCountOfEntityTable("SampleTemplate"));
+
+    ApiSampleWithFullSubSamples fromLimitedReadTemplate =
+        new ApiSampleWithFullSubSamples("sample from limited-read template");
+    fromLimitedReadTemplate.setTemplateId(templateId);
+    Long sampleCount = getCountOfEntityTable("Sample");
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleApiMgr.createNewApiSample(fromLimitedReadTemplate, otherUser));
+    assertEquals(sampleCount, getCountOfEntityTable("Sample"));
   }
 
   @Test
@@ -1060,6 +1070,21 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void groupmateWithFullReadCanDuplicateSampleTemplate() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User groupmate = createAndSaveUserIfNotExists(getRandomAlphabeticString("mate"));
+    initialiseContentWithEmptyContent(pi, owner, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, owner, groupmate);
+    ApiSampleTemplate template = createBasicSampleTemplate(owner);
+
+    ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(template.getId(), groupmate);
+
+    assertEquals(groupmate.getUsername(), duplicate.getOwner().getUsername());
+  }
+
+  @Test
   public void nonOwnerCanDuplicateDefaultSampleTemplate() {
     User nonOwner = createInitAndLoginAnyUser();
     SampleTemplate defaultTemplate =
@@ -1068,7 +1093,8 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
             .createQuery("from SampleTemplate order by id asc", SampleTemplate.class)
             .setMaxResults(1)
             .getSingleResult();
-    assertNotEquals(nonOwner.getUsername(), defaultTemplate.getOwner().getUsername());
+    assertEquals(
+        sampleTemplateDao.getDefaultTemplatesOwner(), defaultTemplate.getOwner().getUsername());
 
     ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(defaultTemplate.getId(), nonOwner);
 

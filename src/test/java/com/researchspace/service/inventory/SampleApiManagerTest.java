@@ -1206,7 +1206,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkLimitedReadSampleActions() {
+  public void checkLimitedReadSampleActions() throws Exception {
 
     // create a pi and other user
     User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
@@ -1242,7 +1242,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertNull(sampleAsSeenByOtherUser.getSubSamples());
 
     Long sampleId = createdSample.getId();
+    Long sampleCount = getCountOfEntityTable("Sample");
     assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(sampleId, otherUser));
+    assertEquals(sampleCount, getCountOfEntityTable("Sample"));
 
     // compare with sample as seen by the owner
     ApiSample sampleAsSeenByTestUser =

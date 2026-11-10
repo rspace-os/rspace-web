@@ -298,10 +298,6 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
    * mappings.
    */
   public ApiInventoryRecordInfo duplicate(Long id, User user) {
-    /* there are default templates for which user only has read permissions,
-     * but should still be be able to copy and reuse */
-    sampleApiMgr.assertUserCanReadSampleTemplate(id, user);
-
     ApiSampleTemplate copy = sampleApiMgr.duplicateTemplate(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;

@@ -98,10 +98,11 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       ApiInstrument apiInstrument, User user) {
     InstrumentTemplate template = null;
     Long templateId = apiInstrument.getTemplateId();
-    // if templateId is null (we're creating a new instrument),
-    // but if not null, we expect it to exist
+    // templateId is null when creating an instrument with no template; when provided, the caller
+    // must have full read of it, because the new instrument copies the template's whole content
     if (templateId != null) {
-      template = assertUserCanReadInstrumentTemplate(templateId, user);
+      template = getInstrumentTemplateOrThrowNotFound(templateId);
+      invPermissions.assertUserCanFullReadInventoryRecord(template, user);
     }
     return template;
   }

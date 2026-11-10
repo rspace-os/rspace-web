@@ -1530,7 +1530,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkLimitedReadContainerActions() {
+  public void checkLimitedReadContainerActions() throws Exception {
 
     // create a pi and other user
     User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
@@ -1590,8 +1590,10 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNull(subContainerAsSeenByOtherUser.getLocations());
 
     Long subContainerId = apiSubContainer.getId();
+    Long containerCount = getCountOfEntityTable("Container");
     assertThrows(
         NotFoundException.class, () -> containerApiMgr.duplicate(subContainerId, otherUser));
+    assertEquals(containerCount, getCountOfEntityTable("Container"));
 
     // compare with subcontainer as seen by the owner
     ApiContainer subContainerAsSeenByTestUser =
