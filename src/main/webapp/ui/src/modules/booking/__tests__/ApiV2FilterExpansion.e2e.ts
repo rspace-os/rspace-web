@@ -5,18 +5,19 @@ import { test as base } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN, USERS } from "@/__tests__/e2e/users";
+import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
+import type { Entry } from "@/modules/common/api/v2/generated/models/entry";
+import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 
 type CreatedInstrument = { id: number; globalId: string; name: string; sharingMode?: string };
 type BookingConfiguration = { id: number };
-type BookingConfigurationPage = {
-  docs: Array<{ id: number }>;
-  totalDocs: number;
-  limit: number;
-  page: number;
-  totalPages: number;
+type BookingConfigurationPage = Required<
+  Pick<ListBookingConfigurations200, "totalDocs" | "limit" | "page" | "totalPages">
+> & {
+  docs: Required<Pick<BookingConfigurationsRead, "id">>[];
 };
 type InventoryAccessView = { permittedActions: string[] };
-type RuntimeFieldCatalog = { fields: Array<{ id: string; label: string }> };
+type RuntimeFieldCatalog = { fields: Required<Pick<Entry, "id" | "label">>[] };
 type FilterExpansionRecords = {
   configurations: Array<{ id: number; apiKey: string }>;
   instruments: Array<{ id: number; apiKey: string }>;
