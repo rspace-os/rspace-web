@@ -199,7 +199,6 @@ describe("BookableItemPage", () => {
               totalDocs: 1,
               limit: 20,
               page: 1,
-
               hasNextPage: false,
             })
           : undefined;
@@ -300,7 +299,6 @@ describe("BookableItemPage", () => {
               totalDocs: 1,
               limit: 20,
               page: 1,
-
               hasNextPage: false,
             })
           : undefined;
@@ -349,7 +347,7 @@ describe("BookableItemPage", () => {
     await expect.poll(() => permanentRequest !== undefined).toBe(true);
     expect(new URL(permanentRequest?.url ?? window.location.href).searchParams.get("permanent")).toBe("true");
     expect(permanentRequest?.headers.get("If-Match")).toBe('"4"');
-    await expect.poll(() => history.location.pathname).toBe("/booking/config/bookable-items");
+    await expect.poll(() => history.location.pathname).toBe("/booking/all-items");
     await expect.element(page.getByRole("heading", { name: "Bookable Items", exact: true })).toBeVisible();
   });
 
