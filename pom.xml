@@ -270,10 +270,6 @@
     </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-toolchains-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
@@ -402,8 +398,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[17,18),[21,22)</version>
-                  <message>RSpace builds on Java 17 or 21. Run Maven with one of those (JAVA_HOME), and pass -Djava-version to pick the toolchain JDK.</message>
+                  <version>${maven.java.versions}</version>
+                  <message>Run Maven on Java 21 (JAVA_HOME). To build or test on 17, pass -Djava-version=17 with a 17 entry in ~/.m2/toolchains.xml.</message>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -1997,6 +1993,28 @@
   </dependencies>
 
   <profiles>
+    <!-- Compile and test on a toolchain JDK only when asked (-Djava-version=17), for example
+      to run the tests on 17 from a Maven running on 21. Otherwise the Maven JVM is used, so no
+      toolchains.xml is needed. -->
+    <profile>
+      <id>toolchain</id>
+      <activation>
+        <property>
+          <name>java-version</name>
+        </property>
+      </activation>
+      <properties>
+        <maven.java.versions>[17,18),[21,22)</maven.java.versions>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-toolchains-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- Opt-in WAR content. Keep the bundle under WEB-INF so the deployment
       property controls access, including when the servlet container serves static files. -->
     <profile>
@@ -2689,6 +2707,10 @@
     <javax.cache.version>1.1.1</javax.cache.version>
 
     <assertj.version>3.27.7</assertj.version>
+
+    <!-- JDKs Maven may run on. Without a toolchain the build compiles and tests on it, so only
+      21; the toolchain profile also accepts 17. -->
+    <maven.java.versions>[21,22)</maven.java.versions>
 
     <!-- TEMPORARY: rspace-parent 3.2.1 still manages Mockito 3.7.7. Parent 3.3.0 carries
          5.23.0, so delete this override once the pinned parent version is bumped. -->

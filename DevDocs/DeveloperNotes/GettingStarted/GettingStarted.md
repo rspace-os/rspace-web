@@ -14,9 +14,9 @@ https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-f
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
-Use Java 21 for development; builds, CI and the Docker dev stack default to it. Production servers may still run Java 17, so the code is still compiled for 17 (`release 17`) and a WAR built on either JDK runs on both. A nightly CI job keeps testing on 17. Maven itself must run on 17 or 21, not just the toolchain JDK, because [Spotless does not use the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857); the build fails fast otherwise.
+Use Java 21 for development; builds, CI and the Docker dev stack default to it. Production servers may still run Java 17, so the code is still compiled for 17 (`release 17`) and a WAR built on either JDK runs on both. A nightly CI job keeps testing on 17. Run Maven on JDK 21 (`JAVA_HOME`): it compiles and runs the tests on that JDK, and the build fails fast on any other.
 
--   Install Java JDK 21 via [Adoptium](https://adoptium.net/temurin/releases/?version=21). Add JDK 17 if you want to reproduce a Java 17 failure (see toolchains below).
+-   Install Java JDK 21 via [Adoptium](https://adoptium.net/temurin/releases/?version=21). Add JDK 17 if you want to reproduce a Java 17 failure (see [Run the build on Java 17](#optional-run-the-build-on-java-17)).
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.11 or 11.8, the versions tested in CI and supported for production RSpace. The Docker dev stack
     defaults to 11.8, as does [rspace-docker](https://github.com/rspace-os/rspace-docker). For native installs, follow
@@ -54,42 +54,24 @@ standalone binary, run `corepack disable pnpm` and make sure the standalone
 pnpm directory is first on `PATH`. The root `package.json` pins the pnpm version;
 pnpm itself honors this pin.
 
-### Set up Maven toolchain
+### (Optional) Run the build on Java 17
 
-This enables us to run builds & tests using different JDK versions.
-Create a file called `toolchains.xml` in your `$HOME/.m2` folder.
-
-Add the following, replacing the value of `jdkHome` with the absolute
-path to your java installation.
+Builds use the JDK that Maven runs on, so no Maven toolchain setup is needed. To compile and run the tests on Java 17, add a JDK 17 entry to `$HOME/.m2/toolchains.xml` and pass `-Djava-version=17`. This turns on the Maven toolchains plugin, which uses that JDK for compiling and testing.
 
 ```xml
 <toolchains>
-  <!-- JDK toolchains -->
-   <toolchain>
-     <type>jdk</type>
-     <provides>
-       <version>21</version>
-       <vendor>openjdk</vendor> <!-- Only vendor=openjdk is accepted at the moment, though it does not have to be actual OpenJDK -->
-     </provides>
-     <configuration>
-       <jdkHome>/usr/lib/jvm/java-21-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
-     </configuration>
-   </toolchain>
-   <!-- Optional: only needed to run on Java 17 -->
    <toolchain>
      <type>jdk</type>
      <provides>
        <version>17</version>
-       <vendor>openjdk</vendor>
+       <vendor>openjdk</vendor> <!-- Only vendor=openjdk is accepted at the moment, though it does not have to be actual OpenJDK -->
      </provides>
      <configuration>
-       <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>
+       <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
      </configuration>
    </toolchain>
 </toolchains>
 ```
-
-**NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>. The default is 21. Surefire forks the toolchain JDK, not the Maven JVM, so to run the tests on Java 17 you need the 17 toolchain entry above and `-Djava-version=17`; setting only `JAVA_HOME` runs them on 21.
 
 To run a branch on Java 17 in CI, start the "Lint and Test" or "e2e (mocked)" workflow from the Actions tab and pick Java 17. For "Lint and Test", also tick the jobs you want, such as the fast or full Java tests.
 
@@ -166,8 +148,7 @@ The application .war file can be built with the following maven command:
 
 ```
 mvn clean package -DgenerateReactDist -DskipTests=true \
-  -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
-  -Djava-version=21 -Djava-vendor=openjdk
+  -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
