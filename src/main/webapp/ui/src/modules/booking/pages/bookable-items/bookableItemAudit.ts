@@ -1,3 +1,4 @@
+import type { ApiV2AuditEventAction } from "@/modules/common/api/v2/generated/models/apiV2AuditEventAction";
 import type { ListBookingConfigurationAuditEvents200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEvents200";
 import type { ListBookingConfigurationAuditEventsParams } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEventsParams";
 
@@ -45,8 +46,8 @@ export const AUDIT_ACTIONS = [
   "VIEW",
   "WITNESSED",
   "WRITE",
-] as const;
-export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+] as const satisfies readonly ApiV2AuditEventAction[];
+export type AuditAction = Extract<ApiV2AuditEventAction, (typeof AUDIT_ACTIONS)[number]>;
 
 const AUDIT_PAGE_SIZE = 20;
 
