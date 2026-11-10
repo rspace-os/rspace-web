@@ -105,6 +105,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -898,6 +899,10 @@ public class UserProfileController extends BaseController {
   @GetMapping("/ajax/inventoryOauthToken")
   public AjaxReturnObject<String> getInventoryOauthToken(Principal principal) {
     User user = userManager.getUserByUsername(principal.getName());
+    if (user.isLoginDisabled()) {
+      throw new AuthorizationException(
+          getText("errors.authorization.inventoryOauthToken.loginRequired"));
+    }
 
     Retry retry = Retry.of("jwtTokenGeneration", retryConfigForNewJwtTokenCreation);
     Callable<NewOAuthTokenResponse> updateWithRetry =

@@ -31,8 +31,9 @@ export function useImagePreview(): {
     link: URL,
     opts?: {
       /*
-       * A list of strings, shown from top to bottom, separated by two
-       * `<br />`s, placed at the bottom of the viewport
+       * A list of strings, shown as plain text from top to bottom with a
+       * blank line between each, placed at the bottom of the viewport. Blank
+       * strings are skipped.
        */
       caption?: ReadonlyArray<string>;
     } | null,

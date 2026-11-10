@@ -345,6 +345,7 @@ public class SignupController extends BaseController {
 
   /** Submits a token to access the password change dialog */
   @GetMapping("/passwordResetReply")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public ModelAndView getPasswordResetPage(@RequestParam("token") String token) {
     return passwordResetEmailHandler
         .getResetPage(token)
@@ -352,7 +353,7 @@ public class SignupController extends BaseController {
   }
 
   @PostMapping("/passwordResetReply")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"password", "confirmPassword"})
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public ModelAndView submitPasswordResetPage(
       @ModelAttribute PasswordResetCommand passwordResetCommand,
       BindingResult errors,

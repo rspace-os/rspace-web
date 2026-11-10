@@ -7,6 +7,7 @@ import {
   type PaletteColorOptions,
   type Transitions,
 } from "@mui/material/styles";
+import { fontFamily } from "@/fonts";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -397,6 +398,7 @@ const baseTheme = createTheme({
     filterToggle: "filter .2s ease-in-out, opacity .2s ease-in-out",
   },
   typography: {
+    fontFamily,
     h6: {
       fontSize: "1.1rem",
     },

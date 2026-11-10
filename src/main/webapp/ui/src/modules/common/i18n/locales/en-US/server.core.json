@@ -102,6 +102,9 @@
         "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account",
         "viewComments": "Unauthorized attempt by {0} to view comments"
       },
+      "inventoryOauthToken": {
+        "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+      },
       "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
       "signing": "Only the record owner can sign the record.",
       "sysadminApiOnly": "Only sysadmin can use this API",
@@ -356,7 +359,7 @@
       "invalidIgsn": "Invalid IGSN format: [{0}]",
       "invalidNumber": "Invalid number: {0}",
       "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
-      "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+      "invalidForLatestTemplate": "Field ''{0}'' has the value ''{1}'', which the latest template no longer allows. Change the value before updating to the latest template.",
       "mandatoryContentMissing": "Field [{0}] is mandatory, but no content is provided",
       "mandatoryInLatestTemplate": "Field [{0}] is empty, but is mandatory in latest template field definition",
       "noConnectedTemplate": "Field [{0}] has no connected template field",

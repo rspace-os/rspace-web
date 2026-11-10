@@ -153,6 +153,7 @@ export default defineConfig({
     // first-attempt timing miss does not fail the run; a test that fails every
     // attempt is a real failure.
     retry: 2,
+    clearMocks: true,
     // Every file shares one origin-level MSW service worker registration. Keep
     // files serial within each browser; the CI matrix provides engine parallelism.
     fileParallelism: false,
@@ -164,10 +165,15 @@ export default defineConfig({
     outputFile: process.env.CI ? { junit: `browser-junit-${browsers.join("-")}.xml` } : undefined,
     browser: {
       enabled: true,
-      provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      instances: browsers.map((browser) => ({ browser })),
+      instances: browsers.map((browser) => ({
+        browser,
+        provider: playwright({
+          // Assertions use English copy and decimal points on every host OS.
+          contextOptions: { locale: "en-US" },
+        }),
+      })),
     },
   },
 });

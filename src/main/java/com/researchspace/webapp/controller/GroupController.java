@@ -704,7 +704,7 @@ public class GroupController extends BaseController {
     groupManager.setRoleForUser(groupId, toChange.getId(), role, subject);
 
     // this only affects people with lab admin role
-    if (roleInGrp.equals(RoleInGroup.RS_LAB_ADMIN)) {
+    if (roleInGrp.equals(RoleInGroup.RS_LAB_ADMIN) && grp.isLabGroup()) {
       groupManager.authorizeLabAdminToViewAll(toChange.getId(), subject, groupId, isAuthorized);
     }
 
