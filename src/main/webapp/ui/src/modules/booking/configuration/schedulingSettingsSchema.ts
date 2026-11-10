@@ -1,5 +1,4 @@
 import * as v from "valibot";
-import type { BookingDisplayPreferencesDocument } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { mapBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
 import { ALL_ISO_WEEKDAYS, mapOpeningHours, validOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
@@ -50,19 +49,19 @@ export const SchedulingSettingsSchema = v.pipe(
 );
 
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
-export type BookingSettings = SchedulingSettings & Omit<BookingDisplayPreferencesDocument, "overridden">;
-export type BookingAdminSettings = BookingSettings & {
-  configurationVersion: number;
-  defaultSharedWith: "ALL_USERS" | "SELECTED" | "ONLY_ME";
-  selectedAccessGrantees: {
-    kind: "USER" | "GROUP";
-    id: number;
-    key: string;
-    name: string;
-    detail?: string | null;
-    available: boolean;
-  }[];
-};
+export type BookingSettings = Required<Omit<BookingSettingsControllerSettingsDocument, "slotGranularityMinutes">> &
+  Pick<SchedulingSettings, "slotGranularityMinutes">;
+export type BookingAdminSettings = BookingSettings &
+  Required<Pick<BookingSettingsControllerAdminSettingsDocument, "configurationVersion" | "defaultSharedWith">> & {
+    selectedAccessGrantees: {
+      kind: "USER" | "GROUP";
+      id: number;
+      key: string;
+      name: string;
+      detail?: string | null;
+      available: boolean;
+    }[];
+  };
 
 export function mapBookingSettings(input: BookingSettingsControllerSettingsDocument): BookingSettings {
   const scheduling = {
