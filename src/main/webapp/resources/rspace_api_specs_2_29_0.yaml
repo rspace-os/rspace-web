@@ -34,7 +34,7 @@ info:
     #### Language support
 
     A high-level overview of API usage can be found on our [Github page](https://github.com/rspace-os/api-tutorial). We are also  developing rich language bindings and example code for `Python`, `Java` and others. Please suggest any use-cases or ideas for improving the API!
-  version: "2.28.0"
+  version: "2.29.0"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -1881,6 +1881,35 @@ paths:
       responses:
         "200":
           description: The item's created-by username and creation time (either may be null)
+  "/gallery/filestores/{filestoreId}/linkedDocuments":
+    get:
+      summary: List the ELN documents linking a filestore item
+      description: >-
+        Returns the current, non-deleted ELN documents whose text links the file or folder at
+        `remotePath` (relative to the filestore root), through any user's filestore of the same
+        filesystem. Documents the caller cannot read are returned as owner-only placeholders
+        (no `id`, `globalId` or `name`). Requires read access to the filesystem. On filesystems
+        with per-user logins the user must also be logged into the filesystem (see /login
+        endpoint), and that login must be able to read the item: list it if it is a folder, open
+        it if it is a file. Any filestore type.
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: "#/components/parameters/filestoreIdParam"
+        - $ref: "#/components/parameters/filestoreRemotePathParam"
+      responses:
+        "200":
+          description: The linking documents, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GalleryFilestoreLinkedDocument"
+        "403":
+          description: Not logged into a filesystem that needs a per-user login.
+        "404":
+          description: Unknown filestore, or an item the user's own filesystem login cannot read.
   "/gallery/filestores/{filestoreId}/download":
     get:
       summary: Download from remote filestore
@@ -4863,6 +4892,20 @@ components:
         content:
           type: string
           description: The serialized sidecar content (YAML).
+    GalleryFilestoreLinkedDocument:
+      description: An ELN document linking a filestore item. `id`, `globalId` and `name` are
+        absent when the caller cannot read the document; only `ownerFullName` is given then.
+      properties:
+        id:
+          type: integer
+          format: int64
+        globalId:
+          type: string
+          example: SD12345
+        name:
+          type: string
+        ownerFullName:
+          type: string
     ExternalStorageOperationResult:
       description: Per-file outcomes of a filestore write or transfer operation.
       properties:
