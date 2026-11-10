@@ -4,6 +4,7 @@ import {
   CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
+  LayoutDashboardIcon,
   LibraryBigIcon,
   ListIcon,
   SettingsIcon,
@@ -27,6 +28,13 @@ import {
 
 const items = (today: string) =>
   [
+    {
+      key: "dashboard",
+      icon: LayoutDashboardIcon,
+      link: (
+        <Link {...linkOptions({ to: "/booking", search: {}, activeOptions: { exact: true, includeSearch: false } })} />
+      ),
+    },
     {
       key: "calendar",
       icon: CalendarIcon,
@@ -70,6 +78,7 @@ export function BookingSidebar() {
   const preferences = useBookingDisplayPreferences();
   const sidebarItems = items(todayInTimeZone(preferences.timeZone));
   const labels = {
+    dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
     allItems: t("sidebar.allItems"),
     addBooking: t("sidebar.addBooking"),

@@ -1,174 +1,29 @@
-import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
-import { BookingDateControls, BookingTimeZoneBadge } from "@/modules/booking/components/BookingToolbar";
-import { DayTimeline, type DayTimelineEvent, DayTimelineEventCard, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
-import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
-import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
-import { BookingForm, type BookingFormState, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
-import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
-import { type BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
-import { type BookingListDocument, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
-import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
-import { addCalendarDays, formatAgendaPeriod, sliceAcrossZonedDay, wallClockDraftFromInstants, wallClockToDayMinute, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { type BookingConfiguration } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
-import { BookingEditorsContext } from "./BookingEventsCalendar";
-import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { getUpdateBookingMutationOptions, invalidateGetBooking, invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { type BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import i18n from "@/modules/common/i18n";
-import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
-import { useTableList } from "@/modules/common/table-list/hooks/state";
-import { Badge } from "@/modules/common/ui/badge";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import { Skeleton } from "@/modules/common/ui/skeleton";
-import { cn } from "@/modules/common/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-
-export function InlineBookingEditor({
-  event: initialEvent,
-  timezone,
-  onClose,
-}: {
-  event: BookingListDocument & EditableBooking;
-  timezone: string;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation(["booking", "common"]);
-  const queryClient = useQueryClient();
-  const [event, setEvent] = React.useState(initialEvent);
-  const [formEvent, setFormEvent] = React.useState(initialEvent);
-  const anchorEvent = React.useRef(initialEvent).current;
-  const editorId = React.useId();
-  const setEditors = React.useContext(BookingEditorsContext)?.setEditors;
-  React.useEffect(() => {
-    setEditors?.((current) => new Map(current).set(editorId, anchorEvent));
-    return () =>
-      setEditors?.((current) => {
-        const next = new Map(current);
-        next.delete(editorId);
-        return next;
-      });
-  }, [editorId, anchorEvent, setEditors]);
-  const configuration = useBookableItemConfiguration(event.target.globalId);
-  const updateOptions = getUpdateBookingMutationOptions(queryClient);
-  const mutation = useMutation({
-    mutationFn: (submission: BookingFormSubmission) => {
-      const patch: BookingsUpdate = {
-        ...(submission.window.start !== event.start ? { start: submission.window.start } : {}),
-        ...(submission.window.end !== event.end ? { end: submission.window.end } : {}),
-        ...(submission.purpose !== event.purpose ? { purpose: submission.purpose } : {}),
-      };
-      return Object.keys(patch).length === 0 ? Promise.resolve(event) : updateBooking(event.id, event.version, patch);
-    },
-    onSuccess: async (updated, _variables, onMutateResult, mutationContext) => {
-      if (updated) {
-        await updateOptions.onSuccess?.(
-          updated,
-          { id: event.id, data: {}, headers: { "If-Match": `"${event.version}"` } },
-          onMutateResult,
-          mutationContext,
-        );
-      }
-      await Promise.all([
-        invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
-        invalidateGetBooking(queryClient, event.id, undefined, { cancelRefetch: false }),
-      ]);
-      onClose();
-    },
-    onError: async (error) => {
-      if (
-        isBookingOutcomeUncertain(error) ||
-        (error instanceof ApiV2ProblemError &&
-          (error.status === 412 ||
-            error.code === "errors.api.v2.booking.concurrentModification" ||
-            error.code === "errors.api.v2.forbidden" ||
-            error.code === "errors.api.v2.booking.state.transition"))
-      ) {
-        await Promise.all([invalidateListBookings(queryClient), invalidateGetBooking(queryClient, event.id)]);
-      }
-      if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        await invalidateListBookingConfigurations(queryClient);
-      }
-    },
-  });
-  const mutationHasError = React.useRef(false);
-  if (event !== initialEvent && !mutation.isPending) {
-    setEvent(initialEvent);
-    if (!isBookingOutcomeUncertain(mutation.error)) setFormEvent(initialEvent);
-  }
-  mutationHasError.current = mutation.isError;
-  const resetMutation = mutation.reset;
-  const clearMutationErrorOnChange = React.useCallback(() => {
-    if (!mutationHasError.current) return;
-    mutationHasError.current = false;
-    resetMutation();
-  }, [resetMutation]);
-
-  if (configuration.isPending) {
-    return (
-      <div className="space-y-4 border-border border-t p-4" aria-busy="true">
-        <p role="status" className="sr-only">
-          {t("bookings.loadingConfiguration")}
-        </p>
-        <Skeleton aria-hidden="true" className="h-12 w-full" />
-        <Skeleton aria-hidden="true" className="h-24 w-full" />
-      </div>
-    );
-  }
-  if (configuration.isError || !configuration.data) {
-    return (
-      <div className="space-y-3 border-border border-t p-4">
-        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => void configuration.refetch()}>
-            {t("common:actions.retry")}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {t("bookings.form.cancel")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
-      <BookingForm
-        key={formEvent.version}
-        mode="edit"
-        density="compact"
-        displayTimezone={timezone}
-        booking={formEvent}
-        configuration={configuration.data}
-        pending={mutation.isPending}
-        error={
-          mutation.error
-            ? t(
-                isBookingOutcomeUncertain(mutation.error)
-                  ? "bookings.errors.outcomeUncertain"
-                  : bookingProblemKey(mutation.error),
-              )
-            : undefined
-        }
-        submissionBlocked={isBookingOverlapError(mutation.error)}
-        onStateChange={clearMutationErrorOnChange}
-        onCancel={() => {
-          mutation.reset();
-          onClose();
-        }}
-        onSubmit={(submission) => mutation.mutateAsync(submission)}
-      />
-    </div>
-  );
-}
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import {
+  BookingForm,
+  type BookingFormState,
+  type BookingFormSubmission,
+  type EditableBooking,
+} from "@/modules/booking/creation/BookingForm";
+import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
+import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
+import { type BookingListDocument, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
+import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import {
+  getUpdateBookingMutationOptions,
+  invalidateGetBooking,
+  invalidateListBookings,
+} from "@/modules/common/api/v2/generated/bookings/bookings";
+import { type BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
+import { Button } from "@/modules/common/ui/button";
+import { Skeleton } from "@/modules/common/ui/skeleton";
+import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
 
 export const BookingEditorsContext = React.createContext<
   | {

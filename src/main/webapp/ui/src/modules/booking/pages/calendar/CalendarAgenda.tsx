@@ -4,7 +4,7 @@ import { type BookingListDocument } from "@/modules/booking/domain/booking";
 import { Badge } from "@/modules/common/ui/badge";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
-import { BookingEditorsContext } from "./BookingEventsCalendar";
+import { BookingEditorsContext } from "./BookingEventActions";
 import { CalendarEventCard } from "./CalendarEventCard";
 import { type CalendarView, eventsOn, formatDate, periodDates, useScrollToToday } from "./calendarLayoutUtils";
 
@@ -39,7 +39,7 @@ export function CalendarAgenda({
         >
           <ol className="space-y-1">
             {dates.map((day) => {
-              const count = eventsOn(events, day, timezone).length;
+              const count = eventsOn(events, day, timezone, editorPositions).length;
               return (
                 <li
                   key={day}

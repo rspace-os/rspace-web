@@ -23,7 +23,7 @@ export function PermanentDeleteBookableItemDialog({
   configuration: BookingConfigurationRow;
   close: () => void;
   onDelete: (id: number, version: number) => Promise<void>;
-  onDeleted: () => void;
+  onDeleted: () => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [confirmation, setConfirmation] = useState("");
@@ -38,7 +38,7 @@ export function PermanentDeleteBookableItemDialog({
     try {
       await onDelete(configuration.id, requiredVersion(configuration));
       close();
-      onDeleted();
+      await onDeleted();
     } catch (error) {
       setDeleteError(error);
     } finally {

@@ -8,29 +8,10 @@ import {
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { type BookingConfiguration } from "./bookingConfiguration";
 
-export function BookableItemRulesReadOut({
-  configuration,
-  displayTimeZone,
-}: {
-  configuration: BookingConfiguration;
-  displayTimeZone: string;
-}) {
-  const { t, i18n } = useTranslation("booking");
-  const updatedAt =
-    configuration.updatedAt === null || configuration.updatedAt === undefined ? (
-      t("bookableItemDetails.notAvailable")
-    ) : (
-      <time dateTime={configuration.updatedAt}>
-        {new Intl.DateTimeFormat(i18n.language, {
-          dateStyle: "medium",
-          timeStyle: "short",
-          timeZone: displayTimeZone,
-        }).format(new Date(configuration.updatedAt))}
-      </time>
-    );
+export function BookableItemRulesReadOut({ configuration }: { configuration: BookingConfiguration }) {
+  const { t } = useTranslation("booking");
   const facts: Array<[string, ReactNode]> = [
     [t("bookableItemDetails.fields.timezone"), configuration.timezone],
-    [t("bookableItemDetails.fields.updatedAt"), updatedAt],
     ...openingHoursFacts(configuration, t),
     [
       t("bookableItemDetails.fields.granularity"),
