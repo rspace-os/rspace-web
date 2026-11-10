@@ -5,7 +5,9 @@ import { TableList } from "../TableList";
 import type { FilterState, TableListFeatures } from "../types";
 import { config, records, type TestRecord } from "./fixtures/tableList";
 
-function renderRemoteSearch(filters: FilterState<TestRecord>, onFiltersChange = vi.fn(), onPageChange = vi.fn()) {
+function renderRemoteSearch(filters: FilterState<TestRecord>) {
+  const onFiltersChange = vi.fn();
+  const onPageChange = vi.fn();
   const features: TableListFeatures<TestRecord> = {
     filtering: { value: filters, onChange: onFiltersChange },
     sorting: false,

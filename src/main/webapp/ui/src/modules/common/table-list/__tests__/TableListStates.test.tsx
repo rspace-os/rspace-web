@@ -1,6 +1,5 @@
 import { onlineManager } from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
-import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { TableList } from "../TableList";
@@ -136,25 +135,16 @@ describe("TableList states", () => {
   });
 
   it("shows a non-destructive refresh status while preserving rows", () => {
-    function Harness() {
-      const [filters, setFilters] = useState(emptyFilters);
-      return (
-        <TableList
-          queryString={false}
-          config={config}
-          rows={records}
-          getRowId={(row) => row.id}
-          status="refreshing"
-          features={{
-            filtering: { value: filters, onChange: setFilters },
-            sorting: false,
-            pagination: false,
-            columns: false,
-          }}
-        />
-      );
-    }
-    render(<Harness />);
+    render(
+      <TableList
+        queryString={false}
+        config={config}
+        rows={records}
+        getRowId={(row) => row.id}
+        status="refreshing"
+        features={disabledFeatures}
+      />,
+    );
     expect(screen.getByRole("status")).toHaveTextContent("common:tableList.refreshing");
     expect(screen.getByRole("cell", { name: "Alpha" })).toBeVisible();
   });
