@@ -5,22 +5,23 @@ import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
+import type { ResourceAccessAssignmentDocument } from "@/modules/common/api/v2/generated/models/resourceAccessAssignmentDocument";
+import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
+import type { ResourceAccessGranteeDocument } from "@/modules/common/api/v2/generated/models/resourceAccessGranteeDocument";
 import { type BookingConfiguration, createBookingConfiguration, type OpeningHoursEntry } from "./bookingE2eFixtures";
 
-type Booking = {
-  id: number;
-  purpose: string | null;
-  target: { globalId: string } | null;
+type Booking = Required<
+  Pick<BookingsRead, "id" | "purpose" | "canEdit" | "canCancel" | "canViewConfiguration" | "timezone">
+> & {
+  target: Pick<NonNullable<BookingsRead["target"]>, "globalId"> | null;
   privacy: "full" | "busy";
-  canEdit: boolean;
-  canCancel: boolean;
-  canViewConfiguration: boolean;
-  timezone: string | null;
 };
 type BookingPage = { docs: Booking[] };
-type AccessDocument = {
-  inherited: boolean;
-  assignments: Array<{ grantee: { detail: string | null }; role: string }>;
+type AccessDocument = Required<Pick<ResourceAccessDocument, "inherited">> & {
+  assignments: (Required<Pick<ResourceAccessAssignmentDocument, "role">> & {
+    grantee: Required<Pick<ResourceAccessGranteeDocument, "detail">>;
+  })[];
 };
 
 async function readBookingConfiguration(
