@@ -38,25 +38,6 @@ RUN set -eux; \
 ENV JAVA_HOME=/opt/jbr
 ENV PATH="/opt/jbr/bin:${PATH}"
 
-# The maven-toolchains-plugin needs a JDK-21 toolchain; point it at JBR. (JBR is
-# OpenJDK-based, so vendor=openjdk is correct.)
-RUN mkdir -p /root/.m2 && \
-    printf '%s\n' \
-      '<?xml version="1.0" encoding="UTF-8"?>' \
-      '<toolchains>' \
-      '  <toolchain>' \
-      '    <type>jdk</type>' \
-      '    <provides>' \
-      '      <version>21</version>' \
-      '      <vendor>openjdk</vendor>' \
-      '    </provides>' \
-      '    <configuration>' \
-      '      <jdkHome>/opt/jbr</jdkHome>' \
-      '    </configuration>' \
-      '  </toolchain>' \
-      '</toolchains>' \
-      > /root/.m2/toolchains.xml
-
 COPY entrypoint-app.sh /usr/local/bin/entrypoint-app.sh
 RUN chmod +x /usr/local/bin/entrypoint-app.sh
 
