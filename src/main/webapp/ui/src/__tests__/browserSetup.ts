@@ -1,3 +1,4 @@
+import { HttpNetworkFrame } from "msw/experimental";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
@@ -41,10 +42,8 @@ beforeAll(async () => {
     quiet: true,
     onUnhandledFrame({ frame }) {
       // MSW 3 calls this onUnhandledFrame, replacing onUnhandledRequest.
-      if (frame.protocol !== "http") return;
-      const data = frame.data;
-      if (!data || typeof data !== "object" || !("request" in data) || !(data.request instanceof Request)) return;
-      const request = data.request;
+      if (!(frame instanceof HttpNetworkFrame)) return;
+      const { request } = frame.data;
       const url = new URL(request.url);
       // Only Vite/Vitest infrastructure and package assets reach the server.
       if (
