@@ -1,5 +1,6 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
+import { bookingConfigurationTargetQuery } from "../bookingConfigurationApi";
 
 beforeBookingCatalog(async () => {
   appI18n.addResourceBundle(
@@ -20,6 +21,23 @@ import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
+
+const booking = {
+  id: 41,
+  version: 0,
+  target: configuration.target,
+  timezone: "UTC",
+  start: "2026-08-25T09:00:00Z",
+  end: "2026-08-25T10:00:00Z",
+  state: "CONFIRMED",
+  privacy: "full",
+  purpose: null,
+  bookedBy: "Ada Lovelace",
+  canEdit: false,
+  canCancel: false,
+  createdAt: "2026-08-17T00:00:00Z",
+  updatedAt: "2026-08-17T00:00:00Z",
+};
 
 beforeEach(() => setupPage());
 
@@ -96,7 +114,7 @@ describe("BookableItemPage", () => {
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    expect(eventRequests).toBe(0);
+    await waitFor(() => expect(eventRequests).toBe(2));
   });
 
   it("marks the configuration update timestamp as machine-readable time", async () => {
@@ -113,5 +131,29 @@ describe("BookableItemPage", () => {
       (element) => element.getAttribute("datetime") === updatedAt,
     );
     expect(updatedTime).toBeVisible();
+  });
+
+  it("reformats existing events after a configuration timezone refresh without refetching events", async () => {
+    let timezone = "UTC";
+    let eventRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...configuration, timezone }], 2)),
+      ),
+      http.get("/api/v2/bookings", () => {
+        eventRequests += 1;
+        return HttpResponse.json(collectionPage([booking], 10));
+      }),
+    );
+    const { queryClient } = renderPage();
+
+    const times = await screen.findAllByRole("time");
+    const utcText = times[0].textContent;
+    expect(eventRequests).toBe(2);
+    timezone = "Europe/Berlin";
+    await queryClient.invalidateQueries({ queryKey: bookingConfigurationTargetQuery("IN123").queryKey });
+
+    await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
+    expect(eventRequests).toBe(2);
   });
 });
