@@ -1,19 +1,22 @@
-import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
+import type { BookingConfigurationCapabilities } from "@/modules/common/api/v2/generated/models/bookingConfigurationCapabilities";
+import type { Item } from "@/modules/common/api/v2/generated/models/item";
 
-export type BookableItemOption = {
-  configurationId: number;
-  targetId: number;
-  globalId: string;
-  name: string;
-  timezone: string;
-  slotGranularityMinutes: number;
-  openingHours: OpeningHoursEntry[];
-  bufferBeforeMinutes: number;
-  bufferAfterMinutes: number;
-  maxBookingDurationMinutes: number;
-  allowDoubleBooking: boolean;
-  capabilities?: { canCreateBlockout: boolean };
-};
+export type BookableItemOption = Required<
+  Pick<
+    Item,
+    | "configurationId"
+    | "targetId"
+    | "globalId"
+    | "name"
+    | "timezone"
+    | "slotGranularityMinutes"
+    | "openingHours"
+    | "bufferBeforeMinutes"
+    | "bufferAfterMinutes"
+    | "maxBookingDurationMinutes"
+    | "allowDoubleBooking"
+  >
+> & { capabilities?: Required<Pick<BookingConfigurationCapabilities, "canCreateBlockout">> };
 
 type CompleteBookableItemOptionSource = Omit<
   BookableItemOption,
