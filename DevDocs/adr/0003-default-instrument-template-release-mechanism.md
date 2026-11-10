@@ -75,3 +75,8 @@ We deliberately diverge from the sample-template mechanism on three points:
   depends on it being indexed at that point or by the standard startup reindex.
   Verify the index is populated on a real deployment; if not, trigger a targeted
   reindex of the seeded template.
+- Duplicating needs full read, not limited read (RSDEV-1611). Default templates
+  meet that because `canUserReadInventoryRecord` grants every user full read of
+  them, so a change that moves them out of that check would stop users
+  duplicating them. `DefaultInstrumentTemplatePermissionsTest` covers a
+  non-owner duplicating the default instrument template.

@@ -19,7 +19,8 @@ resolved during design. This file is a glossary only — no implementation detai
   For samples the equivalents are the seeded standard templates (Antibody,
   Bacteria, etc.).
 - **Default templates owner** — the single account that owns the default templates.
-  All users may read (and therefore duplicate) any template owned by this account.
+  All users have full read of (and therefore may duplicate) any template owned by
+  this account.
   For samples this account is resolved as the owner of the oldest template row,
   which is safe only because samples are seeded before any user can create one.
   For instruments the account is resolved explicitly as the sysadmin, because
@@ -64,6 +65,17 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Explicit access list** — the access permission that names the groups, any in
   the system, whose members have full access.
   _Avoid_: whitelist
+- **Full read** — read access to the whole of an inventory item. Held by its
+  owner, by users its access permissions cover, by a PI or admin over the owner,
+  and by every user for a default template. A user with access to an item stored
+  in a container also has full read of that container.
+- **Limited read** — a cut-down view of an inventory item the user has no full
+  read of: a few basic details and none of its contents. It comes from reading
+  something that points at the item: a container holding it, an ELN document whose
+  List of Materials lists it, or, for a template, a sample made from it. It opens
+  the item but is not enough to link to it, duplicate it or transfer it.
+  _Avoid_: "read" on its own when the difference matters; say full read or
+  limited read
 - **Only the Owner** — the access permission that restricts the item to its owner;
   the PI of a group the owner belongs to keeps read access.
   _Avoid_: private, owner only
