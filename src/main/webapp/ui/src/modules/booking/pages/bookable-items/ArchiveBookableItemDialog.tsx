@@ -22,14 +22,14 @@ export function ArchiveBookableItemDialog({
   configuration: BookingConfigurationRow;
   close: () => void;
   onArchive: (id: number, version: number) => Promise<void>;
-  onArchived: () => void;
+  onArchived: (configurationId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const archiveMutation = useMutation({
     mutationFn: async () => {
       await onArchive(configuration.id, requiredVersion(configuration));
       close();
-      onArchived();
+      await onArchived(configuration.id);
     },
   });
   const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");

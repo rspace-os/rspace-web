@@ -196,6 +196,14 @@ export function DayTimelineEventCard({
     <Popover
       open={isExpanded}
       onOpenChange={(nextOpen, eventDetails) => {
+        if (
+          !nextOpen &&
+          eventDetails.event.target instanceof Element &&
+          eventDetails.event.target.closest("[data-timeline-window-editor]")
+        ) {
+          eventDetails.cancel();
+          return;
+        }
         if (!nextOpen) {
           const destination =
             eventDetails.event instanceof FocusEvent ? eventDetails.event.relatedTarget : eventDetails.event.target;

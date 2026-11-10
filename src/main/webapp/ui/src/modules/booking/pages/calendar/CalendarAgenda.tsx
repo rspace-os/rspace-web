@@ -4,7 +4,7 @@ import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Badge } from "@/modules/common/ui/badge";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
-import { BookingEditorsContext } from "./BookingEventsCalendar";
+import { BookingEditorsContext } from "./BookingEventActions";
 import { CalendarEventCard } from "./CalendarEventCard";
 import { type CalendarView, eventsOn, formatDate, periodDates, useScrollToToday } from "./calendarLayoutUtils";
 
