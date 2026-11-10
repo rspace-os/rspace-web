@@ -1,3 +1,5 @@
+import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
+import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import { getListBookingsQueryKey, invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { bookableItemEventsQuery } from "../bookableItemEvents";
 import "@/__tests__/__mocks__/matchMedia";
@@ -21,26 +23,28 @@ import { bookableItemEventResponse, booking, busyBooking, maintenanceBooking } f
 
 const fullBooking = { ...booking, purpose: "Cell imaging" };
 
-const changeTimezoneLabel = "Change timezone";
+const _changeTimezoneLabel = "Change timezone";
 const changeTargetLabel = "Change target";
 
 function renderList(options: { controls?: boolean } = {}) {
   function Page() {
-    const [timezone, setTimezone] = useState("UTC");
+    const [timeFormat, setTimeFormat] = useState<BookingTimeFormat>("H24");
     const [globalId, setGlobalId] = useState("IN12");
     return (
       <>
         {options.controls ? (
           <>
-            <button type="button" onClick={() => setTimezone("Europe/Berlin")}>
-              {changeTimezoneLabel}
+            <button type="button" onClick={() => setTimeFormat("H12")}>
+              {"Change time format"}
             </button>
             <button type="button" onClick={() => setGlobalId("IN13")}>
               {changeTargetLabel}
             </button>
           </>
         ) : null}
-        <BookingEventList globalId={globalId} timezone={timezone} period="upcoming" cutoff="2026-08-24T12:00:00Z" />
+        <BookingTimeFormatProvider timeFormat={timeFormat}>
+          <BookingEventList globalId={globalId} timezone="UTC" period="upcoming" cutoff="2026-08-24T12:00:00Z" />
+        </BookingTimeFormatProvider>
       </>
     );
   }
@@ -143,6 +147,29 @@ describe("BookingEventList", () => {
       ]),
     ).toBe(2);
   });
+  it.each([["clock preference", "Change time format", /AM|am/]] as const)(
+    "reformats the mounted event table when the %s changes without refetching",
+    async (_, buttonLabel, expected) => {
+      const user = userEvent.setup();
+      let requests = 0;
+      server.use(
+        http.get("/api/v2/bookings", () => {
+          requests += 1;
+          return HttpResponse.json(bookableItemEventResponse([fullBooking]));
+        }),
+      );
+      renderList({ controls: true });
+
+      const time = (await screen.findAllByRole("time"))[0];
+      const before = time.textContent;
+      await user.click(screen.getByRole("button", { name: buttonLabel }));
+
+      const reformattedTime = screen.getAllByRole("time")[0];
+      expect(reformattedTime.textContent).not.toBe(before);
+      if (expected) expect(reformattedTime).toMatchTextContent(expected);
+      expect(requests).toBe(2);
+    },
+  );
 
   it("renders full and busy events without leaking busy details", async () => {
     server.use(
@@ -177,26 +204,6 @@ describe("BookingEventList", () => {
     expect(within(table).getByText("Morgan Ellis (mellis)")).toBeVisible();
     expect(within(table).getByText("Laser alignment")).toBeVisible();
     expect(within(table).queryByText("booking:bookableItemDetails.events.busy")).not.toBeInTheDocument();
-  });
-
-  it("reformats for a timezone change without another request", async () => {
-    const user = userEvent.setup();
-    let requests = 0;
-    server.use(
-      http.get("/api/v2/bookings", () => {
-        requests += 1;
-        return HttpResponse.json(bookableItemEventResponse([fullBooking]));
-      }),
-    );
-    renderList({ controls: true });
-
-    const table = await screen.findByRole("table");
-    const time = await within(table).findByRole("time");
-    const utcText = time.textContent;
-    await user.click(screen.getByRole("button", { name: changeTimezoneLabel }));
-
-    expect(within(table).getByRole("time")).not.toHaveTextContent(utcText ?? "");
-    expect(requests).toBe(2);
   });
 
   it("paginates and resets to the first page for a new target", async () => {
