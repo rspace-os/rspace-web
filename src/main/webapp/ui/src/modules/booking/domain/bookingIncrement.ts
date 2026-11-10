@@ -9,17 +9,16 @@ import {
   validOpeningHoursSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import { resolveWallClock, type WallClockResolution } from "@/modules/booking/domain/bookingTime";
+import type { SettingsDocument } from "@/modules/common/api/v2/generated/models/settingsDocument";
+import type { SettingsDocumentIncrementUnit } from "@/modules/common/api/v2/generated/models/settingsDocumentIncrementUnit";
 
 export const INCREMENT_UNITS = ["MINUTES", "HOURS", "DAYS"] as const;
-export type IncrementUnit = (typeof INCREMENT_UNITS)[number];
+export type IncrementUnit = SettingsDocumentIncrementUnit;
 
 /** Minutes per displayed unit. A Day is a calendar day; 1440 is only its nominal size. */
 export const INCREMENT_UNIT_MINUTES: Readonly<Record<IncrementUnit, number>> = { MINUTES: 1, HOURS: 60, DAYS: 1440 };
 
-export type IncrementSettings = {
-  slotGranularityMinutes: number;
-  incrementUnit: IncrementUnit;
-};
+export type IncrementSettings = Required<Pick<SettingsDocument, "slotGranularityMinutes" | "incrementUnit">>;
 
 /** Elapsed increments count minutes; day increments count calendar days at the same local time. */
 type IncrementRule = { kind: "elapsed"; minutes: number } | { kind: "days"; days: number };
