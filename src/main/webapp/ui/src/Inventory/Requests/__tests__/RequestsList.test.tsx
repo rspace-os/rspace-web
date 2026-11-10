@@ -1,3 +1,4 @@
+import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -22,7 +23,10 @@ function renderWithProviders(
 // would never even issue its requests.
 vi.mock("@/stores/stores/getRootStore", () => ({
   __esModule: true,
-  default: () => ({ authStore: { isSynchronizing: false } }),
+  default: () => ({
+    authStore: { isSynchronizing: false },
+    uiStore: { isVerySmall: false, isSmall: false, setVisiblePanel: () => {} },
+  }),
 }));
 
 const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";

@@ -3,6 +3,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import BackToListButton from "./BackToListButton";
 import RequestsStatusChip from "./RequestsStatusChip";
 
 /**
@@ -32,7 +33,12 @@ export default function RequestDetailHeader({
         gap: 1.5,
       }}
     >
-      <Typography variant="h5">{t("requestsManagement.detail.title", { id, sampleName })}</Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
+        <BackToListButton />
+        <Typography variant="h5" sx={{ overflowWrap: "anywhere" }}>
+          {t("requestsManagement.detail.title", { id, sampleName })}
+        </Typography>
+      </Box>
       {status && <RequestsStatusChip status={status} />}
     </Box>
   );

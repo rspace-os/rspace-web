@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +16,7 @@ import { useOperationWizardLauncher } from "../components/Operations/useOperatio
 import ApprovalResultFields from "./ApprovalResultFields";
 import ChooseMethodDialog from "./ChooseMethodDialog";
 import CollapsibleSection from "./CollapsibleSection";
+import DetailPlaceholder from "./DetailPlaceholder";
 import FulfilRequestDialog from "./FulfilRequestDialog";
 import OwnerActionsPanel from "./OwnerActionsPanel";
 import {
@@ -186,24 +186,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const comment = status ? latestStatusChange(statusChanges, status)?.reason : undefined;
 
-  if (!request) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          flexGrow: 1,
-          width: "100%",
-          height: "100%",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Typography variant="body1" color="text.secondary">
-          {t("requestsManagement.noSelection")}
-        </Typography>
-      </Box>
-    );
-  }
+  if (!request) return <DetailPlaceholder message={t("requestsManagement.noSelection")} />;
 
   // Falls back to the originally requested sample when the fulfilling transition didn't
   // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog) - always

@@ -1,13 +1,13 @@
-import Box from "@mui/material/Box";
-import { useTheme } from "@mui/material/styles";
-import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLandmark } from "@/components/LandmarksContext";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
 import NavigateContext from "@/stores/contexts/Navigate";
+import useStores from "@/stores/use-stores";
+import Layout2x1 from "../components/Layout/Layout2x1";
 import Main from "../Main";
+import DetailPlaceholder from "./DetailPlaceholder";
 import { useSampleRequestDetailQuery } from "./queries";
 import RequestDetailPanel from "./RequestDetailPanel";
 import RequestsList from "./RequestsList";
@@ -19,7 +19,7 @@ import type { ApiSampleRequestListItem } from "./sampleRequest";
  */
 export default function RequestsPage(): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const theme = useTheme();
+  const { uiStore } = useStores();
   const mainContentRef = useLandmark(t("requestsManagement.landmark"));
   const [selectedRequest, setSelectedRequest] = useState<ApiSampleRequestListItem | null>(null);
   const { useLocation } = useContext(NavigateContext);
@@ -58,6 +58,12 @@ export default function RequestsPage(): React.ReactNode {
   // own stale selection without discarding one the user picked themselves since.
   const [deepLinkSelected, setDeepLinkSelected] = useState(false);
 
+  // uiStore.visiblePanel is shared with the other Inventory pages, so a "right" left over from
+  // one of them would otherwise open this page on an empty detail pane in a single-column layout.
+  useEffect(() => {
+    uiStore.setVisiblePanel("left");
+  }, [uiStore]);
+
   useEffect(() => {
     if (rawDeepLinkId === null) {
       // Leaving the deep link (e.g. the sidebar's plain /inventory/requests link) must clear its
@@ -78,6 +84,7 @@ export default function RequestsPage(): React.ReactNode {
       if (lastHandledDeepLinkKey === rawDeepLinkId) return;
       setLastHandledDeepLinkKey(rawDeepLinkId);
       setShowDeepLinkError(true);
+      uiStore.setVisiblePanel("right");
       return;
     }
     if (deepLinkQuery.isSuccess) {
@@ -89,12 +96,14 @@ export default function RequestsPage(): React.ReactNode {
       setShowDeepLinkError(false);
       setDeepLinkSelected(true);
       setSelectedRequest(deepLinkQuery.data);
+      uiStore.setVisiblePanel("right");
       return;
     }
     if (deepLinkQuery.isError) {
       if (lastHandledDeepLinkKey === rawDeepLinkId) return;
       setLastHandledDeepLinkKey(rawDeepLinkId);
       setShowDeepLinkError(true);
+      uiStore.setVisiblePanel("right");
     }
   }, [
     rawDeepLinkId,
@@ -105,49 +114,29 @@ export default function RequestsPage(): React.ReactNode {
     lastHandledDeepLinkKey,
     showDeepLinkError,
     deepLinkSelected,
+    uiStore,
   ]);
 
   function selectRequest(request: ApiSampleRequestListItem) {
     setShowDeepLinkError(false);
     setDeepLinkSelected(false);
     setSelectedRequest(request);
+    uiStore.setVisiblePanel("right");
   }
 
   return (
     <Main ref={mainContentRef} role="main" aria-label={t("requestsManagement.landmark")}>
       <VisuallyHiddenHeading variant="h2">{t("requestsManagement.pageTitle")}</VisuallyHiddenHeading>
-      <Box sx={{ display: "flex", height: "100%" }}>
-        <Box
-          sx={{
-            display: "flex",
-            flex: "1 1 40%",
-            minWidth: 0,
-            borderRight: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <RequestsList selectedRequestId={selectedRequest?.id ?? null} onSelect={selectRequest} />
-        </Box>
-        <Box sx={{ display: "flex", flex: "1 1 60%", minWidth: 0 }}>
-          {showDeepLinkError ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexGrow: 1,
-                width: "100%",
-                height: "100%",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Typography variant="body1" color="text.secondary">
-                {t("requestsManagement.deepLinkError")}
-              </Typography>
-            </Box>
+      <Layout2x1
+        colLeft={<RequestsList selectedRequestId={selectedRequest?.id ?? null} onSelect={selectRequest} />}
+        colRight={
+          showDeepLinkError ? (
+            <DetailPlaceholder message={t("requestsManagement.deepLinkError")} />
           ) : (
             <RequestDetailPanel key={selectedRequest?.id ?? "none"} request={selectedRequest} />
-          )}
-        </Box>
-      </Box>
+          )
+        }
+      />
     </Main>
   );
 }

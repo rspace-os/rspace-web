@@ -1,12 +1,16 @@
+import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { action, observable } from "mobx";
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import NavigateContext from "@/stores/contexts/Navigate";
+import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "@/stores/stores-context";
 import materialTheme from "@/theme";
 import RequestsPage from "../RequestsPage";
 import type { ApiSampleRequestListItem } from "../sampleRequest";
@@ -35,22 +39,37 @@ const SAMPLE_REQUEST_DETAIL_URL = "/api/inventory/v1/sampleRequests/:id";
 
 const apiGet = vi.fn();
 
+function makeUiStore() {
+  const store = observable({
+    visiblePanel: "left" as "left" | "right",
+    isVerySmall: false,
+    isSmall: false,
+    setVisiblePanel: action((panel: "left" | "right") => {
+      store.visiblePanel = panel;
+    }),
+  });
+  return store;
+}
+let uiStore = makeUiStore();
+
 function tree(queryClient: QueryClient, search: string) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <NavigateContext.Provider
-            value={{
-              useNavigate: () => () => {},
-              useLocation: () => ({ hash: "", pathname: "/inventory/requests", search, state: {}, key: "" }),
-            }}
-          >
-            <RequestsPage />
-          </NavigateContext.Provider>
-        </LandmarksProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <storesContext.Provider value={makeMockRootStore({ uiStore })}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={materialTheme}>
+          <LandmarksProvider>
+            <NavigateContext.Provider
+              value={{
+                useNavigate: () => () => {},
+                useLocation: () => ({ hash: "", pathname: "/inventory/requests", search, state: {}, key: "" }),
+              }}
+            >
+              <RequestsPage />
+            </NavigateContext.Provider>
+          </LandmarksProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </storesContext.Provider>
   );
 }
 
@@ -83,6 +102,7 @@ function requestDetailResponse(id: number) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  uiStore = makeUiStore();
   server.use(http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json({ requests: [], totalHits: 0 })));
 });
 
@@ -451,5 +471,76 @@ describe("RequestsPage deep-linking", () => {
 
     expect(await screen.findByTestId("mock-detail-panel")).toHaveTextContent("none");
     expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+  });
+});
+
+const LIST_WITH_ONE_REQUEST = {
+  requests: [
+    {
+      id: 7,
+      status: "PENDING",
+      created: "2026-01-02T10:00:00Z",
+      note: null,
+      requester: { id: 2, username: "other", firstName: "Oscar", lastName: "Other" },
+      sample: { id: 9, globalId: "SA9", name: "Sample Nine", owner: { id: 1 } },
+    },
+  ],
+  totalHits: 1,
+};
+
+describe("RequestsPage on a narrow viewport", () => {
+  const originalWidth = window.innerWidth;
+  beforeEach(() => {
+    window.innerWidth = 400;
+  });
+  afterEach(() => {
+    window.innerWidth = originalWidth;
+  });
+
+  test("shows only the list until a request is picked, then only that request's details", async () => {
+    server.use(http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)));
+    renderWithProviders("");
+
+    const row = (await screen.findByText("SA9")).closest("tr");
+    expect(row).toBeVisible();
+    expect(screen.getByTestId("mock-detail-panel")).not.toBeVisible();
+
+    row?.focus();
+    await userEvent.setup().keyboard("{Enter}");
+
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toBeVisible());
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
+    expect(row).not.toBeVisible();
+  });
+
+  test("opens straight onto the details of a deep-linked request", async () => {
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => HttpResponse.json(requestDetailResponse(Number(params.id)))),
+    );
+    renderWithProviders("?requestId=42");
+
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:42"));
+    expect(screen.getByTestId("mock-detail-panel")).toBeVisible();
+  });
+
+  test("shows a deep-link error with a way back to the list", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })));
+    renderWithProviders("?requestId=999");
+
+    expect(await screen.findByText("inventory:requestsManagement.deepLinkError")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.back" }));
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).not.toBeVisible());
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("resets a details pane left open by another Inventory page back to the list", async () => {
+    uiStore.setVisiblePanel("right");
+    server.use(http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)));
+    renderWithProviders("");
+
+    expect((await screen.findByText("SA9")).closest("tr")).toBeVisible();
+    expect(screen.getByTestId("mock-detail-panel")).not.toBeVisible();
   });
 });
