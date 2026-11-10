@@ -98,10 +98,11 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       ApiInstrument apiInstrument, User user) {
     InstrumentTemplate template = null;
     Long templateId = apiInstrument.getTemplateId();
-    // if templateId is null (we're creating a new instrument),
-    // but if not null, we expect it to exist
+    // templateId is null when creating an instrument with no template; when provided, the caller
+    // must have full read of it, because the new instrument copies the template's whole content
     if (templateId != null) {
-      template = assertUserCanReadInstrumentTemplate(templateId, user);
+      template = getInstrumentTemplateOrThrowNotFound(templateId);
+      invPermissions.assertUserCanFullReadInventoryRecord(template, user);
     }
     return template;
   }
@@ -586,7 +587,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument duplicateInstrument(Long instrumentId, User user) {
-    Instrument dbInstrument = assertUserCanReadInstrument(instrumentId, user);
+    Instrument dbInstrument = getInstrumentOrThrowNotFound(instrumentId);
+    invPermissions.assertUserCanFullReadInventoryRecord(dbInstrument, user);
     Instrument copy = (Instrument) dbInstrument.copy(user);
     clearLandingPage(copy);
     setWorkbenchAsParentForNewInstrument(copy, user);
@@ -882,7 +884,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrumentTemplate duplicateInstrumentTemplate(Long templateId, User user) {
-    InstrumentTemplate dbTemplate = assertUserCanReadInstrumentTemplate(templateId, user);
+    InstrumentTemplate dbTemplate = getInstrumentTemplateOrThrowNotFound(templateId);
+    invPermissions.assertUserCanFullReadInventoryRecord(dbTemplate, user);
     InstrumentTemplate copy = (InstrumentTemplate) dbTemplate.copy(user);
     clearLandingPage(copy);
     copy = instrumentTemplateDao.save(copy);

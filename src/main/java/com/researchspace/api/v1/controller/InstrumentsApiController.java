@@ -253,8 +253,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInstrument duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    instrumentApiMgr.assertUserCanReadInstrument(id, user);
-
     ApiInstrument copy = instrumentApiMgr.duplicateInstrument(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
