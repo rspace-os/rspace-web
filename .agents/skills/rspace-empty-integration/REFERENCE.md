@@ -86,13 +86,18 @@ export const LOGO_COLOR = {
 
 ### 4. `src/main/webapp/ui/src/eln/apps/integrations/<Name>.tsx`
 
+Card text comes from the `apps` catalog (see `locales/en-US/apps.json` under
+Files to modify). Hardcoded JSX text fails `pnpm run i18n:lint`.
+
 ```tsx
 import Grid from "@mui/material/Grid";
 import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import <Name>Icon from "../../../assets/branding/<name>/logo.svg";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/<name>";
+import <Name>Icon from "../../../assets/branding/<name>/logo.svg";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type <Name>Args = {
   integrationState: IntegrationStates["<NAME>"];
@@ -100,35 +105,32 @@ type <Name>Args = {
 };
 
 /*
- * <Name> integration — empty scaffold. Replace placeholder text below.
+ * <Name> has no per-user configuration. Users enable it here and open its
+ * dialog from the text editor toolbar.
  */
 function <Name>({ integrationState, update }: <Name>Args): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
-        name="<Name>"
+        name={t("integrations.<name>.name")}
         integrationState={integrationState}
-        // TODO: replace placeholder explanatoryText with a real description.
-        explanatoryText="<Name> integration. TODO: replace this placeholder."
+        explanatoryText={t("integrations.<name>.description")}
         image={<Name>Icon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
-        // TODO: replace placeholder usageText.
-        usageText="TODO: describe how this integration is used inside RSpace."
-        // TODO: replace placeholder helpLinkText.
-        helpLinkText="<Name> integration docs"
+        usageText={t("integrations.<name>.usage")}
+        helpLinkText={t("integrations.<name>.helpLink")}
         // TODO: replace placeholder website.
-        website="example.com"
+        website="https://example.com"
         docLink="<name>"
-        setupSection={
-          <ol>
-            <li>Enable the integration.</li>
-            <li>
-              When editing a document, click the <Name> icon in the text editor
-              toolbar to open the dialog.
-            </li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.<name>.setup.instructions" />}
       />
     </Grid>
   );
@@ -426,6 +428,23 @@ Insert object alphabetically:
 }
 ```
 
+### `locales/en-US/apps.json`
+
+Insert alphabetically inside `integrations`, with the keys sorted like the
+rest of the catalog.
+
+```json
+"<name>": {
+  "description": "<Name> integration. TODO: replace this placeholder.",
+  "helpLink": "<Name> integration docs",
+  "name": "<Name>",
+  "setup": {
+    "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click the <Name> icon in the text editor toolbar to open the dialog.</li></ol>"
+  },
+  "usage": "TODO: describe how this integration is used inside RSpace."
+},
+```
+
 ### `locales/en-US/common.json`
 
 Insert alphabetically inside `help`:
@@ -434,8 +453,9 @@ Insert alphabetically inside `help`:
 "<name>": "TODO_<NAME>_DOC_ID",
 ```
 
-`IntegrationCard`'s `docLink` is typed from the generated `resources.d.ts`, so
-run `pnpm run i18n:types` after adding the key; `pnpm run tsc` fails until then.
+`IntegrationCard`'s `docLink` and the card's `t()` keys are typed from the
+generated `resources.d.ts`, so run `pnpm run i18n:types` after adding the
+`apps` and `common` keys; `pnpm run tsc` fails until then.
 
 ### `WEB-INF/pages/system/settings_ajax.jsp`
 
@@ -493,16 +513,6 @@ Add a new entry inside `tinymce.IconManager.add('custom_icons', { … })`:
 '<name>': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="10" fill="none" stroke="#151515" stroke-width="2"/><text x="12" y="16" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#151515"><INITIALS></text></svg>',
 ```
 
-### `build-resources/resources_to_MD5_rename.txt`
-
-Two additions in their respective alphabetical groups:
-
-```
-scripts/externalTinymcePlugins/<name>/plugin.min.js
-```
-
-> **Do not** add `ui/dist/externalWorkFlows.js`. That bundle is Galaxy-specific.
-
 ### `src/main/webapp/ui/bundleEntries.json`
 
 Add a new entry to the JSON object, alongside the other `tinymce*` entries:
@@ -517,8 +527,9 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 
 ## Manual follow-up checklist (print after running)
 
-1. Replace placeholder strings in `<Name>.tsx`: `explanatoryText`,
-   `usageText`, `helpLinkText`, `website`.
+1. Replace the placeholder card text in `integrations.<name>` of `apps.json`
+   (`description`, `usage`, `helpLink`, `setup.instructions`) and the
+   `website` in `<Name>.tsx`.
 2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs article slug (for example `vkd8mt2ffb-argos-integration`).
 3. Hand-tune `LOGO_COLOR` in `branding/<name>/index.ts` to match the real brand.
 4. Replace the placeholder `branding/<name>/logo.svg` with a real

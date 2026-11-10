@@ -47,7 +47,7 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/assets/branding/<name>/logo.svg`              | 100×100 placeholder logo.                                          |
 | `src/main/webapp/ui/src/eln/apps/integrations/<Name>.tsx`             | Apps-page card (Chemistry-style simple toggle).                    |
 | `src/main/webapp/scripts/externalTinymcePlugins/<name>/plugin.min.js` | TinyMCE plugin: registers icon + toolbar button + dialog opener.   |
-| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.jsp`    | Dialog body host that loads the React bundle.                      |
+| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.html`   | Dialog body host that loads the React bundle.                      |
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>Entrypoint.tsx`          | Mounts React component into `#tinymce-<name>`.                     |
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                    | Empty React component.                                             |
 | `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`     | Vitest smoke test.                                                 |
@@ -64,6 +64,7 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/eln/apps/CardListing.tsx`                                          | Add import, `<name>Update` `useCallback`, and conditional render block (alphabetical).                                |
 | `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts`                               | Add `IntegrationStates` entry, decoder, encoder branch, two switch arms.                                              |
 | `src/main/webapp/ui/src/eln/apps/__tests__/allIntegrationsAreDisabled.json`                | Insert `"<NAME>": { … }` fixture object.                                                                              |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/apps.json`                       | Add the `integrations.<name>` card text (`description`, `helpLink`, `name`, `setup.instructions`, `usage`) alphabetically. |
 | `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/common.json`                     | Add `"<name>": "TODO_<NAME>_DOC_ID",` inside `help`, then run `pnpm run i18n:types`.                                   |
 | `src/main/webapp/WEB-INF/pages/system/settings_ajax.jsp`                                   | Add `<div id="<name>.available.description">…</div>`.                                                                 |
 | `src/main/webapp/scripts/pages/system/settings_mod.js`                                     | Add `_printSettings(['<name>.available']);` under an existing category.                                               |
@@ -138,8 +139,9 @@ The empty-integration skill **does not** modify any of:
 
 ## Manual follow-up after running the skill
 
-1. Replace placeholder strings in `<Name>.tsx`
-   (`explanatoryText`, `usageText`, `helpLinkText`, `website`).
+1. Replace the placeholder card text in `integrations.<name>` of `apps.json`
+   (`description`, `usage`, `helpLink`, `setup.instructions`) and the
+   `website` in `<Name>.tsx`.
 2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs article
    slug (for example `vkd8mt2ffb-argos-integration`) once the help page exists.
 3. Hand-tune `LOGO_COLOR` in `branding/<name>/index.ts` to match the real

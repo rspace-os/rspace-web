@@ -24,8 +24,9 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
 4. Run `pnpm run build`. The dialog loads `tinymce<Name>.js`; without the bundle,
    it opens blank with a failed resource request.
 5. Run the frontend checks from the root. Regenerate the i18n types first:
-   `docLink="<name>"` is typed from the generated `resources.d.ts`, so `tsc`
-   fails until the new `help` key is in it.
+   the card's `t()` keys and `docLink="<name>"` are typed from the generated
+   `resources.d.ts`, so `tsc` fails until the new `apps` and `help` keys are
+   in it.
 
    ```bash
    pnpm run i18n:types
@@ -43,7 +44,7 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
 
    Alternatively, start the app and confirm `<NAME>` in
    `GET /integration/allIntegrations`. Follow `AGENTS.md` for live verification.
-7. Report the reference's manual follow-ups: card text and website,
+7. Report the reference's manual follow-ups: card text in `apps.json`, website,
    `TODO_<NAME>_DOC_ID` in `common.json`, `LOGO_COLOR`, logo and toolbar SVGs,
    and the category in `settings_mod.js`.
 
