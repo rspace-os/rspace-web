@@ -14,14 +14,7 @@ import {
 import { requireBookingValue } from "./bookingMapping";
 import { validOpeningHours } from "./bookingOpeningHours";
 
-export type BookingDisplayPreferencesDocument = {
-  availabilityWindowStart: string;
-  availabilityWindowEnd: string;
-  timezoneMode: BookingTimezoneMode;
-  customTimezone: string | null;
-  institutionTimezone: string;
-  overridden: boolean;
-};
+export type BookingDisplayPreferencesDocument = Required<BookingDisplayPreferences>;
 export type ResolvedBookingDisplayPreferences = {
   availabilityWindow: { start: string; end: string; startMinute: number; endMinute: number };
   timeZone: string;
