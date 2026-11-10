@@ -42,7 +42,7 @@ knowledge the viewer is not entitled to.
   unreadable inventory target is reachable and should say so. For inventory,
   "readable" in the summary means READ **or** limited read, since either opens
   the item; link creation, `findReferencingItems` and duplicating an item still
-  require full READ. *Amended 2026-11-10 (RSDEV-1611):* duplicate joined this
+  require full READ. *Amended 2026-11-10:* duplicate joined this
   list. It had accepted limited read, so a user who could only see an item's
   limited view could copy it and then read the whole copy.
 * ELN read permission in the summary comes from the live row (a plain DAO
