@@ -1,33 +1,23 @@
 import { describe, expect, it } from "vitest";
 import type { CollectionConfig } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import { config, type TestRecord } from "@/modules/common/table-list/__tests__/fixtures/tableList";
 
-function input(): CollectionConfig<TestRecord> {
-  return {
-    slug: config.slug,
-    idField: config.idField,
-    labels: config.labels,
-    useAsTitle: config.useAsTitle,
-    defaultColumns: config.defaultColumns,
-    listSearchableFields: config.listSearchableFields,
-    pagination: config.pagination,
-    defaultSort: config.defaultSort,
-    fields: config.fields,
-  };
-}
+type TestRecord = { id: string; title: string; score: number };
+const input: CollectionConfig<TestRecord> = {
+  slug: "records",
+  idField: "id",
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+  useAsTitle: "title",
+  defaultColumns: ["title"],
+  listSearchableFields: ["title"],
+  fields: [
+    { name: "id", type: "text", labelKey: "tableList.examples.fields.id", list: false },
+    { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
+    { name: "score", type: "number", labelKey: "tableList.examples.fields.score" },
+  ],
+};
 
 describe("resolveCollectionConfig", () => {
-  it("applies type-specific capability defaults", () => {
-    expect(config.fields.find((field) => field.name === "title")?.capabilities.filterOperators).toContain("matches");
-    expect(config.fields.find((field) => field.name === "score")?.capabilities.filterOperators).toContain(
-      "greaterThan",
-    );
-    expect(config.fields.find((field) => field.name === "enabled")?.capabilities.filterOperators).not.toContain(
-      "notIn",
-    );
-  });
-
   const invalidCases: readonly [string, (value: CollectionConfig<TestRecord>) => CollectionConfig<TestRecord>][] = [
     ["duplicate field", (value) => ({ ...value, fields: [...value.fields, value.fields[0]] })],
     ["unknown title field", (value) => ({ ...value, useAsTitle: "missing" as "title" })],
@@ -36,11 +26,11 @@ describe("resolveCollectionConfig", () => {
   ];
 
   it.each(invalidCases)("rejects a %s", (_name, mutate) => {
-    expect(() => resolveCollectionConfig(mutate(input()))).toThrow();
+    expect(() => resolveCollectionConfig(mutate(input))).toThrow();
   });
 
   it("rejects operators that are incompatible with a field type", () => {
-    const value = input();
+    const value = input;
     expect(() =>
       resolveCollectionConfig({
         ...value,

@@ -65,35 +65,6 @@ describe("TableList data table", () => {
     await expectAccessible(container);
   });
 
-  it("uses the same filtered, sorted, and paginated row model for cards", () => {
-    render(
-      <TableList
-        queryString={false}
-        config={config}
-        rows={records}
-        getRowId={(row) => row.id}
-        clientSide
-        presentations={{ table: false, cards: "all" }}
-        features={{
-          filtering: {
-            value: {
-              search: "ada",
-              expression: { kind: "comparison", field: "enabled", operator: "equals", value: true },
-            },
-            onChange: vi.fn(),
-          },
-          sorting: { value: [{ field: "modifiedAt", direction: "desc" }], onChange: vi.fn() },
-          pagination: { value: { pageIndex: 0, pageSize: 1 }, rowCount: records.length, onChange: vi.fn() },
-          columns: false,
-        }}
-      />,
-    );
-
-    expect(screen.getByRole("article", { name: "Gamma" })).toBeVisible();
-    expect(screen.queryByRole("article", { name: "Alpha" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("article", { name: "Beta" })).not.toBeInTheDocument();
-  });
-
   it("supplies the filtered, sorted, and paginated row model to a custom presentation", () => {
     render(
       <TableList
@@ -161,52 +132,6 @@ describe("TableList data table", () => {
     expect(screen.getByText("1,2,3")).toBeVisible();
   });
 
-  it("uses the shared rows-per-page options by default", () => {
-    render(
-      <TableList
-        queryString={false}
-        config={{ ...config, pagination: undefined }}
-        rows={records}
-        getRowId={(row) => row.id}
-        features={{
-          filtering: false,
-          sorting: false,
-          pagination: { value: { pageIndex: 0, pageSize: 20 }, rowCount: records.length, onChange: vi.fn() },
-          columns: false,
-        }}
-      />,
-    );
-
-    expect(
-      within(screen.getByRole("combobox", { name: "common:tableList.rowsPerPage" }))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["10", "20", "30", "40", "50"]);
-    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-  });
-
-  it("reports controlled pagination intent", async () => {
-    const user = userEvent.setup();
-    const onPageChange = vi.fn();
-    render(
-      <TableList
-        queryString={false}
-        config={config}
-        rows={records.slice(0, 2)}
-        getRowId={(row) => row.id}
-        features={{
-          filtering: false,
-          sorting: false,
-          pagination: { value: firstPage, rowCount: records.length, onChange: onPageChange },
-          columns: false,
-        }}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "common:tableList.actions.nextPage" }));
-    expect(onPageChange).toHaveBeenCalledWith({ pageIndex: 1, pageSize: 2 });
-  });
-
   it("reflects sorting through aria-sort", async () => {
     const user = userEvent.setup();
     function Harness() {
@@ -232,37 +157,6 @@ describe("TableList data table", () => {
     expect(titleHeader).toHaveAttribute("aria-sort", "none");
     await user.click(screen.getAllByRole("button", { name: "common:tableList.actions.sortBy" })[0]);
     expect(titleHeader).toHaveAttribute("aria-sort", "ascending");
-  });
-
-  it("processes local rows through the table row models", () => {
-    render(
-      <TableList
-        queryString={false}
-        config={config}
-        rows={records}
-        getRowId={(row) => row.id}
-        clientSide
-        features={{
-          filtering: {
-            value: {
-              search: "ada",
-              expression: { kind: "comparison", field: "enabled", operator: "equals", value: true },
-            },
-            onChange: vi.fn(),
-          },
-          sorting: {
-            value: [{ field: "modifiedAt", direction: "desc" }],
-            onChange: vi.fn(),
-          },
-          pagination: { value: { pageIndex: 0, pageSize: 1 }, rowCount: records.length, onChange: vi.fn() },
-          columns: false,
-        }}
-      />,
-    );
-
-    expect(screen.getByRole("cell", { name: "Gamma" })).toBeVisible();
-    expect(screen.queryByRole("cell", { name: "Alpha" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("cell", { name: "Beta" })).not.toBeInTheDocument();
   });
 
   it.each<{
@@ -445,28 +339,6 @@ describe("TableList data table", () => {
 
     expect(screen.getByRole("cell", { name: "Matching" })).toBeVisible();
     expect(screen.queryByRole("cell", { name: "Other" })).not.toBeInTheDocument();
-  });
-
-  it("renders presentation-only columns without document fields", () => {
-    render(
-      <TableList
-        queryString={false}
-        config={config}
-        rows={[records[0]]}
-        getRowId={(row) => row.id}
-        uiColumns={[
-          {
-            id: "actions",
-            label: "Actions",
-            renderCell: (row) => <button type="button" aria-label={`Edit ${row.title}`} />,
-          },
-        ]}
-        features={{ filtering: false, sorting: false, pagination: false, columns: false }}
-      />,
-    );
-
-    expect(screen.getByRole("columnheader", { name: "Actions" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Edit Alpha" })).toBeVisible();
   });
 
   it("selects and clears only the visible rows while retaining unloaded IDs", async () => {

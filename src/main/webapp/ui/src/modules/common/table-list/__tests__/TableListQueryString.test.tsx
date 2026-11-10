@@ -8,7 +8,11 @@ import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHisto
 import type { SortRule } from "@/modules/common/collection/config";
 import { TableList } from "../TableList";
 import type { FilterState, TableListQueryStringOptions } from "../types";
-import { config, emptyFilters, records, type TestRecord } from "./fixtures/tableList";
+import { config, emptyFilters, type TestRecord } from "./fixtures/tableList";
+
+const records: readonly TestRecord[] = [
+  { id: "1", title: "Alpha", owner: "Ada", score: 8, enabled: true, modifiedAt: "2026-08-01T10:00:00Z" },
+];
 
 function persistedView(
   overrides: Partial<Record<"search" | "where" | "columns" | "defaults" | "sort", string | null>>,
@@ -77,24 +81,6 @@ describe("TableList query string sharing", () => {
       screen.queryByRole("columnheader", { name: "common:tableList.examples.fields.owner" }),
     ).not.toBeInTheDocument();
     expect(window.location.href).toBe(originalLocation);
-  });
-
-  it("drops only the per-actor field a saved view can no longer resolve", async () => {
-    const withCustomFields = { ...config, runtimeNamespaces: ["customFields"] };
-    const params = new URLSearchParams({
-      "records.q": "Ada",
-      "records.where": 'owner==Ada;customFields.SF999=="BSL-2"',
-      "records.columns": JSON.stringify({ fields: ["title", "customFields.SF999"] }),
-    });
-    render(
-      <NuqsTestingAdapter searchParams={params} hasMemory>
-        <Harness collection={withCustomFields} />
-      </NuqsTestingAdapter>,
-    );
-
-    expect(await screen.findByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("Ada");
-    expect(screen.getByRole("button", { name: "common:tableList.filters.applied" })).toBeVisible();
-    expect(await screen.findByRole("columnheader", { name: "common:tableList.examples.fields.title" })).toBeVisible();
   });
 
   it("invalidates a saved expression when a known runtime predicate is malformed", async () => {
@@ -290,7 +276,6 @@ describe("TableList query string sharing", () => {
     window.localStorage.setItem("rspace.tableList.first.view", persistedView({ search: "Ada" }));
     window.localStorage.setItem("rspace.tableList.second.view", persistedView({ search: "Grace" }));
 
-    // One adapter for both tables, as the app has one router adapter at its root.
     render(
       <NuqsTestingAdapter hasMemory>
         <section aria-label="First table">

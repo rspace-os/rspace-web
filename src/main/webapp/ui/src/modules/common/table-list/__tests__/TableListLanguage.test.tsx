@@ -1,10 +1,3 @@
-import { fakeCollectionResource } from "./fixtures/apiV2Resources";
-
-const resource = {
-  ...fakeCollectionResource("language-records"),
-  runtimeFields: fakeCollectionResource("instruments").runtimeFields,
-};
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -26,7 +19,13 @@ import { TableListErrorState } from "../components/TableListStates";
 import { useApiV2TableList } from "../hooks/apiV2TableList";
 import { TableList } from "../TableList";
 import { RuntimeFieldProjectionLimitError } from "../utils/errors";
-import { definition } from "./fixtures/tableList";
+import { fakeCollectionResource } from "./fixtures/apiV2Resources";
+import { hazardClassDefinition } from "./fixtures/tableList";
+
+const resource = {
+  ...fakeCollectionResource("language-records"),
+  runtimeFields: fakeCollectionResource("instruments").runtimeFields,
+};
 
 type Document = Record<string, unknown>;
 const documentSchema = v.object({
@@ -136,7 +135,7 @@ it("updates derived labels, values and separate owner groups without rebuilding 
     http.get("/api/v2/instruments/fields/customFields", () => {
       catalogs++;
       return HttpResponse.json({
-        fields: [definition({ label: "Weight", type: "number", jsonType: "number" })],
+        fields: [{ ...hazardClassDefinition, label: "Weight", type: "number", jsonType: "number" }],
         hasMore: false,
         page: 1,
         limit: 50,

@@ -43,19 +43,16 @@ export const records: readonly TestRecord[] = [
 export const emptyFilters: FilterState<TestRecord> = { search: "", expression: null };
 export const firstPage: PageState = { pageIndex: 0, pageSize: 2 };
 
-export function definition(overrides: Partial<RuntimeFieldDefinition> = {}): RuntimeFieldDefinition {
-  return {
-    id: "SF104",
-    selector: "customFields.SF104",
-    label: "Hazard class",
-    type: "text",
-    jsonType: "string",
-    operators: ["==", "!=", "=in=", "=out=", "=contains=", "=like=", "=exists="],
-    supportsWildcards: false,
-    columnSelectable: true,
-    sortable: false,
-    source: { id: "IT9", label: "Cell line template" },
-    options: [],
-    ...overrides,
-  };
-}
+export const hazardClassDefinition: RuntimeFieldDefinition = {
+  id: "SF104",
+  selector: "customFields.SF104",
+  label: "Hazard class",
+  type: "text",
+  jsonType: "string",
+  operators: ["==", "!=", "=in=", "=out=", "=contains=", "=like=", "=exists="],
+  supportsWildcards: false,
+  columnSelectable: true,
+  sortable: false,
+  source: { id: "IT9", label: "Cell line template" },
+  options: [],
+};
