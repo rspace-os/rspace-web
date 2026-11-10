@@ -257,7 +257,7 @@ describe("relationship picker restore", () => {
 
     expect(await screen.findByText("Target 42")).toBeVisible();
     act(() => {
-      queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", "caller-one"), {
+      queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", JSON.stringify([["caller-one", null], "caller-one"])), {
         globalId: "FX42",
         name: "Updated target 42",
       });
@@ -266,7 +266,7 @@ describe("relationship picker restore", () => {
 
     await act(async () => {
       await queryClient.invalidateQueries({
-        queryKey: optionBatchCacheKey(fixtureSource, ["FX42"], "caller-one"),
+        queryKey: optionBatchCacheKey(fixtureSource, ["FX42"], JSON.stringify([["caller-one", null], "caller-one"])),
       });
     });
     expect(await screen.findByText("Refreshed target 42")).toBeVisible();
@@ -277,7 +277,7 @@ describe("relationship picker restore", () => {
     const request = vi.fn();
     const source = fixtureSource;
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", "caller-one"), {
+    queryClient.setQueryData(optionCacheKey(fixtureSource, "FX42", JSON.stringify([["caller-one", null], "caller-one"])), {
       globalId: "FX42",
       name: "Cached target 42",
     });
