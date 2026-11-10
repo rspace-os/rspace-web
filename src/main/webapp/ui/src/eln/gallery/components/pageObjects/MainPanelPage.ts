@@ -69,10 +69,9 @@ export class MainPanelPage {
     await expect.element(this.treeItem(name)).toHaveAttribute("aria-expanded", "true");
   }
 
-  /** MUI X 9 reports multi-select selection with aria-checked, not aria-selected. */
   async selectTreeItem(name: string): Promise<void> {
     await this.clickTreeItemContent(name);
-    await expect.element(this.treeItem(name)).toHaveAttribute("aria-checked", "true");
+    await expect.element(this.treeItem(name)).toHaveAttribute("aria-selected", "true");
   }
 
   // ── Copy-to-clipboard button ──────────────────────────────────────────────
