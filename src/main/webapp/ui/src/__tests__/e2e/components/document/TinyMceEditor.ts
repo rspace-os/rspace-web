@@ -1,6 +1,9 @@
 import { basename } from "node:path";
 import { expect, type FrameLocator, type Locator, type Page } from "@playwright/test";
-import { ChemistryFieldContent } from "@/__tests__/e2e/components/document/ChemistryFieldContent";
+import {
+  ChemistryFieldContent,
+  OUTSIDE_FAKE_SELECTION,
+} from "@/__tests__/e2e/components/document/ChemistryFieldContent";
 import { ImageQuickToolbar } from "@/__tests__/e2e/components/document/ImageQuickToolbar";
 import { StoichiometryDialogComponent } from "@/modules/stoichiometry/__tests__/pageObjects/StoichiometryDialogComponent";
 
@@ -33,9 +36,10 @@ export class TinyMceEditor {
 
   async fill(text: string): Promise<void> {
     await this.waitForReady();
-    // fill() alone leaves TinyMCE clean on Firefox after focus moved away, so nothing autosaves.
+    // Firefox 157 leaves TinyMCE clean after fill() or insertText(), so nothing autosaves; typed keys register.
     await this.body.focus();
-    await this.body.fill(text);
+    await this.body.press("ControlOrMeta+A");
+    await this.body.pressSequentially(text);
   }
 
   /** Returns only after this edit has been accepted by the field autosave endpoint. */
@@ -194,7 +198,7 @@ export class TinyMceEditor {
 
   /** The inserted-but-not-yet-configured reaction table node, before any compound has been added. */
   get stoichiometryTablePlaceholder(): Locator {
-    return this.frame.getByRole("button", { name: "Reaction Table" });
+    return this.frame.getByRole("button", { name: "Reaction Table" }).and(this.frame.locator(OUTSIDE_FAKE_SELECTION));
   }
 
   async insertStoichiometryTable(): Promise<StoichiometryDialogComponent> {
