@@ -23,6 +23,7 @@ import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.field.ErrorList;
@@ -54,18 +55,21 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
 
   private Principal sysAdminPrincipal;
   private User sysAdmin;
+  private String originalSignupCode;
 
   @Autowired private SysAdminUserRegistrationController controller;
   @Autowired private IMutablePropertyHolder propertyHolder;
 
   @AfterEach
   public void teardown() throws Exception {
+    propertyHolder.setUserSignupCode(originalSignupCode);
     getBeanOfClass(ConfigurableLogger.class).setLoggerDefault();
     super.tearDown();
   }
 
   @BeforeEach
   public void setup() throws Exception {
+    originalSignupCode = propertyHolder.getUserSignupCode();
     super.setUp();
     sysAdmin = createAndSaveUser(getRandomName(10), Constants.SYSADMIN_ROLE);
     initUser(sysAdmin);
@@ -218,6 +222,32 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     List<String> resultMsgs = (List<String>) resultMap.get("data");
     assertThat(resultMsgs).hasSize(1); // 1x complete
     assertEquals(BATCH_REGISTRATION_COMPLETE_MSG, resultMsgs.get(0));
+  }
+
+  @Test
+  public void testBatchCreateUserWithConfiguredSignupCode() throws Exception {
+    propertyHolder.setUserSignupCode("RSDEV1412");
+    String username = getRandomAlphabeticString("batchSignupCode");
+    String userJson = getUserRegistrationInfoJson(username, Constants.USER_ROLE);
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                post(SYSTEM_USER_REGISTRATION_BATCH_CREATE)
+                    .principal(sysAdminPrincipal)
+                    .contentType(MediaType.APPLICATION_JSON_VALUE)
+                    .content("{\"parsedUsers\":[" + userJson + "]}"))
+            .andExpect(status().is2xxSuccessful())
+            .andExpect(noErrorMessages())
+            .andReturn();
+
+    Map resultMap = parseJSONObjectFromResponseStream(result);
+    List<String> resultMsgs = (List<String>) resultMap.get("data");
+    assertThat(resultMsgs).contains(BATCH_REGISTRATION_COMPLETE_MSG);
+    User createdUser = userMgr.getUserByUsername(username);
+    assertNotNull(createdUser);
+    assertEquals(username + "@test", createdUser.getEmail());
+    assertTrue(createdUser.hasRole(Role.USER_ROLE));
   }
 
   @Test
