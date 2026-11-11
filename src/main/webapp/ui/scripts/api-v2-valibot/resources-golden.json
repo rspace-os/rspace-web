@@ -2,12 +2,14 @@
   "containers": {
     "list": "listContainers",
     "count": "countContainers",
-    "get": "getContainer"
+    "get": "getContainer",
+    "audit": "listContainerAuditEvents"
   },
   "instruments": {
     "list": "listInstruments",
     "count": "countInstruments",
     "get": "getInstrument",
+    "audit": "listInstrumentAuditEvents",
     "runtimeFields": "getInstrumentRuntimeFields"
   },
   "maintenances": {
@@ -24,6 +26,7 @@
   "users": {
     "list": "listUsers",
     "count": "countUsers",
-    "get": "getUser"
+    "get": "getUser",
+    "audit": "listUserAuditEvents"
   }
 }

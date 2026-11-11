@@ -82,7 +82,8 @@ final class ApiV2OpenApiQueryParameters {
               CollectionQueryLimits.MAX_SORT_FIELDS));
       parameters.add(sort);
       parameters.add(components.reference(PARAMETERS, "Page", pageParameter(text)));
-      parameters.add(components.reference(PARAMETERS, "Limit", limitParameter(text)));
+      parameters.add(
+          components.reference(PARAMETERS, "Limit", limitParameter(text.get(Key.PARAMETER_LIMIT))));
       parameters.add(
           components.reference(
               PARAMETERS,
@@ -286,7 +287,7 @@ final class ApiV2OpenApiQueryParameters {
         description);
   }
 
-  private static Map<String, Object> pageParameter(ApiV2OpenApiText text) {
+  static Map<String, Object> pageParameter(ApiV2OpenApiText text) {
     return parameter(
         "page",
         "query",
@@ -295,7 +296,7 @@ final class ApiV2OpenApiQueryParameters {
         text.get(Key.PARAMETER_PAGE));
   }
 
-  private static Map<String, Object> limitParameter(ApiV2OpenApiText text) {
+  static Map<String, Object> limitParameter(String description) {
     return parameter(
         "limit",
         "query",
@@ -309,6 +310,6 @@ final class ApiV2OpenApiQueryParameters {
             CollectionQueryLimits.MAX_PAGE_SIZE,
             "default",
             20),
-        text.get(Key.PARAMETER_LIMIT));
+        description);
   }
 }

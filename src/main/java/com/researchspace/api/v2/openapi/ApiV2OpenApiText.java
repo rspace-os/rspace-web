@@ -135,7 +135,17 @@ public final class ApiV2OpenApiText {
     ACCESS_DOCUMENT("resourceAccess.document"),
     ACCESS_OWNER_REQUIRED("resourceAccess.ownerRequired"),
     ACCESS_STALE("resourceAccess.stale"),
-    RESPONSE_VERSION_CHANGED("responses.versionChanged");
+    RESPONSE_VERSION_CHANGED("responses.versionChanged"),
+    AUDIT_DESCRIPTION("audit.description"),
+    AUDIT_ACCESS("audit.access"),
+    AUDIT_START("audit.start"),
+    AUDIT_END("audit.end"),
+    AUDIT_SEARCH("audit.search"),
+    AUDIT_ACTIONS("audit.actions"),
+    AUDIT_SUCCESS("audit.success"),
+    AUDIT_INVALID("audit.invalid"),
+    AUDIT_UNAVAILABLE("audit.unavailable"),
+    AUDIT_SUMMARY("audit.summary");
 
     static final String PREFIX = "api.v2.openapi.";
 
