@@ -60,6 +60,31 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void matchesPathsExactlyAndOnlyOnTheGivenFilesystem() {
+    User u = createAndSaveUserIfNotExists("nfslinkdao4");
+    initialiseContentWithEmptyContent(u);
+    NfsFileStore store = savedStore(u, "");
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(u, "any");
+    Field field = doc.getFields().get(0);
+    nfsDao.saveFieldLink(new NfsFieldLink(field, store, "/data/Report.csv"));
+    nfsDao.saveFieldLink(new NfsFieldLink(field, store, "/data/a//b"));
+    NfsFileSystem otherFs = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsDao.saveNfsFileSystem(otherFs);
+    NfsFileStore otherFsStore = GalleryFilestoreTestUtils.createFileStore("s3-other", u, otherFs);
+    nfsDao.saveNfsFileStore(otherFsStore);
+    StructuredDocument otherDoc = createBasicDocumentInRootFolderWithText(u, "any");
+    nfsDao.saveFieldLink(
+        new NfsFieldLink(otherDoc.getFields().get(0), otherFsStore, "/data/report.csv"));
+
+    Long fsId = store.getFileSystem().getId();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/report.csv"))).isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/a/b"))).isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv", "data/a//b")))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(doc.getId());
+  }
+
+  @Test
   public void ignoresDeletedDocumentsAndDeletesRows() {
     User u = createAndSaveUserIfNotExists("nfslinkdao2");
     initialiseContentWithEmptyContent(u);

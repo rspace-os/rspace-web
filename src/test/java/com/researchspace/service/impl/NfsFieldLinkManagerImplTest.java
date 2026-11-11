@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -29,6 +30,7 @@ import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -113,6 +115,17 @@ class NfsFieldLinkManagerImplTest {
   }
 
   @Test
+  void reindexSkipsLinksTooLongForTheIndexInsteadOfFailingTheSave() {
+    when(nfsDao.getFieldLinks(5L)).thenReturn(List.of());
+    stubParse("html", new NfsElement(1L, "/" + "a".repeat(NfsFieldLink.MAX_PATH_LENGTH)));
+    when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
+
+    manager.reindex(field, "html");
+
+    verify(nfsDao, never()).saveFieldLink(any());
+  }
+
+  @Test
   void reindexWithBlankContentDeletesAllRowsWithoutParsing() {
     NfsFieldLink row = new NfsFieldLink(field, store, "/a.dat");
     when(nfsDao.getFieldLinks(5L)).thenReturn(List.of(row));
@@ -134,13 +147,13 @@ class NfsFieldLinkManagerImplTest {
     owner.setFirstName("Grace");
     owner.setLastName("Hopper");
     hidden.setOwner(owner);
+    when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
     when(nfsDao.getDocumentsLinkingTo(1L, List.of("data/x.dat")))
         .thenReturn(List.of(readable, hidden));
     when(permUtils.isPermitted(readable, PermissionType.READ, user)).thenReturn(true);
     when(permUtils.isPermitted(hidden, PermissionType.READ, user)).thenReturn(false);
 
-    List<RecordInformation> result =
-        manager.getLinkedDocuments(store.getFileSystem(), List.of("/data/x.dat/"), user);
+    List<RecordInformation> result = manager.getLinkedDocuments(1L, "/x.dat/", user);
 
     assertEquals(2, result.size());
     assertEquals("SD11", result.get(0).getOid().getIdString());
@@ -166,8 +179,18 @@ class NfsFieldLinkManagerImplTest {
     when(nfsDao.getDocumentsLinkingTo(1L, List.of(""))).thenReturn(List.of());
 
     manager.getLinkedDocuments(1L, "/", user);
+  }
 
-    verify(nfsDao).getDocumentsLinkingTo(1L, List.of(""));
+  @Test
+  void lookupDeniedByTheFilesystemAclNeverReadsTheIndex() {
+    when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
+    doThrow(new AuthorizationException("denied"))
+        .when(aclChecker)
+        .assertCanRead(user, store.getFileSystem());
+
+    assertThrows(
+        AuthorizationException.class, () -> manager.getLinkedDocuments(1L, "/a.dat", user));
+    verify(nfsDao, never()).getDocumentsLinkingTo(any(), any());
   }
 
   @Test

@@ -30,6 +30,7 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFileRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
+import com.researchspace.api.v1.model.NfsUserFileSystem;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -44,6 +45,7 @@ import com.researchspace.netfiles.FilestoreAuditMetadata;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
+import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
@@ -58,6 +60,7 @@ import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.service.metadata.GeneratedSidecarFile;
 import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
@@ -819,6 +822,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     readable.setOwnerFullName("Ada Lovelace");
     RecordInformation hidden = new RecordInformation();
     hidden.setOwnerFullName("Grace Hopper");
+    when(nfsManager.getNfsFileStore(1L))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", user));
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user))
         .thenReturn(List.of(readable, hidden));
 
@@ -831,6 +836,51 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertNull(result.get(1).getId());
     assertNull(result.get(1).getGlobalId());
     assertEquals("Grace Hopper", result.get(1).getOwnerFullName());
+  }
+
+  private NfsClient loginToIrodsFilestore() {
+    NfsFileStore store = GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(1L, "i", user);
+    when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
+    credentialsStore
+        .getCredentialsMapCache()
+        .put(
+            new NfsUserFileSystem(user, store.getFileSystem().getId()),
+            new ApiNfsCredentials(user, USERNAME, PASSWORD));
+    NfsClient client = mock(NfsClient.class);
+    when(nfsAuthentication.login(eq(USERNAME), eq(PASSWORD), any(), any())).thenReturn(client);
+    return client;
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedWithoutLogin() {
+    when(nfsManager.getNfsFileStore(1L))
+        .thenReturn(GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(1L, "i", user));
+
+    assertThrows(
+        ExternalApiAuthorizationException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedWhenItemNotReachable()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenThrow(new IOException("no access"));
+
+    assertThrows(
+        NotFoundException.class, () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForReachableFolder()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenReturn(new NfsFolderDetails("XRD"));
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD", user)).isEmpty();
   }
 
   @Test

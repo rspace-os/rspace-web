@@ -10,22 +10,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.TableGenerator;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 /** One Filestore link found in the content of a text field: a row of the Filestore link index. */
 @Entity
 @Getter
-@EqualsAndHashCode(of = {"field", "fileStore", "relPath"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NfsFieldLink implements Serializable {
 
   private static final long serialVersionUID = 1659L;
+
+  /** Column length of both paths; longer links are not indexed. */
+  public static final int MAX_PATH_LENGTH = 1024;
 
   @Id
   @GeneratedValue(strategy = GenerationType.TABLE, generator = "nfs_field_link_gen")
@@ -35,7 +34,6 @@ public class NfsFieldLink implements Serializable {
       pkColumnName = "sequence_name",
       valueColumnName = "next_val",
       allocationSize = 50)
-  @Setter(AccessLevel.PACKAGE)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -47,10 +45,10 @@ public class NfsFieldLink implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   private NfsFileSystem fileSystem;
 
-  @Column(nullable = false, length = 1024)
+  @Column(nullable = false, length = MAX_PATH_LENGTH)
   private String relPath;
 
-  @Column(nullable = false, length = 1024)
+  @Column(nullable = false, length = MAX_PATH_LENGTH)
   private String absolutePath;
 
   public NfsFieldLink(Field field, NfsFileStore fileStore, String relPath) {
@@ -62,15 +60,10 @@ public class NfsFieldLink implements Serializable {
   }
 
   /**
-   * The one normalisation rule for paths on a filesystem: no leading, trailing or doubled slashes,
-   * so the root of the filesystem is the empty string.
+   * The one normalisation rule for paths on a filesystem: no leading or trailing slashes, so the
+   * root of the filesystem is the empty string. Inner slashes are kept, as S3 keys are flat.
    */
   public static String normalisePath(String path) {
-    if (path == null) {
-      return "";
-    }
-    return Arrays.stream(path.split("/"))
-        .filter(segment -> !segment.isEmpty())
-        .collect(Collectors.joining("/"));
+    return StringUtils.strip(path, "/");
   }
 }

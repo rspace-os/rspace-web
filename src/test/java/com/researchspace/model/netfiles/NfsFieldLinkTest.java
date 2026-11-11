@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class NfsFieldLinkTest {
 
   @Test
-  void absolutePathCombinesFilestoreBaseAndLinkPathNormalised() {
+  void absolutePathCombinesFilestoreBaseAndLinkPathKeepingInnerSlashes() {
     NfsFileStore store =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", new User("u"));
     store.setPath("/dev-folder/");
@@ -20,15 +20,16 @@ class NfsFieldLinkTest {
 
     NfsFieldLink link = new NfsFieldLink(field, store, "/XRD//run.dat/");
 
-    assertEquals("dev-folder/XRD/run.dat", link.getAbsolutePath());
+    // S3 keys are flat, so an inner doubled slash names a different object
+    assertEquals("dev-folder/XRD//run.dat", link.getAbsolutePath());
     assertEquals("/XRD//run.dat/", link.getRelPath());
     assertSame(store.getFileSystem(), link.getFileSystem());
   }
 
   @Test
-  void normalisePathTreatsRootAndNullAsEmpty() {
-    assertEquals("", NfsFieldLink.normalisePath(null));
+  void normalisePathStripsOnlyBoundarySlashes() {
     assertEquals("", NfsFieldLink.normalisePath("/"));
     assertEquals("a/b", NfsFieldLink.normalisePath("//a/b/"));
+    assertEquals("a//b", NfsFieldLink.normalisePath("/a//b"));
   }
 }

@@ -17,8 +17,9 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    cost grows with the instance and would be paid on every sidecar preview and every API call;
    predictable lookups won.
 2. Each row stores the filesystem and the normalised absolute path (filestore base path plus the
-   link's relative path, with no leading, trailing or doubled slashes) next to the filestore and the
-   relative path. Filestores are per user and point at arbitrary base paths of one filesystem, and a
+   link's relative path, with no leading or trailing slashes) next to the filestore and the relative
+   path. Inner slashes are kept and paths compare case-sensitively, because S3 keys are flat and
+   `data/a//b` or `Data/a` name different objects. Filestores are per user and point at arbitrary base paths of one filesystem, and a
    filestore's path cannot change after creation, so the absolute path is safe to denormalise and
    makes "who links this S3 key" one indexed equality query across every user's filestore.
 3. Rows follow autosaved content, as `FieldAttachment` does: a link counts as soon as it is in the
