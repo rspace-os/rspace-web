@@ -94,7 +94,7 @@ pipeline {
     }
 }
 
-// The version declared in build.gradle (e.g. '2.28.0-SNAPSHOT'), without the per-build timestamp suffix.
+// The version declared in build.gradle (e.g. '2.29.0-SNAPSHOT'), without the per-build timestamp suffix.
 @NonCPS
 def gradleBaseVersion (String buildGradle) {
     def m = buildGradle =~ /(?m)^version\s*=\s*["']([^"'$]*)/
