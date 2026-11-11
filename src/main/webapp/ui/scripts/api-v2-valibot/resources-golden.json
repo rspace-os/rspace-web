@@ -1,0 +1,27 @@
+{
+  "containers": {
+    "list": "listContainers",
+    "count": "countContainers",
+    "get": "getContainer"
+  },
+  "instruments": {
+    "list": "listInstruments",
+    "count": "countInstruments",
+    "get": "getInstrument",
+    "runtimeFields": "getInstrumentRuntimeFields"
+  },
+  "users": {
+    "list": "listUsers",
+    "count": "countUsers",
+    "get": "getUser"
+  },
+  "config": {
+    "get": "getApiV2Config"
+  },
+  "openapi.json": {
+    "get": "getApiV2OpenApiDocument"
+  },
+  "oauth": {
+    "create": "createUiOAuthToken"
+  }
+}
