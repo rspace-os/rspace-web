@@ -447,16 +447,10 @@ walk `node_modules`. Jenkins runs the same `./gradlew` commands; see the `Jenkin
 
 ### Reusing work without additional runners
 
-The existing change-detection job compiles main and test Java once when Java jobs are selected.
-`scripts/gradle/share-ci-compilation.py` exports newly written compilation entries, with all
-non-compilation caching disabled by its init script. Existing entries restored from main stay
-in the global archive; the artifact contains only the new entries. Java jobs restore the
-artifact from this same workflow run, named by checkout SHA and JDK, before invoking Gradle.
-Filtered resources are generated per job and database test results are never shared. Failed
-preparation or a missing artifact falls back to ordinary per-job compilation. This adds
-compilation to the initial gate, including the wait before frontend jobs on mixed changes,
-but removes repeated compilation from the existing Java runners. Check both elapsed time and
-runner minutes when measuring the next CI run.
+Change detection only selects jobs. Compilation runs independently on each Java runner,
+using the main-only task cache where available. The experimental within-run compilation
+producer was removed after CI showed that its position in change detection delayed frontend
+jobs and increased elapsed time. No additional runners are used.
 
 ## CI optimization verification
 
