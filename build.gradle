@@ -1018,8 +1018,8 @@ tasks.register('checkPinnedVersions') {
   def pinVersions = pinnedModules.collectEntries { ga, m -> [(ga): m.version] }
   // Versions written in the dependencies blocks, which the forced pins silently override. The jetty
   // configurations are left out: gradle/jetty.gradle clears the pins there on purpose.
-  def declared = configurations.findAll { !it.name.startsWith('jetty') }.collectMany { conf ->
-    conf.dependencies.withType(ExternalModuleDependency).findAll { it.version }
+  def declared = configurations.matching { !it.name.startsWith('jetty') }.collectMany { conf ->
+    conf.dependencies.withType(ExternalModuleDependency).matching { it.version }
       .collect { "${conf.name} ${it.group}:${it.name} ${it.version}".toString() }
   }.unique()
   inputs.file('gradle/pinned-versions.txt')
