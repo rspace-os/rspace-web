@@ -122,9 +122,38 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
+    assertItemReachableWithOwnLogin(user, filestoreId, remotePath);
     return nfsFieldLinkManager.getLinkedDocuments(filestoreId, remotePath, user).stream()
         .map(ApiGalleryFilestoreLinkedDocument::new)
         .toList();
+  }
+
+  /**
+   * The link index spans every user's filestores, so on filesystems with per-user logins the
+   * caller's own login must reach the item. Filesystems without them are gated by their allowlists
+   * alone, and an unknown filestore is left to the lookup's 404.
+   */
+  private void assertItemReachableWithOwnLogin(User user, Long filestoreId, String remotePath) {
+    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    if (filestore == null
+        || NfsAuthenticationType.NONE.equals(filestore.getFileSystem().getAuthType())) {
+      return;
+    }
+    NfsClient client = getNfsClientForUserAndFilesystem(user, filestore.getFileSystem());
+    NfsTarget target = new NfsTarget(filestore.getAbsolutePath(remotePath), null);
+    try {
+      if (client.queryForNfsFile(target) != null || client.queryForNfsFolder(target) != null) {
+        return;
+      }
+    } catch (IOException e) {
+      log.warn(
+          "Filestore {} item {} not reachable for {}",
+          filestoreId,
+          remotePath,
+          user.getUsername(),
+          e);
+    }
+    throw new NotFoundException(getMessage("netFileStores.export.resourceNotAccessible"));
   }
 
   /**

@@ -31,6 +31,15 @@
             </column>
         </createTable>
         <sql>alter table NfsFieldLink engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>
+        <!-- createIndex cannot express the (191) prefix -->
         <sql>create index idx_nfsfieldlink_fs_path on NfsFieldLink (fileSystem_id, absolutePath(191));</sql>
+    </changeSet>
+
+    <changeSet id="2026-11-11-nfs-field-link-exact-paths" context="run" author="nferrante">
+        <comment>RSDEV-1659: compare NfsFieldLink paths case-sensitively, as S3 keys and most filesystems do</comment>
+        <!-- ponytail: utf8mb4_bin still pads trailing spaces; a NO PAD collation differs between MariaDB and MySQL -->
+        <sql>alter table NfsFieldLink
+            modify relPath VARCHAR(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            modify absolutePath VARCHAR(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;</sql>
     </changeSet>
 </databaseChangeLog>

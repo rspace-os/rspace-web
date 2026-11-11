@@ -9,7 +9,6 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
-import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RecordInformation;
@@ -18,7 +17,6 @@ import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFieldLinkManager;
 import jakarta.ws.rs.NotFoundException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +51,13 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
         log.debug("Not indexing link to unknown filestore {} in field {}", link, field.getId());
         continue;
       }
-      nfsDao.saveFieldLink(new NfsFieldLink(field, store, link.getRight()));
+      NfsFieldLink row = new NfsFieldLink(field, store, link.getRight());
+      if (row.getRelPath().length() > NfsFieldLink.MAX_PATH_LENGTH
+          || row.getAbsolutePath().length() > NfsFieldLink.MAX_PATH_LENGTH) {
+        log.warn("Not indexing link {} in field {}: path too long", link, field.getId());
+        continue;
+      }
+      nfsDao.saveFieldLink(row);
     }
   }
 
@@ -81,15 +85,8 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
               "netFileStores.errors.fileStoreNotFound", new Object[] {filestoreId}));
     }
     aclChecker.assertCanRead(user, filestore.getFileSystem());
-    String path = filestore.getAbsolutePath(remotePath == null ? "" : remotePath);
-    return getLinkedDocuments(filestore.getFileSystem(), List.of(path), user);
-  }
-
-  @Override
-  public List<RecordInformation> getLinkedDocuments(
-      NfsFileSystem fileSystem, Collection<String> absolutePaths, User user) {
-    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
-    return nfsDao.getDocumentsLinkingTo(fileSystem.getId(), paths).stream()
+    String path = NfsFieldLink.normalisePath(filestore.getAbsolutePath(remotePath));
+    return nfsDao.getDocumentsLinkingTo(filestore.getFileSystem().getId(), List.of(path)).stream()
         .map(doc -> toRecordInfoOrPlaceholder(doc, user))
         .toList();
   }

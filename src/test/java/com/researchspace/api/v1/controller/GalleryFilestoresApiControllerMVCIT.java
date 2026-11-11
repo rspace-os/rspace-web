@@ -266,36 +266,38 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
   public void linkedDocuments_listsTheDocumentWhoseFieldLinksTheItem() throws Exception {
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(null);
     nfsManager.saveNfsFileSystem(fs);
-    NfsFileStore store = nfsManager.createAndSaveNewFileStore(fs.getId(), "s3", "/data", anyUser);
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "v1");
-    Field field = doc.getFields().get(0);
-    recordMgr.saveTemporaryDocument(
-        field.getId(),
-        anyUser,
-        richTextUpdater.generateURLStringForNfs(store.getId(), "/XRD/run.dat", false));
-    recordMgr.saveStructuredDocument(doc.getId(), anyUser.getUsername(), true, null);
+    try {
+      NfsFileStore store = nfsManager.createAndSaveNewFileStore(fs.getId(), "s3", "/data", anyUser);
+      StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "v1");
+      Field field = doc.getFields().get(0);
+      recordMgr.saveTemporaryDocument(
+          field.getId(),
+          anyUser,
+          richTextUpdater.generateURLStringForNfs(store.getId(), "/XRD/run.dat", false));
+      recordMgr.saveStructuredDocument(doc.getId(), anyUser.getUsername(), true, null);
 
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForGet(
-                        API_VERSION.ONE,
-                        apiKey,
-                        "/gallery/filestores/" + store.getId() + "/linkedDocuments",
-                        anyUser)
-                    .param("remotePath", "/XRD/run.dat"))
-            .andExpect(status().isOk())
-            .andReturn();
+      MvcResult result =
+          mockMvc
+              .perform(
+                  createBuilderForGet(
+                          API_VERSION.ONE,
+                          apiKey,
+                          "/gallery/filestores/" + store.getId() + "/linkedDocuments",
+                          anyUser)
+                      .param("remotePath", "/XRD/run.dat"))
+              .andExpect(status().isOk())
+              .andReturn();
 
-    assertNull(result.getResolvedException());
-    List<ApiGalleryFilestoreLinkedDocument> rows =
-        mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
-    assertThat(rows)
-        .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
-        .containsExactly(doc.getGlobalIdentifier());
-
-    // the database is cleaned only after the class, and testGetFilesystems expects no active one
-    fs.setDisabled(true);
-    nfsManager.saveNfsFileSystem(fs);
+      assertNull(result.getResolvedException());
+      List<ApiGalleryFilestoreLinkedDocument> rows =
+          mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
+      assertThat(rows)
+          .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
+          .containsExactly(doc.getGlobalIdentifier());
+    } finally {
+      // the database is cleaned only after the class, and testGetFilesystems expects no active one
+      fs.setDisabled(true);
+      nfsManager.saveNfsFileSystem(fs);
+    }
   }
 }
