@@ -90,6 +90,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -816,6 +818,37 @@ public class IntegrationsHandlerTest {
     assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_APIKEY, null);
     assertThat(((Map<String, String>) options.get("null")))
         .containsEntry(PYRAT_URL, "http://pyrat1.server.com/");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://dsw.example.org, https://dsw.example.org",
+    "https://dsw.example.org/, https://dsw.example.org",
+    "'  https://dsw.example.org//  ', https://dsw.example.org",
+    "'https://example.org/dsw/ /', https://example.org/dsw"
+  })
+  void normalisesDswUrl(String savedUrl, String expected) {
+    Map<String, String> options = new HashMap<>();
+    options.put(DSW_URL, savedUrl);
+
+    assertEquals(expected, IntegrationsHandlerImpl.withNormalisedDswUrl(options).get(DSW_URL));
+  }
+
+  @Test
+  void savingDswOptionsStoresUrlWithoutTrailingSlash() {
+    when(appCfgMgr.findByAppConfigElementSetId(1L)).thenReturn(Optional.empty());
+    Map<String, String> dswOptions = new HashMap<>();
+    dswOptions.put(DSW_ALIAS, "dswAlias");
+    dswOptions.put(DSW_URL, "https://dsw.example.org/ ");
+    dswOptions.put(DSW_APIKEY, null);
+
+    handler.saveAppOptions(1L, dswOptions, DSW_APP_NAME, false, subject);
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Map<String, String>> saved = ArgumentCaptor.forClass(Map.class);
+    verify(appCfgMgr)
+        .saveAppConfigElementSet(saved.capture(), eq(1L), eq(false), eq(subject), anyString());
+    assertEquals("https://dsw.example.org", saved.getValue().get(DSW_URL));
   }
 
   @Test

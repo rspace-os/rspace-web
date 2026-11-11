@@ -136,24 +136,6 @@ class DSWClientTest {
     assertEquals(SERVER + "/wizard-api/", client.getApiBaseUrl(SERVER));
   }
 
-  @ParameterizedTest
-  @CsvSource({
-    "https://dsw.example.com, https://dsw.example.com",
-    "https://dsw.example.com/, https://dsw.example.com",
-    "https://dsw.example.com//, https://dsw.example.com",
-    "https://example.org/dsw/, https://example.org/dsw"
-  })
-  void dropsTrailingSlashFromSavedUrl(String savedUrl, String expected) {
-    assertEquals(expected, DSWClient.withoutTrailingSlash(savedUrl));
-  }
-
-  @Test
-  void savedUrlWithTrailingSlashGivesSingleSlashBeforeApiPath() {
-    server.expect(requestTo(INFO_URL)).andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
-
-    assertEquals(SERVER + "/api/", client.getApiBaseUrl(SERVER + "/"));
-  }
-
   @Test
   void throwsWithoutCachingWhenRedirectIsNotFollowed() {
     String httpServer = "http://dsw.example.com";
@@ -243,7 +225,7 @@ class DSWClientTest {
 
     assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
     ticker.advanceMinutes(DSWClient.DSW_API_PATH_CACHE_TTL_MINUTES - 1);
-    assertEquals(INFO_URL, client.getApiBaseUrl(SERVER + "/"));
+    assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
     server.verify();
   }
 
@@ -283,7 +265,7 @@ class DSWClientTest {
   void usesCurrentProjectsPathForV5Server() {
     server.expect(requestTo(INFO_URL)).andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
 
-    assertEquals(SERVER + "/projects/", client.getProjectsBaseUrl(SERVER + "/"));
+    assertEquals(SERVER + "/projects/", client.getProjectsBaseUrl(SERVER));
   }
 
   @Test
@@ -488,6 +470,62 @@ class DSWClientTest {
       assertEquals(1, requests.get());
     } finally {
       dsw.stop(0);
+    }
+  }
+
+  @Test
+  void errorStatusWithStreamingBodyFailsFastAndClosesConnection() throws Exception {
+    CountDownLatch clientDisconnected = new CountDownLatch(1);
+    AtomicInteger requests = new AtomicInteger();
+    HttpServer dsw =
+        HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+    dsw.createContext(
+        "/api/",
+        exchange -> {
+          requests.incrementAndGet();
+          exchange.getResponseHeaders().add("Content-Type", "text/html");
+          exchange.sendResponseHeaders(503, 0);
+          OutputStream out = exchange.getResponseBody();
+          try {
+            // Each byte arrives well within the read timeout, so the body never ends on its own.
+            for (int i = 0; i < 100; i++) {
+              out.write(' ');
+              out.flush();
+              Thread.sleep(100);
+            }
+          } catch (IOException e) {
+            clientDisconnected.countDown();
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          } finally {
+            exchange.close();
+          }
+        });
+    ExecutorService serverThreads = Executors.newCachedThreadPool();
+    dsw.setExecutor(serverThreads);
+    dsw.start();
+    String dswUrl = "http://localhost:" + dsw.getAddress().getPort();
+    DSWClient realConnectionClient =
+        new DSWClient(
+            null,
+            null,
+            null,
+            null,
+            restTemplate,
+            DSWClient.buildVersionCheckRestTemplate(Duration.ofSeconds(5), Duration.ofSeconds(5)),
+            ticker);
+    try {
+      assertTimeoutPreemptively(
+          Duration.ofSeconds(3),
+          () ->
+              assertThrows(
+                  HttpServerErrorException.class,
+                  () -> realConnectionClient.getApiBaseUrl(dswUrl)));
+      assertTrue(clientDisconnected.await(3, TimeUnit.SECONDS));
+      assertEquals(1, requests.get());
+    } finally {
+      dsw.stop(0);
+      serverThreads.shutdownNow();
     }
   }
 

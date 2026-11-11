@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -54,10 +55,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -278,8 +283,8 @@ public class DSWClient {
     return resolveServer(savedUrl).projectsBaseUrl();
   }
 
-  private DSWServer resolveServer(String savedUrl) {
-    String serverUrl = withoutTrailingSlash(savedUrl);
+  // The stored URL has no trailing slash (see IntegrationsHandlerImpl.saveAppOptions).
+  private DSWServer resolveServer(String serverUrl) {
     return new DSWServer(serverUrl, getPaths(serverUrl));
   }
 
@@ -320,11 +325,6 @@ public class DSWClient {
     return resolveServer(connCfg).apiBaseUrl();
   }
 
-  /** The DSW paths start with a slash, so any trailing slash on the saved URL is dropped. */
-  static String withoutTrailingSlash(String url) {
-    return url.replaceAll("/+$", "");
-  }
-
   /** The parts of the version info response that detection uses. */
   private record VersionInfoResponse(
       HttpStatusCode status, String location, String body, boolean tooLarge) {}
@@ -333,34 +333,60 @@ public class DSWClient {
    * Requests the version info, or returns null for a 404. Runs on {@link #VERSION_CHECK_EXECUTOR};
    * stops reading at the deadline or size limit and closes its own connection, since a read blocked
    * in another thread holds a lock that would stall a disconnect from the waiting thread.
+   *
+   * <p>Uses the request factory directly rather than {@code RestTemplate.execute}: its error
+   * handler reads the whole body of a 4xx or 5xx response, with none of these limits.
    */
   private VersionInfoResponse requestVersionInfo(String serverUrl, long deadlineNanos) {
+    URI uri = UriComponentsBuilder.fromUriString(serverUrl + DSW_PATH_API_CURRENT).build().toUri();
     try {
-      return versionCheckRestTemplate.execute(
-          UriComponentsBuilder.fromUriString(serverUrl + DSW_PATH_API_CURRENT).build().toUri(),
-          HttpMethod.GET,
-          request ->
-              request.getHeaders().setAccept(Collections.singletonList(MediaType.APPLICATION_JSON)),
-          response -> {
-            // Read before the body: reading it may disconnect, after which the JDK resets the
-            // status.
-            HttpStatusCode status = response.getStatusCode();
-            // Raw text, only for a redirect: a malformed Location must not fail parsing.
-            String location =
-                status.is3xxRedirection()
-                    ? response.getHeaders().getFirst(HttpHeaders.LOCATION)
-                    : null;
-            String body = readVersionInfoBody(response.getBody(), serverUrl, deadlineNanos);
-            return new VersionInfoResponse(status, location, body, body == null);
-          });
-    } catch (HttpClientErrorException.NotFound e) {
-      // Log only the status: the exception message can include part of the response body.
-      log.debug(
-          "No DSW version info at {} (HTTP 404), assuming older than {}",
-          serverUrl,
-          DSW_API_PATH_CHANGE_VERSION);
-      return null;
+      ClientHttpRequest request =
+          versionCheckRestTemplate.getRequestFactory().createRequest(uri, HttpMethod.GET);
+      request.getHeaders().setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+      try (ClientHttpResponse response = request.execute()) {
+        // Read before the body: reading it may disconnect, after which the JDK resets the status.
+        HttpStatusCode status = response.getStatusCode();
+        if (status.is2xxSuccessful()) {
+          String body = readVersionInfoBody(response.getBody(), serverUrl, deadlineNanos);
+          return new VersionInfoResponse(status, null, body, body == null);
+        }
+        // Raw text, only for a redirect: a malformed Location must not fail parsing.
+        String location =
+            status.is3xxRedirection() ? response.getHeaders().getFirst(HttpHeaders.LOCATION) : null;
+        // The body is not needed: close the connection so that closing the response cannot read
+        // the rest of it. The stream is opened first so that close() does not open it afterwards.
+        response.getBody();
+        disconnectVersionCheck();
+        if (status.value() == HttpStatus.NOT_FOUND.value()) {
+          log.debug(
+              "No DSW version info at {} (HTTP 404), assuming older than {}",
+              serverUrl,
+              DSW_API_PATH_CHANGE_VERSION);
+          return null;
+        }
+        if (status.is3xxRedirection()) {
+          return new VersionInfoResponse(status, location, null, false);
+        }
+        throw errorFor(status, uri);
+      }
+    } catch (IOException e) {
+      throw new ResourceAccessException(
+          "I/O error on GET request for \"" + uri + "\": " + e.getMessage(), e);
     }
+  }
+
+  // Same exception types as RestTemplate's error handler, without the response body.
+  private static RestClientException errorFor(HttpStatusCode status, URI uri) {
+    String message = "HTTP " + status.value() + " from DSW version check at " + uri;
+    if (status.is4xxClientError()) {
+      return HttpClientErrorException.create(
+          message, status, "", new HttpHeaders(), new byte[0], null);
+    }
+    if (status.is5xxServerError()) {
+      return HttpServerErrorException.create(
+          message, status, "", new HttpHeaders(), new byte[0], null);
+    }
+    return new RestClientException(message);
   }
 
   /** Returns the body as text, or null if it is larger than any real version info. */
