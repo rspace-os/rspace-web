@@ -31,7 +31,7 @@ final class CollectionAccessEvaluator<T> {
     if (selector instanceof FilterSelector.RelationshipPart<?> relationshipPart) {
       return relationshipPart.relationship().readAccess().allowsField(context);
     }
-    return false;
+    return member instanceof FilterOnly<?>;
   }
 
   Set<String> unreadableFields(AccessContext context) {
