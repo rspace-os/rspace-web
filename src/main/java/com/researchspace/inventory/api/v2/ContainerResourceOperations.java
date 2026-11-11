@@ -26,6 +26,7 @@ public class ContainerResourceOperations implements ResourceOperations<Container
   ApiV2ResourceSpec<Container, Long> containerApiV2Resource() {
     return ApiV2ResourceSpec.readOnly(
             ApiV2ContainerResource.description(access), this, Long::valueOf)
+        .audit(ResourceAuditPolicy.standard(this))
         .tagDocumentation(
             "Inventory containers and their scheduling and access metadata.", "Inventory")
         .build();

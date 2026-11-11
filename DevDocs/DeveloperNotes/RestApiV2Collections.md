@@ -197,6 +197,7 @@ ApiV2ResourceSpec<Widget, Long> widgetApiV2Resource() {
 | `scalarReader(reader)` | Entity reads |
 | `runtimeFields(providers)` | No runtime providers |
 | `resourceAccess(spec)` | No access-document routes |
+| `audit(policy)` | No audit route |
 
 `@ApiV2ResourceDefinition.singular` supplies irregular singular operation names through the
 collection description. Programmatic descriptions can supply the singular in their constructor.
@@ -394,6 +395,53 @@ Set `exposedOperations` in `ApiV2ResourceSpec` to choose HTTP routes and OpenAPI
 access checks, including for anonymous callers. For read-only collections, expose `LIST`, `COUNT`,
 and `READ` and use a read-only access policy.
 
+### Audit route (opt-in)
+
+Expose audit explicitly with `.audit(ResourceAuditPolicy.standard(operations))` on the spec builder.
+A present policy requires inherited or direct `@AuditTrailData` metadata and exactly one public
+`@AuditTrailIdentifier` method. Custom policies own audit lookup, authorization and related events.
+Without a policy, the route returns 404 without looking up an entity. Maintenance has no audit
+route. `auditFields=false` controls automatic created/updated fields separately.
+
+Each resource with an audit policy has this route:
+
+| Method and route | Result |
+| --- | --- |
+| `GET /api/v2/widgets/{id}/audit` | Capped newest-first audit events for one readable resource. |
+
+The caller must authenticate with an API key or OAuth bearer token and have resource read access.
+The audit handler applies its normal subject visibility rules.
+
+The route accepts `start`, `end`, repeated `actions`, and `q`. It returns
+`{docs, limit, truncated, start, endExclusive}`. The effective interval includes `start` and excludes
+`endExclusive`, the midnight after the latest completed UTC day permitted by `end`. For compatibility,
+an `end` in the final second of a UTC day includes that day. Today's incomplete day is excluded.
+
+The default response cap is 1,000 events, configured by the positive `api.v2.audit.resultCeiling`
+property. `truncated` is true only when more authorized, filtered events match than the returned
+`limit`. Narrow the date range, actions or `q` to reach older events. The underlying log is unbounded.
+There are no paging, snapshot or total-count parameters or response members.
+
+Text search is case-insensitive literal matching over readable fields. The maximum search window
+is 183 elapsed days to bound scan cost; wider windows return `400` with
+`errors.api.v2.audit.range.tooWide`. Without dates, the server uses the last 183 days.
+`start` after `end` returns `400`.
+
+Every eligible line is scanned, even after reaching the cap. Each authorized filtered match is
+projected to its public fields and deterministic `eventId` before a bounded heap retains the newest
+N events. Public order is timestamp descending, then `eventId` descending; exact duplicates remain
+separate occurrences. Memory use is O(N). The event hash is not a source-log signature.
+Malformed, unreadable or unstable eligible data returns `503` without partial data.
+
+The framework reads `@AuditTrailData` and the single `@AuditTrailIdentifier` method from the entity.
+Startup validation rejects an audit policy without this metadata. Use a stable identifier that is
+unique across audit domains. An entity in the `UNKNOWN` audit domain must include the resource name
+in its audit identifier.
+
+The response contains only audit properties with matching readable REST API v2 fields or
+relationships. Excluding the audit identifier and audit-only properties prevents field-access
+bypasses.
+
 ## Resource configuration
 
 ### `@ApiV2ResourceDefinition`
@@ -403,7 +451,7 @@ and `READ` and use a read-only access policy.
 | `name` | Stable plural resource name and URL segment. The name must be unique. |
 | `entity` | Domain entity for the resource. The entity must be unique in the resource graph. |
 | `id` | Resource ID field. The builder makes this field read-only. |
-| `auditFields` | Adds available created/updated fields. The default is `true`. |
+| `auditFields` | Adds available created/updated fields. The default is `true`; this option does not expose the audit route. |
 
 Use a record for the annotated type. The framework never creates an instance of it. Each record
 component declares exactly one of these annotations:
@@ -815,6 +863,41 @@ Access replacements validate the registered resource and `If-Match` before bindi
 additive `invalidParams` list using dotted field names and array indices, such as
 `assignments[0].role`. All rows are validated before the named-assignment limit;
 `audience:all-users` does not count toward that limit.
+
+The v1 Audit Trail page and v2 audit search share the audit line format, including usernames
+containing `#`, operate-as usernames, empty descriptions, and the legacy `COPY` action. V1 skips
+malformed lines and retains its lenient timestamp parsing in the JVM default zone. V2 rejects
+malformed audit lines and uses strict, zone-aware timestamps.
+
+V2 first authorizes access to the requested record, including lifecycle-hidden records only when the
+resource's audit policy allows it. It filters historical payloads to fields the caller can read
+now. Descriptions are never returned or searched. Text search covers readable payload fields,
+so hidden values cannot be discovered through matching or counts. V1 retains its existing
+actor-directory search and payload/description behavior. V2 exposes only completed UTC days and
+returns `503` rather than silently skipping unreadable or malformed eligible audit lines.
+
+Both readers use `AuditLogLineFormat` for anchored line syntax, username characters, empty
+descriptions and legacy action names. They deliberately differ in malformed-line and timestamp
+policy. V1's `LogLineParser` skips invalid lines and parses dates leniently in the JVM default zone.
+V2's `ApiV2AuditStrictSearch` rejects clock gaps and malformed audit lines. During a DST overlap it
+checks record, actor, action and visible text first. A matching event returns `503` only if its two
+candidate instants differ on inclusion in the requested interval. Otherwise it uses the earlier
+instant. File boundaries use the earliest first and latest last candidate so an ambiguous boundary
+cannot hide a matching event.
+
+V2 scans are limited by `api.v2.audit.concurrentScans` with a default of 2; excess requests return
+`503` immediately with `Retry-After: 1` and a WARN log. `api.v2.audit.scansPerUser` defaults to 1
+and is checked before the global bound. Before taking a scan slot, requests certify cached answers
+under a separate limit of four requests. Configure it with `api.v2.audit.concurrentCacheChecks`.
+Scan saturation therefore does not block cache hits. `api.v2.audit.cacheEntries` defaults to 32 and
+`api.v2.audit.cacheSeconds` to 10; either may be zero to disable caching. The cache stores at most
+the capped projected result and its truncation flag per entry. Keys include the interval, audit
+identity, filters, caller, actor visibility, cap, searchable fields and complete readable-field
+selection. Every request rechecks record and field access and actor visibility before reuse. File
+identity, size or modification-time changes invalidate reuse unless append certification proves that
+every appended event is outside the completed-day window. Failed and retried scans are not cached.
+Successful searches, including truncated results, cache hits and empty results, emit an audit
+`SEARCH` event after certification.
 
 ## OpenAPI tags
 
