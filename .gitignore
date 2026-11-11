@@ -106,4 +106,3 @@ hibtest*/
 /.gradle/
 /buildSrc/build/
 /buildSrc/.gradle/
-/build-benchmarks/
