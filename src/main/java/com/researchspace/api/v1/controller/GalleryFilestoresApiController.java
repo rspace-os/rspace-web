@@ -25,6 +25,7 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
+import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFieldLinkManager;
@@ -122,7 +123,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
-    assertItemReachableWithOwnLogin(user, filestoreId, remotePath);
+    assertItemReadableWithOwnLogin(user, filestoreId, remotePath);
     return nfsFieldLinkManager.getLinkedDocuments(filestoreId, remotePath, user).stream()
         .map(ApiGalleryFilestoreLinkedDocument::new)
         .toList();
@@ -130,30 +131,54 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
   /**
    * The link index spans every user's filestores, so on filesystems with per-user logins the
-   * caller's own login must reach the item. Filesystems without them are gated by their allowlists
-   * alone, and an unknown filestore is left to the lookup's 404.
+   * caller's own login must read the item: a folder must list, a file must open. Listing the parent
+   * tells which it is, since some backends (SFTP) list a file the caller cannot open. Filesystems
+   * without per-user logins are gated by their allowlists alone, and an unknown filestore is left
+   * to the lookup's 404.
    */
-  private void assertItemReachableWithOwnLogin(User user, Long filestoreId, String remotePath) {
+  private void assertItemReadableWithOwnLogin(User user, Long filestoreId, String remotePath) {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     if (filestore == null
         || NfsAuthenticationType.NONE.equals(filestore.getFileSystem().getAuthType())) {
       return;
     }
     NfsClient client = getNfsClientForUserAndFilesystem(user, filestore.getFileSystem());
-    NfsTarget target = new NfsTarget(filestore.getAbsolutePath(remotePath), null);
+    String path = StringUtils.removeEnd(filestore.getAbsolutePath(remotePath), "/");
     try {
-      if (client.queryForNfsFile(target) != null || client.queryForNfsFolder(target) != null) {
-        return;
+      if (StringUtils.strip(remotePath, "/").isEmpty() || isFolderIn(client, path)) {
+        if (client.queryForNfsFolder(new NfsTarget(path, null)) != null) {
+          return;
+        }
+      } else {
+        NfsTarget target = new NfsTarget(path, null);
+        try (InputStream opened = client.queryNfsFileForDownload(target).getRemoteInputStream()) {
+          if (opened != null) {
+            return;
+          }
+        }
       }
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
       log.warn(
-          "Filestore {} item {} not reachable for {}",
+          "Filestore {} item {} not readable for {}: {}",
           filestoreId,
           remotePath,
           user.getUsername(),
-          e);
+          e.getMessage());
     }
     throw new NotFoundException(getMessage("netFileStores.export.resourceNotAccessible"));
+  }
+
+  /** Whether {@code path} is listed as a folder in its parent; throws if it is not listed. */
+  private static boolean isFolderIn(NfsClient client, String path) throws IOException {
+    int slash = path.lastIndexOf('/');
+    String parentPath = slash < 0 ? "" : slash == 0 ? "/" : path.substring(0, slash);
+    NfsFolderDetails parent = client.queryForNfsFolder(new NfsTarget(parentPath, null));
+    String name = path.substring(slash + 1);
+    return parent.getContent().stream()
+            .filter(item -> name.equals(item.getName()))
+            .findFirst()
+            .orElseThrow(() -> new IOException("not listed in its parent folder"))
+        instanceof NfsFolderDetails;
   }
 
   /**
