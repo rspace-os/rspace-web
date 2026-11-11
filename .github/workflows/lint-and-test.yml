@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload test reports
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: gradle-test-reports
           path: build/reports/tests/test
@@ -688,7 +688,7 @@ jobs:
 
       - name: Upload spring JUnit reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: spring-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
           path: build/test-results/test-shard${{ matrix.shard }}/*.xml
@@ -788,7 +788,7 @@ jobs:
 
       - name: Upload integration JUnit reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: integration-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
           path: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
