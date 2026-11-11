@@ -481,7 +481,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
 
       # The base branch may predate the pnpm migration (no root pnpm-lock.yaml or
@@ -499,14 +499,22 @@ jobs:
             echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
           fi
 
-      - name: Setup pnpm
+      - name: Restore base bundle statistics
+        id: base-stats
         if: steps.base-support.outputs.supported == 'true'
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: src/main/webapp/ui/dist/stats.json
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.event.pull_request.base.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+
+      - name: Setup pnpm
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         uses: pnpm/action-setup@v6.1.0
         with:
           run_install: false
 
       - name: Setup Node.js
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         uses: actions/setup-node@v7.1.0
         with:
           node-version-file: package.json
@@ -514,11 +522,11 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build with bundle stats
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         run: pnpm run build:stats
 
       - name: Upload base bundle stats
@@ -899,8 +907,18 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Build project
+        env:
+          FRONTEND_BUILD_STATS: ${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}
         run: |
           ./mvnw clean package -DskipTests=true -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
             -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
+
+      # Base bundle comparisons on pull requests restore this instead of rebuilding main.
+      - name: Cache main bundle statistics
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: src/main/webapp/ui/dist/stats.json
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}

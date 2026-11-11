@@ -296,17 +296,20 @@ export default defineConfig(async ({ mode }) => {
   }
 
   if (shouldGenerateBuildStats) {
-    const { visualizer } = await import("rollup-plugin-visualizer");
     const { analyzer } = await import("vite-bundle-analyzer");
-
+    // CI consumes stats.json; the interactive HTML report is for local analysis.
+    if (process.env.CI !== "true") {
+      const { visualizer } = await import("rollup-plugin-visualizer");
+      plugins.push(
+        visualizer({
+          filename: "stats.html",
+          gzipSize: true,
+          brotliSize: true,
+          sourcemap: true,
+        }),
+      );
+    }
     plugins.push(
-      visualizer({
-        filename: "stats.html",
-        gzipSize: true,
-        brotliSize: true,
-        sourcemap: true,
-      }),
-      // Emits stats.json consumed by wojtekmaj/vite-compare-bundle-size in CI.
       analyzer({
         analyzerMode: "json",
         fileName: "stats",
