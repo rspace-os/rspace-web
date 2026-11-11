@@ -33,53 +33,70 @@ runs:
       shell: bash
       run: echo "LANG=C.UTF-8" >> "$GITHUB_ENV"
 
+    # Both archives are keyed by the build declarations, hashed once here.
     # Only main saves: pull requests can restore main's caches, but not each
-    # other's. The full action's post step saves when the key missed.
+    # other's, and the cache action's post step saves only when its key missed.
+    - name: Compute Gradle cache keys
+      id: keys
+      shell: bash
+      env:
+        BUILD_HASH: ${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}
+        FAMILY: ${{ inputs.cache-key }}
+        JAVA_VERSION: ${{ inputs.java-version }}
+        SAVE: ${{ github.ref == 'refs/heads/main' && inputs.save-cache == 'true' }}
+      run: |
+        {
+          echo "build=$BUILD_HASH"
+          echo "deps=gradle-deps-v2-$RUNNER_OS"
+          echo "tasks=gradle-tasks-v1-$RUNNER_OS-$JAVA_VERSION-$FAMILY"
+          echo "save=$SAVE"
+        } >> "$GITHUB_OUTPUT"
+
     - name: Cache Gradle User Home
-      if: github.ref == 'refs/heads/main' && inputs.save-cache == 'true'
+      if: steps.keys.outputs.save == 'true'
       uses: actions/cache@v6.1.0
       with:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: gradle-deps-v2-${{ runner.os }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}
+        key: ${{ steps.keys.outputs.deps }}-${{ inputs.cache-key }}-${{ steps.keys.outputs.build }}
         restore-keys: |
-          gradle-deps-v2-${{ runner.os }}-${{ inputs.cache-key }}-
-          gradle-deps-v2-${{ runner.os }}-
+          ${{ steps.keys.outputs.deps }}-${{ inputs.cache-key }}-
+          ${{ steps.keys.outputs.deps }}-
 
     - name: Restore Gradle User Home
-      if: github.ref != 'refs/heads/main' || inputs.save-cache != 'true'
+      if: steps.keys.outputs.save != 'true'
       uses: actions/cache/restore@v6.1.0
       with:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: gradle-deps-v2-${{ runner.os }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}
+        key: ${{ steps.keys.outputs.deps }}-${{ inputs.cache-key }}-${{ steps.keys.outputs.build }}
         restore-keys: |
-          gradle-deps-v2-${{ runner.os }}-${{ inputs.cache-key }}-
-          gradle-deps-v2-${{ runner.os }}-
+          ${{ steps.keys.outputs.deps }}-${{ inputs.cache-key }}-
+          ${{ steps.keys.outputs.deps }}-
 
     # Actions cache entries are immutable. Task outputs need a new archive per
     # main revision; otherwise compiled classes stay stuck at the first seed.
     - name: Cache Gradle task outputs
-      if: github.ref == 'refs/heads/main' && inputs.save-cache == 'true'
+      if: steps.keys.outputs.save == 'true'
       uses: actions/cache@v6.1.0
       with:
         path: ~/.gradle/rspace-build-cache
-        key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
+        key: ${{ steps.keys.outputs.tasks }}-${{ steps.keys.outputs.build }}-${{ github.sha }}
         restore-keys: |
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
+          ${{ steps.keys.outputs.tasks }}-${{ steps.keys.outputs.build }}-
+          ${{ steps.keys.outputs.tasks }}-
 
     - name: Restore Gradle task outputs
-      if: github.ref != 'refs/heads/main' || inputs.save-cache != 'true'
+      if: steps.keys.outputs.save != 'true'
       uses: actions/cache/restore@v6.1.0
       with:
         path: ~/.gradle/rspace-build-cache
-        key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
+        key: ${{ steps.keys.outputs.tasks }}-${{ steps.keys.outputs.build }}-${{ github.sha }}
         restore-keys: |
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
+          ${{ steps.keys.outputs.tasks }}-${{ steps.keys.outputs.build }}-
+          ${{ steps.keys.outputs.tasks }}-
 
     # cache-provider external leaves Gradle User Home to the steps above: the
     # default ('enhanced') is a proprietary component under Gradle's terms of
