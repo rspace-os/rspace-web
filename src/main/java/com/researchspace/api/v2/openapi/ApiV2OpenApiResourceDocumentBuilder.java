@@ -6,6 +6,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.api.v2.controller.ApiV2Problem;
+import com.researchspace.api.v2.model.ApiV2AuditEvent;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessPolicySchema;
@@ -63,6 +64,7 @@ final class ApiV2OpenApiResourceDocumentBuilder {
 
   static void addStandardSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.responseSchemaFor(ApiV2Problem.class, schemas);
+    ApiV2OpenApiSchemas.responseSchemaFor(ApiV2AuditEvent.class, schemas);
     ApiV2OpenApiSchemas.responseSchemaFor(ApiV2CountResult.class, schemas);
   }
 
