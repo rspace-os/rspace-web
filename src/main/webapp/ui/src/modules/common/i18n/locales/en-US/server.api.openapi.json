@@ -145,6 +145,18 @@
         },
         "server": {
           "description": "RSpace deployment root for this generated document."
+        },
+        "audit": {
+          "description": "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+          "access": "Authenticated callers who can read the resource.",
+          "start": "Inclusive earliest event time. The server limits the range to 183 days.",
+          "end": "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+          "search": "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+          "actions": "Audit actions to include.",
+          "success": "Capped newest-first audit events.",
+          "invalid": "The search range or filters are invalid.",
+          "unavailable": "The server could not read a consistent audit snapshot and returned no partial data.",
+          "summary": "List audit events for one {0} resource"
         }
       }
     }
