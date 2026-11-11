@@ -1,12 +1,12 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
-import java.math.BigDecimal;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
@@ -19,6 +19,7 @@ public class ExtraNumberField extends ExtraField {
 
   private static final long serialVersionUID = 616794358851234028L;
   private static final String DEFAULT_NAME = "Numeric data";
+  public static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
 
   public ExtraNumberField() {
     setName(DEFAULT_NAME);
@@ -49,9 +50,9 @@ public class ExtraNumberField extends ExtraField {
     ErrorList errors = new ErrorList();
     if (StringUtils.isNotEmpty(data)) {
       try {
-        new BigDecimal(data);
-      } catch (NumberFormatException nfe) {
-        errors.addErrorMsgCode("validation.inventoryField.extraNumberInvalid", data);
+        RuntimeFieldValueType.parseNumber(data);
+      } catch (IllegalArgumentException nfe) {
+        errors.addErrorMsgCode(INVALID_NUMBER_MESSAGE, data);
       }
     }
     return errors;
