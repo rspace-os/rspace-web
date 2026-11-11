@@ -23,7 +23,21 @@ class EmailContentGeneratorTest {
 
   @BeforeEach
   void setUp() {
-    VelocityEngine velocity = new VelocityEngine();
+    VelocityEngine velocity =
+        new VelocityEngine() {
+          @Override
+          public boolean mergeTemplate(
+              String name,
+              String encoding,
+              org.apache.velocity.context.Context context,
+              java.io.Writer writer) {
+            String path =
+                name.contains("/")
+                    ? name
+                    : "velocityTemplates/messageAndNotificationEmails/" + name;
+            return super.mergeTemplate(path, encoding, context, writer);
+          }
+        };
     velocity.setProperty("resource.loaders", "class");
     velocity.setProperty(
         "resource.loader.class.class",
@@ -91,6 +105,24 @@ class EmailContentGeneratorTest {
 
     assertThat(content.htmlContent()).doesNotContain("<head>");
     assertThat(content.plainTextContent()).contains(systemUser.getEmail());
+  }
+
+  @Test
+  void escapesNotificationOriginatorNames() {
+    setDeploymentLocale("en-US");
+    var originator = TestFactory.createAnyUser("actor");
+    originator.setId(7L);
+    originator.setFirstName("Actor <script>");
+    var notification = TestFactory.createANotification(originator);
+
+    EmailContent content =
+        new CommunicationEmailContentGenerator(generator, "https://rspace.example")
+            .generate(notification);
+
+    assertThat(content.htmlContent())
+        .contains("Actor &lt;script&gt;", "href=\"https://rspace.example/userform?userId=7\"")
+        .doesNotContain("Actor <script>");
+    assertThat(content.plainTextContent()).contains("Actor <script>");
   }
 
   private void setDeploymentLocale(String languageTag) {
