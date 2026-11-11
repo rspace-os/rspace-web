@@ -212,7 +212,8 @@ public final class ApiV2AuditStrictSearch {
                 request.searchableFields(),
                 readableFields,
                 request.relatedIdentifierFields(),
-                request.requiredFields());
+                request.requiredFields(),
+                request.relatedFallbackFrom());
         CachedScan hit;
         synchronized (cache) {
           cache
@@ -361,7 +362,8 @@ public final class ApiV2AuditStrictSearch {
       Set<String> searchableFields,
       FieldSelection readableFields,
       Set<String> relatedFields,
-      Map<String, String> requiredFields) {}
+      Map<String, String> requiredFields,
+      Instant relatedFallbackFrom) {}
 
   private record CachedScan(long created, ScanResult results, Map<Path, FileManifest> manifest) {}
 
@@ -630,6 +632,15 @@ public final class ApiV2AuditStrictSearch {
   }
 
   private static boolean requiredFieldsMatch(ParsedLine line, Request request) {
+    Map<String, Object> data = line.result().getEvent().getData().getData();
+    boolean related = request.oid() != null && !request.oid().equals(data.get("id"));
+    if (related
+        && !request.requiredFields().isEmpty()
+        && request.requiredFields().keySet().stream()
+            .noneMatch(field -> data.get(field.split("\\.")[0]) != null)) {
+      return request.relatedFallbackFrom() != null
+          && !line.timestamp().isBefore(request.relatedFallbackFrom());
+    }
     for (var required : request.requiredFields().entrySet()) {
       Object value = line.result().getEvent().getData().getData();
       for (String part : required.getKey().split("\\.")) {
@@ -828,7 +839,39 @@ public final class ApiV2AuditStrictSearch {
       String search,
       Set<String> searchableFields,
       Set<String> relatedIdentifierFields,
-      Map<String, String> requiredFields) {
+      Map<String, String> requiredFields,
+      Instant relatedFallbackFrom) {
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling,
+        boolean bypassActorDirectory,
+        String search,
+        Set<String> searchableFields,
+        Set<String> relatedIdentifierFields,
+        Map<String, String> requiredFields) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          bypassActorDirectory,
+          search,
+          searchableFields,
+          relatedIdentifierFields,
+          requiredFields,
+          null);
+    }
 
     public Request(
         Instant fromInclusive,

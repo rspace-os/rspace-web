@@ -378,8 +378,9 @@ policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 validates
 session-bound REST API v2 UI tokens against the matching live browser session. AuthStore keeps the
-current token in session storage for legacy API clients; the query hooks keep theirs in memory.
-Every page initialization mints the token appropriate to its current authentication context.
+current token in session storage for legacy API clients. The v2 token provider keeps its page token
+in memory. Every page initialization mints the token appropriate to its current authentication
+context.
 
 ### Rate limits
 
@@ -741,6 +742,12 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
+Booking filters accept `requester.value==me` through the requester relationship to users. Each
+request resolves the alias using the effective subject, including during operate-as. Booking
+configurations, the catalogue and calendar events accept the filter-only `targetOwner==me` member.
+It includes the Inventory read constraint and accepts only equality with `me`. It is invalid within
+an OR group. Shared links and saved views should retain `me`, rather than substituting a user id.
 
 ## Generated frontend access and relationship clients
 
