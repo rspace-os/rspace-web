@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.Calendar;
@@ -40,6 +41,19 @@ public class ScheduledMaintenance {
       new ScheduledMaintenance(new Date(0), new Date(1));
 
   private Long id;
+
+  private long version;
+
+  @Version
+  @Column(nullable = false)
+  public long getVersion() {
+    return version;
+  }
+
+  public void setVersion(long version) {
+    this.version = version;
+  }
+
   private Long startDate;
   private Long endDate;
   private Long stopUserLoginDate;

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!-- PRE-STACK SCHEMA CHANGE: Index ExtraField names, deletion flags and subtypes for exact-name hydration lookups. -->
+  <changeSet id="extra-field-name-index" author="tchoi-rs" context="run">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="ExtraField" indexName="ix_extrafield_name_deleted"/>
+      </not>
+    </preConditions>
+    <comment>
+      PRE-STACK SCHEMA CHANGE: Index ExtraField names, deletion flags and subtypes for exact-name hydration lookups.
+      Hydrating a runtime field by its exact name uses the name prefix, deletion flag and subtype,
+      so a selective name does not scan ExtraField; broader discovery queries do not use this index.
+      The plain name predicate lets MariaDB use the prefix index beside the exact HEX identity.
+      The cost is a modest write overhead on ExtraField.
+    </comment>
+    <sql>
+      CREATE INDEX ix_extrafield_name_deleted ON ExtraField (name(128), deleted, DTYPE)
+    </sql>
+  </changeSet>
+
+  <!-- PRE-STACK SCHEMA CHANGE: Index ExtraField owning instruments, names and deletion flags for correlated filters. -->
+  <changeSet id="extra-field-parent-name-index" author="tchoi-rs" context="run">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="ExtraField" indexName="ix_extrafield_instr_name"/>
+      </not>
+    </preConditions>
+    <comment>
+      PRE-STACK SCHEMA CHANGE: Index ExtraField owning instruments, names and deletion flags for correlated filters.
+      On 100,000 instruments and 2,000,000 value rows, correlated runtime-field filters
+      probe each owning instrument, then the name prefix and deletion flag.
+      The plain name equality lets MariaDB use all three indexed columns.
+      Its leading column overlaps the existing foreign-key index FK_ExtraField_to_InstrEntity.
+      That index is kept deliberately: it belongs to the released schema, and dropping it is a
+      separate schema change. This composite index could back the foreign key if it is dropped later.
+    </comment>
+    <sql>
+      CREATE INDEX ix_extrafield_instr_name
+      ON ExtraField (instrumentEntity_id, name(128), deleted)
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>
