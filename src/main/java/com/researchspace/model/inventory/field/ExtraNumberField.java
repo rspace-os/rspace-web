@@ -19,7 +19,7 @@ public class ExtraNumberField extends ExtraField {
 
   private static final long serialVersionUID = 616794358851234028L;
   private static final String DEFAULT_NAME = "Numeric data";
-  public static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
+  private static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
 
   public ExtraNumberField() {
     setName(DEFAULT_NAME);
