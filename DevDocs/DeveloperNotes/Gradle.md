@@ -90,8 +90,10 @@ are given, whatever their value; `generateStorybook` needs `=true`. An unknown
 `-Denvironment` value fails the build. The `jdbc.*.maven`, `surefire.*` and `maven.*` names are
 kept from the old Maven build so that existing commands and CI jobs keep working.
 
-The version is `2.28.0-SNAPSHOT-<timestamp>`. The fixed `dev` default keeps resources up to date
-between local builds; release builds pass `-Dtimestamp=now` or a build number.
+The version is `<version>-<timestamp>`, with `<version>` set by the `version =` line in
+`build.gradle`; release commits bump it there, where they used to edit `pom.xml`. The fixed `dev`
+default keeps resources up to date between local builds; release builds pass `-Dtimestamp=now` or
+a build number.
 
 ## Tests
 
