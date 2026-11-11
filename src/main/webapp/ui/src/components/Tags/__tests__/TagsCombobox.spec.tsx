@@ -51,6 +51,24 @@ describe("TagsCombobox (ontologies, paginated)", () => {
     expect(requestedPositions).not.toContain(1);
   });
 
+  test("never lists a suggestion twice while a new filter loads", async () => {
+    worker.use(ontologyTagsHandler({ allTags: makeTags(5), pageSize: 40, requestedPositions }));
+    render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
+    await pageObj.open();
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+    const listings: Array<Array<string>> = [];
+    const observer = new MutationObserver(() => {
+      listings.push([...document.querySelectorAll("[role=option]")].map((o) => o.getAttribute("data-tag-value") ?? ""));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    pageObj.filter("tag-00");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    observer.disconnect();
+
+    expect(listings.filter((values) => new Set(values).size !== values.length)).toEqual([]);
+  });
+
   test("renders virtualised tag options when opened", async () => {
     render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
 

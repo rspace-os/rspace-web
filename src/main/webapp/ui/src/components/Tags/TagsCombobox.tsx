@@ -436,7 +436,8 @@ function TagsComboboxContent<
     if (reachedEnd) return;
     void loadPage({ pos: page, tagFilter: filter }).then(({ lastPage, tags: newPageOfTags }) => {
       setReachedEnd(lastPage);
-      setTags([...tags, ...newPageOfTags]);
+      // Page 0 starts a new listing (a new filter resets `page`), so replace rather than append.
+      setTags(page === 0 ? newPageOfTags : [...tags, ...newPageOfTags]);
       if (!lastPage) setPage(page + 1);
     });
   };
