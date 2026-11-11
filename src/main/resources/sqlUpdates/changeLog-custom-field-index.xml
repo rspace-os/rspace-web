@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!--
+    REST API v2 custom-field filters resolve a definition to the rows that carry it, so every
+    filter and every catalog page probes InventoryEntityField by (templateField_id, deleted).
+    The existing foreign-key index covers only templateField_id, which leaves the deleted check
+    and the parent lookup to row reads.
+
+    Measured on a data set of 100,000 instruments and 2,000,000 value rows: with this
+    index the catalog page and the filter predicates keep an index-driven plan; without it the
+    optimizer falls back to scanning the value table. Baseline-sized data does not need it.
+  -->
+  <!-- PRE-STACK SCHEMA CHANGE: Index InventoryEntityField definitions, deletion flags and owning instruments for runtime fields. -->
+  <changeSet id="custom-field-definition-index" author="tchoi-rs" context="run">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr"/>
+      </not>
+    </preConditions>
+    <comment>
+      PRE-STACK SCHEMA CHANGE: Index InventoryEntityField definitions, deletion flags and owning instruments for runtime fields.
+    </comment>
+    <createIndex tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr">
+      <column name="templateField_id"/>
+      <column name="deleted"/>
+      <column name="instrumentEntity_id"/>
+    </createIndex>
+  </changeSet>
+
+  <!-- PRE-STACK SCHEMA CHANGE: Drop the redundant InventoryEntityField.templateField_id index after the composite index covers its foreign key. -->
+  <changeSet id="custom-field-drop-redundant-template-index" author="tchoi-rs" context="run">
+    <preConditions onFail="MARK_RAN">
+      <and>
+        <indexExists tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr"/>
+        <indexExists tableName="InventoryEntityField" indexName="FK_3y0km9bpfi2oxanow35t16fdq"/>
+      </and>
+    </preConditions>
+    <comment>PRE-STACK SCHEMA CHANGE: Drop the redundant InventoryEntityField.templateField_id index after the composite index covers its foreign key.</comment>
+    <dropIndex tableName="InventoryEntityField" indexName="FK_3y0km9bpfi2oxanow35t16fdq"/>
+  </changeSet>
+
+</databaseChangeLog>
