@@ -1,6 +1,16 @@
 import { Link, linkOptions } from "@tanstack/react-router";
-import { CalendarIcon, ChevronRightIcon, LayoutDashboardIcon, SettingsIcon, SlidersHorizontalIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  CalendarPlusIcon,
+  CheckSquareIcon,
+  ChevronRightIcon,
+  LayoutDashboardIcon,
+  ListIcon,
+  SettingsIcon,
+  SlidersHorizontalIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
 import {
@@ -15,7 +25,7 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-const items = () =>
+const items = (today: string) =>
   [
     {
       key: "dashboard",
@@ -24,7 +34,21 @@ const items = () =>
         <Link {...linkOptions({ to: "/booking", search: {}, activeOptions: { exact: true, includeSearch: false } })} />
       ),
     },
-    { key: "calendar", icon: CalendarIcon, link: <Link {...linkOptions({ to: "/booking/calendar" })} /> },
+    {
+      key: "calendar",
+      icon: CalendarIcon,
+      link: <Link {...linkOptions({ to: "/booking/calendar", search: () => ({ date: today }) })} />,
+    },
+    {
+      key: "addBooking",
+      icon: CalendarPlusIcon,
+      link: <Link {...linkOptions({ to: "/booking/calendar/bookings/add", search: () => ({ date: today }) })} />,
+    },
+    {
+      key: "myBookings",
+      icon: ListIcon,
+      link: <Link {...linkOptions({ to: "/booking/my-bookings", search: { period: "upcoming" } })} />,
+    },
     {
       key: "preferences",
       icon: SlidersHorizontalIcon,
@@ -34,24 +58,29 @@ const items = () =>
       key: "administration",
       icon: SettingsIcon,
       children: [
-        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
         { key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> },
+        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
       ],
     },
+    { key: "approvalQueue", icon: CheckSquareIcon },
   ] as const;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
-  const sidebarItems = items();
+  const preferences = useBookingDisplayPreferences();
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone));
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
+    addBooking: t("sidebar.addBooking"),
+    myBookings: t("sidebar.myBookings"),
     preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
     bookableItems: t("sidebar.bookableItems"),
+    approvalQueue: t("sidebar.approvalQueue"),
   };
   const visibleItems = currentUser.hasSysAdminRole
     ? sidebarItems
