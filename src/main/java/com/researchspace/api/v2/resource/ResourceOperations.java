@@ -36,29 +36,6 @@ public interface ResourceOperations<T, ID> {
   Optional<T> findById(ID id, User subject);
 
   /**
-   * Finds one resource for its audit endpoint. Implementations may include lifecycle-hidden rows,
-   * but must retain the resource's ordinary row-level readability boundary.
-   */
-  default Optional<T> findByIdForAudit(ID id, User subject) {
-    return findById(id, subject);
-  }
-
-  /** Audit-only authorization hook, deliberately independent of generic access-document routes. */
-  default void requireAuditAccess(T resource, User subject) {}
-
-  /** Extra safe payload fields admitted for related events in a resource lifecycle audit. */
-  default Set<String> relatedAuditFields() {
-    return Set.of();
-  }
-
-  /**
-   * Whether this already-authorised resource audit may include actors outside the user directory.
-   */
-  default boolean auditBypassesActorDirectory() {
-    return false;
-  }
-
-  /**
    * Optionally supplies complete scalar documents for batched relationship expansion.
    *
    * <p>This lets a read-heavy target avoid hydrating a large domain aggregate. The registration
@@ -69,6 +46,7 @@ public interface ResourceOperations<T, ID> {
     return Optional.empty();
   }
 
+  /** Creates one resource, optionally replaying a creator-scoped request. */
   default CreateResult<T> create(
       ParsedDocument document, ApiV2Caller caller, String idempotencyKey) {
     throw readOnly("create");

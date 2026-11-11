@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.user;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ResourceAuditPolicy;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.model.User;
@@ -32,6 +33,7 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
   ApiV2ResourceSpec<User, Long> userApiV2Resource() {
     return ApiV2ResourceSpec.readOnly(ApiV2UserResource.DESCRIPTION, this, Long::valueOf)
         .expose(EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ))
+        .audit(ResourceAuditPolicy.standard(this))
         .tagDocumentation("User accounts, profiles and personal settings.", "Platform")
         .build();
   }

@@ -24,6 +24,9 @@ public final class ApiV2ResourceCatalog {
   public ApiV2ResourceCatalog(
       List<ApiV2ResourceSpec<?, ?>> specs, ResourceMutationManager mutations) {
     Objects.requireNonNull(specs, "Resource specs");
+    for (var spec : specs) {
+      if (spec.audit().isPresent()) validateAuditMetadata(spec.description().entityType());
+    }
     registry = new ResourceRegistry(specs.stream().map(ApiV2ResourceSpec::description).toList());
     Map<String, ApiV2ResourceRegistration<?, ?>> registrations = new LinkedHashMap<>();
     ApiV2RelationshipResolver resolver =
@@ -66,6 +69,10 @@ public final class ApiV2ResourceCatalog {
       ResourceMutationManager mutations) {
     return new ApiV2ResourceRegistration<>(
         spec, registry, resolver, providersByResource, mutations);
+  }
+
+  private static void validateAuditMetadata(Class<?> entityType) {
+    ResourceAuditPolicy.requireAuditIdentifier(entityType);
   }
 
   private static void putUnique(
