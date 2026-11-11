@@ -8,6 +8,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import EmailValidator from "email-validator";
+import { produce } from "immer";
 import React from "react";
 import Select from "react-select";
 import axios from "@/common/axios";
@@ -36,7 +37,10 @@ class createGroupStep3 extends React.Component<any, any> {
       const alreadyInvited = [...prevState.existingUsers, ...prevState.newUsers].some(
         (invitedEmail) => invitedEmail.trim().toLowerCase() === normalizedEmail,
       );
-      return alreadyInvited ? null : { [arrayName]: [...prevState[arrayName], email] };
+      if (alreadyInvited) return null;
+      return produce(prevState, (draft) => {
+        draft[arrayName].push(email);
+      });
     });
   };
 
