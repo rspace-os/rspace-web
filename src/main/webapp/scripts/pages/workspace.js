@@ -256,7 +256,7 @@ function toolbarButtonsEventHandler() {
     _displayWorkspaceSettingsAfterSimpleFilterClick();
   });
 
-  $('#createEntry').click(function (e) {
+  $(document).on('click', '#createEntry', function (e) {
     e.preventDefault();
     var form = document.createElement('form');
     form.setAttribute('action',
@@ -275,7 +275,7 @@ function toolbarButtonsEventHandler() {
     RS.trackEvent("user:open:create_from_form_dialog:workspace");
   });
 
-  $('#createFromWord').click(function (e) {
+  $(document).on('click', '#createFromWord', function (e) {
     e.preventDefault();
     openWordChooserDlg(getSelectedIdsNamesAndTypes, {
       title: RS.msg("legacyjs.workspace.main.importWordTitle"),
@@ -284,13 +284,13 @@ function toolbarButtonsEventHandler() {
     RS.trackEvent("user:open:create_from_word_dialog:workspace");
   });
 
-  $('#createFromProtocolsIo').click(function (e) {
+  $(document).on('click', '#createFromProtocolsIo', function (e) {
     e.preventDefault();
     RS.trackEvent('user:open:create_from_protocols_io_dialog:workspace');
     openProtocolsIoChooserDlg();
   });
 
-  $('#createNewForm').click(function (e) {
+  $(document).on('click', '#createNewForm', function (e) {
     e.preventDefault();
     RS.trackEvent('user:open:create_new_form_window:workspace');
     $("#createNewFormForm").submit();
@@ -559,7 +559,7 @@ $(document).ready(function () {
   initWorkspaceRequestDlg();
   window.addEventListener("ReactToolbarMounted", () => {
     toolbarButtonsEventHandler();
-  });
+  }, { once: true });
   showChemicalSearchIfIntegrationEnabled();
   orderInfoEventHandler();
 
