@@ -6,7 +6,7 @@ import { OperationWizardComponent } from "@/__tests__/e2e/components/inventory/O
 import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { env } from "@/__tests__/e2e/env";
 import { test } from "@/__tests__/e2e/fixtures/flows";
-import { LoginPage } from "@/__tests__/e2e/pageObjects/auth/LoginPage";
+import { performLogin } from "@/__tests__/e2e/fixtures/flows/sessions/userSessions";
 import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { RequestsPage } from "@/__tests__/e2e/pageObjects/inventory/RequestsPage";
 import { SystemConfigPage, type SystemPropertyValue } from "@/__tests__/e2e/pageObjects/system/SystemConfigPage";
@@ -96,10 +96,7 @@ async function newSession(browser: Browser, browserContextOptions: BrowserContex
   openContexts.add(ctx);
   ctx.once("close", () => openContexts.delete(ctx));
   const page = await ctx.newPage();
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  await loginPage.login(user.username, user.password);
-  await page.waitForURL((url) => url.pathname === "/workspace");
+  await performLogin(page, user.username, user.password);
   return {
     page,
     inventoryPage: new InventoryPage(page),
