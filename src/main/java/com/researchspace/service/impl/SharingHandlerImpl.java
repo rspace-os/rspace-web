@@ -6,6 +6,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.ShareRecordAuditEvent;
@@ -160,7 +161,15 @@ public class SharingHandlerImpl implements SharingHandler {
     configEl.setAutoshare(!notify);
     sharingManager.unshareRecord(
         subject, rgs.getShared().getId(), new ShareConfigElement[] {configEl});
-    auditService.notify(new GenericEvent(subject, rgs, AuditAction.UNSHARE));
+    auditService.notify(
+        new GenericEvent(subject, rgs.getShared(), AuditAction.UNSHARE) {
+          @Override
+          protected AuditData getAuditData() {
+            AuditData data = getAuditData(rgs);
+            data.getData().putAll(super.getAuditData().getData());
+            return data;
+          }
+        });
     return new ServiceOperationResult<>(rgs, true);
   }
 
