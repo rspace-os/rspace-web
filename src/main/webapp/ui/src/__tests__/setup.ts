@@ -10,19 +10,8 @@ import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
 
-await i18n.loadNamespaces([
-  "about",
-  "admin",
-  "apps",
-  "common",
-  "dashboard",
-  "gallery",
-  "groups",
-  "inventory",
-  "public",
-  "system",
-  "workspace",
-]);
+// Only real-translation fixtures load the other English catalogues.
+await i18n.loadNamespaces("common");
 // Component tests assert the translation identifier, not the English copy.
 i18n.options.appendNamespaceToCIMode = true;
 await i18n.changeLanguage("cimode");
