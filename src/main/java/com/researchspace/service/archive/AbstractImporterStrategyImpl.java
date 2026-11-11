@@ -352,6 +352,8 @@ abstract class AbstractImporterStrategyImpl {
       linkRecord.addOldIdToNewIdMapping(archivalDoc.getDocId(), newDoc.getId());
       convertStructureDocument(
           archivalDoc, newDoc, importingUser, ref.getPath(), linkRecord, oldIdToNewGalleryItem);
+      newDoc.setAllFieldsValid(
+          newDoc.getFields().stream().allMatch(Field::isMandatoryStateSatisfied));
       if (isTemplate(archivalDoc)) {
         newDoc.addType(RecordType.TEMPLATE);
       }

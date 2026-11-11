@@ -78,6 +78,7 @@ public class FormImporterImpl implements FormImporter {
         case NUMBER:
           persistFieldForm(
               form,
+              aff,
               new NumberFieldDTO<>(
                   aff.getMin(),
                   aff.getMax(),
@@ -88,11 +89,13 @@ public class FormImporterImpl implements FormImporter {
           break;
         case STRING:
           String tr = aff.isPassword() ? "true" : "false";
-          persistFieldForm(form, new StringFieldDTO<>(aff.getName(), tr, aff.getDefaultValue()));
+          persistFieldForm(
+              form, aff, new StringFieldDTO<>(aff.getName(), tr, aff.getDefaultValue()));
           break;
         case RADIO:
           persistFieldForm(
               form,
+              aff,
               new RadioFieldDTO<>(
                   aff.getOptions(),
                   aff.getSelection(),
@@ -103,12 +106,14 @@ public class FormImporterImpl implements FormImporter {
         case CHOICE:
           persistFieldForm(
               form,
+              aff,
               new ChoiceFieldDTO<>(
                   aff.getOptions(), aff.getMultipleChoice(), aff.getSelection(), aff.getName()));
           break;
         case DATE:
           persistFieldForm(
               form,
+              aff,
               new DateFieldDTO<>(
                   aff.getDefaultValue(),
                   aff.getMin(),
@@ -119,6 +124,7 @@ public class FormImporterImpl implements FormImporter {
         case TIME:
           persistFieldForm(
               form,
+              aff,
               new TimeFieldDTO<>(
                   aff.getDefaultValue(),
                   aff.getMin(),
@@ -129,7 +135,7 @@ public class FormImporterImpl implements FormImporter {
 
         default: // Text
           TextFieldForm tfm =
-              persistFieldForm(form, new TextFieldDTO<>(aff.getName(), aff.getDefaultValue()));
+              persistFieldForm(form, aff, new TextFieldDTO<>(aff.getName(), aff.getDefaultValue()));
           setFieldForm(tfm, aff);
       }
     }
@@ -149,10 +155,12 @@ public class FormImporterImpl implements FormImporter {
    * consistent with the database, so later merges are no-ops. (The form is owned by the importing
    * user, so no permission check is needed here.)
    */
-  private <F extends FieldForm> F persistFieldForm(RSForm form, FormFieldSource<F> dto) {
+  private <F extends FieldForm> F persistFieldForm(
+      RSForm form, ArchivalFieldForm aff, FormFieldSource<F> dto) {
     F fieldForm = dto.createFieldForm();
     fieldForm.setColumnIndex(form.getNumActiveFields());
     fieldForm.setForm(form);
+    fieldForm.setMandatory(Boolean.TRUE.equals(aff.getMandatory()));
     FieldForm managed = fieldFormDao.save(fieldForm);
     form.addFieldForm(managed);
     return checkedManagedForm(fieldForm, managed);

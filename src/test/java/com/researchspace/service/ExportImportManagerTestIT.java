@@ -71,7 +71,15 @@ import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData;
 import com.researchspace.model.comms.data.NotificationData;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dtos.ChoiceFieldDTO;
+import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.ExportSelection;
+import com.researchspace.model.dtos.FormFieldSource;
+import com.researchspace.model.dtos.NumberFieldDTO;
+import com.researchspace.model.dtos.RadioFieldDTO;
+import com.researchspace.model.dtos.StringFieldDTO;
+import com.researchspace.model.dtos.TextFieldDTO;
+import com.researchspace.model.dtos.TimeFieldDTO;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
@@ -80,6 +88,8 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalWorkFlowDataBuilder;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -125,6 +135,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -161,6 +172,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -225,6 +238,97 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Folder root = folderDao.getRootRecordForUser(user);
     commitTransaction();
     return root;
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  public void requiredFieldsSurviveXmlArchive(boolean legacyWire) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    RSForm form = new RSForm("Required fields", "XML round trip", user);
+    List<FormFieldSource<? extends FieldForm>> sources =
+        List.of(
+            new StringFieldDTO<>("String", "no", ""),
+            new TextFieldDTO<>("Text", "text"),
+            new ChoiceFieldDTO<>("a=1&b=2", "no", "a=1", "Choice"),
+            new RadioFieldDTO<>("a=1&b=2", "1", "Radio", false, false),
+            new NumberFieldDTO<>("", "", "2", "12", FieldType.NUMBER, "Number"),
+            new DateFieldDTO<>("2026-01-01", "", "", "yyyy-MM-dd", "Date"),
+            new TimeFieldDTO<>("12:30", "", "", "HH:mm", "Time"));
+    for (FormFieldSource<? extends FieldForm> source : sources) {
+      for (boolean required : new boolean[] {true, false}) {
+        FieldForm field = source.createFieldForm();
+        field.setName((required ? "Required" : "Optional") + field.getName());
+        field.setMandatory(required);
+        field.setColumnIndex(form.getNumActiveFields());
+        form.addFieldForm(field);
+      }
+    }
+    form = formMgr.save(form, user);
+    StructuredDocument original = createDocumentInFolder(getRootFolderForUser(user), form, user);
+    assertEquals(7, original.getFields().stream().filter(Field::isMandatory).count());
+    original.getFields().stream()
+        .filter(field -> field.getName().equals("RequiredString"))
+        .findFirst()
+        .orElseThrow()
+        .setFieldData("required value");
+    recordMgr.save(original, user);
+    ArchiveResult result =
+        exportImportMgr
+            .asyncExportSelectionToArchive(
+                getSingleRecordExportSelection(original.getId(), "NORMAL"),
+                createDefaultArchiveConfig(user, tempExportFolder),
+                user,
+                anyURI(),
+                standardPostExport)
+            .get();
+    File extracted = extractZipArchive(result);
+    File formXml =
+        ArchiveTestUtils.getAllXMLFilesInArchive(extracted).stream()
+            .filter(f -> f.getName().endsWith("_form.xml"))
+            .findFirst()
+            .orElseThrow();
+    String xml = FileUtils.readFileToString(formXml, StandardCharsets.UTF_8);
+    if (legacyWire) {
+      xml = xml.replaceAll("<mandatory>.*?</mandatory>", "");
+      FileUtils.writeStringToFile(formXml, xml, StandardCharsets.UTF_8);
+    }
+    File archive = result.getExportFile();
+    if (legacyWire) {
+      archive = new File(tempExportFolder2, "roundtrip.zip");
+      ZipUtils.createZip(archive, extracted.listFiles());
+      String archiveId = ArchiveTestUtils.getManifest(extracted).getArchiveId();
+      // Treat the edited fixture as an archive from another installation.
+      doInTransaction(
+          () ->
+              sessionFactory
+                  .getCurrentSession()
+                  .remove(
+                      sessionFactory.getCurrentSession().get(ArchivalCheckSum.class, archiveId)));
+    }
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(archive.getName(), archive),
+            user.getUsername(),
+            createDefaultArchiveImportConfig(user, tempImportFolder2),
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isValidationSuccessful(), report.getErrorList().toString());
+    assertTrue(report.isSuccessful(), report.getErrorList().toString());
+    StructuredDocument imported =
+        recordMgr
+            .getRecordWithFields(report.getImportedRecords().iterator().next().getId(), user)
+            .asStrucDoc();
+    assertTrue(imported.isAllFieldsValid());
+    assertEquals(14, imported.getFields().size());
+    for (Field field : imported.getFields()) {
+      assertEquals(
+          !legacyWire && field.getName().startsWith("Required"),
+          field.isMandatory(),
+          field.getName());
+    }
+    if (!legacyWire) {
+      assertThat(xml).contains("<mandatory>true</mandatory>", "<mandatory>false</mandatory>");
+    }
   }
 
   @Test
