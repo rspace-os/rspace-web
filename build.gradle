@@ -66,26 +66,14 @@ def buildTimestamp = (setting('timestamp') ?: 'dev').with {
 }
 version = "2.28.0-SNAPSHOT-${buildTimestamp}"
 
-// -Djava-version / -Djava-vendor pick the JDK that compiles and runs the tests from the installed
-// ones (JAVA_HOME, ~/.m2/toolchains.xml, SDKMAN and the other places Gradle looks), as the Maven
-// toolchains plugin did. Nothing is downloaded. Without them, the JDK running Gradle compiles.
-def toolchainVendors = [
-  temurin: JvmVendorSpec.ADOPTIUM, adoptium: JvmVendorSpec.ADOPTIUM, zulu: JvmVendorSpec.AZUL,
-  azul: JvmVendorSpec.AZUL, corretto: JvmVendorSpec.AMAZON, amazon: JvmVendorSpec.AMAZON,
-  microsoft: JvmVendorSpec.MICROSOFT, oracle: JvmVendorSpec.ORACLE, graalvm: JvmVendorSpec.GRAAL_VM,
-  liberica: JvmVendorSpec.BELLSOFT, bellsoft: JvmVendorSpec.BELLSOFT, semeru: JvmVendorSpec.IBM,
-  ibm: JvmVendorSpec.IBM, sapmachine: JvmVendorSpec.SAP, sap: JvmVendorSpec.SAP,
-]
+// -Djava-version picks the installed JDK (JAVA_HOME, ~/.m2/toolchains.xml, SDKMAN and the other
+// places Gradle looks) that compiles and runs the tests. Nothing is downloaded. Without it, the JDK
+// running Gradle compiles. RSpace supports Temurin only, so no vendor is selected.
 def javaVersionSetting = setting('java-version')
-def javaVendorSetting = setting('java-vendor')
 java {
-  if (javaVersionSetting != null || javaVendorSetting != null) {
+  if (javaVersionSetting != null) {
     toolchain {
-      languageVersion = JavaLanguageVersion.of(javaVersionSetting ?: '17')
-      // "openjdk", Maven's default vendor, names no particular build, so it matches any JDK.
-      if (javaVendorSetting != null && javaVendorSetting.toLowerCase() != 'openjdk') {
-        vendor = toolchainVendors[javaVendorSetting.toLowerCase()] ?: JvmVendorSpec.matching(javaVendorSetting)
-      }
+      languageVersion = JavaLanguageVersion.of(javaVersionSetting)
     }
   } else {
     sourceCompatibility = JavaVersion.VERSION_17

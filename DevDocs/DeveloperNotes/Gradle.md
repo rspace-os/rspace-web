@@ -77,7 +77,7 @@ Switches:
 | `-DspotlessFiles=<regex>,...` | Limit Spotless to files whose absolute path matches one regex |
 | `-Dtimestamp=<value>` / `-Dtimestamp=now` | Version stamp; defaults to `dev` |
 | `-Ddeployment=<name>` | Package `src/main/resources/deployments/<name>/` (default `dev`) |
-| `-Djava-version=<17\|21>`, `-Djava-vendor=<vendor>` | Pick a toolchain JDK (see [Toolchains](#toolchains)) |
+| `-Djava-version=<17\|21>` | Pick a toolchain JDK (see [Toolchains](#toolchains)) |
 | `-Dtest=<pattern>,...` | Select test classes or methods |
 | `-Dfast=true` | Tests skip the Spring and database tests |
 | `-DincludedTestGroups=<tags>` / `-DexcludedTestGroups=<tags>` | JUnit tags to include / exclude; `chemistry` is excluded by default, and `-DexcludedTestGroups=` excludes nothing |
@@ -363,11 +363,10 @@ the deployment properties control access to it. See [Storybook.md](Storybook.md)
 
 ## Toolchains
 
-Without `-Djava-version` or `-Djava-vendor`, the JDK running Gradle compiles and runs the tests.
-With them, Gradle uses a matching installed JDK as a toolchain for compiling and testing:
-
-- `-Djava-version` is `17` (the default) or `21`;
-- `-Djava-vendor` is e.g. `temurin`, `zulu`, `corretto` or `oracle`; `openjdk` matches any vendor.
+RSpace supports Eclipse Temurin JDKs only; CI installs Temurin 17 or 21. Without
+`-Djava-version`, the JDK running Gradle compiles and runs the tests. With `-Djava-version=17` or
+`-Djava-version=21`, Gradle uses an installed JDK of that version as a toolchain for compiling
+and testing.
 
 Gradle looks for JDKs in `JAVA_HOME`, `~/.m2/toolchains.xml`, SDKMAN, asdf, the OS's usual
 locations and the other places it
@@ -422,10 +421,10 @@ To review a change, run `./gradlew dumpClasspaths` before and after and diff
 GitHub Actions jobs set up Java and Gradle with the local action
 `.github/actions/setup-gradle-cached`. It:
 
-- installs the JDK with `actions/setup-java`, and sets `LANG=C.UTF-8`;
+- installs Temurin with `actions/setup-java`, and sets `LANG=C.UTF-8`;
 - caches dependencies and wrapper files in `~/.gradle/caches` and `~/.gradle/wrapper`, keyed
   by job family and build/dependency declarations;
-- separately caches task outputs in `~/.gradle/rspace-build-cache`, keyed by OS, JDK vendor/version,
+- separately caches task outputs in `~/.gradle/rspace-build-cache`, keyed by OS, JDK version,
   job family, build declarations and main commit. Restore prefixes first match build declarations,
   then fall back within the same OS/JDK/job family. Gradle validates individual task inputs.
   A new main commit saves new outputs even when dependencies have not changed; Actions

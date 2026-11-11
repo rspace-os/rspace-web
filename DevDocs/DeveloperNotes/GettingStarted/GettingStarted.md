@@ -58,9 +58,8 @@ pnpm itself honors this pin.
 
 This enables us to run builds & tests using different JDK versions.
 Without any options, the JDK running Gradle compiles the code and runs the tests.
-To use another installed JDK, pass `-Djava-version=<17|21>` and optionally
-`-Djava-vendor=<vendor>` (e.g. `temurin`; `openjdk` matches any vendor). Gradle
-finds JDKs in `JAVA_HOME`, SDKMAN, asdf, the usual OS locations and an existing
+RSpace supports Eclipse Temurin JDKs only. To use another installed Temurin JDK,
+pass `-Djava-version=<17|21>`. Gradle finds JDKs in `JAVA_HOME`, SDKMAN, asdf, the usual OS locations and an existing
 `~/.m2/toolchains.xml`; it does not download any. Run `./gradlew javaToolchains`
 to see what it found, and see [Gradle.md](../Gradle.md#toolchains) to add a JDK it
 doesn't find. So to run the tests on Java 21, install JDK 21 and pass `-Djava-version=21`.

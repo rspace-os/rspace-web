@@ -18,10 +18,6 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
-      java_vendor:
-        description: 'Java vendor (setup-java distribution and Gradle toolchain)'
-        type: string
-        default: 'temurin'
 
 permissions:
   contents: read
@@ -62,7 +58,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: coverage
 
@@ -96,7 +91,6 @@ jobs:
           ./gradlew test jacocoTestReport \
             -DenableTestCoverage -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -171,7 +165,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: coverage
 
@@ -201,7 +194,6 @@ jobs:
           ./gradlew integrationTests jacocoIntegrationTestReport \
             -DenableTestCoverage -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -267,7 +259,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: coverage
           save-cache: 'false'
@@ -275,8 +266,7 @@ jobs:
       - name: Compile main classes
         run: |
           ./gradlew -q classes \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+            -Djava-version=${{ matrix.java-version }}
 
       - name: Download unit + Spring exec
         continue-on-error: true

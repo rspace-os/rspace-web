@@ -1,13 +1,10 @@
 name: Set up JDK and Gradle
 description: >-
-  Install the JDK, restore Gradle User Home from the Actions cache, and set up
+  Install Temurin, restore Gradle User Home from the Actions cache, and set up
   Gradle (which validates the wrapper jar). Run after checkout and before any
   `pnpm install`, so the cache key's `**/*.gradle*` glob does not walk node_modules.
 
 inputs:
-  java-distribution:
-    description: setup-java distribution, e.g. "temurin".
-    default: temurin
   java-version:
     description: JDK major version, e.g. "17" or "21".
     default: "17"
@@ -27,7 +24,7 @@ runs:
     - name: Set up JDK
       uses: actions/setup-java@v5.4.0
       with:
-        distribution: ${{ inputs.java-distribution }}
+        distribution: temurin
         java-version: ${{ inputs.java-version }}
 
     # Gradle reads non-ASCII test resource file names, so it must never start
@@ -69,20 +66,20 @@ runs:
       uses: actions/cache@v6.1.0
       with:
         path: ~/.gradle/rspace-build-cache
-        key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
+        key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
         restore-keys: |
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
+          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
+          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
 
     - name: Restore Gradle task outputs
       if: github.ref != 'refs/heads/main' || inputs.save-cache != 'true'
       uses: actions/cache/restore@v6.1.0
       with:
         path: ~/.gradle/rspace-build-cache
-        key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
+        key: gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-${{ github.sha }}
         restore-keys: |
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
-          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-distribution }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
+          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle/pinned-versions.txt', 'gradle.properties', 'buildSrc/build.gradle', 'buildSrc/src/**') }}-
+          gradle-tasks-v1-${{ runner.os }}-${{ inputs.java-version }}-${{ inputs.cache-key }}-
 
     # cache-provider external leaves Gradle User Home to the steps above: the
     # default ('enhanced') is a proprietary component under Gradle's terms of
