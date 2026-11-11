@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserHistory, RouterProvider } from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
+import { createMemoryHistory, type RouterHistory, RouterProvider } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import {
@@ -17,16 +16,18 @@ import { inheritedBrowserBookingPreferences } from "../preferences/bookingPrefer
 import { createCalendarRouter } from "./calendarRouter";
 
 export function CalendarPageStory({
+  history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] }),
   user = currentUser,
   preferences = mapBookingDisplayPreferences(inheritedBrowserBookingPreferences),
 }: {
+  history?: RouterHistory;
   user?: ApiV2CurrentUser;
   preferences?: BookingDisplayPreferencesDocument;
 } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), preferences);
   queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
-  const router = createCalendarRouter(createBrowserHistory());
+  const router = createCalendarRouter(history);
   useEffect(
     () => () => {
       router.history.destroy();
@@ -37,11 +38,9 @@ export function CalendarPageStory({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>
   );
 }

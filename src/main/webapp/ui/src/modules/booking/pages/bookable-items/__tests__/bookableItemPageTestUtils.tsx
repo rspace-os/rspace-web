@@ -12,6 +12,7 @@ import {
 import { render } from "@testing-library/react";
 import { Suspense } from "react";
 import { vi } from "vitest";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -60,9 +61,11 @@ export function renderPage(initialEntry = "/booking/bookable-items/IN123") {
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <RouterProvider router={router as never} />
-      </Suspense>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>,
   );
   return { ...result, queryClient, router };

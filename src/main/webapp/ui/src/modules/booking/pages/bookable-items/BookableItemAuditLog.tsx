@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import { AuditTimestamp, RecordedValues } from "./BookableItemAuditEvent";
+import { AuditTimestamp, bookingId, RecordedValues } from "./BookableItemAuditEvent";
 import {
   type AuditDateError,
   type AuditDateField,
@@ -87,7 +88,16 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
         width: 120,
         minWidth: 100,
         dependencies: ["payload"],
-        renderCell: ({ row }) => <span>{row.target ?? "—"}</span>,
+        renderCell: ({ row }) => {
+          const id = bookingId(row.target);
+          return id === null ? (
+            <span>{row.target ?? "—"}</span>
+          ) : (
+            <Link className="underline" to="/booking/calendar/bookings/$id" params={{ id: String(id) }}>
+              {row.target}
+            </Link>
+          );
+        },
       },
     },
     {

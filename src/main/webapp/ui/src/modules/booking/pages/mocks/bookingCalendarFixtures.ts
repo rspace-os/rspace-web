@@ -1,22 +1,30 @@
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 
-const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
-  relationTo: "instruments" as const,
-  globalId: `IN${id}`,
-  value: {
-    id,
-    name,
-    deleted: false,
-    parentContainer:
-      location === null
-        ? null
-        : {
-            relationTo: "containers" as const,
-            globalId: location?.globalId ?? `IC${id}`,
-            value: { id, name: location?.name ?? `${name} room`, globalId: location?.globalId ?? `IC${id}` },
-          },
-  },
-});
+export function bookingTarget(id: number, name: string, location?: { name: string; globalId: string } | null) {
+  const base = {
+    relationTo: "instruments" as const,
+    value: { id, name, deleted: false },
+    globalId: `IN${id}`,
+  };
+  if (location === undefined) return base;
+  return {
+    ...base,
+    value: {
+      ...base.value,
+      parentContainer:
+        location === null
+          ? null
+          : {
+              relationTo: "containers" as const,
+              globalId: location.globalId,
+              value: { id, name: location.name, globalId: location.globalId },
+            },
+    },
+  };
+}
+
+const target = (id: number, name: string, location?: { name: string; globalId: string } | null) =>
+  bookingTarget(id, name, location === undefined ? { name: `${name} room`, globalId: `IC${id}` } : location);
 
 const timestamps = {
   version: 0,
@@ -68,20 +76,18 @@ export const busyBooking: BookingListDocument = {
 };
 
 export function collectionResponse(
-  docs: readonly Record<string, unknown>[],
-  options: { page?: number; totalDocs?: number; limit?: number } = {},
+  docs: readonly unknown[],
+  options: { page?: number; limit?: number; totalDocs?: number } = {},
 ) {
   const page = options.page ?? 1;
   const limit = options.limit ?? 100;
   const totalDocs = options.totalDocs ?? docs.length;
-  const totalPages = limit > 0 ? Math.ceil(totalDocs / limit) : 0;
-
+  const totalPages = limit > 0 && totalDocs > 0 ? Math.ceil(totalDocs / limit) : 0;
   return {
     docs,
     totalDocs,
     limit,
     page,
-
     hasNextPage: page < totalPages,
   };
 }
