@@ -30,7 +30,6 @@ fi
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url="${CHEMISTRY_URL}" \
   ${MAVEN_TOOLCHAIN_JAVA_VERSION:+-Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION}"} \
-  ${MAVEN_TOOLCHAIN_JAVA_VERSION:+-Djava-vendor="${MAVEN_TOOLCHAIN_JAVA_VENDOR:-openjdk}"} \
   -Djavax.xml.accessExternalDTD=all \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
   -Djdbc.db.maven="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \

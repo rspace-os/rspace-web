@@ -46,7 +46,6 @@ jobs:
         if: matrix.language == 'java-kotlin'
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: temurin
           java-version: 17
           cache-key: tests
           save-cache: 'false'
