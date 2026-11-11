@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.dsw;
 
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Ticker;
@@ -24,15 +25,26 @@ import com.researchspace.webapp.integrations.dsw.model.DSWProject;
 import com.researchspace.webapp.integrations.dsw.model.DSWProjects;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,12 +54,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.UnknownContentTypeException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
@@ -69,6 +82,36 @@ public class DSWClient {
   public static final int DSW_API_PATH_CACHE_TTL_MINUTES = 15;
 
   private static final int DSW_API_PATH_CACHE_MAX_SIZE = 100;
+
+  /**
+   * Timeouts for the version check. Concurrent callers for a server wait on one check, so it must
+   * not be able to hang.
+   */
+  public static final Duration DSW_VERSION_CHECK_CONNECT_TIMEOUT = Duration.ofSeconds(5);
+
+  public static final Duration DSW_VERSION_CHECK_READ_TIMEOUT = Duration.ofSeconds(10);
+
+  /**
+   * Overall limit on a version check. The read timeout applies to each read and each redirect hop
+   * separately, so a server that trickles bytes or chains redirects could otherwise hold every
+   * waiter for much longer.
+   */
+  public static final Duration DSW_VERSION_CHECK_DEADLINE = Duration.ofSeconds(15);
+
+  // Real version info is under 1 KB; anything far larger is some other page.
+  private static final int DSW_VERSION_INFO_MAX_BYTES = 64 * 1024;
+
+  private static final ExecutorService VERSION_CHECK_EXECUTOR =
+      Executors.newCachedThreadPool(
+          runnable -> {
+            Thread thread = new Thread(runnable, "dsw-version-check");
+            thread.setDaemon(true);
+            return thread;
+          });
+
+  // Lets the deadline close the connection a version check is blocked on.
+  private static final ThreadLocal<AtomicReference<HttpURLConnection>> VERSION_CHECK_CONNECTION =
+      new ThreadLocal<>();
 
   // Two or three parts, so a future "5.1" is still recognised. SemanticVersion treats a missing
   // patch number as matching any, so "5.0" counts as 5.0.0.
@@ -92,7 +135,23 @@ public class DSWClient {
     }
   }
 
+  /**
+   * A server URL and the paths it uses, resolved together so that one operation never mixes the
+   * results of two version checks.
+   */
+  private record DSWServer(String url, DSWPaths paths) {
+    String apiBaseUrl() {
+      return url + paths.api;
+    }
+
+    String projectsBaseUrl() {
+      return url + paths.projects;
+    }
+  }
+
   private final RestTemplate restTemplate;
+  private final RestTemplate versionCheckRestTemplate;
+  private final Duration versionCheckDeadline;
   // Server URL, without trailing slash, to the paths it uses.
   private final Cache<String, DSWPaths> pathsCache;
   @Autowired private UserConnectionManager source;
@@ -103,7 +162,7 @@ public class DSWClient {
   private ObjectMapper mapper = new ObjectMapper();
 
   public DSWClient() {
-    this(new RestTemplate(), Ticker.systemTicker());
+    this(null, null, null, null);
   }
 
   @Autowired
@@ -112,17 +171,77 @@ public class DSWClient {
       UserManager userManager,
       MediaManager mediaManager,
       DMPManager dmpManager) {
+    this(
+        userConnectionManager,
+        userManager,
+        mediaManager,
+        dmpManager,
+        new RestTemplate(),
+        buildVersionCheckRestTemplate(
+            DSW_VERSION_CHECK_CONNECT_TIMEOUT, DSW_VERSION_CHECK_READ_TIMEOUT),
+        Ticker.systemTicker());
+  }
+
+  DSWClient(RestTemplate restTemplate, Ticker ticker) {
+    this(null, null, null, null, restTemplate, restTemplate, ticker);
+  }
+
+  DSWClient(
+      UserConnectionManager userConnectionManager,
+      UserManager userManager,
+      MediaManager mediaManager,
+      DMPManager dmpManager,
+      RestTemplate restTemplate,
+      RestTemplate versionCheckRestTemplate,
+      Ticker ticker) {
+    this(
+        userConnectionManager,
+        userManager,
+        mediaManager,
+        dmpManager,
+        restTemplate,
+        versionCheckRestTemplate,
+        ticker,
+        DSW_VERSION_CHECK_DEADLINE);
+  }
+
+  DSWClient(
+      UserConnectionManager userConnectionManager,
+      UserManager userManager,
+      MediaManager mediaManager,
+      DMPManager dmpManager,
+      RestTemplate restTemplate,
+      RestTemplate versionCheckRestTemplate,
+      Ticker ticker,
+      Duration versionCheckDeadline) {
     this.source = userConnectionManager;
     this.userManager = userManager;
     this.mediaManager = mediaManager;
     this.dmpManager = dmpManager;
-    this.restTemplate = new RestTemplate();
-    this.pathsCache = buildPathsCache(Ticker.systemTicker());
+    this.restTemplate = restTemplate;
+    this.versionCheckRestTemplate = versionCheckRestTemplate;
+    this.versionCheckDeadline = versionCheckDeadline;
+    this.pathsCache = buildPathsCache(ticker);
   }
 
-  DSWClient(RestTemplate restTemplate, Ticker ticker) {
-    this.restTemplate = restTemplate;
-    this.pathsCache = buildPathsCache(ticker);
+  static RestTemplate buildVersionCheckRestTemplate(Duration connectTimeout, Duration readTimeout) {
+    // Same-scheme redirects are followed, so a 5.x server behind host canonicalisation or a
+    // moved path is still detected.
+    SimpleClientHttpRequestFactory requestFactory =
+        new SimpleClientHttpRequestFactory() {
+          @Override
+          protected void prepareConnection(HttpURLConnection connection, String httpMethod)
+              throws IOException {
+            super.prepareConnection(connection, httpMethod);
+            AtomicReference<HttpURLConnection> holder = VERSION_CHECK_CONNECTION.get();
+            if (holder != null) {
+              holder.set(connection);
+            }
+          }
+        };
+    requestFactory.setConnectTimeout((int) connectTimeout.toMillis());
+    requestFactory.setReadTimeout((int) readTimeout.toMillis());
+    return new RestTemplate(requestFactory);
   }
 
   private static Cache<String, DSWPaths> buildPathsCache(Ticker ticker) {
@@ -137,19 +256,18 @@ public class DSWClient {
    * DSW 5.0.0 moved its API from {@link #DSW_PATH_API_LEGACY} to {@link #DSW_PATH_API_CURRENT}, and
    * its project pages from {@link #DSW_PATH_PROJECTS_LEGACY} to {@link #DSW_PATH_PROJECTS_CURRENT}.
    * The release version is read from the unauthenticated info endpoint at the new path. Only a
-   * clear "not a 5.x server" answer selects the legacy paths: a 404, a redirect, a body that is not
-   * JSON, or JSON reporting no version or one older than 5.0.0.
+   * clear "not a 5.x server" answer selects the legacy paths: a 404, a body that is not JSON, or
+   * JSON reporting no version or one older than 5.0.0.
    *
    * <p>The detected paths are cached per server URL for {@link #DSW_API_PATH_CACHE_TTL_MINUTES}
    * minutes. Failures are not cached, so the next call checks again.
    *
-   * @throws RestClientException for any other failure, such as a timeout, connection error or other
-   *     HTTP error status, so that a temporary fault on a 5.x server is not mistaken for a
-   *     pre-5.0.0 server
+   * @throws RestClientException for any other failure, such as a timeout, connection error, other
+   *     HTTP error status or a redirect that is not followed (such as http to https), so that a
+   *     temporary fault on a 5.x server is not mistaken for a pre-5.0.0 server
    */
   String getApiBaseUrl(String savedUrl) {
-    String serverUrl = withoutTrailingSlash(savedUrl);
-    return serverUrl + getPaths(serverUrl).api;
+    return resolveServer(savedUrl).apiBaseUrl();
   }
 
   /**
@@ -157,8 +275,16 @@ public class DSWClient {
    * detection and cache as {@link #getApiBaseUrl(String)}.
    */
   String getProjectsBaseUrl(String savedUrl) {
+    return resolveServer(savedUrl).projectsBaseUrl();
+  }
+
+  private DSWServer resolveServer(String savedUrl) {
     String serverUrl = withoutTrailingSlash(savedUrl);
-    return serverUrl + getPaths(serverUrl).projects;
+    return new DSWServer(serverUrl, getPaths(serverUrl));
+  }
+
+  private DSWServer resolveServer(DSWConnectionConfig connCfg) throws MalformedURLException {
+    return resolveServer(connCfg.getRepositoryURL().get().toString());
   }
 
   private DSWPaths getPaths(String serverUrl) {
@@ -191,7 +317,7 @@ public class DSWClient {
   }
 
   private String getApiBaseUrl(DSWConnectionConfig connCfg) throws MalformedURLException {
-    return getApiBaseUrl(connCfg.getRepositoryURL().get().toString());
+    return resolveServer(connCfg).apiBaseUrl();
   }
 
   /** The DSW paths start with a slash, so any trailing slash on the saved URL is dropped. */
@@ -199,40 +325,158 @@ public class DSWClient {
     return url.replaceAll("/+$", "");
   }
 
-  private void logNonJsonVersionInfo(String serverUrl) {
-    log.debug(
-        "DSW version info at {} is not JSON, assuming older than {}",
-        serverUrl,
-        DSW_API_PATH_CHANGE_VERSION);
-  }
+  /** The parts of the version info response that detection uses. */
+  private record VersionInfoResponse(
+      HttpStatusCode status, String location, String body, boolean tooLarge) {}
 
-  private Optional<SemanticVersion> getServerVersion(String serverUrl) {
-    JsonNode info;
+  /**
+   * Requests the version info, or returns null for a 404. Runs on {@link #VERSION_CHECK_EXECUTOR};
+   * stops reading at the deadline or size limit and closes its own connection, since a read blocked
+   * in another thread holds a lock that would stall a disconnect from the waiting thread.
+   */
+  private VersionInfoResponse requestVersionInfo(String serverUrl, long deadlineNanos) {
     try {
-      info =
-          restTemplate.getForObject(
-              UriComponentsBuilder.fromUriString(serverUrl + DSW_PATH_API_CURRENT).build().toUri(),
-              JsonNode.class);
+      return versionCheckRestTemplate.execute(
+          UriComponentsBuilder.fromUriString(serverUrl + DSW_PATH_API_CURRENT).build().toUri(),
+          HttpMethod.GET,
+          request ->
+              request.getHeaders().setAccept(Collections.singletonList(MediaType.APPLICATION_JSON)),
+          response -> {
+            // Read before the body: reading it may disconnect, after which the JDK resets the
+            // status.
+            HttpStatusCode status = response.getStatusCode();
+            // Raw text, only for a redirect: a malformed Location must not fail parsing.
+            String location =
+                status.is3xxRedirection()
+                    ? response.getHeaders().getFirst(HttpHeaders.LOCATION)
+                    : null;
+            String body = readVersionInfoBody(response.getBody(), serverUrl, deadlineNanos);
+            return new VersionInfoResponse(status, location, body, body == null);
+          });
     } catch (HttpClientErrorException.NotFound e) {
       // Log only the status: the exception message can include part of the response body.
       log.debug(
           "No DSW version info at {} (HTTP 404), assuming older than {}",
           serverUrl,
           DSW_API_PATH_CHANGE_VERSION);
-      return Optional.empty();
-    } catch (UnknownContentTypeException e) {
-      logNonJsonVersionInfo(serverUrl);
-      return Optional.empty();
-    } catch (RestClientException e) {
-      if (e.getCause() instanceof HttpMessageNotReadableException) {
-        logNonJsonVersionInfo(serverUrl);
-        return Optional.empty();
-      }
-      throw e;
+      return null;
     }
-    if (info == null) {
+  }
+
+  /** Returns the body as text, or null if it is larger than any real version info. */
+  private String readVersionInfoBody(InputStream in, String serverUrl, long deadlineNanos)
+      throws IOException {
+    ByteArrayOutputStream body = new ByteArrayOutputStream();
+    byte[] buffer = new byte[4096];
+    int read;
+    while ((read = in.read(buffer)) != -1) {
+      body.write(buffer, 0, read);
+      if (body.size() > DSW_VERSION_INFO_MAX_BYTES) {
+        // Close now, so that the response is not drained to the end.
+        disconnectVersionCheck();
+        return null;
+      }
+      if (System.nanoTime() - deadlineNanos > 0 || Thread.currentThread().isInterrupted()) {
+        disconnectVersionCheck();
+        throw new IOException(
+            "DSW version check at "
+                + serverUrl
+                + " did not finish within "
+                + versionCheckDeadline.toSeconds()
+                + " seconds");
+      }
+    }
+    return body.toString(StandardCharsets.UTF_8);
+  }
+
+  private static void disconnectVersionCheck() {
+    AtomicReference<HttpURLConnection> holder = VERSION_CHECK_CONNECTION.get();
+    if (holder != null && holder.get() != null) {
+      holder.get().disconnect();
+    }
+  }
+
+  /**
+   * Runs {@link #requestVersionInfo} with an overall deadline, so that callers waiting on this
+   * check are released even if the request is still in progress.
+   */
+  private VersionInfoResponse requestVersionInfoWithDeadline(String serverUrl) {
+    long deadlineNanos = System.nanoTime() + versionCheckDeadline.toNanos();
+    Future<VersionInfoResponse> request =
+        VERSION_CHECK_EXECUTOR.submit(
+            () -> {
+              VERSION_CHECK_CONNECTION.set(new AtomicReference<>());
+              try {
+                return requestVersionInfo(serverUrl, deadlineNanos);
+              } finally {
+                VERSION_CHECK_CONNECTION.remove();
+              }
+            });
+    try {
+      return request.get(versionCheckDeadline.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (ExecutionException e) {
+      if (e.getCause() instanceof RestClientException restClientException) {
+        throw restClientException;
+      }
+      throw new IllegalStateException(
+          "Unexpected error checking the DSW version at " + serverUrl, e.getCause());
+    } catch (TimeoutException e) {
+      // The interrupt is seen by the reading loop, which closes the connection itself.
+      request.cancel(true);
+      String message =
+          String.format(
+              "DSW version check at %s did not finish within %d seconds",
+              serverUrl, versionCheckDeadline.toSeconds());
+      log.warn(message);
+      throw new ResourceAccessException(message);
+    } catch (InterruptedException e) {
+      request.cancel(true);
+      Thread.currentThread().interrupt();
+      log.warn("Interrupted while checking the DSW version at {}", serverUrl);
+      throw new ResourceAccessException(
+          "Interrupted while checking the DSW version at " + serverUrl);
+    }
+  }
+
+  private Optional<SemanticVersion> getServerVersion(String serverUrl) {
+    VersionInfoResponse response = requestVersionInfoWithDeadline(serverUrl);
+    if (response == null) {
+      return Optional.empty();
+    }
+    if (response.status().is3xxRedirection()) {
+      // Same-scheme redirects are followed, so this is one that changes scheme (such as http to
+      // https). The API calls would not follow it either, so the saved URL needs correcting.
+      String message =
+          String.format(
+              "DSW at %s redirects (HTTP %d) to %s, which is not followed; check the saved DSW URL",
+              serverUrl,
+              response.status().value(),
+              forLog(Objects.toString(response.location(), "")));
+      log.warn(message);
+      throw new ResourceAccessException(message);
+    }
+    if (response.tooLarge()) {
+      log.debug(
+          "DSW version info at {} is larger than {} bytes, assuming older than {}",
+          serverUrl,
+          DSW_VERSION_INFO_MAX_BYTES,
+          DSW_API_PATH_CHANGE_VERSION);
+      return Optional.empty();
+    }
+    String body = response.body();
+    if (body.isBlank()) {
       log.debug(
           "Empty DSW version info at {}, assuming older than {}",
+          serverUrl,
+          DSW_API_PATH_CHANGE_VERSION);
+      return Optional.empty();
+    }
+    JsonNode info;
+    try {
+      info = mapper.readTree(body);
+    } catch (JsonProcessingException e) {
+      log.debug(
+          "DSW version info at {} is not JSON, assuming older than {}",
           serverUrl,
           DSW_API_PATH_CHANGE_VERSION);
       return Optional.empty();
@@ -356,7 +600,15 @@ public class DSWClient {
     // The description metadata does not come with the questionnaire, only
     // in the list of projects, so first of all we need to retrieve those.
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
-    String apiBaseUrl = getApiBaseUrl(connCfg);
+    // Resolve once: a second lookup could repeat the version check after the cache expires, and
+    // fail after the file has been saved.
+    DSWServer dswServer = resolveServer(connCfg);
+    String apiBaseUrl = dswServer.apiBaseUrl();
+    String dmpLink =
+        UriComponentsBuilder.fromUriString(dswServer.projectsBaseUrl() + planUuid)
+            .build()
+            .toUri()
+            .toString();
     DSWProjects projects = getProjectsForCurrentUser(serverAlias, connCfg, apiBaseUrl);
     List<DSWProject> currentProjects =
         Arrays.stream(projects.getProjects())
@@ -401,17 +653,7 @@ public class DSWClient {
             Optional.of(
                 new DMPUser(
                     cfg.getUserAppConfig().getUser(),
-                    new DmpDto(
-                        planUuid,
-                        projectName,
-                        DMPSource.DSW,
-                        null,
-                        UriComponentsBuilder.fromUriString(
-                                getProjectsBaseUrl(connCfg.getRepositoryURL().get().toString())
-                                    + planUuid)
-                            .build()
-                            .toUri()
-                            .toString())));
+                    new DmpDto(planUuid, projectName, DMPSource.DSW, null, dmpLink)));
       }
       if (file != null) {
         dmpUser.get().setDmpDownloadFile(file);
