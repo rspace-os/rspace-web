@@ -10,6 +10,24 @@ access](RestApiV2QueriesAndAccess.md).
 
 For booking domain rules and API examples, see [Booking](Booking.md).
 
+## Check the published contract
+
+`ApiV2OpenApiDocumentExportTest` uses the same document service as the OpenAPI controller. It merges
+generated collection schemas and annotated MVC routes, then exports the result to
+`src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json`. The test fails if the committed file
+differs. After contract changes, regenerate the document and the frontend client:
+
+```sh
+mvn -q test -Dfast=true -Dtest=ApiV2OpenApiDocumentExportTest -DupdateApiV2OpenApiFixture=true
+pnpm generate:api-v2
+```
+
+The Lint and Test workflow compares this document at the pull request base and head with oasdiff,
+falling back to the earlier `src/main/webapp/ui/src/__tests__/mocks/apiV2OpenApi.json` for bases
+that predate the generated client. A separate job checks the base checkout for either file; when
+neither exists, the breaking-change job is skipped. Error-level breaking changes fail the job. Spec
+upload and pull request comments are disabled.
+
 ## Add a field type
 
 Collection field implementations live in `model.collection.types`. Each implements
