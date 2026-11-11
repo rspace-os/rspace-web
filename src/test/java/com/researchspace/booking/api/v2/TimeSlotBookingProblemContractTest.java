@@ -23,10 +23,14 @@ import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Locale;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -138,10 +142,42 @@ class TimeSlotBookingProblemContractTest {
             new BookingPolicyException(BookingPolicyException.Reason.GRANULARITY),
             true,
             """
-            {"title":"Start and end must align with this bookable item's slot granularity.",
-             "status":400,"code":"errors.api.v2.booking.granularity",
-             "detail":"Start and end must align with this bookable item's slot granularity."}
+            {"title":"The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
+             "status":400,"code":"errors.api.v2.booking.granularity"}
             """));
+  }
+
+  @Test
+  void aMissingDayEndNamesTheLocalTimeDateAndZoneInTheDetail() throws Exception {
+    JsonNode body =
+        body(
+            advice.handleBookingPolicy(
+                BookingPolicyException.dayEndMissing(
+                    LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"))));
+
+    assertEquals(
+        json.readTree(
+            """
+            {"title":"The booking end time does not exist in the local time zone.",
+             "status":400,"code":"errors.api.v2.booking.dayEndMissing",
+             "detail":"This booking would end at 02:30 on March 29, 2026, but that local time does not exist in Europe/Berlin. Change the start time or choose another duration."}
+            """),
+        body);
+  }
+
+  @Test
+  void missingDayEndHasTheSameBodyThroughCollectionOperations() throws Exception {
+    BookingPolicyException failure =
+        BookingPolicyException.dayEndMissing(
+            LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"));
+    assertEquals(
+        body(advice.handleBookingPolicy(failure)),
+        body(
+            advice.handleResourceException(
+                translate(
+                    operations.timeSlotBookingApiV2Resource(),
+                    ResourceOperation.CREATE,
+                    failure))));
   }
 
   /** Round-trips through text so numbers compare by value, as a client would parse them. */

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import { Badge } from "@/modules/common/ui/badge";
@@ -47,15 +48,16 @@ function RecordedValues({ row }: { row: AuditRow }) {
     state: t("bookableItemDetails.audit.values.state"),
     target: t("bookableItemDetails.audit.values.target"),
     bookingConfigurationId: t("bookableItemDetails.audit.values.configuration"),
-    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
     enabled: t("bookableItemDetails.audit.values.enabled"),
     timezone: t("bookableItemDetails.audit.values.timezone"),
     openingHours: t("bookableItemDetails.audit.values.openingHours"),
     slotGranularityMinutes: t("bookableItemDetails.audit.values.increment"),
+    incrementUnit: t("bookableItemDetails.audit.values.incrementUnit"),
     maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
     bufferBeforeMinutes: t("bookableItemDetails.audit.values.bufferBefore"),
     bufferAfterMinutes: t("bookableItemDetails.audit.values.bufferAfter"),
     allowDoubleBooking: t("bookableItemDetails.audit.values.allowDoubleBooking"),
+    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
   };
   const words = {
     yes: t("bookableItemDetails.yes"),
@@ -67,16 +69,34 @@ function RecordedValues({ row }: { row: AuditRow }) {
       CANCELLED: t("bookings.details.cancelled"),
       BOOKING: t("bookings.form.typeBooking"),
       MAINTENANCE: t("bookings.form.typeBlockout"),
+      MINUTES: t("settings.fields.incrementMinutes"),
+      HOURS: t("settings.fields.incrementHours"),
+      DAYS: t("settings.fields.incrementDays"),
     },
   };
+  // With its unit recorded alongside, the increment reads as it was configured, such as "1 day", not 1440.
+  const recordedUnit = row.payload.incrementUnit;
+  const recordedMinutes = Number(row.payload.slotGranularityMinutes);
+  const incrementInUnit =
+    (recordedUnit === "MINUTES" || recordedUnit === "HOURS" || recordedUnit === "DAYS") &&
+    Number.isFinite(recordedMinutes)
+      ? formatIncrement({ slotGranularityMinutes: recordedMinutes, incrementUnit: recordedUnit }, t)
+      : undefined;
   return (
     <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
-      {recordedValues(row.payload, i18n.language, words, timeFormat).map(([label, value]) => (
-        <div className="contents" key={label}>
-          <dt className="break-words text-muted-foreground">{labels[label] ?? label}</dt>
-          <dd className="break-words">{value === "{}" ? t("bookableItemDetails.audit.values.empty") : value}</dd>
-        </div>
-      ))}
+      {recordedValues(row.payload, i18n.language, words, timeFormat).map(([label, value]) => {
+        const inUnit = label === "slotGranularityMinutes" ? incrementInUnit : undefined;
+        return (
+          <div className="contents" key={label}>
+            <dt className="break-words text-muted-foreground">
+              {inUnit ? t("bookableItemDetails.fields.granularity") : (labels[label] ?? label)}
+            </dt>
+            <dd className="break-words">
+              {inUnit ?? (value === "{}" ? t("bookableItemDetails.audit.values.empty") : value)}
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }
@@ -98,12 +118,9 @@ function AuditTarget({ target }: { target: AuditRow["target"] }) {
 }
 
 function AuditTimestamp({ value }: { value: string }) {
-  const { i18n } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return (
-    <time dateTime={value}>
-      {formatBookingDateTime(value, "UTC", i18n.language, timeFormat, { timeStyle: "long" })}
-    </time>
+    <time dateTime={value}>{formatBookingDateTime(value, "UTC", undefined, timeFormat, { timeStyle: "long" })}</time>
   );
 }
 

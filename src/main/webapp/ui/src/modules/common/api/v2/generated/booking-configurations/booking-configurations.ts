@@ -33,7 +33,8 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
-import { apiV2Fetch, apiV2HeadersFetch } from "../../apiV2Fetch.ts";
+import { apiV2Fetch } from "../../apiV2Fetch.ts";
+import { apiV2HeadersFetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import { getSearchCalendarEventsQueryKey } from "../booking-calendar/booking-calendar.ts";
 import {
@@ -1562,13 +1563,12 @@ export const getGetBookingCalendarSubscriptionQueryKey = (configurationId: numbe
 
 export const getGetBookingCalendarSubscriptionQueryOptions = <
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1596,9 +1596,12 @@ export const getGetBookingCalendarSubscriptionQueryOptions = <
 export type GetBookingCalendarSubscriptionQueryResult = NonNullable<
   Awaited<ReturnType<typeof getBookingCalendarSubscription>>
 >;
-export type GetBookingCalendarSubscriptionQueryError = ErrorType<
-  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
->;
+export type GetBookingCalendarSubscriptionQueryError =
+  | UnauthenticatedResponse
+  | NotFoundResponse
+  | NotAcceptableResponse
+  | TooManyRequestsResponse
+  | UnexpectedErrorResponse;
 
 /**
  * Returns the caller's current subscription URL when one exists.
@@ -1606,13 +1609,12 @@ export type GetBookingCalendarSubscriptionQueryError = ErrorType<
  */
 export function useGetBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options: {
@@ -1635,13 +1637,12 @@ export function useGetBookingCalendarSubscription<
  */
 export function useGetBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1664,13 +1665,12 @@ export function useGetBookingCalendarSubscription<
  */
 export function useGetBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1685,13 +1685,12 @@ export function useGetBookingCalendarSubscription<
  */
 export function useGetBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1727,13 +1726,12 @@ export const invalidateGetBookingCalendarSubscription = async (
 
 export const getGetBookingCalendarSubscriptionSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1760,9 +1758,12 @@ export const getGetBookingCalendarSubscriptionSuspenseQueryOptions = <
 export type GetBookingCalendarSubscriptionSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof getBookingCalendarSubscription>>
 >;
-export type GetBookingCalendarSubscriptionSuspenseQueryError = ErrorType<
-  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
->;
+export type GetBookingCalendarSubscriptionSuspenseQueryError =
+  | UnauthenticatedResponse
+  | NotFoundResponse
+  | NotAcceptableResponse
+  | TooManyRequestsResponse
+  | UnexpectedErrorResponse;
 
 /**
  * Returns the caller's current subscription URL when one exists.
@@ -1770,13 +1771,12 @@ export type GetBookingCalendarSubscriptionSuspenseQueryError = ErrorType<
  */
 export function useGetBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options: {
@@ -1791,13 +1791,12 @@ export function useGetBookingCalendarSubscriptionSuspense<
  */
 export function useGetBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1812,13 +1811,12 @@ export function useGetBookingCalendarSubscriptionSuspense<
  */
 export function useGetBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1833,13 +1831,12 @@ export function useGetBookingCalendarSubscriptionSuspense<
  */
 export function useGetBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getBookingCalendarSubscription>>,
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
 >(
   configurationId: number,
   options?: {
@@ -1882,14 +1879,13 @@ export const createBookingCalendarSubscription = (
 export const getCreateBookingCalendarSubscriptionMutationKey = () => ["createBookingCalendarSubscription"] as const;
 
 export const getCreateBookingCalendarSubscriptionMutationOptions = <
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | ApiV2Problem
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
   TContext = unknown,
 >(
   queryClient: QueryClient,
@@ -1951,14 +1947,13 @@ export type CreateBookingCalendarSubscriptionMutationResult = NonNullable<
   Awaited<ReturnType<typeof createBookingCalendarSubscription>>
 >;
 
-export type CreateBookingCalendarSubscriptionMutationError = ErrorType<
+export type CreateBookingCalendarSubscriptionMutationError =
   | UnauthenticatedResponse
   | NotFoundResponse
   | NotAcceptableResponse
   | ApiV2Problem
   | TooManyRequestsResponse
-  | UnexpectedErrorResponse
->;
+  | UnexpectedErrorResponse;
 export type CreateBookingCalendarSubscriptionMutationVariables = { configurationId: number };
 
 /**
@@ -1966,14 +1961,13 @@ export type CreateBookingCalendarSubscriptionMutationVariables = { configuration
  * @summary Create a calendar subscription
  */
 export const useCreateBookingCalendarSubscription = <
-  TError = ErrorType<
+  TError =
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | ApiV2Problem
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
   TContext = unknown,
 >(
   options?: {
@@ -2026,15 +2020,14 @@ export const rotateBookingCalendarSubscription = (
 export const getRotateBookingCalendarSubscriptionMutationKey = () => ["rotateBookingCalendarSubscription"] as const;
 
 export const getRotateBookingCalendarSubscriptionMutationOptions = <
-  TError = ErrorType<
+  TError =
     | BadRequestResponse
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | ApiV2Problem
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
   TContext = unknown,
 >(
   queryClient: QueryClient,
@@ -2096,15 +2089,14 @@ export type RotateBookingCalendarSubscriptionMutationResult = NonNullable<
   Awaited<ReturnType<typeof rotateBookingCalendarSubscription>>
 >;
 
-export type RotateBookingCalendarSubscriptionMutationError = ErrorType<
+export type RotateBookingCalendarSubscriptionMutationError =
   | BadRequestResponse
   | UnauthenticatedResponse
   | NotFoundResponse
   | NotAcceptableResponse
   | ApiV2Problem
   | TooManyRequestsResponse
-  | UnexpectedErrorResponse
->;
+  | UnexpectedErrorResponse;
 export type RotateBookingCalendarSubscriptionMutationVariables = {
   configurationId: number;
   headers: RotateBookingCalendarSubscriptionHeaders;
@@ -2115,15 +2107,14 @@ export type RotateBookingCalendarSubscriptionMutationVariables = {
  * @summary Replace a calendar subscription URL
  */
 export const useRotateBookingCalendarSubscription = <
-  TError = ErrorType<
+  TError =
     | BadRequestResponse
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | ApiV2Problem
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse
-  >,
+    | UnexpectedErrorResponse,
   TContext = unknown,
 >(
   options?: {
@@ -4318,7 +4309,7 @@ export const getGetMyBookingNotificationSubscriptionQueryKey = (id: number) => {
 
 export const getGetMyBookingNotificationSubscriptionQueryOptions = <
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4343,12 +4334,12 @@ export const getGetMyBookingNotificationSubscriptionQueryOptions = <
 export type GetMyBookingNotificationSubscriptionQueryResult = NonNullable<
   Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>
 >;
-export type GetMyBookingNotificationSubscriptionQueryError = ErrorType<unknown>;
+export type GetMyBookingNotificationSubscriptionQueryError = unknown;
 
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscription<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options: {
@@ -4368,7 +4359,7 @@ export function useGetMyBookingNotificationSubscription<
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscription<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4388,7 +4379,7 @@ export function useGetMyBookingNotificationSubscription<
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscription<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4400,7 +4391,7 @@ export function useGetMyBookingNotificationSubscription<
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscription<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4433,7 +4424,7 @@ export const invalidateGetMyBookingNotificationSubscription = async (
 
 export const getGetMyBookingNotificationSubscriptionSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4462,12 +4453,12 @@ export const getGetMyBookingNotificationSubscriptionSuspenseQueryOptions = <
 export type GetMyBookingNotificationSubscriptionSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>
 >;
-export type GetMyBookingNotificationSubscriptionSuspenseQueryError = ErrorType<unknown>;
+export type GetMyBookingNotificationSubscriptionSuspenseQueryError = unknown;
 
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options: {
@@ -4481,7 +4472,7 @@ export function useGetMyBookingNotificationSubscriptionSuspense<
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4495,7 +4486,7 @@ export function useGetMyBookingNotificationSubscriptionSuspense<
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4509,7 +4500,7 @@ export function useGetMyBookingNotificationSubscriptionSuspense<
 /** @summary Get the caller's personal subscription and effective event delivery */
 export function useGetMyBookingNotificationSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getMyBookingNotificationSubscription>>,
-  TError = ErrorType<unknown>,
+  TError = unknown,
 >(
   id: number,
   options?: {
@@ -4558,7 +4549,7 @@ export const getReplaceMyBookingNotificationSubscriptionMutationKey = () =>
   ["replaceMyBookingNotificationSubscription"] as const;
 
 export const getReplaceMyBookingNotificationSubscriptionMutationOptions = <
-  TError = ErrorType<BadRequestResponse | ApiV2Problem>,
+  TError = BadRequestResponse | ApiV2Problem,
   TContext = unknown,
 >(
   queryClient: QueryClient,
@@ -4622,17 +4613,17 @@ export type ReplaceMyBookingNotificationSubscriptionMutationResult = NonNullable
   Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>
 >;
 export type ReplaceMyBookingNotificationSubscriptionMutationBody =
-  BodyType<BookingNotificationSubscriptionControllerSubscriptionReplacement>;
-export type ReplaceMyBookingNotificationSubscriptionMutationError = ErrorType<BadRequestResponse | ApiV2Problem>;
+  BookingNotificationSubscriptionControllerSubscriptionReplacement;
+export type ReplaceMyBookingNotificationSubscriptionMutationError = BadRequestResponse | ApiV2Problem;
 export type ReplaceMyBookingNotificationSubscriptionMutationVariables = {
   id: number;
-  data: BodyType<BookingNotificationSubscriptionControllerSubscriptionReplacement>;
+  data: BookingNotificationSubscriptionControllerSubscriptionReplacement;
   headers: ReplaceMyBookingNotificationSubscriptionHeaders;
 };
 
 /** @summary Update the caller's personal subscription with optimistic concurrency */
 export const useReplaceMyBookingNotificationSubscription = <
-  TError = ErrorType<BadRequestResponse | ApiV2Problem>,
+  TError = BadRequestResponse | ApiV2Problem,
   TContext = unknown,
 >(
   options?: {

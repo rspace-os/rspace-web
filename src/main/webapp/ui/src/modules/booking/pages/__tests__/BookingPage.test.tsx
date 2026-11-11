@@ -1,8 +1,9 @@
+import type { AppRouterContext } from "@/modules/common/app/router";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   Outlet,
@@ -54,13 +55,38 @@ function TestShell() {
   );
 }
 
-function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady = Promise.resolve()) {
+type AdministrationAccess = { readableConfigurations: number; eligibleTargets: number };
+
+function renderAt(
+  initialPath: string,
+  hasSysAdminRole = true,
+  preferencesReady = Promise.resolve(),
+  { readableConfigurations, eligibleTargets }: AdministrationAccess = { readableConfigurations: 1, eligibleTargets: 0 },
+) {
   server.use(
     http.get("/api/v2/booking-configurations/42/notification-subscription", () =>
       HttpResponse.json(
         { configurationId: 42, enabled: false, createdEnabled: false, cancelledEnabled: false, emailEnabled: false },
         { headers: { ETag: '"v0-000"' } },
       ),
+    ),
+    // List pages omit totals unless requested; the sidebar uses the count endpoint.
+    http.get("/api/v2/booking-configurations", ({ request }) =>
+      new URL(request.url).searchParams.has("where") ? undefined : HttpResponse.json({ docs: [] }),
+    ),
+    http.get("/api/v2/booking-configurations/count", ({ request }) => {
+      expect(new URL(request.url).searchParams.get("max")).toBe("1");
+      return HttpResponse.json({ totalDocs: Math.min(readableConfigurations, 1) });
+    }),
+    http.get("/api/v2/booking-configuration-targets", () =>
+      HttpResponse.json({
+        docs: Array.from({ length: eligibleTargets }, (_, index) => ({
+          id: 500 + index,
+          globalId: `IN${500 + index}`,
+          name: `Unconfigured instrument ${index + 1}`,
+          deleted: false,
+        })),
+      }),
     ),
     http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),
@@ -70,7 +96,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
       return HttpResponse.json(inheritedBrowserBookingPreferences);
     }),
   );
-  const rootRoute = createRootRoute({ component: TestShell });
+  const rootRoute = createRootRouteWithContext<AppRouterContext>()({ component: TestShell });
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
@@ -79,6 +105,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
+    context: { queryClient },
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
         createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboardPage }),
@@ -172,6 +199,7 @@ describe("booking layout", () => {
       "aria-expanded",
       "true",
     );
+    expect(screen.queryByRole("button", { name: "booking:sidebar.approvalQueue" })).not.toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "booking:sidebar.dashboard" })).toHaveAttribute("href", "/booking");
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.myBookings" })).toHaveAttribute(
@@ -216,32 +244,52 @@ describe("booking layout", () => {
     expect(screen.queryByRole("heading", { name: "Calendar destination" })).not.toBeInTheDocument();
   });
 
-  it("collapses the Administration sub-items", async () => {
+  it.each([
+    { readableConfigurations: 0, eligibleTargets: 0 },
+    { readableConfigurations: 1, eligibleTargets: 0 },
+    { readableConfigurations: 0, eligibleTargets: 1 },
+  ])("hides Administration from non-sysadmins with access %j", async (access) => {
+    let signalRequests = 0;
+    server.events.on("request:start", ({ request }) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v2/booking-configurations/count" || path === "/api/v2/booking-configuration-targets") {
+        signalRequests += 1;
+      }
+    });
+    try {
+      const { container } = renderAt("/booking", false, undefined, access);
+
+      expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
+      expect(signalRequests).toBe(0);
+      expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+      await expectAccessible(container);
+    } finally {
+      server.events.removeAllListeners("request:start");
+    }
+  });
+
+  it("keeps Settings for a sysadmin who has no bookable items to administer", async () => {
     const user = userEvent.setup();
-    renderAt("/booking");
+    renderAt("/booking", true, undefined, { readableConfigurations: 0, eligibleTargets: 0 });
 
-    const administration = await screen.findByRole("button", { name: "booking:sidebar.administration" });
+    expect(await screen.findByRole("link", { name: "booking:sidebar.settings" })).toHaveAttribute(
+      "href",
+      "/booking/config/settings",
+    );
+    expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
+
+    const administration = screen.getByRole("button", { name: "booking:sidebar.administration" });
     expect(administration).toHaveAttribute("aria-expanded", "true");
-
     await user.click(administration);
-
     expect(administration).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+    await user.click(administration);
+    expect(await screen.findByRole("link", { name: "booking:sidebar.settings" })).toBeVisible();
   });
 
-  it("shows All items without Administration to users who are not sysadmins", async () => {
-    renderAt("/booking", false);
-
-    expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
-      "href",
-      "/booking/all-items",
-    );
-    expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
-  });
-
-  it("links the Administration breadcrumb to Settings", async () => {
+  it("shows Administration before Settings in the breadcrumbs", async () => {
     renderAt("/booking/config/settings");
 
     const breadcrumbs = await screen.findByRole("navigation", { name: "booking:breadcrumbs.label" });

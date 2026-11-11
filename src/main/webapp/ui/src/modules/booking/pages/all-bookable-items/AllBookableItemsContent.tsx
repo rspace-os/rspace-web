@@ -6,6 +6,7 @@ import {
   fetchBookingNotificationSubscription,
   replaceBookingNotificationSubscription,
 } from "@/modules/booking/domain/bookingNotificationSubscriptions";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import {
   invalidateCountBookingConfigurations,
   invalidateGetBookingCalendarSubscription,
@@ -17,9 +18,15 @@ import {
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import { rsqlSelectors } from "@/modules/common/table-list/rsql";
 import { Button } from "@/modules/common/ui/button";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
+import {
+  bookableItemBulkNotice,
+  bookableItemLifecycleNotice,
+  useBookableItemNoticeIds,
+} from "../bookable-items/bookableItemFeedback";
 import {
   type BookableItemsBulkAction,
   lifecycleErrorKey,
@@ -45,6 +52,18 @@ function AllBookableItemsContentForUser() {
   const { t } = useTranslation(["booking", "common"]);
   const { data: currentUser } = useCurrentUserQuery();
   const queryClient = useQueryClient();
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("bookable-items", deliverNotice, alertsReady);
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
   const table = useAllBookableItemsData({ subjectId: currentUser.id });
@@ -83,6 +102,7 @@ function AllBookableItemsContentForUser() {
     },
     onSuccess: () => setSelectedRowIds(new Set()),
   });
+  const itemNoticeIds = useBookableItemNoticeIds(table.tableProps.rows);
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
@@ -90,6 +110,7 @@ function AllBookableItemsContentForUser() {
       await invalidateChangedConfigurations(queryClient, [configuration.id]);
       await invalidateListBookings(queryClient);
       await invalidateBookingCatalogueQueries(queryClient);
+      alertsRef.current?.push(bookableItemLifecycleNotice("restored", configuration, t));
       await invalidateGetBookingCalendarSubscription(queryClient, configuration.id);
     },
   });
@@ -101,6 +122,12 @@ function AllBookableItemsContentForUser() {
       mutateBookableItems(action, mutationRowIds),
     onSuccess: async (docs, variables) => {
       await invalidateBookableItemRecords(queryClient, variables.action, docs ?? []);
+      if (variables.action !== "enable") {
+        for (const id of docs?.map((doc) => doc.id) ?? variables.selectedRowIds.map(Number)) {
+          alertsRef.current?.dismiss(itemNoticeIds.get(id) ?? `bookable-item-${id}`);
+        }
+      }
+      alertsRef.current?.push(bookableItemBulkNotice(variables.action, docs?.length ?? null, t));
       setSelectedRowIds(new Set());
       setFailedBulkAction(null);
     },
@@ -151,16 +178,18 @@ function AllBookableItemsContentForUser() {
           setSelectedRowIds(new Set());
           table.setFilters(filters);
         }}
-        onLifecycleChanged={async (ids, _permanent = false, options) => {
+        onLifecycleChanged={async (ids) => {
           await invalidateBookableItemRecords(
             queryClient,
             "archive",
             ids.map((id) => ({ id })),
-            options,
+            { cancelRefetch: false },
           );
           setSelectedRowIds(new Set());
         }}
         onRestore={onRestore}
+        alertsRef={alertsRef}
+        attachAlerts={attachAlerts}
         tableProps={{
           ...table.tableProps,
           selection: {
@@ -183,7 +212,9 @@ function AllBookableItemsContentForUser() {
                       disabled={bulkMutation.isPending || notificationMutation.isPending}
                       onClick={() => notificationMutation.mutate(false)}
                     >
-                      {t("allBookableItems.notifications.unsubscribe")}
+                      {t("allBookableItems.notifications.unsubscribe", {
+                        defaultValue: "Unsubscribe from notifications",
+                      })}
                     </Button>
                   </>
                 ) : null}

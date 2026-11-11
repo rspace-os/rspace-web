@@ -16,6 +16,7 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
   return (
     <TableList
       {...tableProps}
+      stickyActions="when-fitted"
       hideHeader
       hideFilterPanel
       variant="transparent"
@@ -25,7 +26,7 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
           id: "availability",
           label: t("calendar.availability"),
           minWidth: 320,
-          width: 320,
+          widthMode: "fill",
           card: { fullWidth: true },
           renderCell: (row) => {
             const target = row.target;
