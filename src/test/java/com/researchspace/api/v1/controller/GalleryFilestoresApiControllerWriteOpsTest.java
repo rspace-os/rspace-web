@@ -45,7 +45,9 @@ import com.researchspace.netfiles.FilestoreAuditMetadata;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
+import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFolderDetails;
+import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
@@ -61,6 +63,7 @@ import com.researchspace.service.metadata.GeneratedSidecarFile;
 import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
@@ -862,8 +865,14 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     verifyNoInteractions(nfsFieldLinkManager);
   }
 
+  private static NfsFolderDetails folderListing(NfsResourceDetails... content) {
+    NfsFolderDetails folder = new NfsFolderDetails("parent");
+    folder.getContent().addAll(List.of(content));
+    return folder;
+  }
+
   @Test
-  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedWhenItemNotReachable()
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedWhenParentNotListable()
       throws IOException {
     NfsClient client = loginToIrodsFilestore();
     when(client.queryForNfsFolder(any())).thenThrow(new IOException("no access"));
@@ -874,13 +883,41 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForReachableFolder()
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedForListedButUnreadableFile()
       throws IOException {
     NfsClient client = loginToIrodsFilestore();
-    when(client.queryForNfsFolder(any())).thenReturn(new NfsFolderDetails("XRD"));
-    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD", user)).thenReturn(List.of());
+    // like SFTP, where ls lists a file the caller cannot open
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFileDetails("a.dat")));
+    when(client.queryNfsFileForDownload(any())).thenThrow(new IOException("permission denied"));
 
-    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD", user)).isEmpty();
+    assertThrows(
+        NotFoundException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForReadableFile()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFileDetails("a.dat")));
+    NfsFileDetails readable = new NfsFileDetails("a.dat");
+    readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
+    when(client.queryNfsFileForDownload(any())).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/a.dat", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user)).isEmpty();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForListableFolder()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFolderDetails("XRD")));
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user)).isEmpty();
+    verify(client, never()).queryNfsFileForDownload(any());
   }
 
   @Test
