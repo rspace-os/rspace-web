@@ -3,20 +3,24 @@ package com.researchspace.api.v2.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
-import com.researchspace.api.v2.openapi.*;
-import com.researchspace.api.v2.resource.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.openapi.ApiV2TestHandlerMappings;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.featureflags.FeatureFlagResourceOperations;
-import com.researchspace.service.*;
-import com.researchspace.service.inventory.*;
-import java.nio.file.*;
-import java.util.*;
+import io.swagger.v3.core.util.Json31;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,36 +29,118 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Keeps the frontend's REST API v2 OpenAPI fixture equal to the document the backend generates, so
+ * frontend tests run against the published collection contract instead of a hand-written copy.
+ */
 class ApiV2OpenApiDocumentExportTest {
+
+  private static final String UPDATE_PROPERTY = "updateApiV2OpenApiFixture";
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Test
-  void exportFullDocumentWithoutDatabase() throws Exception {
+  void tagsMatchOperationsAndFormCompleteGroups() throws Exception {
+    assertTagDocumentation(MAPPER.readTree(generatedDocument()));
+  }
+
+  @Test
+  void frontendFixturesMatchTheGeneratedContract() throws IOException {
+    Map<Path, String> fixtures =
+        Map.of(
+            Path.of("src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json"),
+            publishedDocument());
+    for (Map.Entry<Path, String> fixture : fixtures.entrySet()) {
+      if (Boolean.getBoolean(UPDATE_PROPERTY)) {
+        Files.createDirectories(fixture.getKey().getParent());
+        Files.writeString(fixture.getKey(), fixture.getValue());
+      } else if (!Files.exists(fixture.getKey())
+          || !fixture.getValue().equals(Files.readString(fixture.getKey()))) {
+        fail(
+            fixture.getKey()
+                + " is out of date with the REST API v2 resources. Regenerate it with: mvn test"
+                + " -Dfast=true -Dtest=ApiV2OpenApiDocumentExportTest -D"
+                + UPDATE_PROPERTY
+                + "=true");
+      }
+    }
+  }
+
+  @Test
+  void generatedDocumentIncludesAnnotatedBookingRoutes() throws IOException {
+    JsonNode paths = MAPPER.readTree(generatedDocument()).path("paths");
+    assertTrue(paths.has("/api/v2/booking-settings/admin"));
+    assertEquals(
+        "#/components/headers/ETag",
+        paths
+            .path("/api/v2/booking-settings/admin")
+            .path("patch")
+            .path("responses")
+            .path("200")
+            .path("headers")
+            .path("ETag")
+            .path("$ref")
+            .asText());
+  }
+
+  /** Component sections whose entries exist only to be referenced by operations and schemas. */
+  private static final Set<String> SHARED_SECTIONS =
+      Set.of("parameters", "responses", "examples", "x-rspace-filters", "x-rspace-access-policies");
+
+  /**
+   * The generated document as its readers see it: references into the shared component sections are
+   * resolved, while schema and header references stay.
+   */
+  private static String generatedDocument() throws IOException {
+    JsonNode document = MAPPER.readTree(publishedDocument());
+    return MAPPER.writeValueAsString(resolveShared(document, document));
+  }
+
+  private static JsonNode resolveShared(JsonNode document, JsonNode node) {
+    if (node.isObject()) {
+      String[] ref = node.path("$ref").asText("").split("/");
+      if (node.size() == 1
+          && ref.length == 4
+          && "#".equals(ref[0])
+          && "components".equals(ref[1])
+          && SHARED_SECTIONS.contains(ref[2])) {
+        JsonNode target = document.path("components").path(ref[2]).path(ref[3]);
+        assertFalse(target.isMissingNode(), "Unresolved OpenAPI reference " + node);
+        return resolveShared(document, target);
+      }
+      ObjectNode result = MAPPER.createObjectNode();
+      node.fields()
+          .forEachRemaining(
+              field -> result.set(field.getKey(), resolveShared(document, field.getValue())));
+      return result;
+    }
+    if (node.isArray()) {
+      ArrayNode result = MAPPER.createArrayNode();
+      node.forEach(element -> result.add(resolveShared(document, element)));
+      return result;
+    }
+    return node;
+  }
+
+  /** The generated document as published, with its component references. */
+  private static String publishedDocument() throws IOException {
     try (var context = ApiV2ResourceConfigTest.newContext();
         var handlers = ApiV2TestHandlerMappings.newContext()) {
       context.register(ApiV2ResourceConfig.class, FeatureFlagResourceOperations.class);
       context.refresh();
-      var document =
-          new ApiV2OpenApiDocumentService(
-                  context.getBean(ApiV2OpenApiGenerator.class),
-                  context.getBean(ApiV2EndpointCatalog.class),
-                  () -> Stream.of(ApiV2TestHandlerMappings.mapping(handlers)))
-              .generate();
-      var path = Path.of("src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json");
-      assertTagDocumentation(MAPPER.valueToTree(document));
-      var json =
-          new ObjectMapper()
-                  .writerWithDefaultPrettyPrinter()
-                  .writeValueAsString(sorted(new ObjectMapper().valueToTree(document)))
-              + "\n";
-      if (Boolean.getBoolean("updateApiV2OpenApiFixture")) {
-        Files.createDirectories(path.getParent());
-        Files.writeString(path, json);
-      } else {
-        assertTrue(Files.exists(path), "OpenAPI missing: run regen");
-        assertEquals(json, Files.readString(path), "OpenAPI drift: run regen");
-      }
-      assertTrue(document.containsKey("paths"));
+      var catalog = context.getBean(ApiV2ResourceCatalog.class);
+      JsonNode document =
+          Json31.mapper()
+              .valueToTree(
+                  new ApiV2OpenApiDocumentService(
+                          new ApiV2OpenApiGenerator(
+                              catalog,
+                              com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                              "RSpace REST API v2",
+                              "2.0.0"),
+                          context.getBean(ApiV2EndpointCatalog.class),
+                          () -> Stream.of(ApiV2TestHandlerMappings.mapping(handlers)))
+                      .generate());
+      return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(sorted(document)) + "\n";
     }
   }
 
