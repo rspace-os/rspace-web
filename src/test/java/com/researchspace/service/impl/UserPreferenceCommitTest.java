@@ -9,10 +9,19 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.CacheNames;
+import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.dao.CommunityDao;
+import com.researchspace.dao.RoleDao;
+import com.researchspace.dao.UserAccountEventDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.preference.Preference;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.MessageSourceUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +35,20 @@ class UserPreferenceCommitTest {
   private final CacheManager caches = mock(CacheManager.class);
   private final Cache preferences = mock(Cache.class);
   private final Cache integrations = mock(Cache.class);
-  private final UserManagerImpl manager = spy(new UserManagerImpl(dao, caches));
+  private final UserManagerImpl manager =
+      spy(
+          new UserManagerImpl(
+              dao,
+              caches,
+              mock(CommunityDao.class),
+              mock(RoleDao.class),
+              mock(UserAccountEventDao.class),
+              mock(IPermissionUtils.class),
+              mock(AnalyticsManager.class),
+              mock(IPropertyHolder.class),
+              mock(IVerificationPasswordValidator.class),
+              mock(MessageSourceUtils.class),
+              mock(RSpacePasswordEncoder.class)));
   private final Preference preference = Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
   private UserPreference saved;
 

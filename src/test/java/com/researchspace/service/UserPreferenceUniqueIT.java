@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.CacheNames;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -29,6 +30,8 @@ import liquibase.parser.ChangeLogParserFactory;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,12 +39,16 @@ import org.springframework.transaction.support.TransactionTemplate;
 class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
   private final PlatformTransactionManager transactionManager;
   private final IntegrationsHandler integrationsHandler;
+  private final CacheManager cacheManager;
 
   @Autowired
   UserPreferenceUniqueIT(
-      PlatformTransactionManager transactionManager, IntegrationsHandler integrationsHandler) {
+      PlatformTransactionManager transactionManager,
+      IntegrationsHandler integrationsHandler,
+      CacheManager cacheManager) {
     this.transactionManager = transactionManager;
     this.integrationsHandler = integrationsHandler;
+    this.cacheManager = cacheManager;
   }
 
   @Test
@@ -144,6 +151,39 @@ class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
         otherPreference, integrationsHandler.getIntegration(user, Preference.GOOGLEDRIVE.name()));
     assertSame(
         otherUserInfo, integrationsHandler.getIntegration(otherUser, Preference.DROPBOX.name()));
+  }
+
+  @Test
+  void rollbackDoesNotCachePreferenceOrIntegrationReadInsideTransaction() {
+    User user = createAndSaveUser(getRandomAlphabeticString("rollbackprefcache"));
+    Preference preference = Preference.DROPBOX;
+    userMgr.setPreference(preference, "false", user.getUsername());
+
+    String key = user.getUsername() + preference.name();
+    Cache preferenceCache = cacheManager.getCache(CacheNames.USER_PREFERENCE);
+    Cache integrationCache = cacheManager.getCache(CacheNames.INTEGRATION_INFO);
+    assertNotNull(preferenceCache);
+    assertNotNull(integrationCache);
+    preferenceCache.evict(key);
+    integrationCache.evict(key);
+    assertNull(preferenceCache.get(key));
+    assertNull(integrationCache.get(key));
+
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            status -> {
+              userMgr.setPreference(preference, "true", user.getUsername());
+              assertTrue(userMgr.getPreferenceForUser(user, preference).getValueAsBoolean());
+              assertTrue(integrationsHandler.getIntegration(user, preference.name()).isEnabled());
+              assertNull(preferenceCache.get(key));
+              assertNull(integrationCache.get(key));
+              status.setRollbackOnly();
+            });
+
+    assertNull(preferenceCache.get(key));
+    assertNull(integrationCache.get(key));
+    assertFalse(userMgr.getPreferenceForUser(user, preference).getValueAsBoolean());
+    assertFalse(integrationsHandler.getIntegration(user, preference.name()).isEnabled());
   }
 
   @Test

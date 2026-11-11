@@ -29,7 +29,10 @@ publish the returned entity to the cache before commit. The migration keeps the
 lowest ID when removing old duplicates: the existing user preference collection
 retains that row, and subsequent setting changes update it. Higher-ID duplicates
 can contain values left over from the original race. Cached reads in a writing
-transaction can retain the previous value until commit.
+transaction can retain the previous value until commit. Read-through caching for
+`getPreferenceForUser` and `getIntegration` publishes cache misses only after the
+transaction commits, so a rollback cannot leave an uncommitted preference or
+integration value in the cache.
 
 ## Http Request caching
 

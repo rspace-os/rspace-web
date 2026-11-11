@@ -47,7 +47,6 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -62,26 +61,45 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
-  private UserDao userDao;
+  private final UserDao userDao;
 
   private final CacheManager cacheManager;
 
-  public UserManagerImpl(@Autowired UserDao userDao, CacheManager cacheManager) {
+  private final CommunityDao communityDao;
+  private final RoleDao roleDao;
+  private final UserAccountEventDao accountEventDao;
+  private final IPermissionUtils permissnUtils;
+  private final AnalyticsManager analyticsManager;
+  private final IPropertyHolder properties;
+  private final IVerificationPasswordValidator verificationPasswordValidator;
+  private final MessageSourceUtils messages;
+  private final RSpacePasswordEncoder passwordEncoder;
+
+  public UserManagerImpl(
+      UserDao userDao,
+      CacheManager cacheManager,
+      CommunityDao communityDao,
+      RoleDao roleDao,
+      UserAccountEventDao accountEventDao,
+      IPermissionUtils permissnUtils,
+      AnalyticsManager analyticsManager,
+      IPropertyHolder properties,
+      IVerificationPasswordValidator verificationPasswordValidator,
+      MessageSourceUtils messages,
+      RSpacePasswordEncoder passwordEncoder) {
+    this.userDao = userDao;
     this.cacheManager = cacheManager;
     this.dao = userDao;
-    this.userDao = userDao;
+    this.communityDao = communityDao;
+    this.roleDao = roleDao;
+    this.accountEventDao = accountEventDao;
+    this.permissnUtils = permissnUtils;
+    this.analyticsManager = analyticsManager;
+    this.properties = properties;
+    this.verificationPasswordValidator = verificationPasswordValidator;
+    this.messages = messages;
+    this.passwordEncoder = passwordEncoder;
   }
-
-  private @Autowired CommunityDao communityDao;
-  private @Autowired RoleDao roleDao;
-  private @Autowired UserAccountEventDao accountEventDao;
-  private @Autowired IPermissionUtils permissnUtils;
-  private @Autowired AnalyticsManager analyticsManager;
-  @Autowired private IPropertyHolder properties;
-
-  private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
-  private @Autowired MessageSourceUtils messages;
-  private @Autowired RSpacePasswordEncoder passwordEncoder;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -355,7 +373,10 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  @Cacheable(value = CacheNames.USER_PREFERENCE, key = "#user.username + #preference.name()")
+  @Cacheable(
+      value = CacheNames.USER_PREFERENCE,
+      key = "#user.username + #preference.name()",
+      cacheResolver = "userPreferenceCacheResolver")
   public UserPreference getPreferenceForUser(User user, Preference preference) {
     user = get(user.getId());
     return user.getValueForPreference(preference);
