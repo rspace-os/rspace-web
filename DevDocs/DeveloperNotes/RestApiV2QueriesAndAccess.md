@@ -339,8 +339,9 @@ policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 validates
 session-bound REST API v2 UI tokens against the matching live browser session. AuthStore keeps the
-current token in session storage for legacy API clients; the v2 token provider keeps its page token in memory.
-Every page initialization mints the token appropriate to its current authentication context.
+current token in session storage for legacy API clients. The v2 token provider keeps its page token
+in memory. Every page initialization mints the token appropriate to its current authentication
+context.
 
 ### Rate limits
 
