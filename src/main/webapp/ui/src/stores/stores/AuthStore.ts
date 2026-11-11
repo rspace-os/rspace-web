@@ -83,10 +83,13 @@ export default class AuthStore {
      */
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
     // Abort a request still pending when the stored token expires, so the catch below redirects.
+    // A retry that starts at or after expiry is aborted at once; a first request may still mint from the session.
     const request = new AbortController();
     const validityMs = storedTokenValidityMs();
     const expiryTimer =
-      validityMs > 0 && validityMs <= MAX_TIMER_DELAY_MS ? setTimeout(() => request.abort(), validityMs) : undefined;
+      (validityMs > 0 || this.refreshFailures > 0) && validityMs <= MAX_TIMER_DELAY_MS
+        ? setTimeout(() => request.abort(), Math.max(validityMs, 0))
+        : undefined;
     return axios
       .get<{ data: string }>(oAuthUrl, { signal: request.signal })
       .finally(() => clearTimeout(expiryTimer))

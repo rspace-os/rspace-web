@@ -159,8 +159,10 @@ describe("AuthStore refresh recovery", () => {
     expect(JwtService.getToken()).toBeNull();
     expect(store.timeoutId).toBeNull();
   });
-  it("redirects at token expiry when a retry never responds", async () => {
-    JwtService.saveToken(tokenExpiringIn(20));
+  it.each([20, 1])("redirects at token expiry when a retry never responds (token valid for %ss)", async (seconds) => {
+    // On a whole second, a 1s token makes the first retry start exactly at expiry.
+    vi.setSystemTime(1_700_000_000_000);
+    JwtService.saveToken(tokenExpiringIn(seconds));
     store.isAuthenticated = true;
     failWith(503);
     await store.authenticate();
