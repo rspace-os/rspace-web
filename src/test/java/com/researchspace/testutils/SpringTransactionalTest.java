@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.Constants;
 import com.researchspace.dao.CommunicationDao;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.EcatCommentDao;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.dao.RecordDao;
+import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.files.service.InternalFileStore;
@@ -34,6 +36,7 @@ import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +72,9 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected @Autowired InternalFileStore fileStore;
   protected @Autowired RecordDao recordDao;
   protected @Autowired UserDao userDao;
+  protected @Autowired ContainerDao containerDao;
+  protected @Autowired SampleDao sampleDao;
+  protected @Autowired InventoryPermissionUtils invPermissionUtils;
   protected @Autowired UserConnectionManager connMgr;
 
   @AfterEach
