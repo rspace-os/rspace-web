@@ -14,8 +14,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { getUnit } from "@/stores/definitions/Units";
 import { gridLocationLabel } from "@/stores/models/HasLocation";
-import useStores from "@/stores/use-stores";
 import { withUniqueFieldNames } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import { type ConfirmSummaryField, type InventoryOperation, resolveProcessName, usesAmountModes } from "./operations";
@@ -57,10 +57,9 @@ function OperationConfirmation({
   const { t, i18n } = useTranslation("inventory");
   const theme = useTheme();
   const rememberHelpId = React.useId();
-  const { unitStore } = useStores();
   const resolveLabel = resolveLabelFrom(t);
   const { effect } = operation;
-  const unitLabel = (unitId: number): string => unitStore.getUnit(unitId)?.label ?? "";
+  const unitLabel = (unitId: number): string => getUnit(unitId)?.label ?? "";
 
   const count = effect.countFrom ? Number(values[effect.countFrom]) : 0;
   const each = effect.eachAmountFrom ? (values[effect.eachAmountFrom] as OperationQuantity | undefined) : undefined;

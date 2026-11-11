@@ -28,7 +28,7 @@ beforeAll(async () => {
 // assertions match on the key, which still tells us which branch rendered. Values not passed through
 // t() (the sample name, a picked template name, a document name) render as their raw string.
 vi.mock("@/stores/use-stores", () => ({
-  default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) } }),
+  default: () => ({}),
 }));
 
 const operation = {
@@ -356,8 +356,8 @@ describe("OperationConfirmation in English", () => {
       },
       english: true,
     });
-    expect(screen.getByText("Vial A: 1 ml")).toBeInTheDocument();
-    expect(screen.getByText("Vial B: 2.5 ml")).toBeInTheDocument();
+    expect(screen.getByText("Vial A: 1 mL")).toBeInTheDocument();
+    expect(screen.getByText("Vial B: 2.5 mL")).toBeInTheDocument();
   });
 });
 
