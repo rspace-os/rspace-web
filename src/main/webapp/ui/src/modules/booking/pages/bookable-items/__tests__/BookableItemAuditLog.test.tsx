@@ -89,7 +89,10 @@ describe("BookableItemAuditLog", () => {
     expect(parameters.get("end")?.endsWith("T00:00:00.000Z")).toBe(true);
     expect(screen.getByText("booking:bookableItemDetails.audit.resultsThrough")).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.status.loaded");
-    expect(screen.getAllByText("bookings:41")[0]).toBeVisible();
+    expect(screen.getAllByRole("link", { name: "bookings:41" })[0]).toHaveAttribute(
+      "href",
+      "/booking/calendar/bookings/41",
+    );
     await expectAccessible(container);
   });
 
@@ -141,22 +144,13 @@ describe("BookableItemAuditLog", () => {
   it("paginates the capped result locally and refreshes once", async () => {
     const user = userEvent.setup();
     let requests = 0;
-    server.use(
-      http.get("/api/v2/booking-configurations/7/audit", () => {
-        requests += 1;
-        return HttpResponse.json(
-          auditPage(
-            Array.from({ length: 21 }, () => event),
-            { limit: 21, truncated: true },
-          ),
-        );
-      }),
-    );
+    server.use(http.get("/api/v2/booking-configurations/7/audit", () => {
+      requests += 1;
+      return HttpResponse.json(auditPage(Array.from({ length: 21 }, () => event), { limit: 21, truncated: true }));
+    }));
     const { container } = renderAudit();
     await screen.findAllByText("common:values.userWithUsername");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "booking:bookableItemDetails.audit.status.loaded booking:bookableItemDetails.audit.truncated",
-    );
+    expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.truncated");
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
     expect(requests).toBe(1);
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" })).toBeDisabled();

@@ -1,19 +1,27 @@
+import { PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
+import { type BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import { Button } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { BookingEditorsContext } from "./BookingEventsCalendar";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
+  actionsFor,
   type BookingCalendarResource,
+  blockoutActionsFor,
   type CalendarView,
   formatDate,
+  nextFreeRange,
   occursOn,
   periodDates,
   resourceLocation,
   scrollCalendarWithArrowKeys,
+  timelineEditorPositions,
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
@@ -61,6 +69,9 @@ export function CalendarResourceSchedule({
   today,
   availabilityStartMinute,
   availabilityEndMinute,
+  resourceConfigurations,
+  creationDisabled,
+  onResourceRangeSelect,
   isLoading = false,
 }: {
   date: string;
@@ -71,7 +82,14 @@ export function CalendarResourceSchedule({
   today: string;
   availabilityStartMinute: number;
   availabilityEndMinute: number;
+  resourceConfigurations?: readonly BookableItemOption[];
+  creationDisabled: boolean;
   isLoading?: boolean;
+  onResourceRangeSelect?: (
+    resource: BookableItemOption,
+    range: { startMinute: number; endMinute: number },
+    trigger: HTMLElement,
+  ) => void;
 }) {
   const { t } = useTranslation("booking");
   const [timelineViewState, setTimelineViewState] = React.useState<DayTimelineViewState>({
@@ -79,12 +97,13 @@ export function CalendarResourceSchedule({
     centerMinute: 13 * 60,
   });
   const timelineScrollSync = useDayTimelineScrollSync();
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = React.useMemo(() => periodDates(date, view), [date, view]);
   const eventsByResourceAndDate = React.useMemo(() => {
     const index = new Map<string, BookingListDocument[]>();
     for (const event of events) {
       for (const day of dates) {
-        if (!occursOn(event, day, timezone)) continue;
+        if (!occursOn(editorPositions?.get(event.id) ?? event, day, timezone)) continue;
         const key = `${event.target.globalId}|${day}`;
         const rows = index.get(key) ?? [];
         rows.push(event);
@@ -93,7 +112,7 @@ export function CalendarResourceSchedule({
     }
     for (const rows of index.values()) rows.sort((left, right) => left.start.localeCompare(right.start));
     return index;
-  }, [dates, events, timezone]);
+  }, [dates, events, timezone, editorPositions]);
   const calendarRef = useScrollToToday(date, view, today);
   const resourceRows = React.useMemo(
     () =>
@@ -103,6 +122,10 @@ export function CalendarResourceSchedule({
         ).values(),
       ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
     [events, resources],
+  );
+  const configurationByTarget = React.useMemo(
+    () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
+    [resourceConfigurations],
   );
   return (
     <section aria-label={t("calendar.layout.resources")} className="p-3" aria-busy={isLoading}>
@@ -118,8 +141,19 @@ export function CalendarResourceSchedule({
           <div className="min-w-225 divide-y">
             {resourceRows.map((resource, index) => {
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
+              const configuration = configurationByTarget.get(resource.globalId);
+              const proposedRange = configuration
+                ? nextFreeRange(
+                    resourceEvents,
+                    date,
+                    timezone,
+                    availabilityStartMinute,
+                    availabilityEndMinute,
+                    configuration.slotGranularityMinutes,
+                  )
+                : undefined;
               return (
-                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)]">
+                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
                     <InventoryItem
                       locationPlacement="below"
@@ -141,6 +175,7 @@ export function CalendarResourceSchedule({
                         date={date}
                         timezone={timezone}
                         events={resourceEvents.map((event) => toTimelineEvent(event, date, timezone))}
+                        eventPositions={timelineEditorPositions(editorPositions, date, timezone)}
                         startWindow={availabilityStartMinute}
                         endWindow={availabilityEndMinute}
                         showZoomControls={false}
@@ -150,9 +185,35 @@ export function CalendarResourceSchedule({
                         onViewStateChange={setTimelineViewState}
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
+                        renderEventActions={actionsFor(resourceEvents, timezone)}
+                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone)}
+                        snapIncrementMinutes={configuration?.slotGranularityMinutes}
+                        creationDisabled={isLoading || creationDisabled || !configuration}
+                        onRangeSelect={
+                          configuration && onResourceRangeSelect
+                            ? (range, trigger) => onResourceRangeSelect(configuration, range, trigger)
+                            : undefined
+                        }
                       />
                     </div>
                     {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
+                  </div>
+                  <div className="flex items-center border-l p-2">
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="outline"
+                      disabled={
+                        isLoading || creationDisabled || !configuration || !proposedRange || !onResourceRangeSelect
+                      }
+                      aria-label={t("calendar.actions.addForItem", { item: resource.value.name })}
+                      onClick={(event) => {
+                        if (!configuration || !proposedRange || !onResourceRangeSelect) return;
+                        onResourceRangeSelect(configuration, proposedRange, event.currentTarget);
+                      }}
+                    >
+                      <PlusIcon aria-hidden="true" />
+                    </Button>
                   </div>
                 </section>
               );

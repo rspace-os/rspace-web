@@ -18,6 +18,11 @@ export function RecordedValues({ row }: { row: AuditRow }) {
   );
 }
 
+export function bookingId(target: string | null | undefined): string | null {
+  const match = target?.match(/^bookings:(\d+)$/);
+  return match?.[1] ?? null;
+}
+
 export function AuditTimestamp({ value }: { value: string }) {
   const { i18n } = useTranslation("booking");
   return (

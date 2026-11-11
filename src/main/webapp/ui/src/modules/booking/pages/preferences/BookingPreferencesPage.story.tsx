@@ -10,7 +10,8 @@ import {
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
-import { isPlainDate } from "@/modules/booking/domain/bookingTime";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
+import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
 import { getGetApiV2OpenApiDocumentQueryKey } from "@/modules/common/api/v2/generated/openapi/openapi";
@@ -34,10 +35,7 @@ export function BookingPreferencesPageStory() {
         createRoute({
           getParentRoute: () => booking,
           path: "/calendar/",
-          validateSearch: (search: Record<string, unknown>): { date?: string; target?: string } => ({
-            date: typeof search.date === "string" && isPlainDate(search.date) ? search.date : undefined,
-            ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
-          }),
+          validateSearch: bookingFormSearch,
           component: CalendarPage,
         }),
       ]),
@@ -48,9 +46,11 @@ export function BookingPreferencesPageStory() {
   return (
     <QueryClientProvider client={queryClient}>
       <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
+        <BookingCreationStoreProvider>
+          <Suspense fallback={null}>
+            <RouterProvider router={router as never} />
+          </Suspense>
+        </BookingCreationStoreProvider>
       </NuqsAdapter>
     </QueryClientProvider>
   );

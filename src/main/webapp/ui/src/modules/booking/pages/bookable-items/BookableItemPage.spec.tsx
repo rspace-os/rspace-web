@@ -77,13 +77,7 @@ function bookableItemAccessHandlers() {
       ),
     ),
     http.get("/api/v2/booking-configurations/7/access/grantees", () =>
-      HttpResponse.json({
-        docs: [{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }],
-        totalDocs: 1,
-        limit: 20,
-        page: 1,
-        hasNextPage: false,
-      }),
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
     ),
   ];
 }
@@ -105,8 +99,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  window.history.replaceState({}, "", "/");
   cleanup();
+  window.history.replaceState({}, "", "/");
 });
 
 describe("BookableItemPage", () => {
@@ -355,25 +349,25 @@ describe("BookableItemPage", () => {
     await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
-  test.each([[503, "errors.api.v2.audit.unavailable", "Audit log unavailable"]])(
-    "shows the distinct audit refusal for %s",
-    async (status, code, title) => {
-      worker.use(
-        http.get("/api/v2/booking-configurations/7/audit", () =>
-          HttpResponse.json({ status, code, detail: "Do not display" }, { status }),
-        ),
-      );
-      render(<BookableItemPageStory />);
-      await expect.element(pageObj.heading).toBeVisible();
-      await pageObj.auditTab.click();
+  test.each([
+    [503, "errors.api.v2.audit.unavailable", "Audit log unavailable"],
 
-      const alert = page.getByRole("alert");
-      await expect.element(alert.getByText(title, { exact: true })).toBeVisible();
-      await expect.element(alert).not.toHaveTextContent("Do not display");
-      await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
-      await expectNoAxeViolations();
-    },
-  );
+  ])("shows the distinct audit refusal for %s", async (status, code, title) => {
+    worker.use(
+      http.get("/api/v2/booking-configurations/7/audit", () =>
+        HttpResponse.json({ status, code, detail: "Do not display" }, { status }),
+      ),
+    );
+    render(<BookableItemPageStory />);
+    await expect.element(pageObj.heading).toBeVisible();
+    await pageObj.auditTab.click();
+
+    const alert = page.getByRole("alert");
+    await expect.element(alert).toHaveTextContent(title);
+    await expect.element(alert).not.toHaveTextContent("Do not display");
+    await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
+    await expectNoAxeViolations();
+  });
 
   test("preserves a dirty editor and hides its controls when another tab is active", async () => {
     render(<BookableItemPageStory />);
