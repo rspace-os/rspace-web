@@ -97,6 +97,7 @@ public class RevisionHistoryController extends BaseController {
       StructuredDocument docVersion = ar.getRecordAsDocument();
       RecordInformation recordInfo = docVersion.toRecordInfo();
       recordInfo.setRevision(ar.getRevision().longValue());
+      recordInfo.setModifiedBy(docVersion.getModifiedBy());
       docVersionInfos.add(recordInfo);
     }
     return new AjaxReturnObject<>(docVersionInfos, null);
