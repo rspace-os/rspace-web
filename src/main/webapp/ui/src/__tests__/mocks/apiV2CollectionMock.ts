@@ -3,6 +3,7 @@ import { HttpResponse } from "msw";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
+import calendarEventFilter from "./apiV2CalendarEventFilter.json";
 import { apiV2OpenApi } from "./apiV2OpenApi";
 
 type ExpressionNode = ReturnType<typeof parse>;
@@ -62,6 +63,14 @@ export function apiV2FilterProblem(resource: string, where: string | null): stri
   return filterProblem(where, filter?.["x-rspace-filter"]?.selectors ?? {}, (selector) =>
     runtime.some(({ namespace }) => selector.startsWith(`${namespace}.`)),
   );
+}
+
+/**
+ * Why the Calendar endpoints would reject an event `where`. Fields reached through `target` or
+ * `location` are resolved by the backend's registry, so only their selector roots are checked.
+ */
+export function calendarEventFilterProblem(where: string | null): string | null {
+  return filterProblem(where, calendarEventFilter.selectors, (selector) => /^(target|location)\./.test(selector));
 }
 
 /**

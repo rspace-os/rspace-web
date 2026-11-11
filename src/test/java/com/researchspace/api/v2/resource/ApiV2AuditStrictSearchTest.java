@@ -11,6 +11,7 @@ import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.ReadObserver;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.Request;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.StrictReadException;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -36,6 +37,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +71,113 @@ class ApiV2AuditStrictSearchTest {
     sysadmin = TestFactory.createAnyUser("sysadmin");
     sysadmin.addRole(Role.SYSTEM_ROLE);
     visibility = new AuditTrailActorVisibility(Mockito.mock(UserManager.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "matching",
+        "mismatching",
+        "missingAfter",
+        "missingBefore",
+        "missingWithoutFallback",
+        "own"
+      })
+  void configurationHistoryChecksRelatedTargetsAndCreationTime(String scenario) throws IOException {
+    var data = new HashMap<String, Object>();
+    data.put("id", scenario.equals("own") ? "BC1" : "bookings:42");
+    data.put("bookingConfigurationId", "BC1");
+    if (!scenario.startsWith("missing")) {
+      data.put(
+          "target", Map.of("type", "INSTRUMENT", "id", scenario.equals("mismatching") ? 999 : 552));
+    }
+    write(
+        "RSLogs.txt",
+        event(
+                scenario.equals("missingBefore")
+                    ? "01 Jan 2026 10:00:00,000"
+                    : "01 Jan 2026 12:00:00,000",
+                data)
+            + "\n");
+    var request =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.UNKNOWN),
+            Set.of(AuditAction.CREATE),
+            "BC1",
+            Set.of(),
+            sysadmin,
+            10,
+            false,
+            null,
+            Set.of(),
+            Set.of("bookingConfigurationId"),
+            Map.of("target.type", "INSTRUMENT", "target.id", "552"),
+            scenario.equals("missingWithoutFallback")
+                ? null
+                : Instant.parse("2026-01-01T11:00:00Z"));
+    assertEquals(
+        scenario.equals("mismatching")
+                || scenario.equals("missingBefore")
+                || scenario.equals("missingWithoutFallback")
+            ? 0
+            : 1,
+        search(ReadObserver.NONE)
+            .search(request, FieldSelection.all(), ApiV2AuditStrictSearchTest::project)
+            .docs()
+            .size());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void actorDirectoryHidesBookingEventsByOutsideUsersUnlessTheResourceBypassesIt(boolean related)
+      throws IOException {
+    User itemManager = TestFactory.createAnyUser("item-manager");
+    UserManager users = Mockito.mock(UserManager.class);
+    Mockito.when(users.getViewableUsers(Mockito.eq(itemManager), Mockito.any()))
+        .thenReturn(new SearchResultsImpl<User>(List.of(), 0, 0L));
+    String payload =
+        related
+            ? "{\"id\":\"bookings:41\",\"bookingConfigurationId\":\"BC1\"}"
+            : "{\"id\":\"BC1\",\"target\":{\"type\":\"INSTRUMENT\",\"id\":552}}";
+    write(
+        "RSLogs.txt",
+        "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:CREATE"
+            + " [{\"data\":"
+            + payload
+            + "}]"
+            + " outside-booker(Outside Booker)\n");
+    ApiV2AuditStrictSearch search =
+        new ApiV2AuditStrictSearch(
+            directory,
+            "RSLogs",
+            ZoneOffset.UTC,
+            new AuditTrailActorVisibility(users),
+            ReadObserver.NONE);
+
+    for (boolean bypass : new boolean[] {false, true}) {
+      List<ApiV2AuditEvent> results =
+          search
+              .search(
+                  new Request(
+                      FROM,
+                      TO,
+                      Set.of(AuditDomain.UNKNOWN),
+                      Set.of(),
+                      "BC1",
+                      Set.of(),
+                      itemManager,
+                      10,
+                      bypass,
+                      null,
+                      Set.of(),
+                      Set.of("bookingConfigurationId")),
+                  FieldSelection.all(),
+                  ApiV2AuditStrictSearchTest::project)
+              .docs();
+      assertEquals(bypass ? 1 : 0, results.size(), "bypass=" + bypass);
+    }
   }
 
   @Test

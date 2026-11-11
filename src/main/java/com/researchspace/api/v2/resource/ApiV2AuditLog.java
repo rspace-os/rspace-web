@@ -171,7 +171,8 @@ public final class ApiV2AuditLog {
               searchableAuditFields(
                   resource.description(), target.readableFields(), resource.relatedAuditFields()),
               resource.relatedAuditIdentifierFields(),
-              target.requiredFields()),
+              target.requiredFields(),
+              target.relatedFallbackFrom()),
           target.readableFields(),
           result ->
               event(
@@ -246,7 +247,8 @@ public final class ApiV2AuditLog {
                     valueDomain(entityType),
                     identifier,
                     target.fields(),
-                    resource.requiredAuditFields(target.entity())));
+                    resource.requiredAuditFields(target.entity()),
+                    resource.relatedAuditFallbackFrom(target.entity())));
   }
 
   private static Set<String> searchableAuditFields(
@@ -414,7 +416,8 @@ public final class ApiV2AuditLog {
       AuditDomain domain,
       String identifier,
       FieldSelection readableFields,
-      Map<String, String> requiredFields) {}
+      Map<String, String> requiredFields,
+      Instant relatedFallbackFrom) {}
 
   private record SearchWindow(Instant fromInclusive, Instant toExclusive) {}
 }

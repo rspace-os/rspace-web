@@ -58,7 +58,8 @@
       "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
       "loading": "Finding bookable items…",
       "retry": "Retry",
-      "scope": "Availability uses the selected display date and timezone."
+      "scope": "Availability uses the selected display date and timezone.",
+      "myItems": "Owned Items"
     }
   },
   "availabilityBar": {
@@ -1028,5 +1029,10 @@
     "unsaved": "Unsaved changes",
     "whoCanBook": "Who can book",
     "yourAccess": "You are an Owner. You can edit rules and manage access."
+  },
+  "filters": {
+    "dropped": "Some saved filter rules are no longer supported and were removed: {fields}.",
+    "me": "Me",
+    "owner": "Owner"
   }
 }

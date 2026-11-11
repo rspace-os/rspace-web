@@ -94,6 +94,7 @@ class ApiV2RelationshipContractMVCIT {
     mockMvc = fixture.mockMvc();
     sysadminKey = fixture.sysadminKey();
     owner = fixture.user();
+    fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
     instrumentId = fixture.instrument(owner, "Confocal microscope " + fixture.marker());
   }
 
@@ -141,15 +142,16 @@ class ApiV2RelationshipContractMVCIT {
     }
 
     @Test
-    @DisplayName("Booking access hides targets without Inventory access")
-    void bookingAccessHidesTargetWithoutInventoryAccess() throws Exception {
+    @DisplayName(
+        "Booking access returns only the safe target reference with read-only Inventory access")
+    void bookingAccessReturnsSafeTargetReferenceWithReadOnlyInventoryAccess() throws Exception {
       long id = fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
 
       mockMvc
           .perform(get(CONFIGURATIONS + "/" + id).header("apiKey", fixture.otherUserKey()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.id").value(id))
-          .andExpect(jsonPath("$.target").isEmpty());
+          .andExpect(jsonPath("$.target.value").value(instrumentId));
 
       mockMvc
           .perform(
@@ -291,9 +293,9 @@ class ApiV2RelationshipContractMVCIT {
     }
 
     @Test
-    @DisplayName("a target filter excludes unreadable Inventory instruments")
-    void aTargetFilterExcludesUnreadableInventoryInstruments() throws Exception {
-      fixture.bookingConfiguration(instrumentId, "UTC");
+    @DisplayName("a target filter uses the safe Booking projection with read-only Inventory access")
+    void aTargetFilterUsesInventoryReadAccess() throws Exception {
+      long id = fixture.bookingConfiguration(instrumentId, "UTC");
 
       mockMvc
           .perform(
@@ -302,7 +304,7 @@ class ApiV2RelationshipContractMVCIT {
                   .header("apiKey", fixture.otherUserKey())
                   .param("where", "target.name=contains=" + fixture.marker()))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.totalDocs").value(0));
+          .andExpect(jsonPath("$.totalDocs").value(1));
     }
 
     @Test
