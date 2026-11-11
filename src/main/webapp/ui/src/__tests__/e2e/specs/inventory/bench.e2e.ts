@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
-import { storageStatePath } from "@/__tests__/e2e/authState";
 import { test } from "@/__tests__/e2e/fixtures/flows";
+import { freshStorageState } from "@/__tests__/e2e/savedSessions";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { USERS } from "@/__tests__/e2e/users";
@@ -54,7 +54,12 @@ test.describe(`Inventory My Bench`, { tag: [tags.INVENTORY, tags.MOBILE] }, () =
   });
 
   test.describe("lab-group member", () => {
-    test.use({ appUser: USERS.user3c, storageState: storageStatePath(USERS.user3c.username) });
+    test.use({
+      appUser: USERS.user3c,
+      storageState: async ({ appUser }, use) => {
+        await use(await freshStorageState(appUser));
+      },
+    });
 
     test(`As a lab-group member, I can see the group's other members`, async ({ page, pageInventory }) => {
       await page.goto("/inventory/search?resultType=SAMPLE");

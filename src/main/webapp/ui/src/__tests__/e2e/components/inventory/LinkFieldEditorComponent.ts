@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { LinkVersionLockDialog } from "./LinkVersionLockDialog";
 
 export class LinkFieldEditorComponent {
@@ -89,6 +89,8 @@ export class LinkFieldEditorComponent {
     const targetCheck = this.waitForTargetCheck(await this.targetGlobalIdInput.inputValue());
     await this.applyButton.click();
     await targetCheck;
+    // The response arrives before React commits the server-side validation error.
+    await expect(this.targetGlobalIdInput).toHaveAttribute("aria-invalid", "true");
     return this.getTargetHelperText();
   }
 

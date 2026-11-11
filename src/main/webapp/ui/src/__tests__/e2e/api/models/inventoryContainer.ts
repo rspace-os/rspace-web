@@ -3,6 +3,7 @@ import type { ApiInventoryRecordInfo } from "./inventoryRecordInfo";
 
 export interface ApiInventoryContainer extends ApiInventoryRecordInfo {
   deleted?: boolean;
+  sharingMode: ApiInventorySharingMode;
   locations?: Array<ApiInventoryGridLocation & { content: ApiInventoryRecordInfo | null }>;
 }
 
