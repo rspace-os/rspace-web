@@ -36,6 +36,21 @@ describe("TagsCombobox (ontologies, paginated)", () => {
     expect(requestedFilters).not.toContain("tag-04");
   });
 
+  test.each([
+    { pages: "one page", tagCount: 10 },
+    { pages: "two pages", tagCount: 50 },
+  ])("keeps the first page of suggestions after the debounce fires ($pages)", async ({ tagCount }) => {
+    worker.use(ontologyTagsHandler({ allTags: makeTags(tagCount), pageSize: 40, requestedPositions }));
+    render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
+    await pageObj.open();
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+    expect(requestedPositions).not.toContain(1);
+  });
+
   test("renders virtualised tag options when opened", async () => {
     render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
 
