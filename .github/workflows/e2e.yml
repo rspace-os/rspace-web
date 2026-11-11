@@ -7,10 +7,6 @@ on:
         description: "mock | real"
         required: true
         type: string
-      java_vendor:
-        description: "Java vendor (setup-java distribution and Gradle toolchain)"
-        type: string
-        default: "temurin"
       java_version:
         description: "Java version (setup-java and Gradle toolchain)"
         type: string
@@ -41,7 +37,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor }}
           java-version: ${{ matrix.java-version }}
           cache-key: war
       - name: Set up pnpm
@@ -58,7 +53,7 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR (frontend + backend)
-        run: ./gradlew war -DgenerateReactDist -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
+        run: ./gradlew war -DgenerateReactDist -Djava-version=${{ matrix.java-version }} -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR
         uses: actions/upload-artifact@v7.0.1
         with:
@@ -135,7 +130,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor }}
           java-version: ${{ matrix.java-version }}
           cache-key: jetty
 
@@ -281,7 +275,7 @@ jobs:
           war=(prebuilt-war/*.war)
           nohup ./gradlew jettyRunWar -PwarFile="$PWD/${war[0]}" \
             -Dtimestamp=${{ github.run_id }} \
-            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
+            -Djava-version=${{ matrix.java-version }} \
             -Denvironment=drop-recreate-db \
             -Dspring.profiles.active=run \
             -DreactDevMode=false \

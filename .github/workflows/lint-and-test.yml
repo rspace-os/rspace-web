@@ -22,10 +22,6 @@ on:
         description: 'Run build'
         type: boolean
         default: false
-      java_vendor:
-        description: 'Java vendor (setup-java distribution and Gradle toolchain)'
-        type: string
-        default: 'temurin'
       java_version:
         description: 'Java version for the Java jobs'
         type: choice
@@ -109,7 +105,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
 
@@ -127,8 +122,7 @@ jobs:
         run: |
           # ponytail: one test fork per CPU core the runner reports (4 on the public-repo runner); isolate RS_FILE_BASE per fork if file-collision flakiness appears
           ./gradlew test -Dfast=true -PmaxTestForks="$(nproc)" -DRS_FILE_BASE=${RS_FILE_BASE} \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+            -Djava-version=${{ matrix.java-version }}
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0
@@ -226,7 +220,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: spotless
 
@@ -239,8 +232,7 @@ jobs:
       - name: Formatting and dependency checks
         run: |
           ./gradlew -q --continue spotlessCheck checkPinnedVersions :buildSrc:test -DspotlessStrict \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+            -Djava-version=${{ matrix.java-version }}
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -640,7 +632,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
 
@@ -673,7 +664,6 @@ jobs:
         run: |
           ./gradlew test -PtestSuite=slow -PtestShard=${{ matrix.shard }}/2 -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Djdbc.db.maven=rspace \
@@ -745,7 +735,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: tests
 
@@ -774,7 +763,6 @@ jobs:
         run: |
           ./gradlew integrationTests --continue -PtestShard=${{ matrix.shard }}/2 -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -845,7 +833,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ inputs.java_version || '17' }}
           cache-key: tests
 
@@ -873,7 +860,6 @@ jobs:
           JDBC_DB: rspace
           JDBC_URL: jdbc:mysql://localhost:3306/rspace
           MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
-          MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
         run: scripts/run-chemistry-tests.sh
 
       - name: Publish test results
@@ -912,7 +898,6 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache-key: war
 
@@ -944,7 +929,7 @@ jobs:
         run: |
           ./gradlew testClasses war -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djava-version=${{ matrix.java-version }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
 
       # Base bundle comparisons on pull requests restore this instead of rebuilding main.

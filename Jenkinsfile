@@ -31,7 +31,7 @@ echo 'Building rspace-web'
  The build runs through the Gradle wrapper (./gradlew). Every -D flag below is forwarded to Gradle's resource
  filtering and to the test JVMs, as it was with Maven.
  Builds use the Java 21 toolchain by default; the bytecode still targets 17 (options.release in build.gradle),
- and 17 can still be picked per build. They are passed as -Djava-version/-Djava-vendor, which select a
+ and 17 can still be picked per build. It is passed as -Djava-version, which selects a
  Gradle Java toolchain, so the requested JDK must be one Gradle can find on the agent (auto-detected, or listed in
  org.gradle.java.installations.paths in the agent's ~/.gradle/gradle.properties). Gradle itself runs on the
  agent's JAVA_HOME (Jenkins Global properties). The parameters keep their
@@ -45,7 +45,6 @@ pipeline {
 
     parameters {
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '21', description: 'Java version of the Gradle toolchain (17 or 21); the name is kept from the Maven build')
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor of the Gradle toolchain; the name is kept from the Maven build')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional extra Gradle arguments for the full Java tests, e.g. -DincludedTestGroups=nightly')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
         booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
@@ -107,8 +106,7 @@ pipeline {
             steps {
                 echo 'This is the main branch, running fast, non Spring tests only'
                 sh "./gradlew clean test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
-                   -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
-                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR}"
+                   -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION}"
             }
 
             post {
@@ -158,7 +156,7 @@ pipeline {
                     sh '''
                     ./gradlew clean testClasses war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-                    -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
+                    -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                     -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                     '''
                 }
@@ -188,7 +186,6 @@ pipeline {
                      ./gradlew clean testClasses war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                     -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
-                    -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                     -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                     '''
                 }
@@ -255,7 +252,6 @@ pipeline {
             steps {
                 echo 'Running liquibase tests on main branch...'
                 sh "./gradlew --stacktrace clean test -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
-                  -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
                   -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate \
                   -Dliquibase.context=run \
@@ -295,7 +291,6 @@ pipeline {
                 withFrontendTools {
                     // --continue runs every test task even after one fails, so all suites report and get coverage
                     sh "./gradlew --continue clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
-                      -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                       -Djavax.xml.accessExternalDTD=all\
                       -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
                       -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
