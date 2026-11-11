@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import { resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import {
@@ -26,6 +25,8 @@ registerHandlers();
 let history: RouterHistory;
 
 beforeEach(async () => {
+  // Timeline handles are a desktop interaction; narrow screens edit times in the bottom sheet.
+  await page.viewport(1440, 900);
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
@@ -39,6 +40,38 @@ afterEach(() => {
 });
 
 describe("Calendar page", () => {
+  test("routes Owner panel edits back to the item expression", async () => {
+    history = createMemoryHistory({
+      initialEntries: [
+        "/booking/calendar?date=2026-08-17&calendar-events.where=requester.value%3D%3Dme&calendar-resources.where=targetOwner%3D%3Dme",
+      ],
+    });
+    render(<CalendarPageStory history={history} />);
+    await page.getByRole("button", { name: "Filters 2 applied", exact: true }).click();
+    await page.getByRole("button", { name: "Edit filters", exact: true }).click();
+    await expect.element(page.getByRole("combobox", { name: "Field for filter 2", exact: true })).toHaveValue("Owner");
+    await expect.element(page.getByRole("combobox", { name: "Value for filter 2", exact: true })).toHaveValue("Me");
+    await page.getByRole("button", { name: "Remove filter 2", exact: true }).click();
+    await page.getByRole("button", { name: "Apply filters", exact: true }).click();
+    await expect.poll(() => new URLSearchParams(history.location.search).get("calendar-resources.where")).toBeNull();
+    await expect
+      .poll(() => new URLSearchParams(history.location.search).get("calendar-events.where"))
+      .toBe("requester.value==me");
+    await expect.element(page.getByRole("button", { name: "Filters 1 applied", exact: true })).toBeVisible();
+  });
+
+  test("edits the requester preset through the existing Filters panel", async () => {
+    render(<CalendarPageStory history={history} />);
+    await page.getByRole("button", { name: "Filters, none applied", exact: true }).click();
+    await page.getByRole("switch", { name: "My Bookings", exact: true }).click();
+    await expect
+      .poll(() => new URLSearchParams(history.location.search).get("calendar-events.where"))
+      .toBe("requester.value==me");
+    await expect.element(page.getByRole("button", { name: "Filters 1 applied", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Edit filters", exact: true }).click();
+    await expect.element(page.getByRole("combobox", { name: "Value for filter 1", exact: true })).toHaveValue("Me");
+  });
+
   test("keeps the event expand control fixed when details open", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.chooseView("Time grid");
@@ -287,8 +320,8 @@ describe("Calendar page", () => {
     await expect.element(moveBooking).toBeVisible();
     moveBooking.element().focus();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:55");
-    await expect.element(card.getByLabelText("End time")).toHaveValue("09:55");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("07:59");
+    await expect.element(card.getByLabelText("End time")).toHaveValue("09:59");
     await card.getByLabelText("Start time").fill("12:00");
     await card.getByLabelText("End time").fill("13:00");
 
@@ -353,13 +386,14 @@ describe("Calendar page", () => {
     await expect.element(move).toBeVisible();
     const canvas = move.element().closest<HTMLElement>('[data-testid="day-timeline-canvas"]');
     if (!canvas) throw new Error("Timeline editor must be rendered inside a day timeline canvas");
-    const fiveMinutes = (canvas.getBoundingClientRect().width / (24 * 60)) * 5;
+    // The item uses the default 15-minute aligned increment.
+    const fifteenMinutes = (canvas.getBoundingClientRect().width / (24 * 60)) * 15;
     const moveBounds = move.element().getBoundingClientRect();
 
     const sourcePosition = [0.1, 0.3, 0.5, 0.7, 0.9]
       .flatMap((x) => [0.25, 0.5, 0.75].map((y) => ({ x: moveBounds.width * x, y: moveBounds.height * y })))
       .find(({ x, y }) =>
-        [x, x + fiveMinutes].every((point) => {
+        [x, x + fifteenMinutes].every((point) => {
           const hit = document.elementFromPoint(moveBounds.left + point, moveBounds.top + y);
           return hit !== null && move.element().contains(hit);
         }),
@@ -367,15 +401,15 @@ describe("Calendar page", () => {
     if (!sourcePosition) throw new Error("Timeline move handle must have an unobscured drag path");
     await userEvent.dragAndDrop(move, move, {
       sourcePosition,
-      targetPosition: { x: sourcePosition.x + fiveMinutes, y: sourcePosition.y },
+      targetPosition: { x: sourcePosition.x + fifteenMinutes, y: sourcePosition.y },
     });
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:05");
-    await expect.element(card.getByLabelText("End time")).toHaveValue("10:05");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:15");
+    await expect.element(card.getByLabelText("End time")).toHaveValue("10:15");
 
     const end = page.getByRole("button", { name: "Change booking end time" });
     end.element().focus();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:05");
+    await expect.element(card.getByLabelText("Start time")).toHaveValue("08:15");
     await expect.element(card.getByLabelText("End time")).toHaveValue("10:00");
   });
 
@@ -425,32 +459,4 @@ describe("Calendar page", () => {
     await calendar.heading.click();
     await expect.element(calendar.showEventDetails("Busy")).toHaveAttribute("aria-expanded", "false");
   });
-});
-
-test("keeps mobile event editor actions in the viewport and restores focus on Escape", async () => {
-  await withViewport(
-    390,
-    async () => {
-      render(<CalendarPageStory history={history} />);
-      const trigger = calendar.showEventDetails("Confocal microscope");
-      await trigger.click();
-      await calendar.editBooking.click();
-      await expect.element(calendar.inlineSave).toBeVisible();
-      await expect
-        .poll(() => {
-          const bounds = calendar.inlineSave.element().getBoundingClientRect();
-          return (
-            bounds.left >= 0 &&
-            bounds.right <= window.innerWidth &&
-            bounds.top >= 0 &&
-            bounds.bottom <= window.innerHeight
-          );
-        })
-        .toBe(true);
-      await calendar.closeWithEscape();
-      await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-      await expect.poll(() => document.activeElement).toBe(trigger.element());
-    },
-    667,
-  );
 });

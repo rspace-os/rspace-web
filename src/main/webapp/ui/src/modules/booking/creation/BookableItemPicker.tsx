@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useDebounce from "@/hooks/ui/useDebounce";
 import { type BookableItemOption, bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { fetchBookingCatalogue, mapBookingCataloguePage } from "@/modules/booking/domain/bookingCatalogue";
-import { mapBookingConfiguration } from "@/modules/booking/pages/bookable-items/bookingConfigurationSchema";
-import { getSearchBookingCatalogueQueryOptions } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import { getListBookingConfigurationsQueryOptions } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import { bookableItemsPickerQuery, enabledBookingPickerTargetQuery } from "@/modules/booking/domain/bookingCatalogue";
+import { bookingConfigurationPickerTargetQuery } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import type { BookingEventKind } from "@/modules/common/api/v2/generated/models/bookingEventKind";
 import { Button } from "@/modules/common/ui/button";
 import {
@@ -20,94 +19,27 @@ import {
 import { Label } from "@/modules/common/ui/label";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 
-export async function loadBookableItems(
-  search: { term?: string; target?: string; page?: number; eventKind?: BookingEventKind },
-
-  signal: AbortSignal,
-): Promise<{ options: readonly BookableItemOption[]; totalPages: number }> {
-  const result = await fetchBookingCatalogue(
-    {
-      q: search.term,
-      target: search.target,
-      capability: search.eventKind === "MAINTENANCE" ? "CREATE_BLOCKOUT" : "CREATE_BOOKING",
-      page: search.page,
-      pageSize: 20,
-    },
-
-    signal,
-  );
-  return pickerPage(result, search.eventKind);
-}
-
-function pickerPage(
-  result: ReturnType<typeof mapBookingCataloguePage>,
-  eventKind?: BookingEventKind,
-): { options: readonly BookableItemOption[]; totalPages: number } {
-  return {
-    options: result.items
-      .filter((item) =>
-        eventKind === "MAINTENANCE" ? item.capabilities.canCreateBlockout : item.capabilities.canCreateBooking,
-      )
-      .map((item) => ({
-        configurationId: item.configurationId,
-        targetId: item.targetId,
-        globalId: item.globalId,
-        name: item.name,
-        timezone: item.timezone,
-        slotGranularityMinutes: item.slotGranularityMinutes,
-        incrementUnit: item.incrementUnit,
-        openingHours: item.openingHours,
-        bufferBeforeMinutes: item.bufferBeforeMinutes,
-        bufferAfterMinutes: item.bufferAfterMinutes,
-        maxBookingDurationMinutes: item.maxBookingDurationMinutes,
-        allowDoubleBooking: item.allowDoubleBooking,
-        capabilities: item.capabilities,
-      })),
-    totalPages: Math.max(1, Math.ceil(result.total / result.pageSize)),
-  };
-}
-function pickerParameters(search: { term?: string; target?: string; page?: number; eventKind?: BookingEventKind }) {
-  return {
-    q: search.term,
-    target: search.target,
-    capability: search.eventKind === "MAINTENANCE" ? ("CREATE_BLOCKOUT" as const) : ("CREATE_BOOKING" as const),
-    mine: false,
-    page: search.page ?? 1,
-    limit: 20,
-  };
-}
+export { loadBookableItems } from "@/modules/booking/domain/bookingCatalogue";
 
 export function useBookableItem(target: string | undefined) {
+  const options = enabledBookingPickerTargetQuery(target);
   // Plain useQuery: the target is optional, and callers render before one is chosen.
-  return useQuery(
-    getSearchBookingCatalogueQueryOptions(pickerParameters({ target }), {
-      query: {
-        enabled: target !== undefined,
-        retry: false,
-        select: (result) =>
-          pickerPage(mapBookingCataloguePage(result)).options.find((option) => option.globalId === target),
-      },
-    }),
-  );
+  return useQuery({
+    ...options,
+    select: (page) => options.select?.(page).options.find((option) => option.globalId === target),
+  });
 }
 
 export function useBookableItemConfiguration(target: string | undefined) {
+  const options = bookingConfigurationPickerTargetQuery(target);
   // Plain useQuery: the target is optional, and callers render before one is chosen.
-  return useQuery(
-    getListBookingConfigurationsQueryOptions(
-      { where: { target: target ?? "" }, depth: 2, limit: 2 },
-      {
-        query: {
-          enabled: target !== undefined,
-          retry: false,
-          select: (result) => {
-            if (result.docs.length !== 1) return undefined;
-            return bookableItemOption(mapBookingConfiguration(result.docs[0]));
-          },
-        },
-      },
-    ),
-  );
+  return useQuery({
+    ...options,
+    select: (result) => {
+      const configuration = options.select?.(result);
+      return configuration ? bookableItemOption(configuration) : undefined;
+    },
+  });
 }
 
 export function BookableItemPicker({
@@ -131,14 +63,10 @@ export function BookableItemPicker({
     setTerm(value);
   }, 250);
   // Plain useQuery: the combobox stays open and typable while result pages load.
-  const query = useQuery(
-    getSearchBookingCatalogueQueryOptions(pickerParameters({ term, page, eventKind }), {
-      query: {
-        enabled: !disabled,
-        select: (result) => pickerPage(mapBookingCataloguePage(result), eventKind),
-      },
-    }),
-  );
+  const query = useQuery({
+    ...bookableItemsPickerQuery(term, page, eventKind),
+    enabled: !disabled,
+  });
   return (
     <div className="space-y-2">
       <Label htmlFor="booking-item-search">{t("bookings.form.item")}</Label>
@@ -201,6 +129,15 @@ export function BookableItemPicker({
           ) : null}
         </ComboboxContent>
       </Combobox>
+      {eventKind === "BOOKING" && query.isSuccess && query.data.options.length === 0 && !term ? (
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>{t("allBookableItems.primer.description")}</p>
+          <p>{t("bookings.form.itemAccess")}</p>
+          <Link className="underline" to="/booking/all-items">
+            {t("sidebar.allItems")}
+          </Link>
+        </div>
+      ) : null}
       {query.isLoading ? (
         <p role="status" className="sr-only">
           {t("bookings.loadingConfiguration")}

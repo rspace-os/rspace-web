@@ -1,18 +1,42 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRouteWithContext,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
+import type { AppRouterContext } from "@/modules/common/app/router";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
 import { cataloguePage, configuration } from "./creationTestFixtures";
 
 function renderPicker() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const root = createRootRouteWithContext<AppRouterContext>()();
+  const picker = createRoute({
+    getParentRoute: () => root,
+    path: "/",
+    component: () => <BookableItemPicker value={undefined} onChange={() => {}} />,
+  });
+  const allItems = createRoute({
+    getParentRoute: () => root,
+    path: "/booking/all-items",
+    component: () => <h1>{"All items destination"}</h1>,
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([picker, allItems]),
+    context: { queryClient },
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  });
   return render(
     <QueryClientProvider client={queryClient}>
-      <BookableItemPicker value={undefined} onChange={() => {}} />
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   );
 }
@@ -93,18 +117,32 @@ describe("BookableItemPicker", () => {
     const user = userEvent.setup();
     renderPicker();
 
-    await user.type(screen.getByRole("combobox", { name: "booking:bookings.form.item" }), "confocal");
+    await user.type(await screen.findByRole("combobox", { name: "booking:bookings.form.item" }), "confocal");
 
     expect(await screen.findByRole("option", { name: "booking:bookings.form.itemOption" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.nextItems" }));
     await waitFor(() => expect(pages).toEqual(["1", "2"]));
   });
 
+  it("explains Inventory access and links to All items when no items are available", async () => {
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    const user = userEvent.setup();
+    renderPicker();
+    expect(await screen.findByText("booking:allBookableItems.primer.description")).toBeVisible();
+    expect(screen.getByText("booking:bookings.form.itemAccess")).toBeVisible();
+    expect(screen.getByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
+      "href",
+      "/booking/all-items",
+    );
+    await user.click(screen.getByRole("link", { name: "booking:sidebar.allItems" }));
+    expect(await screen.findByRole("heading", { name: "All items destination" })).toBeVisible();
+  });
+
   it("shows failure without inventing an option and honors cancellation", async () => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json({}, { status: 500 })));
     const user = userEvent.setup();
     renderPicker();
-    await user.click(screen.getByRole("button", { name: "booking:bookings.form.itemChoose" }));
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.itemChoose" }));
     expect(await screen.findByText("booking:bookings.errors.itemLoad")).toBeVisible();
 
     const controller = new AbortController();
@@ -130,7 +168,7 @@ describe("BookableItemPicker", () => {
 
     finishRequest();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "booking:bookings.form.itemChoose" }));
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.itemChoose" }));
     expect(await screen.findByText("booking:bookings.form.itemNone")).toBeVisible();
   });
 });
