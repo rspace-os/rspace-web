@@ -16,7 +16,7 @@ export type ExtraFieldAttrs = {
   name: string;
   lastModified: string | null;
   type: "text" | "number" | "link";
-  content: string;
+  content?: string | null;
   parentGlobalId: GlobalId | null;
   editable?: boolean;
   editing?: boolean;
