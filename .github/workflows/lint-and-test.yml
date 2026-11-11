@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: dorny/paths-filter@v4.0.2
+      - uses: dorny/paths-filter@v4.0.3
         id: filter
         with:
           filters: |
@@ -125,7 +125,7 @@ jobs:
             -Djava-version=${{ matrix.java-version }}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload test reports
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: gradle-test-reports
           path: build/reports/tests/test
@@ -288,7 +288,7 @@ jobs:
 
       - name: Upload blob report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: vitest-blob-report-${{ matrix.shard }}
           path: src/main/webapp/ui/.vitest/blob/*
@@ -296,7 +296,7 @@ jobs:
           retention-days: 1
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -345,7 +345,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download blob reports
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           path: src/main/webapp/ui/.vitest/blob
           pattern: vitest-blob-report-*
@@ -355,7 +355,7 @@ jobs:
         run: cd src/main/webapp/ui && npx vitest --merge-reports --reporter=default --coverage
 
       - name: Upload merged coverage report
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: vitest-coverage-report
           path: src/main/webapp/ui/coverage
@@ -418,7 +418,7 @@ jobs:
         run: pnpm run storybook:test
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -470,7 +470,7 @@ jobs:
         run: pnpm run build:stats
 
       - name: Upload PR bundle stats
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bundle-stats-pr
           path: src/main/webapp/ui/dist/stats.json
@@ -540,7 +540,7 @@ jobs:
 
       - name: Upload base bundle stats
         if: steps.base-support.outputs.supported == 'true'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bundle-stats-base
           path: src/main/webapp/ui/dist/stats.json
@@ -556,7 +556,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Download PR bundle stats
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bundle-stats-pr
           path: pr
@@ -566,7 +566,7 @@ jobs:
       - name: Download base bundle stats
         id: download-base
         continue-on-error: true
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bundle-stats-base
           path: base
@@ -672,7 +672,7 @@ jobs:
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -686,7 +686,7 @@ jobs:
 
       - name: Upload spring JUnit reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: spring-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
           path: build/test-results/test-shard${{ matrix.shard }}/*.xml
@@ -772,7 +772,7 @@ jobs:
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -786,7 +786,7 @@ jobs:
 
       - name: Upload integration JUnit reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: integration-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
           path: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
@@ -863,7 +863,7 @@ jobs:
         run: scripts/run-chemistry-tests.sh
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
