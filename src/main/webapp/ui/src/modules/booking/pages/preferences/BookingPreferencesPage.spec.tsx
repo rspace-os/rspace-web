@@ -1,6 +1,6 @@
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
 import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
+import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -24,6 +24,10 @@ function registerHandlers() {
     http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
       HttpResponse.json(stored),
     ),
+    http.get<never, never, BookingNotificationPreferences | ApiV2Problem>(
+      "/api/v2/users/me/booking-notification-preferences",
+      () => HttpResponse.json({ autoSubscribeOwnedItems: true }),
+    ),
     http.put<never, BookingDisplayPreferencesReplacement, BookingDisplayPreferences | ApiV2Problem>(
       "/api/v2/users/me/booking-preferences",
       async ({ request }) => {
@@ -39,11 +43,13 @@ function registerHandlers() {
       stored = inheritedBrowserBookingPreferences;
       return new HttpResponse(null, { status: 204 });
     }),
-    http.get<never, never, BookingNotificationPreferences | ApiV2Problem>("/api/v2/users/me/booking-notification-preferences", () =>
-      HttpResponse.json({
-        notifyOwnActions: true,
-        autoSubscribeOwnedItems: true,
-      }),
+    http.get<never, never, BookingNotificationPreferences | ApiV2Problem>(
+      "/api/v2/users/me/booking-notification-preferences",
+      () =>
+        HttpResponse.json({
+          notifyOwnActions: true,
+          autoSubscribeOwnedItems: true,
+        }),
     ),
   );
 }
