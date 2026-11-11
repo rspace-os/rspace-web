@@ -825,7 +825,8 @@ public class IntegrationsHandlerTest {
     "https://dsw.example.org, https://dsw.example.org",
     "https://dsw.example.org/, https://dsw.example.org",
     "'  https://dsw.example.org//  ', https://dsw.example.org",
-    "'https://example.org/dsw/ /', https://example.org/dsw"
+    "'https://example.org/dsw/ /', https://example.org/dsw",
+    "'https://example.org/a\tb', 'https://example.org/a\tb'"
   })
   void normalisesDswUrl(String savedUrl, String expected) {
     Map<String, String> options = new HashMap<>();

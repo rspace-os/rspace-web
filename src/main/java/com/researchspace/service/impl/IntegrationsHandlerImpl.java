@@ -782,8 +782,15 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (url == null) {
       return options;
     }
+    // A loop rather than a regex, which backtracks on long runs of whitespace.
+    String trimmed = url.strip();
+    int end = trimmed.length();
+    while (end > 0
+        && (trimmed.charAt(end - 1) == '/' || Character.isWhitespace(trimmed.charAt(end - 1)))) {
+      end--;
+    }
     Map<String, String> normalised = new HashMap<>(options);
-    normalised.put(DSW_URL, url.strip().replaceAll("[/\\s]+$", ""));
+    normalised.put(DSW_URL, trimmed.substring(0, end));
     return normalised;
   }
 
