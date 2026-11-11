@@ -17,7 +17,10 @@ import {
   rowAvailabilityIntervals,
 } from "@/modules/booking/pages/calendar/calendarAvailability";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
-import { BookingsReadSchema, BookingCatalogueManagerPageSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import {
+  BookingCatalogueManagerPageSchema,
+  BookingsReadSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 import { busyBooking, collectionResponse, otherBooking, ownBooking } from "./bookingCalendarFixtures";
 
@@ -82,7 +85,7 @@ function catalogueAvailability(item: BookingCatalogueItem, url: URL) {
     elapsedMinutes: (Date.parse(end) - Date.parse(start)) / 60_000,
   };
   return classifyCurrentDayAvailability(
-    rowAvailabilityIntervals(row, bounds, parsedAvailabilityBookings),
+    rowAvailabilityIntervals({ ...row, eventKind: "BOOKING" }, bounds, parsedAvailabilityBookings),
     new Date(start),
     new Date(end),
     new Date(url.searchParams.get("now") ?? start),
@@ -98,7 +101,8 @@ async function catalogueCandidates(url: URL): Promise<BookingCatalogueItem[]> {
   }
   candidates.searchParams.set("page", "1");
   candidates.searchParams.set("limit", "100");
-  return mapBookingCataloguePage(v.parse(BookingCatalogueManagerPageSchema, await (await fetch(candidates)).json())).items;
+  return mapBookingCataloguePage(v.parse(BookingCatalogueManagerPageSchema, await (await fetch(candidates)).json()))
+    .items;
 }
 
 export function resetBookingPageRequests(): void {

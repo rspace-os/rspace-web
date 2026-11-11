@@ -22,9 +22,9 @@ import {
 } from "../preferences/BookingNotificationChoiceFields";
 
 type SubscriptionResponse = { body: BookingNotificationSubscriptionControllerSubscriptionStatus; headers: Headers };
-function hasNotificationState(
-  status: SubscriptionResponse | undefined,
-): status is SubscriptionResponse & { body: BookingNotificationSubscriptionControllerSubscriptionStatus & { enabled: boolean } } {
+function hasNotificationState(status: SubscriptionResponse | undefined): status is SubscriptionResponse & {
+  body: BookingNotificationSubscriptionControllerSubscriptionStatus & { enabled: boolean };
+} {
   return typeof status?.body.enabled === "boolean" && status.headers.has("ETag");
 }
 function etag(status: SubscriptionResponse): string {
@@ -45,7 +45,9 @@ function ItemNotificationEditor({
   globalId: string;
 
   subjectId: number;
-  subscription: SubscriptionResponse & { body: BookingNotificationSubscriptionControllerSubscriptionStatus & { enabled: boolean } };
+  subscription: SubscriptionResponse & {
+    body: BookingNotificationSubscriptionControllerSubscriptionStatus & { enabled: boolean };
+  };
   feedback: "saved" | "conflict" | "saveError" | null;
   setFeedback: (value: "saved" | "conflict" | "saveError" | null) => void;
 }) {
@@ -108,6 +110,7 @@ function ItemNotificationEditor({
     },
   });
   const saved = feedback === "saved" && !dirty;
+
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -147,6 +150,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
               aria-busy={mutation.isPending}
               className={
                 saved
@@ -227,13 +231,18 @@ export function BookableItemNotificationSubscription({
   }
 
   return (
-    <ItemNotificationEditor
-      subjectId={subjectId}
-      configurationId={configurationId}
-      globalId={globalId}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        subjectId={subjectId}
+        configurationId={configurationId}
+        globalId={globalId}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
   );
 }

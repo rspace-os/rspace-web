@@ -15,6 +15,9 @@ import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.MessageSourceUtils;
 import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
@@ -56,10 +59,9 @@ class BookingApiV2ControllerAdviceTest {
   void policy() {
     for (var reason : BookingPolicyException.Reason.values()) {
       if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
-      if (reason == BookingPolicyException.Reason.DAY_END_MISSING) continue;
       register(reason.errorCode());
       check(
-          advice.handleBookingPolicy(new BookingPolicyException(reason)),
+          advice.handleBookingPolicy(policyFailure(reason)),
           HttpStatus.BAD_REQUEST,
           reason.errorCode());
     }
@@ -147,7 +149,6 @@ class BookingApiV2ControllerAdviceTest {
     for (var operation : List.of(ResourceOperation.CREATE, ResourceOperation.UPDATE)) {
       for (var reason : BookingPolicyException.Reason.values()) {
         if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
-        if (reason == BookingPolicyException.Reason.DAY_END_MISSING) continue;
         register(reason.errorCode());
         var mapping =
             spec.errorMappings().get(operation).stream()
@@ -155,7 +156,7 @@ class BookingApiV2ControllerAdviceTest {
                 .findFirst()
                 .orElseThrow();
         check(
-            shared.handleResourceException(mapping.translate(new BookingPolicyException(reason))),
+            shared.handleResourceException(mapping.translate(policyFailure(reason))),
             HttpStatus.BAD_REQUEST,
             reason.errorCode());
       }
@@ -169,6 +170,13 @@ class BookingApiV2ControllerAdviceTest {
     String key = "errors.api.v2.bookingCalendar.subscriptionConflict";
     register(key);
     check(advice.handleUserSubscriptionConflict(), HttpStatus.PRECONDITION_FAILED, key);
+  }
+
+  private BookingPolicyException policyFailure(BookingPolicyException.Reason reason) {
+    return reason == BookingPolicyException.Reason.DAY_END_MISSING
+        ? BookingPolicyException.dayEndMissing(
+            LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"))
+        : new BookingPolicyException(reason);
   }
 
   private void register(String key) {

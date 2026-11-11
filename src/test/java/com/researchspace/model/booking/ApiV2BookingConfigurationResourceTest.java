@@ -392,6 +392,8 @@ class ApiV2BookingConfigurationResourceTest {
         List.of("dayOfWeek", "start", "end"),
         hours.fields().stream().map(FieldSchema::name).toList());
     assertTrue(hours.fields().stream().allMatch(FieldSchema::requiredOnCreate));
+    assertEquals(1, hours.writeConstraints().get("minItems"));
+    assertEquals(7, hours.writeConstraints().get("maxItems"));
     assertTrue(hours.filterOperators().isEmpty());
     assertFalse(hours.sortable());
     assertFalse(hours.nullable());
@@ -429,6 +431,15 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals(
         DocumentValidationException.Reason.UNKNOWN_FIELD,
         updateViolation(legacy).getViolations().get(0).reason());
+    JsonNode wrongKind = mapper.readTree("{\"openingHours\":1}");
+    JsonNode empty = mapper.readTree("{\"openingHours\":[]}");
+    DocumentValidationException wrongType = updateViolation(wrongKind);
+    assertEquals(
+        DocumentValidationException.Reason.WRONG_TYPE, wrongType.getViolations().get(0).reason());
+    DocumentValidationException emptySchedule = updateViolation(empty);
+    assertEquals(
+        DocumentValidationException.Reason.INVALID_VALUE,
+        emptySchedule.getViolations().get(0).reason());
   }
 
   @Test
@@ -512,29 +523,22 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void parsesTheIncrementUnitByNameAndRejectsAnyOtherValue() throws Exception {
-    ParsedDocument document = parseUpdate(mapper.readTree("{\"incrementUnit\": \"DAYS\"}"));
-
-    assertEquals(BookingIncrementUnit.DAYS, document.values().get("incrementUnit"));
+  void parsesCompleteReplacementRowsAndSortsOnApplication() throws Exception {
+    ParsedDocument document =
+        parseUpdate(
+            mapper.readTree(
+                """
+                {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
+                                 {"dayOfWeek":1,"start":"00:00","end":"24:00"}]}
+                """));
+    BookingConfiguration configuration = new BookingConfiguration();
+    ApiV2BookingConfigurationResource.DESCRIPTION.apply(
+        configuration, document.values(), WriteOperation.UPDATE);
     assertEquals(
-        DocumentValidationException.Reason.INVALID_VALUE,
-        updateViolation("{\"incrementUnit\": \"WEEKS\"}"));
-    assertEquals(
-        DocumentValidationException.Reason.INVALID_VALUE,
-        updateViolation("{\"incrementUnit\": \"days\"}"));
-    assertEquals(
-        DocumentValidationException.Reason.WRONG_TYPE, updateViolation("{\"incrementUnit\": 1}"));
-  }
-
-  private ParsedDocument parseUpdate(String json) throws Exception {
-    return parseUpdate(mapper.readTree(json));
-  }
-
-  private DocumentValidationException.Reason updateViolation(String json) {
-    DocumentValidationException failure =
-        assertThrows(DocumentValidationException.class, () -> parseUpdate(json));
-    assertEquals(1, failure.getViolations().size());
-    return failure.getViolations().get(0).reason();
+        List.of(
+            new BookingOpeningHoursEntry(1, "00:00", "24:00"),
+            new BookingOpeningHoursEntry(6, "10:00", "16:00")),
+        configuration.getOpeningHours());
   }
 
   @Test

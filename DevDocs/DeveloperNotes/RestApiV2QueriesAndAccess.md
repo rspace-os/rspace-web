@@ -22,14 +22,19 @@ negative, as in seeded and baseline rows such as `US-3`. The API rejects version
 
 For booking domain rules and API examples, see [Booking](Booking.md).
 
-### Inventory container read constraints
+### Containers and trusted read constraints
+
+The read-only `containers` collection exposes `id`, `globalId`, `name`, `containerType` and
+`deleted`, with list, count and single reads.
 
 `InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
 `ContainerReadAccess` excludes deleted containers and allows direct Inventory read access or access
 through an active immediate child Container, Instrument or SubSample. Role visibility applies to the
 container itself, not its children. System administrators can read every active container, including
 workbenches. The query compiler uses correlated subqueries so filtering, totals and pagination use
-the same rule.
+the same rule. Booking location queries reuse this constraint. For domain rules that caller filter
+syntax cannot express, add a typed `QueryConstraint` with caller facts. Compile it centrally and
+combine it with caller filters. Do not rebuild the access predicate in each feature.
 
 Instrument location is the nullable `parentContainer` to-one relationship to `containers`, bound to
 `parentLocation.container.id`. Use relationship expansion to read its name and global ID. An
@@ -226,8 +231,8 @@ compiler.
 
 Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. For client catalog
 allowlisting and redirect rejection, see [Relationship
-filters](TableListInteractions.md#relationship-filters). Target-only aliases may delegate catalogs;
-never infer the catalog resource from `viaResource`.
+filters](TableListInteractions.md#relationship-filters). The registered target collection owns
+relationship runtime catalogs.
 
 Direct, relationship, and runtime predicates share the 50-comparison budget. Argument, nesting,
 LIKE, catalog-ID, page-size, and projection limits continue to apply independently; adding picker

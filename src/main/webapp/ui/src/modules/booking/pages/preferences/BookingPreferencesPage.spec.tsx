@@ -1,6 +1,6 @@
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingNotificationSubscriptionManagerPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionManagerPreferences";
 import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingNotificationSubscriptionManagerPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionManagerPreferences";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -39,14 +39,16 @@ function registerHandlers() {
       stored = inheritedBrowserBookingPreferences;
       return new HttpResponse(null, { status: 204 });
     }),
-    http.get<never, never, BookingNotificationSubscriptionManagerPreferences | ApiV2Problem>("/api/v2/users/me/booking-notification-preferences", () =>
-      HttpResponse.json({
-        autoSubscribeOwnedItems: true,
-        notifyOwnActions: true,
-        notifyOnCreated: true,
-        notifyOnCancelled: true,
-        emailDelivery: false,
-      }),
+    http.get<never, never, BookingNotificationSubscriptionManagerPreferences | ApiV2Problem>(
+      "/api/v2/users/me/booking-notification-preferences",
+      () =>
+        HttpResponse.json({
+          autoSubscribeOwnedItems: true,
+          notifyOwnActions: true,
+          notifyOnCreated: true,
+          notifyOnCancelled: true,
+          emailDelivery: false,
+        }),
     ),
   );
 }
@@ -73,7 +75,7 @@ describe("Booking display preferences", () => {
     await expect
       .element(preferences.end)
       .toHaveAccessibleDescription(
-        "12:00 AM means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "12:00 AM means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA time zone.",
       );
     await expect.element(preferences.save).toBeDisabled();
     await preferences.end.fill("00:00");
@@ -84,19 +86,19 @@ describe("Booking display preferences", () => {
     await expect.element(preferences.start).toHaveAttribute("aria-invalid", "true");
     await expect
       .element(preferences.start)
-      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA timezone.");
+      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA time zone.");
     await preferences.start.fill("09:00");
     await preferences.custom.click();
     await preferences.customTimezone.fill("Not/A-Timezone");
     await expect.element(preferences.customTimezone).toHaveAttribute("aria-invalid", "true");
     await expect
       .element(preferences.customTimezone)
-      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA timezone.");
+      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA time zone.");
     await expect.element(preferences.save).toBeDisabled();
     await preferences.customTimezone.fill("Europe/Berlin");
     await expect.element(preferences.customTimezone).toHaveAttribute("aria-invalid", "false");
     await expect
-      .element(page.getByText("Choose a valid same-day window and, for Custom, a valid IANA timezone."))
+      .element(page.getByText("Choose a valid same-day window and, for Custom, a valid IANA time zone."))
       .not.toBeInTheDocument();
     await expect.element(preferences.save).toBeEnabled();
     // Let the disabled-opacity transition finish before measuring contrast.

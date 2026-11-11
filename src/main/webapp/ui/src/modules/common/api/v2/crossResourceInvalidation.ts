@@ -48,16 +48,6 @@ export const crossResourceInvalidation: ReadonlyArray<{
   },
   {
     onMutations: [
-      "createBookingCalendarSubscription",
-      "rotateBookingCalendarSubscription",
-      "revokeBookingCalendarSubscription",
-      "updateBookingConfiguration",
-      "deleteBookingConfiguration",
-    ],
-    invalidates: [{ query: "listMyBookableItemCalendarSubscriptions" }],
-  },
-  {
-    onMutations: [
       "createBooking",
       "updateBooking",
       "createBookingConfiguration",

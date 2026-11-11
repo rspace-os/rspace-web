@@ -1,9 +1,11 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { TriangleAlertIcon } from "lucide-react";
 import * as React from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { BOOKING_ERROR_CLASS_NAME } from "@/modules/booking/components/bookingWarningStyles";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import {
   BookingForm,
@@ -23,6 +25,7 @@ import { bookingConflicts } from "@/modules/booking/domain/availability";
 import { type BookingListDocument, fetchBooking, updateBooking } from "@/modules/booking/domain/booking";
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatBookingDateTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import { getSearchCalendarCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
@@ -33,11 +36,11 @@ import {
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
-
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { cn } from "@/modules/common/utils/cn";
 import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
 
 /** A save rejected because the booking changed after the version the draft was saved against. */
@@ -73,6 +76,8 @@ export function InlineBookingEditor({
   const { t } = useTranslation(["booking", "common"]);
   const { t: bookingT } = useTranslation("booking");
   const queryClient = useQueryClient();
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const notices = useBookingNotices();
   const configuration = useBookableItemConfiguration(event.target.globalId);
   // The booking the draft started from: the form's defaults and the base of the patch. A refetched `event` (a newer
   // version) never replaces the draft; only discarding it does.
@@ -101,7 +106,7 @@ export function InlineBookingEditor({
   const [windowAdjustment, setWindowAdjustment] = React.useState<BookingFormState["draft"]>();
   const updateOptions = getUpdateBookingMutationOptions(queryClient);
   const mutation = useMutation({
-    mutationFn: ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
+    mutationFn: async ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
       // Only the fields changed from where the draft started, so saving over a newer version keeps that version's
       // other changes.
       const patch: BookingsUpdate = {
@@ -110,9 +115,9 @@ export function InlineBookingEditor({
           : {}),
         ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
       };
-      return Object.keys(patch).length === 0 ? Promise.resolve(event) : updateBooking(event.id, version, patch);
+      return Object.keys(patch).length === 0 ? null : updateBooking(event.id, version, patch);
     },
-    onSuccess: async (updated, _variables, onMutateResult, mutationContext) => {
+    onSuccess: async (updated, { submission }, onMutateResult, mutationContext) => {
       flushSync(onClose);
       if (updated) {
         await updateOptions.onSuccess?.(
@@ -122,12 +127,20 @@ export function InlineBookingEditor({
           mutationContext,
         );
       }
-      await Promise.all([
-        invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
-        invalidateGetBooking(queryClient, event.id, undefined, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchCalendarEventsQueryKey() }, { cancelRefetch: false }),
-        queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey() }, { cancelRefetch: false }),
-      ]);
+      if (updated) {
+        notices.notify(
+          "calendar",
+          createBookingEventNotice({
+            event: updated,
+            message:
+              updated.kind === "MAINTENANCE"
+                ? t("bookings.feedback.maintenanceUpdated", { itemName: submission.target.name })
+                : t("bookings.feedback.eventUpdated", { itemName: submission.target.name }),
+            timeZone: timezone,
+            searchStr,
+          }),
+        );
+      }
     },
     onError: async (error, { version, submission }) => {
       if (isStaleEditError(error) || isBookingOutcomeUncertain(error)) {
@@ -188,15 +201,12 @@ export function InlineBookingEditor({
     },
   });
   const resetMutation = mutation.reset;
-  const clearMutationErrorOnChange = React.useCallback(
-    (state: BookingFormState) => {
-      setFormState(state);
-      setWindowAdjustment(undefined);
-      if (!mutation.isError) return;
-      resetMutation();
-    },
-    [mutation.isError, resetMutation],
-  );
+  const clearMutationErrorOnChange = (state: BookingFormState) => {
+    setFormState(state);
+    setWindowAdjustment(undefined);
+    if (!mutation.isError) return;
+    resetMutation();
+  };
   React.useEffect(() => {
     if (rejectedVersion !== undefined) staleAlertRef.current?.focus();
   }, [rejectedVersion]);
@@ -227,6 +237,7 @@ export function InlineBookingEditor({
   const availabilityRow = configuration.data
     ? calendarAvailabilityRow({
         ...configuration.data,
+        eventKind: event.kind,
         // Opening hours are the form's own check, so closed time must not read as an overlap here.
         ...ALWAYS_OPEN,
         // Fetch overlaps even when the configuration permits double booking so the form can explain them.
@@ -319,7 +330,7 @@ export function InlineBookingEditor({
               ref={staleAlertRef}
               tabIndex={-1}
               variant="destructive"
-              className="border-red-700 bg-red-100 text-red-950 outline-none focus-visible:ring-3 focus-visible:ring-ring/40 *:data-[slot=alert-description]:text-red-950 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200"
+              className={cn(BOOKING_ERROR_CLASS_NAME, "outline-none focus-visible:ring-3 focus-visible:ring-ring/40")}
             >
               <TriangleAlertIcon aria-hidden="true" />
               <AlertDescription>{t("calendar.inlineEditor.staleEdit")}</AlertDescription>

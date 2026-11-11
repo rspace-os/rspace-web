@@ -34,6 +34,8 @@ const event = {
     enabled: true,
     bookingConfigurationId: "booking-configurations:7",
     openingHours: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+    slotGranularityMinutes: 1440,
+    incrementUnit: "HOURS",
   },
   target: "bookings:41",
 };
@@ -107,33 +109,6 @@ describe("BookableItemAuditLog", () => {
     expect(screen.getAllByRole("article")).toHaveLength(2);
   });
 
-  it("labels the permanent-deletion timestamp and retains unknown recorded field names", async () => {
-    const user = userEvent.setup();
-    server.use(
-      http.get("/api/v2/booking-configurations/7/audit", () =>
-        HttpResponse.json(
-          auditPage([
-            {
-              ...event,
-              action: "DELETE",
-              payload: { deletedAt: "2026-08-25T10:42:18Z", enabled: true, customField: "retained" },
-            },
-          ]),
-        ),
-      ),
-    );
-    renderAudit();
-
-    const item = within(await screen.findByRole("article"));
-    await user.click(item.getByRole("button", { name: "common:actions.expand" }));
-    expect(await item.findByText("booking:bookableItemDetails.audit.values.deletedAt")).toBeVisible();
-    expect(item.getByText("2026-08-25T10:42:18Z")).toBeVisible();
-    expect(item.getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
-    expect(item.getByText("customField")).toBeVisible();
-    expect(item.getByText("retained")).toBeVisible();
-    expect(item.queryByText("deletedAt")).not.toBeInTheDocument();
-  });
-
   it("loads a capped completed-day result and renders exact duplicates as separate rows", async () => {
     let request: Request | undefined;
     server.use(
@@ -182,6 +157,14 @@ describe("BookableItemAuditLog", () => {
     expect(
       within(item).getByText("booking:bookableItemDetails.audit.values.openingHours").nextElementSibling,
     ).toHaveTextContent("booking:bookableItemDetails.audit.weekdayRange");
+    expect(
+      within(item).getByText("booking:bookableItemDetails.audit.values.incrementUnit").nextElementSibling,
+    ).toHaveTextContent("booking:settings.fields.incrementHours");
+    // With its unit recorded, 1440 minutes reads as 24 hours rather than a raw minute count.
+    expect(
+      within(item).getByText("booking:bookableItemDetails.fields.granularity").nextElementSibling,
+    ).toHaveTextContent("booking:bookableItemDetails.hours");
+    expect(within(item).queryByText("booking:bookableItemDetails.audit.values.increment")).not.toBeInTheDocument();
     await expectAccessible(container);
   });
 

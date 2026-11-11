@@ -37,14 +37,6 @@ public final class ApiV2ResourceRequestParser {
       ApiV2CollectionQuery query,
       ApiV2FieldsetQuery fieldsets,
       CollectionDescription<?> description,
-      ResourceRegistry registry) {
-    return parse(query, fieldsets, description, registry, RuntimeFieldContext.empty());
-  }
-
-  public static ResourceRequest parse(
-      ApiV2CollectionQuery query,
-      ApiV2FieldsetQuery fieldsets,
-      CollectionDescription<?> description,
       ResourceRegistry registry,
       RuntimeFieldContext runtimeFields) {
     RuntimeFieldResolution runtime = new RuntimeFieldResolution(runtimeFields);
@@ -63,14 +55,6 @@ public final class ApiV2ResourceRequestParser {
       int depth,
       ApiV2FieldsetQuery fieldsets,
       CollectionDescription<?> description,
-      ResourceRegistry registry) {
-    return item(depth, fieldsets, description, registry, RuntimeFieldContext.empty());
-  }
-
-  public static ResourceRequest item(
-      int depth,
-      ApiV2FieldsetQuery fieldsets,
-      CollectionDescription<?> description,
       ResourceRegistry registry,
       RuntimeFieldContext runtimeFields) {
     RuntimeFieldResolution runtime = new RuntimeFieldResolution(runtimeFields);
@@ -82,11 +66,6 @@ public final class ApiV2ResourceRequestParser {
         fields,
         includes(depth, description, registry),
         runtime.selection());
-  }
-
-  public static ResourceRequest filtered(
-      String where, CollectionDescription<?> description, ResourceRegistry registry) {
-    return filtered(where, description, registry, RuntimeFieldContext.empty());
   }
 
   public static ResourceRequest filtered(
@@ -111,11 +90,6 @@ public final class ApiV2ResourceRequestParser {
     ResourceFieldSelections selections = fields(fieldsets, description, registry, runtime);
     return new ResourceRequest(
         filter, List.of(), new Page(1, 1), selections, IncludeTree.empty(), runtime.selection());
-  }
-
-  public static ResourceRequest bulk(
-      String where, CollectionDescription<?> description, ResourceRegistry registry) {
-    return bulk(where, description, registry, RuntimeFieldContext.empty());
   }
 
   public static ResourceRequest bulk(

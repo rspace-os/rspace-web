@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { type BookingWindowDraft, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 import { BookingDayTimelineAside } from "../BookingDayTimelineAside";
 import type { BookableItemOption } from "../bookableItemOption";
 import { confocalBooking, confocalBookingPage, confocalTargetWithHours } from "./creationTestFixtures";
@@ -153,7 +154,12 @@ describe("BookingDayTimelineAside acceptance", () => {
     ],
     [
       "a closed weekday",
-      { ...target, openingHours: target.openingHours.filter((entry) => [2, 3, 4, 5, 6, 7].includes(entry.dayOfWeek)) },
+      {
+        ...target,
+        openingHours: target.openingHours.filter((entry) =>
+          [2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+        ),
+      },
       [{ top: "0px", height: "1344px" }],
     ],
   ])("shades the closed periods of %s on the draft day", async (_, selectedTarget, expected) => {
@@ -178,7 +184,11 @@ describe("BookingDayTimelineAside acceptance", () => {
     render(asideTree({ client: queryClient(), selectedTarget: { ...target, timezone: "Asia/Kolkata" }, timezone }));
 
     await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
-    expect(screen.getAllByText(`${expected} · Confocal microscope`)[0]).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        i18n.t("booking:dayTimeline.vertical.timezoneAndItem", { timezone: expected, item: "Confocal microscope" }),
+      )[0],
+    ).toBeInTheDocument();
   });
 
   it("keeps the loading state visible until the day schedule resolves", async () => {

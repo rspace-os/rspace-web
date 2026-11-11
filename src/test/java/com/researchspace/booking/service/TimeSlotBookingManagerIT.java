@@ -80,7 +80,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void sharedBufferGapIsSymmetricAcrossInsertionOrdersAndAllowsItsExactBoundary() {
+  public void bufferGapsAllowTheirExactBoundariesInBothInsertionOrders() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument created = createBasicInstrumentForUser(owner, "Buffer boundary scope");
     Setup setup = persistConfiguration(owner, created.getId(), false, 1L, 10, 20);
@@ -91,31 +91,31 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             .atTime(10, 0)
             .toInstant(ZoneOffset.UTC);
 
+    // Bookings keep both buffers between them, whichever was created first.
     create(target, owner, start, start.plus(1, ChronoUnit.HOURS));
-
-    Instant afterStart15 = start.plus(1, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES);
+    Instant afterStart25 = start.plus(1, ChronoUnit.HOURS).plus(25, ChronoUnit.MINUTES);
     assertThrows(
         BookingBufferConflictException.class,
-        () -> create(target, owner, afterStart15, afterStart15.plus(1, ChronoUnit.HOURS)));
-    Instant afterStart19 = start.plus(1, ChronoUnit.HOURS).plus(19, ChronoUnit.MINUTES);
+        () -> create(target, owner, afterStart25, afterStart25.plus(1, ChronoUnit.HOURS)));
+    Instant afterStart29 = start.plus(1, ChronoUnit.HOURS).plus(29, ChronoUnit.MINUTES);
     assertThrows(
         BookingBufferConflictException.class,
-        () -> create(target, owner, afterStart19, afterStart19.plus(1, ChronoUnit.HOURS)));
-    Instant afterStart20 = start.plus(1, ChronoUnit.HOURS).plus(20, ChronoUnit.MINUTES);
-    create(target, owner, afterStart20, afterStart20.plus(1, ChronoUnit.HOURS));
+        () -> create(target, owner, afterStart29, afterStart29.plus(1, ChronoUnit.HOURS)));
+    Instant afterStart30 = start.plus(1, ChronoUnit.HOURS).plus(30, ChronoUnit.MINUTES);
+    create(target, owner, afterStart30, afterStart30.plus(1, ChronoUnit.HOURS));
 
     Instant laterStart = start.plus(1, ChronoUnit.DAYS);
     create(target, owner, laterStart, laterStart.plus(1, ChronoUnit.HOURS));
-    Instant beforeStart15 = laterStart.minus(1, ChronoUnit.HOURS).minus(15, ChronoUnit.MINUTES);
+    Instant beforeStart25 = laterStart.minus(1, ChronoUnit.HOURS).minus(25, ChronoUnit.MINUTES);
     assertThrows(
         BookingBufferConflictException.class,
-        () -> create(target, owner, beforeStart15, beforeStart15.plus(1, ChronoUnit.HOURS)));
-    Instant beforeStart19 = laterStart.minus(1, ChronoUnit.HOURS).minus(19, ChronoUnit.MINUTES);
+        () -> create(target, owner, beforeStart25, beforeStart25.plus(1, ChronoUnit.HOURS)));
+    Instant beforeStart29 = laterStart.minus(1, ChronoUnit.HOURS).minus(29, ChronoUnit.MINUTES);
     assertThrows(
         BookingBufferConflictException.class,
-        () -> create(target, owner, beforeStart19, beforeStart19.plus(1, ChronoUnit.HOURS)));
-    Instant beforeStart20 = laterStart.minus(1, ChronoUnit.HOURS).minus(20, ChronoUnit.MINUTES);
-    create(target, owner, beforeStart20, beforeStart20.plus(1, ChronoUnit.HOURS));
+        () -> create(target, owner, beforeStart29, beforeStart29.plus(1, ChronoUnit.HOURS)));
+    Instant beforeStart30 = laterStart.minus(1, ChronoUnit.HOURS).minus(30, ChronoUnit.MINUTES);
+    create(target, owner, beforeStart30, beforeStart30.plus(1, ChronoUnit.HOURS));
   }
 
   @Test

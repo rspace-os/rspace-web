@@ -32,7 +32,6 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
-
 class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }
@@ -147,7 +146,9 @@ export function bookingRouteTargetQuery(globalId: string | undefined) {
 
 export const MINIMUM_TARGET_QUERY_LENGTH = 2;
 
-export function mapBookingTargetDirectory(response: BookingConfigurationTargetControllerTargetDirectoryDocument): BookingConfigurationTarget[] {
+export function mapBookingTargetDirectory(
+  response: BookingConfigurationTargetControllerTargetDirectoryDocument,
+): BookingConfigurationTarget[] {
   return response.docs.map((target) => {
     if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
     return {

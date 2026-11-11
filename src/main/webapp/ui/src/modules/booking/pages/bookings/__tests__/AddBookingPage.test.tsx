@@ -83,7 +83,7 @@ const optionDocument = {
   },
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
-  incrementUnit: "MINUTES",
+  incrementUnit: "MINUTES" as const,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
@@ -119,7 +119,7 @@ const catalogueOption = {
   name: optionDocument.target.value.name,
   timezone: optionDocument.timezone,
   slotGranularityMinutes: optionDocument.slotGranularityMinutes,
-  incrementUnit: optionDocument.incrementUnit,
+  incrementUnit: "MINUTES" as const,
   openingHours: optionDocument.openingHours,
   bufferBeforeMinutes: optionDocument.bufferBeforeMinutes,
   bufferAfterMinutes: optionDocument.bufferAfterMinutes,
@@ -213,7 +213,11 @@ describe("AddBookingPage", () => {
     expect(within(itemInformation).getByText("Confocal microscope")).toBeVisible();
     expect(within(itemInformation).getByText("booking:bookings.itemInformation.open")).toBeVisible();
     expect(within(itemInformation).getByText("booking:bookings.itemInformation.doubleBookingAllowed")).toBeVisible();
-    expect(within(itemInformation).queryByText("booking:bookings.itemInformation.buffer")).not.toBeInTheDocument();
+    for (const side of ["bufferBefore", "bufferAfter"]) {
+      const label = within(itemInformation).getByText(`booking:bookableItemDetails.fields.${side}`);
+      expect(label).toBeVisible();
+      expect(label.nextElementSibling).toHaveTextContent("0 minutes");
+    }
     expect(
       within(itemInformation).queryByRole("button", {
         name: "booking:bookings.itemInformation.timeWithInstrumentTime",
@@ -291,9 +295,9 @@ describe("AddBookingPage", () => {
   });
 
   it.each([
-    [5, 0, "booking:bookings.itemInformation.bufferBefore", "booking:bookings.itemInformation.bufferAfter"],
-    [0, 10, "booking:bookings.itemInformation.bufferAfter", "booking:bookings.itemInformation.bufferBefore"],
-  ])("shows only the non-zero buffer side", async (before, after, shown, hidden) => {
+    [5, 0],
+    [0, 10],
+  ])("shows separate gap facts including the zero side (%s before, %s after)", async (before, after) => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
@@ -307,9 +311,14 @@ describe("AddBookingPage", () => {
     const itemInformation = await screen.findByRole("complementary", {
       name: "booking:bookings.itemInformation.title",
     });
-    expect(within(itemInformation).getByText("booking:bookings.itemInformation.buffer")).toBeVisible();
-    expect(within(itemInformation).getByText(shown)).toBeVisible();
-    expect(within(itemInformation).queryByText(hidden)).not.toBeInTheDocument();
+    for (const [side, minutes] of [
+      ["bufferBefore", before],
+      ["bufferAfter", after],
+    ] as const) {
+      const label = within(itemInformation).getByText(`booking:bookableItemDetails.fields.${side}`);
+      expect(label).toBeVisible();
+      expect(label.nextElementSibling).toHaveTextContent(`${minutes} minutes`);
+    }
   });
 
   it("offers the item's own opening hours in the instrument-time tooltip when its timezone differs", async () => {
@@ -336,7 +345,7 @@ describe("AddBookingPage", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("gives every open day's time its own globe button when the timezones differ", async () => {
+  it("gives each grouped opening time its own globe button when the timezones differ", async () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
@@ -345,7 +354,9 @@ describe("AddBookingPage", () => {
             {
               ...catalogueOption,
               timezone: "America/New_York",
-              openingHours: catalogueOption.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+              openingHours: catalogueOption.openingHours.filter((entry) =>
+                [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+              ),
             },
           ]),
         ),
@@ -356,12 +367,12 @@ describe("AddBookingPage", () => {
     const itemInformation = await screen.findByRole("complementary", {
       name: "booking:bookings.itemInformation.title",
     });
-    expect(within(itemInformation).getAllByText("booking:bookings.itemInformation.closedDay")).toHaveLength(2);
+    expect(within(itemInformation).getAllByText("booking:bookings.itemInformation.closedDay")).toHaveLength(1);
     expect(
       within(itemInformation).getAllByRole("button", {
         name: "booking:bookings.itemInformation.timeWithInstrumentTime",
       }),
-    ).toHaveLength(5);
+    ).toHaveLength(1);
     for (const closed of within(itemInformation).getAllByText("booking:bookings.itemInformation.closedDay")) {
       expect(closed.closest("li")).not.toHaveClass("text-muted-foreground");
     }
@@ -450,7 +461,7 @@ describe("AddBookingPage", () => {
     expect(alert).toMatchTextContent("booking:bookings.errors.buffer");
     expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
     expect(alert).not.toMatchTextContent("booking:bookings.errors.overlapSummary");
-    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.overlapMaintenance");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.maintenanceConflict");
     expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
   });
 

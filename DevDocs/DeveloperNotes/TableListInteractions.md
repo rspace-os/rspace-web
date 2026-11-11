@@ -76,6 +76,9 @@ const mutation = useMutation({
 return <TableList {...table.tableProps} alertsRef={alertsRef} />;
 ```
 
+For results that cross Booking routes or appear on detail pages, see
+[Booking frontend](./BookingFrontend.md). The page delivers table results through `alertsRef`.
+
 ## Add controlled row selection
 
 Pass `selection` when a page supplies bulk actions. The selected IDs stay in the page component,
@@ -206,8 +209,6 @@ Date-time controls display local calendar time and apply an
 instant, preserving seconds and milliseconds. Client date-time comparisons use the same instant
 before and after a saved view restores Date operands.
 
-`TableList` can read the old `filters` parameter. It writes `q` and `where` after the next filter change.
-
 The table also stores filters, sorting, and visible fields in
 `rspace.tableList.<tableId>.view`. The browser profile owns this storage. Pagination and column
 widths are not stored.
@@ -215,7 +216,7 @@ widths are not stored.
 A customised column selection records the configured `defaultColumns` at save time.
 When a later release adds a default column, loading the view inserts it after the preceding default
 instead of hiding it behind the old selection. A default the user removed after seeing it stays
-hidden. Views saved before this record existed gain every missing default once.
+hidden. A saved column selection must include this defaults record.
 
 The collection slug is the default `tableId`. Set a stable, unique ID when independent views use
 the same collection configuration.
@@ -256,11 +257,31 @@ and keyboard input. Filters keep a draft order until the user applies them. Sort
 The Columns panel separates shown and hidden fields. A user can reorder shown fields or move a
 field between sections. Hidden-field order is not stored because it does not affect the table.
 
-Each data-column header has a resize handle. A double-click restores the configured width. Widths
-remain local to the mounted table and are not written to the URL or browser storage.
+Each data-column header has a resize handle. Arrow keys resize by 16px. Widths remain local to
+the mounted table and are not written to the URL or browser storage. Tables with `widthMode:
+"fill"` or `"content"` start with fitted, intrinsic widths. The first mouse, touch, or keyboard
+resize captures the rendered widths, applies column size limits, and switches to fixed layout.
+Double-click, Enter, or Space restores the whole fitted layout on these tables, including after
+hiding the last widthMode column. The next resize captures the rendered widths again. Other
+tables reset only the chosen column to its configured width.
+
+Captured layout survives column visibility changes. Resized tables stay at least as wide as
+their container: on capture, column visibility changes, and container changes, spare width goes
+to a visible fill column up to its maximum. Container shrink reduces it down to its minimum.
+Once the user sizes the fill column, its width stays fixed until reset; a presentation-only
+spacer before Actions takes any remainder, including when no fill column is visible. Other
+columns keep their stored widths, so subsequent resizing starts at the visible edge. The table
+scrolls horizontally when the resized columns exceed the container.
 
 `variant="card"` adds a bordered container around the table. It does not turn each record into a
 card. `variant="transparent"` removes that container treatment.
+
+Use `stickyActions="when-fitted"` for wide visual content such as availability bars. Actions
+remain at the right edge while the table fits; when widths exceed the container, all columns
+scroll together so Actions cannot cover the visual. Actions may start offscreen when the table
+overflows; scroll horizontally to reach them. The scroll container reserves trailing padding so
+scrolling an action into view leaves space at the edge. Resetting widths restores stickiness
+when the table fits again. The default keeps Actions sticky during scrolling.
 
 ## Runtime fields
 

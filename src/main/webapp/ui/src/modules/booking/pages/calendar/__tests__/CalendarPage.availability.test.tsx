@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
+import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { setupCalendarBookableItems } from "./calendarPageTestUtils";
 import { renderCalendar } from "./calendarTestHarness";
 
@@ -182,5 +182,15 @@ describe("Calendar Availability", () => {
     expect(hits).toBe(0);
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     expect(screen.queryByText("Finding bookable items…")).not.toBeInTheDocument();
+  });
+  it("opens an event focus link in Resources and removes its availability preset", async () => {
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))));
+    const { router } = await renderCalendar(
+      "/booking/calendar?layout=availability&date=2026-08-17&target=IN123&focus=41&focusRequest=availability-focus&calendar-resources.where=availability%3D%3Davailable-now",
+    );
+    expect(await screen.findByRole("button", { name: "View: By Item · Day" })).toBeVisible();
+    await waitFor(() =>
+      expect(new URLSearchParams(router.state.location.searchStr).get("calendar-resources.where")).toBeNull(),
+    );
   });
 });

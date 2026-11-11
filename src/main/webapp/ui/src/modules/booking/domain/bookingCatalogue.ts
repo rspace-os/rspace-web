@@ -1,3 +1,4 @@
+import { skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
 import { SchedulingSettingsSchema } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import {
@@ -12,8 +13,16 @@ import {
 import type { BookingCatalogueManagerAvailabilityCounts } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerAvailabilityCounts";
 import type { BookingCatalogueManagerItem } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerItem";
 import type { BookingCatalogueManagerPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerPage";
+import type { BookingsReadKind } from "@/modules/common/api/v2/generated/models/bookingsReadKind";
 import type { SearchBookingCatalogueParams } from "@/modules/common/api/v2/generated/models/searchBookingCatalogueParams";
+import type { BookableItemOption } from "../creation/bookableItemOption";
 import { requireBookingValue as required } from "./bookingMapping";
+
+function mapCapability(value: unknown, fallback?: boolean): boolean {
+  if (value === undefined && fallback !== undefined) return fallback;
+  if (typeof value !== "boolean") throw new Error("Invalid booking capability");
+  return value;
+}
 
 export function mapBookingCatalogueItem(input: BookingCatalogueManagerItem) {
   if (input.targetType !== "INSTRUMENT") throw new Error("Unsupported booking target type");
@@ -217,8 +226,64 @@ function mapAvailabilityCounts(response: BookingCatalogueManagerAvailabilityCoun
   };
 }
 
-function mapCapability(value: unknown, fallback?: boolean): boolean {
-  if (value === undefined && fallback !== undefined) return fallback;
-  if (typeof value !== "boolean") throw new Error("Invalid booking capability");
-  return value;
+type BookableItemSearch = { term?: string; target?: string; page?: number; eventKind?: BookingsReadKind };
+function pickerParameters(search: BookableItemSearch) {
+  return catalogueParameters({
+    q: search.term,
+    target: search.target,
+    capability: search.eventKind === "MAINTENANCE" ? "CREATE_BLOCKOUT" : "CREATE_BOOKING",
+    page: search.page,
+    pageSize: 20,
+  });
+}
+function mapBookableItems(
+  page: BookingCatalogueManagerPage,
+  search: BookableItemSearch,
+): { options: readonly BookableItemOption[]; totalPages: number } {
+  const result = mapBookingCataloguePage(page);
+  return {
+    options: result.items
+      .filter((item) =>
+        search.eventKind === "MAINTENANCE" ? item.capabilities.canCreateBlockout : item.capabilities.canCreateBooking,
+      )
+      .map((item) => ({
+        configurationId: item.configurationId,
+        targetId: item.targetId,
+        globalId: item.globalId,
+        name: item.name,
+        timezone: item.timezone,
+        slotGranularityMinutes: item.slotGranularityMinutes,
+        incrementUnit: item.incrementUnit,
+        openingHours: item.openingHours,
+        bufferBeforeMinutes: item.bufferBeforeMinutes,
+        bufferAfterMinutes: item.bufferAfterMinutes,
+        maxBookingDurationMinutes: item.maxBookingDurationMinutes,
+        allowDoubleBooking: item.allowDoubleBooking,
+        capabilities: item.capabilities,
+      })),
+    totalPages: Math.max(1, Math.ceil(result.total / result.pageSize)),
+  };
+}
+export async function loadBookableItems(
+  search: BookableItemSearch,
+  signal: AbortSignal,
+): Promise<{ options: readonly BookableItemOption[]; totalPages: number }> {
+  return mapBookableItems(await searchBookingCatalogue(pickerParameters(search), { signal }), search);
+}
+export function enabledBookingPickerTargetQuery(globalId: string | undefined) {
+  const search = { target: globalId };
+  return getSearchBookingCatalogueQueryOptions(pickerParameters(search), {
+    query: {
+      ...(!globalId ? { queryFn: skipToken } : {}),
+      enabled: Boolean(globalId),
+      select: (page) => mapBookableItems(page, search),
+      retry: false,
+    },
+  });
+}
+export function bookableItemsPickerQuery(term: string, page: number, eventKind: BookingsReadKind) {
+  const search = { term, page, eventKind };
+  return getSearchBookingCatalogueQueryOptions(pickerParameters(search), {
+    query: { select: (result) => mapBookableItems(result, search) },
+  });
 }
