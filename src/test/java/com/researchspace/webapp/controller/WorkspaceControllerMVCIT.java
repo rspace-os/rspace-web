@@ -2313,6 +2313,51 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     String settingsKey = (String) search.getModelAndView().getModel().get("settingsKey");
 
     for (int returnNumber = 1; returnNumber <= 2; returnNumber++) {
+      if (returnNumber == 2) {
+        mockMvc
+            .perform(
+                get("/workspace/ajax/search")
+                    .session(session)
+                    .principal(principal)
+                    .param("settingsKey", settingsKey)
+                    .param("options[]", ALL_SEARCH_OPTION)
+                    .param("terms[]", "*abc"))
+            .andExpect(status().isInternalServerError());
+        for (WorkspaceViewMode mode :
+            new WorkspaceViewMode[] {WorkspaceViewMode.TREE_VIEW, WorkspaceViewMode.LIST_VIEW}) {
+          mockMvc
+              .perform(
+                  post("/workspace/ajax/saveWorkspaceSettings")
+                      .session(session)
+                      .principal(principal)
+                      .param("settingsKey", settingsKey)
+                      .param("parentFolderId", matching.getParent().getId().toString())
+                      .param("currentViewMode", mode.toString())
+                      .param("resultsPerPage", "50")
+                      .param("options[]", ALL_SEARCH_OPTION)
+                      .param("terms[]", "*abc"))
+              .andExpect(status().isOk())
+              .andExpect(result -> assertNull(result.getResolvedException()));
+          assertEquals(
+              mode.toString(),
+              userMgr
+                  .getPreferenceForUser(user, Preference.CURRENT_WORKSPACE_VIEW_MODE)
+                  .getValue());
+          assertEquals(
+              50,
+              userMgr
+                  .getPreferenceForUser(user, Preference.WORKSPACE_RESULTS_PER_PAGE)
+                  .getValueAsNumber()
+                  .intValue());
+        }
+      }
+      mockMvc
+          .perform(
+              get("/workspace/editor/structuredDocument/{recordId}", matching.getId())
+                  .session(session)
+                  .principal(principal)
+                  .param("settingsKey", settingsKey))
+          .andExpect(status().isOk());
       MvcResult restored =
           mockMvc
               .perform(

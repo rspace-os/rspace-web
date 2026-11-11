@@ -974,18 +974,21 @@ public class WorkspaceController extends BaseController {
       HttpServletResponse response,
       WorkspaceListingConfig input,
       User subject) {
-    ErrorList errors =
-        inputValidator.validateAndGetErrorList(
-            input,
-            new WorkspaceSearchInputValidator(
-                subject,
-                properties.getUserMinSearchTermLength(),
-                properties.getSysadminMinSearchTermLength()));
+    ErrorList errors = getSearchValidationErrors(input, subject);
     if (errors != null && errors.hasErrorMessages()) {
       request.setAttribute("ajax.errors", errors);
       response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
       throw new IllegalArgumentException(getText("workspace.search.errors.invalidInput"));
     }
+  }
+
+  private ErrorList getSearchValidationErrors(WorkspaceListingConfig input, User subject) {
+    return inputValidator.validateAndGetErrorList(
+        input,
+        new WorkspaceSearchInputValidator(
+            subject,
+            properties.getUserMinSearchTermLength(),
+            properties.getSysadminMinSearchTermLength()));
   }
 
   private List<PaginationObject> generateNewPaginationLinks(
@@ -1256,16 +1259,22 @@ public class WorkspaceController extends BaseController {
     if (session.getAttribute(settingsKey) == null) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .body(getText("workspace.settings.errors.missingSessionListing"));
-    } else {
-      WorkspaceListingConfig cfg =
-          new WorkspaceListingConfig(
-              settings,
-              options == null ? new String[] {} : options,
-              terms == null ? new String[] {} : terms);
-      session.setAttribute(settingsKey, cfg);
     }
 
     User user = getUserByUsername(principal.getName());
+    WorkspaceListingConfig cfg =
+        new WorkspaceListingConfig(
+            settings,
+            options == null ? new String[] {} : options,
+            terms == null ? new String[] {} : terms);
+    ErrorList errors =
+        WorkspaceSettings.isSearchTermsSet(cfg.getSrchOptions(), cfg.getSrchTerms())
+            ? getSearchValidationErrors(cfg, user)
+            : null;
+    if (errors == null || !errors.hasErrorMessages()) {
+      session.setAttribute(settingsKey, cfg);
+    }
+
     workspaceViewModePreferences.setOrGetWorkspaceViewMode(settings.getCurrentViewMode(), user);
     PaginationCriteria<BaseRecord> pgCrit = settings.createPaginationCriteria();
     updateResultsPerPageProperty(user, pgCrit, Preference.WORKSPACE_RESULTS_PER_PAGE);
