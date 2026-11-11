@@ -64,7 +64,7 @@ if (!(JavaVersion.current().majorVersion in ['17', '21'])) {
 def buildTimestamp = (setting('timestamp') ?: 'dev').with {
   it == 'now' ? providers.of(CurrentUtcTimestamp) {}.get() : it
 }
-version = "2.28.0-SNAPSHOT-${buildTimestamp}"
+version = "2.29.0-SNAPSHOT-${buildTimestamp}"
 
 // -Djava-version picks the installed JDK (JAVA_HOME, ~/.m2/toolchains.xml, SDKMAN and the other
 // places Gradle looks) that compiles and runs the tests. Nothing is downloaded. Without it, the JDK
@@ -869,7 +869,7 @@ def checkReleaseDependencies = tasks.register('checkReleaseDependencies') {
     }
   }
   doLast {
-    // The -<timestamp> suffix makes 2.28.0-SNAPSHOT-<timestamp> a release version, as it was for
+    // The -<timestamp> suffix makes 2.29.0-SNAPSHOT-<timestamp> a release version, as it was for
     // the enforcer's requireReleaseVersion rule.
     if (isSnapshot(projectVersion)) {
       throw new GradleException("Release builds need a release version, not ${projectVersion}")
