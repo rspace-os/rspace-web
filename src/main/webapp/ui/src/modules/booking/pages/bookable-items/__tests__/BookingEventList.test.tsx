@@ -1,4 +1,5 @@
-import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { getListBookingsQueryKey, invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { bookableItemEventsQuery } from "../bookableItemEvents";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -104,6 +105,43 @@ describe("BookingEventList", () => {
     );
     await queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
     expect(requests.filter((url) => url.searchParams.get("totals") === "true")).toHaveLength(2);
+  });
+
+  it("refetches the cached total after a booking mutation invalidates bookings", async () => {
+    let total = 1;
+    let totalsRequests = 0;
+    server.use(
+      http.post("/api/v2/bookings", () => {
+        total += 1;
+        return HttpResponse.json({}, { status: 201 });
+      }),
+      http.get("/api/v2/bookings", ({ request }) => {
+        if (new URL(request.url).searchParams.has("totals")) totalsRequests += 1;
+        return HttpResponse.json(bookableItemEventResponse([fullBooking], { totalDocs: total }));
+      }),
+    );
+    const { queryClient } = renderList();
+    await screen.findByText("common:tableList.results");
+    expect(totalsRequests).toBe(1);
+    const mutation = queryClient.getMutationCache().build(queryClient, {
+      mutationFn: () => fetch("/api/v2/bookings", { method: "POST" }),
+      onSuccess: () => invalidateListBookings(queryClient),
+    });
+    await mutation.execute(undefined);
+    expect(totalsRequests).toBe(2);
+    expect(
+      queryClient.getQueryData([
+        ...bookableItemEventsQuery({
+          globalId: "IN12",
+          period: "upcoming",
+          cutoff: "2026-08-24T12:00:00Z",
+          page: 0,
+          limit: 1,
+          totals: true,
+        }).queryKey,
+        "bookableItemEventTotals",
+      ]),
+    ).toBe(2);
   });
 
   it("renders full and busy events without leaking busy details", async () => {

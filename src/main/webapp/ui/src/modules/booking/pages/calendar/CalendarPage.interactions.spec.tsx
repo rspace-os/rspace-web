@@ -1,5 +1,4 @@
 import { mapBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, fireEvent, render } from "@testing-library/react";
@@ -189,12 +188,11 @@ describe("Calendar page", () => {
   });
 
   test("opens a full event, edits it on its canonical page, and refreshes the readout", async () => {
-    if (ownBooking.privacy !== "full") throw new Error("The own-booking fixture must expose full details");
     let details = { ...ownBooking, createdBy: "Ada Lovelace (ada)" };
     worker.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(details)),
-      http.patch<never, BookingsUpdate>("/api/v2/bookings/41", async ({ request }) => {
-        const payload = await request.json();
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const payload = (await request.json()) as Partial<typeof details>;
         details = { ...details, ...payload, version: details.version + 1 };
         return HttpResponse.json(details);
       }),
