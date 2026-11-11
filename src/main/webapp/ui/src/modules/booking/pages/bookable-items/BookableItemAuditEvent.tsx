@@ -1,4 +1,5 @@
 import { isNil } from "es-toolkit";
+import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -43,8 +44,20 @@ function RecordedValues({ row }: { row: AuditRow }) {
   );
 }
 
+function bookingId(target: string | null | undefined): string | null {
+  const match = target?.match(/^bookings:(\d+)$/);
+  return match?.[1] ?? null;
+}
+
 function AuditTarget({ target }: { target: AuditRow["target"] }) {
-  return <span>{target ?? "—"}</span>;
+  const id = bookingId(target);
+  return id === null ? (
+    <span>{target ?? "—"}</span>
+  ) : (
+    <Link className="underline" to="/booking/calendar/bookings/$id" params={{ id }}>
+      {target}
+    </Link>
+  );
 }
 
 function AuditTimestamp({ value }: { value: string }) {

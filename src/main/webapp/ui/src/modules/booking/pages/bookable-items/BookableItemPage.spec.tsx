@@ -74,13 +74,7 @@ function bookableItemAccessHandlers() {
       ),
     ),
     http.get("/api/v2/booking-configurations/7/access/grantees", () =>
-      HttpResponse.json({
-        docs: [{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }],
-        totalDocs: 1,
-        limit: 20,
-        page: 1,
-        hasNextPage: false,
-      }),
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
     ),
   ];
 }
@@ -289,6 +283,14 @@ describe("BookableItemPage", () => {
           .some((candidate) => candidate.element().getClientRects().length > 0),
       )
       .toBe(true);
+    await expect
+      .poll(() =>
+        page
+          .getByRole("link", { name: "Edit", exact: true })
+          .all()
+          .some((candidate) => candidate.element().getClientRects().length > 0),
+      )
+      .toBe(true);
 
     const triggerBox = pageObj.lifecycleActions.element().getBoundingClientRect();
     expect(triggerBox.width).toBeGreaterThanOrEqual(44);
@@ -305,6 +307,7 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByText("Archived", { exact: true })).toBeVisible();
     await expect.element(page.getByText("Enabled", { exact: true })).not.toBeInTheDocument();
     await expect.element(page.getByText("Future calibration", { exact: true }).first()).not.toBeInTheDocument();
+    await expect.element(page.getByRole("link", { name: "Edit", exact: true }).first()).not.toBeInTheDocument();
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
 
     await pageObj.lifecycleActions.click();
@@ -315,6 +318,7 @@ describe("BookableItemPage", () => {
     expect(restoreRequest?.headers.get("If-Match")).toBe('"1"');
     await expect(restoreRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
     await expect.element(page.getByText("Future calibration", { exact: true }).first()).not.toBeInTheDocument();
+    await expect.element(page.getByRole("link", { name: "Edit", exact: true }).first()).not.toBeInTheDocument();
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
     const enabled = page.getByText("Enabled", { exact: true });
     await expect.element(enabled).toBeVisible();
@@ -504,7 +508,7 @@ describe("BookableItemPage", () => {
       await pageObj.auditTab.click();
 
       const alert = page.getByRole("alert");
-      await expect.element(alert.getByText(title, { exact: true })).toBeVisible();
+      await expect.element(alert).toHaveTextContent(title);
       await expect.element(alert).not.toHaveTextContent("Do not display");
       await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
       await expectNoAxeViolations();
