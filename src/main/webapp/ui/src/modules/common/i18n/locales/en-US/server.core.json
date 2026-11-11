@@ -107,6 +107,14 @@
           "endDate": {
             "required": "End date is required."
           }
+        },
+        "audit": {
+          "unavailable": "The audit trail is temporarily unavailable. Try again later.",
+          "range": {
+            "inverted": "The audit search start date must not be after its end date.",
+            "tooWide": "The audit search range must not exceed {0} days.",
+            "tooWideTitle": "The audit search range is too wide."
+          }
         }
       },
       "pagination": {
