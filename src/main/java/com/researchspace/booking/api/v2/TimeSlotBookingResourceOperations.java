@@ -16,6 +16,7 @@ import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.resource.VersionPolicy;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
+import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingCreateExecutor;
 import com.researchspace.booking.service.BookingDurationException;
@@ -25,6 +26,7 @@ import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
 import com.researchspace.booking.service.BookingWindowException;
+import com.researchspace.booking.service.ConflictingEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.booking.service.TimeSlotBookingManager.Create;
 import com.researchspace.booking.service.TimeSlotBookingManager.Patch;
@@ -38,10 +40,14 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.MessageSourceUtils;
 import jakarta.ws.rs.NotFoundException;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +55,7 @@ import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 
 /** Adapts REST API v2 booking documents to the booking domain manager. */
@@ -64,6 +71,7 @@ public final class TimeSlotBookingResourceOperations
           ResourceOperation.CREATE,
           ResourceOperation.UPDATE);
 
+  private final MessageSourceUtils messages;
   private final TimeSlotBookingManager manager;
   private final BookingCreateExecutor creates;
   private final FeatureFlagManager featureFlags;
@@ -74,7 +82,9 @@ public final class TimeSlotBookingResourceOperations
       FeatureFlagManager featureFlags,
       @Qualifier(BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION)
           CollectionDescription<TimeSlotBooking> description,
+      MessageSourceUtils messages,
       BookingCreateExecutor creates) {
+    this.messages = messages;
     this.creates = creates;
     this.manager = manager;
     this.featureFlags = featureFlags;
@@ -85,12 +95,42 @@ public final class TimeSlotBookingResourceOperations
   ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookingApiV2Resource() {
     List<ApiV2ErrorMapping> commonErrors =
         List.of(
-            ApiV2ErrorMapping.withErrorCode(
-                BookingPolicyException.class,
-                HttpStatus.BAD_REQUEST,
-                "errors.api.v2.booking.granularity",
-                "The interval violates the scheduling policy.",
-                exception -> exception.reason().errorCode()),
+            ApiV2ErrorMapping.forException(BookingPolicyException.class)
+                .status(HttpStatus.BAD_REQUEST)
+                .documentedError(
+                    "errors.api.v2.booking.granularity",
+                    "The interval violates the scheduling policy.")
+                .code(exception -> exception.reason().errorCode())
+                .arguments(
+                    exception -> {
+                      Locale locale = LocaleContextHolder.getLocale();
+                      if (exception.missingDayEnd().isPresent()) {
+                        BookingPolicyException.MissingDayEnd missing =
+                            exception.missingDayEnd().get();
+                        return new Object[] {
+                          missing.time().format(DateTimeFormatter.ofPattern("HH:mm")),
+                          missing
+                              .date()
+                              .format(
+                                  DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+                                      .withLocale(locale)),
+                          missing.zone().getId()
+                        };
+                      }
+                      return exception.maximumDurationMinutes().isEmpty()
+                          ? new Object[0]
+                          : new Object[] {
+                            BookingDurationWords.format(
+                                exception.maximumDurationMinutes().getAsLong(), messages, locale)
+                          };
+                    })
+                .extensions(
+                    exception ->
+                        exception.maximumDurationMinutes().isEmpty()
+                            ? Map.of()
+                            : BookingProblem.maximumDuration(
+                                exception.maximumDurationMinutes().getAsLong()))
+                .build(),
             ApiV2ErrorMapping.of(
                 BookingWindowException.class,
                 HttpStatus.BAD_REQUEST,
@@ -100,17 +140,37 @@ public final class TimeSlotBookingResourceOperations
                 BookingDurationException.class,
                 HttpStatus.BAD_REQUEST,
                 "errors.api.v2.booking.duration",
-                "The booking interval exceeds 366 days."),
+                "The booking interval exceeds 527040 elapsed minutes."),
             ApiV2ErrorMapping.of(
                 BookingTargetUnavailableException.class,
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.target.unavailable",
                 "The selected target is unavailable."),
-            ApiV2ErrorMapping.of(
-                BookingOverlapException.class,
-                HttpStatus.CONFLICT,
-                "errors.api.v2.booking.overlap",
-                "The interval overlaps another booking."));
+            ApiV2ErrorMapping.forException(BookingOverlapException.class)
+                .status(HttpStatus.CONFLICT)
+                .documentedError(
+                    "errors.api.v2.booking.overlap",
+                    "The interval overlaps another booking or maintenance event. The problem's"
+                        + " conflict member identifies the first such event.")
+                .arguments(ignored -> new Object[0])
+                .extensions(
+                    exception -> BookingProblem.bookingConflict(conflict(exception.conflict())))
+                .build(),
+            ApiV2ErrorMapping.forException(BookingBufferConflictException.class)
+                .status(HttpStatus.CONFLICT)
+                .documentedError(
+                    "errors.api.v2.booking.buffer",
+                    "The interval is free but falls inside the buffer around another booking or"
+                        + " maintenance event. The problem's conflict, bufferBeforeMinutes, and"
+                        + " bufferAfterMinutes members describe it.")
+                .arguments(ignored -> new Object[0])
+                .extensions(
+                    exception ->
+                        BookingProblem.bookingBuffer(
+                            conflict(exception.conflict()),
+                            exception.bufferBeforeMinutes(),
+                            exception.bufferAfterMinutes()))
+                .build());
     List<ApiV2ErrorMapping> updateErrors =
         Stream.concat(
                 commonErrors.stream(),
@@ -269,5 +329,13 @@ public final class TimeSlotBookingResourceOperations
     if (!enabled(subject)) {
       throw new NotFoundException();
     }
+  }
+
+  private static BookingProblem.BookingConflict conflict(ConflictingEvent event) {
+    return new BookingProblem.BookingConflict(
+        event.id(),
+        event.kind().name(),
+        DateTimeFormatter.ISO_INSTANT.format(event.start()),
+        DateTimeFormatter.ISO_INSTANT.format(event.end()));
   }
 }
