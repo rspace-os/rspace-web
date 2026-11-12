@@ -94,7 +94,7 @@ jobs:
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
-            -Djdbc.db.maven=rspace \
+            -Djdbc.server.db=rspace \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
@@ -197,7 +197,7 @@ jobs:
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
-            -Djdbc.db.maven=rspace \
+            -Djdbc.server.db=rspace \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}

@@ -56,7 +56,7 @@ Every `-D<name>=<value>` on the Gradle command line is a build setting. It:
 - overrides the resource-filter property of the same name (see [Resource filtering](#resource-filtering));
 - is passed as a system property to every test JVM and to the Jetty JVM.
 
-So `-Dspring.profiles.active=run`, `-DRS_FILE_BASE=...` or `-Djdbc.db.maven=rspace` reach both
+So `-Dspring.profiles.active=run`, `-DRS_FILE_BASE=...` or `-Djdbc.server.db=rspace` reach both
 the filtered resources and the running code. A bare `-Dname` means `-Dname=true`. `-P<name>=<value>`
 also works for the switches below and for the names in `gradle/resource-filter.properties` (plus
 `jdbc.url`, `ssl.enabled` and `RS.devlogLevel`), but no other placeholder, and it is not passed to
@@ -87,8 +87,10 @@ Switches:
 
 The `generateReactDist`, `enableTestCoverage` and `spotlessStrict` switches are on whenever they
 are given, whatever their value; `generateStorybook` needs `=true`. An unknown
-`-Denvironment` value fails the build. The `jdbc.*.maven`, `surefire.*` and `maven.*` names are
-kept from the old Maven build so that existing commands and CI jobs keep working.
+`-Denvironment` value fails the build. The `surefire.*` and `maven.*` names are kept from the old
+Maven build so that existing commands and CI jobs keep working. The `jdbc.server.*` settings also
+accept their Maven names, `jdbc.url.maven`, `jdbc.db.maven`, `jdbc.username.maven`,
+`jdbc.password.maven` and `jdbc.driverClassName.maven`; the new name wins when both are given.
 
 The version is `<version>-<timestamp>`, with `<version>` set by the `version =` line in
 `build.gradle`; release commits bump it there, where they used to edit `pom.xml`. The fixed `dev`
@@ -173,21 +175,21 @@ runs:
 # Slow tests, including Spring tests; pure units run separately with -Dfast
 ./gradlew test -PtestSuite=slow -Denvironment=drop-recreate-db \
   -Djavax.xml.accessExternalDTD=all -Dlog4j2.configurationFile=log4j2-dev.xml \
-  -Djdbc.db.maven=rspace -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+  -Djdbc.server.db=rspace -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
   -DRS.devlogLevel=INFO -DRS_FILE_BASE=$RS_FILE_BASE
 
 # Integration tests
 ./gradlew integrationTests --continue -Dsurefire.rerunFailingTestsCount=1 <same flags>
 ```
 
-The Hibernate model tests use `jdbc.url.maven` for their scratch database too.
+The Hibernate model tests use `jdbc.server.url` for their scratch database too.
 For a server on another port, change the port in `-Djdbc.url`, which the app and tests connect
-to, and add `-Djdbc.url.maven=jdbc:mysql://localhost:<port>`, which `recreateDatabase` uses.
+to, and add `-Djdbc.server.url=jdbc:mysql://localhost:<port>`, which `recreateDatabase` uses.
 
 With `-Denvironment=drop-recreate-db`, every test task depends on `recreateDatabase`, which:
 
-- drops and recreates `jdbc.db.maven` (default `rspace`) on `jdbc.url.maven`, as
-  `jdbc.username.maven`;
+- drops and recreates `jdbc.server.db` (default `rspace`) on `jdbc.server.url`, as
+  `jdbc.server.username`;
 - loads `src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql`;
 - leaves the Liquibase changesets for RSpace to apply when it starts.
 
