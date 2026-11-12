@@ -1,4 +1,14 @@
+import { Temporal } from "@js-temporal/polyfill";
+import { Minus, Plus } from "lucide-react";
+import * as React from "react";
+import { useTranslation } from "react-i18next";
+import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { dayMinuteToZonedTime, wallClockToDayMinute, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { elapsedNowMinute, useBookingNow } from "@/modules/booking/domain/useBookingNow";
+import { Button } from "@/modules/common/ui/button";
+import { cn } from "@/modules/common/utils/cn";
 import {
+  type DayTimelineActionRenderers,
   type DayTimelineEvent,
   type DayTimelineRange,
   type DayTimelineViewState,
@@ -7,43 +17,16 @@ import {
 } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { centerMinuteForScrollPosition, type useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
-import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import {
-  dayMinuteToZonedTime,
-  parsePlainDate,
-  wallClockToDayMinute,
-  zonedDayBounds,
-} from "@/modules/booking/domain/bookingTime";
-import { elapsedNowMinute, useBookingNow } from "@/modules/booking/domain/useBookingNow";
-import { Button } from "@/modules/common/ui/button";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import {
-  Popover,
-  PopoverClose,
-  PopoverContent,
-  PopoverDescription,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
-import { cn } from "@/modules/common/utils/cn";
-import { Temporal } from "@js-temporal/polyfill";
-import { ChevronRight, LockKeyhole, Minus, Plus, Wrench, X } from "lucide-react";
-import * as React from "react";
-import { useTranslation } from "react-i18next";
+
+export type { DayTimelineEvent, DayTimelineItem, DayTimelineRange, DayTimelineViewState } from "./DayTimelineEvent";
+export { DayTimelineEventCard };
 
 const MINIMUM_VISUAL_DURATION = 15;
-
 const BASE_HOUR_WIDTH = 80;
-
 const DENSITY_WIDTH_STEP = 12;
-
 const EVENTS_PER_BASE_HOUR = 4;
-
 const EVENT_CARD_HEIGHT = 72;
-
 const EVENT_LANE_GAP = 8;
-
 const EVENT_LANE_PITCH = EVENT_CARD_HEIGHT + EVENT_LANE_GAP;
 
 type PositionedEvent = {
@@ -179,12 +162,10 @@ export function DayTimeline({
   variant?: "detail" | "table-row";
   itemName?: string;
   expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
   snapIncrementMinutes?: number;
   creationDisabled?: boolean;
   onRangeSelect?: (range: DayTimelineRange, trigger: HTMLElement) => void;
-}) {
+} & DayTimelineActionRenderers) {
   const dayMinutes = React.useMemo(() => zonedDayBounds(date, timezone).elapsedMinutes, [date, timezone]);
   const startWindow = React.useMemo(
     () => wallClockToDayMinute(date, timezone, wallStartWindow),
@@ -483,11 +464,3 @@ export function DayTimeline({
     </section>
   );
 }
-
-export type { DayTimelineItem } from "@/modules/booking/components/DayTimelineEvent";
-
-export type { DayTimelineEvent } from "@/modules/booking/components/DayTimelineEvent";
-
-export type { DayTimelineViewState } from "@/modules/booking/components/DayTimelineEvent";
-
-export type { DayTimelineRange } from "@/modules/booking/components/DayTimelineEvent";
