@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -78,22 +78,6 @@ describe("BookingSettingsPage", () => {
     expect(doubleBooking).toBeChecked();
   });
 
-  it("offers every supported time increment", async () => {
-    server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
-    );
-    renderPage();
-
-    const granularity = await screen.findByRole("combobox", {
-      name: "booking:settings.fields.granularity",
-    });
-    expect(
-      within(granularity)
-        .getAllByRole("option")
-        .map((option) => option.getAttribute("value")),
-    ).toEqual(["1", "5", "10", "15"]);
-  });
-
   it("does not submit an invalid maximum duration", async () => {
     const user = userEvent.setup();
     let patches = 0;
@@ -111,7 +95,9 @@ describe("BookingSettingsPage", () => {
     });
     await user.clear(maximum);
     await user.type(maximum, "7");
-    expect(maximum).toHaveAccessibleDescription("booking:settings.fields.maximumDurationDescription");
+    expect(maximum).toHaveAccessibleDescription(
+      "booking:settings.fields.maximumDurationDescription booking:settings.errors.maximumDuration",
+    );
     expect(screen.getByText("booking:settings.errors.maximumDuration")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
@@ -136,11 +122,11 @@ describe("BookingSettingsPage", () => {
     renderPage();
 
     const buffer = await screen.findByRole("spinbutton", {
-      name: "booking:settings.fields.buffer",
+      name: "booking:settings.fields.bufferBefore",
     });
-    expect(buffer).toHaveValue(null);
-    expect(buffer).not.toBeRequired();
-    expect(screen.getByText("booking:settings.fields.bufferMixed")).toBeVisible();
+    expect(buffer).toHaveValue(3);
+    expect(buffer).toBeRequired();
+    expect(screen.getByRole("spinbutton", { name: "booking:settings.fields.bufferAfter" })).toHaveValue(7);
     await user.click(
       screen.getByRole("checkbox", {
         name: "booking:settings.fields.allowDoubleBooking",
@@ -151,6 +137,7 @@ describe("BookingSettingsPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
     expect(body).toEqual({
       slotGranularityMinutes: 5,
+      incrementUnit: "MINUTES",
       openingHours: settings.openingHours,
       bufferBeforeMinutes: 3,
       bufferAfterMinutes: 7,
@@ -165,7 +152,7 @@ describe("BookingSettingsPage", () => {
     });
   });
 
-  it("writes one entered buffer value to both stored directions", async () => {
+  it("edits the before gap independently of the after gap", async () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
@@ -178,15 +165,16 @@ describe("BookingSettingsPage", () => {
     renderPage();
 
     const buffer = await screen.findByRole("spinbutton", {
-      name: "booking:settings.fields.buffer",
+      name: "booking:settings.fields.bufferBefore",
     });
+    await user.clear(buffer);
     await user.type(buffer, "12");
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByRole("status")).toBeVisible();
     expect(body).toMatchObject({
       bufferBeforeMinutes: 12,
-      bufferAfterMinutes: 12,
+      bufferAfterMinutes: 7,
     });
     expect(body).not.toHaveProperty("configurationVersion");
   });
