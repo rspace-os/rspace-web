@@ -167,7 +167,7 @@
         },
         "booking": {
           "window": "Start time must be in the future and end time must be after start time.",
-          "duration": "Bookings may not exceed 366 days.",
+          "duration": "Bookings may not last longer than 527,040 elapsed minutes (366 days of 24 hours).",
           "target": {
             "unavailable": "The selected target is not available for booking."
           },
