@@ -1,5 +1,6 @@
 import * as React from "react";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
+import { ALWAYS_OPEN, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import { type BookingWindowDraft, instantToDayMinute } from "@/modules/booking/domain/bookingTime";
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 import { VerticalDayTimeline } from "./VerticalDayTimeline";
@@ -67,6 +68,7 @@ export const VERTICAL_DAY_TIMELINE_EVENTS: readonly DayTimelineEvent[] = [
 ];
 
 export function VerticalDayTimelineStory({
+  openingHours = ALWAYS_OPEN.openingHours,
   initialDraft = {
     startDate: DATE,
     startTime: "02:00",
@@ -76,6 +78,7 @@ export function VerticalDayTimelineStory({
   },
 }: {
   initialDraft?: BookingWindowDraft;
+  openingHours?: readonly OpeningHoursEntry[];
 } = {}) {
   const [date, setDate] = React.useState(DATE);
   const [draft, setDraft] = React.useState<BookingWindowDraft>(initialDraft);
@@ -90,12 +93,17 @@ export function VerticalDayTimelineStory({
       schedule={{ status: "success" }}
       scheduleWindow={{
         timezone: TIMEZONE,
-        openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+        openingHours,
       }}
       editing={{
         draft,
-        schedulingTimeZone: TIMEZONE,
-        slotGranularityMinutes: 5,
+        policy: timelinePolicy({
+          timezone: TIMEZONE,
+          openingHours,
+          slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES",
+          maxBookingDurationMinutes: 0,
+        }),
         targetKey: "IN123",
         onChange: setDraft,
       }}

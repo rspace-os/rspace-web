@@ -64,10 +64,7 @@ const configurationResponse = {
   limit: 2,
   page: 1,
 
-
   hasNextPage: false,
-
-
 };
 
 function renderEdit(scheduleBookings: readonly unknown[] = [], preferences = inheritedBrowserBookingPreferences) {
@@ -79,10 +76,6 @@ function renderEdit(scheduleBookings: readonly unknown[] = [], preferences = inh
         page: 1,
         hasNextPage: false,
         limit: 100,
-
-
-
-
       }),
     ),
   );
