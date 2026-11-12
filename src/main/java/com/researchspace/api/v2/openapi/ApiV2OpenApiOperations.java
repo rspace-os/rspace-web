@@ -1,43 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiAuditDocs.auditPage;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.operationAccessExtension;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.field;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.scalarSchema;
-import com.researchspace.api.v2.resource.IdempotencyPolicy;
-import com.researchspace.model.audittrail.AuditAction;
-import com.researchspace.model.collection.AccessPolicy;
-import com.researchspace.model.collection.FieldSchema;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.addResourceAccessSchemas;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addSchemas;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiSchemas.withNullableReferenceProperties;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.responseRef;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHeaders;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponseReference;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
-import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
-import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
-import com.researchspace.api.v2.resource.DeletePolicy;
-import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
-import io.swagger.v3.core.util.Json31;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.servers.Server;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.putIfNotNull;
@@ -48,10 +11,12 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.param
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameters;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.access;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyAccess;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.PROBLEM_JSON;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.RESPONSES;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitHeaders;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.bulkResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.listResult;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -59,6 +24,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
+import com.researchspace.api.v2.resource.IdempotencyPolicy;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.collection.AccessDocumentation;
@@ -84,6 +50,7 @@ final class ApiV2OpenApiOperations {
       ResourceOperation operation,
       String component,
       Map<String, ResourceSchema> resourceSchemas,
+      Map<String, Object> schemas,
       ApiV2OpenApiComponents components) {
     ResourceSchema schema = resource.description().schema();
     OpenApiOperationDocumentation documentation = resource.operationDocumentation(operation);
@@ -119,7 +86,8 @@ final class ApiV2OpenApiOperations {
             schema,
             resourceSchemas,
             resource.registry(),
-            runtimeFields.runtimeFieldsExtension(resource), text);
+            runtimeFields.runtimeFieldsExtension(resource),
+            text);
     if (operation == ResourceOperation.CREATE
         && resource.mutationPolicy().idempotency() == IdempotencyPolicy.CREATOR_SCOPED) {
       parameters.add(
@@ -169,7 +137,8 @@ final class ApiV2OpenApiOperations {
     if (hasRequestBody(operation)) {
       result.put("requestBody", requestBody(operation, component, documentation));
     }
-    result.put("responses", responses(resource, operation, component, documentation, components));
+    result.put(
+        "responses", responses(resource, operation, component, documentation, schemas, components));
     result.put("x-rspace-operation", operation.name());
     result.putAll(documentation.extensions());
     return result;
@@ -221,6 +190,7 @@ final class ApiV2OpenApiOperations {
       ResourceOperation operation,
       String component,
       OpenApiOperationDocumentation documentation,
+      Map<String, Object> schemas,
       ApiV2OpenApiComponents components) {
     Map<String, Object> responses = new LinkedHashMap<>();
     String successStatus =
@@ -352,6 +322,29 @@ final class ApiV2OpenApiOperations {
                 mutable.put("description", responseDocumentation.description());
                 responses.put(String.valueOf(status), mutable);
               }
+            });
+    documentation
+        .problemSchemas()
+        .forEach(
+            (status, type) -> {
+              Object existing = responses.get(String.valueOf(status));
+              if (existing == null)
+                throw new IllegalArgumentException(
+                    "Problem schema needs a documented response: " + status);
+              Map<String, Object> response = new LinkedHashMap<>(mutableObjectMap(existing));
+              if (response.containsKey("$ref")) {
+                String name =
+                    response.remove("$ref").toString().replace("#/components/responses/", "");
+                response.putAll(mutableObjectMap(standardResponses(text).get(name)));
+              }
+              Map<String, Object> content =
+                  new LinkedHashMap<>(mutableObjectMap(response.get("content")));
+              Map<String, Object> media =
+                  new LinkedHashMap<>(mutableObjectMap(content.get(PROBLEM_JSON)));
+              media.put("schema", ApiV2OpenApiSchemas.responseSchemaFor(type, schemas));
+              content.put(PROBLEM_JSON, media);
+              response.put("content", content);
+              responses.put(String.valueOf(status), response);
             });
     return responses;
   }
