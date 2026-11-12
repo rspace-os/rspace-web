@@ -539,38 +539,31 @@ describe("ZonedBookingWindowFields", () => {
     ["00:00", "24:00", 0, true],
     ["09:00", "17:00", 0, false],
     ["00:00", "24:00", 60, false],
-  ])(
-    "validates multiday windows against %s–%s and duration %i",
-    (openingStart, openingEnd, maxBookingDurationMinutes, valid) => {
-      render(
-        <ZonedBookingWindowFields
-          displayTimezone="UTC"
-          schedulingTimezone="UTC"
-          slotGranularityMinutes={5}
-          openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: openingStart, end: openingEnd }))}
-          maxBookingDurationMinutes={maxBookingDurationMinutes}
-          value={{ startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" }}
-          onChange={vi.fn()}
-        />,
-      );
-      expect(
-        validateBookingWindow(
-          { startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" },
-          "UTC",
-          {
-            schedulingTimezone: "UTC",
-            slotGranularityMinutes: 5,
-            openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
-              dayOfWeek,
-              start: openingStart,
-              end: openingEnd,
-            })),
-            maxBookingDurationMinutes,
-          },
-        ).window,
-      ).toEqual(valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined);
-    },
-  );
+  ])("validates multiday windows against %s–%s and duration %i", (start, end, maxBookingDurationMinutes, valid) => {
+    render(
+      <ZonedBookingWindowFields
+        displayTimezone="UTC"
+        schedulingTimezone="UTC"
+        slotGranularityMinutes={5}
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start, end }))}
+        maxBookingDurationMinutes={maxBookingDurationMinutes}
+        value={{ startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      validateBookingWindow(
+        { startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" },
+        "UTC",
+        {
+          schedulingTimezone: "UTC",
+          slotGranularityMinutes: 5,
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start, end })),
+          maxBookingDurationMinutes,
+        },
+      ).window,
+    ).toEqual(valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined);
+  });
 
   it("allows an exclusive endpoint at midnight when the day is open through 24:00", () => {
     const validate = (endTime: string) =>
