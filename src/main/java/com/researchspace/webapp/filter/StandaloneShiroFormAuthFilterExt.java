@@ -25,6 +25,7 @@ import org.apache.shiro.web.util.WebUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 @Slf4j
 public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
@@ -111,9 +112,13 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
           return true; /* true as the request should continue, failureAttribute will take it back to login page */
         }
       } catch (DataAccessException re) {
-        // expected for an unknown username (the login failure itself is logged by
-        // onLoginFailure), but worth a trace of the cause in case of real DB trouble
-        log.warn("Could not check lockout state for username [{}]: {}", username, re.getMessage());
+        // an unknown username is routine and onLoginFailure already logs the failed login
+        if (!(re instanceof ObjectRetrievalFailureException)) {
+          log.warn(
+              "Could not check lockout state for username [{}]",
+              username.replaceAll("[\\r\\n]", " "),
+              re);
+        }
         if (!properties.isUserSignup() && properties.isLdapAuthenticationEnabled()) {
           HttpSession session = ((HttpServletRequest) request).getSession();
           session.setAttribute("userName", username);
