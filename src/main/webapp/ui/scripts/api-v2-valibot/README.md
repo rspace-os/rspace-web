@@ -1,12 +1,13 @@
 # API v2 Valibot adapter
 
 `pnpm generate:api-v2` generates the HTTP client, then Orval's reusable Valibot
-output, then runs `generate.mjs`. Both Orval projects read the committed API v2
+output, then runs `generate.mjs` and `resources.mjs`. Both Orval projects read the committed API v2
 OpenAPI document. The adapter reads `generated/valibot/native.ts`, adjusts it, and
 writes `schemas.ts` and `operations.ts` beside it. No schema translator is retained.
 
-The registry emitter (`resources.mjs`) reads collection operation metadata from OpenAPI and writes
-`generated/apiV2Resources.ts` with request functions and query-key references.
+The registry emitter (`resources.mjs`) reads tags and explicit `x-rspace-operation` metadata from OpenAPI and writes
+`generated/apiV2Resources.ts` with request functions and query-key references. CUSTOM-only tags are omitted; runtime fields
+use the RUNTIME_FIELDS kind. This step runs explicitly after the Valibot adapter.
 
 The schema-only preflight rejects unsupported keywords, formats, references and
 inline schemas, including errors and headers. New schema constructs require an

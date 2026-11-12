@@ -123,11 +123,6 @@ export async function generateFiles(input, output) {
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const ui = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-  const { generateResourceFile } = await import("./resources.mjs");
-  await generateResourceFile(
-    resolve(ui, "src/modules/common/api/v2/openapi.generated.json"),
-    resolve(ui, "src/modules/common/api/v2/generated"),
-  );
   await generateFiles(
     resolve(ui, "src/modules/common/api/v2/openapi.generated.json"),
     resolve(ui, "src/modules/common/api/v2/generated/valibot"),

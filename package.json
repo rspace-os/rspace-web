@@ -18,7 +18,7 @@
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
     "build:stats": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true vite build --config vite.config.ts",
     "serve": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite --config vite.config.ts",
-    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.mjs",
+    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.mjs && node scripts/api-v2-valibot/resources.mjs",
     "tsc": "cd src/main/webapp/ui && tsc --noEmit",
     "test-browser": "cd src/main/webapp/ui && cross-env vitest run --config vitest.browser.config.ts",
     "test-browser:ui": "cd src/main/webapp/ui && cross-env vitest --config vitest.browser.config.ts --ui --standalone",

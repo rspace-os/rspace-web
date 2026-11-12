@@ -21,8 +21,7 @@ pnpm generate:api-v2
 controllers without a database. It writes only
 `src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json` and checks drift from the backend.
 
-`pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, and the adapter
-last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
+`pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, the adapter next, and the resource registry last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
 can delete validation files generated before it. The Valibot project uses `client: "valibot"`,
 `mode: "single"` and `override.valibot.generateReusableSchemas: true`, with an isolated target and
 no `output.schemas` setting.
@@ -129,12 +128,16 @@ mapping and plain functions for transforms or domain checks. Invalidation belong
 configuration. Components may call generated hooks directly for plain calls without domain logic and
 for imperative actions such as downloads.
 
-Collection entries are generated into `generated/apiV2Resources.ts` by
-`scripts/api-v2-valibot/resources.mjs`, invoked by `generate.mjs` after both Orval projects.
-The emitter maps `x-rspace-operation` kinds to slots and recognizes runtime fields by their route.
-It ignores `CUSTOM` operations and rejects unknown kinds, duplicate slots, missing generated
-exports and untagged operations outside the runtime-field route. Each entry retains its literal
-resource name through `satisfies ApiV2ResourceEntry`. Unsupported capabilities are absent.
+The registry is generated from each operation's tag and `x-rspace-operation` by
+`scripts/api-v2-valibot/resources.mjs`, run by `pnpm generate:api-v2` after Orval and the
+Valibot adapter. The handwritten module keeps the registry types and re-exports generated
+`apiV2Resources`; tags with only `CUSTOM` operations have no entry. Read operations expose
+`request` and `queryKey`; writes expose their request function. Runtime-field endpoints use
+`RUNTIME_FIELDS`, with no route-name inference. Unknown kinds, duplicate kinds within a tag,
+and missing Orval exports fail generation. To add a kind, register its backend metadata,
+add its slot and read/write classification to `resources.mjs`, extend `ApiV2OperationSet`
+if needed, and update the focused mapping test. Regenerate the client and golden slots.
+The generated entries retain literal tag names through `satisfies ApiV2ResourceEntry`.
 
 ## Validation rules
 
