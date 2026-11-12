@@ -1,37 +1,37 @@
 import { runInAction } from "mobx";
 import posthog from "posthog-js";
 import { PostHogProvider, usePostHog } from "posthog-js/react";
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect } from "react";
 import axios from "@/common/axios";
 import AnalyticsContext from "../stores/contexts/Analytics";
 
+type SegmentAnalytics = {
+  initialize: unknown;
+  invoked: boolean;
+  methods: Array<string>;
+  factory: (method: unknown) => (...args: unknown[]) => typeof window.analytics;
+  push: (...args: unknown[]) => void;
+  load: (key: string, options?: unknown) => void;
+  identify: (userId: string) => void;
+  track: (event: string, properties?: Record<string, unknown>) => void;
+  page: () => void;
+  _loadOptions: unknown;
+  _writeKey: string;
+  SNIPPET_VERSION: string;
+};
+
+type AnalyticsBridge = {
+  track: SegmentAnalytics["track"];
+  _queue?: Array<[string, Record<string, unknown> | undefined]>;
+};
+
 declare global {
   interface Window {
-    analytics: {
-      initialize: unknown;
-      invoked: boolean;
-      methods: Array<string>;
-      factory: (method: unknown) => (...args: unknown[]) => typeof window.analytics;
-      push: (...args: unknown[]) => void;
-      load: (key: string, options?: typeof window.analytics._loadOptions) => void;
-      identify: (userId: string) => void;
-      track: (event: string, properties?: Record<string, unknown>) => void;
-      page: () => void;
-      _loadOptions: unknown;
-      _writeKey: string;
-      SNIPPET_VERSION: string;
-    };
+    analytics: SegmentAnalytics | AnalyticsBridge;
   }
 }
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
-
-/*
- * This component sets up an analytics context. Any code that wishes to report
- * analytics events to intercom should wrap the react components in this
- * component and then use the `trackEvent` function exposed by the analytics
- * context.
- */
 
 function loadIntercom({
   analyticsServerKey,
@@ -55,7 +55,7 @@ function loadIntercom({
       (() => {
         // Create a queue, but don't obliterate an existing one!
         // biome-ignore lint/suspicious/noAssignInExpressions: initial biome migration
-        var analytics = (window.analytics = window.analytics || []);
+        var analytics = (window.analytics = window.analytics || []) as SegmentAnalytics;
         // If the real analytics.js is already on the page return.
         if (analytics.initialize) return;
         // If the snippet was invoked already show an error.
@@ -159,58 +159,79 @@ type AnalyticsArgs = {
   children: React.ReactNode;
 };
 
-export default function Analytics({ children }: AnalyticsArgs): React.ReactNode {
-  const [postHogEnabled, setPostHogEnable] = React.useState(false);
-  const analyticsContext = useContext(AnalyticsContext);
-  const api = useRef(
-    axios.create({
-      baseURL: "/session/ajax",
-      timeout: ONE_MINUTE_IN_MS,
-    }),
-  );
+type AnalyticsSetup = "posthog" | "segment" | "disabled";
+let analyticsSetup: Promise<AnalyticsSetup> | undefined;
 
-  useEffect(() => {
-    void (async () => {
+function setUpAnalyticsOnce(): Promise<AnalyticsSetup> {
+  if (!analyticsSetup) {
+    analyticsSetup = (async () => {
+      const api = axios.create({
+        baseURL: "/session/ajax",
+        timeout: ONE_MINUTE_IN_MS,
+      });
       const {
         data: { analyticsEnabled, analyticsServerType, analyticsServerHost, analyticsServerKey, analyticsUserId },
-      } = await api.current.get<{
+      } = await api.get<{
         analyticsEnabled: boolean;
         analyticsServerType: "posthog" | "segment";
         analyticsServerHost: string;
         analyticsServerKey: string;
         analyticsUserId: string;
       }>("/analyticsProperties");
-      if (analyticsEnabled) {
-        if (analyticsServerType === "posthog") {
-          setPostHogEnable(true);
-          posthog.init(analyticsServerKey, {
-            api_host: analyticsServerHost,
-          });
-          runInAction(() => {
-            analyticsContext.isAvailable = true;
-          });
-        } else {
-          void loadIntercom({ analyticsServerKey, analyticsUserId })
-            .then(() => {
-              runInAction(() => {
-                analyticsContext.isAvailable = true;
-                analyticsContext.trackEvent = (name, properties) => {
-                  window.analytics.track(name, properties);
-                };
-              });
-            })
-            .catch(() => {
-              runInAction(() => {
-                analyticsContext.isAvailable = false;
-              });
-            });
-        }
-      } else {
+      if (!analyticsEnabled) return "disabled";
+      if (analyticsServerType === "posthog") {
+        posthog.init(analyticsServerKey, { api_host: analyticsServerHost });
+        const analytics = window.analytics;
+        const queuedEvents = analytics && "_queue" in analytics ? analytics._queue : undefined;
+        window.analytics = {
+          track: (event, properties) => posthog.capture(event, properties),
+        };
+        queuedEvents?.forEach(([event, properties]) => {
+          window.analytics.track(event, properties);
+        });
+        return "posthog";
+      }
+      await loadIntercom({ analyticsServerKey, analyticsUserId });
+      return "segment";
+    })().catch((error: unknown) => {
+      analyticsSetup = undefined;
+      throw error;
+    });
+  }
+  return analyticsSetup;
+}
+
+/*
+ * This component sets up an analytics context. Any code that wishes to report
+ * analytics events should wrap the react components in this component and
+ * then use the `trackEvent` function exposed by the analytics context.
+ */
+export default function Analytics({ children }: AnalyticsArgs): React.ReactNode {
+  const [postHogEnabled, setPostHogEnable] = React.useState(false);
+  const analyticsContext = useContext(AnalyticsContext);
+
+  useEffect(() => {
+    let mounted = true;
+    void setUpAnalyticsOnce()
+      .then((provider) => {
+        if (!mounted) return;
+        setPostHogEnable(provider === "posthog");
+        runInAction(() => {
+          analyticsContext.isAvailable = provider !== "disabled";
+          if (provider === "segment") {
+            analyticsContext.trackEvent = (name, properties) => window.analytics.track(name, properties);
+          }
+        });
+      })
+      .catch(() => {
+        if (!mounted) return;
         runInAction(() => {
           analyticsContext.isAvailable = false;
         });
-      }
-    })();
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
