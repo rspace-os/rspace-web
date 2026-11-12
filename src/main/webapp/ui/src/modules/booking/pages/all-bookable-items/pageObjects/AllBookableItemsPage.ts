@@ -1,165 +1,85 @@
-import { type Locator, page } from "vitest/browser";
-import { bookableItemHeading, bookableItemTarget, css } from "../../bookable-items/pageObjects/bookableItemLocators";
+import { type Locator, page, userEvent } from "vitest/browser";
 
 export class AllBookableItemsPage {
-  get instrumentName(): Locator {
-    return page.getByRole("link", { name: "Confocal microscope", exact: true }).first();
-  }
-
-  readonly bookableItemDetailsHeading: Locator = bookableItemHeading("Confocal microscope");
-  readonly bookableItemDetailsTarget: Locator = bookableItemTarget("IN123");
-
-  get table(): Locator {
-    return page.getByRole("table");
-  }
-
-  get heading(): Locator {
-    return page.getByRole("heading", { name: "All Bookable Items" });
-  }
-
-  get toolbar(): Locator {
-    return page.getByRole("toolbar", { name: "All Bookable Items" });
-  }
-
-  get dateControls(): Locator {
-    return page.getByRole("group", { name: "Availability date controls" });
-  }
-
-  get tableElement(): Locator {
-    return css('[data-slot="table"][aria-label="All Bookable Items table"]');
-  }
-
-  get cards(): Locator {
-    return css('[data-slot="table-list-card-view"][aria-label="All Bookable Items cards"]');
-  }
-
-  get search(): Locator {
-    return page.getByRole("textbox", { name: "Search All Bookable Items" });
-  }
-
-  get filtersButton(): Locator {
-    return page.getByRole("button", { name: /^Filters/ });
-  }
-
-  get filtersPanel(): Locator {
-    return css("#table-list-control-panel");
-  }
-
-  get resetTable(): Locator {
-    return page.getByRole("button", { name: "Reset filters, sorting, and columns to defaults" });
-  }
-
-  get item(): Locator {
-    return this.table.getByText("Confocal microscope", { exact: true });
-  }
-
-  get electronMicroscope(): Locator {
-    return this.table.getByText("Electron microscope", { exact: true });
-  }
-
-  get massSpectrometer(): Locator {
-    return this.table.getByText("Mass spectrometer", { exact: true });
-  }
-
-  get flowCytometer(): Locator {
-    return this.table.getByText("Flow cytometer", { exact: true });
-  }
-
-  get confocalAvailability(): Locator {
-    return page.getByRole("img", { name: "Confocal microscope availability" });
-  }
-
-  get confocalAvailabilityText(): Locator {
-    return this.card("Confocal microscope").getByText("Available until 10:00", { exact: true });
-  }
-
-  availabilitySlice(itemName: string, contributorCount: number, state = ".*", period = ".*"): Locator {
-    return page.getByRole("button", {
-      name: new RegExp(
-        `^${itemName}, ${state}, ${period}, ${contributorCount} event${contributorCount === 1 ? "" : "s"}$`,
-      ),
-    });
-  }
-
-  get availabilityDetails(): Locator {
-    return page.getByRole("dialog");
-  }
-
-  get availabilityBookingRows(): Locator {
-    return this.availabilityDetails.getByRole("listitem");
-  }
-
-  focusAvailabilitySlice(itemName: string, contributorCount: number): void {
-    this.availabilitySlice(itemName, contributorCount).element().focus();
-  }
-
-  availabilityDetailsRect(): DOMRect {
-    return this.availabilityDetails.element().getBoundingClientRect();
-  }
-
-  availabilityDetailsIsScrollable(): boolean {
-    const details = this.availabilityDetails.element();
-    return details.scrollHeight > details.clientHeight;
-  }
-
-  availabilityDetailsBorderWidth(): string {
-    return getComputedStyle(this.availabilityDetails.element()).borderTopWidth;
-  }
-
-  get effectiveTimeZone(): Locator {
-    return page.getByText("UTC", { exact: true });
-  }
-
-  get datePicker(): Locator {
-    return page.getByRole("button", { name: /^Jump to date, / });
-  }
-
-  get nextDay(): Locator {
-    return page.getByRole("button", { name: "Next day" });
-  }
-
-  get availableNow(): Locator {
-    return page.getByRole("button", { name: "Available now", exact: true });
-  }
-
-  get freeLaterToday(): Locator {
-    return page.getByRole("button", { name: "Free later today", exact: false });
-  }
-
+  readonly table = page.getByRole("table");
   get detailsButton(): Locator {
     return this.table
       .getByRole("row")
       .filter({ hasText: "Confocal microscope" })
-      .getByRole("link", { name: "View details", exact: true });
+      .getByRole("link", { name: "View details for Confocal microscope", exact: true });
+  }
+  get filterButton(): Locator {
+    return page.getByRole("button", { name: "Filters, none applied" });
   }
 
-  get electronBookButton(): Locator {
-    return this.table
-      .getByRole("row")
-      .filter({ hasText: "Electron microscope" })
-      .getByRole("link", { name: "Book", exact: true });
+  get columnsButton(): Locator {
+    return page.getByRole("button", { name: "Columns" });
   }
 
-  card(itemName: string): Locator {
-    return this.cards.getByRole("article").filter({ has: page.getByText(itemName, { exact: true }) });
+  get hiddenColumns(): Locator {
+    return page.getByRole("group", { name: "Hidden" });
   }
 
-  cardBookButton(itemName: string): Locator {
-    return this.card(itemName).getByRole("link", { name: "Book", exact: true });
+  get hiddenInstrumentName(): Locator {
+    return this.hiddenColumns.getByText("Bookable item \u2192 Name", { exact: true });
   }
 
-  cardDetailsButton(itemName: string): Locator {
-    return this.card(itemName).getByRole("link", { name: "View details", exact: true });
+  get hiddenDeleted(): Locator {
+    return this.hiddenColumns.getByText("Bookable item \u2192 Deleted", { exact: true });
   }
 
-  cardWidth(itemName: string): number {
-    return this.card(itemName).element().getBoundingClientRect().width;
+  get hiddenGlobalId(): Locator {
+    return this.hiddenColumns.getByText("Bookable item \u2192 Global ID", { exact: true });
   }
 
-  availabilityWidth(itemName: string): number {
-    return page
-      .getByRole("img", { name: `${itemName} availability` })
-      .element()
-      .getBoundingClientRect().width;
+  fieldOption(label: string): Locator {
+    return page.getByRole("option", { name: label });
+  }
+
+  get instrumentNameHeader(): Locator {
+    return page.getByRole("columnheader", { name: "Bookable item \u2192 Name" });
+  }
+
+  get deletedHeader(): Locator {
+    return page.getByRole("columnheader", { name: "Bookable item \u2192 Deleted" });
+  }
+
+  async openColumns(): Promise<void> {
+    await userEvent.click(this.columnsButton);
+  }
+
+  get fieldSelect(): Locator {
+    return page.getByRole("combobox", { name: "Field for filter 1" });
+  }
+
+  get customFieldSearch(): Locator {
+    return page.getByRole("combobox", { name: "Search Bookable item custom fields for filter 1" });
+  }
+
+  get valueInput(): Locator {
+    return page.getByRole("combobox", { name: "Value for filter 1" });
+  }
+
+  get valueTextbox(): Locator {
+    return page.getByRole("textbox", { name: "Value for filter 1" });
+  }
+
+  get operatorSelect(): Locator {
+    return page.getByRole("combobox", { name: "Operator for filter 1" });
+  }
+
+  async openFilters(): Promise<void> {
+    await userEvent.click(this.filterButton);
+    await userEvent.click(page.getByRole("button", { name: "Add filter" }));
+  }
+
+  async chooseField(label: string): Promise<void> {
+    await userEvent.click(this.fieldSelect);
+    await userEvent.fill(this.fieldSelect, label);
+    await userEvent.click(page.getByRole("option", { name: label }));
+  }
+
+  async chooseCustomFieldSource(): Promise<void> {
+    await this.chooseField("Custom field…");
   }
 }
