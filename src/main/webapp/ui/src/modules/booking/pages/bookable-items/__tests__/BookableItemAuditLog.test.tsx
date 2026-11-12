@@ -157,7 +157,9 @@ describe("BookableItemAuditLog", () => {
     );
     const { container } = renderAudit();
     await screen.findAllByText("common:values.userWithUsername");
-    expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.truncated");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "booking:bookableItemDetails.audit.status.loaded booking:bookableItemDetails.audit.truncated",
+    );
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
     expect(requests).toBe(1);
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" })).toBeDisabled();
