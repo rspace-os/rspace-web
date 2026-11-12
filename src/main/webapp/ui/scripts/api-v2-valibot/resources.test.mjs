@@ -11,7 +11,7 @@ const golden = JSON.parse(await readFile(resolve("scripts/api-v2-valibot/resourc
 const generated = pathToFileURL(`${resolve(apiRoot, "generated")}/`);
 const op = (kind, id = "example") => ({
   operationId: id,
-  tags: ["Examples"],
+  tags: ["examples"],
   ...(kind == null ? {} : { "x-rspace-operation": kind }),
 });
 const spec = (operation, path = "/api/v2/examples") => ({ paths: { [path]: { get: operation } } });
@@ -55,6 +55,18 @@ describe("collection resource registry emitter", () => {
       LIST: "list",
       COUNT: "count",
       READ: "get",
+      CREATE: "create",
+      UPDATE: "update",
+      DELETE: "delete",
+      BULK_CREATE: "createMany",
+      BULK_UPDATE: "updateMany",
+      BULK_DELETE: "deleteMany",
+      ACCESS_READ: "access",
+      ACCESS_REPLACE: "replaceAccess",
+      ACCESS_LEAVE: "leaveAccess",
+      ACCESS_GRANTEE_SEARCH: "grantees",
+      AUDIT_LIST: "audit",
+      RUNTIME_FIELDS: "runtimeFields",
     };
     const paths = Object.fromEntries(
       Object.keys(expected).map((kind) => [`/api/v2/examples/${kind}`, { get: op(kind, kind) }]),
@@ -63,21 +75,22 @@ describe("collection resource registry emitter", () => {
       examples: Object.fromEntries(Object.entries(expected).map(([kind, slot]) => [slot, kind])),
     });
   });
-  it("recognizes runtime fields by path and ignores custom operations", () => {
-    expect(invoke(spec(op(null), "/api/v2/examples/fields/{namespace}")).value).toEqual({
-      examples: { runtimeFields: "example" },
-    });
+  it("uses explicit runtime-field metadata and skips CUSTOM-only tags", () => {
+    expect(invoke(spec(op("RUNTIME_FIELDS"))).value).toEqual({ examples: { runtimeFields: "example" } });
     expect(invoke(spec(op("CUSTOM"))).value).toEqual({});
     const resources = invoke(document).value;
     expect(resources).not.toHaveProperty("maintenances");
     expect(Object.keys(resources)).toHaveLength(3);
+  });
+  it("groups operations by tag instead of guessing from the route", () => {
+    expect(invoke(spec(op("LIST"), "/api/v2/different")).value).toEqual({ examples: { list: "example" } });
   });
   it("rejects unknown kinds and untagged routes", () => {
     const results = invokeMany([
       { document: spec(op("SURPRISE")) },
       { document: spec(op("constructor")) },
       { document: spec(op(null)) },
-      { document: spec(op(null), "/api/v2/examples/fields/other") },
+      { document: spec(op(null), "/api/v2/examples/fields/{namespace}") },
     ]);
     expect(results.map(({ error }) => error)).toEqual([
       expect.stringContaining("Unknown operation kind"),
