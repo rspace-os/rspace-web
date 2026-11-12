@@ -155,7 +155,12 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                             owner);
                       }
                     });
-    assertThrows(BookingConcurrentModificationException.class, updateFromStaleSnapshot::run);
+    // The locking configuration read sees the committed disable, so the target is unavailable.
+    Class<? extends RuntimeException> expected =
+        mutation == SnapshotMutation.DISABLE_CONFIGURATION
+            ? BookingTargetUnavailableException.class
+            : BookingConcurrentModificationException.class;
+    assertThrows(expected, updateFromStaleSnapshot::run);
 
     if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
       assertTrue(
