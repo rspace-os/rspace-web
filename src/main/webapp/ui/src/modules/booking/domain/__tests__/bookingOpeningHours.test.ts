@@ -1,11 +1,24 @@
 import { describe, expect, test } from "vitest";
+import { incrementFitsSchedule } from "@/modules/booking/domain/bookingIncrement";
 import {
+  ALL_ISO_WEEKDAYS,
   customOpeningHours,
   formatIsoWeekday,
   isOpenAllDay,
+  longestOpeningMinutes,
+  MAX_BOOKING_DURATION_MINUTES,
   mapOpeningHours,
+  type OpeningSchedule,
   validOpeningHours,
 } from "../bookingOpeningHours";
+
+function schedule(overrides: Partial<OpeningSchedule> = {}): OpeningSchedule {
+  return {
+    openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
+    ...overrides,
+  };
+}
 
 describe("opening-hour schemas", () => {
   test.each<[string, number[]]>([
@@ -58,5 +71,32 @@ describe("opening-hour editor helpers", () => {
   test("formats ISO weekdays in the requested locale", () => {
     expect(formatIsoWeekday(1)).toBe("Monday");
     expect(formatIsoWeekday(7, "long", "de-DE")).toBe("Sonntag");
+  });
+});
+
+describe("duration increments and continuous opening periods", () => {
+  test.each([
+    [[1], "09:00", "17:00", 480],
+    [[7, 1], "00:00", "24:00", 2880],
+    [[1, 3], "00:00", "24:00", 1440],
+    [[1, 2, 3, 4, 5, 6, 7], "00:00", "24:00", MAX_BOOKING_DURATION_MINUTES],
+  ])("merges the weekly schedule %s", (days, start, end, expected) => {
+    expect(
+      longestOpeningMinutes(schedule({ openingHours: days.map((dayOfWeek) => ({ dayOfWeek, start, end })) })),
+    ).toBe(expected);
+  });
+  test("merges evening, full-day and morning intervals across Sunday", () => {
+    const hours = schedule({
+      openingHours: [
+        { dayOfWeek: 6, start: "18:00", end: "24:00" },
+        { dayOfWeek: 7, start: "00:00", end: "24:00" },
+        { dayOfWeek: 1, start: "00:00", end: "06:00" },
+      ],
+    });
+    expect(longestOpeningMinutes(hours)).toBe(2160);
+    const increment = (slotGranularityMinutes: number) =>
+      incrementFitsSchedule({ ...hours, slotGranularityMinutes, incrementUnit: "MINUTES" });
+    expect(increment(2160)).toBe(true);
+    expect(increment(2161)).toBe(false);
   });
 });
