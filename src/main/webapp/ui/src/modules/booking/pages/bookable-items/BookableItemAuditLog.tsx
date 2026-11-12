@@ -12,6 +12,7 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
 import { UserBadge } from "@/modules/common/ui/user-badge";
+import { AuditTimestamp, RecordedValues } from "./BookableItemAuditEvent";
 import {
   type AuditDateError,
   type AuditDateField,
@@ -20,29 +21,12 @@ import {
   auditPresetRange,
   auditRangeToQuery,
   fetchBookingConfigurationAudit,
-  recordedValues,
   validateAuditDateRange,
 } from "./bookableItemAudit";
 
 const PRESET_DAYS = [7, 30, 90] as const;
-const RANGE_SEPARATOR = "\u2013";
 
-function RecordedValues({ row }: { row: AuditRow }) {
-  const { t } = useTranslation("booking");
-  const labels: Record<string, string> = {
-    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
-  };
-  return (
-    <dl className="grid min-w-52 grid-cols-[max-content_1fr] gap-x-3 gap-y-1 font-mono text-xs">
-      {recordedValues(row.payload).map(([label, value]) => (
-        <div className="contents" key={label}>
-          <dt className="text-muted-foreground">{labels[label] ?? label}</dt>
-          <dd className="break-all">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
+const RANGE_SEPARATOR = "\u2013";
 
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
   slug: "booking-configuration-audit",
@@ -119,15 +103,6 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
     },
   ],
 });
-
-function AuditTimestamp({ value }: { value: string }) {
-  const { i18n } = useTranslation("booking");
-  return (
-    <time dateTime={value}>
-      {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value))}
-    </time>
-  );
-}
 
 type RequestError = "unavailable" | "generic";
 

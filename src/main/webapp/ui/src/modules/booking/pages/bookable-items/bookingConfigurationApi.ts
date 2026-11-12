@@ -1,13 +1,27 @@
 import {
+  deleteManyBookingConfigurations,
   getListBookingConfigurationsQueryOptions,
   listBookingConfigurations,
+  updateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import { bulkParameters } from "./BookableItemsContent";
+import { type BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
+
+export async function mutateBookableItems(
+  action: BookableItemsBulkAction,
+  selectedRowIds: readonly string[],
+): Promise<void> {
+  const params = bulkParameters(selectedRowIds);
+  if (action === "archive") await deleteManyBookingConfigurations(params);
+  else await updateManyBookingConfigurations({ enabled: action === "enable" }, params);
+}
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+
 class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }
@@ -29,12 +43,14 @@ function parameters(globalId: string) {
     }),
   };
 }
+
 function oneConfiguration(globalId: string, documents: BookingConfiguration[]): BookingConfiguration {
   if (documents.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
   if (documents.length === 0 || documents[0].target?.globalId !== globalId)
     throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
   return documents[0];
 }
+
 export async function fetchBookingConfigurationByTarget(
   globalId: string,
   signal?: AbortSignal,
@@ -44,12 +60,14 @@ export async function fetchBookingConfigurationByTarget(
     (await listBookingConfigurations(parameters(globalId), { signal })).docs.map(mapBookingConfiguration),
   );
 }
+
 export function fetchBookingConfigurationDetailsByTarget(
   globalId: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
   return fetchBookingConfigurationByTarget(globalId, signal);
 }
+
 export async function findBookingConfigurationByTarget(
   globalId: string,
   signal?: AbortSignal,
@@ -60,6 +78,7 @@ export async function findBookingConfigurationByTarget(
   if (documents.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
   return documents[0] ?? null;
 }
+
 export function bookingConfigurationTargetQuery(globalId: string) {
   return getListBookingConfigurationsQueryOptions<BookingConfiguration>(parameters(globalId), {
     query: {

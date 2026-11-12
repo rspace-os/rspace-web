@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import * as v from "valibot";
 import { expect } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingSettingsControllerAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerAdminSettingsDocument";
 import type { BookingSettingsControllerSettingsPatch } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerSettingsPatch";
 import { BookingSettingsControllerAdminSettingsDocumentSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
@@ -38,14 +39,20 @@ export function serveBookingSettings(
   let current: BookingSettingsControllerAdminSettingsDocument = createBookingSettingsFixture(initial);
   server.use(
     http.get("/api/v2/booking-settings/admin", () =>
-      HttpResponse.json<BookingSettingsControllerAdminSettingsDocument>(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+      HttpResponse.json<BookingSettingsControllerAdminSettingsDocument>(current, {
+        headers: { ETag: `"${current.configurationVersion}"` },
+      }),
     ),
     http.patch<never, BookingSettingsControllerSettingsPatch>("/api/v2/booking-settings/admin", async ({ request }) => {
       expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
       const body = await request.json();
       expect(body).not.toHaveProperty("configurationVersion");
       submitted.push(body);
-      if (!saveSucceeds()) return HttpResponse.json({ status: 500 }, { status: 500 });
+      if (!saveSucceeds())
+        return HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", code: "errors.api.v2.unexpected", status: 500 },
+          { status: 500 },
+        );
       current = v.parse(BookingSettingsControllerAdminSettingsDocumentSchema, {
         ...current,
         ...body,
