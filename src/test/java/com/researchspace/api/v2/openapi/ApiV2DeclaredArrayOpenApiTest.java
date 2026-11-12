@@ -270,7 +270,7 @@ class ApiV2DeclaredArrayOpenApiTest {
     var builder =
         ApiV2ResourceSpec.builder(description, operations, Long::valueOf)
             .mutationErrors("create-error", "update-error")
-            .expose(EnumSet.allOf(ResourceOperation.class));
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE));
     if (protectedResource) builder.resourceAccess(new ResourceAccessSpec<>(access));
     var spec = builder.build();
     return Json31.mapper()

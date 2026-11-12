@@ -49,6 +49,11 @@ class ApiV2RuntimeProjectionOpenApiTest {
   void generatedReadSchemaStructurallyCoversActualRuntimeProjectionDocuments() {
     ProjectionFixture fixture = fixture();
     JsonNode openApi = Json31.mapper().valueToTree(fixture.document());
+    assertEquals(
+        "RUNTIME_FIELDS",
+        openApi
+            .at("/paths/~1api~1v2~1sources~1fields~1{namespace}/get/x-rspace-operation")
+            .asText());
     JsonNode readSchema = openApi.at("/components/schemas/SourcesRead");
     JsonNode properties = readSchema.path("properties");
 

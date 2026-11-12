@@ -279,7 +279,7 @@ final class ApiV2OpenApiResourceAccessDocs {
 
   static AccessDocumentation access(AccessPolicySchema access, ResourceOperation operation) {
     return switch (operation) {
-      case LIST, COUNT, READ -> access.readAccess();
+      case LIST, COUNT, READ, RUNTIME_FIELDS -> access.readAccess();
       case CREATE, BULK_CREATE -> access.createAccess();
       case UPDATE, BULK_UPDATE -> access.updateAccess();
       case DELETE, BULK_DELETE -> access.deleteAccess();

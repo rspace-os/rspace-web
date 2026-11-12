@@ -205,6 +205,8 @@ public final class ApiV2OpenApiGenerator {
               ordered(
                   "operationId",
                   "get" + singularName(resource) + "RuntimeFields",
+                  "x-rspace-operation",
+                  ResourceOperation.RUNTIME_FIELDS.name(),
                   "tags",
                   List.of(resource.resourceName()),
                   "security",
@@ -514,6 +516,9 @@ public final class ApiV2OpenApiGenerator {
       ResourceOperation operation, String component, String singular) {
     String prefix =
         switch (operation) {
+          case RUNTIME_FIELDS ->
+              throw new IllegalArgumentException(
+                  "Runtime fields are documented from registered providers");
           case LIST -> "list";
           case COUNT -> "count";
           case READ -> "get";
@@ -535,6 +540,9 @@ public final class ApiV2OpenApiGenerator {
       ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
     String resource = registration.resourceName();
     return switch (operation) {
+      case RUNTIME_FIELDS ->
+          throw new IllegalArgumentException(
+              "Runtime fields are documented from registered providers");
       case LIST -> "List " + resource;
       case COUNT -> "Count " + resource;
       case READ -> "Get one " + resource;
@@ -559,6 +567,9 @@ public final class ApiV2OpenApiGenerator {
       ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
     String resource = registration.resourceName();
     return switch (operation) {
+      case RUNTIME_FIELDS ->
+          throw new IllegalArgumentException(
+              "Runtime fields are documented from registered providers");
       case LIST ->
           "Returns a paginated view of "
               + resource
