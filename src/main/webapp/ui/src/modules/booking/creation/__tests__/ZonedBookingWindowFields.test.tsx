@@ -1,10 +1,26 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  ALL_ISO_WEEKDAYS,
+  MAX_BOOKING_DURATION_MINUTES,
+  type OpeningSchedule,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import { validateBookingWindow, ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
+
+function StatefulFields({
+  initial,
+  ...props
+}: { initial: BookingWindowDraft } & Omit<ComponentProps<typeof ZonedBookingWindowFields>, "value" | "onChange">) {
+  const [value, setValue] = useState(initial);
+  return <ZonedBookingWindowFields {...props} value={value} onChange={setValue} />;
+}
+
+const ALL_DAY = {
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+} satisfies OpeningSchedule;
 
 describe("ZonedBookingWindowFields", () => {
   it("uses one date for both endpoints in compact mode", () => {
@@ -130,6 +146,24 @@ describe("ZonedBookingWindowFields", () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ startTime: "09:05", startOccurrence: undefined }),
     );
+  });
+
+  it("shows both dates in compact density for a Day increment", () => {
+    render(
+      <StatefulFields
+        displayTimezone="UTC"
+        schedulingTimezone="UTC"
+        slotGranularityMinutes={1440}
+        incrementUnit="DAYS"
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        density="compact"
+        initial={{ startDate: "2026-08-17", startTime: "23:00", endDate: "2026-08-17", endTime: "23:00" }}
+      />,
+    );
+
+    expect(screen.getByLabelText("booking:bookings.form.startDate")).toHaveValue("2026-08-17");
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-08-17");
   });
 
   it("preserves unchanged original endpoints while snapping only the edited endpoint", async () => {
