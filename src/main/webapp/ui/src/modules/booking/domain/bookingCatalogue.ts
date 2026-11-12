@@ -1,5 +1,4 @@
 import * as v from "valibot";
-import { validMaximumBookingDuration } from "@/modules/booking/configuration/schedulingSettings";
 import { SchedulingSettingsSchema } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import {
   getSearchBookingCatalogueQueryOptions,
@@ -14,10 +13,6 @@ import { requireBookingValue as required } from "./bookingMapping";
 export function mapBookingCatalogueItem(input: BookingCatalogueManagerItem) {
   const policy = v.parse(SchedulingSettingsSchema, input);
   if (input.targetType !== "INSTRUMENT") throw new Error("Unsupported booking target type");
-  const slotGranularityMinutes = required(input.slotGranularityMinutes, "slotGranularityMinutes");
-  const maxBookingDurationMinutes = required(input.maxBookingDurationMinutes, "maxBookingDurationMinutes");
-  if (!validMaximumBookingDuration(maxBookingDurationMinutes, slotGranularityMinutes))
-    throw new Error("Invalid booking duration");
   const capabilities = required(input.capabilities, "capabilities");
   return {
     configurationId: required(input.configurationId, "configurationId"),
@@ -81,6 +76,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
     state: "ACTIVE" as const,
     timezone: item.timezone,
     slotGranularityMinutes: item.slotGranularityMinutes,
+    incrementUnit: item.incrementUnit,
     openingHours: item.openingHours,
     bufferBeforeMinutes: item.bufferBeforeMinutes,
     bufferAfterMinutes: item.bufferAfterMinutes,
