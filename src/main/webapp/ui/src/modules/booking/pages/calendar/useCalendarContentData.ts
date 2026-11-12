@@ -13,8 +13,7 @@ import { resolveCollectionConfig } from "@/modules/common/collection/resolveConf
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
-import { type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
-import { calendarDates } from "./calendarLayoutUtils";
+import { type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
 import { useCalendarEvents } from "./calendarEvents";
 
 const calendarResourceConfig = resolveCollectionConfig({

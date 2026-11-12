@@ -6,14 +6,14 @@ import { BookingForm, type BookingFormState } from "@/modules/booking/creation/B
 import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
-import type { TimelineMovePolicy } from "@/modules/booking/creation/timelineMove";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import {
-  bookingCreationProblemKey,
+  bookingProblemFeedback,
+  isBookingConflictError,
   isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 import { calendarAvailabilityRow } from "@/modules/booking/domain/availability";
-import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 
@@ -158,13 +158,14 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
       (availability.data.get(availabilityTarget.globalId)?.length ?? 0) > 0,
   );
 
+  const problem = bookingProblemFeedback(mutation.error, t, {
+    target: availabilityTarget && {
+      maxBookingDurationMinutes: maintenance ? 0 : availabilityTarget.maxBookingDurationMinutes,
+    },
+    creation: true,
+  });
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
-  const movementPolicy: TimelineMovePolicy = {
-    maxBookingDurationMinutes: maintenance ? 0 : (availabilityTarget?.maxBookingDurationMinutes ?? 0),
-    openingHours: availabilityTarget?.openingHours ?? [],
-    enforceOpeningHours: Boolean(availabilityTarget) && !maintenance,
-  };
 
   return (
     <>
@@ -173,9 +174,9 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           creation={creation}
           draft={markerDraft}
           timeZone={preferences.timeZone}
-          schedulingTimezone={availabilityTarget?.timezone ?? preferences.timeZone}
-          snapIncrementMinutes={availabilityTarget?.slotGranularityMinutes}
-          movementPolicy={movementPolicy}
+          policy={
+            availabilityTarget ? timelinePolicy(availabilityTarget, maintenance ? "MAINTENANCE" : "BOOKING") : undefined
+          }
           onChange={creation.timelineAdjustable ? setWindowAdjustment : undefined}
         />
       ) : null}
@@ -227,6 +228,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           <BookingForm
             mode="add"
             density="compact"
+            fixedTimezone
             displayTimezone={preferences.timeZone}
             eventKind={creation.eventKind}
             initialTarget={creation.target}
@@ -234,18 +236,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             initialWindow={creation.window}
             lockTarget={creation.lockTarget}
             pending={mutation.isPending}
-            error={
-              availabilityViolation
-                ? t("bookings.errors.overlap")
-                : mutation.error
-                  ? t(bookingCreationProblemKey(mutation.error))
-                  : undefined
-            }
+            error={availabilityViolation ? t("bookings.errors.overlap") : problem.message}
             outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||
               availabilityViolation ||
-              isBookingOverlapError(mutation.error) ||
+              isBookingConflictError(mutation.error) ||
               isBookingOutcomeUncertain(mutation.error)
             }
             windowAdjustment={windowAdjustment}
