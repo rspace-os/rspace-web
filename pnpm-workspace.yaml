@@ -15,7 +15,7 @@ overrides:
   # @sa11y/vitest 8.x declares a hard vitest ^4 dependency, which installs a
   # second vitest whose expect our tests never use. Share the root vitest
   # until sa11y supports Vitest 5.
-  '@sa11y/vitest>vitest': 5.0.5
+  '@sa11y/vitest>vitest': 5.1.0
   # Keep React-PDF's API on the same version as the bundled PDF.js worker.
   react-pdf>pdfjs-dist: 5.7.284
   # @jupyter-kit/katex and rehype-katex still ask for katex ^0.16, which is
@@ -29,10 +29,6 @@ packageExtensions:
   '@replit/codemirror-css-color-picker@6.3.0':
     dependencies:
       '@lezer/common': ^1.5.2
-  # scalar/scalar#10765
-  '@scalar/schemas@0.15.0':
-    dependencies:
-      '@scalar/types': 0.25.2
   # dromru/react-photoswipe-gallery#1495
   react-photoswipe-gallery:
     peerDependencies:
