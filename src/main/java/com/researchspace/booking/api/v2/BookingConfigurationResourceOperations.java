@@ -33,6 +33,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.collection.CollectionDescription;
@@ -144,7 +145,9 @@ public final class BookingConfigurationResourceOperations
                         "enabled",
                         true,
                         "slotGranularityMinutes",
-                        5,
+                        15,
+                        "incrementUnit",
+                        "MINUTES",
                         "openingHours",
                         List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
                         "bufferBeforeMinutes",
@@ -351,6 +354,7 @@ public final class BookingConfigurationResourceOperations
   private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
     return new BookingSchedulingSettings.Patch(
         BookingDocumentValues.value(document, "slotGranularityMinutes", Long.class),
+        BookingDocumentValues.value(document, "incrementUnit", BookingIncrementUnit.class),
         openingHours(document),
         BookingDocumentValues.value(document, "bufferBeforeMinutes", Long.class),
         BookingDocumentValues.value(document, "bufferAfterMinutes", Long.class),
