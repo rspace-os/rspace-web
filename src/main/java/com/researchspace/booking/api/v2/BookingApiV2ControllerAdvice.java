@@ -50,7 +50,17 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
 
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+    String code = ex.reason().errorCode();
+    if (ex.maximumDurationMinutes().isEmpty()) {
+      return problem(HttpStatus.BAD_REQUEST, code);
+    }
+    long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
+    Locale locale = LocaleContextHolder.getLocale();
+    return problems.problem(
+        HttpStatus.BAD_REQUEST,
+        code,
+        BookingProblem.maximumDuration(maximumMinutes),
+        BookingDurationWords.format(maximumMinutes, messages, locale));
   }
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)
@@ -62,5 +72,4 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
     return problem(HttpStatus.PRECONDITION_FAILED, "errors.api.v2.bookingConfiguration.stale");
   }
-
 }

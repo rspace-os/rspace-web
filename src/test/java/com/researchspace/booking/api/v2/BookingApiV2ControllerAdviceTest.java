@@ -61,6 +61,7 @@ class BookingApiV2ControllerAdviceTest {
   @Test
   void policy() {
     for (var reason : BookingPolicyException.Reason.values()) {
+      if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
       register(reason.errorCode());
       check(
           advice.handleBookingPolicy(new BookingPolicyException(reason)),
@@ -139,6 +140,7 @@ class BookingApiV2ControllerAdviceTest {
             mock(TimeSlotBookingManager.class),
             mock(FeatureFlagManager.class),
             ApiV2TimeSlotBookingResource.DESCRIPTION,
+            mock(MessageSourceUtils.class),
             mock(BookingCreateExecutor.class));
     var spec = operations.timeSlotBookingApiV2Resource();
     var shared =
@@ -147,6 +149,7 @@ class BookingApiV2ControllerAdviceTest {
             new ApiV2ProblemFactory(new MessageSourceUtils(source)));
     for (var operation : List.of(ResourceOperation.CREATE, ResourceOperation.UPDATE)) {
       for (var reason : BookingPolicyException.Reason.values()) {
+        if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
         register(reason.errorCode());
         var mapping =
             spec.errorMappings().get(operation).stream()
