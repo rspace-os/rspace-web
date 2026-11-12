@@ -38,15 +38,16 @@ import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.ResourceMutationManager;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.inventory.RuntimeFieldNamespaces;
 import com.researchspace.service.inventory.ContainerReadAccess;
 import com.researchspace.service.inventory.ContainerReadManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.RuntimeFieldNamespaces;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -149,7 +150,8 @@ class ApiV2ResourceConfigTest {
 
   static AnnotationConfigApplicationContext newContext() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-    context.registerBean("messageSource", org.springframework.context.MessageSource.class, JsonMessageSource::new);
+    context.registerBean(
+        "messageSource", org.springframework.context.MessageSource.class, JsonMessageSource::new);
     context.registerBean(ResourceMutationManager.class, ResourceMutationManager::new);
     context.registerBean(MaintenanceManager.class, () -> mock(MaintenanceManager.class));
     context.registerBean(UserManager.class, () -> mock(UserManager.class));
@@ -164,6 +166,7 @@ class ApiV2ResourceConfigTest {
         () -> mock(BookingConfigurationTargetManager.class));
     context.registerBean(TimeSlotBookingManager.class, () -> mock(TimeSlotBookingManager.class));
     context.registerBean(BookingCreateExecutor.class, () -> mock(BookingCreateExecutor.class));
+    context.registerBean(MessageSourceUtils.class, () -> mock(MessageSourceUtils.class));
     context.registerBean(
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
     InstrumentCustomFieldManager customFields = mock(InstrumentCustomFieldManager.class);
