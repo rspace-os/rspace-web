@@ -15,7 +15,9 @@ function Router(): React.ReactNode {
 
   useEffect(() => {
     if (!authStore.isSynchronizing && !authStore.isAuthenticated) {
-      void authStore.authenticate();
+      void authStore.authenticate().catch((error: unknown) => {
+        console.error("Router authentication failed", error);
+      });
     }
   }, []);
 
