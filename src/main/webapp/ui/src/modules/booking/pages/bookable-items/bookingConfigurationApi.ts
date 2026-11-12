@@ -1,4 +1,8 @@
 import {
+  getSearchBookingConfigurationTargetsQueryOptions,
+  getSearchBookingConfigurationTargetsSuspenseQueryOptions,
+} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
   updateBookingConfiguration as generatedUpdateBookingConfiguration,
   getListBookingConfigurationsQueryOptions,
@@ -8,6 +12,7 @@ import {
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { isNonEmpty } from "@/util/ArrayUtils";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
+import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
   await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
@@ -96,6 +101,7 @@ export function findBookingConfigurationQueryOptions(globalId: string) {
   });
 }
 
+/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
 export async function fetchBookingOwnershipCandidates(
   globalIds: readonly string[],
 
@@ -108,4 +114,19 @@ export async function fetchBookingOwnershipCandidates(
       { signal },
     )
   ).docs.map(mapBookingConfiguration);
+}
+
+export function bookingRouteTargetQuery(globalId: string | undefined) {
+  return getSearchBookingConfigurationTargetsQueryOptions(
+    { q: globalId ?? "", limit: 20 },
+    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
+  );
+}
+
+/** The route-target search for a known target, read with `useSuspenseQuery`; it shares `bookingRouteTargetQuery`'s key. */
+export function bookingRouteTargetSuspenseQuery(globalId: string) {
+  return getSearchBookingConfigurationTargetsSuspenseQueryOptions(
+    { q: globalId, limit: 20 },
+    { query: { select: mapBookingTargetDirectory } },
+  );
 }
