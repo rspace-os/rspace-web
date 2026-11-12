@@ -196,10 +196,7 @@ describe("BookableItemPage", () => {
               limit: 20,
               page: 1,
 
-
               hasNextPage: false,
-
-
             })
           : undefined;
       }),
@@ -300,10 +297,7 @@ describe("BookableItemPage", () => {
               limit: 20,
               page: 1,
 
-
               hasNextPage: false,
-
-
             })
           : undefined;
       }),
