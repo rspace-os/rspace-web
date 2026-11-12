@@ -1,4 +1,4 @@
-export { SchedulingSettingsFields } from "@/modules/booking/configuration/SchedulingSettingsFields";
+export { incrementProblem, SchedulingSettingsFields } from "@/modules/booking/configuration/SchedulingSettingsFields";
 export {
   loadBookingAdminSettings,
   loadBookingSettings,
@@ -14,5 +14,4 @@ export {
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
   schedulingSettingsFieldNames,
-  validMaximumBookingDuration,
 } from "@/modules/booking/configuration/schedulingSettingsSchema";
