@@ -1214,6 +1214,31 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void saveTemporaryDocumentRequiresWriteAccess() {
+    User pi = createAndSaveAPi();
+    User reader = createAndSaveRandomUser();
+    User editor = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, reader, editor);
+    Group group = createGroup("anyGroup", pi);
+    addUsersToGroup(pi, group, reader, editor);
+    logoutAndLoginAs(pi);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi, "original");
+    shareRecordWithUser(pi, doc, reader);
+    shareRecordWithUserForEdit(pi, doc, editor);
+    Field field = doc.getFields().get(0);
+
+    logoutAndLoginAs(reader);
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordMgr.saveTemporaryDocument(field, reader, "refused edit"));
+    assertNull(((StructuredDocument) recordMgr.get(doc.getId())).getTempRecord());
+
+    logoutAndLoginAs(editor);
+    recordMgr.saveTemporaryDocument(field, editor, "shared edit");
+    assertNotNull(((StructuredDocument) recordMgr.get(doc.getId())).getTempRecord());
+  }
+
+  @Test
   public void cancelStructuredDocument() throws Exception {
     Folder root = folderMgr.getRootFolderForUser(user);
     anyForm = formDao.getAll().get(0);

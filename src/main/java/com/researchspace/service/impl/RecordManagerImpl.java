@@ -623,6 +623,10 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public StructuredDocument saveTemporaryDocument(Field currField, User subject, String data) {
+    // The next editor loads this draft, and callers such as the API commit it before
+    // saveStructuredDocument checks write access, so check here too.
+    permissnUtils.assertIsPermitted(
+        currField.getStructuredDocument(), PermissionType.WRITE, subject, "save document");
     // collect some info as this might be slow
     StopWatch sw = new StopWatch();
     sw.start();

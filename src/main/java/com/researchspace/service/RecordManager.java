@@ -137,6 +137,7 @@ public interface RecordManager {
    * @param user
    * @param data
    * @return
+   * @throws AuthorizationException if {@code user} can't write to the field's document
    */
   StructuredDocument saveTemporaryDocument(Field field, User user, String data);
 
