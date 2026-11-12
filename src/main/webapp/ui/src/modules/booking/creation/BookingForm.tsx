@@ -202,7 +202,8 @@ export function BookingForm(props: BookingFormProps) {
       target
         ? validateBookingWindow(draft, displayTimezone, {
             schedulingTimezone: target.timezone,
-            slotGranularityMinutes: target.slotGranularityMinutes,
+            slotGranularityMinutes: eventKind === "MAINTENANCE" ? 1 : target.slotGranularityMinutes,
+            incrementUnit: eventKind === "MAINTENANCE" ? "MINUTES" : target.incrementUnit,
             maxBookingDurationMinutes: eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes,
             openingHours: target.openingHours,
             enforceOpeningHours: eventKind !== "MAINTENANCE",
@@ -288,7 +289,8 @@ export function BookingForm(props: BookingFormProps) {
     <ZonedBookingWindowFields
       displayTimezone={displayTimezone}
       schedulingTimezone={target?.timezone ?? displayTimezone}
-      slotGranularityMinutes={target?.slotGranularityMinutes ?? 1}
+      slotGranularityMinutes={eventKind === "MAINTENANCE" ? 1 : (target?.slotGranularityMinutes ?? 1)}
+      incrementUnit={eventKind === "MAINTENANCE" ? "MINUTES" : (target?.incrementUnit ?? "MINUTES")}
       maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
       openingHours={target?.openingHours ?? []}
       enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
