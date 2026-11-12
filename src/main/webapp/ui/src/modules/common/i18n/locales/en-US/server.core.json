@@ -130,7 +130,7 @@
           "lifecycleConflict": "Restore the archived booking configuration before changing it.",
           "stale": "The booking settings changed after this page was loaded. Reload and try again.",
           "granularity": {
-            "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
+            "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
           },
           "openingHours": {
             "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
@@ -139,7 +139,7 @@
             "invalid": "Booking buffers must be between 0 and 10,080 minutes."
           },
           "maximumDuration": {
-            "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
+            "invalid": "Maximum booking duration must be 0, or from one time increment up to 527,040 elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of 1,440 minutes per day."
           },
           "target": {
             "invalid": "The selected target is not available for booking.",
