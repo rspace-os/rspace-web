@@ -1,11 +1,20 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBookingLength, formatIncrement } from "@/modules/booking/configuration/incrementFacts";
-import type { IncrementSettings, IncrementViolation } from "@/modules/booking/domain/bookingIncrement";
+import {
+  type IncrementSettings,
+  type IncrementViolation,
+  snapEndToIncrement,
+} from "@/modules/booking/domain/bookingIncrement";
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft, WallClockResolution } from "@/modules/booking/domain/bookingTime";
-import { formatPlainDate, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import {
+  formatPlainDate,
+  formatWallClockTime,
+  wallClockEndpointFromInstant,
+  wallClockInstant,
+} from "@/modules/booking/domain/bookingTime";
 import i18n from "@/modules/common/i18n";
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
@@ -22,23 +31,6 @@ export {
 
 function offset(instant: string, timezone: string): string {
   return Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).offset;
-}
-
-function snapTimeToIncrement(time: string, incrementMinutes: number, schedulingOffsetMinutes = 0): string {
-  const match = /^(\d{2}):(\d{2})$/.exec(time);
-  if (!match) return time;
-  const minutes = Number(match[1]) * 60 + Number(match[2]);
-  const firstValidMinute = ((-schedulingOffsetMinutes % incrementMinutes) + incrementMinutes) % incrementMinutes;
-  const latestValidMinute =
-    firstValidMinute + Math.floor((24 * 60 - 1 - firstValidMinute) / incrementMinutes) * incrementMinutes;
-  const snappedMinutes = Math.min(
-    latestValidMinute,
-    Math.max(
-      firstValidMinute,
-      firstValidMinute + Math.round((minutes - firstValidMinute) / incrementMinutes) * incrementMinutes,
-    ),
-  );
-  return `${String(Math.floor(snappedMinutes / 60)).padStart(2, "0")}:${String(snappedMinutes % 60).padStart(2, "0")}`;
 }
 
 export function ZonedBookingWindowFields({
@@ -112,37 +104,67 @@ export function ZonedBookingWindowFields({
   } = result;
   const increment = formatIncrement({ slotGranularityMinutes, incrementUnit }, t);
   const locale = i18n.resolvedLanguage ?? i18n.language ?? "en-US";
-  const schedulingEndpoint = (instant: string | undefined) =>
-    instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
+  const zones = { start: resolvedDisplayTimezone, end: resolvedDisplayTimezone };
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
-  const snapTime = (name: "start" | "end") => {
-    const dateKey = `${name}Date` as const;
+  const [snaps, setSnaps] = useState<Partial<Record<"start" | "end", { date: string; time: string; note: string }>>>(
+    {},
+  );
+  const changeTime = (name: "start" | "end", time: string) => {
     const timeKey = `${name}Time` as const;
     const occurrenceKey = `${name}Occurrence` as const;
+    setSnaps((current) => ({ ...current, [name]: undefined }));
+    change({ [timeKey]: time, [occurrenceKey]: undefined });
+  };
+  // A repeated time is snapped only once the user has chosen its occurrence; until then the form asks for it.
+  const typedInstant = (name: "start" | "end") => wallClockInstant(result[name], value[`${name}Occurrence`]);
+  const applySnap = (name: "start" | "end", instant: string, note: (time: string, date: string) => string) => {
+    const draft = wallClockEndpointFromInstant(instant, zones[name]);
+    // A snap onto a repeated time keeps an occurrence only if the user chose it for this very time; a choice made
+    // for the typed time does not carry over to a different one.
+    const sameTime = draft.date === value[`${name}Date`] && draft.time === value[`${name}Time`];
+    const next = sameTime && value[`${name}Occurrence`] ? draft : { ...draft, occurrence: undefined };
     if (
-      originalValue &&
-      value[dateKey] === originalValue[dateKey] &&
-      value[timeKey] === originalValue[timeKey] &&
-      value[occurrenceKey] === originalValue[occurrenceKey]
+      next.date === value[`${name}Date`] &&
+      next.time === value[`${name}Time`] &&
+      next.occurrence === value[`${name}Occurrence`]
     ) {
       return;
     }
-    const endpointResolution = result[name];
-    const instant =
-      endpointResolution?.kind === "unique"
-        ? endpointResolution.instant
-        : endpointResolution?.kind === "ambiguous"
-          ? endpointResolution[value[occurrenceKey] ?? "earlier"]
-          : undefined;
-    const schedulingTime = schedulingEndpoint(instant);
-    const match = /^(\d{2}):(\d{2})$/.exec(value[timeKey]);
-    const displayMinute = match ? Number(match[1]) * 60 + Number(match[2]) : undefined;
-    const schedulingOffsetMinutes =
-      schedulingTime && displayMinute !== undefined
-        ? schedulingTime.hour * 60 + schedulingTime.minute - displayMinute
-        : 0;
-    const snappedTime = snapTimeToIncrement(value[timeKey], slotGranularityMinutes, schedulingOffsetMinutes);
-    if (snappedTime !== value[timeKey]) change({ [timeKey]: snappedTime, [occurrenceKey]: undefined });
+    setSnaps((current) => ({
+      ...current,
+      [name]: {
+        date: next.date,
+        time: next.time,
+        note: note(formatWallClockTime(next.time, locale), formatPlainDate(next.date, locale)),
+      },
+    }));
+    change({ [`${name}Date`]: next.date, [`${name}Time`]: next.time, [`${name}Occurrence`]: next.occurrence });
+  };
+  const originalEndpoint = (name: "start" | "end") =>
+    originalValue &&
+    value[`${name}Date`] === originalValue[`${name}Date`] &&
+    value[`${name}Time`] === originalValue[`${name}Time`] &&
+    value[`${name}Occurrence`] === originalValue[`${name}Occurrence`];
+  const endSnapNote = (time: string, date: string) => t("bookings.form.endSnapped", { time, date, increment });
+  const snapEnd = () => {
+    if (originalEndpoint("end")) return;
+    const start = wallClockInstant(result.start, value.startOccurrence);
+    const end = typedInstant("end");
+    if (!start || !end) return;
+    const snap = snapEndToIncrement(rule, start, end, resolvedSchedulingTimezone);
+    if (snap.kind === "instant") applySnap("end", snap.instant, endSnapNote);
+  };
+  const snapNote = (name: "start" | "end") => {
+    const snap = snaps[name];
+    return (
+      <div aria-live="polite">
+        {snap && snap.time === value[`${name}Time`] && snap.date === value[`${name}Date`] ? (
+          <p role="status" id={`${fieldId}-${name}-snap`} className="text-sm text-muted-foreground">
+            {snap.note}
+          </p>
+        ) : null}
+      </div>
+    );
   };
 
   const endpointUnresolved = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
@@ -244,7 +266,7 @@ export function ZonedBookingWindowFields({
               id={timeId}
               aria-label={t(`bookings.form.${name}Time`)}
               type="time"
-              step={slotGranularityMinutes * 60}
+              step={60}
               required
               aria-invalid={
                 showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined
@@ -252,11 +274,12 @@ export function ZonedBookingWindowFields({
               aria-describedby={describedBy}
               disabled={disabled}
               value={value[timeKey]}
-              onChange={(event) => change({ [timeKey]: event.currentTarget.value, [occurrenceKey]: undefined })}
-              onBlur={() => snapTime(name)}
+              onChange={(event) => changeTime(name, event.currentTarget.value)}
+              onBlur={name === "end" ? snapEnd : undefined}
             />
           </div>
         </div>
+        {snapNote(name)}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
       </FieldSet>
@@ -269,7 +292,6 @@ export function ZonedBookingWindowFields({
     occurrence: "earlier" | "later" | undefined,
   ) => {
     const timeKey = `${name}Time` as const;
-    const occurrenceKey = `${name}Occurrence` as const;
     const timeId = `${fieldId}-${name}-time`;
     const describedBy = errorDescription(name, endpointResolution);
     return (
@@ -279,7 +301,7 @@ export function ZonedBookingWindowFields({
           id={timeId}
           aria-label={t(`bookings.form.${name}Time`)}
           type="time"
-          step={slotGranularityMinutes * 60}
+          step={60}
           required
           aria-invalid={
             showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined
@@ -287,9 +309,10 @@ export function ZonedBookingWindowFields({
           aria-describedby={describedBy}
           disabled={disabled}
           value={value[timeKey]}
-          onChange={(event) => change({ [timeKey]: event.currentTarget.value, [occurrenceKey]: undefined })}
-          onBlur={() => snapTime(name)}
+          onChange={(event) => changeTime(name, event.currentTarget.value)}
+          onBlur={name === "end" ? snapEnd : undefined}
         />
+        {snapNote(name)}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
       </div>
