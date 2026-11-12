@@ -219,15 +219,6 @@ ensure_shared_volumes() {
   docker volume create rspace-dev-pnpm-store >/dev/null
 }
 
-legacy_notices() {
-  if [ -f "${ENV_FILE}" ] && grep -qE '^[[:space:]]*(export[[:space:]]+)?MAVEN_OPTS[[:space:]]*=' "${ENV_FILE}"; then
-    echo 'rspace-dev: MAVEN_OPTS is ignored; move Jetty heap flags and -D properties to ORG_GRADLE_PROJECT_jettyJvmArgs in docker/dev/.env.' >&2
-  fi
-  if docker volume inspect rspace-dev-m2-repo >/dev/null 2>&1; then
-    echo 'rspace-dev: rspace-dev-m2-repo is unused by Gradle; when no older worktrees need it, remove with: docker volume rm rspace-dev-m2-repo' >&2
-  fi
-}
-
 cmd_up() {
   ensure_env
   ensure_shared_volumes
@@ -331,14 +322,9 @@ cmd_db() {
 cmd_nuke() {
   echo "rspace-dev: removing containers AND volumes for this worktree ..." >&2
   compose down -v
-  local legacy="$(env_get COMPOSE_PROJECT_NAME)_app-target"
-  if docker volume inspect "${legacy}" >/dev/null 2>&1; then
-    docker volume rm "${legacy}"
-  fi
 }
 
 main() {
-  legacy_notices
   local command="${1:-}"
   [ $# -gt 0 ] && shift || true
   case "${command}" in

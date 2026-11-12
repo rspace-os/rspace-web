@@ -239,15 +239,8 @@ another worktree's instance):
 ./docker/dev/rspace-dev nuke
 ```
 
-`nuke` runs `docker compose down --volumes` and removes the legacy
-`<project>_app-target` volume if present. It only removes this project's volumes.
+`nuke` runs `docker compose down --volumes`. It only removes this project's volumes.
 The shared pnpm store survives. Host build directories are never deleted.
-
-The launcher reports an existing Maven-era `rspace-dev-m2-repo` volume but never
-deletes it. Older branches may still need it. Once those stacks are retired,
-remove it with `docker volume rm rspace-dev-m2-repo`. The old shared
-`rspace-dev-gradle-cache` is also unused by this stack; only remove it once no
-older Gradle stacks need it.
 
 Verify it is gone:
 
@@ -556,12 +549,11 @@ program arguments as `jettyRun`. Jetty is PID 1 and receives SIGTERM directly;
 its shutdown hook stops Jetty and the Spring context. Compose allows 120 seconds
 before forcing termination. No Gradle daemon remains resident after startup.
 
-An existing `MAVEN_OPTS` entry in `.env` triggers a warning. Move its heap flags
-and application `-D` properties, including PyRAT configuration, to
-`ORG_GRADLE_PROJECT_jettyJvmArgs`. Gradle's build heap uses `org.gradle.jvmargs`.
-The launcher never prints the old variable's value.
+Jetty's heap and extra JVM arguments, including application `-D` properties such
+as the PyRAT configuration, go in `ORG_GRADLE_PROJECT_jettyJvmArgs` in `.env`.
+Gradle's own build heap uses `org.gradle.jvmargs`.
 
 SIGTERM during an in-flight redeploy waits for Spring to finish starting before
 Jetty stops it. The 120-second grace period allows slower shared machines to
 finish; Docker kills the process if it exceeds that limit. Manual redeploy
-invalidates logged-in sessions, matching Maven's redirect to login.
+invalidates logged-in sessions; existing sessions redirect to login.
