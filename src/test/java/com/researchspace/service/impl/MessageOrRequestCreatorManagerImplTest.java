@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.Constants;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.RecordDao;
@@ -53,7 +54,7 @@ public class MessageOrRequestCreatorManagerImplTest {
     anyUser = TestFactory.createAnyUser("any");
     notInGroup = TestFactory.createAnyUser("notInGroup");
     toInvite = TestFactory.createAnyUser("toInvite");
-    pi = TestFactory.createAnyUserWithRole("pi", com.researchspace.Constants.PI_ROLE);
+    pi = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
     group = TestFactory.createAnyGroup(pi, anyUser);
     group.setId(1L);
   }

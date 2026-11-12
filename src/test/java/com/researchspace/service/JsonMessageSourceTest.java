@@ -3,6 +3,7 @@ package com.researchspace.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.NoSuchMessageException;
@@ -70,7 +71,7 @@ class JsonMessageSourceTest {
         "1000.5",
         SOURCE.getMessage(
             "errors.inventory.field.validation",
-            new Object[] {new java.math.BigDecimal("1000.5")},
+            new Object[] {new BigDecimal("1000.5")},
             Locale.GERMAN));
   }
 

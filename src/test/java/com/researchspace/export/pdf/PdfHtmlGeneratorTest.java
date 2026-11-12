@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Entities;
 import org.jsoup.nodes.Node;
 import org.junit.jupiter.api.Assertions;
@@ -62,10 +63,10 @@ public class PdfHtmlGeneratorTest {
   }
 
   private boolean htmlElementContains(String html, String element, String value) {
-    org.jsoup.nodes.Document document = Jsoup.parse(html);
+    Document document = Jsoup.parse(html);
     document
         .outputSettings()
-        .syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+        .syntax(Document.OutputSettings.Syntax.xml)
         .escapeMode(Entities.EscapeMode.xhtml)
         .charset("UTF-8");
     Node elementNode = document.selectFirst(element);

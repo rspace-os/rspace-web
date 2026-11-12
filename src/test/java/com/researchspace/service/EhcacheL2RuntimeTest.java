@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
@@ -104,7 +105,7 @@ public class EhcacheL2RuntimeTest {
         new String[] {
           "com.researchspace.model.ImageBlob", "com.researchspace.model.FileProperty"
         }) {
-      javax.cache.Cache cache = cacheManager.getCache(region);
+      Cache cache = cacheManager.getCache(region);
       assertNotNull(cache, region + " missing from ehcache.xml");
       assertDoesNotThrow(
           () -> cache.put(HIBERNATE_STYLE_KEY, "anyEntityValue"),

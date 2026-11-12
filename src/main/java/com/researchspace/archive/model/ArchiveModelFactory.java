@@ -290,7 +290,7 @@ public class ArchiveModelFactory {
 
     addParentFolderDetails(std.getOwnerParent(), rc);
 
-    for (com.researchspace.model.field.Field fdx : std.getFields()) {
+    for (Field fdx : std.getFields()) {
       ArchivalField afdx = createArchivalField(fdx);
       rc.addArchivalField(afdx);
     }

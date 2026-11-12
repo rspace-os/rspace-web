@@ -36,6 +36,10 @@ import com.researchspace.model.inventory.field.ExtraTextField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.service.inventory.OperationTemplateConformanceValidator;
+import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.operations.AliquotOperation;
 import com.researchspace.service.inventory.operations.DestroyOperation;
 import com.researchspace.service.inventory.operations.OperationFieldNames;
@@ -60,13 +64,11 @@ import org.springframework.validation.FieldError;
 @ExtendWith(MockitoExtension.class)
 class InventoryOperationManagerImplTest {
 
-  @Mock private com.researchspace.service.inventory.SampleApiManager sampleApiMgr;
-  @Mock private com.researchspace.service.inventory.SubSampleApiManager subSampleApiMgr;
-  @Mock private com.researchspace.service.inventory.LinkTargetResolver linkTargetResolver;
+  @Mock private SampleApiManager sampleApiMgr;
+  @Mock private SubSampleApiManager subSampleApiMgr;
+  @Mock private LinkTargetResolver linkTargetResolver;
 
-  @Mock
-  private com.researchspace.service.inventory.OperationTemplateConformanceValidator
-      templateConformance;
+  @Mock private OperationTemplateConformanceValidator templateConformance;
 
   private InventoryOperationManagerImpl manager;
   private final User user = new User("anyUser");

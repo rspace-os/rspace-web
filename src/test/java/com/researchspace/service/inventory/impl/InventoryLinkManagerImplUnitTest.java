@@ -27,6 +27,7 @@ import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -188,7 +189,7 @@ class InventoryLinkManagerImplUnitTest {
   void findReferencingItemsQueriesSourcesWhenTargetIsReadable() {
     stubReadableTarget();
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SA, 42L))
-        .thenReturn(java.util.Collections.emptyList());
+        .thenReturn(Collections.emptyList());
 
     assertThat(linkManager.findReferencingItems("SA42", actor)).isEmpty();
   }

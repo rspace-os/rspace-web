@@ -41,6 +41,7 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -151,7 +152,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StoichiometryInventoryLink link = createMoleculeAndLink(321L, 300L, mol);
 
-    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(link));
+    when(linkDao.getSafeNull(321L)).thenReturn(Optional.of(link));
 
     StockDeductionResult result =
         manager.deductStock(requestedStoichiometryId, List.of(321L), user);
@@ -178,7 +179,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
 
-    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(linkDao.getSafeNull(321L)).thenReturn(Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
 
@@ -203,7 +204,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
 
-    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(linkDao.getSafeNull(321L)).thenReturn(Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     doNothing()
@@ -241,7 +242,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
 
-    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(linkDao.getSafeNull(321L)).thenReturn(Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
 
@@ -277,7 +278,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(101L, 1001L, mol);
     InventoryRecord ss = link.getInventoryRecord();
-    when(linkDao.getSafeNull(101L)).thenReturn(java.util.Optional.of(link));
+    when(linkDao.getSafeNull(101L)).thenReturn(Optional.of(link));
     when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     doThrow(new NotFoundException("Molecule 1 Not Found"))
@@ -301,7 +302,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(102L, 1002L, mol);
     InventoryRecord ss = link.getInventoryRecord();
-    when(linkDao.getSafeNull(102L)).thenReturn(java.util.Optional.of(link));
+    when(linkDao.getSafeNull(102L)).thenReturn(Optional.of(link));
     when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     doThrow(new IllegalArgumentException("Molecule 2 Insufficient Stock"))
@@ -325,7 +326,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(104L, 1004L, mol);
     InventoryRecord ss = link.getInventoryRecord();
-    when(linkDao.getSafeNull(104L)).thenReturn(java.util.Optional.of(link));
+    when(linkDao.getSafeNull(104L)).thenReturn(Optional.of(link));
     when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     doThrow(new LocalizedIllegalArgumentException("validation.quantity.incomparableUnits"))
@@ -347,7 +348,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(103L, 1003L, mol);
     InventoryRecord ss = link.getInventoryRecord();
-    when(linkDao.getSafeNull(103L)).thenReturn(java.util.Optional.of(link));
+    when(linkDao.getSafeNull(103L)).thenReturn(Optional.of(link));
     when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     doThrow(new RuntimeException("Internal error not returned to user"))

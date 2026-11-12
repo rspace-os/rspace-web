@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
@@ -53,9 +54,7 @@ class JsonValidationMessageSourceTest {
             "Invalid temperature - must be a temperature measurement greater than absolute zero",
             "must not be null",
             "Title"),
-        violations.stream()
-            .map(ConstraintViolation::getMessage)
-            .collect(java.util.stream.Collectors.toSet()));
+        violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toSet()));
     validator.close();
   }
 }

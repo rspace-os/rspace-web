@@ -21,6 +21,7 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
@@ -29,6 +30,7 @@ import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -169,12 +171,10 @@ class SampleApiManagerImplLinkFieldTest {
   void invalidRelationTypeIsRejectedWithCleanError() {
     ApiInventoryEntityField apiField = apiLinkField("SA3", "NotARelation", null);
 
-    com.researchspace.api.v1.auth.ApiRuntimeException ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
-            com.researchspace.api.v1.auth.ApiRuntimeException.class,
-            () -> manager.applyLinkFieldValue(dbField, apiField, user));
-    org.junit.jupiter.api.Assertions.assertEquals(
-        "errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
+    ApiRuntimeException ex =
+        Assertions.assertThrows(
+            ApiRuntimeException.class, () -> manager.applyLinkFieldValue(dbField, apiField, user));
+    Assertions.assertEquals("errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);
   }
 
@@ -183,11 +183,10 @@ class SampleApiManagerImplLinkFieldTest {
     dbField.setAllowedRelationTypes("References|IsPartOf");
     ApiInventoryEntityField apiField = apiLinkField("SA3", "Cites", null);
 
-    com.researchspace.api.v1.auth.ApiRuntimeException ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
-            com.researchspace.api.v1.auth.ApiRuntimeException.class,
-            () -> manager.applyLinkFieldValue(dbField, apiField, user));
-    org.junit.jupiter.api.Assertions.assertEquals(
+    ApiRuntimeException ex =
+        Assertions.assertThrows(
+            ApiRuntimeException.class, () -> manager.applyLinkFieldValue(dbField, apiField, user));
+    Assertions.assertEquals(
         "errors.inventory.field.linkRelationTypeNotPermitted", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);
   }
@@ -477,7 +476,7 @@ class SampleApiManagerImplLinkFieldTest {
     // CSV import skips the target check, so a crafted cell can name the Global ID the record is
     // about to be given. rejectSelfLink cannot see it: link fields are applied before the record
     // has an id. This backstop runs once it does.
-    com.researchspace.model.inventory.Sample saved = TestFactory.createBasicSampleInContainer(user);
+    Sample saved = TestFactory.createBasicSampleInContainer(user);
     saved.setId(200L);
     InventoryLink selfLink = new InventoryLink();
     selfLink.setRelationType("IsDerivedFrom");
@@ -498,7 +497,7 @@ class SampleApiManagerImplLinkFieldTest {
 
   @Test
   void aLinkToAnotherRecordPassesTheAfterSaveCheck() {
-    com.researchspace.model.inventory.Sample saved = TestFactory.createBasicSampleInContainer(user);
+    Sample saved = TestFactory.createBasicSampleInContainer(user);
     saved.setId(200L);
     InventoryLinkField field = new InventoryLinkField();
     field.setName("Derived from");
