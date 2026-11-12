@@ -1,34 +1,13 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { getGetAdminBookingSettingsQueryKey } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
-import BookingSettingsPage from "../BookingSettingsPage";
-import { bookingSettingsFixture } from "./bookingSettingsFixture";
+import { bookingSettingsFixture, renderBookingSettingsPage } from "./bookingSettingsTestHarness";
 
-const settings = {
-  ...bookingSettingsFixture,
-  bufferBeforeMinutes: 3,
-  bufferAfterMinutes: 7,
-  state: "ACTIVE" as const,
-};
-
-function renderPage(
-  queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  }),
-) {
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <BookingSettingsPage />
-      </Suspense>
-    </QueryClientProvider>,
-  );
-}
+const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
 
 describe("BookingSettingsPage", () => {
   it("keeps the draft's ETag after a background settings refresh", async () => {
@@ -50,7 +29,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ status: 412, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 412 });
       }),
     );
-    renderPage(queryClient);
+    renderBookingSettingsPage(queryClient);
     const doubleBooking = await screen.findByRole("checkbox", {
       name: "booking:settings.fields.allowDoubleBooking",
     });
@@ -88,7 +67,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json(settings, { headers: { ETag: '"0"' } });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const maximum = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.maximumDuration",
@@ -119,7 +98,7 @@ describe("BookingSettingsPage", () => {
         );
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const buffer = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.bufferBefore",
@@ -162,7 +141,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 }, { headers: { ETag: '"1"' } });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const buffer = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.bufferBefore",
@@ -194,7 +173,7 @@ describe("BookingSettingsPage", () => {
         ),
       ),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     await user.click(
       await screen.findByRole("checkbox", {
