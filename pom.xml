@@ -2581,6 +2581,12 @@
               <java>
                 <cleanthat/>
               </java>
+              <!-- The index is discarded whenever the Spotless config changes, so sharing it
+                   with the base config made every strict run (e.g. the pre-commit hook) force
+                   the next compile to re-format every file. -->
+              <upToDateChecking>
+                <indexFile>${project.basedir}/.spotless/spotless-strict-index</indexFile>
+              </upToDateChecking>
             </configuration>
             <executions>
               <execution>
@@ -2591,6 +2597,30 @@
                 <phase>validate</phase>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Format/check only files changed since the merge base with the given ref, e.g.
+         -DspotlessRatchetFrom=origin/main. spotless-maven-plugin 3.5.1 ignores
+         -Dspotless.ratchetFrom, hence this profile. -->
+    <profile>
+      <id>spotlessRatchet</id>
+      <activation>
+        <property>
+          <name>spotlessRatchetFrom</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <version>${spotless.version}</version>
+            <configuration>
+              <ratchetFrom>${spotlessRatchetFrom}</ratchetFrom>
+            </configuration>
           </plugin>
         </plugins>
       </build>

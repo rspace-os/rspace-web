@@ -341,6 +341,8 @@ Code formatting is applied via the [Spotless Maven Plugin](https://github.com/di
 The formatting is applied (if there are any changes) each time rspace-web is compiled, as the plugin is tied to the Maven compile phase.
 Doing so ensures that before a PR is created the formatting is as expected and changesets should therefore only contain actual code changes rather than formatting/whitespace changes.
 
+CI also runs the stricter `-DspotlessStrict` check, which adds CleanThat. On PRs it checks only the files the PR changes, unless `pom.xml` changed. To run the same check locally, use `./mvnw spotless:check -DspotlessStrict -DspotlessRatchetFrom=origin/main`, and replace `check` with `apply` to fix violations. Spotless skips unchanged files using indexes in `.spotless/`; the base and strict configurations keep separate indexes.
+
 To sync Intellij formatting with the formatting applied by Spotless, import the [intellij-java-google-style.xml](/intellij-java-google-style.xml) file:
 1. Open File -> Settings
 2. Navigate to Editor -> Code Style

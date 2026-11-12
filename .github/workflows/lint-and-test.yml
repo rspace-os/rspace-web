@@ -219,9 +219,19 @@ jobs:
       # frontend checks (and vice versa).
       # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
       # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
+      # PRs check only the files they change (main is already clean), unless
+      # pom.xml changed, since a formatter bump or config change can affect
+      # every file. Pushes to main and manual runs check everything.
       - name: Spotless check
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          ./mvnw -q spotless:check -DspotlessStrict \
+          ratchet=()
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] \
+            && git diff --quiet "origin/$BASE_REF...HEAD" -- pom.xml; then
+            ratchet=(-DspotlessRatchetFrom="origin/$BASE_REF")
+          fi
+          ./mvnw -q spotless:check -DspotlessStrict "${ratchet[@]}" \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
