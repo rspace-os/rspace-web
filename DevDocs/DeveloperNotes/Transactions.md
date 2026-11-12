@@ -51,6 +51,11 @@ come with the pattern and are easy to lose in a later refactor:
 Older programmatic uses exist in `AbstractCustomLiquibaseUpdater` and
 `BlobMigrationBase`, which run outside the normal request lifecycle.
 
+`UserManager.setPreference` runs at `READ_COMMITTED` (see `userManagerTxAdvice`)
+so its upsert reads back a row committed by a concurrent same-value write. This
+requires `ROW` or `MIXED` `binlog_format` on MariaDB deployments with binary
+logging; `STATEMENT` rejects these writes with error 1665.
+
 ### Transaction behaviour
 
 Uses Spring defaults which is `Transaction.REQUIRED`. This enables service

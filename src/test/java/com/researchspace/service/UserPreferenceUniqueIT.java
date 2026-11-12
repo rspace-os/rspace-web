@@ -18,8 +18,10 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import liquibase.change.core.AddUniqueConstraintChange;
 import liquibase.change.core.RawSQLChange;
@@ -29,6 +31,8 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.parser.ChangeLogParserFactory;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -184,6 +188,64 @@ class UserPreferenceUniqueIT extends RealTransactionSpringTestBase {
     assertNull(integrationCache.get(key));
     assertFalse(userMgr.getPreferenceForUser(user, preference).getValueAsBoolean());
     assertFalse(integrationsHandler.getIntegration(user, preference.name()).isEnabled());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void concurrentSameValueWritesReturnCommittedValue(boolean existingRow) throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("samepref"));
+    Preference preference = Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
+    JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+    if (existingRow) {
+      userMgr.setPreference(preference, "true", user.getUsername());
+    }
+    int writers = 8;
+    CountDownLatch ready = new CountDownLatch(writers);
+    CountDownLatch write = new CountDownLatch(1);
+    var executor = Executors.newFixedThreadPool(writers);
+    try {
+      var results = new ArrayList<Future<UserPreference>>();
+      for (int i = 0; i < writers; i++) {
+        results.add(
+            executor.submit(
+                () -> {
+                  ready.countDown();
+                  assertTrue(write.await(10, TimeUnit.SECONDS));
+                  // No enclosing transaction, so the proxy applies READ_COMMITTED.
+                  return userMgr.setPreference(preference, "false", user.getUsername());
+                }));
+      }
+      assertTrue(ready.await(10, TimeUnit.SECONDS));
+      write.countDown();
+      Long storedId = null;
+      for (var result : results) {
+        UserPreference saved = result.get(20, TimeUnit.SECONDS);
+        assertNotNull(saved.getId());
+        assertEquals("false", saved.getValue());
+        if (storedId == null) {
+          storedId = saved.getId();
+        }
+        assertEquals(storedId, saved.getId());
+      }
+      assertEquals(
+          1,
+          jdbc.queryForObject(
+              "SELECT COUNT(*) FROM UserPreference WHERE user_id=? AND preference=?",
+              Integer.class,
+              user.getId(),
+              preference.ordinal()));
+      assertEquals(
+          "false",
+          jdbc.queryForObject(
+              "SELECT value FROM UserPreference WHERE user_id=? AND preference=?",
+              String.class,
+              user.getId(),
+              preference.ordinal()));
+    } finally {
+      write.countDown();
+      executor.shutdownNow();
+      assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+    }
   }
 
   @Test
