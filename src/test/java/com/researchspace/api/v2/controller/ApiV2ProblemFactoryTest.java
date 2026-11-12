@@ -40,10 +40,11 @@ class ApiV2ProblemFactoryTest {
                 "errors.api.v2.invalidRequest",
                 "Field is required",
                 invalid,
-                Map.of())
+                Map.of("limit", 5))
             .getBody();
     assertEquals("Invalid request", explicit.title());
     assertEquals("Field is required", explicit.detail());
     assertEquals(invalid, explicit.invalidParams());
+    assertEquals(Map.of("limit", 5), explicit.extensions());
   }
 }
