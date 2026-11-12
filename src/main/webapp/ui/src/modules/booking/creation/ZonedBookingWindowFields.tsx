@@ -1,13 +1,17 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { formatBookingLength, formatIncrement } from "@/modules/booking/configuration/incrementFacts";
+import type { IncrementSettings, IncrementViolation } from "@/modules/booking/domain/bookingIncrement";
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft, WallClockResolution } from "@/modules/booking/domain/bookingTime";
+import { formatPlainDate, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 import { cn } from "@/modules/common/utils/cn";
-import { validateBookingWindow } from "./bookingWindowValidation";
+import { resolveBookingWindow, validateBookingWindow } from "./bookingWindowValidation";
 
 export {
   type BookingWindowPolicy,
@@ -41,6 +45,7 @@ export function ZonedBookingWindowFields({
   displayTimezone,
   schedulingTimezone,
   slotGranularityMinutes,
+  incrementUnit = "MINUTES",
   maxBookingDurationMinutes,
   openingHours,
   enforceOpeningHours = true,
@@ -56,6 +61,7 @@ export function ZonedBookingWindowFields({
   displayTimezone?: string;
   schedulingTimezone?: string;
   slotGranularityMinutes: number;
+  incrementUnit?: IncrementSettings["incrementUnit"];
   maxBookingDurationMinutes: number;
   openingHours: readonly OpeningHoursEntry[];
   enforceOpeningHours?: boolean;
@@ -78,6 +84,7 @@ export function ZonedBookingWindowFields({
       validateBookingWindow(value, resolvedDisplayTimezone, {
         schedulingTimezone: resolvedSchedulingTimezone,
         slotGranularityMinutes,
+        incrementUnit,
         maxBookingDurationMinutes,
         openingHours,
         enforceOpeningHours,
@@ -88,13 +95,23 @@ export function ZonedBookingWindowFields({
       resolvedDisplayTimezone,
       resolvedSchedulingTimezone,
       slotGranularityMinutes,
+      incrementUnit,
       maxBookingDurationMinutes,
       openingHours,
       enforceOpeningHours,
       allowPolicyMismatch,
     ],
   );
-  const { granularityInvalid, openingInvalid, maximumDurationInvalid, policyInvalid } = result;
+  const {
+    rule,
+    incrementViolation: violation,
+    missingDayEnd,
+    openingInvalid,
+    maximumDurationInvalid,
+    policyInvalid,
+  } = result;
+  const increment = formatIncrement({ slotGranularityMinutes, incrementUnit }, t);
+  const locale = i18n.resolvedLanguage ?? i18n.language ?? "en-US";
   const schedulingEndpoint = (instant: string | undefined) =>
     instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
@@ -279,11 +296,39 @@ export function ZonedBookingWindowFields({
     );
   };
 
+  const incrementError = (current: IncrementViolation | null) => {
+    if (current === "dayEndMissing" && missingDayEnd) {
+      return (
+        <FieldError>
+          {t("bookings.errors.dayEndMissing", {
+            time: formatWallClockTime(missingDayEnd.time, locale),
+            date: formatPlainDate(missingDayEnd.date, locale),
+            timezone: resolvedSchedulingTimezone,
+          })}
+        </FieldError>
+      );
+    }
+    if (current === "duration" || current === "dayEndMissing") {
+      const resolved = resolveBookingWindow(value, resolvedDisplayTimezone).window;
+      const length = resolved
+        ? formatBookingLength(incrementUnit, resolved, resolvedSchedulingTimezone, t, locale)
+        : "";
+      return (
+        <FieldError>
+          {rule.kind === "days"
+            ? t("bookings.errors.dayIncrement", { length, increment, timezone: resolvedSchedulingTimezone })
+            : t("bookings.errors.durationMultiple", { length, increment })}
+        </FieldError>
+      );
+    }
+    return null;
+  };
+
   const windowErrors = showErrors ? (
     <div id={windowErrorId}>
       {(!result.start || !result.end) && <FieldError>{t("bookings.errors.windowRequired")}</FieldError>}
       {result.orderInvalid && <FieldError>{t("bookings.errors.endAfterStart")}</FieldError>}
-      {granularityInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.granularity")}</FieldError>}
+      {!allowPolicyMismatch && incrementError(violation)}
       {openingInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.openingHours")}</FieldError>}
       {maximumDurationInvalid && !allowPolicyMismatch && (
         <FieldError>{t("bookings.errors.maximumDuration")}</FieldError>
@@ -291,7 +336,7 @@ export function ZonedBookingWindowFields({
     </div>
   ) : null;
 
-  if (density === "compact" && value.startDate === value.endDate) {
+  if (density === "compact" && value.startDate === value.endDate && incrementUnit !== "DAYS") {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate || Boolean(startErrorId);
     return (
