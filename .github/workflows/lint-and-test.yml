@@ -53,7 +53,7 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       java: ${{ steps.filter.outputs.java }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - uses: dorny/paths-filter@v4.0.2
@@ -92,7 +92,7 @@ jobs:
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -142,13 +142,13 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -201,7 +201,7 @@ jobs:
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -245,13 +245,13 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -316,12 +316,12 @@ jobs:
         needs.changed-files.outputs.frontend == 'true'
       )
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -372,13 +372,13 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -438,12 +438,12 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -479,7 +479,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
@@ -509,7 +509,7 @@ jobs:
 
       - name: Setup pnpm
         if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -615,7 +615,7 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -712,7 +712,7 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -805,7 +805,7 @@ jobs:
         ports:
           - 8090:8090
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -872,7 +872,7 @@ jobs:
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -885,7 +885,7 @@ jobs:
           cache: maven
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
