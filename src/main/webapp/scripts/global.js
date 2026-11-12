@@ -5,6 +5,29 @@
  * Namespace for global variables and functions
  */
 var RS = window.RS || {};
+// Preserve ready-handler initialization on pages without a server-defined currentUser.
+if (typeof window.currentUser === "undefined") {
+  window.currentUser = "";
+}
+
+/*
+ * Wrapper over analytics.js in case we swap provider in future.
+ *
+ * name - the event name, mandatory
+ * properties - optional object of key-value pairs with additional data about the event
+ */
+RS.trackEvent = function (name, properties) {
+  if (!window.analytics) {
+    window.analytics = {
+      _queue: [],
+      track: function (e, d) {
+        this._queue.push([e, d]);
+      }
+    };
+  }
+  window.analytics.track(name, properties || {});
+};
+
 var fadeTime = 400;
 RS._entityMap = {
   "&": "&amp;",

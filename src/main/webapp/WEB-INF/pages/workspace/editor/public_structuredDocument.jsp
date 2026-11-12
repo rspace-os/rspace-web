@@ -27,7 +27,6 @@
   <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
-  <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
   
   <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 

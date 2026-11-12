@@ -4,7 +4,7 @@ import { makeAutoObservable } from "mobx";
 import { HttpResponse, http } from "msw";
 import posthog from "posthog-js";
 import { StrictMode, useContext } from "react";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 
 // Keeps one React instance across vi.resetModules(), which each test uses to
@@ -16,6 +16,12 @@ beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
   Reflect.deleteProperty(window, "analytics");
+});
+
+afterEach(() => {
+  document.querySelectorAll('script[src^="https://cdn.segment.com/analytics.js/"]').forEach((script) => {
+    script.remove();
+  });
 });
 
 async function loadAnalytics() {
@@ -147,4 +153,63 @@ it("handles a failed properties request and lets a later mount retry", async () 
   await screen.findByRole("button", { name: "true" });
   expect(requests).toBe(2);
   expect(posthog.init).toHaveBeenCalledTimes(1);
+});
+
+it("replays legacy events through Segment and loads its script once across mounts", async () => {
+  server.use(
+    http.get("/session/ajax/analyticsProperties", () =>
+      HttpResponse.json({
+        analyticsEnabled: true,
+        analyticsServerType: "segment",
+        analyticsServerKey: "segment-key",
+        analyticsUserId: "test-user",
+      }),
+    ),
+  );
+  const queue: Array<[string, Record<string, unknown> | undefined]> = [];
+  window.analytics = {
+    _queue: queue,
+    track: (event, properties) => {
+      queue.push([event, properties]);
+    },
+  };
+  window.analytics.track("Before init", { queued: true });
+  // The snippet inserts its script before the first script already on the page.
+  const entrypoint = document.createElement("script");
+  document.head.appendChild(entrypoint);
+  const user = userEvent.setup();
+  const { Analytics, Status } = await loadAnalytics();
+  try {
+    render(
+      <StrictMode>
+        <Analytics>
+          <Status />
+        </Analytics>
+      </StrictMode>,
+    );
+    await user.click(await screen.findByRole("button", { name: "true" }));
+    window.analytics.track("After init", { queued: false });
+    render(
+      <Analytics>
+        <Status />
+      </Analytics>,
+    );
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "true" })).toHaveLength(2));
+    expect(window.analytics).toEqual(
+      expect.arrayContaining([
+        ["identify", "test-user"],
+        ["page"],
+        ["track", "Before init", { queued: true }],
+        ["track", "React event", { source: "test" }],
+        ["track", "After init", { queued: false }],
+      ]),
+    );
+    expect(queue).toEqual([["Before init", { queued: true }]]);
+    expect(
+      document.querySelectorAll('script[src="https://cdn.segment.com/analytics.js/v1/segment-key/analytics.min.js"]'),
+    ).toHaveLength(1);
+    expect(posthog.init).not.toHaveBeenCalled();
+  } finally {
+    entrypoint.remove();
+  }
 });

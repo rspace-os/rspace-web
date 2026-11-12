@@ -50,6 +50,19 @@ function loadIntercom({
         horizontal_padding: 120,
       };
 
+      const existingAnalytics = window.analytics;
+      const queuedEvents =
+        existingAnalytics &&
+        "_queue" in existingAnalytics &&
+        !("initialize" in existingAnalytics) &&
+        !("invoked" in existingAnalytics)
+          ? existingAnalytics._queue
+          : undefined;
+      if (queuedEvents) {
+        // The Segment snippet needs an array, not the legacy RS.trackEvent bridge.
+        Reflect.deleteProperty(window, "analytics");
+      }
+
       // Segment tracking
       // The following code is copied from https://segment.com/docs/connections/sources/catalog/libraries/website/javascript/quickstart/
       (() => {
@@ -131,6 +144,9 @@ function loadIntercom({
         analytics.page();
       })();
 
+      queuedEvents?.forEach(([event, properties]) => {
+        window.analytics.track(event, properties);
+      });
       resolve();
     } catch (e) {
       console.warn("Could not load Segment", e);
