@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.resource;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,8 @@ public record ApiV2ErrorMapping(
     String errorCode,
     String description,
     Function<RuntimeException, Object[]> argumentExtractor,
-    Function<RuntimeException, String> errorCodeExtractor) {
+    Function<RuntimeException, String> errorCodeExtractor,
+    Function<RuntimeException, Map<String, Object>> extensionExtractor) {
 
   public ApiV2ErrorMapping {
     Objects.requireNonNull(exceptionType, "Exception type");
@@ -21,6 +23,7 @@ public record ApiV2ErrorMapping(
     Assert.hasText(description, "Error description must not be blank");
     Objects.requireNonNull(errorCodeExtractor, "Error code extractor");
     Objects.requireNonNull(argumentExtractor, "Error argument extractor");
+    Objects.requireNonNull(extensionExtractor, "Error extension extractor");
     if (!status.isError()) {
       throw new IllegalArgumentException("Resource error mapping requires an error status");
     }
@@ -44,23 +47,8 @@ public record ApiV2ErrorMapping(
         errorCode,
         description,
         exception -> argumentExtractor.apply(exceptionType.cast(exception)),
-        ignored -> errorCode);
-  }
-
-  /** Maps reason-bearing failures while retaining a representative documented error code. */
-  public static <E extends RuntimeException> ApiV2ErrorMapping withErrorCode(
-      Class<E> type,
-      HttpStatus status,
-      String documentedCode,
-      String description,
-      Function<E, String> errorCodeExtractor) {
-    return new ApiV2ErrorMapping(
-        type,
-        status,
-        documentedCode,
-        description,
-        ignored -> new Object[0],
-        exception -> errorCodeExtractor.apply(type.cast(exception)));
+        ignored -> errorCode,
+        ignored -> Map.of());
   }
 
   public static <E extends RuntimeException> Builder<E> forException(Class<E> type) {
@@ -74,6 +62,7 @@ public record ApiV2ErrorMapping(
     private String description;
     private Function<E, Object[]> arguments = ignored -> new Object[0];
     private Function<E, String> code;
+    private Function<E, Map<String, Object>> extensions = ignored -> Map.of();
 
     private Builder(Class<E> type) {
       this.type = Objects.requireNonNull(type);
@@ -100,6 +89,11 @@ public record ApiV2ErrorMapping(
       return this;
     }
 
+    public Builder<E> extensions(Function<E, Map<String, Object>> extensions) {
+      this.extensions = Objects.requireNonNull(extensions);
+      return this;
+    }
+
     public ApiV2ErrorMapping build() {
       String fixedCode = errorCode;
       Function<E, String> codeExtractor = code == null ? ignored -> fixedCode : code;
@@ -109,7 +103,8 @@ public record ApiV2ErrorMapping(
           errorCode,
           description,
           arguments.compose(type::cast),
-          codeExtractor.compose(type::cast));
+          codeExtractor.compose(type::cast),
+          extensions.compose(type::cast));
     }
   }
 
@@ -118,7 +113,8 @@ public record ApiV2ErrorMapping(
         exception,
         status,
         errorCodeExtractor.apply(exception),
-        Objects.requireNonNull(argumentExtractor.apply(exception), "Mapped error arguments"));
+        Objects.requireNonNull(argumentExtractor.apply(exception), "Mapped error arguments"),
+        Objects.requireNonNull(extensionExtractor.apply(exception), "Mapped error extensions"));
   }
 
   OpenApiOperationDocumentation.Response documentedResponse() {
