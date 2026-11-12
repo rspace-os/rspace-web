@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
+import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
   updateBookingConfiguration as generatedUpdateBookingConfiguration,
@@ -9,6 +10,7 @@ import {
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
+import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
   await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
@@ -125,4 +127,11 @@ export async function invalidateBookingCatalogueQueries(queryClient: QueryClient
     invalidateBookingListOperation(queryClient, "calendarCatalogue"),
     invalidateBookingListOperation(queryClient, "availabilityCounts"),
   ]);
+}
+
+export function bookingRouteTargetQuery(globalId: string | undefined) {
+  return getSearchBookingConfigurationTargetsQueryOptions(
+    { q: globalId ?? "", limit: 20 },
+    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
+  );
 }

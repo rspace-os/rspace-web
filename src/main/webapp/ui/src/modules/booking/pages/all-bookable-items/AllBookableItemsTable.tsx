@@ -33,7 +33,11 @@ type AllBookableItemsTableProps = {
   resetView: () => void;
   setFilters: (next: FilterState<AllBookableItem>) => void;
   canAdd: boolean;
-  onLifecycleChanged: (ids: readonly number[], permanent?: boolean, options?: import("@tanstack/react-query").InvalidateOptions) => Promise<void>;
+  onLifecycleChanged: (
+    ids: readonly number[],
+    permanent?: boolean,
+    options?: import("@tanstack/react-query").InvalidateOptions,
+  ) => Promise<void>;
   onRestore: (row: AllBookableItem) => Promise<void>;
 };
 
@@ -48,7 +52,6 @@ export function AllBookableItemsTable({
   setFilters,
   canAdd,
   onLifecycleChanged,
-
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
   const rowActions = useMemo<TableListRowActions<AllBookableItem>>(

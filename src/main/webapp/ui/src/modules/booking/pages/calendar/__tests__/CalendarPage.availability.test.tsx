@@ -41,7 +41,7 @@ describe("Calendar Availability", () => {
     const { router } = await renderCalendar(
       "/booking/calendar?layout=availability&calendar-resources.q=scope&calendar-resources.where=targetOwner%3D%3Dme%3Bavailability%3D%3Davailable-now",
     );
-    await screen.findByRole("button", { name: "Availability", exact: true });
+    await screen.findByRole("button", { name: "Availability" });
     const writes = vi.spyOn(router, "navigate");
     const invalidRequests: string[] = [];
     server.use(
@@ -180,5 +180,4 @@ describe("Calendar Availability", () => {
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     expect(screen.queryByText("Finding bookable items…")).not.toBeInTheDocument();
   });
-
 });

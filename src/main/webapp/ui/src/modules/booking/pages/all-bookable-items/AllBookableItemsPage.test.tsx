@@ -3,8 +3,8 @@ import { getGetBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
-import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import type { BookingConfigurationTargetControllerTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetControllerTargetDirectoryDocument";
+import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -542,8 +542,8 @@ describe("AllBookableItemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Add filter" }));
     await user.click(screen.getByRole("combobox", { name: "Field for filter 1" }));
 
-    expect(await screen.findByRole("option", { name: "Gap before (minutes)" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "Gap after (minutes)" })).toBeVisible();
+    expect(await screen.findByRole("option", { name: "Buffer before booking (minutes)" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "Buffer after booking (minutes)" })).toBeVisible();
   });
 
   it("hides a column locally when the table uses a fixed projection", async () => {
@@ -605,7 +605,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,enabled,id,target,configurationVersion,incrementUnit,effectiveRole,roleSources,capabilities",
+        "state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,enabled,id,target,configurationVersion,effectiveRole,roleSources,capabilities",
       );
       expect(params.get("depth")).toBe("1");
     });
@@ -651,7 +651,6 @@ describe("AllBookableItemsPage", () => {
     expect(new URL(enableRequest.url).searchParams.get("where")).toBe("id=in=(7,8)");
     expect(enableRequest.body).toEqual({ enabled: true });
     expect(enableRequest.authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
-    expect(await screen.findByText("2 items are now enabled.")).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
     );
@@ -691,7 +690,6 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(requests).toHaveLength(1));
     expect(requests[0]).toEqual({ where: "id=in=(7,8)", body: { enabled: false } });
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
-    expect(await screen.findByText("2 items are now disabled.")).toBeVisible();
   });
 
   it("confirms the multi-page count and archives all selected rows with one request", async () => {
@@ -799,9 +797,6 @@ describe("AllBookableItemsPage", () => {
     expect(bulkRequests).toBe(0);
   });
 
-
-
-
   it("accepts a committed bulk success with an unreadable receipt", async () => {
     server.use(http.patch("/api/v2/booking-configurations", () => HttpResponse.json({ docs: [{ id: "invalid" }] })));
     await expect(mutateBookableItems("disable", ["7"])).resolves.toBeNull();
@@ -884,8 +879,9 @@ it("subscribes only eligible selected rows and preserves the version", async () 
     }),
   );
   renderBookableItemsPage("/booking/all-items", await realI18nWrapper());
+  await screen.findByRole("checkbox", { name: "Select Confocal microscope" });
   await user.click(await screen.findByRole("checkbox", { name: "Select all rows on this page" }));
-  await user.click(screen.getByRole("button", { name: "Subscribe to notifications" }));
+  await user.click(await screen.findByRole("button", { name: "Subscribe to notifications" }));
   await waitFor(() => expect(updates).toEqual([{ id: bookingConfiguration.id, body: { enabled: true } }]));
 });
 

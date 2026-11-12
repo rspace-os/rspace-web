@@ -131,8 +131,14 @@ export function CalendarFilterControls({
             legend={t("calendar.period.legend")}
             options={calendarViews}
             value={view}
-            isDisabled={(option) => (layout === "availability" && option !== "day") || (layout === "resources" && option === "month")}
-            disabledReason={() => layout === "availability" ? t("calendar.period.dayOnlyAvailability") : t("calendar.period.monthUnavailableInResources")}
+            isDisabled={(option) =>
+              (layout === "availability" && option !== "day") || (layout === "resources" && option === "month")
+            }
+            disabledReason={() =>
+              layout === "availability"
+                ? t("calendar.period.dayOnlyAvailability")
+                : t("calendar.period.monthUnavailableInResources")
+            }
             optionLabel={(option) => t(`calendar.period.${option}`)}
             onChange={onViewChange}
           />

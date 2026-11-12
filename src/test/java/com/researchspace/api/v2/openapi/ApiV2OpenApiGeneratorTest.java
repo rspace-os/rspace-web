@@ -30,7 +30,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -130,8 +129,7 @@ class ApiV2OpenApiGeneratorTest {
                     IdempotencyPolicy.NONE))
             .mutationErrors("create-error", "update-error")
             .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
-            .resourceAccess(
-                new ResourceAccessSpec<>(protectedAccess()))
+            .resourceAccess(new ResourceAccessSpec<>(protectedAccess()))
             .build();
     ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookings =
         ApiV2ResourceSpec.builder(
@@ -172,7 +170,8 @@ class ApiV2OpenApiGeneratorTest {
                             ApiV2ContainerResource.DESCRIPTION, operationsMock(), Long::valueOf)
                         .mutationErrors("create-error", "update-error")
                         .expose(Set.of())
-                        .build())), com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                        .build())),
+            com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
             "Test API",
             "2.0.0");
   }
@@ -596,28 +595,6 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(selectors.containsKey("target.relationTo"));
   }
 
-  void publishesTheLocationFilterAndRequesterRelationship() {
-    Map<String, Object> bookings = where(document(), "/api/v2/bookings");
-    Map<String, Object> bookingSelectors =
-        objectMap(objectMap(bookings.get("x-rspace-filter")).get("selectors"));
-
-    assertTrue(bookingSelectors.containsKey("requester.value"));
-    assertFalse(bookingSelectors.containsKey("requesterId"));
-    // Bookings render the readable location too, and filter by it with the same picker.
-    assertEquals(
-        "containers",
-        objectMap(objectMap(bookingSelectors.get("location")).get("picker")).get("resource"));
-
-    Map<String, Object> configurations = where(document(), "/api/v2/booking-configurations");
-    Map<String, Object> configurationSelectors =
-        objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
-
-    assertEquals(
-        Map.of("resource", "containers", "identity", "globalId", "globalIdPrefix", "IC"),
-        objectMap(configurationSelectors.get("location")).get("picker"));
-    assertTrue(configurationSelectors.containsKey("location.name"));
-  }
-
   @Test
   void publishesTheLocationFilterAndRequesterRelationship() {
     Map<String, Object> bookings = where(document(), "/api/v2/bookings");
@@ -779,19 +756,21 @@ class ApiV2OpenApiGeneratorTest {
             List.of(new Sort("id", true)));
     ResourceOperations<Widget, Long> widgetOperations = operationsMock();
     Map<String, Object> document =
-        documentMap(new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(
-                            List.of(
-                                ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
-                                    .mutationErrors("create-error", "update-error")
-                                    .build(),
-                                ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
-                                    .mutationErrors("create-error", "update-error")
-                                    .expose(Set.of())
-                                    .build())), com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
-                        "Test API",
-                        "2.0.0")
-                    .generate());
+        documentMap(
+            new ApiV2OpenApiGenerator(
+                    new ApiV2ResourceCatalog(
+                        List.of(
+                            ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .build(),
+                            ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .expose(Set.of())
+                                .build())),
+                    com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                    "Test API",
+                    "2.0.0")
+                .generate());
     Map<String, Object> schemas = schemas(document);
 
     for (String variant : List.of("Read", "Create", "Update")) {
@@ -919,8 +898,13 @@ class ApiV2OpenApiGeneratorTest {
                         ApiV2ContainerResource.DESCRIPTION, operationsMock(), Long::valueOf)
                     .mutationErrors("create-error", "update-error")
                     .build()));
-    return documentMap(new ApiV2OpenApiGenerator(
-                    catalog, ApiV2OpenApiTestText.english(), "Test API", "2.0.0").generate());
+    return documentMap(
+        new ApiV2OpenApiGenerator(
+                catalog,
+                com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                "Test API",
+                "2.0.0")
+            .generate());
   }
 
   private static Map<String, Object> objectMap(Object value) {
@@ -945,12 +929,13 @@ class ApiV2OpenApiGeneratorTest {
     return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
   }
 
-  /** The generated document as a map, with its component references (other than schemas) resolved. */
+  /**
+   * The generated document as a map, with its component references (other than schemas) resolved.
+   */
   private static Map<String, Object> documentMap(OpenAPI openApi) {
     return Json31.mapper()
         .convertValue(
             ApiV2OpenApiTestRefs.dereferenced(Json31.mapper().valueToTree(openApi)),
             new TypeReference<LinkedHashMap<String, Object>>() {});
   }
-
 }

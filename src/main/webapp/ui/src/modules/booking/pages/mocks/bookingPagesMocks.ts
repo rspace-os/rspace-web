@@ -17,7 +17,10 @@ import {
   rowAvailabilityIntervals,
 } from "@/modules/booking/pages/calendar/calendarAvailability";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
-import { BookingsReadSchema, BookingCatalogueManagerPageSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import {
+  BookingCatalogueManagerPageSchema,
+  BookingsReadSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 import { busyBooking, collectionResponse, otherBooking, ownBooking } from "./bookingCalendarFixtures";
 
@@ -103,7 +106,8 @@ async function catalogueCandidates(url: URL): Promise<BookingCatalogueItem[]> {
   }
   candidates.searchParams.set("page", "1");
   candidates.searchParams.set("limit", "100");
-  return mapBookingCataloguePage(v.parse(BookingCatalogueManagerPageSchema, await (await fetch(candidates)).json())).items;
+  return mapBookingCataloguePage(v.parse(BookingCatalogueManagerPageSchema, await (await fetch(candidates)).json()))
+    .items;
 }
 
 export function resetBookingPageRequests(): void {
@@ -202,10 +206,6 @@ export function bookingPagesHandlers(): RequestHandler[] {
           page: 1,
           hasNextPage: false,
           limit: 100,
-
-
-
-
         });
       }
       return undefined;

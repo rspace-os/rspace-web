@@ -41,7 +41,7 @@
         },
         "bookingCatalogue": {
           "availability": {
-            "invalid": "Availability filters need available-now or free-later-today and an availability window of at most two days whose end is not before its start."
+            "invalid": "Choose an availability window with a start and an end, ending no earlier than it starts and lasting at most 2 days."
           }
         },
         "forbidden": "You do not have permission to perform this action.",
@@ -168,11 +168,6 @@
           "timeZone": {
             "required": "A time zone is required.",
             "invalid": "The time zone must be a valid IANA time zone."
-          }
-        },
-        "bookingCatalogue": {
-          "availability": {
-            "invalid": "Choose an availability window with a start and an end, ending no earlier than it starts and lasting at most 2 days."
           }
         },
         "bookingDisplayPreferences": {

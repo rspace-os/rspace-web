@@ -65,9 +65,11 @@ function InteractiveCalendar() {
   const [search, setSearch] = React.useState("");
   const [mineOnly, setMineOnly] = React.useState(false);
   // The page asks the server to filter; the story filters its fixture so Search and My calendar visibly work.
-  const events = storyEvents.filter(
-    (event) =>
-      (!mineOnly || bookingRequesterId(event.requester) === 1) &&
+  const events = storyEvents.filter((event) => {
+    const requesterValue = event.requester?.value;
+    const requesterId = typeof requesterValue === "number" ? requesterValue : requesterValue?.id;
+    return (
+      (!mineOnly || requesterId === 1) &&
       [event.target?.value.name, event.purpose, event.bookedBy].some((value) =>
         value?.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
       )
