@@ -117,38 +117,20 @@ through the helper.
 
 ## Notification delivery
 
-`CommunicationManager.notify` and `doCreateNotification` save notifications in the
-caller's transaction. With synchronization active, a transaction-bound batch
-collects broadcasts and distinct recipient ids. Commit runs each broadcast in a
-`REQUIRES_NEW` transaction, then recounts each affected recipient once using a
-single `count(distinct n.id)` query in another new transaction. Mark-read operations
-join the same batch. Rollback suppresses all delivery effects. Batches detach on
-suspension and reattach on resume so nested transactions deliver independently.
-Without synchronization, delivery and count increments remain immediate.
+`CommunicationManager` saves notifications in the caller's transaction and
+delivers their effects only after that transaction commits:
 
-Tracker publication uses a short per-user lock; no database query or connection
-acquisition runs under it. A version check retries a committed recount in a fresh
-transaction if a concurrent publication invalidated its snapshot, with at most three
-queries per refresh. After three conflicts it keeps the newer publication, including
-immediate fallback deltas and clears, rather than overwriting it with a stale result.
-Login queries also run outside the lock. They preserve newer notification counts,
-and retry up to three queries when message or special-message versions change.
-Login always installs the latest queried message baselines, since a concurrent
-pre-commit delta alone may not include existing database messages. As before this change,
-a message delta whose transaction has not committed yet can still be overwritten by the
-login baseline.
-Message and notification increments share that user's lock and advance the corresponding
-count's version.
-Thus one user's query cannot block another user's login or a connection-owning
-message publisher. Recounts normally run once per user per transaction; concurrent
-tracker changes can require up to two additional queries to avoid publishing stale data.
-
-Each broadcast and each recipient refresh catches delivery failures and logs a
-WARN with the stage, notification or user id, and exception stack trace. No
-notification content or message text is added to the log. A delivery failure cannot
-fail the committed request or prevent other recipients or later callbacks from
-running. `NotificationAfterCommitIT` covers commit, rollback, intervening reads
-and login, and failure-notification persistence.
+- **Commit-only delivery.** Broadcasts and unread-count updates run after
+  commit. A rollback suppresses them. Nested transactions deliver independently.
+- **One recount per user per transaction.** Each affected recipient's unread
+  count is recounted once, from committed data, in a new transaction.
+  Mark-read operations join the same batch.
+- **No stale overwrite.** A recount or login never replaces a count published
+  after its query started.
+- **No database work under a lock.** The tracker's per-user lock covers only
+  in-memory publication, never a query or connection acquisition.
+- **Isolated failures.** A failed broadcast or recount is logged at WARN and
+  cannot fail the committed request or skip other recipients.
 
 ## Transactions in tests
 

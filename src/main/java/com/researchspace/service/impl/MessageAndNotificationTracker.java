@@ -72,7 +72,7 @@ public class MessageAndNotificationTracker implements IMessageAndNotificationTra
       int count = committedCount.getAsInt();
       synchronized (state) {
         if (state.notificationVersion != version) {
-          // Preserve newer publications, including immediate deltas and clears.
+          // A newer publication landed during the query; requery instead of overwriting it.
           continue;
         }
         userToNotification.put(userId, count);
