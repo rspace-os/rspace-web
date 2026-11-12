@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.collection.FilterExpression;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,6 +28,7 @@ public interface BookingCatalogueManager {
       String name,
       String timezone,
       long slotGranularityMinutes,
+      BookingIncrementUnit incrementUnit,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
