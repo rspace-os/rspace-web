@@ -1,0 +1,244 @@
+import * as React from "react";
+import { useTranslation } from "react-i18next";
+import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
+import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
+import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { Skeleton } from "@/modules/common/ui/skeleton";
+import { CalendarEventCard } from "./CalendarEventCard";
+import {
+  type BookingCalendarResource,
+  type CalendarView,
+  formatDate,
+  occursOn,
+  periodDates,
+  resourceLocation,
+  scrollCalendarWithArrowKeys,
+  toTimelineEvent,
+  useScrollToToday,
+} from "./calendarLayoutUtils";
+
+export function ResourceDateGrid({
+  dates,
+  view,
+  children,
+}: {
+  dates: readonly string[];
+  view: CalendarView;
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation("booking");
+  return (
+    <div
+      className="grid min-w-max"
+      style={{
+        gridTemplateColumns: `12rem repeat(${dates.length}, minmax(${view === "month" ? 54 : 128}px, 1fr))`,
+      }}
+    >
+      <div className="sticky left-0 z-20 border-r border-b bg-muted p-2 text-xs font-semibold">
+        {t("calendar.item")}
+      </div>
+      {dates.map((day) => (
+        <div
+          key={day}
+          data-calendar-date={day}
+          className="border-r border-b bg-muted/60 p-2 text-center text-[11px] font-semibold"
+        >
+          <time dateTime={day}>{formatDate(day, { month: "short", day: "numeric" })}</time>
+        </div>
+      ))}
+      {children}
+    </div>
+  );
+}
+
+export function CalendarResourceSchedule({
+  date,
+  view,
+  events,
+  resources,
+  timezone,
+  today,
+  availabilityStartMinute,
+  availabilityEndMinute,
+  isLoading = false,
+}: {
+  date: string;
+  view: CalendarView;
+  events: readonly BookingListDocument[];
+  resources?: readonly BookingCalendarResource[];
+  timezone: string;
+  today: string;
+  availabilityStartMinute: number;
+  availabilityEndMinute: number;
+  isLoading?: boolean;
+}) {
+  const { t } = useTranslation("booking");
+  const [timelineViewState, setTimelineViewState] = React.useState<DayTimelineViewState>({
+    zoom: 1,
+    centerMinute: 13 * 60,
+  });
+  const timelineScrollSync = useDayTimelineScrollSync();
+  const dates = React.useMemo(() => periodDates(date, view), [date, view]);
+  const eventsByResourceAndDate = React.useMemo(() => {
+    const index = new Map<string, BookingListDocument[]>();
+    for (const event of events) {
+      for (const day of dates) {
+        if (!occursOn(event, day, timezone)) continue;
+        const key = `${event.target.globalId}|${day}`;
+        const rows = index.get(key) ?? [];
+        rows.push(event);
+        index.set(key, rows);
+      }
+    }
+    for (const rows of index.values()) rows.sort((left, right) => left.start.localeCompare(right.start));
+    return index;
+  }, [dates, events, timezone]);
+  const calendarRef = useScrollToToday(date, view, today);
+  const resourceRows = React.useMemo(
+    () =>
+      [
+        ...new Map(
+          (resources ?? events.map((event) => event.target)).map((resource) => [resource.globalId, resource]),
+        ).values(),
+      ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
+    [events, resources],
+  );
+  return (
+    <section aria-label={t("calendar.layout.resources")} className="p-3" aria-busy={isLoading}>
+      <section
+        ref={calendarRef}
+        className="overflow-x-auto rounded-sm border bg-card"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: This named scroll region supports arrow-key navigation.
+        tabIndex={0}
+        aria-label={t("calendar.resourceSchedule")}
+        onKeyDown={scrollCalendarWithArrowKeys}
+      >
+        {view === "day" ? (
+          <div className="min-w-225 divide-y">
+            {resourceRows.map((resource, index) => {
+              const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
+              return (
+                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)]">
+                  <header className="border-r bg-muted/30 p-1">
+                    <InventoryItem
+                      locationPlacement="below"
+                      name={resource.value.name}
+                      globalId={resource.globalId}
+                      href={`/globalId/${resource.globalId}`}
+                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                      size="xs"
+                    >
+                      <InventoryLocationLink
+                        name={resourceLocation(resource)?.name}
+                        globalId={resourceLocation(resource)?.globalId}
+                      />
+                    </InventoryItem>
+                  </header>
+                  <div className="relative grid min-h-32 min-w-0">
+                    <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>
+                      <DayTimeline
+                        date={date}
+                        timezone={timezone}
+                        events={resourceEvents.map((event) => toTimelineEvent(event, date, timezone))}
+                        startWindow={availabilityStartMinute}
+                        endWindow={availabilityEndMinute}
+                        showZoomControls={false}
+                        variant="table-row"
+                        itemName={resource.value.name}
+                        viewState={timelineViewState}
+                        onViewStateChange={setTimelineViewState}
+                        scrollSync={timelineScrollSync}
+                        showScrollbar={index === resourceRows.length - 1}
+                      />
+                    </div>
+                    {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <ResourceDateGrid dates={dates} view={view}>
+            {resourceRows.map((resource) => (
+              <React.Fragment key={resource.globalId}>
+                <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
+                  <InventoryItem
+                    locationPlacement="below"
+                    name={resource.value.name}
+                    globalId={resource.globalId}
+                    href={`/globalId/${resource.globalId}`}
+                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                    size="xs"
+                  >
+                    <InventoryLocationLink
+                      name={resourceLocation(resource)?.name}
+                      globalId={resourceLocation(resource)?.globalId}
+                    />
+                  </InventoryItem>
+                </div>
+                {dates.map((day) => (
+                  <div key={day} className="min-h-20 space-y-1 border-r border-b p-1">
+                    {isLoading ? (
+                      <Skeleton aria-hidden="true" className="h-16 w-full" />
+                    ) : (
+                      (eventsByResourceAndDate.get(`${resource.globalId}|${day}`) ?? []).map((event) => (
+                        <CalendarEventCard
+                          key={event.id}
+                          event={event}
+                          date={day}
+                          timezone={timezone}
+                          compact
+                          overlay
+                        />
+                      ))
+                    )}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </ResourceDateGrid>
+        )}
+      </section>
+    </section>
+  );
+}
+
+export function ResourceScheduleSkeleton({ period }: { period?: { date: string; view: CalendarView } } = {}) {
+  const { t } = useTranslation("common");
+  const dates = period && period.view !== "day" ? periodDates(period.date, period.view) : undefined;
+  return (
+    <section className="p-3" aria-label={t("loading")} aria-busy="true">
+      <div aria-hidden="true" className="overflow-hidden rounded-sm border">
+        {dates && period ? (
+          <ResourceDateGrid dates={dates} view={period.view}>
+            {[0, 1, 2, 3].map((row) => (
+              <React.Fragment key={row}>
+                <div className="border-r border-b p-1">
+                  <Skeleton className="h-16 w-full" />
+                </div>
+                {dates.map((day) => (
+                  <div key={day} className="min-h-20 border-r border-b p-1">
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </ResourceDateGrid>
+        ) : (
+          [0, 1, 2, 3].map((row) => (
+            <div key={row} className="grid min-w-225 grid-cols-[12rem_minmax(0,1fr)_auto] border-b">
+              <div className="border-r p-1">
+                <Skeleton className="h-16 w-full" />
+              </div>
+              <Skeleton className="min-h-32 w-full" />
+              <div className="border-l p-2">
+                <Skeleton className="h-8 w-8" />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
