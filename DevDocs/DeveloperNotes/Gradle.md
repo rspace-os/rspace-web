@@ -294,19 +294,22 @@ Only the `-Ddeployment` folder of `src/main/resources/deployments/` is packaged.
 ## Coverage
 
 `-DenableTestCoverage` puts JaCoCo on every test task and adds two report tasks, which run after
-the tests:
+the tests, plus `jacocoMergedReport`, which you run yourself:
 
 ```bash
 ./gradlew test -DenableTestCoverage                # also runs jacocoTestReport
 ./gradlew integrationTests -DenableTestCoverage    # also runs jacocoIntegrationTestReport
+./gradlew jacocoMergedReport -DenableTestCoverage  # one report from every build/jacoco/*.exec
 ```
 
 - Unit and Spring tests: `build/reports/jacoco/test/jacocoTestReport.{xml,csv}` and `html/`.
 - Integration tests: `build/reports/jacoco/integrationTests/jacocoIntegrationTestReport.{xml,csv}`
   and `html/`.
+- Merged: `build/reports/jacoco/merged/jacoco.{xml,csv}` and `html/`.
 - Execution data: `build/jacoco/<task>.exec`.
 
-`.github/workflows/coverage.yml` merges the exec files of its shards with the JaCoCo CLI.
+`.github/workflows/coverage.yml` downloads the exec files of its jobs into `build/jacoco` and runs
+`jacocoMergedReport`.
 
 ## Formatting (Spotless)
 

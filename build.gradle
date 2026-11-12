@@ -758,6 +758,8 @@ tasks.register('verify') {
 
 // -DenableTestCoverage: JaCoCo agents on every test task, and XML, CSV and HTML reports after
 // `test` (jacocoTestReport) and after the integration tests (jacocoIntegrationTestReport).
+// jacocoMergedReport combines every build/jacoco/*.exec file, including ones copied in from
+// other CI jobs.
 if (flag('enableTestCoverage')) {
   apply plugin: 'jacoco'
   jacoco {
@@ -785,6 +787,21 @@ if (flag('enableTestCoverage')) {
       xml.outputLocation = outDir.map { it.file('jacocoIntegrationTestReport.xml') }
       csv.required = true
       csv.outputLocation = outDir.map { it.file('jacocoIntegrationTestReport.csv') }
+      html.required = true
+      html.outputLocation = outDir.map { it.dir('html') }
+    }
+  }
+  tasks.register('jacocoMergedReport', JacocoReport) {
+    description = 'Writes one coverage report from every exec file in build/jacoco.'
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    executionData.from(fileTree(layout.buildDirectory.dir('jacoco')) { include '*.exec' })
+    sourceSets sourceSets.main
+    def outDir = layout.buildDirectory.dir('reports/jacoco/merged')
+    reports {
+      xml.required = true
+      xml.outputLocation = outDir.map { it.file('jacoco.xml') }
+      csv.required = true
+      csv.outputLocation = outDir.map { it.file('jacoco.csv') }
       html.required = true
       html.outputLocation = outDir.map { it.dir('html') }
     }
