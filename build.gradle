@@ -33,16 +33,22 @@ def cliPropertyNames = gradle.startParameter.systemPropertiesArgs.keySet() - gra
 def cliSystemProperties = new TreeMap<String, String>(
   providers.systemPropertiesPrefixedBy('').get().findAll { k, v -> k in cliPropertyNames }
     .collectEntries { k, v -> [(k): v == '' ? 'true' : v] })
-// The database server settings that recreateDatabase and the Hibernate model tests use. The
-// Maven build's jdbc.*.maven names still work; the new name wins when both are given.
-def legacyJdbcNames = [
+// Settings renamed from their Maven build names. The Maven names still work but are deprecated and
+// will be removed in a later version; the new name wins when both are given.
+def deprecatedMavenNames = [
+  // the database server settings that recreateDatabase and the Hibernate model tests use
   'jdbc.server.driverClassName': 'jdbc.driverClassName.maven',
   'jdbc.server.url'            : 'jdbc.url.maven',
   'jdbc.server.db'             : 'jdbc.db.maven',
   'jdbc.server.username'       : 'jdbc.username.maven',
   'jdbc.server.password'       : 'jdbc.password.maven',
+  'testRetries'                : 'surefire.rerunFailingTestsCount',
+  'ignoreTestFailures'         : 'maven.test.failure.ignore',
 ]
-legacyJdbcNames.each { name, legacy ->
+deprecatedMavenNames.each { name, legacy ->
+  if (cliSystemProperties.containsKey(legacy) || providers.gradleProperty(legacy).isPresent()) {
+    logger.warn("${legacy} is deprecated and will be removed in a later version; use ${name} instead.")
+  }
   if (!cliSystemProperties.containsKey(name) && cliSystemProperties.containsKey(legacy)) {
     cliSystemProperties[name] = cliSystemProperties[legacy]
   }
@@ -50,7 +56,10 @@ legacyJdbcNames.each { name, legacy ->
 // gradle/jetty.gradle forwards these to the Jetty JVM.
 ext.cliSystemProperties = cliSystemProperties
 
-def setting = { String name -> cliSystemProperties.containsKey(name) ? cliSystemProperties[name] : providers.gradleProperty(name).getOrNull() }
+def setting = { String name ->
+  cliSystemProperties.containsKey(name) ? cliSystemProperties[name]
+    : providers.gradleProperty(name).orElse(providers.gradleProperty(deprecatedMavenNames[name] ?: name)).getOrNull()
+}
 // Maven activated these profiles when the property was defined at all, whatever its value.
 def flag = { String name -> setting(name) != null }
 
@@ -514,7 +523,7 @@ def environmentFilterProperties = [
 filterProperties.putAll(environmentFilterProperties[buildEnvironment] ?: [:])
 // Placeholders with no default, left for Spring to resolve unless given.
 (filterProperties.keySet() + ['jdbc.url', 'ssl.enabled', 'RS.devlogLevel']).each { name ->
-  def value = providers.gradleProperty(name).orElse(providers.gradleProperty(legacyJdbcNames[name] ?: name)).getOrNull()
+  def value = providers.gradleProperty(name).orElse(providers.gradleProperty(deprecatedMavenNames[name] ?: name)).getOrNull()
   if (value != null) {
     filterProperties[name] = value
   }
@@ -636,7 +645,7 @@ def forkCountSetting = setting('forkCount') ?: setting('maxTestForks')
 def testForks = forkCountSetting == null ? null : forkCountSetting.endsWith('C')
   ? Math.max(1, (forkCountSetting[0..-2].toBigDecimal() * Runtime.runtime.availableProcessors()).intValue())
   : forkCountSetting.toInteger()
-def rerunFailingTestsCount = (setting('surefire.rerunFailingTestsCount') ?: '0').toInteger()
+def rerunFailingTestsCount = (setting('testRetries') ?: '0').toInteger()
 // JUnit tags. Gradle reads -DexcludedTestGroups= (empty, as Surefire's "exclude nothing") the same
 // as a bare -DexcludedTestGroups, which cliSystemProperties turns into 'true', so both mean none.
 def testGroups = { String name, String defaultGroups ->
@@ -673,7 +682,7 @@ tasks.withType(Test).configureEach {
   if (testForks != null) {
     maxParallelForks = testForks
   }
-  ignoreFailures = setting('maven.test.failure.ignore') == 'true'
+  ignoreFailures = setting('ignoreTestFailures') == 'true'
   retry {
     maxRetries = rerunFailingTestsCount
     // a test that passes on a rerun counts as flaky, not failed

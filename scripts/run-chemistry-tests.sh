@@ -26,10 +26,12 @@ fi
 
 # integrationTests runs the integration test tasks only (no unit tests), as Maven's
 # integration-test -DskipUnitTests=true did; --continue lets every task report.
+# Unset: compile and test on the JDK running Gradle.
+java_version="${TOOLCHAIN_JAVA_VERSION:-${MAVEN_TOOLCHAIN_JAVA_VERSION:-}}"
 ./gradlew --continue clean integrationTests -Denvironment=drop-recreate-db \
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url="${CHEMISTRY_URL}" \
-  ${MAVEN_TOOLCHAIN_JAVA_VERSION:+-Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION}"} \
+  ${java_version:+-Djava-version="${java_version}"} \
   -Djavax.xml.accessExternalDTD=all \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
   -Djdbc.server.db="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \
