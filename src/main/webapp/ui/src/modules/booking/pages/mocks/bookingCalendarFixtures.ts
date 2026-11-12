@@ -72,15 +72,15 @@ export function collectionResponse(
   options: { page?: number; totalDocs?: number; limit?: number } = {},
 ) {
   const page = options.page ?? 1;
+  const limit = options.limit ?? 100;
   const totalDocs = options.totalDocs ?? docs.length;
   const totalPages = limit > 0 ? Math.ceil(totalDocs / limit) : 0;
 
   return {
     docs,
     totalDocs,
-    limit: 100,
+    limit,
     page,
-
 
     hasNextPage: page < totalPages,
   };
