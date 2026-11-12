@@ -413,22 +413,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.2</version>
+        <version>3.11.0</version>
         <configuration>
           <usedDependencies>
             <!-- these dependencies show up as false positives in the unused dependency list -->
-            <dependency>org.tuckey:urlrewritefilter</dependency> <!-- used but not referenced in code -->
             <dependency>com.mysql:mysql-connector-j</dependency> <!-- used at runtime but also needed during compilation as used by another plugin -->
             <dependency>jaxen:jaxen</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.fasterxml:classmate</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.hibernate.orm:hibernate-jcache</dependency> <!-- used but not referenced in code -->
-            <dependency>org.apache.tika:tika-parsers</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.codehaus.woodstox:wstx-asl</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>org.slf4j:slf4j-log4j12</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>com.lowagie:itext</dependency> <!-- used by javamelody -->
             <dependency>xalan:xalan</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>net.bull.javamelody:javamelody-core</dependency> <!-- used for monitoring -->
-            <dependency>dom4j:dom4j</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.apache.commons:commons-dbcp2</dependency> <!-- used but not referenced in code -->
             <dependency>io.jsonwebtoken:jjwt-impl</dependency> <!-- used but not referenced in code -->
             <dependency>com.thoughtworks.xstream:xstream</dependency> <!-- used but not referenced in code -->
