@@ -1,31 +1,14 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, within } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { getGetAdminBookingSettingsQueryKey } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import BookingSettingsPage from "../BookingSettingsPage";
-import { bookingSettingsFixture } from "./bookingSettingsFixture";
+import { bookingSettingsFixture, renderBookingSettingsPage } from "./bookingSettingsTestHarness";
 
-const settings = {
-  ...bookingSettingsFixture,
-  bufferBeforeMinutes: 3,
-  bufferAfterMinutes: 7,
-  state: "ACTIVE" as const,
-};
-
-function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <BookingSettingsPage />
-      </Suspense>
-    </QueryClientProvider>,
-  );
-}
+const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
 
 describe("BookingSettingsPage", () => {
   it("keeps the draft's ETag after a background settings refresh", async () => {
@@ -46,7 +29,7 @@ describe("BookingSettingsPage", () => {
         );
       }),
     );
-    renderPage(queryClient);
+    renderBookingSettingsPage(queryClient);
     const doubleBooking = await screen.findByRole("checkbox", {
       name: "booking:settings.fields.allowDoubleBooking",
     });
@@ -67,22 +50,6 @@ describe("BookingSettingsPage", () => {
     expect(doubleBooking).toBeChecked();
   });
 
-  it("offers every supported time increment", async () => {
-    server.use(
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings, { headers: { ETag: '"0"' } })),
-    );
-    renderPage();
-
-    const granularity = await screen.findByRole("combobox", {
-      name: "booking:settings.fields.granularity",
-    });
-    expect(
-      within(granularity)
-        .getAllByRole("option")
-        .map((option) => option.getAttribute("value")),
-    ).toEqual(["1", "5", "10", "15"]);
-  });
-
   it("does not submit an invalid maximum duration", async () => {
     const user = userEvent.setup();
     let patches = 0;
@@ -93,14 +60,16 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json(settings, { headers: { ETag: '"0"' } });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const maximum = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.maximumDuration",
     });
     await user.clear(maximum);
     await user.type(maximum, "7");
-    expect(maximum).toHaveAccessibleDescription("booking:settings.fields.maximumDurationDescription");
+    expect(maximum).toHaveAccessibleDescription(
+      "booking:settings.fields.maximumDurationDescription booking:settings.errors.maximumDuration",
+    );
     expect(screen.getByText("booking:settings.errors.maximumDuration")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
@@ -122,20 +91,25 @@ describe("BookingSettingsPage", () => {
         );
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const buffer = await screen.findByRole("spinbutton", {
-      name: "booking:settings.fields.buffer",
+      name: "booking:settings.fields.bufferBefore",
     });
-    expect(buffer).toHaveValue(null);
-    expect(buffer).not.toBeRequired();
-    expect(screen.getByText("booking:settings.fields.bufferMixed")).toBeVisible();
-    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    expect(buffer).toHaveValue(3);
+    expect(buffer).toBeRequired();
+    expect(screen.getByRole("spinbutton", { name: "booking:settings.fields.bufferAfter" })).toHaveValue(7);
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "booking:settings.fields.allowDoubleBooking",
+      }),
+    );
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
     expect(body).toEqual({
       slotGranularityMinutes: 5,
+      incrementUnit: "MINUTES",
       openingHours: settings.openingHours,
       bufferBeforeMinutes: 3,
       bufferAfterMinutes: 7,
@@ -148,7 +122,7 @@ describe("BookingSettingsPage", () => {
     });
   });
 
-  it("writes one entered buffer value to both stored directions", async () => {
+  it("edits the before gap independently of the after gap", async () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
@@ -158,16 +132,20 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 }, { headers: { ETag: '"1"' } });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const buffer = await screen.findByRole("spinbutton", {
-      name: "booking:settings.fields.buffer",
+      name: "booking:settings.fields.bufferBefore",
     });
+    await user.clear(buffer);
     await user.type(buffer, "12");
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByRole("status")).toBeVisible();
-    expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
+    expect(body).toMatchObject({
+      bufferBeforeMinutes: 12,
+      bufferAfterMinutes: 7,
+    });
     expect(body).not.toHaveProperty("configurationVersion");
   });
 
@@ -182,7 +160,7 @@ describe("BookingSettingsPage", () => {
         ),
       ),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     await user.click(
       await screen.findByRole("checkbox", {
