@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { VerticalDayTimeline } from "@/modules/booking/components/VerticalDayTimeline";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { type BookingWindowDraft, isPlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { dayScheduleQuery } from "@/modules/booking/domain/fetchDayBookings";
@@ -88,8 +89,7 @@ export function BookingDayTimelineAside({
           ? {
               draft,
               targetKey: target.globalId,
-              schedulingTimeZone: target.timezone,
-              slotGranularityMinutes: target.slotGranularityMinutes,
+              policy: timelinePolicy(target),
               onChange,
               onInteractionChange,
               disabledReason,
