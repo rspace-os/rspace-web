@@ -185,8 +185,10 @@
           "create": "The booking is invalid.",
           "patch": "The booking patch is invalid.",
           "granularity": "Start and end must align with this bookable item's slot granularity.",
+          "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
+          "dayEndMissingTitle": "The booking end time does not exist in the local time zone.",
           "openingHours": "The booking must remain within this bookable item's opening hours.",
-          "maximumDuration": "The booking exceeds this bookable item's maximum duration.",
+          "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
           "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
           "purpose": {
             "length": "Purpose must not exceed 1,000 characters."
@@ -619,5 +621,10 @@
       "titleRequired": "Title is a required field.",
       "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
     }
+  },
+  "duration": {
+    "days": "{0, plural, one {# day} other {# days}}",
+    "hours": "{0, plural, one {# hour} other {# hours}}",
+    "minutes": "{0, plural, one {# minute} other {# minutes}}"
   }
 }
