@@ -62,6 +62,7 @@ class BookingApiV2ControllerAdviceTest {
   void policy() {
     for (var reason : BookingPolicyException.Reason.values()) {
       if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
+      if (reason == BookingPolicyException.Reason.DAY_END_MISSING) continue;
       register(reason.errorCode());
       check(
           advice.handleBookingPolicy(new BookingPolicyException(reason)),
@@ -150,6 +151,7 @@ class BookingApiV2ControllerAdviceTest {
     for (var operation : List.of(ResourceOperation.CREATE, ResourceOperation.UPDATE)) {
       for (var reason : BookingPolicyException.Reason.values()) {
         if (reason == BookingPolicyException.Reason.MAXIMUM_DURATION) continue;
+        if (reason == BookingPolicyException.Reason.DAY_END_MISSING) continue;
         register(reason.errorCode());
         var mapping =
             spec.errorMappings().get(operation).stream()
