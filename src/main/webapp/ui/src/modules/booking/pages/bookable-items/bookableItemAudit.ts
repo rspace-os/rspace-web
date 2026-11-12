@@ -75,13 +75,9 @@ export async function fetchBookingConfigurationAudit(
   const result = await listBookingConfigurationAuditEvents(
     input.configurationId,
     {
-
-
       q: input.q,
       start: input.start,
       end: input.end,
-
-
     },
     { signal: input.signal },
   );

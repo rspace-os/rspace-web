@@ -78,10 +78,7 @@ function pagedCollectionResponse(docs: readonly BookingConfigurationsRead[], pag
     totalDocs,
     page,
 
-
     hasNextPage: page * 20 < totalDocs,
-
-
   };
 }
 
