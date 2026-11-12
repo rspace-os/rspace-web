@@ -55,10 +55,7 @@ const configurationResponse = {
   limit: 2,
   page: 1,
 
-
   hasNextPage: false,
-
-
 };
 
 function renderEdit() {
