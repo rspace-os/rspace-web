@@ -235,6 +235,7 @@
       "disconnect": "Disconnect",
       "disconnectConfirm": "Disconnect",
       "disconnected": "This item's calendar link is disconnected.",
+      "disconnectWarning": "Calendars using this link will stop updating, and it cannot be restored.",
       "generateError": "The calendar link could not be generated. Try again.",
       "generating": "Generating calendar link.",
       "google": "Google Calendar",
@@ -247,8 +248,7 @@
       "retry": "Retry",
       "statusError": "Calendar subscription status could not be loaded.",
       "title": "Add to your calendar",
-      "trigger": "Add to calendar",
-      "disconnectWarning": "Calendars using this link will stop updating, and it cannot be restored."
+      "trigger": "Add to calendar"
     },
     "cancelEdit": "Cancel",
     "days": "{count, plural, one {# day} other {# days}}",
