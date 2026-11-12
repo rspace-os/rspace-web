@@ -7,6 +7,7 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -155,15 +156,23 @@ public class NfsDaoHibernate implements NfsDao {
     if (absolutePaths.isEmpty()) {
       return List.of();
     }
+    // the column's collation pads trailing spaces, which S3 keys keep: compare exactly here
+    Set<String> exactPaths = Set.copyOf(absolutePaths);
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "select distinct doc from NfsFieldLink l join l.field f join f.structuredDocument doc"
+            "select l.absolutePath, doc from NfsFieldLink l join l.field f"
+                + " join f.structuredDocument doc"
                 + " where l.fileSystem.id = :fsId and l.absolutePath in (:paths)"
                 + " and doc.deleted = false order by doc.id",
-            StructuredDocument.class)
+            Object[].class)
         .setParameter("fsId", fileSystemId)
         .setParameterList("paths", absolutePaths)
-        .list();
+        .list()
+        .stream()
+        .filter(row -> exactPaths.contains((String) row[0]))
+        .map(row -> (StructuredDocument) row[1])
+        .distinct()
+        .toList();
   }
 }
