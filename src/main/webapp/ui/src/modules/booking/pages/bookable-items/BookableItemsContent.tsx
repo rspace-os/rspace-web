@@ -1,34 +1,50 @@
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { PlusIcon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
-import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
-import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
-import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
-import { BookingConfigurationActionsMenu, type BookingConfigurationLifecycleAction } from "./BookingConfigurationActionsMenu";
-import { PermanentDeleteBookableItemDialog } from "./PermanentDeleteBookableItemDialog";
-import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
-import { type BookingConfigurationRow, bookingConfigurationConfig } from "./bookingConfiguration";
-import { mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
-import { getSearchBookingCatalogueLocationsQueryKey, getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import { deleteBookingConfiguration, deleteManyBookingConfigurations, getCountBookingConfigurationsQueryKey, getGetBookingCalendarSubscriptionQueryKey, getGetBookingConfigurationAccessQueryKey, getGetBookingConfigurationQueryKey, getListBookingConfigurationAuditEventsQueryKey, getListBookingConfigurationsQueryKey, getSearchBookingConfigurationAccessGranteesQueryKey, invalidateListBookingConfigurations, listBookingConfigurations, updateBookingConfiguration as patchBookingConfiguration, updateManyBookingConfigurations, useDeleteManyBookingConfigurations, useUpdateManyBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import {
+  getSearchBookingCatalogueLocationsQueryKey,
+  getSearchBookingCatalogueQueryKey,
+} from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import {
+  deleteBookingConfiguration,
+  getCountBookingConfigurationsQueryKey,
+  getGetBookingCalendarSubscriptionQueryKey,
+  getGetBookingConfigurationAccessQueryKey,
+  getGetBookingConfigurationQueryKey,
+  getListBookingConfigurationAuditEventsQueryKey,
+  getListBookingConfigurationsQueryKey,
+  getSearchBookingConfigurationAccessGranteesQueryKey,
+  invalidateListBookingConfigurations,
+  listBookingConfigurations,
+  updateBookingConfiguration as patchBookingConfiguration,
+  useDeleteManyBookingConfigurations,
+  useUpdateManyBookingConfigurations,
+} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getCountBookingsQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { getGetUserBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { TableList, type TableListFilterButtons, type TableListRowActions, type TableListSelectionContext } from "@/modules/common/table-list/TableList";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import {
+  TableList,
+  type TableListFilterButtons,
+  type TableListRowActions,
+} from "@/modules/common/table-list/TableList";
 import { type FilterExpression } from "@/modules/common/table-list/types";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/modules/common/ui/alert-dialog";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { Input } from "@/modules/common/ui/input";
-import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
-import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { ArchiveIcon, EyeIcon, PlusIcon } from "lucide-react";
-import { Suspense, useCallback, useId, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
+import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
+import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
+import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
+import { type BookingConfigurationRow, bookingConfigurationConfig } from "./bookingConfiguration";
+import { mapBookingConfiguration } from "./bookingConfigurationSchema";
+import { PermanentDeleteBookableItemDialog } from "./PermanentDeleteBookableItemDialog";
 
 export const bookableItemsProjection = {
   fixed: [
@@ -59,8 +75,7 @@ export const ownerAttentionParams = {
 
 export async function fetchOwnerAttentionPage(page: number, signal: AbortSignal) {
   const result = await listBookingConfigurations({ ...ownerAttentionParams, page }, { signal });
-  if (result.totalDocs === undefined || result.totalIsLowerBound)
-    throw new Error("Owner-health totals are missing");
+  if (result.totalDocs === undefined || result.totalIsLowerBound) throw new Error("Owner-health totals are missing");
   return { ...result, totalDocs: result.totalDocs, totalPages: Math.ceil(result.totalDocs / result.limit) };
 }
 
@@ -260,7 +275,14 @@ export function BookableItemsContent() {
       ) : null}
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
-          {t(lifecycleErrorKey(restoreMutation.error, "bookableItems.lifecycleErrors.restore", "bookableItems.lifecycleErrors.stale", "bookableItems.lifecycleErrors.stateChanged"))}
+          {t(
+            lifecycleErrorKey(
+              restoreMutation.error,
+              "bookableItems.lifecycleErrors.restore",
+              "bookableItems.lifecycleErrors.stale",
+              "bookableItems.lifecycleErrors.stateChanged",
+            ),
+          )}
         </p>
       ) : null}
       <TableList

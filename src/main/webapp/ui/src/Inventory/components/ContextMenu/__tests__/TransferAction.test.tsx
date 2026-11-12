@@ -88,10 +88,7 @@ describe("TransferAction", () => {
           limit: 1,
           page: 1,
 
-
           hasNextPage: false,
-
-
         });
       }),
     );
