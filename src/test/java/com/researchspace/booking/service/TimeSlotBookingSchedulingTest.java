@@ -284,6 +284,7 @@ class TimeSlotBookingSchedulingTest {
 
     TimeSlotBooking existing = booking(41L, 12L, actor);
     existing.getBookingConfiguration().setMaxBookingDurationMinutes(60);
+    existing.getBookingConfiguration().setSlotGranularityMinutes(5);
     stubReadableBookingAndConfigurationLock(existing);
 
     BookingPolicyException failure =
@@ -293,7 +294,7 @@ class TimeSlotBookingSchedulingTest {
                 manager.updateBooking(
                     41L,
                     new TimeSlotBookingManager.Patch(
-                        null, instant("2026-10-25T09:05:00Z"), false, null, null),
+                        null, instant("2026-10-25T09:15:00Z"), false, null, null),
                     actor,
                     actor));
     assertEquals(BookingPolicyException.Reason.MAXIMUM_DURATION, failure.reason());
