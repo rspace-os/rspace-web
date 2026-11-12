@@ -1,13 +1,15 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ComponentProps, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import {
   ALL_ISO_WEEKDAYS,
   MAX_BOOKING_DURATION_MINUTES,
   type OpeningSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import { validateBookingWindow, ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
 
 function StatefulFields({
@@ -218,6 +220,36 @@ describe("ZonedBookingWindowFields", () => {
     expect(screen.queryByText("booking:bookings.errors.dayIncrement")).not.toBeInTheDocument();
   });
 
+  it("names the missing local end time instead of moving a Day booking across the spring gap", async () => {
+    const user = userEvent.setup();
+    await renderWithRealI18n(
+      <StatefulFields
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
+        slotGranularityMinutes={1440}
+        incrementUnit="DAYS"
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-03-28", startTime: "02:30", endDate: "2026-03-29", endTime: "05:00" }}
+      />,
+      {
+        resources: { booking: { bookings: { errors: bookingEnglish.bookings.errors } } },
+        defaultNS: "booking",
+      },
+    );
+    const end = screen.getByLabelText("bookings.form.endTime");
+
+    await user.click(end);
+    await user.tab();
+
+    expect(end).toHaveValue("05:00");
+    expect(
+      screen.getByText(
+        /This booking would end at 02:30 AM on .*, but that local time does not exist in Europe\/Berlin\./,
+      ),
+    ).toBeVisible();
+  });
+
   it("does not choose an occurrence for a repeated time when snapping", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
@@ -266,6 +298,96 @@ describe("ZonedBookingWindowFields", () => {
     );
   });
 
+  it("names a missing Day end that the snap chose on another date", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
+        slotGranularityMinutes={2880}
+        incrementUnit="DAYS"
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2027-03-26", startTime: "02:30", endDate: "2027-03-27", endTime: "20:00" }}
+      />,
+    );
+    expect(screen.getByText("booking:bookings.errors.dayIncrement")).toBeVisible();
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+
+    // Two days on is 28 March at 02:30, which the spring change skips.
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2027-03-27");
+    expect(screen.getByText("booking:bookings.errors.dayEndMissing")).toBeVisible();
+    expect(screen.queryByText("booking:bookings.errors.dayIncrement")).not.toBeInTheDocument();
+  });
+
+  it("asks which occurrence of a repeated Day end to use when the form shows another zone", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        displayTimezone="UTC"
+        schedulingTimezone="Europe/Berlin"
+        slotGranularityMinutes={1440}
+        incrementUnit="DAYS"
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-10-24", startTime: "00:30", endDate: "2026-10-25", endTime: "03:00" }}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+    const choice = screen.getByRole("group", { name: "booking:bookings.form.repeatedEnd" });
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveValue("03:00");
+
+    await user.click(within(choice).getByRole("radio", { name: "booking:bookings.form.laterOccurrence" }));
+
+    // 02:30 winter time in Berlin is 01:30 UTC.
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveValue("01:30");
+    expect(screen.queryByRole("group", { name: "booking:bookings.form.repeatedEnd" })).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:bookings.errors.dayIncrement")).not.toBeInTheDocument();
+  });
+
+  it("keeps the chosen occurrence when the display zone repeats the same time", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    function Fields() {
+      const [value, setValue] = useState<BookingWindowDraft>({
+        startDate: "2026-10-24",
+        startTime: "02:30",
+        endDate: "2026-10-25",
+        endTime: "03:00",
+      });
+      return (
+        <ZonedBookingWindowFields
+          displayTimezone="Europe/Paris"
+          schedulingTimezone="Europe/Berlin"
+          slotGranularityMinutes={1440}
+          incrementUnit="DAYS"
+          maxBookingDurationMinutes={0}
+          {...ALL_DAY}
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    render(<Fields />);
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+    const choice = screen.getByRole("group", { name: "booking:bookings.form.repeatedEnd" });
+    await user.click(within(choice).getByRole("radio", { name: "booking:bookings.form.laterOccurrence" }));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ endDate: "2026-10-25", endTime: "02:30", endOccurrence: "later" }),
+    );
+    expect(screen.queryByText("booking:bookings.errors.occurrenceRequired")).not.toBeInTheDocument();
+  });
+
   it("does not carry an occurrence chosen for the typed end over to a different snapped end", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
@@ -292,6 +414,28 @@ describe("ZonedBookingWindowFields", () => {
 
     // The nearest whole hour is 02:00 winter time; the earlier choice was for 02:40, so the form asks again.
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ endTime: "02:00", endOccurrence: undefined }));
+  });
+
+  it("retires a missing Day end message when the item's rule changes", async () => {
+    const user = userEvent.setup();
+    const props = {
+      displayTimezone: "Europe/Berlin",
+      schedulingTimezone: "Europe/Berlin",
+      maxBookingDurationMinutes: 0,
+      ...ALL_DAY,
+      value: { startDate: "2027-03-26", startTime: "02:30", endDate: "2027-03-27", endTime: "20:00" },
+      onChange: vi.fn(),
+    };
+    const { rerender } = render(
+      <ZonedBookingWindowFields {...props} slotGranularityMinutes={2880} incrementUnit="DAYS" />,
+    );
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+    expect(screen.getByText("booking:bookings.errors.dayEndMissing")).toBeVisible();
+
+    rerender(<ZonedBookingWindowFields {...props} slotGranularityMinutes={15} incrementUnit="MINUTES" />);
+
+    expect(screen.queryByText("booking:bookings.errors.dayEndMissing")).not.toBeInTheDocument();
   });
 
   it("shows both dates in compact density for a Day increment", () => {
