@@ -705,7 +705,7 @@ class ApiV2CrudControllerTest {
                 new MaintenanceResourceOperations(maintenanceManager),
                 Long::valueOf)
             .mutationErrors("errors.api.v2.invalidRequest", "errors.api.v2.maintenance.patch")
-            .expose(EnumSet.allOf(ResourceOperation.class))
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
             .runtimeFields(List.of(runtimeFields))
             .build();
     MockMvc runtimeMvc =
