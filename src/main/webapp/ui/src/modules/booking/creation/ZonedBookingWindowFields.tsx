@@ -12,6 +12,8 @@ import type { BookingWindowDraft, WallClockResolution } from "@/modules/booking/
 import {
   formatPlainDate,
   formatWallClockTime,
+  sameDraft,
+  sameTimeZone,
   wallClockEndpointFromInstant,
   wallClockInstant,
 } from "@/modules/booking/domain/bookingTime";
@@ -32,6 +34,11 @@ export {
 function offset(instant: string, timezone: string): string {
   return Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).offset;
 }
+
+type EndIssue = (
+  | { kind: "missing"; date: string; time: string }
+  | { kind: "choose"; date: string; time: string; earlier: string; later: string }
+) & { draft: BookingWindowDraft; contextKey: string };
 
 export function ZonedBookingWindowFields({
   displayTimezone,
@@ -109,6 +116,15 @@ export function ZonedBookingWindowFields({
   const [snaps, setSnaps] = useState<Partial<Record<"start" | "end", { date: string; time: string; note: string }>>>(
     {},
   );
+  const [endIssue, setEndIssue] = useState<EndIssue>();
+  // An end issue belongs to the draft, rule and zones it was found for; any change retires it.
+  const endIssueContextKey = [
+    slotGranularityMinutes,
+    incrementUnit,
+    zones.start,
+    zones.end,
+    resolvedSchedulingTimezone,
+  ].join("|");
   const changeTime = (name: "start" | "end", time: string) => {
     const timeKey = `${name}Time` as const;
     const occurrenceKey = `${name}Occurrence` as const;
@@ -117,12 +133,18 @@ export function ZonedBookingWindowFields({
   };
   // A repeated time is snapped only once the user has chosen its occurrence; until then the form asks for it.
   const typedInstant = (name: "start" | "end") => wallClockInstant(result[name], value[`${name}Occurrence`]);
-  const applySnap = (name: "start" | "end", instant: string, note: (time: string, date: string) => string) => {
+  const applySnap = (
+    name: "start" | "end",
+    instant: string,
+    note: (time: string, date: string) => string,
+    // The user picked this instant's occurrence, rather than typing a time the snap moved.
+    chosen = false,
+  ) => {
     const draft = wallClockEndpointFromInstant(instant, zones[name]);
     // A snap onto a repeated time keeps an occurrence only if the user chose it for this very time; a choice made
     // for the typed time does not carry over to a different one.
     const sameTime = draft.date === value[`${name}Date`] && draft.time === value[`${name}Time`];
-    const next = sameTime && value[`${name}Occurrence`] ? draft : { ...draft, occurrence: undefined };
+    const next = chosen || (sameTime && value[`${name}Occurrence`]) ? draft : { ...draft, occurrence: undefined };
     if (
       next.date === value[`${name}Date`] &&
       next.time === value[`${name}Time`] &&
@@ -152,7 +174,59 @@ export function ZonedBookingWindowFields({
     const end = typedInstant("end");
     if (!start || !end) return;
     const snap = snapEndToIncrement(rule, start, end, resolvedSchedulingTimezone);
-    if (snap.kind === "instant") applySnap("end", snap.instant, endSnapNote);
+    setEndIssue(undefined);
+    if (snap.kind === "instant") {
+      applySnap("end", snap.instant, endSnapNote);
+      return;
+    }
+    // The nearest Day end does not exist; name it rather than moving the booking to another date.
+    if (snap.kind === "dayEndMissing") {
+      setEndIssue({ kind: "missing", date: snap.date, time: snap.time, draft: value, contextKey: endIssueContextKey });
+      return;
+    }
+    // In another display zone the repeated time reads as two different times, so ask which one to use here.
+    if (!sameTimeZone(zones.end, resolvedSchedulingTimezone)) {
+      setEndIssue({ ...snap, kind: "choose", draft: value, contextKey: endIssueContextKey });
+      return;
+    }
+    if (snap.date === value.endDate && snap.time === value.endTime) return;
+    setSnaps((current) => ({
+      ...current,
+      end: {
+        date: snap.date,
+        time: snap.time,
+        note: endSnapNote(formatWallClockTime(snap.time, locale), formatPlainDate(snap.date, locale)),
+      },
+    }));
+    change({ endDate: snap.date, endTime: snap.time, endOccurrence: undefined });
+  };
+  // Shown only while the draft is the one the end snap examined.
+  const activeEndIssue =
+    endIssue && endIssue.contextKey === endIssueContextKey && sameDraft(endIssue.draft, value) ? endIssue : undefined;
+  const endIssueFields = () => {
+    if (!activeEndIssue) return null;
+    const timezone = resolvedSchedulingTimezone;
+    const date = formatPlainDate(activeEndIssue.date, locale);
+    const time = formatWallClockTime(activeEndIssue.time, locale);
+    if (activeEndIssue.kind === "missing") {
+      return (
+        <FieldError id={`${fieldId}-end-issue`}>
+          {t("bookings.errors.dayEndMissing", { time, date, timezone })}
+        </FieldError>
+      );
+    }
+    const choice = activeEndIssue;
+    return occurrenceChoiceFields({
+      inputName: `${fieldId}-end-issue-occurrence`,
+      fieldsetId: `${fieldId}-end-issue`,
+      legend: t("bookings.form.repeatedEnd", { time, date, timezone }),
+      values: choice,
+      timezone,
+      onSelect: (occurrence) => {
+        setEndIssue(undefined);
+        applySnap("end", choice[occurrence], endSnapNote, true);
+      },
+    });
   };
   const snapNote = (name: "start" | "end") => {
     const snap = snaps[name];
@@ -166,6 +240,32 @@ export function ZonedBookingWindowFields({
       </div>
     );
   };
+
+  const occurrenceChoiceFields = ({
+    inputName,
+    fieldsetId,
+    legend,
+    values,
+    timezone,
+    onSelect,
+  }: {
+    inputName: string;
+    fieldsetId: string;
+    legend: string;
+    values: { earlier: string; later: string };
+    timezone: string;
+    onSelect: (choice: "earlier" | "later") => void;
+  }) => (
+    <fieldset className="space-y-2" id={fieldsetId}>
+      <legend className="text-sm font-medium">{legend}</legend>
+      {(["earlier", "later"] as const).map((choice) => (
+        <Label key={choice} className="flex items-center gap-2">
+          <input type="radio" name={inputName} disabled={disabled} onChange={() => onSelect(choice)} />
+          {t(`bookings.form.${choice}Occurrence`, { offset: offset(values[choice], timezone) })}
+        </Label>
+      ))}
+    </fieldset>
+  );
 
   const endpointUnresolved = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
     endpointResolution?.kind === "nonexistent" ||
@@ -181,6 +281,7 @@ export function ZonedBookingWindowFields({
     showErrors
       ? [
           name === "start" ? startErrorId : undefined,
+          name === "end" && activeEndIssue ? `${fieldId}-end-issue` : undefined,
           endpointUnresolved(name, endpointResolution) ? `${fieldId}-${name}-error` : undefined,
           !endpointResolution || result.orderInvalid || (policyInvalid && !allowPolicyMismatch)
             ? windowErrorId
@@ -280,6 +381,7 @@ export function ZonedBookingWindowFields({
           </div>
         </div>
         {snapNote(name)}
+        {name === "end" ? endIssueFields() : null}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
       </FieldSet>
@@ -313,6 +415,7 @@ export function ZonedBookingWindowFields({
           onBlur={name === "end" ? snapEnd : undefined}
         />
         {snapNote(name)}
+        {name === "end" ? endIssueFields() : null}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
       </div>
@@ -320,6 +423,8 @@ export function ZonedBookingWindowFields({
   };
 
   const incrementError = (current: IncrementViolation | null) => {
+    // The end field already names the missing Day end the snap found.
+    if (activeEndIssue?.kind === "missing" && (current === "duration" || current === "dayEndMissing")) return null;
     if (current === "dayEndMissing" && missingDayEnd) {
       return (
         <FieldError>
