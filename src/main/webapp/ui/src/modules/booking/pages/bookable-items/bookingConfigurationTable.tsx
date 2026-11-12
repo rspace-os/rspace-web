@@ -103,7 +103,9 @@ export const bookingConfigurationConfig = {
       required: true,
       list: false,
       // Create-only: the API rejects timezone changes, so edit forms filter this field out.
-      form: { descriptionKey: "booking:allBookableItems.fields.timezoneDescription" satisfies CollectionTranslationKey },
+      form: {
+        descriptionKey: "booking:allBookableItems.fields.timezoneDescription" satisfies CollectionTranslationKey,
+      },
     },
     {
       name: "updatedAt",
