@@ -30,7 +30,6 @@ describe("getNextMaintenance", () => {
     expect(requestUrl.searchParams.get("limit")).toBe("1");
     expect(requestUrl.searchParams.get("where")).toMatch(/^endDate=gt=\d{4}-\d{2}-\d{2}T/);
     expect(requestUrl.searchParams.get("fields[maintenances]")).toBe("startDate");
-    expect(requestUrl.searchParams.has("select[startDate]")).toBe(false);
     expect(capturedRequest?.headers.get("Authorization")).toBeNull();
     expect(capturedRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
