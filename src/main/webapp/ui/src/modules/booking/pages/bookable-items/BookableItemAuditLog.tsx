@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getListBookingConfigurationAuditEventsQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -8,41 +8,38 @@ import { resolveCollectionConfig } from "@/modules/common/collection/resolveConf
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList } from "@/modules/common/table-list/TableList";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
-import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
-import { UserBadge } from "@/modules/common/ui/user-badge";
+import { AuditEventItem } from "./BookableItemAuditEvent";
 import {
+  AUDIT_ACTIONS,
   type AuditDateError,
   type AuditDateField,
   type AuditDateRange,
   type AuditRow,
   auditPresetRange,
   auditRangeToQuery,
+  type BookingAuditAction,
   fetchBookingConfigurationAudit,
-  recordedValues,
   validateAuditDateRange,
 } from "./bookableItemAudit";
 
 const PRESET_DAYS = [7, 30, 90] as const;
 const RANGE_SEPARATOR = "\u2013";
-
-function RecordedValues({ row }: { row: AuditRow }) {
-  const { t } = useTranslation("booking");
-  const labels: Record<string, string> = {
-    deletedAt: t("bookableItemDetails.audit.values.deletedAt"),
-  };
-  return (
-    <dl className="grid min-w-52 grid-cols-[max-content_1fr] gap-x-3 gap-y-1 font-mono text-xs">
-      {recordedValues(row.payload).map(([label, value]) => (
-        <div className="contents" key={label}>
-          <dt className="text-muted-foreground">{labels[label] ?? label}</dt>
-          <dd className="break-all">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
+const errorMessageKeys = {
+  unavailable: {
+    title: "bookableItemDetails.audit.unavailable.title",
+    description: "bookableItemDetails.audit.unavailable.description",
+  },
+  tooMany: {
+    title: "bookableItemDetails.audit.tooMany.title",
+    description: "bookableItemDetails.audit.tooMany.description",
+  },
+  generic: {
+    title: "bookableItemDetails.audit.error.title",
+    description: "bookableItemDetails.audit.error.description",
+  },
+} as const;
 
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
   slug: "booking-configuration-audit",
@@ -53,81 +50,20 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
   },
   useAsTitle: "timestamp",
   defaultColumns: ["timestamp", "username", "action", "target", "payload"],
-  listSearchableFields: ["username", "fullName", "action", "description"],
+  listSearchableFields: ["username", "fullName", "action", "description", "target", "payload"],
   fields: [
-    { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId", list: false },
-    { name: "eventId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.eventId", list: false },
-    {
-      name: "timestamp",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.timestamp",
-      list: { width: 200, minWidth: 170, renderCell: ({ row }) => <AuditTimestamp value={row.timestamp} /> },
-    },
-    {
-      name: "username",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.actor",
-      list: {
-        width: 190,
-        minWidth: 160,
-        dependencies: ["fullName"],
-        renderCell: ({ row }) => <UserBadge name={row.fullName ?? row.username} username={row.username} />,
-      },
-    },
+    { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId" },
+    { name: "eventId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.eventId" },
+    { name: "timestamp", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.timestamp" },
+    { name: "username", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.actor" },
     { name: "fullName", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.fullName" },
-    {
-      name: "action",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.action",
-      list: {
-        width: 300,
-        minWidth: 220,
-        dependencies: ["description"],
-        renderCell: ({ row }) => (
-          <span>
-            <Badge variant="outline">{row.action}</Badge>
-            {row.description === null || row.description === undefined ? null : (
-              <span className="mt-2 block whitespace-normal text-muted-foreground">{row.description}</span>
-            )}
-          </span>
-        ),
-      },
-    },
+    { name: "action", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.action" },
     { name: "description", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.description" },
-    { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain", list: false },
-    {
-      name: "target",
-      type: "text",
-      labelKey: "booking:bookableItems.fields.id",
-      list: {
-        width: 120,
-        minWidth: 100,
-        dependencies: ["payload"],
-        renderCell: ({ row }) => <span>{row.target ?? "—"}</span>,
-      },
-    },
-    {
-      name: "payload",
-      type: "text",
-      labelKey: "booking:bookableItemDetails.audit.fields.values",
-      list: {
-        width: 320,
-        minWidth: 240,
-        card: { fullWidth: true },
-        renderCell: ({ row }) => <RecordedValues row={row} />,
-      },
-    },
+    { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain" },
+    { name: "target", type: "text", labelKey: "booking:bookableItems.fields.id" },
+    { name: "payload", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.values" },
   ],
 });
-
-function AuditTimestamp({ value }: { value: string }) {
-  const { i18n } = useTranslation("booking");
-  return (
-    <time dateTime={value}>
-      {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value))}
-    </time>
-  );
-}
 
 type RequestError = "unavailable" | "generic";
 
@@ -143,6 +79,8 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const [today] = useState(() => new Date());
   const [draft, setDraft] = useState<AuditDateRange>(() => auditPresetRange(30, today));
   const [applied, setApplied] = useState<AuditDateRange>(draft);
+  const [search, setSearch] = useState("");
+  const [action, setAction] = useState<BookingAuditAction | "">("");
   const [errors, setErrors] = useState<Partial<Record<AuditDateField, AuditDateError>>>({});
   const [page, setPage] = useState(0);
 
@@ -156,6 +94,8 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
     queryKey: [
       ...getListBookingConfigurationAuditEventsQueryKey(configurationId, {
         ...bounds,
+        q: search,
+        actions: action === "" ? undefined : [action],
       }),
       "bookableItemAudit",
     ],
@@ -163,6 +103,8 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
       fetchBookingConfigurationAudit({
         configurationId,
         ...bounds,
+        q: search,
+        actions: action === "" ? undefined : [action],
 
         signal,
       }),
@@ -176,14 +118,27 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
       type: "client",
       rows: audit.isError ? [] : (audit.data?.rows.slice(page * 20, (page + 1) * 20) ?? []),
     },
+    initialState: { filters: { search, expression: null } },
     features: { sorting: false, pagination: false, columns: false },
     queryString: false,
     reserveEmptyRows: false,
   });
 
+  useEffect(() => {
+    const nextSearch = table.state.filters.search;
+    if (nextSearch === search) return;
+    setSearch(nextSearch);
+    setPage(0);
+  }, [search, table.state.filters.search]);
+
   const resetResultSet = () => {
     setPage(0);
     void audit.refetch();
+  };
+
+  const selectAction = (value: string) => {
+    setAction(AUDIT_ACTIONS.find((candidate) => candidate === value) ?? "");
+    setPage(0);
   };
 
   const apply = (range: AuditDateRange) => {
@@ -196,7 +151,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
     }
     setErrors({});
     setApplied(range);
-    setPage(0);
+    resetResultSet();
   };
 
   const navigate = (nextPage: number) => setPage(nextPage);
@@ -268,6 +223,22 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
             {t("bookableItemDetails.audit.lastDays", { count: days })}
           </Button>
         ))}
+        <label className="flex items-center gap-2 text-sm font-medium" htmlFor="audit-action-filter">
+          {t("bookableItemDetails.audit.fields.action")}
+          <select
+            id="audit-action-filter"
+            className="h-9 rounded-sm border bg-background px-2 text-sm font-normal focus-visible:ring-2 focus-visible:ring-ring"
+            value={action}
+            onChange={(event) => selectAction(event.currentTarget.value)}
+          >
+            <option value="">{t("bookableItemDetails.audit.allActions")}</option>
+            {AUDIT_ACTIONS.map((auditAction) => (
+              <option key={auditAction} value={auditAction}>
+                {auditAction}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="ml-auto flex min-w-0 flex-wrap items-start gap-2">
           <div>
             <InputGroup className="w-auto max-w-full flex-wrap sm:flex-nowrap">
@@ -350,13 +321,21 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
       ) : (
         <TableList
           {...table.tableProps}
+          clientSide={false}
           status={audit.isPending ? "loading" : audit.isFetching ? "refreshing" : "idle"}
-          presentations={{ table: "wide", cards: "narrow" }}
           emptyDescription={
             stableEmpty ? t("bookableItemDetails.audit.emptyStable") : t("bookableItemDetails.audit.empty")
           }
           variant="transparent"
           hideHeader
+          hideFilterPanel
+          renderRows={(rows) => (
+            <ol className="space-y-3 py-3">
+              {rows.map((row) => (
+                <AuditEventItem key={row.rowId} row={row} />
+              ))}
+            </ol>
+          )}
         />
       )}
 
