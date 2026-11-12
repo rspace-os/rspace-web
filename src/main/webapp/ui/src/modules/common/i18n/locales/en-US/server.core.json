@@ -184,7 +184,7 @@
           "ifMatchRequired": "The current booking version is required.",
           "create": "The booking is invalid.",
           "patch": "The booking patch is invalid.",
-          "granularity": "Start and end must align with this bookable item's slot granularity.",
+          "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
           "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
           "dayEndMissingTitle": "The booking end time does not exist in the local time zone.",
           "openingHours": "The booking must remain within this bookable item's opening hours.",
