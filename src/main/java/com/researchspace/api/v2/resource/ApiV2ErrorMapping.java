@@ -57,11 +57,7 @@ public record ApiV2ErrorMapping(
 
     public ApiV2ErrorMapping build() {
       return new ApiV2ErrorMapping(
-          type,
-          status,
-          errorCode,
-          description,
-          arguments.compose(type::cast));
+          type, status, errorCode, description, arguments.compose(type::cast));
     }
   }
 

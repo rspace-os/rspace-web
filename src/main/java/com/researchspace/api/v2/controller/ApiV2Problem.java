@@ -25,5 +25,4 @@ public record ApiV2Problem(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String reason) {}
 
   public static final MediaType PROBLEM_JSON = MediaType.valueOf("application/problem+json");
-
 }

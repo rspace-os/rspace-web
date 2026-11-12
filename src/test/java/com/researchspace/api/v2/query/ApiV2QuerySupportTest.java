@@ -161,7 +161,7 @@ class ApiV2QuerySupportTest {
   }
 
   @Test
-  void rejectsConflictingDuplicateLegacyAndUnknownFieldsets() {
+  void rejectsConflictingUnknownMalformedAndDuplicateFieldsets() {
     ApiV2FieldsetQuery mixed = fields(Map.of("maintenances", "message"));
     mixed.setExclude(Map.of("maintenances", "startDate"));
     ApiV2FieldsetQuery unknown = fields(Map.of("maintenances", "unknown"));

@@ -68,7 +68,6 @@ public final class ApiV2ResourceCatalog {
         spec, registry, resolver, providersByResource, mutations);
   }
 
-
   private static void putUnique(
       Map<String, ApiV2ResourceRegistration<?, ?>> registrations,
       String name,

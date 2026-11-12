@@ -8,10 +8,8 @@ public record ApiV2ListResult<T>(
     int page,
     int limit,
     boolean hasNextPage,
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        Long totalDocs,
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        Boolean totalIsLowerBound) {
+    @JsonInclude(JsonInclude.Include.NON_NULL) Long totalDocs,
+    @JsonInclude(JsonInclude.Include.NON_NULL) Boolean totalIsLowerBound) {
   /** Derives navigation from the known total, independently of optional capped metadata. */
   public static <T> ApiV2ListResult<T> counted(
       List<T> docs, long total, int page, int limit, boolean includeTotals, Integer max) {

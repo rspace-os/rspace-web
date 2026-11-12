@@ -9,7 +9,11 @@ public enum ResourceOperation {
   UPDATE("PATCH"),
   BULK_UPDATE("PATCH"),
   DELETE("DELETE"),
-  BULK_DELETE("DELETE");
+  BULK_DELETE("DELETE"),
+  /**
+   * Runtime catalog routes are derived from registered providers, outside the CRUD operation set.
+   */
+  RUNTIME_FIELDS("GET");
 
   private final String httpMethod;
 

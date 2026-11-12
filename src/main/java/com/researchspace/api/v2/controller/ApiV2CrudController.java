@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.controller;
 
-import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
@@ -8,6 +7,7 @@ import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
@@ -38,8 +38,6 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.HandlerMapping;
 
 /** Supplies the standard CRUD routes for every registered REST v2 collection. */
 @RestController
@@ -154,9 +152,7 @@ public class ApiV2CrudController {
     entry.put("label", definition.label());
     entry.put("type", definition.type().name().toLowerCase(Locale.ROOT));
     entry.put("jsonType", definition.type().jsonType());
-    entry.put(
-        "operators",
-        definition.operators().stream().map(Operator::token).sorted().toList());
+    entry.put("operators", definition.operators().stream().map(Operator::token).sorted().toList());
     entry.put("supportsWildcards", definition.supportsWildcards());
     entry.put("columnSelectable", definition.columnSelectable());
     entry.put("sortable", false);

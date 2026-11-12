@@ -169,9 +169,6 @@ public final class ApiV2ResourceRequestParser {
   public static void validateFieldsetParameters(Map<String, String[]> parameters) {
     for (Map.Entry<String, String[]> parameter : parameters.entrySet()) {
       String name = parameter.getKey();
-      if (name.equals("select") || name.startsWith("select[")) {
-        throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-      }
       if (name.equals("fields") || name.startsWith("fields[")) {
         validateFieldsetParameter(parameter, "fields[");
       }

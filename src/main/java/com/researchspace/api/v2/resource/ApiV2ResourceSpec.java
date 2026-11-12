@@ -33,7 +33,7 @@ public record ApiV2ResourceSpec<T, ID>(
     Optional<ScalarReader> scalarReader) {
 
   private static final Set<ResourceOperation> STANDARD_OPERATIONS =
-      Set.copyOf(EnumSet.allOf(ResourceOperation.class));
+      Set.copyOf(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE));
 
   public ApiV2ResourceSpec {
     Objects.requireNonNull(scalarReader, "Scalar reader");

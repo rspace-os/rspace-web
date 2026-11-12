@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.resource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -49,7 +50,20 @@ class ApiV2ResourceSpecTest {
         ApiV2ResourceSpec.builder(description, operations, Long::valueOf)
             .mutationErrors("create", "update")
             .build();
-    assertEquals(Set.of(ResourceOperation.values()), all.exposedOperations());
+    assertEquals(
+        Set.of(
+            ResourceOperation.LIST,
+            ResourceOperation.COUNT,
+            ResourceOperation.READ,
+            ResourceOperation.CREATE,
+            ResourceOperation.BULK_CREATE,
+            ResourceOperation.UPDATE,
+            ResourceOperation.BULK_UPDATE,
+            ResourceOperation.DELETE,
+            ResourceOperation.BULK_DELETE),
+        all.exposedOperations());
+    assertFalse(all.exposedOperations().contains(ResourceOperation.RUNTIME_FIELDS));
+    assertEquals("GET", ResourceOperation.RUNTIME_FIELDS.httpMethod());
   }
 
   private record Widget(Long id) {}
