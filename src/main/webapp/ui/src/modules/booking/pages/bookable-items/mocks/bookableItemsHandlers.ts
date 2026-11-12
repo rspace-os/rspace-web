@@ -2,8 +2,8 @@ import { HttpResponse, http, type RequestHandler } from "msw";
 import { apiV2CollectionResponse, apiV2ListResult } from "@/__tests__/mocks/apiV2CollectionMock";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import type { ApiV2RuntimeFieldCatalog } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalog";
-import type { BookingCatalogueManagerLocationPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerLocationPage";
-import type { BookingCatalogueManagerPage } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerPage";
+import type { BookingCatalogueLocationPageDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueLocationPageDocument";
+import type { BookingCataloguePageDocument } from "@/modules/common/api/v2/generated/models/bookingCataloguePageDocument";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
@@ -125,7 +125,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
               locations.includes(fixture.target.value.parentContainer?.globalId))),
       );
       const start = (page - 1) * pageSize;
-      return HttpResponse.json<BookingCatalogueManagerPage>({
+      return HttpResponse.json<BookingCataloguePageDocument>({
         items: matching.slice(start, start + pageSize).map((fixture) => ({
           configurationId: fixture.id,
           configurationVersion: fixture.configurationVersion,
@@ -170,7 +170,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
         ).values(),
       );
       const start = (page - 1) * pageSize;
-      return HttpResponse.json<BookingCatalogueManagerLocationPage>({
+      return HttpResponse.json<BookingCatalogueLocationPageDocument>({
         items: locations.slice(start, start + pageSize),
         page,
         pageSize,
