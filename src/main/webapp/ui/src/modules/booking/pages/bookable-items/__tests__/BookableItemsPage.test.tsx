@@ -26,11 +26,11 @@ import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
+import { mutateBookableItems } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { mutateBookableItems } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import {
   bookableItemFixtures,
   bookableItemsOpenApi,
@@ -76,10 +76,7 @@ function pagedCollectionResponse(docs: readonly BookingConfigurationsRead[], pag
     totalDocs,
     page,
 
-
     hasNextPage: page * 20 < totalDocs,
-
-
   };
 }
 

@@ -102,14 +102,10 @@ export async function fetchBookingConfigurationAudit(
   const result = await listBookingConfigurationAuditEvents(
     input.configurationId,
     {
-
-
       q: input.q?.trim() || undefined,
       start: input.start,
       end: input.end,
       actions: input.actions ? [...input.actions] : undefined,
-
-
     },
     { signal: input.signal },
   );
