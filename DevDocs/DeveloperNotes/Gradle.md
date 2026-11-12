@@ -81,18 +81,32 @@ Switches:
 | `-Dtest=<pattern>,...` | Select test classes or methods |
 | `-Dfast=true` | Tests skip the Spring and database tests |
 | `-DincludedTestGroups=<tags>` / `-DexcludedTestGroups=<tags>` | JUnit tags to include / exclude; `chemistry` is excluded by default, and `-DexcludedTestGroups=` excludes nothing |
-| `-Dsurefire.rerunFailingTestsCount=<n>` | Retry each failed test up to n times |
+| `-DtestRetries=<n>` | Retry each failed test up to n times |
 | `-DforkCount=<n>` or `<n>C`, `-PmaxTestForks=<n>` | Parallel test JVMs (`1C` = one per core) |
-| `-Dmaven.test.failure.ignore=true` | Test failures do not fail the build |
+| `-DignoreTestFailures=true` | Test failures do not fail the build |
 
 The `generateReactDist`, `enableTestCoverage` and `spotlessStrict` switches are on whenever they
 are given, whatever their value; `generateStorybook` needs `=true`. An unknown
-`-Denvironment` value fails the build. The `surefire.*` and `maven.*` names are kept from the old
-Maven build so that existing commands and CI jobs keep working. The `jdbc.server.*` settings also
-accept their Maven names, `jdbc.url.maven`, `jdbc.db.maven`, `jdbc.username.maven`,
-`jdbc.password.maven` and `jdbc.driverClassName.maven`; the new name wins when both are given.
-These Maven names are deprecated and will be removed in a later version, so new commands, scripts
-and CI jobs should use the `jdbc.server.*` names.
+`-Denvironment` value fails the build.
+
+Settings that the Maven build named after Maven also accept their old names, so that existing
+commands and CI jobs keep working; the new name wins when both are given. The old names are
+deprecated and will be removed in a later version, and the build warns when one is used, so new
+commands, scripts and CI jobs should use the new names:
+
+| New name | Deprecated Maven name |
+|---|---|
+| `jdbc.server.url` | `jdbc.url.maven` |
+| `jdbc.server.db` | `jdbc.db.maven` |
+| `jdbc.server.username` | `jdbc.username.maven` |
+| `jdbc.server.password` | `jdbc.password.maven` |
+| `jdbc.server.driverClassName` | `jdbc.driverClassName.maven` |
+| `testRetries` | `surefire.rerunFailingTestsCount` |
+| `ignoreTestFailures` | `maven.test.failure.ignore` |
+
+Jenkins takes the toolchain version as `TOOLCHAIN_JAVA_VERSION`, as does
+`scripts/run-chemistry-tests.sh`. Both still accept the deprecated `MAVEN_TOOLCHAIN_JAVA_VERSION`. The script prefers the new name, but
+in Jenkins it overrides `TOOLCHAIN_JAVA_VERSION` when set, because the new parameter has a default.
 
 The version is `<version>-<timestamp>`, with `<version>` set by the `version =` line in
 `build.gradle`; release commits bump it there, where they used to edit `pom.xml`. The fixed `dev`
@@ -161,7 +175,7 @@ is an aggregate; apply `--test-dry-run` to `integrationTest`, `integrationTestRu
 
 ### Retries
 
-The `org.gradle.test-retry` plugin reruns failed tests when `-Dsurefire.rerunFailingTestsCount=<n>`
+The `org.gradle.test-retry` plugin reruns failed tests when `-DtestRetries=<n>`
 is set. A test that passes on a retry does not fail the build, and its JUnit XML matches
 Surefire's: one test case with a `flakyFailure`, left out of the suite's failure count, so CI's
 test-results checks and Jenkins treat it as passed. CI's integration job retries once.
@@ -181,7 +195,7 @@ runs:
   -DRS.devlogLevel=INFO -DRS_FILE_BASE=$RS_FILE_BASE
 
 # Integration tests
-./gradlew integrationTests --continue -Dsurefire.rerunFailingTestsCount=1 <same flags>
+./gradlew integrationTests --continue -DtestRetries=1 <same flags>
 ```
 
 The Hibernate model tests use `jdbc.server.url` for their scratch database too.

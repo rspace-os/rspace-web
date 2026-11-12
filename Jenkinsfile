@@ -34,8 +34,9 @@ echo 'Building rspace-web'
  and 17 can still be picked per build. It is passed as -Djava-version, which selects a
  Gradle Java toolchain, so the requested JDK must be one Gradle can find on the agent (auto-detected, or listed in
  org.gradle.java.installations.paths in the agent's ~/.gradle/gradle.properties). Gradle itself runs on the
- agent's JAVA_HOME (Jenkins Global properties). The parameters keep their
- MAVEN_TOOLCHAIN_ names because other Jenkins jobs (the nightly JDK runs) pass them by name.
+ agent's JAVA_HOME (Jenkins Global properties). The toolchain is TOOLCHAIN_JAVA_VERSION; the Maven build's
+ MAVEN_TOOLCHAIN_JAVA_VERSION still works, and wins when set, for the other Jenkins jobs (the nightly JDK runs)
+ that pass it by name. It is deprecated and will be removed in a later version.
 */
 
 pipeline {
@@ -44,7 +45,8 @@ pipeline {
     options { disableConcurrentBuilds() }
 
     parameters {
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '21', description: 'Java version of the Gradle toolchain (17 or 21); the name is kept from the Maven build')
+        string(name: 'TOOLCHAIN_JAVA_VERSION', defaultValue: '21', description: 'Java version of the Gradle toolchain (17 or 21)')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '', description: 'Deprecated, will be removed in a later version: use TOOLCHAIN_JAVA_VERSION. Overrides it when set')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional extra Gradle arguments for the full Java tests, e.g. -DincludedTestGroups=nightly')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
         booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
@@ -58,6 +60,7 @@ pipeline {
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
         CI = 'true'
+        JAVA_TOOLCHAIN = "${params.MAVEN_TOOLCHAIN_JAVA_VERSION ?: params.TOOLCHAIN_JAVA_VERSION}"
         // BRANCH_NAME may contain '/' (e.g. feature/foo); sanitise before using it in filesystem paths or resource names
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
@@ -106,7 +109,7 @@ pipeline {
             steps {
                 echo 'This is the main branch, running fast, non Spring tests only'
                 sh "./gradlew clean test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
-                   -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION}"
+                   -Djava-version=${env.JAVA_TOOLCHAIN}"
             }
 
             post {
@@ -156,7 +159,7 @@ pipeline {
                     sh '''
                     ./gradlew clean testClasses war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-                    -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                    -Djava-version=${JAVA_TOOLCHAIN} \
                     -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                     '''
                 }
@@ -185,7 +188,7 @@ pipeline {
                      sh '''
                      ./gradlew clean testClasses war -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -Dtimestamp=now \
                     -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
-                    -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                    -Djava-version=${JAVA_TOOLCHAIN} \
                     -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                     '''
                 }
@@ -251,7 +254,7 @@ pipeline {
             }
             steps {
                 echo 'Running liquibase tests on main branch...'
-                sh "./gradlew --stacktrace clean test -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./gradlew --stacktrace clean test -Djava-version=${env.JAVA_TOOLCHAIN} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
                   -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate \
                   -Dliquibase.context=run \
@@ -290,9 +293,9 @@ pipeline {
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
                 withFrontendTools {
                     // --continue runs every test task even after one fails, so all suites report and get coverage
-                    sh "./gradlew --continue clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                    sh "./gradlew --continue clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${env.JAVA_TOOLCHAIN} \
                       -Djavax.xml.accessExternalDTD=all\
-                      -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
+                      -Dlog4j2.configurationFile=log4j2-dev.xml -DtestRetries=2\
                       -Djdbc.server.db=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
                       -Denvironment=drop-recreate-db \
                       -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \

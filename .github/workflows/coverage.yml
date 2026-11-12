@@ -93,7 +93,7 @@ jobs:
             -Djava-version=${{ matrix.java-version }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
-            -Dsurefire.rerunFailingTestsCount=1 \
+            -DtestRetries=1 \
             -Djdbc.server.db=rspace \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
             -DRS.devlogLevel=INFO \
@@ -196,7 +196,7 @@ jobs:
             -Djava-version=${{ matrix.java-version }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
-            -Dsurefire.rerunFailingTestsCount=1 \
+            -DtestRetries=1 \
             -Djdbc.server.db=rspace \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
             -DRS.devlogLevel=INFO \
