@@ -88,17 +88,6 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   }
 
   @Override
-  public boolean overlaps(
-      Long configurationId,
-      Date start,
-      Date end,
-      Long excludedBookingId,
-      Set<BookingEventKind> includedKinds) {
-    return findFirstOverlap(configurationId, start, end, excludedBookingId, includedKinds)
-        .isPresent();
-  }
-
-  @Override
   public Optional<TimeSlotBooking> findFirstOverlap(
       Long configurationId,
       Date start,
