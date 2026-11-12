@@ -122,9 +122,9 @@ public interface BookingCatalogueManager {
       User caller);
 
   /**
-   * As {@link #search(String, String, ResourceRequest, List, List, Capability, int, int, User)},
-   * keeping only the items in the {@code availability} category of {@code window}. Rows and the
-   * total agree, and the items keep catalogue order. A null {@code availability} applies no
+   * As {@link #search(String, String, ResourceRequest, List, List, Capability, boolean, int, int,
+   * User)}, keeping only the items in the {@code availability} category of {@code window}. Rows and
+   * the total agree, and the items keep catalogue order. A null {@code availability} applies no
    * availability rule.
    *
    * <p>An item is free where the window lies inside its opening hours, evaluated per date in its
@@ -138,6 +138,7 @@ public interface BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       Availability availability,
       AvailabilityWindow window,
       int page,
@@ -155,6 +156,7 @@ public interface BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       AvailabilityWindow window,
       User caller);
 

@@ -147,7 +147,13 @@ export function useCalendarContentData() {
     return resolveCollectionConfig({
       ...enriched,
       fields: enriched.fields
-        .filter((field) => field.name === "id" || field.name === "target" || String(field.name) === "targetOwner" || String(field.name).startsWith("target."))
+        .filter(
+          (field) =>
+            field.name === "id" ||
+            field.name === "target" ||
+            String(field.name) === "targetOwner" ||
+            String(field.name).startsWith("target."),
+        )
         .map((field) =>
           field.name === "id" ? { ...field, capabilities: { ...field.capabilities, filterOperators: [] } } : field,
         ),
@@ -185,7 +191,11 @@ export function useCalendarContentData() {
     [itemConfig, itemWhere],
   );
   const parsedEvents = React.useMemo(
-    () => dropInvalidMeRules(eventWhere ? parseRsqlExpression(eventWhere, eventConfig) : null, ["requester.value", "targetOwner"]),
+    () =>
+      dropInvalidMeRules(eventWhere ? parseRsqlExpression(eventWhere, eventConfig) : null, [
+        "requester.value",
+        "targetOwner",
+      ]),
     [eventConfig, eventWhere],
   );
   const itemExpression = parsedItems.expression;

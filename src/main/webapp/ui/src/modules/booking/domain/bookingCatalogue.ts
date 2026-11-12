@@ -303,7 +303,14 @@ export function bookingCatalogueAvailabilityCountsQuery(
   today: CatalogueAvailabilityWindow,
 ) {
   return getCountBookingCatalogueAvailabilityQueryOptions<BookingCatalogueManagerAvailabilityCounts>(
-    { q: search.q?.trim() || undefined, where: search.where, start: today.start, end: today.end, now: today.now },
+    {
+      q: search.q?.trim() || undefined,
+      where: search.where,
+      mine: false,
+      start: today.start,
+      end: today.end,
+      now: today.now,
+    },
     { query: { select: mapAvailabilityCounts, staleTime: 30_000 } },
   );
 }
