@@ -62,4 +62,15 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
 
   /** Removes every live booking for a configuration in bounded audited entity batches. */
   int removeAllByConfigurationId(Long configurationId);
+
+  /**
+   * Returns the first confirmed overlapping event using a locking read; hold the configuration lock
+   * first.
+   */
+  Optional<TimeSlotBooking> findFirstOverlap(
+      Long configurationId,
+      Date start,
+      Date end,
+      Long excludedBookingId,
+      Set<BookingEventKind> includedKinds);
 }
