@@ -105,7 +105,8 @@ public final class ApiV2OpenApiGenerator {
     catalog
         .routableResources()
         .forEach(
-            resource -> addPaths(paths, resource, componentNames, resourceSchemas, referenced));
+            resource ->
+                addPaths(paths, resource, componentNames, resourceSchemas, schemas, referenced));
 
     schemas.replaceAll(
         (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
@@ -127,13 +128,12 @@ public final class ApiV2OpenApiGenerator {
         .extensions(Map.of("x-rspace-rate-limits", rateLimitsExtension(text)));
   }
 
-
-
   private void addPaths(
       Map<String, Object> paths,
       ApiV2ResourceRegistration<?, ?> resource,
       Map<String, String> componentNames,
       Map<String, ResourceSchema> resourceSchemas,
+      Map<String, Object> schemas,
       ApiV2OpenApiComponents referenced) {
     String collectionPath = "/api/v2/" + resource.resourceName();
     String itemPath = collectionPath + "/{id}";
@@ -156,7 +156,8 @@ public final class ApiV2OpenApiGenerator {
       }
       pathItem.put(
           method,
-          operations.operation(resource, operation, component, resourceSchemas, referenced));
+          operations.operation(
+              resource, operation, component, resourceSchemas, schemas, referenced));
     }
     runtimeFields.addRuntimeFieldsPath(paths, resource);
     ApiV2OpenApiAuditDocs.addAuditPaths(paths, resource, component, text, referenced);
