@@ -29,6 +29,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.BookingResourceTestFixtures;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
@@ -47,7 +48,11 @@ class TimeSlotBookingResourceOperationsTest {
   private final BookingCreateExecutor creates = mock(BookingCreateExecutor.class);
   private final TimeSlotBookingResourceOperations operations =
       new TimeSlotBookingResourceOperations(
-          manager, featureFlags, ApiV2TimeSlotBookingResource.DESCRIPTION, creates);
+          manager,
+          featureFlags,
+          ApiV2TimeSlotBookingResource.DESCRIPTION,
+          mock(MessageSourceUtils.class),
+          creates);
   private final User actor = mock(User.class);
 
   @BeforeEach
