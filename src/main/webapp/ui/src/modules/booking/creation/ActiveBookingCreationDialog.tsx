@@ -8,13 +8,13 @@ import { type BookingCreationContext, useBookingCreationStore } from "@/modules/
 import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
 import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import {
-  bookingCreationProblemKey,
+  bookingProblemFeedback,
+  isBookingConflictError,
   isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 
 import { bookingConflicts, calendarAvailabilityRow } from "@/modules/booking/domain/availability";
-import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 
@@ -169,6 +169,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
     conflicts.every(({ kind }) => kind === "BOOKING");
   const conflictBlocksSubmission = availabilityViolation && !canOverlapBookings;
 
+  const problem = bookingProblemFeedback(mutation.error, t, {
+    target: availabilityTarget && {
+      maxBookingDurationMinutes: maintenance ? 0 : availabilityTarget.maxBookingDurationMinutes,
+    },
+    creation: true,
+  });
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
 
@@ -233,6 +239,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           <BookingForm
             mode="add"
             density="compact"
+            fixedTimezone
             displayTimezone={preferences.timeZone}
             eventKind={creation.eventKind}
             initialTarget={creation.target}
@@ -240,20 +247,14 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             initialWindow={creation.window}
             lockTarget={creation.lockTarget}
             pending={mutation.isPending}
-            error={
-              availabilityViolation && conflicts.length === 0
-                ? t("bookings.errors.overlap")
-                : mutation.error
-                  ? t(bookingCreationProblemKey(mutation.error))
-                  : undefined
-            }
+            error={availabilityViolation && conflicts.length === 0 ? t("bookings.errors.overlap") : problem.message}
             conflicts={conflicts}
-            conflictSeverity={canOverlapBookings && !isBookingOverlapError(mutation.error) ? "warning" : "error"}
+            conflictSeverity={canOverlapBookings && !isBookingConflictError(mutation.error) ? "warning" : "error"}
             outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||
               conflictBlocksSubmission ||
-              isBookingOverlapError(mutation.error) ||
+              isBookingConflictError(mutation.error) ||
               isBookingOutcomeUncertain(mutation.error)
             }
             windowAdjustment={windowAdjustment}
