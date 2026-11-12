@@ -259,6 +259,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             instrument.getName(),
             configuration.getTimeZone(),
             configuration.getSlotGranularityMinutes(),
+            configuration.getIncrementUnit(),
             configuration.getOpeningHours(),
             configuration.getBufferBeforeMinutes(),
             configuration.getBufferAfterMinutes(),
