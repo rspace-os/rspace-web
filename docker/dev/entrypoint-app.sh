@@ -47,7 +47,7 @@ for dir in /var/rspace-build/project/.gradle /var/rspace-build/project/buildSrc/
   fi
 done
 export GRADLE_USER_HOME=/var/rspace-build/gradle-home
-# Gradle 9.8 creates buildSrc's cache service before init scripts can change its
+# Gradle creates buildSrc's cache service before init scripts can change its
 # StartParameter. Give it an external project directory, with links to live source.
 # No mountpoint or symlink is created inside the host worktree.
 #
