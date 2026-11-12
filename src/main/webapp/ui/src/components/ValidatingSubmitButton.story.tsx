@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import { ThemeProvider } from "@mui/material/styles";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/other";
 import theme from "../theme";
@@ -44,14 +44,18 @@ export const ProgressExample = ({ onClick = () => {} }: { onClick: () => void })
   const [validationResult, setValidationResult] = useState<ValidationResult>(IsValid());
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<number | undefined>(undefined);
+  const interval = useRef<ReturnType<typeof setInterval>>(undefined);
+  // Stop ticking after unmount, which also keeps the timer from outliving a test's DOM.
+  useEffect(() => () => clearInterval(interval.current), []);
 
   const handleClick = () => {
     onClick();
     setProgress(0);
-    const interval = setInterval(() => {
+    clearInterval(interval.current);
+    interval.current = setInterval(() => {
       setProgress((prev) => {
         if (prev === undefined || prev >= 100) {
-          clearInterval(interval);
+          clearInterval(interval.current);
           return undefined;
         }
         return prev + 10;
