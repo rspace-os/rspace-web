@@ -5,11 +5,6 @@
  * Namespace for global variables and functions
  */
 var RS = window.RS || {};
-// Preserve ready-handler initialization on pages without a server-defined currentUser.
-if (typeof window.currentUser === "undefined") {
-  window.currentUser = "";
-}
-
 /*
  * Wrapper over analytics.js in case we swap provider in future.
  *

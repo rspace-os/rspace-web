@@ -25,6 +25,8 @@
   <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/jquery.toastmessage.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+  <%-- global.js skips its ready-handler setup when currentUser is undefined; this page has always run it. --%>
+  <script>if (typeof window.currentUser === "undefined") { window.currentUser = ""; }</script>
   <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
   

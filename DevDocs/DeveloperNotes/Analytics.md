@@ -17,10 +17,12 @@ Segment snippet can install its array queue, then replays events through
 Segment's `track`. Existing Segment snippets and loaded SDKs retain their
 normal behavior.
 
-`global.js` also sets `window.currentUser` to an empty string if it is undefined.
-The global ready handler checks `currentUser` before initializing. This shim
-preserves initialization on the public document and plugin dialog pages, which
-do not declare the `currentUser` variable supplied by `default.jsp`.
+The global ready handler in `global.js` skips its setup when `currentUser` is
+undefined. The public structured document page and the Omero, Clustermarket and
+Galaxy dialog pages don't declare the `currentUser` variable that `default.jsp`
+supplies, so each sets `window.currentUser` to an empty string after loading
+`global.js`. That keeps the setup running there, as the removed `segment.js`
+used to. Other pages that load `global.js` without `default.jsp` still skip it.
 
 `WEB-INF/decorators/default.jsp` includes `common/header.jsp`, which loads the
 AppBar entrypoint wrapped in Analytics. The public structured document page
