@@ -14,12 +14,12 @@ Use the stack to reproduce crashes, inspect runtime state, diagnose regressions,
 and verify fixes end to end. Code reading and covered unit/integration behavior
 do not require booting it.
 
-Commands affect only this worktree. Only pnpm is shared. Gradle home, project
-caches and outputs use per-stack volumes. `down` retains them; `nuke` deletes
-them and the legacy per-stack `app-target`. All backend build state lives outside
-`/rspace`, so host Gradle builds, `./gradlew clean` and `rm -rf build` can run while the
-stack is up. A host `git clean -fdX` also removes the frontend's `node_modules` mount;
-run `down` then `up` afterwards (`restart` recreates only the app).
+Commands affect only this worktree. Only the pnpm store is shared; Gradle caches
+and outputs live in per-stack volumes, outside the worktree, so host Gradle builds
+and `./gradlew clean` can run while the stack is up. A host `git clean -fdX` also
+removes the frontend's `node_modules` mount; run `down` then `up` afterwards.
+Set Jetty's heap or extra JVM arguments with `ORG_GRADLE_PROJECT_jettyJvmArgs`
+in `docker/dev/.env`.
 
 ## Start and inspect
 
@@ -79,9 +79,9 @@ Drawing a structure in Ketcher enables its 3D Viewer, which loads `miew-react`.
 | Spring XML / web.xml / new beans / build.gradle | `./docker/dev/rspace-dev restart` |
 | Liquibase / schema | `./docker/dev/rspace-dev reset-db` or `up --fresh` |
 
-See README sections "Hot reloading Java" and "What still requires a full
-restart" if behavior remains stale. See [REFERENCE.md](REFERENCE.md) for Gradle
-JVM, cache and reload details.
+`reload` compiles, then redeploys the webapp, which logs users out. A failed
+compile does not redeploy. See README sections "Hot reloading Java" and "What
+still requires a full restart" if behavior remains stale.
 
 ```bash
 ./docker/dev/rspace-dev logs app          # Jetty/Spring
