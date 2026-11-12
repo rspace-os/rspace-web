@@ -1,7 +1,7 @@
 import type { BrowserContext, BrowserContextOptions, Page, TestFixture } from "@playwright/test";
 import { test as base } from "@playwright/test";
-import { BookableItemPage } from "@/modules/booking/__tests__/pageObjects/BookableItemPage";
 import { AllBookableItemsFilterPage } from "@/modules/booking/__tests__/pageObjects/AllBookableItemsFilterPage";
+import { BookableItemPage } from "@/modules/booking/__tests__/pageObjects/BookableItemPage";
 import { GitHubAppsCardComponent } from "@/modules/github/__tests__/pageObjects/GitHubAppsCardComponent";
 import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObjects/MsTeamsShareDialogComponent";
 import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidProfilePage";
