@@ -152,7 +152,8 @@ export const InteractionTest: Story = {
     await waitFor(() => expect(page.queryByRole("tooltip")).not.toBeInTheDocument());
     trigger.focus();
     await userEvent.keyboard("{Tab}");
-    await expect(await page.findByRole("tooltip")).toHaveTextContent("Delete item");
+    // Focusing the first trigger can reopen its tooltip, which may still be closing after the Tab.
+    await expect(await page.findByRole("tooltip", { name: "Delete item" })).toBeVisible();
   },
 };
 
