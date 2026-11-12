@@ -91,6 +91,8 @@ are given, whatever their value; `generateStorybook` needs `=true`. An unknown
 Maven build so that existing commands and CI jobs keep working. The `jdbc.server.*` settings also
 accept their Maven names, `jdbc.url.maven`, `jdbc.db.maven`, `jdbc.username.maven`,
 `jdbc.password.maven` and `jdbc.driverClassName.maven`; the new name wins when both are given.
+These Maven names are deprecated and will be removed in a later version, so new commands, scripts
+and CI jobs should use the `jdbc.server.*` names.
 
 The version is `<version>-<timestamp>`, with `<version>` set by the `version =` line in
 `build.gradle`; release commits bump it there, where they used to edit `pom.xml`. The fixed `dev`
