@@ -79,6 +79,8 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
     Long fsId = store.getFileSystem().getId();
     assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/report.csv"))).isEmpty();
     assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/a/b"))).isEmpty();
+    // a trailing space names another S3 key, though padded collations compare it as equal
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv "))).isEmpty();
     assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv", "data/a//b")))
         .extracting(StructuredDocument::getId)
         .containsExactly(doc.getId());
