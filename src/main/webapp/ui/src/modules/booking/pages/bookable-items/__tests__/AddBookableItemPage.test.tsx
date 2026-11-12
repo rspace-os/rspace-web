@@ -257,7 +257,9 @@ describe("AddBookableItemPage", () => {
     queryClient.setQueryData(catalogueQueryKey, []);
 
     expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "booking:allBookableItems.fields.timezone" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "booking:allBookableItems.fields.timezone" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
     await completeForm(user);
 

@@ -56,9 +56,12 @@ function TestShell() {
 
 function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady = Promise.resolve()) {
   server.use(
-      http.get("/api/v2/booking-configurations/42/notification-subscription", () =>
-        HttpResponse.json({ configurationId: 42, enabled: false, createdEnabled: false, cancelledEnabled: false, emailEnabled: false }, { headers: { ETag: '"v0-000"' } }),
+    http.get("/api/v2/booking-configurations/42/notification-subscription", () =>
+      HttpResponse.json(
+        { configurationId: 42, enabled: false, createdEnabled: false, cancelledEnabled: false, emailEnabled: false },
+        { headers: { ETag: '"v0-000"' } },
       ),
+    ),
     http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),
     http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([], { limit: 100 }))),
@@ -231,7 +234,10 @@ describe("booking layout", () => {
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute("href", "/booking/all-items");
+    expect(screen.getByRole("link", { name: "booking:sidebar.allItems" })).toHaveAttribute(
+      "href",
+      "/booking/all-items",
+    );
     expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
   });
 

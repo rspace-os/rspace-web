@@ -122,10 +122,13 @@ describe("availability quick filters", () => {
   it("reads both counts in one request, with the item rules and today's window, and no catalogue page", async () => {
     const requests: URL[] = [];
     server.use(
-      http.get<never, never, BookingCatalogueManagerAvailabilityCounts>("/api/v2/booking-catalogue/availability-counts", ({ request }) => {
-        requests.push(new URL(request.url));
-        return HttpResponse.json({ availableNow: 3, freeLaterToday: 1 });
-      }),
+      http.get<never, never, BookingCatalogueManagerAvailabilityCounts>(
+        "/api/v2/booking-catalogue/availability-counts",
+        ({ request }) => {
+          requests.push(new URL(request.url));
+          return HttpResponse.json({ availableNow: 3, freeLaterToday: 1 });
+        },
+      ),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) =>
@@ -159,10 +162,13 @@ describe("availability quick filters", () => {
   it("does not request disabled counts", () => {
     let requests = 0;
     server.use(
-      http.get<never, never, BookingCatalogueManagerAvailabilityCounts>("/api/v2/booking-catalogue/availability-counts", () => {
-        requests += 1;
-        return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
-      }),
+      http.get<never, never, BookingCatalogueManagerAvailabilityCounts>(
+        "/api/v2/booking-catalogue/availability-counts",
+        () => {
+          requests += 1;
+          return HttpResponse.json({ availableNow: 0, freeLaterToday: 0 });
+        },
+      ),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) =>
@@ -199,7 +205,6 @@ describe("the availability oracle", () => {
     start,
     end,
     state: "CONFIRMED",
-    cancellationReason: null,
     kind,
     privacy: "busy",
     purpose: null,
