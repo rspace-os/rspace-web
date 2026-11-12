@@ -241,32 +241,6 @@ export function ZonedBookingWindowFields({
     );
   };
 
-  const occurrenceChoiceFields = ({
-    inputName,
-    fieldsetId,
-    legend,
-    values,
-    timezone,
-    onSelect,
-  }: {
-    inputName: string;
-    fieldsetId: string;
-    legend: string;
-    values: { earlier: string; later: string };
-    timezone: string;
-    onSelect: (choice: "earlier" | "later") => void;
-  }) => (
-    <fieldset className="space-y-2" id={fieldsetId}>
-      <legend className="text-sm font-medium">{legend}</legend>
-      {(["earlier", "later"] as const).map((choice) => (
-        <Label key={choice} className="flex items-center gap-2">
-          <input type="radio" name={inputName} disabled={disabled} onChange={() => onSelect(choice)} />
-          {t(`bookings.form.${choice}Occurrence`, { offset: offset(values[choice], timezone) })}
-        </Label>
-      ))}
-    </fieldset>
-  );
-
   const endpointUnresolved = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
     endpointResolution?.kind === "nonexistent" ||
     (endpointResolution?.kind === "ambiguous" && !value[`${name}Occurrence`]);
@@ -291,6 +265,47 @@ export function ZonedBookingWindowFields({
           .join(" ") || undefined
       : undefined;
 
+  const occurrenceChoiceFields = ({
+    inputName,
+    fieldsetId,
+    legend,
+    values,
+    timezone,
+    selected,
+    error,
+    onSelect,
+  }: {
+    inputName: string;
+    fieldsetId?: string;
+    legend: string;
+    values: { earlier: string; later: string };
+    timezone: string;
+    selected?: "earlier" | "later";
+    error?: { id: string; message: string };
+    onSelect: (choice: "earlier" | "later") => void;
+  }) => (
+    <fieldset className="space-y-2" id={fieldsetId}>
+      <legend className="text-sm font-medium">{legend}</legend>
+      {(["earlier", "later"] as const).map((choice) => (
+        <Label key={choice} className="flex items-center gap-2">
+          <input
+            type="radio"
+            name={inputName}
+            disabled={disabled}
+            checked={selected === choice}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error?.id}
+            onChange={() => onSelect(choice)}
+          />
+          {choice === "earlier"
+            ? t("bookings.form.earlierOccurrence", { offset: offset(values[choice], timezone) })
+            : t("bookings.form.laterOccurrence", { offset: offset(values[choice], timezone) })}
+        </Label>
+      ))}
+      {error ? <FieldError id={error.id}>{error.message}</FieldError> : null}
+    </fieldset>
+  );
+
   const occurrenceFields = (
     name: "start" | "end",
     endpointResolution: WallClockResolution | undefined,
@@ -299,30 +314,20 @@ export function ZonedBookingWindowFields({
     if (endpointResolution?.kind !== "ambiguous") return null;
     const occurrenceKey = `${name}Occurrence` as const;
     const endpointErrorId = `${fieldId}-${name}-error`;
-    return (
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">{t("bookings.form.occurrence")}</legend>
-        {(["earlier", "later"] as const).map((choice) => (
-          <Label key={choice} className="flex items-center gap-2">
-            <input
-              type="radio"
-              name={`${fieldId}-${name}-occurrence`}
-              disabled={disabled}
-              checked={occurrence === choice}
-              aria-invalid={showErrors && !occurrence ? true : undefined}
-              aria-describedby={showErrors && !occurrence ? endpointErrorId : undefined}
-              onChange={() => change({ [occurrenceKey]: choice })}
-            />
-            {t(`bookings.form.${choice}Occurrence`, {
-              offset: offset(endpointResolution[choice], resolvedDisplayTimezone),
-            })}
-          </Label>
-        ))}
-        {showErrors && !occurrence && (
-          <FieldError id={endpointErrorId}>{t("bookings.errors.occurrenceRequired")}</FieldError>
-        )}
-      </fieldset>
-    );
+    return occurrenceChoiceFields({
+      inputName: `${fieldId}-${name}-occurrence`,
+      legend: t("bookings.form.occurrence"),
+      values: endpointResolution,
+      timezone: resolvedDisplayTimezone,
+      selected: occurrence,
+      error:
+        showErrors && !occurrence
+          ? { id: endpointErrorId, message: t("bookings.errors.occurrenceRequired") }
+          : undefined,
+      onSelect: (choice) => {
+        change({ [occurrenceKey]: choice });
+      },
+    });
   };
 
   const endpointError = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
