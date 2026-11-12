@@ -53,7 +53,7 @@ public final class MaintenanceResourceOperations
             new MutationPolicy(
                 VersionPolicy.optional("version"), DeletePolicy.HARD, IdempotencyPolicy.NONE))
         .mutationErrors("errors.api.v2.invalidRequest", "errors.api.v2.maintenance.patch")
-        .expose(EnumSet.allOf(ResourceOperation.class))
+        .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
         .documentation(
             ResourceOperation.DELETE,
             OpenApiOperationDocumentation.builder()
