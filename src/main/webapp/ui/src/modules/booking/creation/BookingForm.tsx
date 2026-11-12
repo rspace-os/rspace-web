@@ -14,7 +14,9 @@ import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
   currentWallClock,
+  sameTimeZone,
   wallClockDraftFromInstants,
+  wallClockInstant,
 } from "@/modules/booking/domain/bookingTime";
 import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import type { BookingsReadKind } from "@/modules/common/api/v2/generated/models/bookingsReadKind";
@@ -30,7 +32,10 @@ import { FieldError } from "@/modules/common/ui/field";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { cn } from "@/modules/common/utils/cn";
 import {
+  type EndpointTimezones,
+  endpointTimezones,
   type ResolvedBookingWindow,
+  resolveBookingWindow,
   validateBookingWindow,
   ZonedBookingWindowFields,
 } from "./ZonedBookingWindowFields";
@@ -73,7 +78,13 @@ export type BookingFormSubmission = {
 export type BookingFormState = {
   target: BookableItemOption | undefined;
   draft: BookingWindowDraft;
+  /** The window once it passes the item's rules; submission uses it. */
   window: ResolvedBookingWindow | undefined;
+  /**
+   * The window as soon as both endpoints resolve with the end after the start, even when it breaks the item's rules,
+   * so conflicts can be checked straight away.
+   */
+  enteredWindow: ResolvedBookingWindow | undefined;
   purpose: string;
   eventKind: BookingsReadKind;
   dirty: boolean;
@@ -88,6 +99,8 @@ type BookingFormCommonProps = {
   outcomeUncertain?: boolean;
   density?: "comfortable" | "compact";
   layout?: "stacked" | "inline";
+  // Hides the time zone fields; the form stays in the display timezone.
+  fixedTimezone?: boolean;
   formId?: string;
   windowAdjustment?: BookingWindowDraft;
   showMobileItemInformation?: boolean;
@@ -131,6 +144,51 @@ function sameWindowDraft(left: BookingWindowDraft, right: BookingWindowDraft): b
   );
 }
 
+function wallClockEndpoint(instant: string, timezone: string) {
+  const {
+    startDate: date,
+    startTime: time,
+    startOccurrence: occurrence,
+  } = wallClockDraftFromInstants(instant, instant, timezone);
+  return { date, time, occurrence };
+}
+
+function draftFromInstants(start: string, end: string, timezones: EndpointTimezones): BookingWindowDraft {
+  const zones = endpointTimezones(timezones);
+  const startValue = wallClockEndpoint(start, zones.start);
+  const endValue = wallClockEndpoint(end, zones.end);
+  return {
+    startDate: startValue.date,
+    startTime: startValue.time,
+    startOccurrence: startValue.occurrence,
+    endDate: endValue.date,
+    endTime: endValue.time,
+    endOccurrence: endValue.occurrence,
+  };
+}
+
+/**
+ * The same instants as `draft` read in `from`, written as wall clocks in `to`, each endpoint in its own zone. Endpoints
+ * convert separately, so an out-of-order draft still converts; one without a resolvable date and time stays as entered.
+ */
+function convertDraft(draft: BookingWindowDraft, from: EndpointTimezones, to: EndpointTimezones): BookingWindowDraft {
+  const source = endpointTimezones(from);
+  const destination = endpointTimezones(to);
+  if (sameTimeZone(source.start, destination.start) && sameTimeZone(source.end, destination.end)) return draft;
+  const { start, end } = resolveBookingWindow(draft, source);
+  const startInstant = wallClockInstant(start, draft.startOccurrence);
+  const endInstant = wallClockInstant(end, draft.endOccurrence);
+  const startValue = startInstant ? wallClockEndpoint(startInstant, destination.start) : undefined;
+  const endValue = endInstant ? wallClockEndpoint(endInstant, destination.end) : undefined;
+  return {
+    ...draft,
+    ...(startValue
+      ? { startDate: startValue.date, startTime: startValue.time, startOccurrence: startValue.occurrence }
+      : {}),
+    ...(endValue ? { endDate: endValue.date, endTime: endValue.time, endOccurrence: endValue.occurrence } : {}),
+  };
+}
+
 export function BookingForm(props: BookingFormProps) {
   const { t } = useTranslation("booking");
   const editing = props.mode === "edit";
@@ -141,18 +199,29 @@ export function BookingForm(props: BookingFormProps) {
   const initialPurpose = props.mode === "add" ? (props.initialPurpose ?? "") : (props.booking.purpose ?? "");
   const eventKind = props.mode === "add" ? props.eventKind : props.booking.kind;
   const textFields = useMemo(() => purposeFields(eventKind), [eventKind]);
+  // Drafts crossing the props (initialWindow, onStateChange) use displayTimezone, the viewer's preference. The fields
+  // and the draft held here use formTimezones: displayTimezone for both endpoints unless the viewer picks another,
+  // optionally a separate one for the end. A picked zone keeps the entered wall clock, so the instants move.
   const displayTimezone = props.displayTimezone ?? (editing ? fixedTarget?.timezone : initialTarget?.timezone) ?? "UTC";
-  const originalDraft =
-    props.mode === "edit"
-      ? wallClockDraftFromInstants(props.booking.start, props.booking.end, displayTimezone)
-      : undefined;
-  const addDraft =
-    initialWindow ??
-    emptyDraft(
-      initialDate ?? (initialTarget ? currentWallClock(new Date().toISOString(), displayTimezone).date : undefined),
-    );
   const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
+  const [timezoneChoice, setTimezoneChoice] = useState<string>();
+  // Set only while the end has its own zone.
+  const [endTimezoneChoice, setEndTimezoneChoice] = useState<string>();
+  const formTimezone = timezoneChoice ?? displayTimezone;
+  const endFormTimezone = endTimezoneChoice ?? formTimezone;
+  const formTimezones = useMemo(() => ({ start: formTimezone, end: endFormTimezone }), [formTimezone, endFormTimezone]);
+  const originalDraft =
+    props.mode === "edit" ? draftFromInstants(props.booking.start, props.booking.end, formTimezones) : undefined;
+  const addDraft = initialWindow
+    ? convertDraft(initialWindow, displayTimezone, formTimezones)
+    : emptyDraft(
+        initialDate ?? (initialTarget ? currentWallClock(new Date().toISOString(), formTimezone).date : undefined),
+      );
   const [draft, setDraft] = useState<BookingWindowDraft>(() => originalDraft ?? addDraft);
+  const displayDraft = useMemo(
+    () => convertDraft(draft, formTimezones, displayTimezone),
+    [draft, formTimezones, displayTimezone],
+  );
   const appliedWindowAdjustment = useRef<BookingWindowDraft | undefined>(undefined);
   const [attemptedAt, setAttemptedAt] = useState<number>();
   const attempted = attemptedAt !== undefined;
@@ -170,6 +239,7 @@ export function BookingForm(props: BookingFormProps) {
   const [initialState, setInitialState] = useState({
     targetGlobalId: (editing ? fixedTarget : initialTarget)?.globalId ?? "",
     draft: originalDraft ?? addDraft,
+    timezones: formTimezones,
     purpose: initialPurpose,
     eventKind,
   });
@@ -184,7 +254,7 @@ export function BookingForm(props: BookingFormProps) {
   if (initialTarget !== previousInitialTarget) {
     setPreviousInitialTarget(initialTarget);
     if (!editing && !target && initialTarget) {
-      const date = currentWallClock(new Date().toISOString(), displayTimezone).date;
+      const date = currentWallClock(new Date().toISOString(), formTimezone).date;
       const seedDates = !draft.startDate && !initialDate;
       const nextDraft = seedDates ? { ...draft, startDate: date, endDate: date } : draft;
       setTarget(initialTarget);
@@ -197,10 +267,11 @@ export function BookingForm(props: BookingFormProps) {
     }
   }
   const allowPolicyMismatch = Boolean(originalDraft && sameWindowDraft(draft, originalDraft));
+  const enteredWindow = useMemo(() => resolveBookingWindow(draft, formTimezones).window, [draft, formTimezones]);
   const validation = useMemo(
     () =>
       target
-        ? validateBookingWindow(draft, displayTimezone, {
+        ? validateBookingWindow(draft, formTimezones, {
             schedulingTimezone: target.timezone,
             slotGranularityMinutes: eventKind === "MAINTENANCE" ? 1 : target.slotGranularityMinutes,
             incrementUnit: eventKind === "MAINTENANCE" ? "MINUTES" : target.incrementUnit,
@@ -210,19 +281,15 @@ export function BookingForm(props: BookingFormProps) {
             allowPolicyMismatch,
           })
         : undefined,
-    [draft, displayTimezone, target, eventKind, allowPolicyMismatch],
+    [draft, formTimezones, target, eventKind, allowPolicyMismatch],
   );
   const window = validation?.window;
   const selectTarget = (next: BookableItemOption | undefined) => {
     setTarget(next);
+    const today = currentWallClock(new Date().toISOString(), formTimezone).date;
     setDraft((current) => ({
       ...current,
-      ...(next && !current.startDate
-        ? {
-            startDate: currentWallClock(new Date().toISOString(), displayTimezone).date,
-            endDate: currentWallClock(new Date().toISOString(), displayTimezone).date,
-          }
-        : {}),
+      ...(next && !current.startDate ? { startDate: today, endDate: today } : {}),
       startOccurrence: undefined,
       endOccurrence: undefined,
     }));
@@ -253,7 +320,7 @@ export function BookingForm(props: BookingFormProps) {
         window,
         purpose: input.purpose.trim() || null,
         eventKind,
-        returnDate: draft.startDate,
+        returnDate: displayDraft.startDate,
       });
     } catch {
       // The owning page exposes mutation failures through the error prop while this form keeps its draft.
@@ -265,12 +332,14 @@ export function BookingForm(props: BookingFormProps) {
   const dirty =
     (target?.globalId ?? "") !== initialState.targetGlobalId ||
     !sameWindowDraft(draft, initialState.draft) ||
+    formTimezones.start !== initialState.timezones.start ||
+    formTimezones.end !== initialState.timezones.end ||
     purposeValue !== initialState.purpose;
   const bookingInPast = hasPastStart();
   const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));
   useEffect(() => {
-    notifyStateChange({ target, draft, window, purpose: purposeValue, eventKind, dirty });
-  }, [dirty, draft, eventKind, purposeValue, target, window]);
+    notifyStateChange({ target, draft: displayDraft, window, enteredWindow, purpose: purposeValue, eventKind, dirty });
+  }, [dirty, displayDraft, enteredWindow, eventKind, purposeValue, target, window]);
   const compact = props.density === "compact";
   const inline = props.layout === "inline";
   const submitLabel = editing
@@ -285,10 +354,30 @@ export function BookingForm(props: BookingFormProps) {
     target.openingHours.every((entry) => entry.start === firstHours.start && entry.end === firstHours.end)
       ? firstHours
       : undefined;
+  // The entered wall clock stays; a repeated-hour choice made for one zone means nothing in another.
+  const applyTimezones = (next: { start: string; end: string }) => {
+    setDraft({
+      ...draft,
+      ...(next.start === formTimezones.start ? {} : { startOccurrence: undefined }),
+      ...(next.end === formTimezones.end ? {} : { endOccurrence: undefined }),
+    });
+  };
+  // The end follows the start's zone until it is given another; picking the start's zone for it links them again.
+  const changeTimezone = (name: "start" | "end", next: string) => {
+    if (name === "end") {
+      setEndTimezoneChoice(sameTimeZone(next, formTimezones.start) ? undefined : next);
+      applyTimezones({ ...formTimezones, end: next });
+      return;
+    }
+    setTimezoneChoice(next);
+    applyTimezones({ start: next, end: endTimezoneChoice ?? next });
+  };
   const windowFields = (
     <ZonedBookingWindowFields
-      displayTimezone={displayTimezone}
-      schedulingTimezone={target?.timezone ?? displayTimezone}
+      displayTimezone={formTimezones.start}
+      endTimezone={formTimezones.end}
+      onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
+      schedulingTimezone={target?.timezone ?? formTimezone}
       slotGranularityMinutes={eventKind === "MAINTENANCE" ? 1 : (target?.slotGranularityMinutes ?? 1)}
       incrementUnit={eventKind === "MAINTENANCE" ? "MINUTES" : (target?.incrementUnit ?? "MINUTES")}
       maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
@@ -300,9 +389,8 @@ export function BookingForm(props: BookingFormProps) {
       originalValue={originalDraft}
       disabled={busy}
       density={props.density}
-      showErrors={
-        attempted || (compact && Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime))
-      }
+      // Once both endpoints are entered the times are checked, so a rule they break shows before submission.
+      showErrors={attempted || Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime)}
       startErrorId={bookingInPast ? pastStartErrorId : undefined}
     />
   );
@@ -315,7 +403,7 @@ export function BookingForm(props: BookingFormProps) {
       aria-busy={busy}
       onSubmit={submit}
     >
-      <div className={compact ? "min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" : "space-y-8"}>
+      <div className={compact ? "min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" : "space-y-6"}>
         {fixedTarget && !compact && !inline ? (
           <div className="space-y-1">
             <p className="text-sm font-medium">{t("bookings.form.item")}</p>
@@ -408,7 +496,7 @@ export function BookingForm(props: BookingFormProps) {
           </div>
         )}
         <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} layout="stacked" />
-        <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-6")} aria-live="polite">
+        <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-4")} aria-live="polite">
           {t(eventKind === "MAINTENANCE" ? "bookings.form.notesCount" : "bookings.form.purposeCount", {
             count: purposeValue.length,
           })}
@@ -455,7 +543,7 @@ export function BookingForm(props: BookingFormProps) {
                 className: busy ? "pointer-events-none opacity-50" : "",
               })}
               to="/booking/calendar"
-              search={{ date: draft.startDate, target: target?.globalId }}
+              search={{ date: displayDraft.startDate, target: target?.globalId }}
               aria-disabled={busy}
               tabIndex={busy ? -1 : undefined}
             >

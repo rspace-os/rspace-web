@@ -1,20 +1,32 @@
 import { CalendarCheck2Icon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { type BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { BookingEditorsContext } from "@/modules/booking/pages/calendar/InlineBookingEditor";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { Button } from "@/modules/common/ui/button";
-import { type BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
 import { CalendarTimeGrid } from "./CalendarTimeGrid";
-import { type BookingCalendarResource, type CalendarLayout, type CalendarView } from "./calendarLayoutUtils";
+import type { BookingCalendarResource, CalendarLayout, CalendarView } from "./calendarLayoutUtils";
+import { BookingEditorsContext } from "./InlineBookingEditor";
+
+export { ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
+export type {
+  BookingCalendarResource,
+  CalendarLayout,
+  CalendarView,
+} from "./calendarLayoutUtils";
+export {
+  calendarDates,
+  calendarLayouts,
+  calendarViews,
+} from "./calendarLayoutUtils";
 
 function additionalEventResourceCount(
   events: readonly BookingListDocument[],
@@ -83,7 +95,6 @@ const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
     { name: "updatedAt", type: "dateTime", labelKey: "booking:calendar.fields.updatedAt", list: false },
   ],
 });
-
 export function BookingEventsCalendar({
   date,
   view,
@@ -339,9 +350,3 @@ export function BookingEventsCalendar({
     </main>
   );
 }
-
-export type {
-  BookingCalendarResource,
-  CalendarLayout,
-  CalendarView,
-} from "@/modules/booking/pages/calendar/calendarLayoutUtils";
