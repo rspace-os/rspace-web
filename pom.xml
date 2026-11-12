@@ -2869,7 +2869,7 @@
     <urlrewrite.version>5.1.3</urlrewrite.version>
     <skipUnitTests>false</skipUnitTests>
     <spotless.version>3.5.1</spotless.version>
-    <bucket4j.version>8.21.0</bucket4j.version>
+    <bucket4j.version>8.22.0</bucket4j.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->
