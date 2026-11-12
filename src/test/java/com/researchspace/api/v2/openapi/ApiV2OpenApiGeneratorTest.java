@@ -45,6 +45,7 @@ import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.OpenAPI;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -75,7 +76,7 @@ class ApiV2OpenApiGeneratorTest {
         ApiV2ResourceSpec.builder(
                 ApiV2MaintenanceResource.DESCRIPTION, maintenanceOperations, Long::valueOf)
             .mutationErrors("create-error", "update-error")
-            .expose(EnumSet.allOf(ResourceOperation.class))
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
             .documentation(
                 ResourceOperation.LIST,
                 OpenApiOperationDocumentation.builder()
@@ -116,14 +117,14 @@ class ApiV2OpenApiGeneratorTest {
                     DeletePolicy.SOFT.withPermanentOption(),
                     IdempotencyPolicy.NONE))
             .mutationErrors("create-error", "update-error")
-            .expose(EnumSet.allOf(ResourceOperation.class))
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
             .resourceAccess(new ResourceAccessSpec<>(protectedAccess()))
             .build();
     ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookings =
         ApiV2ResourceSpec.builder(
                 ApiV2TimeSlotBookingResource.DESCRIPTION, timeSlotBookingOperations, Long::valueOf)
             .mutationErrors("create-error", "update-error")
-            .expose(EnumSet.allOf(ResourceOperation.class))
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
             .build();
     ApiV2ResourceSpec<FeatureFlagResource, String> featureFlags =
         ApiV2ResourceSpec.builder(
@@ -631,23 +632,21 @@ class ApiV2OpenApiGeneratorTest {
             List.of(new Sort("id", true)));
     ResourceOperations<Widget, Long> widgetOperations = operationsMock();
     Map<String, Object> document =
-        Json31.mapper()
-            .convertValue(
-                new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(
-                            List.of(
-                                ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
-                                    .mutationErrors("create-error", "update-error")
-                                    .build(),
-                                ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
-                                    .mutationErrors("create-error", "update-error")
-                                    .expose(Set.of())
-                                    .build())),
-                        com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
-                        "Test API",
-                        "2.0.0")
-                    .generate(),
-                new TypeReference<LinkedHashMap<String, Object>>() {});
+        documentMap(
+            new ApiV2OpenApiGenerator(
+                    new ApiV2ResourceCatalog(
+                        List.of(
+                            ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .build(),
+                            ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .expose(Set.of())
+                                .build())),
+                    com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                    "Test API",
+                    "2.0.0")
+                .generate());
     Map<String, Object> schemas = schemas(document);
 
     for (String variant : List.of("Read", "Create", "Update")) {
@@ -732,8 +731,7 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   private Map<String, Object> document() {
-    return Json31.mapper()
-        .convertValue(generator.generate(), new TypeReference<LinkedHashMap<String, Object>>() {});
+    return documentMap(generator.generate());
   }
 
   private static Map<String, Object> objectMap(Object value) {
@@ -756,5 +754,15 @@ class ApiV2OpenApiGeneratorTest {
   @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
   private static <T> ResourceOperations<T, Long> operationsMock() {
     return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
+  }
+
+  /**
+   * The generated document as a map, with its component references (other than schemas) resolved.
+   */
+  private static Map<String, Object> documentMap(OpenAPI openApi) {
+    return Json31.mapper()
+        .convertValue(
+            ApiV2OpenApiTestRefs.dereferenced(Json31.mapper().valueToTree(openApi)),
+            new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 }
