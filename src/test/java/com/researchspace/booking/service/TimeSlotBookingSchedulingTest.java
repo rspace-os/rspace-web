@@ -504,6 +504,7 @@ class TimeSlotBookingSchedulingTest {
     assertEquals(10, failure.bufferBeforeMinutes());
     assertEquals(20, failure.bufferAfterMinutes());
     verify(bookingDao, never()).saveAndFlush(any());
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test
