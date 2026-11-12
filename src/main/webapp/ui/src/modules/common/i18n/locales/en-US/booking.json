@@ -133,6 +133,7 @@
     },
     "backgroundError": "Couldn't refresh this item. You can retry without losing your unsaved changes.",
     "cancelEdit": "Cancel",
+    "days": "{count, plural, one {# day} other {# days}}",
     "disabled": "Disabled",
     "disableDialog": {
       "confirm": "Disable and save",
@@ -175,6 +176,7 @@
       "timezone": "Timezone",
       "updatedAt": "Last updated"
     },
+    "hours": "{count, plural, one {# hour} other {# hours}}",
     "leaveDialog": {
       "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
       "error": "Could not leave this configuration.",
@@ -392,10 +394,13 @@
     "errors": {
       "checkExistingBookings": "Check My Bookings",
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
+      "dayEndMissing": "This booking would end at {time} on {date}, but that local time does not exist in {timezone}. Change the start time or choose another duration.",
+      "dayIncrement": "This booking lasts {length}. Day bookings must end at the same local time as they start, a multiple of {increment} later, in {timezone}.",
       "deleteForbidden": "You no longer have permission to cancel this booking.",
       "deleteGeneric": "RSpace could not cancel the booking. Try again.",
       "deleteStale": "This booking can no longer be cancelled.",
       "duration": "Bookings may not exceed 366 days.",
+      "durationMultiple": "This booking lasts {length}. Its length must be a multiple of {increment}.",
       "endAfterStart": "The end must be after the start.",
       "forbidden": "You cannot edit this booking.",
       "generic": "RSpace could not save the booking. Try again.",
@@ -422,6 +427,7 @@
       "earlierOccurrence": "Earlier occurrence ({offset})",
       "end": "End",
       "endDate": "End date",
+      "endSnapped": "End adjusted to {time} on {date} so the booking lasts a multiple of {increment}.",
       "endTime": "End time",
       "item": "Bookable item",
       "itemChoose": "Choose a bookable item",
@@ -444,6 +450,7 @@
       "previousItems": "Previous",
       "purpose": "Purpose",
       "purposeCount": "{count, number}/1,000 characters",
+      "repeatedEnd": "The end time {time} occurs twice on {date} in {timezone}. Choose which one to use.",
       "returnToCalendar": "Return to Calendar",
       "returnToMyBookings": "Return to My Bookings",
       "save": "Save changes",
