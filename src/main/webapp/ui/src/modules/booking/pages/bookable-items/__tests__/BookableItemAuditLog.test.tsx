@@ -351,13 +351,22 @@ describe("BookableItemAuditLog", () => {
   it("paginates the capped result locally and refreshes once", async () => {
     const user = userEvent.setup();
     let requests = 0;
-    server.use(http.get("/api/v2/booking-configurations/7/audit", () => {
-      requests += 1;
-      return HttpResponse.json(auditPage(Array.from({ length: 21 }, () => event), { limit: 21, truncated: true }));
-    }));
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () => {
+        requests += 1;
+        return HttpResponse.json(
+          auditPage(
+            Array.from({ length: 21 }, () => event),
+            { limit: 21, truncated: true },
+          ),
+        );
+      }),
+    );
     const { container } = renderAudit();
     await screen.findAllByText("common:values.userWithUsername");
-    expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.truncated");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "booking:bookableItemDetails.audit.status.loaded booking:bookableItemDetails.audit.truncated",
+    );
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
     expect(requests).toBe(1);
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" })).toBeDisabled();

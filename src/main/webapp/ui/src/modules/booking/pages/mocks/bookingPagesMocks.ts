@@ -121,10 +121,6 @@ export function bookingPagesHandlers(): RequestHandler[] {
           page: 1,
           hasNextPage: false,
           limit: 100,
-
-
-
-
         });
       }
       return undefined;

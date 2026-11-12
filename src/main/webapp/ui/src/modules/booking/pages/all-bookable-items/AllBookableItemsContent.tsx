@@ -46,7 +46,11 @@ import { isNonEmpty } from "@/util/ArrayUtils";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
-import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "../bookable-items/bookableItemLifecycleHelpers";
+import {
+  type BookableItemsBulkAction,
+  lifecycleErrorKey,
+  requiredVersion,
+} from "../bookable-items/bookableItemLifecycleHelpers";
 import {
   archiveBookingConfiguration,
   type BookingConfigurationRow,
@@ -56,6 +60,7 @@ import {
 } from "../bookable-items/bookingConfiguration";
 import { mapBookingConfiguration } from "../bookable-items/bookingConfigurationSchema";
 import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
+import { WhenEligibleToAdd } from "../bookable-items/WhenEligibleToAdd";
 
 const bookableItemsProjection = {
   fixed: [
@@ -259,10 +264,12 @@ export function AllBookableItemsContent() {
             : undefined
         }
         createAction={
-          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-            <PlusIcon aria-hidden="true" data-icon="inline-start" />
-            {t("bookableItems.actions.add")}
-          </Link>
+          <WhenEligibleToAdd>
+            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+              <PlusIcon aria-hidden="true" data-icon="inline-start" />
+              {t("bookableItems.actions.add")}
+            </Link>
+          </WhenEligibleToAdd>
         }
       />
     </main>

@@ -157,10 +157,6 @@ function renderPage(hasSysAdminRole = false, scheduleBookings: readonly unknown[
             page: 1,
             hasNextPage: false,
             limit: 100,
-
-
-
-
           }),
     ),
   );

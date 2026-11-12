@@ -41,7 +41,9 @@ describe("CalendarPage", () => {
 
     await waitFor(() => {
       expect(catalogueRequests.at(-1)?.searchParams.get("where")).toContain("targetOwner==me");
-      expect(eventRequests.some((request) => request.searchParams.get("where")?.includes("targetOwner==me"))).toBe(true);
+      expect(eventRequests.some((request) => request.searchParams.get("where")?.includes("targetOwner==me"))).toBe(
+        true,
+      );
     });
   });
 
