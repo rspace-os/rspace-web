@@ -2602,30 +2602,6 @@
       </build>
     </profile>
 
-    <!-- Format/check only files changed since the merge base with the given ref, e.g.
-         -DspotlessRatchetFrom=origin/main. spotless-maven-plugin 3.5.1 ignores
-         -Dspotless.ratchetFrom, hence this profile. -->
-    <profile>
-      <id>spotlessRatchet</id>
-      <activation>
-        <property>
-          <name>spotlessRatchetFrom</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.diffplug.spotless</groupId>
-            <artifactId>spotless-maven-plugin</artifactId>
-            <version>${spotless.version}</version>
-            <configuration>
-              <ratchetFrom>${spotlessRatchetFrom}</ratchetFrom>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
     <!-- Dummy profile setting up argLine property that is referred by surefire plugin -->
     <profile>
       <id>noCodeCoverage</id>
@@ -2789,7 +2765,7 @@
     <sitemesh.version>3.2.2</sitemesh.version>
     <urlrewrite.version>5.1.3</urlrewrite.version>
     <skipUnitTests>false</skipUnitTests>
-    <spotless.version>3.5.1</spotless.version>
+    <spotless.version>3.11.0</spotless.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->

@@ -231,7 +231,7 @@ jobs:
           ratchet=()
           if [ "$GITHUB_EVENT_NAME" = pull_request ] \
             && git diff --quiet "origin/$DEFAULT_BRANCH...HEAD" -- pom.xml; then
-            ratchet=(-DspotlessRatchetFrom="origin/$DEFAULT_BRANCH")
+            ratchet=(-DratchetFrom="origin/$DEFAULT_BRANCH")
           fi
           ./mvnw -q spotless:check -DspotlessStrict "${ratchet[@]}" \
             -Djava-version=${{ matrix.java-version }} \
