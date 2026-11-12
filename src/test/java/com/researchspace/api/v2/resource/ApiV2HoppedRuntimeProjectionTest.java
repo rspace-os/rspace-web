@@ -79,7 +79,8 @@ class ApiV2HoppedRuntimeProjectionTest {
     ApiV2ResourceSpec<Target, Long> targetSpec =
         ApiV2ResourceSpec.builder(targetDescription(), new Targets(), Long::valueOf)
             .mutationErrors("error", "error")
-            .expose(Set.copyOf(EnumSet.allOf(ResourceOperation.class)))
+            .expose(
+                Set.copyOf(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE)))
             .runtimeFields(List.of(targetFields))
             .build();
     return new ApiV2ResourceCatalog(List.of(nodeSpec, targetSpec));
