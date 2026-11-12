@@ -33,10 +33,10 @@ public class HibernateUtils {
 
   /** Builds a scratch-database URL on the server used by the Gradle database reset. */
   static String jdbcUrl(String dbName) {
-    return System.getProperty("jdbc.url.maven", "jdbc:mysql://localhost:3306")
-            .replaceFirst("/+$", "")
-        + "/"
-        + dbName;
+    String server =
+        System.getProperty(
+            "jdbc.server.url", System.getProperty("jdbc.url.maven", "jdbc:mysql://localhost:3306"));
+    return server.replaceFirst("/+$", "") + "/" + dbName;
   }
 
   private static Configuration createConfiguration(String dbName) {

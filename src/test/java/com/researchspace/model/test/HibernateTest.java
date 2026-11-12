@@ -96,7 +96,7 @@ import org.junit.jupiter.api.Tag;
  * Common class for hibernate-based tests.
  *
  * <p>These tests need a scratch database on the same MariaDB server the main test suite uses
- * (localhost:3306 by default, or {@code jdbc.url.maven}, with RSpace credentials); Hibernate
+ * (localhost:3306 by default, or {@code jdbc.server.url}, with RSpace credentials); Hibernate
  * creates and drops its schema on each run. The database is called hibtest unless the hibtest.db
  * system property names another, which Jenkins sets per branch so concurrent builds on its shared
  * server do not drop each other's tables. A name that does not start with hibtest, or is not a

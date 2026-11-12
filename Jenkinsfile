@@ -293,7 +293,7 @@ pipeline {
                     sh "./gradlew --continue clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                       -Djavax.xml.accessExternalDTD=all\
                       -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
-                      -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
+                      -Djdbc.server.db=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
                       -Denvironment=drop-recreate-db \
                       -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
                       -DenableTestCoverage  ${params.NIGHTLY_BUILD}"

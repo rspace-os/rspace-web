@@ -289,7 +289,7 @@ jobs:
             -Dmail.ssl.enabled=false \
             -Dmail.from=noreply@rspace-e2e.local \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
-            -Djdbc.db.maven=rspace \
+            -Djdbc.server.db=rspace \
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
             "${INTEGRATION_ARGS[@]}" \

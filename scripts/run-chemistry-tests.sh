@@ -32,6 +32,6 @@ fi
   -Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION:-17}" \
   -Djavax.xml.accessExternalDTD=all \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
-  -Djdbc.db.maven="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \
+  -Djdbc.server.db="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \
   -DRS.devlogLevel=INFO \
   -DRS_FILE_BASE="${RS_FILE_BASE}"
