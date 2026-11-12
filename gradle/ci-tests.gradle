@@ -1,6 +1,3 @@
-import com.researchspace.build.CiTestShard
-import groovy.json.JsonSlurper
-
 // Local `test` still runs every unit/Spring test. CI runs the two disjoint tag sets.
 def suite = providers.gradleProperty('testSuite').orElse('all').get()
 if (!(suite in ['all', 'slow'])) {
@@ -26,25 +23,8 @@ def (index, count) = shardSpec.split('/').collect { it.toInteger() }
 if (index > count || fast || project.ext.cliSystemProperties.containsKey('test') || providers.gradleProperty('test').isPresent()) {
   throw new GradleException('Test sharding requires index <= count, and cannot be combined with -Dfast or -Dtest')
 }
-def durationFile = layout.projectDirectory.file('gradle/ci-test-durations.json')
-def durations = new TreeMap<String, Double>()
-new JsonSlurper().parseText(providers.fileContents(durationFile).asText.get()).each { name, seconds ->
-  durations[name] = seconds.doubleValue()
-}
-
-// These groups keep their shared database and order on shard one. Reserve their
-// class estimates plus ten seconds for each additional test JVM before balancing.
-def specialGroups = ['integrationTestRun', 'integrationTestProblematic']
-def specialClassNames = specialGroups.collectMany { name ->
-  tasks.named(name, Test).get().includes.collect { it.tokenize('/').last().replace('.class', '') }
-}
-def reservedIntegrationSeconds = specialGroups.size() * 10.0 + specialClassNames.sum { simpleName ->
-  durations.findAll { name, seconds -> name.tokenize('.').last() == simpleName }.values().sum(0.0) ?: 1.0
-}
-
 tasks.withType(Test).configureEach {
   inputs.property('testShard', shardSpec)
-  inputs.file(durationFile).withPathSensitivity(PathSensitivity.RELATIVE)
   // Keep reports from earlier shards out of the current shard's publication.
   reports.junitXml.outputLocation = layout.buildDirectory.dir("test-results/${name}-shard${index}")
   reports.html.outputLocation = layout.buildDirectory.dir("reports/tests/${name}-shard${index}")
@@ -70,8 +50,9 @@ tasks.withType(Test).configureEach {
         roots.find { path.startsWith(it) }.relativize(path).toString()
           .replace(File.separator, '.').replaceAll(/[.]class$/, '')
       }
-      def reservedSeconds = task.name == 'integrationTest' ? reservedIntegrationSeconds : 0.0
-      def selected = CiTestShard.select(names, durations, index, count, reservedSeconds)
+      // A stable hash, not measured durations: every runner computes the same split, and each
+      // class reaches exactly one shard.
+      def selected = names.findAll { Math.floorMod(it.hashCode(), count) == index - 1 }.sort()
       task.filter {
         failOnNoMatchingTests = false
         // A nonmatching pattern prevents an empty shard from selecting everything.
