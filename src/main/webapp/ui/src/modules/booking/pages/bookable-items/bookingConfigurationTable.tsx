@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
+import { INCREMENT_UNITS } from "@/modules/booking/domain/bookingIncrement";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
@@ -99,6 +100,14 @@ export const bookingConfigurationConfig = {
       name: "slotGranularityMinutes",
       type: "number",
       labelKey: "booking:settings.fields.granularity",
+      list: false,
+      form: false,
+    },
+    {
+      name: "incrementUnit",
+      type: "select",
+      options: INCREMENT_UNITS,
+      labelKey: "booking:settings.fields.incrementUnit",
       list: false,
       form: false,
     },

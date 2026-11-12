@@ -28,6 +28,7 @@ import { collectionPage } from "../mocks/bookableItemsMocks";
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
 const settings = {
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:00" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
@@ -209,11 +210,12 @@ describe("AddBookableItemPage", () => {
       }),
     );
     renderPage("/booking/bookable-items/add?target=IN123");
-    await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" });
+    expect(await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
 
     await user.click(await screen.findByRole("button", { name: "common:relationshipPicker.clear" }));
 
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toHaveValue("");
     await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
     await user.click(
       await screen.findByRole("option", { name: "Spare microscope common:relationshipPicker.openRecord" }),
@@ -273,6 +275,7 @@ describe("AddBookableItemPage", () => {
       target: { relationTo: "instruments", value: 123 },
       enabled: true,
       slotGranularityMinutes: 5,
+      incrementUnit: "MINUTES",
       openingHours: settings.openingHours,
       bufferBeforeMinutes: 0,
       bufferAfterMinutes: 0,
