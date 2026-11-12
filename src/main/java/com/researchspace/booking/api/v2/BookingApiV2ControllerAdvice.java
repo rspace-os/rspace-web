@@ -10,6 +10,8 @@ import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.service.MessageSourceUtils;
+import java.util.Locale;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -21,9 +23,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice(basePackages = "com.researchspace.booking.api.v2")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
+  private final MessageSourceUtils messages;
 
   public BookingApiV2ControllerAdvice(MessageSourceUtils messages, ApiV2ProblemFactory problems) {
     super(messages, problems);
+    this.messages = messages;
   }
 
   @ExceptionHandler(InvalidBookingSchedulingSettingsException.class)
