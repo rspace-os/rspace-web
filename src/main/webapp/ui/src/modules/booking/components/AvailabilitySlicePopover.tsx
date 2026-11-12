@@ -1,16 +1,6 @@
-import { type AvailabilityInterval, type AvailabilitySource, type AvailabilityState, buildAvailabilitySlices, timestamp } from "@/modules/booking/domain/availability";
-import { formatList } from "@/modules/common/i18n/listFormat";
-import { buttonVariants } from "@/modules/common/ui/button";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
-import { cn } from "@/modules/common/utils/cn";
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import { Temporal } from "@js-temporal/polyfill";
-import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
-import { useTranslation } from "react-i18next";
+import { Popover, PopoverTrigger } from "@/modules/common/ui/popover";
+import { cn } from "@/modules/common/utils/cn";
 
 export function AvailabilitySlicePopover({
   children,

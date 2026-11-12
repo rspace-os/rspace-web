@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
-import { DraftMarker } from "../CompactBookingCreationDialog";
+import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
 
 it("retains the elapsed width of a booking across the repeated hour", () => {
   render(
