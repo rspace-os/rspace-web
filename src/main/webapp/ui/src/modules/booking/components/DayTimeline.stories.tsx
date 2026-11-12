@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { type DayTimelineEvent, type DayTimelineViewState } from "@/modules/booking/components/DayTimelineEvent";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { DayTimeline, type DayTimelineEvent, type DayTimelineViewState } from "./DayTimeline";
+import { DayTimeline } from "./DayTimeline";
 import { DayTimelineStory } from "./DayTimeline.story";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 

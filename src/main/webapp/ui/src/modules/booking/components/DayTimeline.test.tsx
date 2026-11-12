@@ -14,10 +14,12 @@ import userEvent from "@testing-library/user-event";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { type DayTimelineViewState } from "@/modules/booking/components/DayTimelineEvent";
+import { DayTimelineEventCard } from "@/modules/booking/components/DayTimelineEventCard";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import { DayTimeline, DayTimelineEventCard, type DayTimelineViewState } from "./DayTimeline";
+import { DayTimeline } from "./DayTimeline";
 import { dayTimelineEvents, LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
