@@ -6,7 +6,9 @@ import static com.researchspace.testutils.TestFactory.createAnySD;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalForm;
@@ -17,7 +19,10 @@ import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ChoiceFieldForm;
+import com.researchspace.model.field.DateFieldForm;
 import com.researchspace.model.field.NumberFieldForm;
+import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.Folder;
@@ -130,5 +135,34 @@ public class ArchiveModelFactoryTest {
     ArchivalDocument archivalDocument = factory.createArchivalDocument(structuredDocument);
 
     assertEquals("a, b", archivalDocument.getListFields().get(0).getFieldDataPrintable());
+  }
+
+  @Test
+  public void testMandatoryFields() {
+    TextFieldForm tff = TestFactory.createTextFieldForm();
+    tff.setMandatory(true);
+    DateFieldForm sff = TestFactory.createDateFieldForm();
+    sff.setMandatory(false);
+    RSForm form = new RSForm("form", "desc", createAnyUser("user"));
+    form.addAllFieldForms(tff, sff);
+    form.setId(1L);
+    ArchivalForm aform = factory.createArchivalForm(form, "asd");
+    assertTrue(aform.getFieldFormList().get(0).isMandatory());
+    assertFalse(aform.getFieldFormList().get(1).isMandatory());
+  }
+
+  @Test
+  public void archivalRadioFieldKeepsPickListSettings() {
+    RadioFieldForm radioFieldForm = new RadioFieldForm("radio");
+    radioFieldForm.setShowAsPickList(true);
+    radioFieldForm.setSortAlphabetic(true);
+    RSForm form = new RSForm("form", "desc", createAnyUser("user"));
+    form.addAllFieldForms(radioFieldForm);
+    form.setId(1L);
+
+    ArchivalForm aform = factory.createArchivalForm(form, "asd");
+
+    assertTrue(aform.getFieldFormList().get(0).isDisplayAsPickList());
+    assertTrue(aform.getFieldFormList().get(0).isSortAlphabetic());
   }
 }
