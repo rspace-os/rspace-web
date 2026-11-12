@@ -89,6 +89,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         return HttpResponse.json({
           docs: availabilityBookings,
           totalDocs: availabilityBookings.length,
+          limit: 100,
           page: 1,
           hasNextPage: false,
         });
