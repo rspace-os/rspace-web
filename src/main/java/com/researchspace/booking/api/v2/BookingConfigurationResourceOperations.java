@@ -132,7 +132,7 @@ public final class BookingConfigurationResourceOperations
                 IdempotencyPolicy.NONE))
         .mutationErrors(
             "errors.api.v2.bookingConfiguration.create", "errors.api.v2.bookingConfiguration.patch")
-        .expose(EnumSet.allOf(ResourceOperation.class))
+        .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
         .documentation(
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
