@@ -1,4 +1,3 @@
-import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 import { bookableItemHeading } from "../../bookable-items/pageObjects/bookableItemLocators";
 
