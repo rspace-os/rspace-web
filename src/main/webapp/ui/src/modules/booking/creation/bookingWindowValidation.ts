@@ -1,12 +1,17 @@
 import { Temporal } from "@js-temporal/polyfill";
 import {
+  type IncrementSettings,
+  type IncrementViolation,
+  incrementRule,
+  incrementViolation,
+} from "@/modules/booking/domain/bookingIncrement";
+import {
   coversInterval,
   MAX_BOOKING_DURATION_MINUTES,
   type OpeningSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
-  isBookingInstantAlignedToGranularity,
   resolveWallClock,
   type WallClockResolution,
   wallClockInstant,
@@ -51,6 +56,7 @@ export function resolveBookingWindow(
 export type BookingWindowPolicy = OpeningSchedule & {
   schedulingTimezone: string;
   slotGranularityMinutes: number;
+  incrementUnit?: IncrementSettings["incrementUnit"];
   /** The configurable item limit; 0 means only the absolute limit applies. */
   maxBookingDurationMinutes: number;
   /** False is the explicit maintenance bypass: closed weekdays and hours are not checked. */
@@ -65,6 +71,7 @@ export function validateBookingWindow(
   {
     schedulingTimezone: resolvedSchedulingTimezone,
     slotGranularityMinutes,
+    incrementUnit = "MINUTES",
     maxBookingDurationMinutes,
     enforceOpeningHours = true,
     allowPolicyMismatch = false,
@@ -72,13 +79,24 @@ export function validateBookingWindow(
   }: BookingWindowPolicy,
 ) {
   const result = resolveBookingWindow(value, timezones);
-  const granularityInvalid = Boolean(
-    result.window &&
-      (!isBookingInstantAlignedToGranularity(result.window.start, resolvedSchedulingTimezone, slotGranularityMinutes) ||
-        !isBookingInstantAlignedToGranularity(result.window.end, resolvedSchedulingTimezone, slotGranularityMinutes)),
-  );
-  // The smaller of the item limit and the absolute limit; checked first so an unbounded draft never
-  // reaches the opening-hours date walk.
+  const rule = incrementRule({ slotGranularityMinutes, incrementUnit });
+  const violation: IncrementViolation | null = result.window
+    ? incrementViolation(rule, result.window.start, result.window.end, resolvedSchedulingTimezone)
+    : null;
+  const granularityInvalid = violation !== null;
+  const missingDayEnd =
+    violation === "dayEndMissing" && result.window
+      ? {
+          date: Temporal.Instant.from(result.window.end)
+            .toZonedDateTimeISO(resolvedSchedulingTimezone)
+            .toPlainDate()
+            .toString(),
+          time: Temporal.Instant.from(result.window.start)
+            .toZonedDateTimeISO(resolvedSchedulingTimezone)
+            .toPlainTime()
+            .toString({ smallestUnit: "minute" }),
+        }
+      : undefined;
   const maximumDurationLimitMinutes =
     maxBookingDurationMinutes > 0
       ? Math.min(maxBookingDurationMinutes, MAX_BOOKING_DURATION_MINUTES)
@@ -101,6 +119,9 @@ export function validateBookingWindow(
     ...result,
     window: resolvedWindow,
     granularityInvalid,
+    rule,
+    incrementViolation: violation,
+    missingDayEnd,
     openingInvalid,
     maximumDurationInvalid,
     maximumDurationLimitMinutes,
