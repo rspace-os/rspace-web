@@ -31,6 +31,8 @@ public class ArchivalFieldForm {
 
   @XmlElement private String summary;
 
+  @XmlElement private Boolean mandatory = Boolean.FALSE;
+
   @XmlElement private String min;
 
   @XmlElement private String max;
