@@ -75,13 +75,15 @@ describe("the All Bookable Items page", () => {
     worker.use(
       http.get<never, never, ListBookingConfigurations200 | ApiV2Problem>("/api/v2/booking-configurations", () => {
         requests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 1001, limit: 100, limit: 100, page: 1 });
+        return HttpResponse.json({ docs: [], totalDocs: 1001, limit: 100, page: 1 });
       }),
     );
     render(<AllBookableItemsStory history={history} />);
     await expect
       .element(page.getByRole("alert"))
-      .toHaveTextContent("Availability quick filters are unavailable for more than 1,000 items.");
+      .toHaveTextContent(
+        "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
+      );
     await expect.element(page.getByRole("button", { name: "Retry", exact: true })).not.toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: /Available now/ })).toBeDisabled();
     await expect.element(pageObj.detailsButton).toBeVisible();
