@@ -276,7 +276,7 @@ export function BookingEventsCalendar({
           renderRowsWhenEmpty
           renderRows={() => (
             <>
-              {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
+              {targetFilter ? <CalendarAppliedFilters targetFilter={targetFilter} quickFilters={[]} /> : null}
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
               <CalendarAvailabilityRows data={availabilityLayout} />
             </>

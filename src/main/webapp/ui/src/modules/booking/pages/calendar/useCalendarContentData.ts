@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
@@ -218,7 +217,10 @@ export function useCalendarContentData() {
       config: { ...calendarEventSourceConfig, fields: [...calendarEventSourceConfig.fields, eventOwnerField] },
       metadata: eventRuntimeFields.metadata,
       runtimeFields: eventRuntimeFields.runtimeFields,
-      localFields: [...calendarEventSourceConfig.fields.filter((field) => field.name !== "target").map((field) => field.name), eventOwnerField.name],
+      localFields: [
+        ...calendarEventSourceConfig.fields.filter((field) => field.name !== "target").map((field) => field.name),
+        eventOwnerField.name,
+      ],
     });
     return resolveCollectionConfig({
       ...enriched,
@@ -247,7 +249,11 @@ export function useCalendarContentData() {
     return { expression: recovered.expression, dropped: [...staleFields, ...recovered.dropped] };
   }, [itemConfig, itemWhere, layout]);
   const parsedEvents = React.useMemo(
-    () => dropInvalidMeRules(eventWhere ? parseRsqlExpression(eventWhere, eventConfig) : null, ["requester.value", "targetOwner"]),
+    () =>
+      dropInvalidMeRules(eventWhere ? parseRsqlExpression(eventWhere, eventConfig) : null, [
+        "requester.value",
+        "targetOwner",
+      ]),
     [eventConfig, eventWhere],
   );
   const itemExpression = parsedItems.expression;
