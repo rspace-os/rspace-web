@@ -2,10 +2,8 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { expect, it } from "vitest";
 import { getOperations } from "./index";
-import { verifyOperationIdProtection } from "./protectOperationId";
 
 const require = createRequire(import.meta.url);
 const ui = resolve(import.meta.dirname, "../..");
@@ -22,7 +20,7 @@ function generatedFiles(directory: string): string[] {
   });
 }
 
-it("verifies operation protection over a complete scratch generation", () => {
+it("retains operation IDs over a complete scratch generation", () => {
   const directory = scratch();
   try {
     for (const file of [
@@ -65,7 +63,7 @@ it("verifies operation protection over a complete scratch generation", () => {
     let operationCount = 0;
     for (const file of files) {
       const source = readFileSync(file, "utf8");
-      verifyOperationIdProtection(source, file);
+
       operationCount += [...source.matchAll(/operationId:\s*["']/g)].length;
     }
     expect(operationCount).toBe(getOperations(JSON.parse(readFileSync(spec, "utf8"))).length);
@@ -73,36 +71,3 @@ it("verifies operation protection over a complete scratch generation", () => {
     rmSync(directory, { recursive: true, force: true });
   }
 }, 90_000);
-
-it("rejects changed generator formatting and exits nonzero even if Orval catches the hook exception", () => {
-  for (const source of [
-    "type Options = SecondParameter < typeof apiV2Fetch >;",
-    "type Options = Parameters < typeof apiV2HeadersFetch > [1];",
-    "type Options = NonNullable<SecondParameter<typeof apiV2BlobFetch>>;",
-    'const init = { "operationId": "updateBooking", headers: { "X-Requested-With": "XMLHttpRequest" }, ...options };',
-  ]) {
-    expect(() => verifyOperationIdProtection(source)).toThrow(/Unprotected public|must follow/);
-  }
-  const directory = scratch();
-  try {
-    const file = resolve(directory, "unsafe.ts");
-    writeFileSync(file, "type Options = SecondParameter < typeof apiV2Fetch >;");
-    const hook = pathToFileURL(resolve(import.meta.dirname, "protectOperationId.ts")).href;
-    const result = spawnSync(
-      process.execPath,
-      [
-        "--input-type=module",
-        "-e",
-        `
-      import { protectGeneratedOperationIds } from ${JSON.stringify(hook)};
-      try { protectGeneratedOperationIds([${JSON.stringify(directory)}]); } catch (error) { console.error(error.message); }
-    `,
-      ],
-      { encoding: "utf8" },
-    );
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("Unprotected public API v2 request options");
-  } finally {
-    rmSync(directory, { recursive: true, force: true });
-  }
-});

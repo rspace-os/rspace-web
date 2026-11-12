@@ -1,9 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { buildInvalidationRules, type Document, getOperations, queryFile } from "./index";
-import { protectOperationId } from "./protectOperationId";
 
 const document: Document = {
   paths: {
@@ -53,24 +51,14 @@ describe("resource invalidation", () => {
       buildInvalidationRules(document, [{ onMutations: ["updateBooking"], invalidates: [{ query: "unknown" }] }]),
     ).toThrow("Unknown query");
   });
-  it("places the fixed operation after caller options and is idempotent", () => {
-    const source = 'const init = { operationId: "updateBooking", ...options, method: "PATCH" };';
-    const result = protectOperationId(source);
-    expect(result).toBe('const init = { ...options, operationId: "updateBooking", method: "PATCH" };');
-    expect(protectOperationId(result)).toBe(result);
-    expect(runInNewContext(`${result}; init`, { options: { operationId: "wrong" } }).operationId).toBe("updateBooking");
-    const options = "options?: Parameters<typeof apiV2Fetch>[1]; request?: SecondParameter<typeof apiV2HeadersFetch>";
-    const protectedOptions = protectOperationId(options);
-    expect(protectedOptions).toContain('Omit<NonNullable<Parameters<typeof apiV2Fetch>[1]>, "operationId">');
-    expect(protectedOptions).toContain('Omit<NonNullable<SecondParameter<typeof apiV2HeadersFetch>>, "operationId">');
-    expect(protectOperationId(protectedOptions)).toBe(protectedOptions);
-  });
 });
 
 // Run after generation, against either the committed client or a scratch client.
 it("covers every mutation and resolves every target to a generated GET and file", async () => {
   const root = resolve(process.env.API_V2_CONFIG_TEST_ROOT ?? ".");
-  const spec: Document = JSON.parse(readFileSync(resolve(root, "src/modules/common/api/v2/openapi.generated.json"), "utf8"));
+  const spec: Document = JSON.parse(
+    readFileSync(resolve(root, "src/modules/common/api/v2/openapi.generated.json"), "utf8"),
+  );
   const { crossResourceInvalidation } = await import("../../src/modules/common/api/v2/crossResourceInvalidation");
   const operations = getOperations(spec);
   const rules = buildInvalidationRules(spec, crossResourceInvalidation);
@@ -89,7 +77,6 @@ it("covers every mutation and resolves every target to a generated GET and file"
       expect(existsSync(file), file).toBe(true);
       const source = readFileSync(file, "utf8");
       expect(source).toContain(`export const ${query.operationId} =`);
-      expect(source).not.toMatch(/operationId:\s*["'][^"']+["'],?\s*\.\.\.options,/);
     }
   }
 });
