@@ -354,14 +354,14 @@ importers:
         specifier: 1.9.4
         version: 1.9.4
       mobx:
-        specifier: 7.1.3
-        version: 7.1.3
+        specifier: 7.1.4
+        version: 7.1.4
       mobx-react:
         specifier: 10.0.3
-        version: 10.0.3(@types/react@19.3.0)(mobx@7.1.3)(react@19.3.1)
+        version: 10.0.3(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1)
       mobx-react-lite:
         specifier: 5.1.2
-        version: 5.1.2(@types/react@19.3.0)(mobx@7.1.3)(react@19.3.1)
+        version: 5.1.2(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1)
       pdfjs-dist:
         specifier: 6.3.289
         version: 6.3.289
@@ -5703,8 +5703,8 @@ packages:
       '@types/react':
         optional: true
 
-  mobx@7.1.3:
-    resolution: {integrity: sha512-H2NcS5ylMsqYn7v4WpSdzv5YWPmw5XTV6pG2NvY0qYbh95FXbswZJ7pn7wU0rOtUvRzk+3t4AOX2eircoN+vBg==}
+  mobx@7.1.4:
+    resolution: {integrity: sha512-2G9WcLqXGKe4e5usnMabjz06mqO5hQmad3qagY7/n5MmKS7t281+XtmYxnPYqVmSnCEGAKJkrdRfDhOjn3UNJg==}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -12887,22 +12887,22 @@ snapshots:
   mkdirp-classic@0.5.3:
     optional: true
 
-  mobx-react-lite@5.1.2(@types/react@19.3.0)(mobx@7.1.3)(react@19.3.1):
+  mobx-react-lite@5.1.2(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1):
     dependencies:
-      mobx: 7.1.3
+      mobx: 7.1.4
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
 
-  mobx-react@10.0.3(@types/react@19.3.0)(mobx@7.1.3)(react@19.3.1):
+  mobx-react@10.0.3(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1):
     dependencies:
-      mobx: 7.1.3
-      mobx-react-lite: 5.1.2(@types/react@19.3.0)(mobx@7.1.3)(react@19.3.1)
+      mobx: 7.1.4
+      mobx-react-lite: 5.1.2(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1)
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
 
-  mobx@7.1.3: {}
+  mobx@7.1.4: {}
 
   mrmime@2.0.1: {}
 

@@ -144,7 +144,7 @@
     "ketcher-react": "3.18.0",
     "ketcher-standalone": "3.18.0",
     "leaflet": "1.9.4",
-    "mobx": "7.1.3",
+    "mobx": "7.1.4",
     "mobx-react": "10.0.3",
     "mobx-react-lite": "5.1.2",
     "pdfjs-dist": "6.3.289",
