@@ -1,12 +1,6 @@
-import { reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import * as v from "valibot";
-import {
-  SchedulingSettingsSchema,
-  schedulingSettingsEntries,
-} from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
   invalidateListBookingConfigurations,
@@ -14,30 +8,13 @@ import {
   useLeaveBookingConfigurationAccess,
   useUpdateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
-import { BookingConfigurationsUpdateSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import type { BookingConfigurationLifecycleAction } from "./BookingConfigurationActionsMenu";
 import type { BookingConfiguration } from "./bookingConfiguration";
 import { bookingConfigurationTargetQuery } from "./bookingConfigurationApi";
 
-export const bookableItemConfigurationFormSchema = v.intersect([
-  v.object({ ...BookingConfigurationsUpdateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
-  SchedulingSettingsSchema,
-]);
-
 export type BookableItemTab = "details" | "audit" | "access";
-
-export function configurationInput(configuration: BookingConfiguration) {
-  return {
-    enabled: configuration.enabled,
-    slotGranularityMinutes: configuration.slotGranularityMinutes,
-    openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
-    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
-    bufferAfterMinutes: configuration.bufferAfterMinutes,
-    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
-    allowDoubleBooking: configuration.allowDoubleBooking,
-  };
-}
 
 type LoadedBookableItemPageActionsOptions = {
   configuration: BookingConfiguration;
@@ -55,12 +32,6 @@ export function useLoadedBookableItemPageActions({
   const queryClient = useQueryClient();
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
-  const [baseVersion, setBaseVersion] = useState(configuration.configurationVersion);
-  const [openedEnabled, setOpenedEnabled] = useState(configuration.enabled);
-  const [pendingDisable, setPendingDisable] = useState<{
-    input: BookingConfigurationsUpdate;
-    version: number;
-  } | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
   const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
@@ -72,10 +43,6 @@ export function useLoadedBookableItemPageActions({
   const canEdit = configuration.capabilities.canEditConfiguration;
   const active = configuration.state === "ACTIVE";
   const editing = active && canEdit && edit;
-  const form = useForm({
-    schema: bookableItemConfigurationFormSchema,
-    initialInput: configurationInput(configuration),
-  });
   const setEdit = (next: boolean) =>
     void navigate({
       search: next ? { edit: true } : {},
@@ -120,7 +87,10 @@ export function useLoadedBookableItemPageActions({
         headers: { "If-Match": `"${configuration.configurationVersion}"` },
       }),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
+      ]);
       setArchiveOpen(false);
       setSaveAnnouncement("archived");
     },
@@ -140,7 +110,10 @@ export function useLoadedBookableItemPageActions({
         headers: { "If-Match": `"${configuration.configurationVersion}"` },
       }),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
+      ]);
       setSaveAnnouncement("restored");
     },
     onError: async (error) => {
@@ -180,14 +153,6 @@ export function useLoadedBookableItemPageActions({
   });
 
   useEffect(() => {
-    if (!editing) {
-      reset(form, { initialInput: configurationInput(configuration) });
-      setBaseVersion(configuration.configurationVersion);
-      setOpenedEnabled(configuration.enabled);
-      setPendingDisable(null);
-    }
-  }, [configuration, editing, form]);
-  useEffect(() => {
     if (wasEditing.current && !editing) editButtonRef.current?.focus();
     wasEditing.current = editing;
   }, [editing]);
@@ -223,7 +188,6 @@ export function useLoadedBookableItemPageActions({
   }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
 
   const cancelEdit = () => {
-    reset(form, { initialInput: configurationInput(configuration) });
     setSaveAnnouncement(null);
     setStaleEdit(false);
     setEdit(false);
@@ -250,8 +214,6 @@ export function useLoadedBookableItemPageActions({
     setPermanentDeleteConfirmation,
     leaveOpen,
     setLeaveOpen,
-    pendingDisable,
-    setPendingDisable,
     editButtonRef,
     saveButtonRef,
     actionsButtonRef,
@@ -260,9 +222,6 @@ export function useLoadedBookableItemPageActions({
     editing,
     setEdit,
     setTab,
-    form,
-    baseVersion,
-    openedEnabled,
     updateMutation,
     archiveMutation,
     restoreMutation,
