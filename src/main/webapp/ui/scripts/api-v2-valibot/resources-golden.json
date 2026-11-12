@@ -14,14 +14,5 @@
     "list": "listUsers",
     "count": "countUsers",
     "get": "getUser"
-  },
-  "config": {
-    "get": "getApiV2Config"
-  },
-  "openapi.json": {
-    "get": "getApiV2OpenApiDocument"
-  },
-  "oauth": {
-    "create": "createUiOAuthToken"
   }
 }
