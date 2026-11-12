@@ -39,7 +39,11 @@ export function useRelationshipOptions({
         for (const document of documents) {
           const option = candidate.toOption(document, labels);
           queryClient.setQueryData(
-            optionCacheKey(candidate, canonicalValue(candidate, String(option.value)) ?? String(option.value), authScope ?? null),
+            optionCacheKey(
+              candidate,
+              canonicalValue(candidate, String(option.value)) ?? String(option.value),
+              authScope ?? null,
+            ),
             document,
           );
         }
@@ -184,7 +188,10 @@ export function useSelectedRelationshipOptions({
             const forceRefresh = state?.isInvalidated === true && state.dataUpdatedAt > 0;
             const valuesToResolve = forceRefresh
               ? batch
-              : batch.filter((canonical) => !cacheEntryIsFresh(queryClient, optionCacheKey(candidate, canonical, authScope ?? null)));
+              : batch.filter(
+                  (canonical) =>
+                    !cacheEntryIsFresh(queryClient, optionCacheKey(candidate, canonical, authScope ?? null)),
+                );
             if (valuesToResolve.length > 0) {
               const documents = await resolveMany(valuesToResolve, signal);
               for (const canonical of valuesToResolve) {
