@@ -29,7 +29,7 @@ fi
 ./gradlew --continue clean integrationTests -Denvironment=drop-recreate-db \
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url="${CHEMISTRY_URL}" \
-  -Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION:-17}" \
+  -Djava-version="${TOOLCHAIN_JAVA_VERSION:-${MAVEN_TOOLCHAIN_JAVA_VERSION:-17}}" \
   -Djavax.xml.accessExternalDTD=all \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
   -Djdbc.server.db="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \
