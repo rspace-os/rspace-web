@@ -9,7 +9,10 @@ import { buttonVariants } from "@/modules/common/ui/button";
 import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 
-export type BookingRow = CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration" | "state">;
+export type BookingRow = CollectionRow<
+  BookingListDocument,
+  "id" | "target" | "timezone" | "canViewConfiguration" | "state"
+>;
 
 const iconButtonClassName = buttonVariants({ size: "icon-lg", variant: "outline" });
 
@@ -23,12 +26,13 @@ export function BookingRowActions({
   onCancelled: () => void | Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const itemName = row.target?.value.name ?? t("common:values.unknownItem");
   const itemCalendarLabel = t("myBookings.actions.itemCalendar");
   const viewDetailsLabel = t("myBookings.actions.viewDetails");
   const editLabel = t("myBookings.actions.edit");
   return (
     <div className="flex flex-wrap gap-1">
-      {row.canViewConfiguration ? (
+      {row.canViewConfiguration && row.target ? (
         <TooltipIconLink label={itemCalendarLabel} icon={<CalendarClockIcon aria-hidden="true" />}>
           <Link
             className={iconButtonClassName}
@@ -48,7 +52,7 @@ export function BookingRowActions({
           />
         </TooltipIconLink>
       ) : null}
-      {row.canEdit ? (
+      {row.canEdit && row.target && row.timezone ? (
         <TooltipIconLink label={editLabel} icon={<PencilIcon aria-hidden="true" />}>
           <Link
             className={iconButtonClassName}
@@ -58,10 +62,10 @@ export function BookingRowActions({
           />
         </TooltipIconLink>
       ) : null}
-      {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+      {row.canViewConfiguration && row.target && row.state === "CONFIRMED" ? (
         <BookingCalendarFileButton
           bookingId={row.id}
-          itemName={row.target.value.name}
+          itemName={itemName}
           period={formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone)}
           iconOnly
         />
@@ -70,7 +74,7 @@ export function BookingRowActions({
         <DeleteBookingDialog
           bookingId={row.id}
           bookingVersion={row.version ?? 0}
-          itemName={row.target.value.name}
+          itemName={itemName}
           period={formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone)}
           iconOnly
           onDeleted={onCancelled}
