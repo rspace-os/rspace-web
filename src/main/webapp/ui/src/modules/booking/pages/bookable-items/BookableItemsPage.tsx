@@ -86,8 +86,7 @@ const ownerAttentionParams = {
 } as const;
 async function fetchOwnerAttentionPage(page: number, signal: AbortSignal) {
   const result = await listBookingConfigurations({ ...ownerAttentionParams, page }, { signal });
-  if (result.totalDocs === undefined || result.totalIsLowerBound)
-    throw new Error("Owner-health totals are missing");
+  if (result.totalDocs === undefined || result.totalIsLowerBound) throw new Error("Owner-health totals are missing");
   return { ...result, totalDocs: result.totalDocs, totalPages: Math.ceil(result.totalDocs / result.limit) };
 }
 
