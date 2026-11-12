@@ -55,6 +55,7 @@ function pickerPage(
         name: item.name,
         timezone: item.timezone,
         slotGranularityMinutes: item.slotGranularityMinutes,
+        incrementUnit: item.incrementUnit,
         openingHours: item.openingHours,
         bufferBeforeMinutes: item.bufferBeforeMinutes,
         bufferAfterMinutes: item.bufferAfterMinutes,
