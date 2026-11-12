@@ -2,6 +2,8 @@ import { Temporal } from "@js-temporal/polyfill";
 import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { resizeDisabledReason } from "@/modules/booking/creation/timelineEditText";
+import type { TimelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
@@ -38,8 +40,8 @@ export type VerticalDayTimelineSchedule =
 
 export type VerticalDayTimelineEditing = {
   draft: BookingWindowDraft;
-  schedulingTimeZone: string;
-  slotGranularityMinutes: number;
+  /** The item's rules for this event kind; every adjustment is a complete valid interval. */
+  policy: TimelinePolicy;
   onChange: (draft: BookingWindowDraft) => void;
   onInteractionChange?: (active: boolean) => void;
   disabledReason?: string;
@@ -115,8 +117,10 @@ export function VerticalDayTimeline({
     startInteraction,
     updateInteraction,
     finishInteraction,
-    cancelCapturedPointer,
     onDraftHandleKeyDown,
+    abortInteraction,
+    adjuster,
+    commitRange,
   } = useVerticalDayTimelineInteraction({
     date,
     timezone,
@@ -328,7 +332,10 @@ export function VerticalDayTimeline({
               startInteraction={startInteraction}
               updateInteraction={updateInteraction}
               finishInteraction={finishInteraction}
-              cancelCapturedPointer={cancelCapturedPointer}
+              abortInteraction={abortInteraction}
+              editing={editing}
+              adjuster={adjuster}
+              commitRange={commitRange}
               onDraftHandleKeyDown={onDraftHandleKeyDown}
             />
           ) : null}
@@ -374,6 +381,16 @@ export function VerticalDayTimeline({
       <p id={instructionsId} className="sr-only">
         {t("dayTimeline.vertical.keyboardInstructions")}
       </p>
+      {adjuster && editing
+        ? (["start", "end"] as const).map((edge) => {
+            const reason = adjuster.visible[edge] ? resizeDisabledReason(edge, adjuster, editing.policy, t) : undefined;
+            return reason ? (
+              <p key={edge} id={`${instructionsId}-${edge}-reason`} className="sr-only">
+                {reason}
+              </p>
+            ) : null;
+          })
+        : null}
     </section>
   );
 }

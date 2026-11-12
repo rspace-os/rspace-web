@@ -35,7 +35,7 @@ describe("BookingSettingsPage", () => {
           return HttpResponse.json(current, { headers: { ETag: `"${current.configurationVersion}"` } });
         }),
       );
-      renderPage();
+      renderBookingSettingsPage();
 
       expect(
         await screen.findByRole("radio", { name: `booking:preferences.timeFormat.${initialLabel}` }),
