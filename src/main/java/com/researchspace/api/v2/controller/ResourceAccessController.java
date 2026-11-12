@@ -1,8 +1,7 @@
 package com.researchspace.api.v2.controller;
 
-import jakarta.ws.rs.NotFoundException;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
@@ -13,6 +12,9 @@ import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
+import com.researchspace.model.collection.DocumentValidationException;
+import com.researchspace.model.collection.DocumentValidationException.Reason;
+import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccessRequest;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
@@ -21,12 +23,14 @@ import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.util.function.SingletonSupplier;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,7 +54,7 @@ public class ResourceAccessController {
   private final ApiV2ResourceCatalog resources;
   private final ResourceAccessManager accessManager;
   private final ResourceAccessDirectoryManager directoryManager;
-  private final ObjectProvider<RequestMappingHandlerAdapter> handlerAdapter;
+  private final SingletonSupplier<ObjectMapper> strictMapper;
 
   public ResourceAccessController(
       ApiV2ResourceCatalog resources,
@@ -60,7 +64,7 @@ public class ResourceAccessController {
     this.resources = resources;
     this.accessManager = accessManager;
     this.directoryManager = directoryManager;
-    this.handlerAdapter = handlerAdapter;
+    this.strictMapper = SingletonSupplier.of(() -> strictMapper(handlerAdapter));
   }
 
   @GetMapping("/{resource}/{id}/access")
@@ -169,23 +173,19 @@ public class ResourceAccessController {
     if (body == null || body.node() == null) {
       throw invalidRequest();
     }
-    ObjectMapper base =
-        handlerAdapter.getObject().getMessageConverters().stream()
-            .filter(MappingJackson2HttpMessageConverter.class::isInstance)
-            .map(MappingJackson2HttpMessageConverter.class::cast)
-            .map(MappingJackson2HttpMessageConverter::getObjectMapper)
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("No Jackson HTTP message converter"));
     List<ResourceAccessGrant> grants;
     try {
       ReplaceResourceAccessRequest request =
-          ApiV2JsonMappers.strict(base)
-              .treeToValue(body.node(), ReplaceResourceAccessRequest.class);
+          strictMapper.get().treeToValue(body.node(), ReplaceResourceAccessRequest.class);
       if (request == null) {
         throw invalidRequest();
       }
+      validateAssignmentFields(body.node());
       grants = request.assignments();
-    } catch (MismatchedInputException | ValueInstantiationException ex) {
+    } catch (ValueInstantiationException ex) {
+      validateAssignmentFields(body.node());
+      throw ApiV2JsonMappers.validationException(ex);
+    } catch (MismatchedInputException ex) {
       throw ApiV2JsonMappers.validationException(ex);
     } catch (JsonProcessingException | IllegalArgumentException ex) {
       throw invalidRequest();
@@ -196,6 +196,45 @@ public class ResourceAccessController {
       throw ApiV2ResourceException.badRequest("errors.api.v2.resourceAccess.assignmentLimit");
     }
     return List.copyOf(grants);
+  }
+
+  private static ObjectMapper strictMapper(
+      ObjectProvider<RequestMappingHandlerAdapter> handlerAdapter) {
+    ObjectMapper base =
+        handlerAdapter.getObject().getMessageConverters().stream()
+            .filter(MappingJackson2HttpMessageConverter.class::isInstance)
+            .map(MappingJackson2HttpMessageConverter.class::cast)
+            .map(MappingJackson2HttpMessageConverter::getObjectMapper)
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No Jackson HTTP message converter"));
+    return ApiV2JsonMappers.strict(base);
+  }
+
+  private static void validateAssignmentFields(JsonNode node) {
+    if (!node.isObject()) {
+      return;
+    }
+    JsonNode assignments = requiredField(node, "assignments", "assignments");
+    if (assignments.isArray()) {
+      for (int index = 0; index < assignments.size(); index++) {
+        JsonNode assignment = assignments.get(index);
+        if (assignment.isObject()) {
+          for (String field : List.of("granteeKey", "role")) {
+            requiredField(assignment, field, "assignments[" + index + "]." + field);
+          }
+        }
+      }
+    }
+  }
+
+  private static JsonNode requiredField(JsonNode object, String field, String path) {
+    JsonNode value = object.get(field);
+    if (value == null || value.isNull()) {
+      Reason reason = value == null ? Reason.REQUIRED : Reason.NULL_NOT_ALLOWED;
+      throw new DocumentValidationException(
+          "errors.api.v2.invalidRequest", List.of(new Violation(path, reason)));
+    }
+    return value;
   }
 
   private static ApiV2ResourceException invalidRequest() {
