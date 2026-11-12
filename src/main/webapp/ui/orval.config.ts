@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { defineConfig } from "orval";
 import { buildInvalidationRules, type Document, getOperations } from "./scripts/api-v2-invalidation";
-import { protectGeneratedOperationIds } from "./scripts/api-v2-invalidation/protectOperationId";
 import { crossResourceInvalidation } from "./src/modules/common/api/v2/crossResourceInvalidation";
 
 const spec: Document = JSON.parse(
@@ -59,7 +58,6 @@ export default defineConfig({
         operations,
       },
     },
-    hooks: { afterAllFilesWrite: protectGeneratedOperationIds },
   },
   validation: {
     input: { target: "./src/modules/common/api/v2/openapi.generated.json" },

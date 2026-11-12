@@ -45,17 +45,14 @@ Paths below are relative to `src/main/webapp/ui/`:
 Backend `operationId` values determine generated names. Collection names are plural, such as
 `listInstruments` and `countInstruments`; single-record names are singular, such as
 `getInstrument`. Fix names in the backend. There is no Orval operation-name
-override or input transformer. The `protectOperationId` gate runs on HTTP output only. It keeps the
-generated `operationId` after caller option spreads and excludes it from public request options with
-`Omit`. It rejects HTTP output whose formatting cannot be protected, rather than allowing callers to
-select a different validation schema. Native Valibot output does not pass through this gate.
+override or input transformer. 
 
 ## Transport and errors
 
 The runtime lives in `src/modules/common/api/v2/`, with exports through `index.ts`. The default
 mutator is `apiV2Fetch<T>(url, init?): Promise<T>`. It returns the parsed body; a 204 returns
 `undefined` and generates a `void` return type. Generated requests supply an internal `operationId`
-for validation lookup. Public request options cannot set or override it, and an unregistered
+for validation lookup. An unregistered
 operation fails.
 
 The mutator sends `X-Requested-With: XMLHttpRequest`. It gets Bearer authorization from the token
