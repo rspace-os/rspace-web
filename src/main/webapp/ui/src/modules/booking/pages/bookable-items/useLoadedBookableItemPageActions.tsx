@@ -31,6 +31,7 @@ export function configurationInput(configuration: BookingConfiguration) {
   return {
     enabled: configuration.enabled,
     slotGranularityMinutes: configuration.slotGranularityMinutes,
+    incrementUnit: configuration.incrementUnit,
     openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
     bufferBeforeMinutes: configuration.bufferBeforeMinutes,
     bufferAfterMinutes: configuration.bufferAfterMinutes,
