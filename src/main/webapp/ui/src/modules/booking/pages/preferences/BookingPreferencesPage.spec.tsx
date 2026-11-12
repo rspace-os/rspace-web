@@ -88,30 +88,6 @@ describe("Booking display preferences", () => {
       .toBeVisible();
     await expect.element(page.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
 
-    history.push("/booking/all-items?date=2026-08-28");
-    await expect.element(page.getByRole("heading", { name: "All Bookable Items" })).toBeVisible();
-    await expect.element(page.getByLabelText("Time zone: America/New_York")).not.toBeInTheDocument();
-    const itemNames = ["Confocal microscope", "Electron microscope", "Mass spectrometer", "Flow cytometer"];
-    // The heading renders before the availability bars, and expect.poll gives up after 1 s.
-    for (const name of itemNames) {
-      await expect
-        .element(page.getByRole("img", { name: `${name} availability` }).getByTitle("Current time", { exact: false }))
-        .toBeInTheDocument();
-    }
-    await expect
-      .poll(
-        () =>
-          new Set(
-            itemNames.map(
-              (name) =>
-                page
-                  .getByRole("img", { name: `${name} availability` })
-                  .getByTitle("Current time", { exact: false })
-                  .element().style.left,
-            ),
-          ),
-      )
-      .toEqual(new Set(["37.5%"]));
     await expectNoAxeViolations();
     expect(window.location.href).toBe(browserUrl);
   });

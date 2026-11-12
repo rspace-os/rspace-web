@@ -9,7 +9,6 @@ import { type BookingListDocument } from "@/modules/booking/domain/booking";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { BookingEditorsContext } from "./BookingEventActions";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
@@ -26,6 +25,7 @@ import {
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
+import { BookingEditorsContext } from "./InlineBookingEditor";
 
 export function ResourceDateGrid({
   dates,
