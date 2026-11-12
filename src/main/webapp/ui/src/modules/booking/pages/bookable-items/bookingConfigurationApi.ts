@@ -20,7 +20,7 @@ export async function mutateBookableItems(
 }
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;

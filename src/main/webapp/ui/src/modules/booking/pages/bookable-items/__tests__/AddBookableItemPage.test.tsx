@@ -28,6 +28,7 @@ import { collectionPage } from "../mocks/bookableItemsMocks";
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
 const settings = {
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:00" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
@@ -273,6 +274,7 @@ describe("AddBookableItemPage", () => {
       target: { relationTo: "instruments", value: 123 },
       enabled: true,
       slotGranularityMinutes: 5,
+      incrementUnit: "MINUTES",
       openingHours: settings.openingHours,
       bufferBeforeMinutes: 0,
       bufferAfterMinutes: 0,

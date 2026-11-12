@@ -131,6 +131,7 @@ export function AddBookableItemForm({
       ...(initialTargetId === undefined ? {} : { target: { relationTo: "instruments", value: initialTargetId } }),
       enabled: true,
       slotGranularityMinutes: defaults.slotGranularityMinutes,
+      incrementUnit: defaults.incrementUnit,
       openingHours: defaults.openingHours.map((entry) => ({ ...entry })),
       bufferBeforeMinutes: defaults.bufferBeforeMinutes,
       bufferAfterMinutes: defaults.bufferAfterMinutes,

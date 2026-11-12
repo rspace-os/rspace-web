@@ -120,6 +120,7 @@ const openApi = {
                   "state",
                   "timezone",
                   "slotGranularityMinutes",
+                  "incrementUnit",
                   "openingHours",
                   "bufferBeforeMinutes",
                   "bufferAfterMinutes",
@@ -451,7 +452,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
+        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,incrementUnit,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
       );
       expect(params.get("depth")).toBe("1");
     });
