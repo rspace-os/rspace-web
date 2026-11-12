@@ -1,4 +1,37 @@
 import { Temporal } from "@js-temporal/polyfill";
+import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
+
+/** Reuse the 128 most recently used values in long-lived sessions. */
+function cachedValue<T>(cache: Map<string, T>, key: string, create: () => T): T {
+  const existing = cache.get(key);
+  if (existing !== undefined) {
+    cache.delete(key);
+    cache.set(key, existing);
+    return existing;
+  }
+  const value = create();
+  const oldest = cache.keys().next().value;
+  if (cache.size >= 128 && oldest !== undefined) cache.delete(oldest);
+  cache.set(key, value);
+  return value;
+}
+
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+const dayBounds = new Map<string, ZonedDayBounds>();
+
+export function bookingDateTimeFormatter(
+  locale?: string,
+  options: Intl.DateTimeFormatOptions = {},
+): Intl.DateTimeFormat {
+  const key = JSON.stringify([
+    locale,
+    Object.entries(options)
+      .filter(([, value]) => value !== undefined)
+      .sort(),
+  ]);
+  return cachedValue(dateTimeFormatters, key, () => new Intl.DateTimeFormat(locale, options));
+}
 
 export type ZonedDayBounds = {
   start: string;
@@ -25,8 +58,25 @@ export type BookingWindowDraft = {
   endOccurrence?: "earlier" | "later";
 };
 
+export function sameDraft(left: BookingWindowDraft, right: BookingWindowDraft): boolean {
+  return (
+    left.startDate === right.startDate &&
+    left.startTime === right.startTime &&
+    left.startOccurrence === right.startOccurrence &&
+    left.endDate === right.endDate &&
+    left.endTime === right.endTime &&
+    left.endOccurrence === right.endOccurrence
+  );
+}
+
 export function parsePlainDate(value: string): Temporal.PlainDate {
   return Temporal.PlainDate.from(value);
+}
+
+/** Whether two timezone names are the same zone, such as `Etc/UTC` and the `UTC` a browser reports. */
+export function sameTimeZone(first: string, second: string): boolean {
+  const canonical = (timeZone: string) => bookingDateTimeFormatter("en-US", { timeZone }).resolvedOptions().timeZone;
+  return first === second || canonical(first) === canonical(second);
 }
 
 export function isPlainDate(value: string): boolean {
@@ -42,13 +92,17 @@ export function addCalendarDays(value: string, days: number): string {
 }
 
 export function zonedDayBounds(date: string, timezone: string): ZonedDayBounds {
-  const start = parsePlainDate(date).toZonedDateTime({ timeZone: timezone, plainTime: "00:00" });
-  const end = parsePlainDate(date).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: "00:00" });
-  return {
-    start: start.toInstant().toString(),
-    end: end.toInstant().toString(),
-    elapsedMinutes: Number(end.toInstant().since(start.toInstant()).total("minutes")),
-  };
+  const bounds = cachedValue(dayBounds, JSON.stringify([date, timezone]), () => {
+    const start = parsePlainDate(date).toZonedDateTime({ timeZone: timezone, plainTime: "00:00" });
+    const end = parsePlainDate(date).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: "00:00" });
+    return {
+      start: start.toInstant().toString(),
+      end: end.toInstant().toString(),
+      elapsedMinutes: Number(end.toInstant().since(start.toInstant()).total("minutes")),
+    };
+  });
+  // Keep callers from mutating the cached value through the returned object.
+  return { ...bounds };
 }
 
 /** The preferred wall-clock range. A window wholly inside a DST gap has zero elapsed minutes. */
@@ -168,6 +222,12 @@ export function wallClockDraftFromInstants(start: string, end: string, timezone:
   };
 }
 
+/** One instant as its wall-clock date, time and repeated-hour occurrence in `timezone`. */
+export function wallClockEndpointFromInstant(instant: string, timezone: string) {
+  const draft = wallClockDraftFromInstants(instant, instant, timezone);
+  return { date: draft.startDate, time: draft.startTime, occurrence: draft.startOccurrence };
+}
+
 export function wallClockInstant(
   resolution: WallClockResolution | undefined,
   occurrence: "earlier" | "later" | undefined,
@@ -175,6 +235,60 @@ export function wallClockInstant(
   if (!resolution || resolution.kind === "nonexistent") return undefined;
   if (resolution.kind === "unique") return resolution.instant;
   return occurrence ? resolution[occurrence] : undefined;
+}
+
+/** The app language when Intl can format it, otherwise en-US; for words such as durations. */
+export function bookingLocale(): string {
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  try {
+    return language && Intl.DateTimeFormat.supportedLocalesOf([language]).length > 0 ? language : "en-US";
+  } catch {
+    return "en-US";
+  }
+}
+
+/** A wall-clock `HH:mm` time as the locale writes it, which is also how native time inputs display it. */
+export function formatWallClockTime(time: string, locale = bookingLocale()): string {
+  return Temporal.PlainTime.from(time === "24:00" ? "00:00" : time).toLocaleString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** A plain `YYYY-MM-DD` date as the locale writes it, which is also how native date inputs display it. */
+export function formatPlainDate(date: string, locale = bookingLocale()): string {
+  return Temporal.PlainDate.from(date).toLocaleString(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+/** A whole-minute duration in words, for example "2 hours" or "1 day, 30 minutes". */
+export function formatDurationMinutes(
+  totalMinutes: number,
+  locale = bookingLocale(),
+  options: { largestUnit?: "day" | "hour" } = {},
+): string {
+  const parts = (
+    options.largestUnit === "hour"
+      ? ([
+          ["hour", Math.floor(totalMinutes / 60)],
+          ["minute", totalMinutes % 60],
+        ] as const)
+      : ([
+          ["day", Math.floor(totalMinutes / 1440)],
+          ["hour", Math.floor((totalMinutes % 1440) / 60)],
+          ["minute", totalMinutes % 60],
+        ] as const)
+  ).filter(([, value]) => value > 0);
+  return formatList(
+    (parts.length > 0 ? parts : [["minute", 0] as const]).map(([unit, value]) =>
+      new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(value),
+    ),
+    locale,
+    { type: "unit", style: "long" },
+  );
 }
 
 export function formatAgendaPeriod(start: string, end: string, timezone: string, locale = "en-US"): string {
