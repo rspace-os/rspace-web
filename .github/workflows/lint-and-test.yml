@@ -70,7 +70,6 @@ jobs:
               - 'src/test/resources/**'
               - 'src/main/webapp/WEB-INF/**'
               - 'scripts/run-chemistry-tests.sh'
-              - 'scripts/gradle/**'
               - 'build.gradle'
               - 'settings.gradle'
               - 'gradle.properties'
@@ -231,7 +230,7 @@ jobs:
       # fix those; use `./gradlew spotlessApply -DspotlessStrict`.
       - name: Formatting and dependency checks
         run: |
-          ./gradlew -q --continue spotlessCheck checkPinnedVersions :buildSrc:test -DspotlessStrict \
+          ./gradlew -q --continue spotlessCheck checkPinnedVersions -DspotlessStrict \
             -Djava-version=${{ matrix.java-version }}
 
   vitest-tests:
@@ -684,14 +683,6 @@ jobs:
           comment_mode: off
           files: build/test-results/test-shard${{ matrix.shard }}/*.xml
 
-      - name: Upload spring JUnit reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: spring-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
-          path: build/test-results/test-shard${{ matrix.shard }}/*.xml
-          retention-days: 7
-
   integration-tests:
     runs-on: ubuntu-latest
     needs: changed-files
@@ -783,14 +774,6 @@ jobs:
           check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }}, shard ${{ matrix.shard }})
           comment_mode: off
           files: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
-
-      - name: Upload integration JUnit reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: integration-junit-${{ matrix.java-version }}-${{ matrix.mariadb-version }}-${{ matrix.shard }}
-          path: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
-          retention-days: 7
 
   chemistry-tests:
     runs-on: ubuntu-latest

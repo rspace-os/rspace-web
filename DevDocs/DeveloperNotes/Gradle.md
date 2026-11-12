@@ -141,27 +141,15 @@ it directly. Add the tag to any new test that needs Spring, a database, or the s
 
 The Spring and integration jobs each run two shards per MariaDB version, with an independent
 database and filestore on every runner. `-PtestShard=1/2` and `-PtestShard=2/2` assign complete
-top-level classes using duration estimates in `gradle/ci-test-durations.json`. Nested tests stay
-with their parent. Unknown classes are assigned too; estimates affect balancing, never coverage.
+top-level classes by the hash of their fully qualified name, modulo the shard count, so every
+runner computes the same split without any timing data. Nested tests stay with their parent.
+The split balances class counts, not durations; it stays within about a minute of a
+duration-balanced split at two shards, but the gap grows with more shards.
 The run-profile and problematic integration groups retain their ordering and run on shard 1.
-The balancer reserves their estimated class durations and ten seconds per extra test JVM on
-that shard before assigning ordinary integration classes.
 JUnit XML and HTML report directories have a `-shardN` suffix; CI publishes only its current
 shard, so switching shards locally cannot republish stale special-group results.
 Sharding cannot be combined with `-Dfast` or `-Dtest`; shard `test` with `-PtestSuite=slow`.
 
-Estimates retain the November 4 parity samples for unsampled classes and use the November 5
-[Gradle CI reports](https://github.com/rspace-os/rspace-web/actions/runs/42038679444) for the
-Spring and integration classes. Refresh them after
-large test changes with full JUnit XML report directories, for example:
-
-```bash
-python3 scripts/gradle/update-ci-test-durations.py reports/spring reports/integration
-```
-
-CI uploads the shard JUnit XML reports as seven-day artifacts. Combine all shards from one
-run into one report directory per suite and MariaDB version before refreshing estimates. Keep separate full-run
-directories for repeated samples; the script takes the median per class.
 To check selection without running test bodies, use `--test-dry-run` on each concrete test task,
 and compare the combined class/method inventory against the unpartitioned task. `integrationTests`
 is an aggregate; apply `--test-dry-run` to `integrationTest`, `integrationTestRun`, and
