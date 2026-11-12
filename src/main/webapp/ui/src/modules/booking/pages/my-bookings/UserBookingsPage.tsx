@@ -13,6 +13,7 @@ import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/types";
@@ -22,8 +23,8 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { requesterValueField } from "../ownerPreset";
-import { upcomingBookingWhere } from "./bookingCountFilter";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
+import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
@@ -96,6 +97,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
   const asOf = useAlignedMinute();
@@ -136,12 +138,13 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   );
   const request = useMemo(
     () => ({
+      authScope: currentUser.id,
       depth: 1,
       projection,
       baseFilter,
       validateRows: BookingListDocumentTableValidation.validateRows,
     }),
-    [baseFilter],
+    [baseFilter, currentUser.id],
   );
   const table = useApiV2TableList({
     resource: bookingListResource,
