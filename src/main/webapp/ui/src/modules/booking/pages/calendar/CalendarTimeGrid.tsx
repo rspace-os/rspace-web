@@ -4,7 +4,6 @@ import { DayTimeline } from "@/modules/booking/components/DayTimeline";
 import { type BookingListDocument } from "@/modules/booking/domain/booking";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
-import { BookingEditorsContext } from "./BookingEventActions";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
@@ -19,6 +18,7 @@ import {
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
+import { BookingEditorsContext } from "./InlineBookingEditor";
 
 export function CalendarTimeGrid({
   date,
