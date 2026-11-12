@@ -31,11 +31,7 @@ public final class ApiV2JsonMappers {
     register(converter, ApiV2JsonBody.class, limited(base));
     if (strictTypes.length > 0) {
       // Bean Validation owns HTTP records' required fields and nullable patch components.
-      ObjectMapper strictBody =
-          strict(base)
-              .disable(
-                  DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,
-                  DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES);
+      ObjectMapper strictBody = strict(base);
       for (Class<?> type : strictTypes) {
         register(converter, type, strictBody);
       }
@@ -66,10 +62,11 @@ public final class ApiV2JsonMappers {
     ObjectMapper mapper = limited(base);
     mapper.enable(
         DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-        DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,
-        DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES,
         DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS);
-    mapper.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT);
+    mapper.disable(
+        DeserializationFeature.ACCEPT_FLOAT_AS_INT,
+        DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,
+        DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES);
 
     MutableCoercionConfig textual = mapper.coercionConfigFor(LogicalType.Textual);
     textual.setCoercion(CoercionInputShape.Integer, CoercionAction.Fail);
@@ -107,15 +104,6 @@ public final class ApiV2JsonMappers {
       return Reason.UNKNOWN_FIELD;
     }
     if (exception instanceof InvalidNullException) {
-      return Reason.NULL_NOT_ALLOWED;
-    }
-    // Jackson reports both creator failures as MismatchedInputException without a reason code.
-    String message = exception.getOriginalMessage();
-    if (message.startsWith("Missing creator property")
-        || message.startsWith("Missing required creator property")) {
-      return Reason.REQUIRED;
-    }
-    if (message.startsWith("Null value for creator property")) {
       return Reason.NULL_NOT_ALLOWED;
     }
     return Reason.WRONG_TYPE;
