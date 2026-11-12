@@ -1,5 +1,8 @@
 package com.researchspace.testutils;
 
+import com.researchspace.api.v2.resource.ApiV2ResourceException;
+import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -30,6 +33,15 @@ public final class BookingResourceTestFixtures {
             jdbc.execute("SET SESSION innodb_snapshot_isolation = " + original);
           }
         });
+  }
+
+  public static ApiV2ResourceException translate(
+      ApiV2ResourceSpec<?, ?> spec, ResourceOperation operation, RuntimeException failure) {
+    return spec.errorMappings().get(operation).stream()
+        .filter(mapping -> mapping.exceptionType() == failure.getClass())
+        .findFirst()
+        .orElseThrow()
+        .translate(failure);
   }
 
   public static ResolvedResourceReference<BookableTargetType, Long> resolved(long id) {

@@ -172,6 +172,7 @@
             "unavailable": "The selected target is not available for booking."
           },
           "overlap": "The selected time overlaps another booking.",
+          "buffer": "The selected time is too close to another booking (buffer).",
           "state": {
             "transition": "The requested booking state transition is not permitted."
           },
