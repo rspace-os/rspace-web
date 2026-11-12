@@ -1,4 +1,4 @@
-import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
+import { CalendarCheck2Icon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
