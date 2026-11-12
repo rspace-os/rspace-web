@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -178,7 +179,7 @@ class OperationOriginRulesTest {
 
   @Test
   void readsASubsampleIdOnlyFromAWellFormedSubsampleGlobalId() {
-    MapBindingResult errors = new MapBindingResult(new java.util.HashMap<>(), "request");
+    MapBindingResult errors = new MapBindingResult(new HashMap<>(), "request");
 
     assertEquals(
         Long.valueOf(100L), OperationOriginRules.subSampleId("SS100", "origin.globalId", errors));

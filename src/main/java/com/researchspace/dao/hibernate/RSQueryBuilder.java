@@ -16,7 +16,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.Query;
+import org.hibernate.search.backend.lucene.LuceneExtension;
+import org.hibernate.search.backend.lucene.search.predicate.dsl.LuceneSearchPredicateFactory;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.BooleanPredicateClausesStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
@@ -403,16 +409,12 @@ class RSQueryBuilder {
       term = term.substring(SearchConstants.NATIVE_LUCENE_PREFIX.length());
       // Use Lucene's QueryParser for full native syntax support (negation, AND, OR, etc.)
       try {
-        org.apache.lucene.queryparser.classic.QueryParser parser =
-            new org.apache.lucene.queryparser.classic.QueryParser(
-                field, new org.apache.lucene.analysis.standard.StandardAnalyzer());
-        org.apache.lucene.search.Query luceneQuery = parser.parse(term);
-        return ((org.hibernate.search.backend.lucene.search.predicate.dsl
-                    .LuceneSearchPredicateFactory)
-                f.extension(org.hibernate.search.backend.lucene.LuceneExtension.get()))
+        QueryParser parser = new QueryParser(field, new StandardAnalyzer());
+        Query luceneQuery = parser.parse(term);
+        return ((LuceneSearchPredicateFactory) f.extension(LuceneExtension.get()))
             .fromLuceneQuery(luceneQuery)
             .toPredicate();
-      } catch (org.apache.lucene.queryparser.classic.ParseException e) {
+      } catch (ParseException e) {
         throw new SearchQueryParseException(e);
       }
     } else if (term.endsWith(FUZZY_LUCENE_INDICATOR)) {

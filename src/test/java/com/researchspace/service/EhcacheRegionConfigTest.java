@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import jakarta.persistence.Entity;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.TreeMap;
@@ -163,7 +165,7 @@ public class EhcacheRegionConfigTest {
   private String readProductionDaoContext() throws IOException {
     var resources = getClass().getClassLoader().getResources(DAO_CONTEXT_RESOURCE);
     while (resources.hasMoreElements()) {
-      java.net.URL url = resources.nextElement();
+      URL url = resources.nextElement();
       if (!url.getPath().contains("test-classes")) {
         try (InputStream in = url.openStream()) {
           return IOUtils.toString(in, StandardCharsets.UTF_8);
@@ -189,8 +191,7 @@ public class EhcacheRegionConfigTest {
     return findAnnotatedClasses(Cache.class);
   }
 
-  private Set<Class<?>> findAnnotatedClasses(
-      Class<? extends java.lang.annotation.Annotation> annotation) {
+  private Set<Class<?>> findAnnotatedClasses(Class<? extends Annotation> annotation) {
     ClassPathScanningCandidateComponentProvider scanner =
         new ClassPathScanningCandidateComponentProvider(false);
     scanner.addIncludeFilter(new AnnotationTypeFilter(annotation));

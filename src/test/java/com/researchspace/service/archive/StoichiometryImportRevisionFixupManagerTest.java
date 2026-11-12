@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -128,7 +129,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
     setupRecordInReport();
     when(fieldManager.getFieldsByRecordId(100L, user)).thenThrow(new RuntimeException("db gone"));
 
-    org.junit.jupiter.api.Assertions.assertThrows(
+    Assertions.assertThrows(
         RuntimeException.class, () -> testee.fixupStoichiometryRevisions(report, user));
   }
 

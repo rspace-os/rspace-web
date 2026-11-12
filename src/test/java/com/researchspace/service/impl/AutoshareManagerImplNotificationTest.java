@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.RecordGroupSharing;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.JsonMessageSource;
@@ -12,6 +13,7 @@ import java.lang.reflect.Field;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -98,9 +100,8 @@ public class AutoshareManagerImplNotificationTest {
   }
 
   private RecordGroupSharing mockFailure(String name, String globalId) {
-    RecordGroupSharing failure = org.mockito.Mockito.mock(RecordGroupSharing.class);
-    com.researchspace.model.record.BaseRecord shared =
-        org.mockito.Mockito.mock(com.researchspace.model.record.BaseRecord.class);
+    RecordGroupSharing failure = Mockito.mock(RecordGroupSharing.class);
+    BaseRecord shared = Mockito.mock(BaseRecord.class);
     when(shared.getName()).thenReturn(name);
     when(shared.getGlobalIdentifier()).thenReturn(globalId);
     when(failure.getShared()).thenReturn(shared);

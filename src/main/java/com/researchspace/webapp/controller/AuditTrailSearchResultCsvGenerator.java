@@ -25,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -61,15 +62,7 @@ public class AuditTrailSearchResultCsvGenerator {
   }
 
   private static final CellProcessor[] CELL_PROCESSORS =
-      new CellProcessor[] {
-        null,
-        null,
-        null,
-        null,
-        new org.supercsv.cellprocessor.Optional(),
-        new org.supercsv.cellprocessor.Optional(),
-        new org.supercsv.cellprocessor.Optional()
-      };
+      new CellProcessor[] {null, null, null, null, new Optional(), new Optional(), new Optional()};
 
   ResponseEntity<String> convertToCsv(
       ISearchResults<AuditTrailSearchResult> res, AuditTrailUISearchConfig inputSearchConfig)
