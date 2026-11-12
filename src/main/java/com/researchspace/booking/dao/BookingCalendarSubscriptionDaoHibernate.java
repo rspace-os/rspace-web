@@ -6,6 +6,7 @@ import com.researchspace.model.booking.BookingConfigurationDefaults;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.OptimisticLockException;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -76,6 +77,18 @@ public class BookingCalendarSubscriptionDaoHibernate
       LOG.warn("Current calendar subscription lookup failed", failure);
       throw failure;
     }
+  }
+
+  @Override
+  public List<BookableItemCalendarSubscription> findByUserId(Long userId) {
+    return getSession()
+        .createQuery(
+            "from BookableItemCalendarSubscription subscription"
+                + " join fetch subscription.bookingConfiguration"
+                + " where subscription.user.id = :userId",
+            BookableItemCalendarSubscription.class)
+        .setParameter("userId", userId)
+        .list();
   }
 
   @Override
