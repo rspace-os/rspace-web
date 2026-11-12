@@ -256,7 +256,7 @@ export E2E_MOCK_PORT="${E2E_MOCK_PORT:-9099}"
   -Dtimestamp=e2e-local \
   -Denvironment=drop-recreate-db -Dspring.profiles.active=run \
   -DreactDevMode=false \
-  -Djdbc.url=jdbc:mysql://localhost:3306/rspace -Djdbc.db.maven=rspace \
+  -Djdbc.url=jdbc:mysql://localhost:3306/rspace -Djdbc.server.db=rspace \
   -DRS_FILE_BASE=/tmp/e2e-filestore \
   -Dpubchem.base.url="http://localhost:${E2E_MOCK_PORT}" \
   -Dfieldmark.api.url="http://localhost:${E2E_MOCK_PORT}" \

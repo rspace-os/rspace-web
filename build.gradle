@@ -33,6 +33,20 @@ def cliPropertyNames = gradle.startParameter.systemPropertiesArgs.keySet() - gra
 def cliSystemProperties = new TreeMap<String, String>(
   providers.systemPropertiesPrefixedBy('').get().findAll { k, v -> k in cliPropertyNames }
     .collectEntries { k, v -> [(k): v == '' ? 'true' : v] })
+// The database server settings that recreateDatabase and the Hibernate model tests use. The
+// Maven build's jdbc.*.maven names still work; the new name wins when both are given.
+def legacyJdbcNames = [
+  'jdbc.server.driverClassName': 'jdbc.driverClassName.maven',
+  'jdbc.server.url'            : 'jdbc.url.maven',
+  'jdbc.server.db'             : 'jdbc.db.maven',
+  'jdbc.server.username'       : 'jdbc.username.maven',
+  'jdbc.server.password'       : 'jdbc.password.maven',
+]
+legacyJdbcNames.each { name, legacy ->
+  if (!cliSystemProperties.containsKey(name) && cliSystemProperties.containsKey(legacy)) {
+    cliSystemProperties[name] = cliSystemProperties[legacy]
+  }
+}
 // gradle/jetty.gradle forwards these to the Jetty JVM.
 ext.cliSystemProperties = cliSystemProperties
 
@@ -491,16 +505,16 @@ file('gradle/resource-filter.properties').withReader('UTF-8') { reader ->
 def environmentFilterProperties = [
   // as Maven gave it, ?false=false rather than ?useSSL=false
   'drop-recreate-db'          : ['context.path': '/', 'ssl.enabled': 'false',
-                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false'],
-  'drop-recreate-hibernate-db': ['jdbc.db.maven': 'rspace_hib', 'context.path': '/', 'ssl.enabled': 'false',
-                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false'],
+                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.server.db}?${ssl.enabled}=false'],
+  'drop-recreate-hibernate-db': ['jdbc.server.db': 'rspace_hib', 'context.path': '/', 'ssl.enabled': 'false',
+                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.server.db}?useSSL=false'],
   'keepdbintact'              : ['context.path': '/', 'ssl.enabled': 'false'],
   'prodRelease'               : ['context.path': '/'],
 ]
 filterProperties.putAll(environmentFilterProperties[buildEnvironment] ?: [:])
 // Placeholders with no default, left for Spring to resolve unless given.
 (filterProperties.keySet() + ['jdbc.url', 'ssl.enabled', 'RS.devlogLevel']).each { name ->
-  def value = providers.gradleProperty(name).getOrNull()
+  def value = providers.gradleProperty(name).orElse(providers.gradleProperty(legacyJdbcNames[name] ?: name)).getOrNull()
   if (value != null) {
     filterProperties[name] = value
   }
@@ -579,11 +593,11 @@ tasks.register('recreateDatabase', RecreateDatabase) {
   description = 'Drops and recreates the test database (-Denvironment=drop-recreate-db or drop-recreate-hibernate-db).'
   group = LifecycleBasePlugin.VERIFICATION_GROUP
   driverClasspath.from(jdbcDriverClasspath)
-  driverClassName = filterProperties['jdbc.driverClassName.maven']
-  serverUrl = filterProperties['jdbc.url.maven']
-  databaseName = filterProperties['jdbc.db.maven']
-  username = filterProperties['jdbc.username.maven']
-  password = filterProperties['jdbc.password.maven']
+  driverClassName = filterProperties['jdbc.server.driverClassName']
+  serverUrl = filterProperties['jdbc.server.url']
+  databaseName = filterProperties['jdbc.server.db']
+  username = filterProperties['jdbc.server.username']
+  password = filterProperties['jdbc.server.password']
   if (buildEnvironment != 'drop-recreate-hibernate-db') {
     baselineScript = layout.projectDirectory.file('src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql')
   }
