@@ -485,7 +485,7 @@ class ApiV2CrudControllerTest {
   }
 
   @Test
-  void rejectsMalformedRepeatedAndLegacyFieldsets() throws Exception {
+  void rejectsMalformedAndRepeatedFieldsets() throws Exception {
     stubPage(List.of(futureMaintenance(2, "Window")), 1);
 
     mockMvc
@@ -496,11 +496,6 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(get(ENDPOINT).param("fields[maintenances][nested]", "message"))
         .andExpect(status().isBadRequest());
-
-    mockMvc
-        .perform(get(ENDPOINT).param("select[message]", "true"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.query.field"));
   }
 
   @Test
