@@ -11,9 +11,17 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdviceAdapter;
 
-/** Retains the presence of a body version for infrastructure errors raised at commit. */
+/**
+ * Retains the presence of a body version for infrastructure errors raised at commit. Features
+ * extend this advice with their own controller package, as they do {@link ApiV2ControllerAdvice}.
+ */
 @ControllerAdvice(basePackageClasses = ApiV2ControllerAdvice.class)
 public class ApiV2VersionPreconditionAdvice extends RequestBodyAdviceAdapter {
+  /** Request attribute set to {@code true} when the request body carries a non-null version. */
+  public static final String VERSION_PRECONDITION_ATTRIBUTE = "api.v2.versionPrecondition";
+
+  private static final String VERSION = "version";
+
   @Override
   public boolean supports(
       MethodParameter parameter, Type type, Class<? extends HttpMessageConverter<?>> converter) {
@@ -27,16 +35,20 @@ public class ApiV2VersionPreconditionAdvice extends RequestBodyAdviceAdapter {
       MethodParameter parameter,
       Type type,
       Class<? extends HttpMessageConverter<?>> converter) {
-    var bean = new BeanWrapperImpl(body);
     boolean versioned =
         body instanceof ApiV2JsonBody json
-            ? json.node().hasNonNull("version")
-            : bean.isReadableProperty("version") && bean.getPropertyValue("version") != null;
+            ? json.node().hasNonNull(VERSION)
+            : hasVersionProperty(body);
     if (versioned
         && RequestContextHolder.getRequestAttributes()
             instanceof ServletRequestAttributes attributes) {
-      attributes.getRequest().setAttribute("api.v2.versionPrecondition", true);
+      attributes.getRequest().setAttribute(VERSION_PRECONDITION_ATTRIBUTE, true);
     }
     return body;
+  }
+
+  private static boolean hasVersionProperty(Object body) {
+    var bean = new BeanWrapperImpl(body);
+    return bean.isReadableProperty(VERSION) && bean.getPropertyValue(VERSION) != null;
   }
 }

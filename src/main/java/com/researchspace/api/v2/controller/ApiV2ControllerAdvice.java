@@ -272,7 +272,9 @@ public class ApiV2ControllerAdvice {
       boolean conditional =
           request != null
               && (request.getHeader(HttpHeaders.IF_MATCH) != null
-                  || Boolean.TRUE.equals(request.getAttribute("api.v2.versionPrecondition")));
+                  || Boolean.TRUE.equals(
+                      request.getAttribute(
+                          ApiV2VersionPreconditionAdvice.VERSION_PRECONDITION_ATTRIBUTE)));
       HttpStatus status = conditional ? HttpStatus.PRECONDITION_FAILED : HttpStatus.CONFLICT;
       if (!conditional
           && request != null

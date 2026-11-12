@@ -491,11 +491,7 @@ Offsets beyond Blaze's integer limit return an empty slice without querying. `pa
 `projectedPage` retain their counted-page behavior.
 
 The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is needed to preserve
-sort order. On the seeded 100k-row benchmark with the PI access rule, MariaDB `ANALYZE FORMAT=JSON`
-for 21 rows examined 35 index entries and stopped without a filesort, taking 0.22 ms. Without the
-index it scanned 100,000 rows and sorted 90,002 active rows, taking 92.40 ms. These measurements
-come from single warm queries. They support this access path but do not guarantee latency. The
-temporary benchmark index was removed after measurement.
+sort order.
 
 ## Request and response payloads
 
