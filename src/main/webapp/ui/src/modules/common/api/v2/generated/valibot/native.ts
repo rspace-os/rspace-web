@@ -193,6 +193,18 @@ export const ApiV2UiToken = v.object({
   accessToken: v.pipe(v.string(), v.description("OAuth bearer token for REST API requests.")),
 });
 
+export const BookingCalendarSubscriptionCreated = v.object({
+  active: v.boolean(),
+  subscriptionUrl: v.pipe(v.string()),
+  updatedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
+});
+
+export const BookingCalendarSubscriptionStatus = v.object({
+  active: v.boolean(),
+  subscriptionUrl: v.nullable(v.pipe(v.string())),
+  updatedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
+});
+
 export const BookingCatalogueCapability = v.picklist(["CREATE_BOOKING", "CREATE_BLOCKOUT"]);
 
 export const BookingCatalogueManagerAvailabilityCounts = v.object({
@@ -1043,6 +1055,18 @@ export const ResourceGranteeDirectoryDocument = v.object({
   docs: v.array(ResourceGranteeDirectoryEntry),
 });
 
+export const UserBookingCalendarSubscriptionControllerItemLinkDocument = v.object({
+  configurationId: v.optional(v.pipe(v.number(), v.integer())),
+  itemGlobalId: v.optional(v.string()),
+  itemName: v.optional(v.string()),
+  subscriptionUrl: v.optional(v.string()),
+  updatedAt: v.optional(v.string()),
+});
+
+export const UserBookingCalendarSubscriptionControllerItemLinksDocument = v.object({
+  docs: v.optional(v.array(UserBookingCalendarSubscriptionControllerItemLinkDocument)),
+});
+
 /**
  * @summary Search visible calendar events
  */
@@ -1373,6 +1397,51 @@ export const CountBookingConfigurationsQueryParams = v.object({
 export const CountBookingConfigurationsResponse = ApiV2CountResult;
 
 /**
+ * @summary Revoke a calendar subscription
+ */
+export const RevokeBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer()),
+});
+
+/**
+ * Returns the caller's current subscription URL when one exists.
+ * @summary Get calendar subscription status
+ */
+export const GetBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer()),
+});
+
+export const GetBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionStatus;
+
+/**
+ * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
+ * @summary Create a calendar subscription
+ */
+export const CreateBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer()),
+});
+
+export const CreateBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
+
+/**
+ * Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.
+ * @summary Replace a calendar subscription URL
+ */
+export const RotateBookingCalendarSubscriptionParams = v.object({
+  configurationId: v.pipe(v.number(), v.integer()),
+});
+
+export const RotateBookingCalendarSubscriptionHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[!#-~]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const RotateBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
+
+/**
  * Archives one booking-configurations and returns the archived document. Repeating ordinary DELETE is a no-op. The explicit permanent=true option permanently removes the resource for a direct sysadmin and returns no document.
  * @summary Archive one booking-configurations
  */
@@ -1395,7 +1464,7 @@ export const DeleteBookingConfigurationQueryParams = v.object({
 export const DeleteBookingConfigurationHeader = v.object({
   "If-Match": v.pipe(
     v.string(),
-    v.regex(/^"[0-9]+"$/),
+    v.regex(/^"[!#-~]+"$/),
     v.description("Strong entity tag containing the current resource version."),
   ),
 });
@@ -1464,7 +1533,7 @@ export const UpdateBookingConfigurationParams = v.object({
 export const UpdateBookingConfigurationHeader = v.object({
   "If-Match": v.pipe(
     v.string(),
-    v.regex(/^"[0-9]+"$/),
+    v.regex(/^"[!#-~]+"$/),
     v.description("Strong entity tag containing the current resource version."),
   ),
 });
@@ -1492,7 +1561,7 @@ export const ReplaceBookingConfigurationAccessParams = v.object({
 export const ReplaceBookingConfigurationAccessHeader = v.object({
   "If-Match": v.pipe(
     v.string(),
-    v.regex(/^"[0-9]+"$/),
+    v.regex(/^"[!#-~]+"$/),
     v.description("Strong entity tag containing the current resource version."),
   ),
 });
@@ -1595,7 +1664,7 @@ export const GetAdminBookingSettingsResponse = BookingSettingsControllerAdminSet
 export const PatchAdminBookingSettingsHeader = v.object({
   "If-Match": v.pipe(
     v.string(),
-    v.regex(/^"[0-9]+"$/),
+    v.regex(/^"[!#-~]+"$/),
     v.description("Strong entity tag containing the current resource version."),
   ),
 });
@@ -1752,6 +1821,14 @@ export const CountBookingsQueryParams = v.object({
 export const CountBookingsResponse = ApiV2CountResult;
 
 /**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export const DownloadBookingCalendarFileParams = v.object({
+  bookingId: v.pipe(v.number(), v.integer()),
+});
+
+/**
  * Returns one visible bookings. A resource that is absent or not readable is reported as not found.
  * @summary Get one bookings
  */
@@ -1813,7 +1890,7 @@ export const UpdateBookingParams = v.object({
 export const UpdateBookingHeader = v.object({
   "If-Match": v.pipe(
     v.string(),
-    v.regex(/^"[0-9]+"$/),
+    v.regex(/^"[!#-~]+"$/),
     v.description("Strong entity tag containing the current resource version."),
   ),
 });
@@ -2747,7 +2824,7 @@ export const DeleteMaintenanceHeader = v.object({
   "If-Match": v.optional(
     v.pipe(
       v.string(),
-      v.regex(/^"[0-9]+"$/),
+      v.regex(/^"[!#-~]+"$/),
       v.description("Strong entity tag containing the current resource version."),
     ),
   ),
@@ -2810,7 +2887,7 @@ export const UpdateMaintenanceHeader = v.object({
   "If-Match": v.optional(
     v.pipe(
       v.string(),
-      v.regex(/^"[0-9]+"$/),
+      v.regex(/^"[!#-~]+"$/),
       v.description("Strong entity tag containing the current resource version."),
     ),
   ),
@@ -2955,6 +3032,38 @@ export const CountUsersResponse = ApiV2CountResult;
  * @summary Get the current user
  */
 export const GetCurrentUserResponse = ApiV2CurrentUser;
+
+/**
+ * Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.
+ * @summary List the caller's bookable-item calendar links
+ */
+export const ListMyBookableItemCalendarSubscriptionsResponse =
+  UserBookingCalendarSubscriptionControllerItemLinksDocument;
+
+/**
+ * @summary Get the caller's booking calendar subscription
+ */
+export const GetUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionStatus;
+
+/**
+ * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
+ * @summary Create the caller's booking calendar subscription
+ */
+export const CreateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
+
+/**
+ * Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.
+ * @summary Replace the caller's booking calendar subscription URL
+ */
+export const RotateUserBookingCalendarSubscriptionHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[!#-~]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const RotateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
 
 /**
  * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.

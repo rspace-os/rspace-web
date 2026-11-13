@@ -12,6 +12,13 @@ const spec: Document = JSON.parse(
 const mutatorOverrides: Record<string, "apiV2HeadersFetch" | "apiV2BlobFetch"> = {
   getAdminBookingSettings: "apiV2HeadersFetch",
   patchAdminBookingSettings: "apiV2HeadersFetch",
+  getBookingCalendarSubscription: "apiV2HeadersFetch",
+  createBookingCalendarSubscription: "apiV2HeadersFetch",
+  rotateBookingCalendarSubscription: "apiV2HeadersFetch",
+  getUserBookingCalendarSubscription: "apiV2HeadersFetch",
+  createUserBookingCalendarSubscription: "apiV2HeadersFetch",
+  rotateUserBookingCalendarSubscription: "apiV2HeadersFetch",
+  downloadBookingCalendarFile: "apiV2BlobFetch",
 };
 const specOperationIds = new Set(getOperations(spec).map(({ operationId }) => operationId));
 for (const operationId of Object.keys(mutatorOverrides)) {
