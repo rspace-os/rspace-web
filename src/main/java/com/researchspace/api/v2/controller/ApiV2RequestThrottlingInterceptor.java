@@ -7,9 +7,6 @@ import com.researchspace.core.util.throttling.ThrottleInterval;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.Validate;
@@ -76,52 +73,41 @@ public class ApiV2RequestThrottlingInterceptor extends ApiV2AbstractThrottleInte
     return clientAllowed && globallyAllowed;
   }
 
+  /**
+   * Sets {@code X-Rate-Limit-Limit-<interval>}, {@code X-Rate-Limit-Remaining-<interval>} and
+   * {@code X-Rate-Limit-WaitTimeTillNextRequestMillis-<interval>} for each configured interval,
+   * plus the longest wait and minimum interval across them. Set before the throttle check so a 429
+   * carries them too.
+   */
   void setUsageHeaderStats(
       HttpServletRequest request, HttpServletResponse response, String identifier) {
-    // we update the headers here, before testing throttler, in case exception is
-    // thrown.
-    Optional<APIUsageStats> quarterMinStats = Optional.empty();
-    List<Integer> minTimesIntegersCollector = new ArrayList<>();
-    for (ThrottleInterval interval :
-        List.of(ThrottleInterval.QUARTER_MIN, ThrottleInterval.HOUR, ThrottleInterval.DAY)) {
-      Optional<APIUsageStats> stats = userThrottler.getStats(identifier, interval);
-      if (stats.isPresent()) {
-        setHeaders(response, stats.orElseThrow(), interval, minTimesIntegersCollector);
-        if (interval == ThrottleInterval.QUARTER_MIN) {
-          quarterMinStats = stats;
-        }
-      } else {
+    int waitTime = -1;
+    int minWaitInterval = -1;
+    for (ThrottleInterval interval : ThrottleInterval.values()) {
+      Optional<APIUsageStats> optionalStats = userThrottler.getStats(identifier, interval);
+      if (optionalStats.isEmpty()) {
         // Expected, not a misconfiguration, when APIRequestThrottler.PASS_THRU is configured.
         log.debug(
             "Could not obtain API usage stats for throttle with interval {} - is this configured?",
             interval.name());
+        continue;
       }
+      APIUsageStats stats = optionalStats.orElseThrow();
+      String suffix = "-" + interval.name().toLowerCase(Locale.ROOT);
+      response.setHeader(
+          "X-Rate-Limit-Limit" + suffix, Integer.toString(stats.getTotalRequestsPerPeriod()));
+      response.setHeader(
+          "X-Rate-Limit-Remaining" + suffix,
+          Long.toString((long) Math.floor(stats.getRemainingRequestsInPeriod())));
+      response.setHeader(
+          "X-Rate-Limit-WaitTimeTillNextRequestMillis" + suffix,
+          Integer.toString(stats.millisDelayTillNextRequest()));
+      waitTime = Math.max(waitTime, stats.millisDelayTillNextRequest());
+      minWaitInterval = Math.max(minWaitInterval, stats.getMinDelayTillNextRequestMillis());
     }
-    if (quarterMinStats.isPresent()) {
-      minTimesIntegersCollector.add(
-          quarterMinStats.orElseThrow().getMinDelayTillNextRequestMillis());
-      Integer waitTime = Collections.max(minTimesIntegersCollector);
-      response.setHeader("X-Rate-Limit-WaitTimeMillis", waitTime + "");
+    if (waitTime >= 0) {
+      response.setHeader("X-Rate-Limit-WaitTimeMillis", Integer.toString(waitTime));
+      response.setHeader("X-Rate-Limit-MinWaitIntervalMillis", Integer.toString(minWaitInterval));
     }
-  }
-
-  void setHeaders(
-      HttpServletResponse response,
-      APIUsageStats optionalStats,
-      ThrottleInterval interval,
-      List<Integer> minTimesIntegersCollector) {
-    String intervalSuffix = "-" + interval.name().toLowerCase(Locale.ROOT);
-    String limitSuffix = interval == ThrottleInterval.QUARTER_MIN ? "" : intervalSuffix;
-    response.setHeader(
-        "X-Rate-Limit-Limit" + limitSuffix, optionalStats.getTotalRequestsPerPeriod() + "");
-    response.setHeader(
-        "X-Rate-Limit-Remaining" + limitSuffix, optionalStats.getRemainingRequestsInPeriod() + "");
-    response.setHeader(
-        "X-Rate-Limit-WaitTimeTillNextRequestMillis" + intervalSuffix,
-        optionalStats.millisDelayTillNextRequest() + "");
-    minTimesIntegersCollector.add(optionalStats.millisDelayTillNextRequest());
-    response.setHeader(
-        "X-Rate-Limit-MinWaitIntervalMillis",
-        optionalStats.getMinDelayTillNextRequestMillis() + "");
   }
 }

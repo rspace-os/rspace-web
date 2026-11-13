@@ -2,6 +2,7 @@ package com.researchspace.service.resourceaccess;
 
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,7 +12,7 @@ public record ResourceAccessGranteeDocument(
     Object id,
     String key,
     String name,
-    String detail,
+    @Schema(nullable = true) String detail,
     boolean available,
     Optional<String> effectiveRole,
     List<ResourceRoleSource> roleSources) {

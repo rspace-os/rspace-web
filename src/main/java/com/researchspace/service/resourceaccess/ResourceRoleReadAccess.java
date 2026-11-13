@@ -76,6 +76,7 @@ public final class ResourceRoleReadAccess implements AccessFunction {
   public java.util.Optional<AccessDocumentation> documentation() {
     return java.util.Optional.of(
         new AccessDocumentation(
+            "ResourceRoleRead",
             "A logged-in user with a current readable resource role is required.",
             Set.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
   }

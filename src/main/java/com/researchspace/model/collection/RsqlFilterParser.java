@@ -1,18 +1,8 @@
 package com.researchspace.model.collection;
 
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.EQUAL;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.GREATER_THAN;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.GREATER_THAN_OR_EQUAL;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.IN;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.LESS_THAN;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.LESS_THAN_OR_EQUAL;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.NOT_EQUAL;
-import static cz.jirutka.rsql.parser.ast.RSQLOperators.NOT_IN;
-
 import cz.jirutka.rsql.parser.RSQLParser;
 import cz.jirutka.rsql.parser.RSQLParserException;
 import cz.jirutka.rsql.parser.ast.AndNode;
-import cz.jirutka.rsql.parser.ast.Arity;
 import cz.jirutka.rsql.parser.ast.ComparisonNode;
 import cz.jirutka.rsql.parser.ast.ComparisonOperator;
 import cz.jirutka.rsql.parser.ast.LogicalNode;
@@ -20,33 +10,21 @@ import cz.jirutka.rsql.parser.ast.Node;
 import cz.jirutka.rsql.parser.ast.OrNode;
 import cz.jirutka.rsql.parser.ast.RSQLVisitor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Parses bounded RSQL into a typed, persistence-neutral filter tree. */
 public final class RsqlFilterParser {
 
-  private static final ComparisonOperator CONTAINS =
-      new ComparisonOperator("=contains=", Arity.of(1, 1));
-  private static final ComparisonOperator LIKE = new ComparisonOperator("=like=", Arity.of(1, 1));
-  private static final ComparisonOperator EXISTS =
-      new ComparisonOperator("=exists=", Arity.of(1, 1));
   private static final Map<ComparisonOperator, Operator> OPERATOR_MAPPING =
-      Map.ofEntries(
-          Map.entry(EQUAL, Operator.EQUAL),
-          Map.entry(NOT_EQUAL, Operator.NOT_EQUAL),
-          Map.entry(GREATER_THAN, Operator.GREATER_THAN),
-          Map.entry(GREATER_THAN_OR_EQUAL, Operator.GREATER_THAN_OR_EQUAL),
-          Map.entry(LESS_THAN, Operator.LESS_THAN),
-          Map.entry(LESS_THAN_OR_EQUAL, Operator.LESS_THAN_OR_EQUAL),
-          Map.entry(IN, Operator.IN),
-          Map.entry(NOT_IN, Operator.NOT_IN),
-          Map.entry(CONTAINS, Operator.CONTAINS),
-          Map.entry(LIKE, Operator.LIKE),
-          Map.entry(EXISTS, Operator.EXISTS));
+      Arrays.stream(Operator.values())
+          .collect(Collectors.toUnmodifiableMap(Operator::rsql, Function.identity()));
   private static final Set<ComparisonOperator> OPERATORS = Set.copyOf(OPERATOR_MAPPING.keySet());
   private static final String CURRENT_SUBJECT_ALIAS = "me";
   private static final String USERS_RESOURCE = "users";

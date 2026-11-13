@@ -7,6 +7,7 @@ import java.util.Objects;
 import org.springframework.http.MediaType;
 
 /** RFC 9457 problem details using the default {@code about:blank} type. */
+@Schema(additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiV2Problem(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String title,

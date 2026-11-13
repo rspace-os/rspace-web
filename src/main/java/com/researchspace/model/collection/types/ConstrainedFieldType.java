@@ -21,7 +21,7 @@ public record ConstrainedFieldType<V>(CollectionFieldType<V> base, FieldConstrai
     Objects.requireNonNull(base, "Constrained field type");
     Objects.requireNonNull(constraints, "Field constraints");
     if (base instanceof ConstrainedFieldType<?>
-        || base instanceof OpaqueObjectFieldType
+        || base instanceof ReadOnlyObjectFieldType<?>
         || base instanceof StructuredFieldType<?>) {
       throw new IllegalArgumentException("Constraints require a single scalar field type");
     }
