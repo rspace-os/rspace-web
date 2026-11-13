@@ -1,23 +1,20 @@
 import { type BookingFormState } from "./BookingForm";
 import { type BookingCreationContext } from "./bookingCreationStore";
 import { TimelineWindowEditor } from "./TimelineWindowEditor";
-import { type TimelineMovePolicy } from "./timelineMove";
+import { type TimelinePolicy, unrestrictedTimelinePolicy } from "./timelineRange";
 
 export function DraftMarker({
   creation,
   draft,
   timeZone,
-  schedulingTimezone = timeZone,
-  snapIncrementMinutes = 5,
-  movementPolicy,
+  policy = unrestrictedTimelinePolicy(timeZone),
   onChange,
 }: {
   creation: BookingCreationContext;
   draft: BookingFormState["draft"];
   timeZone: string;
-  schedulingTimezone?: string;
-  snapIncrementMinutes?: number;
-  movementPolicy?: TimelineMovePolicy;
+  /** The chosen item's rules; without an item the draft is unrestricted. */
+  policy?: TimelinePolicy;
   onChange?: (draft: BookingFormState["draft"]) => void;
 }) {
   const trigger = document.getElementById(creation.triggerId);
@@ -28,10 +25,8 @@ export function DraftMarker({
       anchor={trigger}
       date={originDate}
       timezone={timeZone}
-      schedulingTimezone={schedulingTimezone}
       draft={draft}
-      snapIncrementMinutes={snapIncrementMinutes}
-      movementPolicy={movementPolicy}
+      policy={policy}
       onChange={onChange}
       tone={creation.eventKind === "MAINTENANCE" ? "maintenance" : "booking"}
       testId="compact-booking-draft-marker"

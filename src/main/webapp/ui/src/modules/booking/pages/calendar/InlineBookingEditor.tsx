@@ -9,6 +9,7 @@ import {
   type EditableBooking,
 } from "@/modules/booking/creation/BookingForm";
 import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
 import { type BookingListDocument, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
@@ -191,14 +192,8 @@ export function InlineBookingEditor({
           verticalAnchor={timelineEventElement}
           date={timelineDate}
           timezone={timezone}
-          schedulingTimezone={configuration.data.timezone}
           draft={timelineDraft}
-          snapIncrementMinutes={configuration.data.slotGranularityMinutes}
-          movementPolicy={{
-            maxBookingDurationMinutes: event.kind === "MAINTENANCE" ? 0 : configuration.data.maxBookingDurationMinutes,
-            openingHours: configuration.data.openingHours,
-            enforceOpeningHours: event.kind !== "MAINTENANCE",
-          }}
+          policy={timelinePolicy(configuration.data, event.kind === "MAINTENANCE" ? "MAINTENANCE" : "BOOKING")}
           onChange={setWindowAdjustment}
           tone={event.kind === "MAINTENANCE" ? "maintenance" : "booking"}
         />
