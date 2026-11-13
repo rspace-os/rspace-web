@@ -32,6 +32,7 @@ import type {
   NotFoundResponse,
   SearchBookingCatalogueLocationsParams,
   SearchBookingCatalogueParams,
+  SearchCalendarCatalogueParams,
   TooManyRequestsResponse,
   UnauthenticatedResponse,
   UnexpectedErrorResponse
@@ -231,6 +232,180 @@ export function useSearchBookingCatalogueSuspense<TData = Awaited<ReturnType<typ
  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getSearchBookingCatalogueSuspenseQueryOptions(params,options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSearchCalendarCatalogueUrl = (params: SearchCalendarCatalogueParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/booking-catalogue/calendar?${stringifiedParams}` : `/api/v2/booking-catalogue/calendar`
+}
+
+/**
+ * @summary Search bookable instruments in a calendar interval
+ */
+export const searchCalendarCatalogue = async (params: SearchCalendarCatalogueParams, options?: Parameters<typeof apiV2Fetch>[1]): Promise<BookingCatalogueManagerPage> => {
+
+  return apiV2Fetch<BookingCatalogueManagerPage>(getSearchCalendarCatalogueUrl(params),
+  {
+      operationId: 'searchCalendarCatalogue',
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchCalendarCatalogueQueryKey = (params?: SearchCalendarCatalogueParams,) => {
+    return [
+    `/api/v2/booking-catalogue/calendar`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchCalendarCatalogueQueryOptions = <TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchCalendarCatalogueQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchCalendarCatalogue>>> = ({ signal }) => searchCalendarCatalogue(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SearchCalendarCatalogueQueryResult = NonNullable<Awaited<ReturnType<typeof searchCalendarCatalogue>>>
+export type SearchCalendarCatalogueQueryError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>
+
+
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogue<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchCalendarCatalogue>>,
+          TError,
+          Awaited<ReturnType<typeof searchCalendarCatalogue>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogue<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchCalendarCatalogue>>,
+          TError,
+          Awaited<ReturnType<typeof searchCalendarCatalogue>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogue<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogue<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSearchCalendarCatalogueQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useSearchCalendarCatalogue} query
+ */
+export const invalidateSearchCalendarCatalogue = async (
+ queryClient: QueryClient, params: SearchCalendarCatalogueParams, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey(params) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getSearchCalendarCatalogueSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchCalendarCatalogueQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchCalendarCatalogue>>> = ({ signal }) => searchCalendarCatalogue(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type SearchCalendarCatalogueSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof searchCalendarCatalogue>>>
+export type SearchCalendarCatalogueSuspenseQueryError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>
+
+
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogueSuspense<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogueSuspense<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogueSuspense<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search bookable instruments in a calendar interval */
+export function useSearchCalendarCatalogueSuspense<TData = Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse>>(
+ params: SearchCalendarCatalogueParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchCalendarCatalogue>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSearchCalendarCatalogueSuspenseQueryOptions(params,options)
 
   const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

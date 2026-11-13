@@ -1,3 +1,4 @@
+export * from './booking-calendar/booking-calendar.ts';
 export * from './booking-catalogue/booking-catalogue.ts';
 export * from './booking-configuration-targets/booking-configuration-targets.ts';
 export * from './booking-configurations/booking-configurations.ts';
