@@ -8,7 +8,7 @@ import {
 import {
   coversInterval,
   MAX_BOOKING_DURATION_MINUTES,
-  type OpeningHoursEntry,
+  type OpeningSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
@@ -28,12 +28,20 @@ function resolution(date: string, time: string, timezone: string): WallClockReso
   }
 }
 
+/** The zone each endpoint's wall clock is read in; a single zone applies to both. */
+export type EndpointTimezones = string | { start: string; end: string };
+
+export function endpointTimezones(timezones: EndpointTimezones): { start: string; end: string } {
+  return typeof timezones === "string" ? { start: timezones, end: timezones } : timezones;
+}
+
 export function resolveBookingWindow(
   draft: BookingWindowDraft,
-  displayTimezone: string,
+  timezones: EndpointTimezones,
 ): { window?: ResolvedBookingWindow; start?: WallClockResolution; end?: WallClockResolution; orderInvalid: boolean } {
-  const start = resolution(draft.startDate, draft.startTime, displayTimezone);
-  const end = resolution(draft.endDate, draft.endTime, displayTimezone);
+  const zones = endpointTimezones(timezones);
+  const start = resolution(draft.startDate, draft.startTime, zones.start);
+  const end = resolution(draft.endDate, draft.endTime, zones.end);
   const startInstant = wallClockInstant(start, draft.startOccurrence);
   const endInstant = wallClockInstant(end, draft.endOccurrence);
   const orderInvalid = Boolean(startInstant && endInstant && Temporal.Instant.compare(endInstant, startInstant) <= 0);
@@ -45,12 +53,13 @@ export function resolveBookingWindow(
   };
 }
 
-export type BookingWindowPolicy = {
+export type BookingWindowPolicy = OpeningSchedule & {
   schedulingTimezone: string;
   slotGranularityMinutes: number;
   incrementUnit?: IncrementSettings["incrementUnit"];
+  /** The configurable item limit; 0 means only the absolute limit applies. */
   maxBookingDurationMinutes: number;
-  openingHours: readonly OpeningHoursEntry[];
+  /** False is the explicit maintenance bypass: closed weekdays and hours are not checked. */
   enforceOpeningHours?: boolean;
   allowPolicyMismatch?: boolean;
 };
@@ -58,18 +67,18 @@ export type BookingWindowPolicy = {
 /** Resolve and validate synchronously so rendering and submission use the same window. */
 export function validateBookingWindow(
   value: BookingWindowDraft,
-  displayTimezone: string,
+  timezones: EndpointTimezones,
   {
     schedulingTimezone: resolvedSchedulingTimezone,
     slotGranularityMinutes,
     incrementUnit = "MINUTES",
     maxBookingDurationMinutes,
-    openingHours,
     enforceOpeningHours = true,
     allowPolicyMismatch = false,
+    ...openingSchedule
   }: BookingWindowPolicy,
 ) {
-  const result = resolveBookingWindow(value, displayTimezone);
+  const result = resolveBookingWindow(value, timezones);
   const rule = incrementRule({ slotGranularityMinutes, incrementUnit });
   const violation: IncrementViolation | null = result.window
     ? incrementViolation(rule, result.window.start, result.window.end, resolvedSchedulingTimezone)
@@ -102,7 +111,7 @@ export function validateBookingWindow(
     enforceOpeningHours &&
       result.window &&
       !maximumDurationInvalid &&
-      !coversInterval({ openingHours }, resolvedSchedulingTimezone, result.window),
+      !coversInterval(openingSchedule, resolvedSchedulingTimezone, result.window),
   );
   const policyInvalid = granularityInvalid || openingInvalid || maximumDurationInvalid;
   const resolvedWindow = policyInvalid && !allowPolicyMismatch ? undefined : result.window;
@@ -115,6 +124,7 @@ export function validateBookingWindow(
     missingDayEnd,
     openingInvalid,
     maximumDurationInvalid,
+    maximumDurationLimitMinutes,
     policyInvalid,
   };
 }
