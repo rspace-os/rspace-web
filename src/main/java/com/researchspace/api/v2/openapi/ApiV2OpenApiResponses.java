@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.componentRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
@@ -82,7 +83,7 @@ final class ApiV2OpenApiResponses {
 
   static Map<String, Object> standardResponseReference(String status) {
     String name = STANDARD_RESPONSE_NAMES.get(status);
-    return name == null ? null : Map.of("$ref", "#/components/responses/" + name);
+    return name == null ? null : componentRef("responses", name);
   }
 
   /** Adds a reference to the shared component response for each status. */
@@ -171,6 +172,6 @@ final class ApiV2OpenApiResponses {
   }
 
   static Map<String, Object> headerRef(String name) {
-    return Map.of("$ref", "#/components/headers/" + name);
+    return componentRef("headers", name);
   }
 }

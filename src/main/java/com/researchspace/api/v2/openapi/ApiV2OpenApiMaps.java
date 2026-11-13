@@ -41,7 +41,22 @@ final class ApiV2OpenApiMaps {
   }
 
   static Map<String, Object> ref(String name) {
-    return Map.of("$ref", RefUtils.constructRef(name));
+    return componentRef("schemas", name);
+  }
+
+  /** A reference to the named component in {@code #/components/<section>/}. */
+  static Map<String, Object> componentRef(String section, String name) {
+    return Map.of("$ref", RefUtils.constructRef(name, "#/components/" + section + "/"));
+  }
+
+  /**
+   * A reference written in an annotation. A full reference or URL is kept as written, and a bare
+   * component name is placed in {@code section}, as swagger's model {@code $ref} setters do.
+   */
+  static Map<String, Object> annotationRef(String section, String value) {
+    return value.indexOf('/') >= 0 || value.indexOf('.') >= 0
+        ? Map.of("$ref", value)
+        : componentRef(section, value);
   }
 
   static void putIfNotNull(Map<String, Object> target, String name, Object value) {

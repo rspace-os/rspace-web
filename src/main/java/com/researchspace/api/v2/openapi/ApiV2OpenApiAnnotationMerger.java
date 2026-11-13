@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.annotationRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
@@ -148,7 +149,7 @@ final class ApiV2OpenApiAnnotationMerger {
       String responseCode = documented.responseCode();
       boolean success = isSuccessResponse(responseCode);
       if (!documented.ref().isBlank()) {
-        responses.put(responseCode, Map.of("$ref", documented.ref()));
+        responses.put(responseCode, annotationRef("responses", documented.ref()));
       } else if (success
           || responseCode.startsWith("1")
           || responseCode.startsWith("3")
@@ -220,7 +221,7 @@ final class ApiV2OpenApiAnnotationMerger {
   private static Map<String, Object> parameter(
       Parameter documented, Type type, ParameterLocation location, Map<String, Object> schemas) {
     if (documented != null && !documented.ref().isBlank()) {
-      return Map.of("$ref", documented.ref());
+      return annotationRef("parameters", documented.ref());
     }
     Components components = new Components();
     var parameter =
@@ -282,7 +283,7 @@ final class ApiV2OpenApiAnnotationMerger {
     if (documented != null) {
       putIfText(result, "description", documented.description());
       if (!documented.ref().isBlank()) {
-        return Optional.of(Map.of("$ref", documented.ref()));
+        return Optional.of(annotationRef("requestBodies", documented.ref()));
       }
     }
     result.put("required", documented != null ? documented.required() : true);
