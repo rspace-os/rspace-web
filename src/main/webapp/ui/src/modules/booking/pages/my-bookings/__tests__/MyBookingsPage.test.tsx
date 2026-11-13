@@ -23,14 +23,15 @@ import {
 } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { Suspense } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { MyBookingsRoutePage } from "../MyBookingsPage";
 import { bookingHandlers, bookingsOpenApi, roleLostBooking, upcomingBooking } from "../mocks/bookingMocks";
+import { UserBookingsPage } from "../UserBookingsPage";
 
 const initialColumns = '{ "fields": ["target", "start", "end"] }';
 const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal&my-bookings.where=target.name%3Dcontains%3Dscope&my-bookings.columns=${encodeURIComponent(initialColumns)}&my-bookings.sort=-start`;
@@ -57,7 +58,7 @@ function renderPage(
   const pageRoute = createRoute({
     getParentRoute: () => root,
     path: "/booking/my-bookings/",
-    component: () => <MyBookingsRoutePage requesterId={requesterId} title="Test user bookings" />,
+    component: () => <UserBookingsPage requesterId={requesterId} title="Test user bookings" />,
   });
   const detailsRoute = createRoute({
     getParentRoute: () => root,
@@ -90,7 +91,7 @@ describe("My Bookings page", () => {
     renderPage(initialPath, 84, (url) => requests.push(url));
     const user = userEvent.setup();
 
-    expect(await screen.findByRole("heading", { name: "Test user bookings" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Test user bookings" })).toHaveClass("text-2xl", "font-semibold");
     await waitFor(() =>
       expect(
         requests.some((request) => request.searchParams.get("where")?.includes("target.name=contains=scope")),
@@ -159,7 +160,8 @@ describe("My Bookings page", () => {
     expect(countWhere).toMatch(/^requester.value==84;kind==BOOKING;state==CONFIRMED;end=gt=.+Z$/);
     expect(countWhere).not.toContain("confocal");
     expect(countWhere).not.toContain("target.name");
-    expect([...counts[0].searchParams.keys()]).toEqual(["where"]);
+    expect([...counts[0].searchParams.keys()]).toEqual(["where", "max"]);
+    expect(counts[0].searchParams.get("max")).toBe("100");
     const asOf = countWhere?.match(/end=gt=(.+)$/)?.[1] ?? "";
     expect(asOf).not.toBe("");
     expect(Date.parse(upcomingBooking.start)).toBeLessThan(Date.parse(asOf));
@@ -167,6 +169,17 @@ describe("My Bookings page", () => {
     expect(
       lists.findLast((request) => request.searchParams.get("where")?.includes("confocal"))?.searchParams.get("where"),
     ).toContain(`end=gt=${asOf}`);
+  });
+
+  it("shows the lower-bound upcoming count as 99+", async () => {
+    renderPage();
+    server.use(
+      http.get("/api/v2/bookings/count", () => HttpResponse.json({ totalDocs: 100, totalIsLowerBound: true })),
+    );
+    expect(i18n.t("booking:myBookings.count.lowerBound", { lng: "en-US" })).toBe("99+");
+    expect(await screen.findByLabelText("booking:myBookings.count.lowerBoundAccessible")).toHaveTextContent(
+      "booking:myBookings.count.lowerBound",
+    );
   });
 
   it("formats booking times in the resolved display timezone", async () => {
@@ -200,7 +213,7 @@ describe("My Bookings page", () => {
     expect(screen.queryByRole("button", { name: "booking:calendar.file.accessibleLabel" })).not.toBeInTheDocument();
   });
 
-  it("keeps icon-only page actions accessible by name", async () => {
+  it("keeps page actions accessible by name", async () => {
     renderPage();
 
     const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.withCount" });
@@ -210,8 +223,11 @@ describe("My Bookings page", () => {
     const edit = table.getByRole("link", { name: "booking:myBookings.actions.edit" });
     const cancel = table.getByRole("button", { name: "booking:bookings.actions.cancel" });
 
-    expect(within(upcoming).queryByText("booking:myBookings.period.upcoming")).not.toBeInTheDocument();
-    expect(within(past).queryByText("booking:myBookings.period.past")).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "booking:myBookings.period.legend" })).toContainElement(upcoming);
+    expect(screen.queryByRole("heading", { name: "booking:myBookings.plural" })).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:myBookings.description")).not.toBeInTheDocument();
+    expect(within(upcoming).getByText("booking:myBookings.period.upcoming")).toBeVisible();
+    expect(within(past).getByText("booking:myBookings.period.past")).toBeVisible();
     expect(within(viewDetails).queryByText("booking:myBookings.actions.viewDetails")).not.toBeInTheDocument();
     expect(within(edit).queryByText("booking:myBookings.actions.edit")).not.toBeInTheDocument();
     expect(within(cancel).queryByText("booking:bookings.actions.cancel")).not.toBeInTheDocument();
