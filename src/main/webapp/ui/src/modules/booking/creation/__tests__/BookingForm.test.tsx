@@ -157,7 +157,7 @@ describe("BookingForm", () => {
     expect(submit).toHaveBeenCalledOnce();
   });
 
-  it("preserves stored instants when an edit opens in a different display timezone", async () => {
+  it("opens an edit in the viewer's timezone, notes the instrument's times, and preserves stored instants", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
 
@@ -177,6 +177,7 @@ describe("BookingForm", () => {
     expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-10-24");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("21:30");
+    expect(screen.getByRole("note")).toHaveTextContent("booking:bookings.form.instrumentTimes");
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
 
     expect(submit).toHaveBeenCalledWith(
@@ -184,6 +185,123 @@ describe("BookingForm", () => {
         window: { start: editableBooking.start, end: editableBooking.end },
       }),
     );
+  });
+
+  it("keeps the entered wall clock when the form timezone changes", async () => {
+    const user = userEvent.setup();
+    const stateChanged = vi.fn();
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        displayTimezone="Europe/Berlin"
+        initialTarget={{ ...target, timezone: "Asia/Tokyo" }}
+        initialWindow={{ startDate: "2026-10-12", startTime: "03:00", endDate: "2026-10-12", endTime: "04:00" }}
+        lockTarget
+        pending={false}
+        onStateChange={stateChanged}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const startTime = await screen.findByLabelText("booking:bookings.form.startTime");
+    expect(startTime).toHaveValue("03:00");
+    expect(screen.getByRole("note")).toHaveTextContent("booking:bookings.form.instrumentTimes");
+    expect(stateChanged).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        draft: expect.objectContaining({ startDate: "2026-10-12", startTime: "03:00", endTime: "04:00" }),
+        window: { start: "2026-10-12T01:00:00Z", end: "2026-10-12T02:00:00Z" },
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" }));
+    const timezone = screen.getByRole("combobox", { name: "booking:bookings.form.startTimezone" });
+    expect(timezone).toHaveValue("Europe/Berlin");
+    await user.clear(timezone);
+    await user.type(timezone, "Asia/Tokyo");
+
+    // 03:00 now means 03:00 in Tokyo, the instrument's own zone, so the note goes. The end follows the start, and the
+    // page sees the moved instants as Berlin wall clocks.
+    expect(startTime).toHaveValue("03:00");
+    expect(screen.getByRole("combobox", { name: "booking:bookings.form.endTimezone" })).toHaveValue("Asia/Tokyo");
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(stateChanged).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        draft: expect.objectContaining({ startDate: "2026-10-11", startTime: "20:00", endTime: "21:00" }),
+        window: { start: "2026-10-11T18:00:00Z", end: "2026-10-11T19:00:00Z" },
+      }),
+    );
+  });
+
+  it("reports the entered window for conflict checks before it meets the item's rules", async () => {
+    const stateChanged = vi.fn();
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        displayTimezone="Europe/Berlin"
+        initialTarget={{
+          ...target,
+          openingHours: target.openingHours.map((entry) => ({ ...entry, start: "08:00", end: "09:00" })),
+        }}
+        initialWindow={{ startDate: "2026-10-12", startTime: "10:00", endDate: "2026-10-12", endTime: "11:00" }}
+        lockTarget
+        pending={false}
+        onStateChange={stateChanged}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    await screen.findByLabelText("booking:bookings.form.startTime");
+    expect(stateChanged).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        window: undefined,
+        enteredWindow: { start: "2026-10-12T08:00:00Z", end: "2026-10-12T09:00:00Z" },
+      }),
+    );
+    // Both endpoints are entered, so the broken rule is named without waiting for submission.
+    expect(screen.getByText("booking:bookings.errors.openingHours")).toBeVisible();
+  });
+
+  it("reads the end in its own timezone once it is given one", async () => {
+    const user = userEvent.setup();
+    const stateChanged = vi.fn();
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        displayTimezone="Europe/Berlin"
+        initialTarget={{ ...target, timezone: "Asia/Tokyo" }}
+        initialWindow={{ startDate: "2026-10-12", startTime: "03:00", endDate: "2026-10-12", endTime: "04:00" }}
+        lockTarget
+        pending={false}
+        onStateChange={stateChanged}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.changeTimezone" }));
+    expect(screen.getByRole("combobox", { name: "booking:bookings.form.startTimezone" })).toHaveValue("Europe/Berlin");
+    const endZone = screen.getByRole("combobox", { name: "booking:bookings.form.endTimezone" });
+    expect(endZone).toHaveValue("Europe/Berlin");
+    await user.clear(endZone);
+    await user.type(endZone, "America/New_York");
+
+    // 03:00 Berlin to 04:00 New York: both entered times stay and only the end's instant moves.
+    expect(screen.getByLabelText("booking:bookings.form.startTime")).toHaveValue("03:00");
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveValue("04:00");
+    expect(stateChanged).toHaveBeenLastCalledWith(
+      expect.objectContaining({ window: { start: "2026-10-12T01:00:00Z", end: "2026-10-12T08:00:00Z" } }),
+    );
+
+    const globe = screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" });
+    expect(globe).toHaveAttribute("aria-expanded", "true");
+    await user.click(globe);
+    expect(screen.queryByRole("combobox", { name: "booking:bookings.form.startTimezone" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "booking:bookings.form.endTimezone" })).not.toBeInTheDocument();
   });
 
   it("prefills only the Calendar date and reports the missing window", async () => {
@@ -208,7 +326,7 @@ describe("BookingForm", () => {
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "300");
     expect(within(end).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
-    expect(screen.getByText("booking:bookings.form.openingHours")).toBeVisible();
+    expect(screen.getByText("booking:bookings.form.openAllDay")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
 
@@ -449,7 +567,7 @@ describe("BookingForm", () => {
     await user.type(within(end).getByLabelText("booking:bookings.form.time"), "10:05");
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
-    expect(screen.getByText("booking:bookings.errors.maximumDuration")).toBeVisible();
+    expect(screen.getByText("booking:bookings.errors.maximumDurationLimit")).toBeVisible();
     expect(submit).not.toHaveBeenCalled();
   });
 
@@ -683,7 +801,7 @@ describe("BookingForm", () => {
       />,
     );
 
-    expect(screen.queryByText("booking:bookings.errors.maximumDuration")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:bookings.errors.maximumDurationLimit")).not.toBeInTheDocument();
     await user.type(await screen.findByRole("textbox", { name: "booking:bookings.form.purpose" }), " updated");
     await user.click(await screen.findByRole("button", { name: "booking:bookings.form.save" }));
     expect(submit).toHaveBeenCalledWith(
