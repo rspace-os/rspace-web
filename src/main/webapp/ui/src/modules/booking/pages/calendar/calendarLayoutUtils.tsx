@@ -8,7 +8,7 @@ import {
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import i18n from "@/modules/common/i18n";
-import { BookingActions } from "./BookingEventsCalendar";
+import { BookingActions } from "./BookingEventActions";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 
