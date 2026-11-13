@@ -119,15 +119,15 @@ BSL-2` matches `Level BSL-2 lab`. See `InstrumentCustomFieldTextSearchIT` for ex
 
 ### Fields reached through a relationship
 
-Declaring a relationship publishes every field of every destination it can reach, under
-`x-rspace-relationship-fields` on the `where` parameter and keyed by `<relationship>.<field>`:
+The `where` parameter's `x-rspace-filter.selectors` map publishes immediate target scalar fields,
+keyed by `<relationship>.<field>`. `viaTitle` carries the relationship's title:
 
 ```json
-"x-rspace-relationship-fields": {
+"selectors": {
   "target.name":     {"schema": {"type": "string"}, "operators": ["==", "=contains=", "=like="],
-                      "wildcards": true, "title": "Name"},
+                      "wildcards": true, "title": "Name", "viaTitle": "Booking target"},
   "target.globalId": {"schema": {"type": "string"}, "operators": [], "wildcards": false,
-                      "title": "Global ID"}
+                      "title": "Global ID", "viaTitle": "Booking target"}
 }
 ```
 
@@ -139,15 +139,50 @@ value. `=like=` finds words anywhere in the value. Client labels must show this 
 
 `operators` is empty for a field with no backing column, such as a global ID derived from an ID. The
 API publishes the field so clients can display it, but `where` rejects it as unsupported.
-`x-rspace-relationship-fields` lists fields available through a relationship. `x-rspace-filter`
-lists fields that a filter expression can use.
+Entries with non-empty `operators` can be used in filter expressions. An entry's presence alone
+does not make it filterable.
 
 A polymorphic relationship publishes only fields shared by every destination with the same schema
 and the intersection of their operators. This avoids columns empty for half the rows and filters
 whose meaning depends on the destination.
 
-The API publishes only scalar fields from one relationship hop. It does not publish a target's own
-relationships because the query language compiles one hop and depth 1 expands one target level.
+This selector map covers one relationship hop. It does not include paths such as
+`target.parentContainer.name`; the query language does not accept those multi-hop filters.
+
+### Discovering nested relationships for display
+
+Each relationship property in a resource's `Read` component carries `x-rspace-relationship.targets`.
+The map identifies every permitted target resource and points to its existing read schema. For
+example, `InstrumentsRead.properties.parentContainer` includes:
+
+```json
+"x-rspace-relationship": {
+  "targets": {
+    "containers": {"$ref": "#/components/schemas/ContainersRead"}
+  }
+}
+```
+
+To build a relationship browser, start from the response's read schema, display its properties,
+and follow each relationship's target pointer to discover the next resource's properties. Existing
+property titles and `x-rspace-access` metadata describe the field at each step. Polymorphic
+relationships list every possible target separately; keep those branches distinct because their
+fields may differ.
+
+These pointers form a finite graph, including self-references and cycles. Resolve them lazily when
+a user expands a relationship. Track pointers on the current traversal path and stop automatic
+expansion when a pointer repeats; do not globally suppress the same resource on unrelated branches.
+Set a display depth limit as well. The `$ref` values inside this extension are pointers for the
+application to resolve against `components.schemas`; standard OpenAPI tools need not resolve
+extension contents automatically. The extension is server-owned and overrides any schema annotation
+extension with the same name on a read relationship property.
+
+Graph discovery describes possible response shapes. It does not grant access to records or enable
+additional query paths. Request `depth` controls how many relationship levels the server expands,
+and `fields[resource]` controls selected fields on each resource. Missing or unreadable targets can
+render as `null`. Use the original endpoint's `x-rspace-filter.selectors` and its non-empty operator
+lists to determine which paths can be filtered. In particular, following several schema pointers
+does not make the resulting multi-hop path a supported filter.
 
 ### Scalar read documents
 

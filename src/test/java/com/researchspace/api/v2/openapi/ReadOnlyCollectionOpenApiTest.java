@@ -26,9 +26,12 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceMember;
+import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.UserManager;
 import io.swagger.v3.core.util.Json31;
@@ -164,6 +167,71 @@ class ReadOnlyCollectionOpenApiTest {
     String relationship = properties.path("parentContainer").toString();
     assertTrue(relationship.contains("\"const\":\"containers\""), relationship);
     assertTrue(relationship.contains("#/components/schemas/ContainersRead"), relationship);
+    assertEquals(
+        "#/components/schemas/ContainersRead",
+        properties.at("/parentContainer/x-rspace-relationship/targets/containers/$ref").asText());
+  }
+
+  @Test
+  void publishesRecursiveAndPolymorphicDisplayEdgesWithoutAddingNestedFilters() {
+    var nodes = graphDescription("nodes", List.of("nodes", "branches"));
+    var branches = graphDescription("branches", List.of("nodes"));
+    JsonNode document =
+        Json31.mapper()
+            .valueToTree(
+                new ApiV2OpenApiGenerator(
+                        new ApiV2ResourceCatalog(
+                            List.of(
+                                resourceSpec(nodes, List.of()), resourceSpec(branches, List.of()))),
+                        "API",
+                        "2.0.0")
+                    .generate());
+    JsonNode schemas = document.at("/components/schemas");
+    JsonNode nodeSchema = schemas.path("NodesRead");
+    JsonNode targets = nodeSchema.at("/properties/related/x-rspace-relationship/targets");
+    assertEquals(2, targets.size());
+    String self = targets.at("/nodes/$ref").asText();
+    assertEquals("#/components/schemas/NodesRead", self);
+    assertEquals(nodeSchema, document.at(self.substring(1)));
+    String branch = targets.at("/branches/$ref").asText();
+    assertEquals("#/components/schemas/BranchesRead", branch);
+    assertEquals(
+        self,
+        document
+            .at(branch.substring(1))
+            .at("/properties/related/x-rspace-relationship/targets/nodes/$ref")
+            .asText());
+    assertEquals(
+        1, targets.path("nodes").size(), "An edge contains a reference, not an inline graph");
+    assertEquals("null", nodeSchema.at("/properties/related/anyOf/1/type").asText());
+    assertFalse(nodeSchema.at("/properties/id").has("x-rspace-relationship"));
+    for (String variant : List.of("Create", "Update")) {
+      assertFalse(
+          schemas.path("Nodes" + variant).at("/properties/related").has("x-rspace-relationship"));
+    }
+    JsonNode selectors = whereSelectors(document.at("/paths/~1api~1v2~1nodes/get/parameters"));
+    assertTrue(selectors.has("related.id"));
+    assertFalse(selectors.has("related.related.id"));
+  }
+
+  private static CollectionDescription<GraphNode> graphDescription(
+      String name, List<String> targets) {
+    return new CollectionDescription<>(
+        name,
+        GraphNode.class,
+        List.of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), GraphNode::id),
+            Relationship.polymorphicToOne(
+                    "related",
+                    CollectionFieldTypes.longNumber(),
+                    targets.stream()
+                        .map(target -> new RelationshipTarget<>(target, target, GraphNode.class))
+                        .toList(),
+                    new SplitReferenceBinding<>(GraphNode::related, "relatedKind", "relatedId"))
+                .allowNull()
+                .allowSelfReference()),
+        "id",
+        List.of(new Sort("id", true)));
   }
 
   @Test
@@ -339,6 +407,8 @@ class ReadOnlyCollectionOpenApiTest {
   private record Gadget(Long id, Phase phase, Phase previous, String code) {}
 
   private record InstrumentSource(Long id, Instrument instrument) {}
+
+  private record GraphNode(Long id, ResourceReference<String, Long> related) {}
 
   private record NamespaceTarget(Long id) {}
 

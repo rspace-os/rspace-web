@@ -689,6 +689,13 @@
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
               "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "containers" : {
+                  "$ref" : "#/components/schemas/ContainersRead"
+                }
+              }
             }
           }
         },

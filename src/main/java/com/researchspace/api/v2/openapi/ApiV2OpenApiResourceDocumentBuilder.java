@@ -141,6 +141,13 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       boolean readOnlyBeforeAccess) {
     Map<String, Object> property = documentFieldSchema(field, names, writeOperation);
     applyDocumentation(property, field.openApi());
+    if (writeOperation == null && field instanceof RelationshipSchema relationship) {
+      Map<String, Object> targets = new LinkedHashMap<>();
+      relationship
+          .targetResources()
+          .forEach(target -> targets.put(target, ref(names.get(target) + "Read")));
+      property.put("x-rspace-relationship", ordered("targets", targets));
+    }
     if ((writeOperation == WriteOperation.CREATE
             || (updateDefaults && writeOperation == WriteOperation.UPDATE))
         && field.defaultValue() != null) {
