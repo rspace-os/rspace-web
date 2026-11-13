@@ -7,7 +7,10 @@ import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.collection.ResourceRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /** Read-only, caller-relative catalogue of resources that can be discovered in Booking. */
 public interface BookingCatalogueManager {
@@ -59,6 +62,48 @@ public interface BookingCatalogueManager {
       items = List.copyOf(items);
     }
   }
+
+  /** An availability quick filter; an item is in at most one category. */
+  enum Availability {
+    /** Free at {@link AvailabilityWindow#now()}. */
+    AVAILABLE_NOW("available-now"),
+    /** Busy at {@link AvailabilityWindow#now()} and free again later in the window. */
+    FREE_LATER_TODAY("free-later-today");
+
+    private final String value;
+
+    Availability(String value) {
+      this.value = value;
+    }
+
+    /** The public request value. */
+    public String value() {
+      return value;
+    }
+
+    /** The category a public request value names, if any. */
+    public static Optional<Availability> fromValue(String value) {
+      return Arrays.stream(values()).filter(category -> category.value.equals(value)).findFirst();
+    }
+  }
+
+  /**
+   * The caller's availability window for today, {@code [start, end)}, and the instant to classify.
+   * The client derives the window from its display time zone and availability-window preference, so
+   * the server applies no display wall-clock rule of its own. Opening hours still use each item's
+   * scheduling time zone.
+   */
+  record AvailabilityWindow(Instant start, Instant end, Instant now) {
+
+    public AvailabilityWindow {
+      Objects.requireNonNull(start, "Window start");
+      Objects.requireNonNull(end, "Window end");
+      Objects.requireNonNull(now, "Now");
+    }
+  }
+
+  /** How many matching items are in each availability category. */
+  record AvailabilityCounts(long availableNow, long freeLaterToday) {}
 
   /**
    * Finds one requested page, intersecting the typed filter with Booking and Inventory visibility.
