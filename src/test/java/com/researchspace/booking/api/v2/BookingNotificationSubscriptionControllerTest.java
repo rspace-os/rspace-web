@@ -1,4 +1,4 @@
-package com.researchspace.api.v2.controller;
+package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -20,12 +20,10 @@ import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.controller.ApiV2ProblemFactory;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
-import com.researchspace.booking.api.v2.BookingApiV2ControllerAdvice;
-import com.researchspace.booking.api.v2.BookingNotificationSubscriptionController;
 import com.researchspace.booking.service.BookingNotificationSubscriptionConflictException;
+import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Status;
-import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.model.User;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.config.WebConfig;
