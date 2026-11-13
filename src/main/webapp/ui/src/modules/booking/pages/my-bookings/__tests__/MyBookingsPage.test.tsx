@@ -29,8 +29,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { MyBookingsRoutePage } from "../MyBookingsPage";
 import { bookingHandlers, bookingsOpenApi, roleLostBooking, upcomingBooking } from "../mocks/bookingMocks";
+import { UserBookingsPage } from "../UserBookingsPage";
 
 const initialColumns = '{ "fields": ["target", "start", "end"] }';
 const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal&my-bookings.where=target.name%3Dcontains%3Dscope&my-bookings.columns=${encodeURIComponent(initialColumns)}&my-bookings.sort=-start`;
@@ -57,7 +57,7 @@ function renderPage(
   const pageRoute = createRoute({
     getParentRoute: () => root,
     path: "/booking/my-bookings/",
-    component: () => <MyBookingsRoutePage requesterId={requesterId} title="Test user bookings" />,
+    component: () => <UserBookingsPage requesterId={requesterId} title="Test user bookings" />,
   });
   const detailsRoute = createRoute({
     getParentRoute: () => root,

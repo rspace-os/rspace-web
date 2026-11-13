@@ -46,6 +46,7 @@
       "overlap": "Booked and blocked out: {ranges}."
     },
     "slice": {
+      "bookedBy": "Booked by {user}",
       "count": "{count, plural, one {# event} other {# events}}",
       "details": "Details",
       "sources": {
@@ -612,7 +613,9 @@
     "count": {
       "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
       "error": "The upcoming booking count could not be loaded.",
-      "loading": "Loading upcoming count"
+      "loading": "Loading upcoming count",
+      "lowerBound": "99+",
+      "lowerBoundAccessible": "More than 99 upcoming bookings"
     },
     "description": "View and manage bookings requested by this user.",
     "empty": {
