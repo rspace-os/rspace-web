@@ -59,6 +59,7 @@ public interface AccessFunction {
   static AccessFunction when(Predicate<AccessContext> predicate) {
     Objects.requireNonNull(predicate, "Access predicate");
     return documented(
+        "Conditional",
         "Access depends on the caller and target resource.",
         Set.of(AccessPolicy.FORBIDDEN),
         context ->
@@ -68,8 +69,8 @@ public interface AccessFunction {
   }
 
   static AccessFunction documented(
-      String description, Set<String> denialReasonCodes, AccessFunction delegate) {
-    return documented(new AccessDocumentation(description, denialReasonCodes), delegate);
+      String name, String description, Set<String> denialReasonCodes, AccessFunction delegate) {
+    return documented(new AccessDocumentation(name, description, denialReasonCodes), delegate);
   }
 
   static AccessFunction documented(AccessDocumentation documentation, AccessFunction delegate) {
@@ -92,6 +93,7 @@ public interface AccessFunction {
   static AccessFunction anyone() {
     return documented(
         new AccessDocumentation(
+            "Anyone",
             "Anyone may perform this action, including anonymous callers.",
             Set.of(),
             AccessDocumentation.AuthenticationRequirement.PUBLIC),
@@ -100,6 +102,7 @@ public interface AccessFunction {
 
   static AccessFunction authenticated() {
     return documented(
+        "Authenticated",
         "A logged-in session is required.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED),
         context ->
@@ -110,6 +113,7 @@ public interface AccessFunction {
 
   static AccessFunction sysadmin() {
     return documented(
+        "Sysadmin",
         "A logged-in system administrator is required.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN),
         context -> {
@@ -133,6 +137,7 @@ public interface AccessFunction {
       throw new IllegalArgumentException("Self-access ID field must not be blank");
     }
     return documented(
+        "SelfOnly",
         "A logged-in user may access only the resource identified by their own user id.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED),
         context -> {
@@ -154,6 +159,7 @@ public interface AccessFunction {
   static AccessFunction sysadminOrSelf(String idField) {
     AccessFunction self = selfOnly(idField);
     return documented(
+        "SysadminOrSelf",
         "A logged-in system administrator may access every resource; other users may access only "
             + "the resource identified by their own user id.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED),
@@ -170,6 +176,7 @@ public interface AccessFunction {
 
   static AccessFunction never() {
     return documented(
+        "Never",
         "This action is not permitted.",
         Set.of(AccessPolicy.FORBIDDEN),
         context -> AccessResult.denied(AccessPolicy.FORBIDDEN));

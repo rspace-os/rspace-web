@@ -1,0 +1,222 @@
+package com.researchspace.api.v2.openapi;
+
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.componentRef;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+
+import com.researchspace.api.v2.ApiV2ErrorCodes;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
+import com.researchspace.core.util.throttling.ThrottleInterval;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import org.springframework.http.HttpStatus;
+
+/** Shared OpenAPI problem responses and response headers. */
+final class ApiV2OpenApiResponses {
+  private ApiV2OpenApiResponses() {}
+
+  static final String PROBLEM_JSON = "application/problem+json";
+  static final String RESPONSES = "responses";
+  static final String EXAMPLES = "examples";
+  private static final Map<String, String> STANDARD_RESPONSE_NAMES =
+      Map.of(
+          "400", "BadRequest",
+          "401", "Unauthenticated",
+          "403", "Forbidden",
+          "404", "NotFound",
+          "406", "NotAcceptable",
+          "415", "UnsupportedMediaType",
+          "422", "BulkLimit",
+          "429", "TooManyRequests",
+          "500", "UnexpectedError");
+
+  static Map<String, Object> standardResponses(ApiV2OpenApiText text) {
+    return ordered(
+        STANDARD_RESPONSE_NAMES.get("400"),
+        problemResponse(
+            text.get(Key.RESPONSE_BAD_REQUEST),
+            400,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.BAD_REQUEST)),
+        STANDARD_RESPONSE_NAMES.get("401"),
+        problemResponse(
+            text.get(Key.RESPONSE_UNAUTHENTICATED),
+            401,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.UNAUTHORIZED)),
+        STANDARD_RESPONSE_NAMES.get("403"),
+        problemResponse(
+            text.get(Key.RESPONSE_FORBIDDEN),
+            403,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.FORBIDDEN)),
+        STANDARD_RESPONSE_NAMES.get("404"),
+        problemResponse(
+            text.get(Key.RESPONSE_NOT_FOUND),
+            404,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.NOT_FOUND)),
+        STANDARD_RESPONSE_NAMES.get("406"),
+        problemResponse(
+            text.get(Key.RESPONSE_NOT_ACCEPTABLE),
+            406,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.NOT_ACCEPTABLE)),
+        STANDARD_RESPONSE_NAMES.get("415"),
+        problemResponse(
+            text.get(Key.RESPONSE_UNSUPPORTED_MEDIA_TYPE),
+            415,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.UNSUPPORTED_MEDIA_TYPE)),
+        STANDARD_RESPONSE_NAMES.get("422"),
+        problemResponse(text.get(Key.RESPONSE_BULK_LIMIT), 422, "errors.api.v2.bulk.limit"),
+        STANDARD_RESPONSE_NAMES.get("429"),
+        ordered(
+            "description",
+            text.get(Key.RESPONSE_TOO_MANY_REQUESTS),
+            "content",
+            problemContent(
+                text.get(Key.RESPONSE_TOO_MANY_REQUESTS),
+                429,
+                ApiV2ErrorCodes.messageKeyFor(HttpStatus.TOO_MANY_REQUESTS)),
+            "headers",
+            allRateLimitHeaders()),
+        STANDARD_RESPONSE_NAMES.get("500"),
+        problemResponse(
+            text.get(Key.RESPONSE_UNEXPECTED_ERROR),
+            500,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.INTERNAL_SERVER_ERROR)));
+  }
+
+  static Map<String, Object> standardResponseReference(String status) {
+    String name = STANDARD_RESPONSE_NAMES.get(status);
+    return name == null ? null : componentRef(RESPONSES, name);
+  }
+
+  /** Adds a reference to the shared component response for each status. */
+  static void putStandardResponses(Map<String, Object> responses, String... statuses) {
+    for (String status : statuses) {
+      responses.put(status, Objects.requireNonNull(standardResponseReference(status), status));
+    }
+  }
+
+  static Map<String, Object> problemResponse(String description, int status, String code) {
+    return ordered(
+        "description", description, "content", problemContent(description, status, code));
+  }
+
+  /**
+   * A problem response listing the documented error codes. Each code's example is the shared
+   * component named by the code, unless another response already gave that code another example.
+   */
+  static Map<String, Object> problemResponse(
+      String description,
+      int status,
+      Map<String, String> errors,
+      ApiV2OpenApiComponents components) {
+    if (errors.size() == 1) {
+      Map.Entry<String, String> error = errors.entrySet().iterator().next();
+      return problemResponse(description, status, error.getKey());
+    }
+    Map<String, Object> examples = new LinkedHashMap<>();
+    errors.forEach(
+        (code, errorDescription) ->
+            examples.put(
+                code,
+                components.referenceOrInline(
+                    EXAMPLES,
+                    code,
+                    ordered(
+                        "summary",
+                        errorDescription,
+                        "value",
+                        ordered("title", errorDescription, "status", status, "code", code)))));
+    return ordered(
+        "description",
+        description,
+        "content",
+        Map.of(PROBLEM_JSON, ordered("schema", ref("ApiV2Problem"), "examples", examples)));
+  }
+
+  private static Map<String, Object> problemContent(String description, int status, String code) {
+    Map<String, Object> media = new LinkedHashMap<>();
+    media.put("schema", ref("ApiV2Problem"));
+    media.put("example", ordered("title", description, "status", status, "code", code));
+    return Map.of(PROBLEM_JSON, media);
+  }
+
+  static Map<String, Object> standardHeaders(ApiV2OpenApiText text) {
+    return ordered(
+        "ETag",
+        ordered(
+            "description",
+            text.get(Key.HEADER_ETAG),
+            "schema",
+            ordered("type", "string", "pattern", "^\\\"[^\\\"\\x00-\\x20]+\\\"$")),
+        "RateLimitLimit",
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_LIMIT)),
+        "RateLimitRemaining",
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_REMAINING)),
+        "RateLimitWait",
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_WAIT)),
+        "RateLimitMinWait",
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_MIN_WAIT)));
+  }
+
+  private static Map<String, Object> integerHeader(String description) {
+    return ordered(
+        "description", description, "schema", ordered("type", "integer", "format", "int64"));
+  }
+
+  /** The throttle intervals named by the per-interval rate-limit headers. */
+  static final List<String> RATE_LIMIT_INTERVALS =
+      Arrays.stream(ThrottleInterval.values())
+          .map(interval -> interval.name().toLowerCase(Locale.ROOT))
+          .toList();
+
+  /** The rate-limit headers a successful response documents itself. */
+  static Map<String, Object> rateLimitHeaders() {
+    return ordered(
+        "X-Rate-Limit-WaitTimeMillis",
+        headerRef("RateLimitWait"),
+        "X-Rate-Limit-MinWaitIntervalMillis",
+        headerRef("RateLimitMinWait"));
+  }
+
+  /** The per-interval headers, keyed by name with {@code {interval}} for the interval. */
+  private static Map<String, Object> perIntervalRateLimitHeaders() {
+    return ordered(
+        "X-Rate-Limit-Limit-{interval}",
+        headerRef("RateLimitLimit"),
+        "X-Rate-Limit-Remaining-{interval}",
+        headerRef("RateLimitRemaining"),
+        "X-Rate-Limit-WaitTimeTillNextRequestMillis-{interval}",
+        headerRef("RateLimitWait"));
+  }
+
+  /** The base rate-limit headers and every per-interval header, listed by the 429 response. */
+  private static Map<String, Object> allRateLimitHeaders() {
+    Map<String, Object> headers = rateLimitHeaders();
+    for (String interval : RATE_LIMIT_INTERVALS) {
+      perIntervalRateLimitHeaders()
+          .forEach((name, header) -> headers.put(name.replace("{interval}", interval), header));
+    }
+    return headers;
+  }
+
+  /**
+   * The top-level {@code x-rspace-rate-limits} extension: the per-interval headers sent with every
+   * response that documents the base rate-limit headers, which those responses do not repeat.
+   */
+  static Map<String, Object> rateLimitsExtension(ApiV2OpenApiText text) {
+    return ordered(
+        "description",
+        text.get(Key.HEADER_RATE_LIMIT_INTERVALS),
+        "intervals",
+        RATE_LIMIT_INTERVALS,
+        "perIntervalHeaders",
+        perIntervalRateLimitHeaders());
+  }
+
+  static Map<String, Object> headerRef(String name) {
+    return componentRef("headers", name);
+  }
+}

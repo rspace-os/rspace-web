@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +35,11 @@ public final class ApiV2ProblemFactory {
         title = messages.getMessage(titleKey);
         if (titleKey.equals(title)) {
           log.warn("Missing REST API v2 problem title for code {}", code);
-          title = messages.getMessage(messageKeyFor(status));
+          title = messages.getMessage(ApiV2ErrorCodes.messageKeyFor(status));
         }
       } catch (NoSuchMessageException ex) {
         log.warn("Missing REST API v2 problem title for code {}", code, ex);
-        title = messages.getMessage(messageKeyFor(status));
+        title = messages.getMessage(ApiV2ErrorCodes.messageKeyFor(status));
       }
     } else {
       title = messages.getMessage(code);
@@ -54,23 +55,6 @@ public final class ApiV2ProblemFactory {
       Map<String, Object> extensions) {
     return response(
         status, code, messages.getMessage(code), explicitDetail, invalidParams, extensions);
-  }
-
-  private static String messageKeyFor(HttpStatus status) {
-    if (status.is5xxServerError()) {
-      return "errors.api.v2.unexpected";
-    }
-    return switch (status) {
-      case NOT_FOUND -> "errors.api.v2.notFound";
-      case METHOD_NOT_ALLOWED -> "errors.api.v2.methodNotAllowed";
-      case NOT_ACCEPTABLE -> "errors.api.v2.notAcceptable";
-      case UNSUPPORTED_MEDIA_TYPE -> "errors.api.v2.unsupportedMediaType";
-      case UNAUTHORIZED -> "errors.api.v2.authenticationRequired";
-      case FORBIDDEN -> "errors.api.v2.forbidden";
-      case TOO_MANY_REQUESTS -> "errors.api.v2.tooManyRequests";
-      case BAD_REQUEST -> "errors.api.v2.invalidRequest";
-      default -> "errors.api.v2.requestRejected";
-    };
   }
 
   private ResponseEntity<ApiV2Problem> response(

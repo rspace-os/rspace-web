@@ -306,6 +306,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return crud.get(id, authorized, caller, runtimeValues(authorized, caller));
   }
 
+  public MutationPolicy mutationPolicy() {
+    return spec.mutationPolicy();
+  }
+
   public Optional<String> documentEtag(Map<String, Object> document) {
     return spec.mutationPolicy()
         .version()

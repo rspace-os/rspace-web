@@ -5,6 +5,7 @@ import com.researchspace.model.collection.EmbeddedObjects;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.Operator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -54,6 +55,11 @@ abstract class DeclaredValueFieldType<V, R> implements DeclaredFieldType<V> {
   @Override
   public Class<R> rowType() {
     return rowType;
+  }
+
+  @Override
+  public Schema schema() {
+    return new Schema(inputKind.name().toLowerCase(Locale.ROOT), null, null, Map.of(), rowType);
   }
 
   @Override
