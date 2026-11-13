@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { type EditableBooking } from "@/modules/booking/creation/BookingForm";
 import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import { InlineBookingEditor } from "./BookingEventsCalendar";
@@ -20,8 +22,10 @@ export function BookingActions({ event, timezone }: { event: BookingListDocument
   if (editing && editable) {
     return <InlineBookingEditor event={event} timezone={timezone} onClose={() => setEditing(false)} />;
   }
+  // The same pair of conditions the download endpoint itself enforces, so the action never 404s.
+  const canDownload = event.canViewConfiguration && event.state === "CONFIRMED";
   const canViewDetails = event.privacy === "full";
-  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0);
+  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0) + (canDownload ? 1 : 0);
   if (actionCount === 0) return null;
   const actionClassName = cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2");
   return (
@@ -41,6 +45,16 @@ export function BookingActions({ event, timezone }: { event: BookingListDocument
         <button type="button" className={actionClassName} onClick={() => setEditing(true)}>
           {t("calendar.actions.edit")}
         </button>
+      ) : null}
+      {canDownload ? (
+        <BookingCalendarFileButton
+          bookingId={event.id}
+          itemName={event.target.value.name}
+          period={formatAgendaPeriod(event.start, event.end, timezone)}
+          size="xs"
+          variant="link"
+          className="h-auto rounded-none py-2"
+        />
       ) : null}
     </div>
   );
