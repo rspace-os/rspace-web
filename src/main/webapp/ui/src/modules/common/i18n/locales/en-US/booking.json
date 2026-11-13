@@ -450,6 +450,8 @@
     "editTitle": "Edit Booking",
     "errors": {
       "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
+      "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
+      "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
       "bufferUnknown": "Too close to another booking.",
       "checkExistingBookings": "Check My Bookings",
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
@@ -479,9 +481,7 @@
       "overlap": "This period overlaps another booking or a maintenance event.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
-      "windowRequired": "Enter a valid start and end.",
-      "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
-      "bufferBefore": "Too close to another booking. This item needs {before} before each booking."
+      "windowRequired": "Enter a valid start and end."
     },
     "form": {
       "cancel": "Cancel",
@@ -546,6 +546,9 @@
       "past": "Choose a start time in the future."
     }
   },
+  "breadcrumbs": {
+    "label": "Breadcrumbs"
+  },
   "calendar": {
     "actions": {
       "addForItem": "Add booking for {item}",
@@ -554,6 +557,7 @@
       "label": "Booking actions",
       "viewDetails": "View details"
     },
+    "additionalEventResources": "{count, plural, one {# additional resource with a matching event is shown.} other {# additional resources with matching events are shown.}} Pagination applies to catalogue items.",
     "agenda": "Booking agenda",
     "availability": "Availability",
     "availabilityLoading": "Loading availability",

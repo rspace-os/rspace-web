@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 import { PageSkeleton } from "@/modules/common/app/PageSkeleton";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { AllBookableItemsAvailabilityPanel } from "./AllBookableItemsAvailabilityPanel";
 import { AllBookableItemsContent } from "./AllBookableItemsContent";
 
 export default function AllBookableItemsPage() {
   return (
     <Suspense fallback={<BookableItemsSkeleton />}>
+      <AllBookableItemsAvailabilityPanel />
       <AllBookableItemsContent />
     </Suspense>
   );
