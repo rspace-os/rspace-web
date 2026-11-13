@@ -446,8 +446,20 @@ access, so read item schemas do not require those keys. Each declared property a
 remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are
 unchanged.
 
-`CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
-structured values can still use `structured(...)`; ARRAY values always use declared children.
+Read schemas publish the object of each top-level declared field as a component, so generated
+clients get a named model per row type. Fields that declare the same row type identically share
+`Declared<Type>`, where nested types are prefixed by their enclosing types. If any declaration of
+that type differs, each field gets `<Component><Field>` instead, so a new collection never renames
+another's model. Request schemas keep their objects inline.
+
+For a computed object that clients only read, such as a capability summary, use
+`CollectionFieldTypes.readOnlyObject(SomeRecord.class)` and return the record from the getter. The
+API's JSON mapper writes the record, and OpenAPI references the schema generated from the same
+class, with the field's own documentation and access beside the reference. Describe its components
+with `@Schema`. These fields cannot be filtered, sorted, written or selected into. Two Java types
+whose derived schema names match fail document generation, so give a top-level record a unique name
+or nest it in the type that owns it. An explicit `@Schema(name)` is not checked. Writable non-array structured values can still use
+`structured(...)`; ARRAY values always use declared children.
 
 A writable field can default to a fixed value when omitted on create: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,

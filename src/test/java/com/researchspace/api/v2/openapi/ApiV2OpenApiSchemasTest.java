@@ -2,6 +2,7 @@ package com.researchspace.api.v2.openapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -29,6 +30,25 @@ class ApiV2OpenApiSchemasTest {
       @Schema(nullable = true) String nullableText,
       @Schema(nullable = true) Child child,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String title) {}
+
+  static final class Clash {
+    record Name(String first) {}
+  }
+
+  record ClashName(String second) {}
+
+  @Test
+  void rejectsTwoTypesWithOneSchemaName() {
+    Map<String, Object> components = new LinkedHashMap<>();
+    ApiV2OpenApiSchemas.schemaFor(Clash.Name.class, components);
+
+    IllegalStateException error =
+        assertThrows(
+            IllegalStateException.class,
+            () -> ApiV2OpenApiSchemas.schemaFor(ClashName.class, components));
+    assertTrue(
+        error.getMessage().contains("ApiV2OpenApiSchemasTestClashName"), error.getMessage());
+  }
 
   @Test
   void responseSchemasMatchJacksonEmptyOptionalsAndOmittedNulls() throws Exception {

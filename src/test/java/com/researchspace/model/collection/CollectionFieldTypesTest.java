@@ -124,7 +124,7 @@ class CollectionFieldTypesTest {
         () -> CollectionFieldTypes.constrained(constrained, pattern("a")));
     assertThrows(
         IllegalArgumentException.class,
-        () -> CollectionFieldTypes.constrained(CollectionFieldTypes.object(), minLength(1)));
+        () -> CollectionFieldTypes.constrained(CollectionFieldTypes.readOnlyObject(Item.class), minLength(1)));
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -199,7 +199,7 @@ class CollectionFieldTypesTest {
         IllegalArgumentException.class,
         () ->
             new com.researchspace.model.collection.types.ConstrainedFieldType<>(
-                CollectionFieldTypes.object(), minLength(1).toFieldConstraints()));
+                CollectionFieldTypes.readOnlyObject(Item.class), minLength(1).toFieldConstraints()));
     assertThrows(
         IllegalArgumentException.class,
         () ->

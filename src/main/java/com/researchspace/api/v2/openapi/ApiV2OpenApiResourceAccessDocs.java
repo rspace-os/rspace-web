@@ -2,7 +2,6 @@ package com.researchspace.api.v2.openapi;
 
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator.AUTHENTICATED_SECURITY;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.idParameter;
@@ -15,7 +14,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
-import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
@@ -30,8 +28,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 final class ApiV2OpenApiResourceAccessDocs {
 
@@ -80,62 +76,6 @@ final class ApiV2OpenApiResourceAccessDocs {
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ReplaceResourceAccessRequest.class, schemas);
-  }
-
-  static void applyRegisteredAccessFieldSchemas(
-      Map<String, Object> schemas,
-      ApiV2ResourceRegistration<?, ?> resource,
-      String component,
-      Set<String> declaredComponents) {
-    ResourceAccessSpec<?, ?> access = resource.resourceAccess().orElse(null);
-    if (access == null || component == null) {
-      return;
-    }
-    Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));
-    Map<String, Object> properties = mutableObjectMap(read.get("properties"));
-    Object roleSources = properties.get("roleSources");
-    if (roleSources instanceof Map<?, ?> array && array.get("items") instanceof Map<?, ?> items) {
-      if (!declaredComponents.add("DeclaredResourceRoleSource")
-          && !Objects.equals(schemas.get("DeclaredResourceRoleSource"), items)) {
-        throw new IllegalArgumentException("Inconsistent declared ResourceRoleSource children");
-      }
-      schemas.put("DeclaredResourceRoleSource", items);
-      mutableObjectMap(roleSources).put("items", ref("DeclaredResourceRoleSource"));
-    }
-    access
-        .capabilitiesType()
-        .ifPresent(
-            type ->
-                replaceFieldShape(
-                    properties,
-                    "capabilities",
-                    ApiV2OpenApiSchemas.responseSchemaFor(type, schemas)));
-    access
-        .ownerHealthType()
-        .ifPresent(
-            type ->
-                replaceFieldShape(
-                    properties,
-                    "ownerHealth",
-                    ApiV2OpenApiSchemas.responseSchemaFor(type, schemas)));
-  }
-
-  private static void replaceFieldShape(
-      Map<String, Object> properties, String field, Map<String, Object> shape) {
-    Object current = properties.get(field);
-    if (!(current instanceof Map<?, ?> currentMap)) {
-      return;
-    }
-    Map<String, Object> replacement = new LinkedHashMap<>(shape);
-    currentMap.forEach(
-        (key, value) -> {
-          if (key instanceof String name
-              && !Set.of("type", "format", "items", "properties", "additionalProperties")
-                  .contains(name)) {
-            replacement.put(name, value);
-          }
-        });
-    properties.put(field, replacement);
   }
 
   private final ApiV2OpenApiText text;

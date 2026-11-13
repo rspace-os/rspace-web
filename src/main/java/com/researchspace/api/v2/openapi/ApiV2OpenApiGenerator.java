@@ -3,7 +3,6 @@ package com.researchspace.api.v2.openapi;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.addResourceAccessSchemas;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitsExtension;
@@ -23,7 +22,6 @@ import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -97,16 +95,7 @@ public final class ApiV2OpenApiGenerator {
                     componentNames,
                     routableNames.contains(description.resourceName()),
                     text));
-    Set<String> declaredComponents = new LinkedHashSet<>();
-    catalog
-        .routableResources()
-        .forEach(
-            resource ->
-                applyRegisteredAccessFieldSchemas(
-                    schemas,
-                    resource,
-                    componentNames.get(resource.resourceName()),
-                    declaredComponents));
+    ApiV2OpenApiDeclaredRows.share(schemas, catalog.allSchemas(), componentNames);
     catalog
         .routableResources()
         .forEach(

@@ -10,7 +10,7 @@ import com.researchspace.model.collection.types.FieldConstraints;
 import com.researchspace.model.collection.types.InstantFieldType;
 import com.researchspace.model.collection.types.IntegerFieldType;
 import com.researchspace.model.collection.types.LongFieldType;
-import com.researchspace.model.collection.types.OpaqueObjectFieldType;
+import com.researchspace.model.collection.types.ReadOnlyObjectFieldType;
 import com.researchspace.model.collection.types.StructuredValueFieldType;
 import com.researchspace.model.collection.types.TextFieldType;
 import java.math.BigDecimal;
@@ -49,9 +49,13 @@ public final class CollectionFieldTypes {
     return BOOLEAN;
   }
 
-  /** A server-rendered object field that is readable but never queryable or writable. */
-  public static CollectionFieldType<Map<String, Object>> object() {
-    return new OpaqueObjectFieldType();
+  /**
+   * A server-rendered object that is readable but never queryable or writable. The API documents
+   * the value from {@code type}, so prefer a record whose components carry {@code @Schema}
+   * descriptions.
+   */
+  public static <R> CollectionFieldType<R> readOnlyObject(Class<R> type) {
+    return new ReadOnlyObjectFieldType<>(type);
   }
 
   /** Declares object rows, whose adapter runs after child validation. */

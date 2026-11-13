@@ -50,12 +50,14 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       ApiV2OpenApiText text) {
     String component = names.get(resource.name());
     components.put(component + "Reference", referenceSchema(resource));
-    components.put(component + "Read", documentSchema(resource, names, null, text));
+    components.put(component + "Read", documentSchema(resource, names, null, text, components));
     if (routable) {
       components.put(
-          component + "Create", documentSchema(resource, names, WriteOperation.CREATE, text));
+          component + "Create",
+          documentSchema(resource, names, WriteOperation.CREATE, text, components));
       components.put(
-          component + "Update", documentSchema(resource, names, WriteOperation.UPDATE, text));
+          component + "Update",
+          documentSchema(resource, names, WriteOperation.UPDATE, text, components));
     }
   }
 
@@ -83,7 +85,8 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       ResourceSchema resource,
       Map<String, String> names,
       WriteOperation writeOperation,
-      ApiV2OpenApiText text) {
+      ApiV2OpenApiText text,
+      Map<String, Object> components) {
     Map<String, Object> properties = new LinkedHashMap<>();
     List<String> required = new ArrayList<>();
     for (ResourceFieldSchema field : resource.documentFields()) {
@@ -91,7 +94,7 @@ final class ApiV2OpenApiResourceDocumentBuilder {
         continue;
       }
       Map<String, Object> property =
-          documentFieldProperty(field, names, writeOperation, false, false, text);
+          documentFieldProperty(field, names, writeOperation, false, false, text, components);
       properties.put(field.name(), property);
       if ((writeOperation == WriteOperation.CREATE && field.requiredOnCreate())
           || (writeOperation == null && field.name().equals(resource.idField()))) {
@@ -107,16 +110,23 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       ResourceFieldSchema field,
       Map<String, String> names,
       WriteOperation writeOperation,
-      ApiV2OpenApiText text) {
+      ApiV2OpenApiText text,
+      Map<String, Object> components) {
     Map<String, Object> schema;
-    if (field instanceof FieldSchema scalar) {
+    if (field instanceof FieldSchema scalar
+        && scalar.fields().isEmpty()
+        && scalar.type().objectType() != null) {
+      schema =
+          new LinkedHashMap<>(
+              ApiV2OpenApiSchemas.responseSchemaFor(scalar.type().objectType(), components));
+    } else if (field instanceof FieldSchema scalar) {
       schema = scalarSchema(scalar.type(), false);
       // Only body properties carry write constraints: where literals are never checked against
       // them, so the shared scalar schema must not publish them.
       schema.putAll(scalar.writeConstraints());
       if (!scalar.fields().isEmpty()) {
         Map<String, Object> object =
-            embeddedObjectSchema(scalar.fields(), names, writeOperation, text);
+            embeddedObjectSchema(scalar.fields(), names, writeOperation, text, components);
         if ("array".equals(scalar.type().jsonType())) {
           schema.put("items", object);
         } else {
@@ -143,8 +153,10 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       WriteOperation writeOperation,
       boolean updateDefaults,
       boolean readOnlyBeforeAccess,
-      ApiV2OpenApiText text) {
-    Map<String, Object> property = documentFieldSchema(field, names, writeOperation, text);
+      ApiV2OpenApiText text,
+      Map<String, Object> components) {
+    Map<String, Object> property =
+        documentFieldSchema(field, names, writeOperation, text, components);
     applyDocumentation(property, field.openApi());
     if (writeOperation == null && field instanceof RelationshipSchema relationship) {
       Map<String, Object> targets = new LinkedHashMap<>();
@@ -172,7 +184,8 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       List<FieldSchema> fields,
       Map<String, String> names,
       WriteOperation operation,
-      ApiV2OpenApiText text) {
+      ApiV2OpenApiText text,
+      Map<String, Object> components) {
     Map<String, Object> properties = new LinkedHashMap<>();
     List<String> required = new ArrayList<>();
     for (FieldSchema child : fields) {
@@ -180,7 +193,7 @@ final class ApiV2OpenApiResourceDocumentBuilder {
         continue;
       }
       Map<String, Object> property =
-          documentFieldProperty(child, names, operation, true, true, text);
+          documentFieldProperty(child, names, operation, true, true, text, components);
       properties.put(child.name(), property);
       if (operation != null && child.requiredOnCreate()) {
         required.add(child.name());

@@ -44,7 +44,16 @@ final class ApiV2OpenApiNames {
     return pascalCase(singular);
   }
 
-  private static String pascalCase(String value) {
+  /**
+   * Names a Java type after its simple name prefixed by its enclosing types, matching the names the
+   * schema converter gives nested types.
+   */
+  static String typeName(Class<?> type) {
+    Class<?> enclosing = type.getEnclosingClass();
+    return enclosing == null ? type.getSimpleName() : typeName(enclosing) + type.getSimpleName();
+  }
+
+  static String pascalCase(String value) {
     String result =
         Arrays.stream(value.split("[^A-Za-z0-9]+"))
             .map(StringUtils::capitalize)

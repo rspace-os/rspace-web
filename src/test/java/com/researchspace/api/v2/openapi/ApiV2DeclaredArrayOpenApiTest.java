@@ -22,7 +22,9 @@ import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,11 +51,14 @@ class ApiV2DeclaredArrayOpenApiTest {
           Detail.class,
           List.of(COUNT),
           values -> new Detail((Integer) values.get("count"), "private"));
-  private static final DeclaredFieldType<List<Row>> ROWS =
-      CollectionFieldTypes.array(
+  private static final DeclaredFieldType<List<Row>> ROWS = rows(10);
+  private static final String ROW_REF = "#/components/schemas/DeclaredApiV2DeclaredArrayOpenApiTestRow";
+
+  private static DeclaredFieldType<List<Row>> rows(int nameLength) {
+    return CollectionFieldTypes.array(
           Row.class,
           List.of(
-              Field.embedded("name", CollectionFieldTypes.text(10), Row::name)
+              Field.embedded("name", CollectionFieldTypes.text(nameLength), Row::name)
                   .required()
                   .documented(
                       OpenApiSchemaDocumentation.builder()
@@ -89,6 +94,7 @@ class ApiV2DeclaredArrayOpenApiTest {
           rows -> {},
           1,
           7);
+  }
 
   @Test
   void generatedSchemasPreserveRecursiveChildrenDefaultsAndReplacementRequirements() {
@@ -99,7 +105,7 @@ class ApiV2DeclaredArrayOpenApiTest {
       assertEquals(List.of("array", "null"), array.get("type"), operation);
       assertEquals(1, array.get("minItems"), operation);
       assertEquals(7, array.get("maxItems"), operation);
-      Map<String, Object> item = map(array.get("items"));
+      Map<String, Object> item = resolved(schemas, array.get("items"));
       assertEquals(false, item.get("additionalProperties"), operation);
       Map<String, Object> children = map(item.get("properties"));
       assertEquals(10, map(children.get("name")).get("maxLength"), operation);
@@ -178,17 +184,73 @@ class ApiV2DeclaredArrayOpenApiTest {
   }
 
   @Test
-  void protectedRoleSourceComponentUsesDeclaredChildrenAndRetainsItsNamedReference() {
-    Map<String, Object> schemas = schemas(document(description("roleSources"), true));
-    Map<String, Object> array =
-        map(map(map(schemas.get("ItemsRead")).get("properties")).get("roleSources"));
-    assertEquals(
-        Map.of("$ref", "#/components/schemas/DeclaredResourceRoleSource"), array.get("items"));
-    Map<String, Object> row = map(schemas.get("DeclaredResourceRoleSource"));
+  void collectionsDeclaringOneRowTypeAlikeShareItsReadComponent() {
+    Map<String, Object> schemas =
+        schemas(document(List.of(description("items", "rows", ROWS), description("others", "entries", ROWS)), false));
+
+    for (var property : List.of(List.of("ItemsRead", "rows"), List.of("OthersRead", "entries"))) {
+      Map<String, Object> array =
+          map(map(map(schemas.get(property.get(0))).get("properties")).get(property.get(1)));
+      assertEquals(Map.of("$ref", ROW_REF), array.get("items"));
+    }
+    Map<String, Object> row = map(schemas.get("DeclaredApiV2DeclaredArrayOpenApiTestRow"));
     assertEquals(false, row.get("additionalProperties"));
     assertEquals(
         Set.of("name", "group", "children", "createOnly"), map(row.get("properties")).keySet());
     assertTrue(map(map(row.get("properties")).get("group")).containsKey("properties"));
+    Map<String, Object> created =
+        map(map(map(schemas.get("ItemsCreate")).get("properties")).get("rows"));
+    assertTrue(map(created.get("items")).containsKey("properties"));
+  }
+
+  @Test
+  void differentDeclarationsOfOneRowTypeEachGetTheirOwnComponent() {
+    Map<String, Object> schemas =
+        schemas(
+            document(
+                List.of(description("items", "rows", ROWS), description("others", "entries", rows(20))),
+                false));
+
+    assertFalse(schemas.containsKey("DeclaredApiV2DeclaredArrayOpenApiTestRow"));
+    assertEquals(
+        Map.of("$ref", "#/components/schemas/ItemsRows"),
+        map(map(map(schemas.get("ItemsRead")).get("properties")).get("rows")).get("items"));
+    assertEquals(
+        Map.of("$ref", "#/components/schemas/OthersEntries"),
+        map(map(map(schemas.get("OthersRead")).get("properties")).get("entries")).get("items"));
+    assertEquals(
+        20,
+        map(map(map(schemas.get("OthersEntries")).get("properties")).get("name")).get("maxLength"));
+  }
+
+  @Test
+  void nullableDeclaredObjectReferencesItsComponentOrNull() {
+    Map<String, Object> detail =
+        map(map(map(schemas(document(description("rows"), false)).get("ItemsRead")).get("properties")).get("detail"));
+
+    assertEquals(
+        List.of(
+            Map.of("$ref", "#/components/schemas/DeclaredApiV2DeclaredArrayOpenApiTestDetail"),
+            Map.of("type", "null")),
+        detail.get("anyOf"));
+    assertFalse(detail.containsKey("properties"));
+    assertTrue(detail.containsKey("x-rspace-fields"));
+  }
+
+  @Test
+  void readOnlyObjectPublishesItsTypeAsAComponentWithFieldMetadata() {
+    Map<String, Object> schemas = schemas(document(description("rows"), false));
+    Map<String, Object> summary =
+        map(map(map(schemas.get("ItemsRead")).get("properties")).get("summary"));
+
+    assertEquals("#/components/schemas/ApiV2DeclaredArrayOpenApiTestSummary", summary.get("$ref"));
+    assertEquals(true, summary.get("readOnly"));
+    assertTrue(summary.containsKey("x-rspace-access"));
+    assertEquals(
+        "Rows counted",
+        map(map(map(schemas.get("ApiV2DeclaredArrayOpenApiTestSummary")).get("properties")).get("rows"))
+            .get("description"));
+    assertFalse(map(map(schemas.get("ItemsCreate")).get("properties")).containsKey("summary"));
   }
 
   @Test
@@ -229,7 +291,7 @@ class ApiV2DeclaredArrayOpenApiTest {
       assertEquals(
           List.of(new Row("ok", new Detail(3, "private"), List.of(new Detail(2, "private")), null)),
           ROWS.parse(Json31.mapper().valueToTree(array.get("example")), WriteOperation.UPDATE));
-      Map<String, Object> children = map(map(array.get("items")).get("properties"));
+      Map<String, Object> children = map(resolved(schemas, array.get("items")).get("properties"));
       assertEquals("123", map(children.get("name")).get("example"), operation);
       assertEquals(
           List.of("true", "null", "\"abc\""), map(children.get("name")).get("examples"), operation);
@@ -246,12 +308,24 @@ class ApiV2DeclaredArrayOpenApiTest {
   }
 
   private static CollectionDescription<Item> description(String name) {
+    return description("items", name, ROWS);
+  }
+
+  private static CollectionDescription<Item> description(
+      String resource, String name, DeclaredFieldType<List<Row>> rows) {
     return new CollectionDescription<>(
-        "items",
+        resource,
         Item.class,
         List.of(
             Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Item::id),
-            Field.writable(name, "rows", ROWS, Item::rows, (item, value) -> {})
+            Field.readOnly("detail", "detail", DETAIL, (Item item) -> new Detail(1, "private"))
+                .allowNull(),
+            Field.readOnly(
+                "summary",
+                "summary",
+                CollectionFieldTypes.readOnlyObject(Summary.class),
+                (Item item) -> new Summary(1)),
+            Field.writable(name, "rows", rows, Item::rows, (item, value) -> {})
                 .allowNull()
                 .defaultValue(
                     List.of(
@@ -269,21 +343,29 @@ class ApiV2DeclaredArrayOpenApiTest {
         List.of(new Sort("id", true)));
   }
 
-  @SuppressWarnings("unchecked")
   private static Map<String, Object> document(
       CollectionDescription<Item> description, boolean protectedResource) {
-    ResourceOperations<Item, Long> operations = mock(ResourceOperations.class);
-    ProtectedResourceAccess<Item, Long> access = mock(ProtectedResourceAccess.class);
-    var builder =
-        ApiV2ResourceSpec.builder(description, operations, Long::valueOf)
-            .mutationErrors("create-error", "update-error")
-            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE));
-    if (protectedResource) builder.resourceAccess(new ResourceAccessSpec<>(access));
-    var spec = builder.build();
+    return document(List.of(description), protectedResource);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Map<String, Object> document(
+      List<CollectionDescription<Item>> descriptions, boolean protectedResource) {
+    List<ApiV2ResourceSpec<?, ?>> specs = new ArrayList<>();
+    for (CollectionDescription<Item> description : descriptions) {
+      ResourceOperations<Item, Long> operations = mock(ResourceOperations.class);
+      ProtectedResourceAccess<Item, Long> access = mock(ProtectedResourceAccess.class);
+      var builder =
+          ApiV2ResourceSpec.builder(description, operations, Long::valueOf)
+              .mutationErrors("create-error", "update-error")
+              .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE));
+      if (protectedResource) builder.resourceAccess(new ResourceAccessSpec<>(access));
+      specs.add(builder.build());
+    }
     return Json31.mapper()
         .convertValue(
             new ApiV2OpenApiGenerator(
-                    new ApiV2ResourceCatalog(List.of(spec)),
+                    new ApiV2ResourceCatalog(specs),
                     ApiV2OpenApiTestText.english(),
                     "Test API",
                     "2.0.0")
@@ -293,6 +375,13 @@ class ApiV2DeclaredArrayOpenApiTest {
 
   private static Map<String, Object> schemas(Map<String, Object> document) {
     return map(map(document.get("components")).get("schemas"));
+  }
+
+  private static Map<String, Object> resolved(Map<String, Object> schemas, Object schema) {
+    Object ref = map(schema).get("$ref");
+    return ref == null
+        ? map(schema)
+        : map(schemas.get(String.valueOf(ref).substring("#/components/schemas/".length())));
   }
 
   @SuppressWarnings("unchecked")
@@ -308,6 +397,8 @@ class ApiV2DeclaredArrayOpenApiTest {
   private record Detail(Integer count, String privateValue) {}
 
   private record Row(String name, Detail group, List<Detail> children, String createOnly) {}
+
+  private record Summary(@Schema(description = "Rows counted") int rows) {}
 
   private record Item(Long id, List<Row> rows) {}
 }

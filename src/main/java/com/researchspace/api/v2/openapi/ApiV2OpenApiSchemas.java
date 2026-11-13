@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /** Converts Java types to OpenAPI 3.1 component schemas. */
@@ -43,16 +44,33 @@ final class ApiV2OpenApiSchemas {
   /**
    * Names a nested type after its enclosing types, so {@code ApiV2Config.Branding} becomes {@code
    * ApiV2ConfigBranding} and features cannot collide on short names such as {@code Entry}. An
-   * explicit {@code @Schema(name)} still wins.
+   * explicit {@code @Schema(name)} still wins. Components are keyed by name alone, so two types
+   * with one derived name would silently replace each other's schema; naming the second one fails
+   * instead. Swagger applies an explicit {@code @Schema(name)} without this resolver, so such a
+   * name is the author's responsibility.
    */
   private static final class NestedTypeNameResolver extends TypeNameResolver {
+    private final Map<String, Class<?>> named = new ConcurrentHashMap<>();
+
     @Override
     protected String nameForClass(Class<?> cls, Set<Options> options) {
-      String name = super.nameForClass(cls, options);
+      String simple = super.nameForClass(cls, options);
       Class<?> enclosing = cls.getEnclosingClass();
-      return enclosing != null && name.equals(cls.getSimpleName())
-          ? nameForClass(enclosing, options) + name
-          : name;
+      String name =
+          enclosing != null && simple.equals(cls.getSimpleName())
+              ? nameForClass(enclosing, options) + simple
+              : simple;
+      Class<?> previous = named.putIfAbsent(name, cls);
+      if (previous != null && previous != cls) {
+        throw new IllegalStateException(
+            "OpenAPI schema name "
+                + name
+                + " names both "
+                + previous.getName()
+                + " and "
+                + cls.getName());
+      }
+      return name;
     }
   }
 
