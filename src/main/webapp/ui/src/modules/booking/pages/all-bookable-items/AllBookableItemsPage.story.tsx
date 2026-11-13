@@ -9,8 +9,8 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 
 export function BookableItemsStory() {
@@ -26,7 +26,7 @@ export function BookableItemsStory() {
       createRoute({
         getParentRoute: () => bookingRoute,
         path: "/config/bookable-items/",
-        component: BookableItemsPage,
+        component: AllBookableItemsPage,
       }),
       createRoute({
         getParentRoute: () => bookingRoute,
