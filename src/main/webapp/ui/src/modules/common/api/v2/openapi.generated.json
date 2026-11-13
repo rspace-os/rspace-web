@@ -1547,6 +1547,38 @@
         "required" : [ "canChangeFeatureFlagBaselines", "canOverrideFeatureFlags", "canUseDevtools", "lastSession", "operatedAs" ],
         "type" : "object"
       },
+      "ApiV2ListResultMapStringObject" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "additionalProperties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "hasNextPage" : {
+            "type" : "boolean"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalDocs" : {
+            "description" : "Present only when totals=true.",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalIsLowerBound" : {
+            "description" : "True when the requested total exceeds max.",
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "ApiV2Problem" : {
         "additionalProperties" : true,
         "properties" : {
@@ -2248,6 +2280,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -2762,6 +2795,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -3371,6 +3405,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -3513,21 +3548,24 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "format" : "int64",
@@ -3544,7 +3582,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -3805,7 +3844,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "canOverride" : {
             "description" : "Whether this caller can set a user override.",
@@ -3813,7 +3853,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "name" : {
             "description" : "Stable lower-camel-case feature flag name.",
@@ -3840,7 +3881,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "value" : {
             "description" : "Effective value for this caller.",
@@ -3848,7 +3890,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "name" ],
@@ -3909,7 +3952,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "extraFields" : {
             "additionalProperties" : true,
@@ -3923,7 +3967,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable instrument identifier.",
@@ -3946,7 +3991,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "parentContainer" : {
             "anyOf" : [ {
@@ -3972,6 +4018,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -4114,7 +4161,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "endDate" : {
             "description" : "End of the maintenance window.",
@@ -4123,7 +4171,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable maintenance identifier.",
@@ -4143,7 +4192,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "startDate" : {
             "description" : "Beginning of the maintenance window.",
@@ -4152,7 +4202,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "stopUserLoginDate" : {
             "description" : "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
@@ -4160,7 +4211,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "version" : {
             "description" : "Version for conditional updates and deletes.",
@@ -4170,7 +4222,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -4453,7 +4506,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "email" : {
             "description" : "User's email address.",
@@ -4463,7 +4517,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "firstName" : {
             "description" : "User's given name.",
@@ -4471,7 +4526,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable user identifier.",
@@ -4490,7 +4546,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "username" : {
             "description" : "RSpace login name.",
@@ -4499,7 +4556,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -5383,6 +5441,126 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/v2/booking-calendar/events" : {
+      "get" : {
+        "operationId" : "searchCalendarEvents",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.",
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "fields",
+          "required" : false,
+          "schema" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "style" : "deepObject",
+          "x-rspace-comma-separated-values" : true,
+          "x-rspace-mutually-exclusive-with" : "exclude"
+        }, {
+          "description" : "Comma-separated nested field paths by resource type, using square-bracket keys such as exclude[resource]=id,name.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "exclude",
+          "required" : false,
+          "schema" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "style" : "deepObject",
+          "x-rspace-comma-separated-values" : true,
+          "x-rspace-mutually-exclusive-with" : "fields"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2ListResultMapStringObject"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search visible calendar events",
+        "tags" : [ "booking-calendar" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/booking-catalogue" : {
       "get" : {
         "operationId" : "searchBookingCatalogue",
@@ -5487,6 +5665,104 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Search the Booking catalogue",
+        "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-catalogue/calendar" : {
+      "get" : {
+        "operationId" : "searchCalendarCatalogue",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups.",
+          "in" : "query",
+          "name" : "eventWhere",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerPage"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search bookable instruments in a calendar interval",
         "tags" : [ "booking-catalogue" ],
         "x-rspace-operation" : "CUSTOM"
       }
@@ -9872,6 +10148,9 @@
     "url" : "/"
   } ],
   "tags" : [ {
+    "description" : "Calendar event searches and availability views.",
+    "name" : "booking-calendar"
+  }, {
     "description" : "The catalogue of bookable resources and their availability.",
     "name" : "booking-catalogue"
   }, {
@@ -9928,7 +10207,7 @@
   },
   "x-tagGroups" : [ {
     "name" : "Booking",
-    "tags" : [ "booking-catalogue", "booking-configuration-targets", "booking-configurations", "booking-settings", "bookings" ]
+    "tags" : [ "booking-calendar", "booking-catalogue", "booking-configuration-targets", "booking-configurations", "booking-settings", "bookings" ]
   }, {
     "name" : "Inventory",
     "tags" : [ "containers", "instruments" ]

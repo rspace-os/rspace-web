@@ -32,9 +32,8 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import type { ErrorType } from "../../apiV2Fetch.ts";
-import { apiV2Fetch } from "../../apiV2Fetch.ts";
-import { apiV2HeadersFetch } from "../../apiV2Fetch.ts";
+import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
+import { apiV2Fetch, apiV2HeadersFetch } from "../../apiV2Fetch.ts";
 import type {
   ApiV2Problem,
   BadRequestResponse,
@@ -337,7 +336,7 @@ export const getGetAdminBookingSettingsQueryKey = () => {
 
 export const getGetAdminBookingSettingsQueryOptions = <
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
   request?: SecondParameter<typeof apiV2HeadersFetch>;
@@ -357,12 +356,14 @@ export const getGetAdminBookingSettingsQueryOptions = <
 };
 
 export type GetAdminBookingSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminBookingSettings>>>;
-export type GetAdminBookingSettingsQueryError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse;
+export type GetAdminBookingSettingsQueryError = ErrorType<
+  UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse
+>;
 
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettings<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>> &
@@ -381,7 +382,7 @@ export function useGetAdminBookingSettings<
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettings<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>> &
@@ -400,7 +401,7 @@ export function useGetAdminBookingSettings<
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettings<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
@@ -411,7 +412,7 @@ export function useGetAdminBookingSettings<
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettings<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
@@ -442,7 +443,7 @@ export const invalidateGetAdminBookingSettings = async (
 
 export const getGetAdminBookingSettingsSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(options?: {
   query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
   request?: SecondParameter<typeof apiV2HeadersFetch>;
@@ -466,12 +467,14 @@ export const getGetAdminBookingSettingsSuspenseQueryOptions = <
 export type GetAdminBookingSettingsSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof getAdminBookingSettings>>
 >;
-export type GetAdminBookingSettingsSuspenseQueryError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse;
+export type GetAdminBookingSettingsSuspenseQueryError = ErrorType<
+  UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse
+>;
 
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettingsSuspense<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options: {
     query: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
@@ -482,7 +485,7 @@ export function useGetAdminBookingSettingsSuspense<
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettingsSuspense<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options?: {
     query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
@@ -493,7 +496,7 @@ export function useGetAdminBookingSettingsSuspense<
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettingsSuspense<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options?: {
     query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
@@ -504,7 +507,7 @@ export function useGetAdminBookingSettingsSuspense<
 /** @summary Get global Booking administration settings */
 export function useGetAdminBookingSettingsSuspense<
   TData = Awaited<ReturnType<typeof getAdminBookingSettings>>,
-  TError = UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse,
+  TError = ErrorType<UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse>,
 >(
   options?: {
     query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getAdminBookingSettings>>, TError, TData>>;
@@ -546,7 +549,7 @@ export const patchAdminBookingSettings = (
 export const getPatchAdminBookingSettingsMutationKey = () => ["patchAdminBookingSettings"] as const;
 
 export const getPatchAdminBookingSettingsMutationOptions = <
-  TError = BadRequestResponse | ForbiddenResponse | NotFoundResponse | ApiV2Problem,
+  TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse | ApiV2Problem>,
   TContext = unknown,
 >(
   queryClient: QueryClient,
@@ -607,14 +610,12 @@ export const getPatchAdminBookingSettingsMutationOptions = <
 export type PatchAdminBookingSettingsMutationResult = NonNullable<
   Awaited<ReturnType<typeof patchAdminBookingSettings>>
 >;
-export type PatchAdminBookingSettingsMutationBody = BookingSettingsControllerSettingsPatch;
-export type PatchAdminBookingSettingsMutationError =
-  | BadRequestResponse
-  | ForbiddenResponse
-  | NotFoundResponse
-  | ApiV2Problem;
+export type PatchAdminBookingSettingsMutationBody = BodyType<BookingSettingsControllerSettingsPatch>;
+export type PatchAdminBookingSettingsMutationError = ErrorType<
+  BadRequestResponse | ForbiddenResponse | NotFoundResponse | ApiV2Problem
+>;
 export type PatchAdminBookingSettingsMutationVariables = {
-  data: BookingSettingsControllerSettingsPatch;
+  data: BodyType<BookingSettingsControllerSettingsPatch>;
   headers: PatchAdminBookingSettingsHeaders;
 };
 
@@ -623,7 +624,7 @@ export type PatchAdminBookingSettingsMutationVariables = {
  * @summary Patch global Booking defaults
  */
 export const usePatchAdminBookingSettings = <
-  TError = BadRequestResponse | ForbiddenResponse | NotFoundResponse | ApiV2Problem,
+  TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse | ApiV2Problem>,
   TContext = unknown,
 >(
   options?: {
