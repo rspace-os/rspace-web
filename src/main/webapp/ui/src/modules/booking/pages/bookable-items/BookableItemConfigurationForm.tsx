@@ -1,7 +1,16 @@
-import { Form, isDirty } from "@formisch/react";
+import { Form, isDirty, useForm } from "@formisch/react";
+import { pick } from "es-toolkit";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
-import { type BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
+import * as v from "valibot";
+import {
+  SchedulingSettingsFields,
+  SchedulingSettingsSchema,
+  schedulingSettingsEntries,
+  schedulingSettingsFieldNames,
+} from "@/modules/booking/configuration/schedulingSettings";
+import type { BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
+import { BookingConfigurationsUpdateSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import {
@@ -15,38 +24,48 @@ import {
   AlertDialogTitle,
 } from "@/modules/common/ui/alert-dialog";
 import { type BookingConfiguration, bookingConfigurationFields } from "./bookingConfiguration";
-import { type useLoadedBookableItemPageActions } from "./useLoadedBookableItemPageActions";
 
-type ConfigurationSubmission = { input: BookingConfigurationsUpdate; version: number };
+const bookableItemConfigurationFormSchema = v.intersect([
+  v.object({ ...BookingConfigurationsUpdateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
+  SchedulingSettingsSchema,
+]);
 
+function configurationInput(configuration: BookingConfiguration) {
+  return {
+    ...pick(configuration, ["enabled", ...schedulingSettingsFieldNames]),
+    openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
+  };
+}
+
+/** Each edit session keeps the version and input it opened with, even after a refetch. */
 export function BookableItemConfigurationForm({
   configuration,
   globalId,
   formId,
-  form,
-  version,
-  openedEnabled,
   pending,
   staleEdit,
   failed,
-  pendingDisable,
-  onPendingDisableChange,
   onSubmit,
 }: {
   configuration: BookingConfiguration;
   globalId: string;
   formId: string;
-  form: ReturnType<typeof useLoadedBookableItemPageActions>["form"];
-  version: number;
-  openedEnabled: boolean;
   pending: boolean;
   staleEdit: boolean;
   failed: boolean;
-  pendingDisable: ConfigurationSubmission | null;
-  onPendingDisableChange: (submission: ConfigurationSubmission | null) => void;
   onSubmit: (input: BookingConfigurationsUpdate, version: number) => Promise<unknown>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const [version] = useState(configuration.configurationVersion);
+  const [openedEnabled] = useState(configuration.enabled);
+  const [pendingDisable, setPendingDisable] = useState<{
+    input: BookingConfigurationsUpdate;
+    version: number;
+  } | null>(null);
+  const form = useForm({
+    schema: bookableItemConfigurationFormSchema,
+    initialInput: configurationInput(configuration),
+  });
   return (
     <>
       <DirtyNavigationGuard
@@ -64,7 +83,7 @@ export function BookableItemConfigurationForm({
         className="min-w-0 space-y-4"
         onSubmit={(input) => {
           if (openedEnabled && !input.enabled) {
-            onPendingDisableChange({ input, version });
+            setPendingDisable({ input, version });
             return;
           }
           return onSubmit(input, version);
@@ -90,7 +109,7 @@ export function BookableItemConfigurationForm({
       <AlertDialog
         open={pendingDisable !== null}
         onOpenChange={(open) => {
-          if (!open) onPendingDisableChange(null);
+          if (!open) setPendingDisable(null);
         }}
       >
         <AlertDialogContent>
@@ -108,7 +127,7 @@ export function BookableItemConfigurationForm({
               disabled={pending}
               onClick={() => {
                 const submission = pendingDisable;
-                onPendingDisableChange(null);
+                setPendingDisable(null);
                 if (submission) void onSubmit(submission.input, submission.version).catch(() => undefined);
               }}
             >
