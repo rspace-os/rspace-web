@@ -119,6 +119,43 @@ public interface BookingCatalogueManager {
       int limit,
       User caller);
 
+  /**
+   * As {@link #search(String, String, ResourceRequest, List, List, Capability, int, int, User)},
+   * keeping only the items in the {@code availability} category of {@code window}. Rows and the
+   * total agree, and the items keep catalogue order. A null {@code availability} applies no
+   * availability rule.
+   *
+   * <p>An item is free where the window lies inside its opening hours, evaluated per date in its
+   * scheduling time zone, and outside every confirmed event widened by the item's buffers.
+   * Maintenance always counts as busy; bookings do unless the item allows double booking.
+   */
+  Page search(
+      String query,
+      String targetGlobalId,
+      ResourceRequest request,
+      List<String> targetTypes,
+      List<String> locationGlobalIds,
+      Capability capability,
+      Availability availability,
+      AvailabilityWindow window,
+      int page,
+      int limit,
+      User caller);
+
+  /**
+   * Counts the items the same catalogue filters match in each availability category of {@code
+   * window}, without returning rows. Only items the caller may read are counted.
+   */
+  AvailabilityCounts countAvailability(
+      String query,
+      String targetGlobalId,
+      ResourceRequest request,
+      List<String> targetTypes,
+      List<String> locationGlobalIds,
+      Capability capability,
+      AvailabilityWindow window,
+      User caller);
+
   /** Calendar resources and distinct total under correlated visible-event filtering. */
   Page searchCalendar(
       String query,
