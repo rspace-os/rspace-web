@@ -17,14 +17,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.CurrentItemCalendarSubscription;
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.BookingInstrumentQueryDao;
@@ -35,11 +40,12 @@ import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.TestFactory;
+import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Date;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.shiro.authz.AuthorizationException;
@@ -48,6 +54,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 class BookingCalendarManagerSubscriptionTest {
 
@@ -56,9 +64,10 @@ class BookingCalendarManagerSubscriptionTest {
   private UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private TimeSlotBookingManager bookingManager;
   private FeatureFlagManager featureFlags;
-  private ResourceAccessManager accessManager;
+  private BookingItemPermissions accessManager;
   private BookingCalendarFeedGenerator generator;
   private BookingCalendarCreationTransaction creationTransaction;
+  private BookingCalendarPermissionGateDao permissionGate;
   private BookingInstrumentQueryDao instrumentDao;
   private BookingCalendarManager manager;
   private User owner;
@@ -72,9 +81,10 @@ class BookingCalendarManagerSubscriptionTest {
     bookingManager = mock(TimeSlotBookingManager.class);
     instrumentDao = mock(BookingInstrumentQueryDao.class);
     featureFlags = mock(FeatureFlagManager.class);
-    accessManager = mock(ResourceAccessManager.class);
+    accessManager = mock(BookingItemPermissions.class);
     generator = mock(BookingCalendarFeedGenerator.class);
     creationTransaction = mock(BookingCalendarCreationTransaction.class);
+    permissionGate = mock(BookingCalendarPermissionGateDao.class);
 
     owner = createOwner();
     configuration = createConfiguration(owner);
@@ -82,11 +92,21 @@ class BookingCalendarManagerSubscriptionTest {
     when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
-    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ownerAccess());
+    when(accessManager.resolveForMutation(configuration, owner)).thenReturn(ownerAccess());
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.empty());
     when(subscriptionDao.saveAndFlush(any(BookableItemCalendarSubscription.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(subscriptionDao.reconcileCreated(owner.getId(), CONFIGURATION_ID))
+        .thenReturn(
+            new CurrentItemCalendarSubscription(
+                41L,
+                owner.getId(),
+                CONFIGURATION_ID,
+                CryptoUtils.hashToken(RAW_TOKEN),
+                RAW_TOKEN,
+                new Date()));
     when(userSubscriptionDao.saveAndFlush(any(UserBookingCalendarSubscription.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(userSubscriptionDao.lockUser(owner.getId())).thenReturn(owner);
@@ -107,7 +127,8 @@ class BookingCalendarManagerSubscriptionTest {
             featureFlags,
             accessManager,
             generator,
-            creationTransaction);
+            creationTransaction,
+            permissionGate);
   }
 
   @Test
