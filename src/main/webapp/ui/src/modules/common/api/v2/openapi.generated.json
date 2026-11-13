@@ -117,6 +117,16 @@
           "type" : "integer"
         }
       },
+      "IfMatchOptional" : {
+        "description" : "Strong entity tag containing the current resource version.",
+        "in" : "header",
+        "name" : "If-Match",
+        "required" : false,
+        "schema" : {
+          "pattern" : "^\\\"[0-9]+\\\"$",
+          "type" : "string"
+        }
+      },
       "InstrumentsExclude" : {
         "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[instruments]=id,name.",
         "explode" : true,
@@ -233,6 +243,86 @@
           "maximum" : 1E+2,
           "minimum" : 1,
           "type" : "integer"
+        }
+      },
+      "MaintenancesExclude" : {
+        "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[maintenances]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "exclude",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "maintenances" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "maintenances" : [ "id", "version", "startDate", "endDate", "stopUserLoginDate", "message", "canUserLoginNow" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "fields"
+      },
+      "MaintenancesFields" : {
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "fields",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "maintenances" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "maintenances" : [ "id", "version", "startDate", "endDate", "stopUserLoginDate", "message", "canUserLoginNow" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "exclude"
+      },
+      "MaintenancesId" : {
+        "description" : "Resource identifier.",
+        "in" : "path",
+        "name" : "id",
+        "required" : true,
+        "schema" : {
+          "format" : "int64",
+          "type" : "integer"
+        }
+      },
+      "MaintenancesWhere" : {
+        "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.",
+        "in" : "query",
+        "name" : "where",
+        "required" : false,
+        "schema" : {
+          "maxLength" : 32768,
+          "type" : "string"
+        },
+        "x-rspace-filter" : {
+          "$ref" : "#/components/x-rspace-filters/Maintenances"
+        }
+      },
+      "MaintenancesWhereRequired" : {
+        "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.",
+        "in" : "query",
+        "name" : "where",
+        "required" : true,
+        "schema" : {
+          "maxLength" : 32768,
+          "type" : "string"
+        },
+        "x-rspace-filter" : {
+          "$ref" : "#/components/x-rspace-filters/Maintenances"
         }
       },
       "Max" : {
@@ -523,6 +613,21 @@
           }
         },
         "description" : "The request media type is unsupported."
+      },
+      "VersionChanged" : {
+        "content" : {
+          "application/problem+json" : {
+            "example" : {
+              "code" : "errors.concurrentChange",
+              "status" : 412,
+              "title" : "The resource version changed."
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ApiV2Problem"
+            }
+          }
+        },
+        "description" : "The resource version changed."
       }
     },
     "schemas" : {
@@ -1078,6 +1183,180 @@
           "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       },
+      "MaintenancesCreate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "endDate" : {
+            "description" : "End of the maintenance window.",
+            "example" : "2026-08-01T21:00:00Z",
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "message" : {
+            "description" : "User-facing maintenance message.",
+            "maxLength" : 255,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "startDate" : {
+            "description" : "Beginning of the maintenance window.",
+            "example" : "2026-08-01T20:00:00Z",
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "stopUserLoginDate" : {
+            "description" : "Time after which ordinary users may no longer log in.",
+            "format" : "date-time",
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          }
+        },
+        "required" : [ "endDate", "startDate" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        }
+      },
+      "MaintenancesRead" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "canUserLoginNow" : {
+            "description" : "Whether ordinary users can log in at the current server time.",
+            "readOnly" : true,
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          },
+          "endDate" : {
+            "description" : "End of the maintenance window.",
+            "example" : "2026-08-01T21:00:00Z",
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          },
+          "id" : {
+            "description" : "Stable maintenance identifier.",
+            "example" : 42,
+            "examples" : [ 43 ],
+            "format" : "int64",
+            "readOnly" : true,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          },
+          "message" : {
+            "description" : "User-facing maintenance message.",
+            "maxLength" : 255,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          },
+          "startDate" : {
+            "description" : "Beginning of the maintenance window.",
+            "example" : "2026-08-01T20:00:00Z",
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          },
+          "stopUserLoginDate" : {
+            "description" : "Time after which ordinary users may no longer log in.",
+            "format" : "date-time",
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          },
+          "version" : {
+            "description" : "Version for conditional updates and deletes.",
+            "example" : 0,
+            "format" : "int64",
+            "readOnly" : true,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+            }
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+        }
+      },
+      "MaintenancesReference" : {
+        "properties" : {
+          "relationTo" : {
+            "const" : "maintenances",
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "relationTo", "value" ],
+        "type" : "object"
+      },
+      "MaintenancesUpdate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "endDate" : {
+            "description" : "End of the maintenance window.",
+            "example" : "2026-08-01T21:00:00Z",
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "message" : {
+            "description" : "User-facing maintenance message.",
+            "maxLength" : 255,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "startDate" : {
+            "description" : "Beginning of the maintenance window.",
+            "example" : "2026-08-01T20:00:00Z",
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "stopUserLoginDate" : {
+            "description" : "Time after which ordinary users may no longer log in.",
+            "format" : "date-time",
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          }
+        },
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        }
+      },
       "ResourceAccessAssignmentDocument" : {
         "properties" : {
           "grantee" : {
@@ -1200,6 +1479,18 @@
           }
         },
         "required" : [ "assignments" ],
+        "type" : "object"
+      },
+      "ResourceGranteeDirectoryDocument" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceGranteeDirectoryEntry"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "docs" ],
         "type" : "object"
       },
       "ResourceGranteeDirectoryEntry" : {
@@ -1363,10 +1654,20 @@
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
         "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
       },
+      "MaintenanceRead" : {
+        "authentication" : "PUBLIC",
+        "denialReasonCodes" : [ ],
+        "description" : "Anyone may read current and future maintenance; authenticated callers may also read past maintenance."
+      },
       "Never" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
         "description" : "This action is not permitted."
+      },
+      "Sysadmin" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+        "description" : "A logged-in system administrator is required."
       },
       "SysadminOrSelf" : {
         "authentication" : "AUTHENTICATED",
@@ -1486,6 +1787,62 @@
           },
           "parentContainer.value" : {
             "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          }
+        }
+      },
+      "Maintenances" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "endDate" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "id" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "message" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : true
+          },
+          "startDate" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "stopUserLoginDate" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : false
+          },
+          "version" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
             "schema" : {
               "format" : "int64",
               "type" : "integer"
@@ -2127,6 +2484,695 @@
         "x-rspace-operation" : "READ"
       }
     },
+    "/api/v2/maintenances" : {
+      "delete" : {
+        "description" : "Deletes every maintenances matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+        "operationId" : "deleteManyMaintenances",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/MaintenancesWhereRequired"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/MaintenancesRead"
+                      },
+                      "type" : "array"
+                    }
+                  },
+                  "required" : [ "docs" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful bulk_delete.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "422" : {
+            "$ref" : "#/components/responses/BulkLimit"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Delete matching maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        },
+        "x-rspace-operation" : "BULK_DELETE"
+      },
+      "get" : {
+        "description" : "Returns a paginated view of maintenances. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
+        "operationId" : "listMaintenances",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/MaintenancesWhere"
+        }, {
+          "description" : "Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "x-rspace-sort" : {
+            "default" : [ "startDate", "id" ],
+            "fields" : [ "id", "version", "startDate", "endDate", "stopUserLoginDate", "message" ],
+            "maximumFields" : 5
+          }
+        }, {
+          "$ref" : "#/components/parameters/Page"
+        }, {
+          "$ref" : "#/components/parameters/Limit"
+        }, {
+          "$ref" : "#/components/parameters/Totals"
+        }, {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/MaintenancesFields"
+        }, {
+          "$ref" : "#/components/parameters/MaintenancesExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/MaintenancesRead"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful list.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ ],
+        "summary" : "List maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+        },
+        "x-rspace-operation" : "LIST"
+      },
+      "patch" : {
+        "description" : "Updates every maintenances matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+        "operationId" : "updateManyMaintenances",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/MaintenancesWhereRequired"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MaintenancesUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/MaintenancesRead"
+                      },
+                      "type" : "array"
+                    }
+                  },
+                  "required" : [ "docs" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful bulk_update.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.maintenance.window",
+                  "status" : 400,
+                  "title" : "The maintenance window is invalid."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The maintenance window is invalid."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "422" : {
+            "$ref" : "#/components/responses/BulkLimit"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update matching maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        },
+        "x-rspace-operation" : "BULK_UPDATE"
+      },
+      "post" : {
+        "description" : "Creates one maintenances from the documented create schema.",
+        "operationId" : "createMaintenance",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MaintenancesCreate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenancesRead"
+                }
+              }
+            },
+            "description" : "Successful create.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.maintenance.window",
+                  "status" : 400,
+                  "title" : "The maintenance window is invalid."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The maintenance window is invalid."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create one maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        },
+        "x-rspace-operation" : "CREATE"
+      }
+    },
+    "/api/v2/maintenances/bulk" : {
+      "post" : {
+        "description" : "Creates the supplied maintenances documents in input order. The batch is handled as one service-layer mutation; validation failure prevents the entire batch from being created.",
+        "operationId" : "createManyMaintenances",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "additionalProperties" : false,
+                "properties" : {
+                  "docs" : {
+                    "items" : {
+                      "$ref" : "#/components/schemas/MaintenancesCreate"
+                    },
+                    "minItems" : 1,
+                    "type" : "array"
+                  }
+                },
+                "required" : [ "docs" ],
+                "type" : "object"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/MaintenancesRead"
+                      },
+                      "type" : "array"
+                    }
+                  },
+                  "required" : [ "docs" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful bulk_create.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.maintenance.window",
+                  "status" : 400,
+                  "title" : "The maintenance window is invalid."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The maintenance window is invalid."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create many maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        },
+        "x-rspace-operation" : "BULK_CREATE"
+      }
+    },
+    "/api/v2/maintenances/count" : {
+      "get" : {
+        "description" : "Counts maintenances matching the optional bounded filter.",
+        "operationId" : "countMaintenances",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/MaintenancesWhere"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/CountResult"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Count maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+        },
+        "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/maintenances/{id}" : {
+      "delete" : {
+        "description" : "Deletes one maintenances and returns the deleted document.",
+        "operationId" : "deleteMaintenance",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/MaintenancesId"
+        }, {
+          "$ref" : "#/components/parameters/IfMatchOptional"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Maintenance permanently deleted."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "412" : {
+            "$ref" : "#/components/responses/VersionChanged"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Delete one maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        },
+        "x-rspace-operation" : "DELETE"
+      },
+      "get" : {
+        "description" : "Returns one visible maintenances. A resource that is absent or not readable is reported as not found.",
+        "operationId" : "getMaintenance",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/MaintenancesId"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/MaintenancesFields"
+        }, {
+          "$ref" : "#/components/parameters/MaintenancesExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenancesRead"
+                }
+              }
+            },
+            "description" : "Successful read.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Get one maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
+        },
+        "x-rspace-operation" : "READ"
+      },
+      "patch" : {
+        "description" : "Partially updates one maintenances and returns the updated document.",
+        "operationId" : "updateMaintenance",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/MaintenancesId"
+        }, {
+          "$ref" : "#/components/parameters/IfMatchOptional"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MaintenancesUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenancesRead"
+                }
+              }
+            },
+            "description" : "Successful update.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.maintenance.window",
+                  "status" : 400,
+                  "title" : "The maintenance window is invalid."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The maintenance window is invalid."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "412" : {
+            "$ref" : "#/components/responses/VersionChanged"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update one maintenances",
+        "tags" : [ "maintenances" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+        },
+        "x-rspace-operation" : "UPDATE"
+      }
+    },
     "/api/v2/oauth/tokens" : {
       "post" : {
         "description" : "Creates an OAuth token from the authenticated browser session.",
@@ -2541,6 +3587,9 @@
     "description" : "Inventory instruments and their scheduling and access metadata.",
     "name" : "instruments"
   }, {
+    "description" : "Planned system maintenance and its access policy.",
+    "name" : "maintenances"
+  }, {
     "description" : "OAuth access tokens for API clients.",
     "name" : "oauth"
   }, {
@@ -2568,6 +3617,9 @@
   "x-tagGroups" : [ {
     "name" : "Inventory",
     "tags" : [ "containers", "instruments" ]
+  }, {
+    "name" : "Maintenance",
+    "tags" : [ "maintenances" ]
   }, {
     "name" : "Platform",
     "tags" : [ "config", "oauth", "openapi", "users" ]
