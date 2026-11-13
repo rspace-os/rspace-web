@@ -386,6 +386,7 @@ export const BookingDisplayPreferences = v.object({
   customTimezone: v.nullish(v.string()),
   institutionTimezone: v.optional(v.pipe(v.string(), v.description('The running institution\'s JVM-default IANA timezone.'))),
   overridden: v.optional(v.pipe(v.boolean(), v.description('Whether these values come from an explicit user override.'))),
+  timeFormat: v.optional(v.picklist(['AUTOMATIC', 'H12', 'H24'])),
   timezoneMode: v.optional(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))
 })
 
@@ -393,6 +394,7 @@ export const BookingDisplayPreferencesControllerReplacement = v.object({
   availabilityWindowEnd: v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$'))),
   availabilityWindowStart: v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$'))),
   customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.'))),
+  timeFormat: v.nullish(v.pipe(v.picklist(['AUTOMATIC', 'H12', 'H24']), v.description('AUTOMATIC (default when omitted) follows the browser region in the UI and the language\'s usual clock in email; H12 and H24 force a 12- or 24-hour clock.'))),
   timezoneMode: v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM'])
 })
 
@@ -448,6 +450,7 @@ export const BookingSettingsControllerAdminSettingsDocument = v.object({
   maxBookingDurationMinutes: v.optional(v.pipe(v.number(), v.integer())),
   openingHours: v.optional(v.array(BookingOpeningHoursEntry)),
   slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer())),
+  timeFormat: v.optional(v.picklist(['AUTOMATIC', 'H12', 'H24'])),
   timezoneMode: v.optional(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))
 })
 
@@ -463,6 +466,7 @@ export const BookingSettingsControllerSettingsDocument = v.object({
   maxBookingDurationMinutes: v.optional(v.pipe(v.number(), v.integer())),
   openingHours: v.optional(v.array(BookingOpeningHoursEntry)),
   slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer())),
+  timeFormat: v.optional(v.picklist(['AUTOMATIC', 'H12', 'H24'])),
   timezoneMode: v.optional(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))
 })
 
@@ -478,6 +482,7 @@ export const BookingSettingsControllerSettingsPatch = v.object({
   maxBookingDurationMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(527040))),
   openingHours: v.nullish(v.pipe(v.array(BookingOpeningHoursEntry), v.minLength(1), v.maxLength(7), v.description('Independent opening interval for each listed ISO weekday; omitted days are closed.'))),
   slotGranularityMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(527040))),
+  timeFormat: v.nullish(v.picklist(['AUTOMATIC', 'H12', 'H24'])),
   timezoneMode: v.nullish(v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM']))
 })
 
@@ -1824,7 +1829,7 @@ export const GetMyBookingPreferencesResponse = BookingDisplayPreferences
 
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
  * @summary Replace Booking display preferences
  */
 export const ReplaceMyBookingPreferencesBody = BookingDisplayPreferencesControllerReplacement

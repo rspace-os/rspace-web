@@ -5,6 +5,7 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
+import type { BookingDisplayPreferencesControllerReplacementTimeFormat } from './bookingDisplayPreferencesControllerReplacementTimeFormat.ts';
 import type { BookingDisplayPreferencesControllerReplacementTimezoneMode } from './bookingDisplayPreferencesControllerReplacementTimezoneMode.ts';
 
 export interface BookingDisplayPreferencesControllerReplacement {
@@ -19,5 +20,10 @@ export interface BookingDisplayPreferencesControllerReplacement {
      * @nullable
      */
   customTimezone?: string | null;
+  /**
+     * AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.
+     * @nullable
+     */
+  timeFormat?: BookingDisplayPreferencesControllerReplacementTimeFormat;
   timezoneMode: BookingDisplayPreferencesControllerReplacementTimezoneMode;
 }

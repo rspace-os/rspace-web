@@ -7,6 +7,7 @@
  */
 import type { BookingOpeningHoursEntry } from './bookingOpeningHoursEntry.ts';
 import type { BookingSettingsControllerSettingsDocumentIncrementUnit } from './bookingSettingsControllerSettingsDocumentIncrementUnit.ts';
+import type { BookingSettingsControllerSettingsDocumentTimeFormat } from './bookingSettingsControllerSettingsDocumentTimeFormat.ts';
 import type { BookingSettingsControllerSettingsDocumentTimezoneMode } from './bookingSettingsControllerSettingsDocumentTimezoneMode.ts';
 
 export interface BookingSettingsControllerSettingsDocument {
@@ -22,5 +23,6 @@ export interface BookingSettingsControllerSettingsDocument {
   maxBookingDurationMinutes?: number;
   openingHours?: BookingOpeningHoursEntry[];
   slotGranularityMinutes?: number;
+  timeFormat?: BookingSettingsControllerSettingsDocumentTimeFormat;
   timezoneMode?: BookingSettingsControllerSettingsDocumentTimezoneMode;
 }
