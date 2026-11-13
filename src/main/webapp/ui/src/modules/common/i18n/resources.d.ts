@@ -864,15 +864,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
@@ -979,6 +970,33 @@ export default interface Resources {
     },
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
+    },
+    "featureFlags": {
+      "baseline": {
+        "controlLabel": "{flagName} baseline",
+        "description": "The instance-wide value used when a user has no override. The properties file can force it and make the flag read-only.",
+        "helpLabel": "What is the baseline value?",
+        "label": "Baseline"
+      },
+      "columns": {
+        "myValue": "My Value",
+        "name": "Name",
+        "source": "Source"
+      },
+      "errors": {
+        "requestFailed": "The feature flag request failed."
+      },
+      "overrideLabel": "{flagName} override",
+      "reload": {
+        "action": "Reload page to apply changes"
+      },
+      "tableLabel": "Feature flags",
+      "title": "Feature Flags",
+      "values": {
+        "off": "Off",
+        "on": "On"
+      },
+      "warning": "Baseline changes affect every user. Changes made without RSpace support are not covered by RSpace support agreements."
     },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
@@ -6131,6 +6149,16 @@ export default interface Resources {
       "pubchem": {
         "errors": {
           "unexpected": "An unexpected error occurred."
+        }
+      },
+      "v2": {
+        "featureFlags": {
+          "errors": {
+            "invalidPatch": "The feature flag patch is invalid.",
+            "notPermitted": "Feature flag operation is not permitted",
+            "readOnly": "Feature flag is controlled by properties file: {0}",
+            "readOnlyTitle": "The feature flag is controlled by a properties file."
+          }
         }
       }
     },
