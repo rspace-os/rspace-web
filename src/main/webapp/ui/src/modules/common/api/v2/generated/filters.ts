@@ -7,6 +7,14 @@ export interface ApiV2FilterFields {
     id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
     name: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
   };
+  FeatureFlags: {
+    baselineValue: { operators: "!=" | "==" | "=exists="; value: boolean };
+    canOverride: { operators: "!=" | "==" | "=exists="; value: boolean };
+    name: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
+    overrideValue: { operators: "!=" | "==" | "=exists="; value: boolean };
+    source: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
+    value: { operators: "!=" | "==" | "=exists="; value: boolean };
+  };
   Instruments: {
     deleted: { operators: "!=" | "==" | "=exists="; value: boolean };
     id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
