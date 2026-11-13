@@ -1605,7 +1605,7 @@ export const getUpdateBookingUrl = (id: number) => {
 };
 
 /**
- * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
+ * Updates or cancels one booking. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const updateBooking = async (
@@ -1714,7 +1714,7 @@ export type UpdateBookingMutationVariables = {
 };
 
 /**
- * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
+ * Updates or cancels one booking. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const useUpdateBooking = <

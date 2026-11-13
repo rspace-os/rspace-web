@@ -20,10 +20,7 @@ export interface BookingDisplayPreferencesControllerReplacement {
    * @nullable
    */
   customTimezone?: string | null;
-  /**
-   * AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.
-   * @nullable
-   */
-  timeFormat?: BookingTimeFormat | null;
+  /** AUTOMATIC follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock. */
+  timeFormat: BookingTimeFormat;
   timezoneMode: BookingTimezoneMode;
 }
