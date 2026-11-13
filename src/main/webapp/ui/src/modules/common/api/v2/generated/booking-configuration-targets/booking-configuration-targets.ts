@@ -68,6 +68,7 @@ export const getSearchBookingConfigurationTargetsUrl = (params: SearchBookingCon
 };
 
 /**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
  * @summary Search eligible Booking configuration targets
  */
 export const searchBookingConfigurationTargets = async (
@@ -121,7 +122,10 @@ export type SearchBookingConfigurationTargetsQueryError = ErrorType<
   BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse
 >;
 
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargets<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -143,7 +147,10 @@ export function useSearchBookingConfigurationTargets<
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargets<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -165,7 +172,10 @@ export function useSearchBookingConfigurationTargets<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargets<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -179,7 +189,10 @@ export function useSearchBookingConfigurationTargets<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargets<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -252,7 +265,10 @@ export type SearchBookingConfigurationTargetsSuspenseQueryError = ErrorType<
   BadRequestResponse | UnauthenticatedResponse | NotFoundResponse | TooManyRequestsResponse | UnexpectedErrorResponse
 >;
 
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargetsSuspense<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -268,7 +284,10 @@ export function useSearchBookingConfigurationTargetsSuspense<
   },
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargetsSuspense<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -284,7 +303,10 @@ export function useSearchBookingConfigurationTargetsSuspense<
   },
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargetsSuspense<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
@@ -300,7 +322,10 @@ export function useSearchBookingConfigurationTargetsSuspense<
   },
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/** @summary Search eligible Booking configuration targets */
+/**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
+ * @summary Search eligible Booking configuration targets
+ */
 export function useSearchBookingConfigurationTargetsSuspense<
   TData = Awaited<ReturnType<typeof searchBookingConfigurationTargets>>,
   TError = ErrorType<
