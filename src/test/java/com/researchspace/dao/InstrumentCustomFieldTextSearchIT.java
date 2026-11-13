@@ -8,7 +8,6 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
-import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResolvedRuntimeField;
@@ -22,7 +21,6 @@ import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
-import com.researchspace.service.inventory.impl.ExtraFieldRuntimeManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
 import java.util.Set;
@@ -35,18 +33,18 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
   private final InstrumentDao instrumentDao;
   private final InstrumentReadAccess instrumentReadAccess;
   private final InstrumentCustomFieldManager customFields;
-  private final ExtraFieldDao extraFieldDao;
+  private final ExtraFieldRuntimeManager<Instrument> extraFields;
 
   @Autowired
   InstrumentCustomFieldTextSearchIT(
       InstrumentDao instrumentDao,
       InstrumentReadAccess instrumentReadAccess,
       InstrumentCustomFieldManager customFields,
-      ExtraFieldDao extraFieldDao) {
+      ExtraFieldRuntimeManager<Instrument> extraFields) {
     this.instrumentDao = instrumentDao;
     this.instrumentReadAccess = instrumentReadAccess;
     this.customFields = customFields;
-    this.extraFieldDao = extraFieldDao;
+    this.extraFields = extraFields;
   }
 
   private User owner;
@@ -171,13 +169,6 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
   }
 
   private ResolvedRuntimeField extraFieldDefinition() {
-    ExtraFieldRuntimeManager<Instrument> extraFields =
-        new ExtraFieldRuntimeManagerImpl<>(
-            extraFieldDao,
-            Instrument.class,
-            ApiV2InstrumentResource.DESCRIPTION,
-            "instrumentEntity",
-            instrumentReadAccess::check);
     return extraFields
         .discover(owner, new RuntimeFieldCatalogQuery(null, Set.of(), 1, 50))
         .fields()

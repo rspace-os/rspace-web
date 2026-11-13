@@ -7,6 +7,8 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
@@ -234,4 +236,15 @@ public interface UserDao extends GenericDao<User, Long> {
 
   /** Retrieves all tags used for tagging users (on System->Users page) */
   List<String> getAllUserTags();
+
+  /**
+   * A page of users matching a REST API v2 collection request.
+   *
+   * @param request already narrowed by the collection's access policy, so an ordinary caller's
+   *     request carries an {@code id} constraint limiting it to their own row
+   */
+  ResourcePage<User> getUsers(ResourceRequest request);
+
+  /** Total users matching a REST API v2 collection request. */
+  long countUsers(ResourceRequest request);
 }
