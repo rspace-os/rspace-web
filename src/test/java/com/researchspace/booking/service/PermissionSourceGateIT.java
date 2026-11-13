@@ -53,8 +53,6 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Holds source transactions after their service call, before revocation finalization and commit.
  */
 class PermissionSourceGateIT extends RealTransactionSpringTestBase {
-  private static final String NO_LINK = "\"inactive\"";
-
   @BeforeEach
   @Override
   public void setUp() throws Exception {
@@ -321,11 +319,7 @@ class PermissionSourceGateIT extends RealTransactionSpringTestBase {
     withBookingEnabled(
         () -> {
           Fixture f = fixture(path);
-          String linkEtag =
-              calendars
-                  .create(f.configurationId(), f.reader(), f.reader())
-                  .status()
-                  .etag();
+          calendars.create(f.configurationId(), f.reader(), f.reader());
           CountDownLatch changed = new CountDownLatch(1);
           CountDownLatch commit = new CountDownLatch(1);
           CountDownLatch subscribeStarted = new CountDownLatch(1);
@@ -346,8 +340,7 @@ class PermissionSourceGateIT extends RealTransactionSpringTestBase {
                 pool.submit(
                     () -> {
                       subscribeStarted.countDown();
-                      return calendars.create(
-                          f.configurationId(), f.reader(), f.reader());
+                      return calendars.create(f.configurationId(), f.reader(), f.reader());
                     });
             await(subscribeStarted);
             assertThrows(
@@ -392,8 +385,7 @@ class PermissionSourceGateIT extends RealTransactionSpringTestBase {
                             .executeWithoutResult(
                                 status -> {
                                   gate.lockShared();
-                                  calendars.create(
-                                      f.configurationId(), f.reader(), f.reader());
+                                  calendars.create(f.configurationId(), f.reader(), f.reader());
                                   subscribed.countDown();
                                   await(commit);
                                 }));
@@ -450,13 +442,8 @@ class PermissionSourceGateIT extends RealTransactionSpringTestBase {
                           }));
           assertEquals(1, linkCount(f));
           assertEquals(
-              before.status().etag().replace("\"", ""),
-              jdbc.queryForObject(
-                  "select tokenHash from BookableItemCalendarSubscription where"
-                      + " bookingConfiguration_id = ? and user_id = ?",
-                  String.class,
-                  f.configurationId(),
-                  f.reader().getId()));
+              before.status().etag(),
+              calendars.create(f.configurationId(), f.reader(), f.reader()).status().etag());
         });
   }
 

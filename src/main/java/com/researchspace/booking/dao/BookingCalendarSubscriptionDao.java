@@ -37,6 +37,7 @@ public interface BookingCalendarSubscriptionDao
   /** Re-reads and refreshes exactly one newly-created row after its insert has been flushed. */
   CurrentItemCalendarSubscription reconcileCreated(Long userId, Long configurationId);
 
+  /** Finds all of one user's item subscriptions with their configurations loaded. */
   List<BookableItemCalendarSubscription> findByUserId(Long userId);
 
   /** Finds a subscription by its one-way token hash. */

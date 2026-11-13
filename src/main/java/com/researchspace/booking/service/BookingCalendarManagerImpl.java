@@ -170,6 +170,17 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   }
 
   @Override
+  public Created create(Long configurationId, User subject, User actor) {
+    permissionGate.assertNoSuspendedAncestor();
+    if (permissionGate.hasActiveGate()) {
+      requirePersonalIdentity(subject, actor);
+      return issueItemLink(configurationId, subject, null);
+    }
+    requirePersonalCaller(subject, actor);
+    return creationTransaction.create(
+        subject.getId(), freshSubject -> issueItemLink(configurationId, freshSubject, null));
+  }
+
   @Override
     permissionGate.assertNoSuspendedAncestor();
     if (permissionGate.hasActiveGate()) {
@@ -184,6 +195,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private Created createOrRotateInTransaction(
       Long configurationId, User subject, String expectedEtag) {
+  private Created issueItemLink(Long configurationId, User subject, String rotateFromEtag) {
     if (permissionGate.hasActiveGate()) {
       requireFeatureEnabled(subject);
     } else {
@@ -200,6 +212,15 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     Optional<CurrentItemCalendarSubscription> existing =
         subscriptionDao.lockCurrent(subject.getId(), configurationId);
+    if (rotateFromEtag == null && existing.isPresent()) {
+      CurrentItemCalendarSubscription current = existing.get();
+      String currentUrl = current.rawToken() == null ? null : subscriptionUrl(current.rawToken());
+      Status status = new Status(true, current.updatedAt(), currentUrl, itemEtag(current));
+      return new Created(status, currentUrl, false);
+    }
+    if (rotateFromEtag != null
+        && (existing.isEmpty()
+            || !Objects.equals(rotateFromEtag, itemEtag(existing.orElseThrow())))) {
       throw new UserSubscriptionConflictException();
     }
     String rawToken = tokenSupplier.get();
@@ -243,6 +264,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         saved.id());
     String url = subscriptionUrl(rawToken);
     Status status = new Status(true, saved.updatedAt(), url, itemEtag(saved));
+    return new Created(status, url, true);
   }
 
   private static String itemEtag(BookableItemCalendarSubscription subscription) {
