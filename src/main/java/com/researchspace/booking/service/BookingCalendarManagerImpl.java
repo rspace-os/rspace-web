@@ -408,6 +408,55 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   @Override
   @Transactional(readOnly = true)
+  public List<ItemLink> itemLinks(User subject, User actor) {
+    requirePersonalCaller(subject, actor);
+    requireFeatureRead(subject);
+    List<BookableItemCalendarSubscription> eligible =
+        subscriptionDao.findByUserId(subject.getId()).stream()
+            .filter(subscription -> listable(subscription.getBookingConfiguration()))
+            .toList();
+    Map<Long, ResolvedResourceAccess> resolved =
+        accessManager.resolveAll(
+            eligible.stream()
+                .map(BookableItemCalendarSubscription::getBookingConfiguration)
+                .toList(),
+            subject);
+    List<BookableItemCalendarSubscription> listable =
+        eligible.stream()
+            .filter(
+                subscription ->
+                    resolved
+                        .getOrDefault(
+                            subscription.getBookingConfiguration().getId(),
+                            ResolvedResourceAccess.none())
+                        .hasCapability(BookingResourceRoleScheme.READ_RESOURCE))
+            .toList();
+    Map<Long, InstrumentReadSummary> instruments =
+        instrumentDao.getBookingSummaries(
+            listable.stream()
+                .map(subscription -> subscription.getBookingConfiguration().getTarget().id())
+                .collect(Collectors.toSet()));
+    return listable.stream()
+        .flatMap(
+            subscription -> {
+              Long targetId = subscription.getBookingConfiguration().getTarget().id();
+              InstrumentReadSummary instrument = instruments.get(targetId);
+              if (instrument == null || instrument.deleted()) {
+                return Stream.empty();
+              }
+              return Stream.of(
+                  new ItemLink(
+                      subscription.getBookingConfiguration().getId(),
+                      targetId,
+                      instrument.name(),
+                      subscription.getUpdatedAt(),
+                      subscriptionUrl(subscription.getRawToken())));
+            })
+        .sorted(Comparator.comparing(ItemLink::itemName, String.CASE_INSENSITIVE_ORDER))
+        .toList();
+  }
+
+  /** Filters configurations that cannot produce an item link before resolving permissions. */
   private boolean listable(BookingConfiguration configuration) {
     BookableTargetReference target = configuration.getTarget();
     return configuration.getState() != BookingConfigurationState.ARCHIVED

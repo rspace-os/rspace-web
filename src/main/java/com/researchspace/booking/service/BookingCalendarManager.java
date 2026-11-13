@@ -119,6 +119,7 @@ public interface BookingCalendarManager {
    * Lists the caller's item links for active configurations they can still read, ordered by item
    * name.
    */
+  List<ItemLink> itemLinks(User subject, User actor);
 
   /** Revokes the caller's user-wide booking calendar credential. */
   void revokeUser(User subject, User actor);

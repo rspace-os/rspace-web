@@ -444,6 +444,56 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   @Test
+  void itemLinksListOnlyActiveReadableInstrumentsByName() {
+    BookingConfiguration archived = configuration(15L, 102L);
+    archived.setState(BookingConfigurationState.ARCHIVED);
+    BookingConfiguration unreadable = configuration(12L, 103L);
+    BookingConfiguration deletedItem = configuration(13L, 104L);
+    BookingConfiguration second = configuration(14L, 105L);
+    when(accessManager.resolveAll(any(), eq(owner)))
+        .thenReturn(
+            Map.of(
+                configuration.getId(), ownerAccess(),
+                unreadable.getId(), ResolvedResourceAccess.none(),
+                deletedItem.getId(), ownerAccess(),
+                second.getId(), ownerAccess()));
+    when(subscriptionDao.findByUserId(owner.getId()))
+        .thenReturn(
+            List.of(
+                subscription(configuration, "first"),
+                subscription(archived, "archived"),
+                subscription(unreadable, "unreadable"),
+                subscription(deletedItem, "deleted"),
+                subscription(second, "second")));
+    when(instrumentDao.getBookingSummaries(Set.of(101L, 104L, 105L)))
+        .thenReturn(
+            Map.of(
+                101L, instrument(101L, "microscope", false),
+                104L, instrument(104L, "Centrifuge", true),
+                105L, instrument(105L, "Autoclave", false)));
+
+    List<BookingCalendarManager.ItemLink> links = manager.itemLinks(owner, owner);
+
+    assertEquals(
+        List.of("Autoclave", "microscope"),
+        links.stream().map(BookingCalendarManager.ItemLink::itemName).toList());
+    assertEquals(105L, links.get(0).targetId());
+    assertEquals(14L, links.get(0).configurationId());
+    assertEquals(
+        "https://rspace.example/context/public/booking/calendars/feed.ics?token=second",
+        links.get(0).subscriptionUrl());
+    verify(accessManager)
+        .resolveAll(eq(List.of(configuration, unreadable, deletedItem, second)), eq(owner));
+    verify(accessManager, never()).resolve(any(BookingConfiguration.class), eq(owner));
+  }
+
+  @Test
+  void itemLinksRequireAnActivePersonalCaller() {
+    User delegate = TestFactory.createAnyUser("delegate");
+    delegate.setId(8L);
+
+    assertThrows(AuthorizationException.class, () -> manager.itemLinks(owner, delegate));
+    verify(subscriptionDao, never()).findByUserId(any());
   }
 
   @Test
