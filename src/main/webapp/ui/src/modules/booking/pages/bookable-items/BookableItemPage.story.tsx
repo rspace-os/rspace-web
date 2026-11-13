@@ -9,8 +9,8 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import {
@@ -65,7 +65,7 @@ export function BookableItemPageStory({ hasSysAdminRole = true }: { hasSysAdminR
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/config/bookable-items/",
-          component: BookableItemsPage,
+          component: AllBookableItemsPage,
         }),
       ]),
     ]),
