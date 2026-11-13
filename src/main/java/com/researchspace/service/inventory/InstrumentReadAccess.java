@@ -22,6 +22,7 @@ public final class InstrumentReadAccess implements AccessFunction {
   private static final String MEMO_KEY = InstrumentReadAccess.class.getName() + ".constraint";
   private static final AccessDocumentation DOCUMENTATION =
       new AccessDocumentation(
+          "InstrumentRead",
           "A logged-in session is required. Only active instruments visible under the inventory "
               + "sharing policy are returned.",
           Set.of(AccessPolicy.AUTHENTICATION_REQUIRED));

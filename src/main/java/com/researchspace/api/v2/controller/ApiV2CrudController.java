@@ -16,6 +16,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -42,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** Supplies the standard CRUD routes for every registered REST v2 collection. */
 @RestController
 @RequestMapping("/api/v2")
+@Hidden // Concrete resource paths are documented by ApiV2OpenApiGenerator.
 public class ApiV2CrudController {
 
   private final ApiV2ResourceCatalog resources;
@@ -126,10 +129,7 @@ public class ApiV2CrudController {
     Set<String> requested =
         ids == null
             ? Set.of()
-            : Arrays.stream(ids.split(",", -1))
-                .map(String::trim)
-                .filter(id -> !id.isEmpty())
-                .collect(Collectors.toSet());
+            : Set.copyOf(Arrays.asList(StringUtils.tokenizeToStringArray(ids, ",")));
     if (requested.size() > RuntimeFieldCatalogQuery.MAX_IDS) {
       throw ApiV2ResourceException.badRequest(
           "errors.api.v2.runtimeFields.ids.limit", RuntimeFieldCatalogQuery.MAX_IDS);

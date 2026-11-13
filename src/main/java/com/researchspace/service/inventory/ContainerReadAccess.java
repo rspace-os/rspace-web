@@ -20,6 +20,7 @@ public final class ContainerReadAccess implements AccessFunction {
   private static final String MEMO_KEY = ContainerReadAccess.class.getName() + ".constraint";
   private static final AccessDocumentation DOCUMENTATION =
       new AccessDocumentation(
+          "ContainerRead",
           "A logged-in session is required. Only active containers visible directly or through an"
               + " immediate child under the inventory sharing policy are returned.",
           Set.of(AccessPolicy.AUTHENTICATION_REQUIRED));

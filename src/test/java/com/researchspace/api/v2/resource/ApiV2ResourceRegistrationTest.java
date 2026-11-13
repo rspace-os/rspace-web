@@ -32,13 +32,14 @@ class ApiV2ResourceRegistrationTest {
   private ApiV2ResourceRegistration<?, ?> registration(QueryConstraint readScope) {
     var read =
         AccessFunction.documented(
+            "ReadScope",
             "Read scope",
             Set.of(),
             context ->
                 readScope == null ? AccessResult.allowed() : AccessResult.allowedWhere(readScope));
     var write =
         AccessFunction.documented(
-            "Write scope", Set.of(), context -> AccessResult.allowedWhere(WRITE));
+            "WriteScope", "Write scope", Set.of(), context -> AccessResult.allowedWhere(WRITE));
     var description =
         new CollectionDescription<>(
             "items",

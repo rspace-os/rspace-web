@@ -259,6 +259,7 @@ class RsqlCollectionQueryTest {
     CollectionDescription<Related> description = relationshipDescription();
     AccessFunction excludesNine =
         AccessFunction.documented(
+            "TestTargetAccess",
             "Test target access.",
             Set.of(),
             ignored ->
@@ -458,6 +459,7 @@ class RsqlCollectionQueryTest {
             List.of(new Sort("id", true)),
             AccessPolicy.readOnly(
                 AccessFunction.documented(
+                    "NestedTargetRead",
                     "Nested target read rule.",
                     Set.of(),
                     ignored ->

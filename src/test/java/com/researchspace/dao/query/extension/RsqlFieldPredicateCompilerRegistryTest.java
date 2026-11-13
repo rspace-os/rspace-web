@@ -128,6 +128,7 @@ class RsqlFieldPredicateCompilerRegistryTest {
   void propagatesCustomRegistryIntoTargetFiltersAndTargetAccessConstraints() {
     AccessFunction access =
         AccessFunction.documented(
+            "TestCode",
             "Requires a test code.",
             Set.of(),
             ignored ->

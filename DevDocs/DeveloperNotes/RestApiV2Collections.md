@@ -2,7 +2,7 @@
 
 REST API v2 resource definitions list the public fields, access rules, relationships, and default
 sort. A resource operations class connects the definition to a domain manager. An
-`ApiV2ResourceSpec` bean registers its HTTP operations.
+`ApiV2ResourceSpec` bean registers its HTTP operations and schemas in OpenAPI.
 
 Use a concrete controller for an operation outside collection CRUD, such as `/api/v2/users/me`. For
 query compilation, authentication and request limits, see [REST API v2 queries and
@@ -57,6 +57,7 @@ These routes use concrete controllers:
 
 | Route | Access | Result |
 | --- | --- | --- |
+| `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
 | `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
 | `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
@@ -195,7 +196,7 @@ validates this text against the public resource definition.
 Use `AccessPolicy.readOnly(...)` for a collection that clients only read, such as a relationship
 target that a picker searches. The policy rejects mutations before dispatch, so the operations class
 implements only `find`, `count`, and `findById`. Limit `exposedOperations` to `LIST`, `COUNT`, and
-`READ` to match the routes the collection serves.
+`READ` so OpenAPI documents only the routes the collection serves.
 
 Each resource name has one catalog entry. Registration also makes the resource a relationship
 target. Adding an `ApiV2RelationshipTargetSpec` with an existing resource-spec name therefore causes
@@ -431,25 +432,46 @@ input. Producers must validate complete values before creating such an included 
 exception does not apply to renderer-level substitutions or fresh serializer output.
 
 Defaults and published examples pass declared-child validation, including scalar child constraints.
-The declared child list controls the public object shape. Scalar to-many fields and generic array
-row editors remain deferred; existing relationship multiplicity and arbitrary historical audit JSON
-are unchanged.
+OpenAPI publishes object and array examples as JSON values, including additional examples. STRING
+examples retain their raw text, even when that text looks like JSON. Recursive `fields` metadata and
+OpenAPI object `items` come from those definitions. The declared child list controls the public
+object shape; child constraints, documentation, nullability, and operation-specific access shape
+recursive `properties` and `items`, with `additionalProperties: false` on each object. The array
+factory's inclusive row bounds publish as `minItems` and `maxItems`. Request schemas describe a
+supplied array as a complete replacement: required children and child defaults apply to every
+supplied row on CREATE and UPDATE, while the outer field remains optional on update. These schemas
+do not enable HTTP write routes for read-only collections. Read properties may be omitted by child
+access, so read item schemas do not require those keys. Each declared property also publishes
+`x-rspace-fields` for custom frontend renderers. Scalar to-many fields and generic array row editors
+remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are
+unchanged.
 
-`CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
-structured values can still use `structured(...)`; ARRAY values always use declared children.
+Read schemas publish the object of each top-level declared field as a component, so generated
+clients get a named model per row type. Fields that declare the same row type identically share
+`Declared<Type>`, where nested types are prefixed by their enclosing types. If any declaration of
+that type differs, each field gets `<Component><Field>` instead, so a new collection never renames
+another's model. Request schemas keep their objects inline.
+
+For a computed object that clients only read, such as a capability summary, use
+`CollectionFieldTypes.readOnlyObject(SomeRecord.class)` and return the record from the getter. The
+API's JSON mapper writes the record, and OpenAPI references the schema generated from the same
+class, with the field's own documentation and access beside the reference. Describe its components
+with `@Schema`. These fields cannot be filtered, sorted, written or selected into. Two Java types
+whose derived schema names match fail document generation, so give a top-level record a unique name
+or nest it in the type that owns it. An explicit `@Schema(name)` is not checked. Writable non-array structured values can still use
+`structured(...)`; ARRAY values always use declared children.
 
 A writable field can default to a fixed value when omitted on create: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
-including an allowed `null`, takes precedence. The framework applies it only on create and records
-it as create-schema metadata. The default must pass the field's own rules, and a required field
-cannot have one. Dynamic defaults are not supported yet. Apply contextual values in the create
-operation.
+including an allowed `null`, takes precedence. The framework applies it only on create and publishes
+it in the create schema. The default must pass the field's own rules, and a required field cannot
+have one. Dynamic defaults are not supported yet. Apply contextual values in the create operation.
 
 ### Field constraints
 
 The framework enforces `maxLength`, `minLength`, `pattern`, `minimum`, `maximum` and `enumValues`
-when a client writes a value. Violations return `INVALID_VALUE`. Schema metadata distinguishes body
-constraints from query constraints:
+when a client writes a value. Violations return `INVALID_VALUE`. OpenAPI publishes each rule only
+where the server checks it:
 
 | Rule | Checked on writes | Checked in `where` | Published on |
 | --- | --- | --- | --- |
@@ -565,3 +587,13 @@ omits that member too.
 Feature resource specs supply `.tagDocumentation(description, group)`; annotated controllers supply a Swagger `@Tag` description and an `x-tag-group` extension. The document lists exactly the tags used by operations, grouped through `x-tagGroups`, and rejects missing metadata.
 
 For OpenAPI 3.2, replace `x-tagGroups` with `Tag.parent` and a `kind: "nav"` parent tag per group once swagger-core supports 3.2 (swagger-api/swagger-core#5326).
+
+## OpenAPI text
+
+The shared builders resolve every summary, description and example title they generate through
+`ApiV2OpenApiText` from the `api.v2.openapi.*` keys in `server.api.openapi.json`. Add a `Key`
+constant and its catalog entry together; `ApiV2OpenApiTextTest` checks that the two sets match.
+Identifiers such as operation IDs, component names, paths, headers and media types stay in code.
+Text that a feature supplies through its spec or Swagger annotations is published as written. The
+document is generated in English; serving another locale would resolve the same keys with the
+request locale.
