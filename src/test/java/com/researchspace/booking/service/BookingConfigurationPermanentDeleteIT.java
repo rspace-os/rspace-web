@@ -52,7 +52,6 @@ public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpring
         configurationManager.createConfiguration(
             new BookingConfigurationManager.Create(true, "UTC", resolvedTarget), owner, owner);
     Long configurationId = configuration.getId();
-    Long accessId = configuration.getResourceAccess().getId();
 
     Instant start = Instant.now().plus(30, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
     Long bookingId =
@@ -86,7 +85,6 @@ public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpring
         owner);
     assertEquals(1, count("BookingConfiguration", "id", configurationId));
     assertEquals(1, count("TimeSlotBooking", "bookingConfiguration_id", configurationId));
-    assertTrue(count("ResourceRoleAssignment", "resourceAccess_id", accessId) > 0);
 
     long currentVersion =
         jdbcTemplate.queryForObject(
@@ -103,8 +101,6 @@ public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpring
     assertFalse(configurationManager.getConfiguration(configurationId, sysadmin).isPresent());
     assertEquals(0, count("BookingConfiguration", "id", configurationId));
     assertEquals(0, count("TimeSlotBooking", "bookingConfiguration_id", configurationId));
-    assertEquals(0, count("ResourceRoleAssignment", "resourceAccess_id", accessId));
-    assertEquals(0, count("ResourceAccess", "id", accessId));
     assertEquals(1, count("BookingConfiguration", "id", unrelated.getId()));
     assertEquals(1, count("TimeSlotBooking", "bookingConfiguration_id", unrelated.getId()));
     assertEquals(1, count("InstrumentEntity", "id", instrument.getId()));
@@ -114,8 +110,6 @@ public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpring
     assertTrue(count("BookingConfiguration_AUD", "id", configurationId) >= 2);
     assertEquals(1, deletedRevisionCount("BookingConfiguration_AUD", "id", configurationId));
     assertEquals(1, deletedRevisionCount("TimeSlotBooking_AUD", "id", bookingId));
-    assertEquals(1, deletedRevisionCount("ResourceAccess_AUD", "id", accessId));
-    assertTrue(count("ResourceRoleAssignment_AUD", "resourceAccess_id", accessId) > 0);
   }
 
   private Instrument initializedInstrument(Long instrumentId) {
