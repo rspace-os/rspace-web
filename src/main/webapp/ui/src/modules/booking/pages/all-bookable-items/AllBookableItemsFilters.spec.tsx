@@ -4,12 +4,12 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
-import { storyUser } from "./BookableItemPage.story";
-import { BookableItemsStory } from "./BookableItemsPage.story";
-import { bookableItemsHandlers } from "./mocks/bookableItemsMocks";
-import { BookableItemsPage } from "./pageObjects/BookableItemsPage";
+import { storyUser } from "../bookable-items/BookableItemPage.story";
+import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
+import { BookableItemsStory } from "./AllBookableItemsPage.story";
+import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
 
-const pageObj = new BookableItemsPage();
+const pageObj = new AllBookableItemsPage();
 let collectionQuery = "";
 
 beforeEach(() => {

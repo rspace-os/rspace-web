@@ -22,10 +22,11 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
 import { mutateBookableItems } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -35,7 +36,7 @@ import {
   bookerBookingAccess,
   collectionPage,
   ownerBookingAccess,
-} from "../mocks/bookableItemsMocks";
+} from "../bookable-items/mocks/bookableItemsMocks";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
@@ -82,13 +83,21 @@ function pagedCollectionResponse(docs: readonly BookingConfigurationsRead[], pag
   };
 }
 
-const bookingConfigurationsPath = bookableItemsOpenApi.paths["/api/v2/booking-configurations"];
+type FixtureParameter = {
+  name: string;
+  "x-rspace-filter"?: { selectors: Record<string, { operators: string[] }> };
+  "x-rspace-allowed-fields"?: Record<string, string[]>;
+};
+const fixtureOpenApi = dereferenceApiV2OpenApi(bookableItemsOpenApi) as {
+  paths: Record<string, { get?: { parameters: FixtureParameter[] } }>;
+};
+const bookingConfigurationsPath = fixtureOpenApi.paths["/api/v2/booking-configurations"];
 const bookingConfigurationsGet = bookingConfigurationsPath.get;
 if (!bookingConfigurationsGet) throw new Error("Missing booking configuration GET fixture");
 const openApi = {
-  ...bookableItemsOpenApi,
+  ...fixtureOpenApi,
   paths: {
-    ...bookableItemsOpenApi.paths,
+    ...fixtureOpenApi.paths,
     "/api/v2/booking-configurations": {
       ...bookingConfigurationsPath,
       get: {
@@ -155,7 +164,7 @@ function renderBookableItemsPage(
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/config/bookable-items/",
-          component: BookableItemsPage,
+          component: AllBookableItemsPage,
         }),
         createRoute({
           getParentRoute: () => bookingRoute,

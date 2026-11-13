@@ -36,13 +36,17 @@ import {
 import { type FilterExpression } from "@/modules/common/table-list/types";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
-import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
-import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
-import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
-import { type BookingConfigurationRow, bookingConfigurationConfig } from "./bookingConfiguration";
-import { mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { PermanentDeleteBookableItemDialog } from "./PermanentDeleteBookableItemDialog";
+import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
+import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
+import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
+import {
+  type BookableItemsBulkAction,
+  lifecycleErrorKey,
+  requiredVersion,
+} from "../bookable-items/bookableItemLifecycleHelpers";
+import { type BookingConfigurationRow, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
+import { mapBookingConfiguration } from "../bookable-items/bookingConfigurationSchema";
+import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
 
 export const bookableItemsProjection = {
   fixed: [
@@ -121,7 +125,7 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
   await deleteBookingConfiguration(id, { "If-Match": `"${version}"` }, { permanent: true });
 }
 
-export function BookableItemsContent() {
+export function AllBookableItemsContent() {
   const { t } = useTranslation(["booking", "common"]);
 
   const { data: currentUser } = useCurrentUserQuery();

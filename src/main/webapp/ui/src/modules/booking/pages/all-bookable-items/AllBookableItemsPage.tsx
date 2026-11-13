@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { BookableItemsContent } from "./BookableItemsContent";
+import { AllBookableItemsContent } from "./AllBookableItemsContent";
 
-export default function BookableItemsPage() {
+export default function AllBookableItemsPage() {
   return (
     <Suspense fallback={<BookableItemsSkeleton />}>
-      <BookableItemsContent />
+      <AllBookableItemsContent />
     </Suspense>
   );
 }
