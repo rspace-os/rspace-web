@@ -12,13 +12,16 @@ import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDi
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
+import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/types";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
+import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { Heading } from "@/modules/common/ui/typography";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
@@ -85,10 +88,10 @@ export async function fetchUpcomingBookingCount(
   requesterId: number,
   asOf: Date,
   signal?: AbortSignal,
-): Promise<number> {
-  const result = await countBookings({ where: upcomingBookingWhere(requesterId, asOf) }, { signal });
+): Promise<ApiV2CountResult & { totalDocs: number }> {
+  const result = await countBookings({ where: upcomingBookingWhere(requesterId, asOf), max: 100 }, { signal });
   if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-  return result.totalDocs;
+  return { ...result, totalDocs: result.totalDocs };
 }
 
 export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
@@ -155,12 +158,12 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   });
   const upcomingCount = useQuery(
     getCountBookingsQueryOptions(
-      { where: upcomingBookingWhere(requesterId, asOfDate) },
+      { where: upcomingBookingWhere(requesterId, asOfDate), max: 100 },
       {
         query: {
           select: (result) => {
             if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-            return result.totalDocs;
+            return { ...result, totalDocs: result.totalDocs };
           },
         },
       },
@@ -196,75 +199,68 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     <TooltipProvider delay={250}>
       <main className="space-y-6 p-4 sm:p-8">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{t("myBookings.description")}</p>
+          <Heading level={3} as="h1">
+            {title}
+          </Heading>
           <p className="text-sm text-muted-foreground">
             {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
         </header>
         <div className="space-y-2">
-          <fieldset>
-            <legend className="sr-only">{t("myBookings.period.legend")}</legend>
-            <div className="flex gap-3">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className={`relative ${period === "upcoming" ? "border-foreground bg-muted text-foreground" : ""}`}
-                      aria-label={
-                        upcomingCount.isSuccess
-                          ? t("myBookings.period.withCount", {
-                              label: t("myBookings.period.upcoming"),
-                              count: upcomingCount.data,
-                            })
-                          : t("myBookings.period.upcoming")
-                      }
-                      aria-pressed={period === "upcoming"}
-                      onClick={() => selectPeriod("upcoming")}
-                    />
+          <ButtonGroup aria-label={t("myBookings.period.legend")}>
+            <Button
+              type="button"
+              size="sm"
+              variant={period === "upcoming" ? "secondary" : "outline"}
+              aria-label={
+                upcomingCount.isSuccess
+                  ? t("myBookings.period.withCount", {
+                      label: t("myBookings.period.upcoming"),
+                      count: upcomingCount.data.totalIsLowerBound
+                        ? t("myBookings.count.lowerBound")
+                        : upcomingCount.data.totalDocs,
+                    })
+                  : t("myBookings.period.upcoming")
+              }
+              aria-pressed={period === "upcoming"}
+              onClick={() => selectPeriod("upcoming")}
+            >
+              <CalendarClockIcon aria-hidden="true" />
+              {t("myBookings.period.upcoming")}{" "}
+              {upcomingCount.isSuccess && (
+                <Badge
+                  variant={period === "upcoming" ? "secondary" : "outline"}
+                  className="pointer-events-none min-w-5 px-1"
+                  aria-label={
+                    upcomingCount.data.totalIsLowerBound
+                      ? t("myBookings.count.lowerBoundAccessible")
+                      : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                   }
                 >
-                  <CalendarClockIcon aria-hidden="true" />
-                  {upcomingCount.isSuccess && (
-                    <Badge
-                      variant={period === "upcoming" ? "secondary" : "outline"}
-                      className="pointer-events-none absolute -top-2 -right-2 min-w-5 px-1"
-                      aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
-                    >
-                      {upcomingCount.data}
-                    </Badge>
-                  )}
-                  {upcomingCount.isPending && (
-                    <span role="status" className="sr-only">
-                      {t("myBookings.count.loading")}
-                    </span>
-                  )}
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{t("myBookings.period.upcoming")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className={period === "past" ? "border-foreground bg-muted text-foreground" : undefined}
-                      aria-label={t("myBookings.period.past")}
-                      aria-pressed={period === "past"}
-                      onClick={() => selectPeriod("past")}
-                    />
-                  }
-                >
-                  <HistoryIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{t("myBookings.period.past")}</TooltipContent>
-              </Tooltip>
-            </div>
-          </fieldset>
+                  {" "}
+                  {upcomingCount.data.totalIsLowerBound
+                    ? t("myBookings.count.lowerBound")
+                    : upcomingCount.data.totalDocs}
+                </Badge>
+              )}
+              {upcomingCount.isPending && (
+                <span role="status" className="sr-only">
+                  {t("myBookings.count.loading")}
+                </span>
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={period === "past" ? "secondary" : "outline"}
+              aria-label={t("myBookings.period.past")}
+              aria-pressed={period === "past"}
+              onClick={() => selectPeriod("past")}
+            >
+              <HistoryIcon aria-hidden="true" />
+              {t("myBookings.period.past")}
+            </Button>
+          </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
               <span>{t("myBookings.count.error")}</span>
@@ -293,6 +289,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
           presentations={{ table: "wide", cards: "narrow" }}
           emptyDescription={t(emptyDescriptionKeys[period])}
           rowActions={rowActions}
+          hideHeader
         />
       </main>
     </TooltipProvider>
