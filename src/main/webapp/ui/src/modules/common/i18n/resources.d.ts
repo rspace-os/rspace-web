@@ -1441,7 +1441,6 @@ export default interface Resources {
       "detail": "Bookings for {itemName}",
       "detailLoading": "Loading bookings.",
       "detailUnavailable": "Bookings are unavailable.",
-      "displayControls": "Calendar display controls",
       "event": "Booking event",
       "feed": {
         "bookedBy": "Booked by: {0}",
@@ -1497,25 +1496,25 @@ export default interface Resources {
         "agenda": "Agenda",
         "availability": "Availability",
         "legend": "Layout",
-        "resources": "Resources",
+        "resources": "By Item",
         "time-grid": "Time grid"
       },
       "loading": "Loading booking events.",
       "nextDay": "Next day",
-      "nextPeriod": "Next {period}",
+      "nextPeriod": "{period, select, day {Next day} week {Next week} month {Next month} other {Next period}}",
       "period": {
         "day": "Day",
         "dayOnlyAvailability": "Availability is available for Day only.",
         "dayOnlyShort": "Day only",
         "legend": "Period",
         "month": "Month",
-        "monthUnavailableInResources": "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
-        "monthUnavailableShort": "Not available in Resources",
+        "monthUnavailableInResources": "Month isn't available in the By Item view. Use Time grid or Agenda for a month overview.",
+        "monthUnavailableShort": "Not available in the By Item view",
         "week": "Week"
       },
       "periodNavigation": "Calendar period navigation",
       "previousDay": "Previous day",
-      "previousPeriod": "Previous {period}",
+      "previousPeriod": "{period, select, day {Previous day} week {Previous week} month {Previous month} other {Previous period}}",
       "privacy": {
         "busy": "Busy only",
         "full": "Full details"
