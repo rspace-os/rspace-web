@@ -26,6 +26,13 @@ public interface BookingInstrumentQueryDao {
   Map<Long, BookingCatalogueLocation> getReadableParentLocationSummaries(
       Set<Long> instrumentIds, User caller);
 
+  /**
+   * Returns active Instruments that have a Booking configuration and are stored directly in a
+   * non-deleted parent Container the caller may read. A null {@code parentIds} matches any readable
+   * parent; an empty set matches nothing. Containers and workbenches share one ID space.
+   */
+  Set<Long> findConfiguredInstrumentIdsInReadableParents(Set<Long> parentIds, User caller);
+
   /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
   Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
 

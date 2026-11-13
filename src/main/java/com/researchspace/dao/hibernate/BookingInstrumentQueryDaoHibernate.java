@@ -270,4 +270,34 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
                     new BookingCatalogueLocation(
                         (Long) row[1], (String) row[2], (ContainerType) row[3])));
   }
+
+  @Override
+  public Set<Long> findConfiguredInstrumentIdsInReadableParents(Set<Long> parentIds, User caller) {
+    if (caller == null
+        || !caller.isEnabled()
+        || caller.isAccountLocked()
+        || (parentIds != null && parentIds.isEmpty())) {
+      return Set.of();
+    }
+    InventoryReadQueryContext context = readQueryContext(caller);
+    String hql =
+        "select distinct instrument.id from BookingConfiguration configuration, Instrument"
+            + " instrument join instrument.parentLocation location join location.container parent"
+            + " where configuration.target.type = :targetType"
+            + " and configuration.target.id = instrument.id"
+            + " and type(instrument) = Instrument and instrument.deleted = false"
+            + " and location.storedInstrument.id = instrument.id and parent.deleted = false"
+            + (parentIds == null ? "" : " and parent.id in (:parentIds)")
+            + " and "
+            + context.readableContainerPredicate(this, "parent");
+    Query<Long> query =
+        getSession()
+            .createQuery(hql, Long.class)
+            .setParameter("targetType", BookableTargetType.INSTRUMENT);
+    if (parentIds != null) {
+      query.setParameterList("parentIds", parentIds);
+    }
+    context.bind(query, null);
+    return Set.copyOf(query.getResultList());
+  }
 }
