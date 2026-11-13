@@ -10,7 +10,7 @@ import type { IfMatchParameter } from "./ifMatchParameter.ts";
 export type UpdateBookingHeaders = {
   /**
    * Strong entity tag containing the current resource version.
-   * @pattern ^\"[0-9]+\"$
+   * @pattern ^\"[!#-~]+\"$
    */
   "If-Match": IfMatchParameter;
 };
