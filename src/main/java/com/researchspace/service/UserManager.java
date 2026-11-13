@@ -23,6 +23,11 @@ import java.util.Set;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 public interface UserManager extends GenericManager<User, Long> {
+  /** Persists successful-login history and expiry unlock without the permission gate. */
+  void recordLoginSuccess(User subject);
+
+  /** Applies the lockout policy, taking the permission gate before a new lock transition. */
+  void recordLoginFailure(String usernameOrAlias);
 
   /**
    * Retrieves a user by userId. An exception is thrown if user not found
