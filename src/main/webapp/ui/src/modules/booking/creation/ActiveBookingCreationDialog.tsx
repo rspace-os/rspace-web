@@ -2,7 +2,6 @@ import { useBlocker, useLocation, useNavigate } from "@tanstack/react-router";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   calendarAvailabilityRow,
@@ -25,7 +24,12 @@ import { BookingForm, type BookingFormState } from "./BookingForm";
 import { type BookingCreationDraft } from "./bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "./bookingCreationStore";
 import { DraftMarker } from "./DraftMarker";
-import { bookingCreationProblemKey, isBookingOutcomeUncertain, useCreateBooking } from "./useCreateBooking";
+import {
+  bookingProblemFeedback,
+  isBookingConflictError,
+  isBookingOutcomeUncertain,
+  useCreateBooking,
+} from "./useCreateBooking";
 
 export function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationContext }) {
   const { t } = useTranslation("booking");
@@ -137,6 +141,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   useCalendarAvailability(availabilityRow && formState?.window ? [availabilityRow] : [], availabilityInterval);
 
   const maintenance = creation.eventKind === "MAINTENANCE";
+  const problem = bookingProblemFeedback(mutation.error, t, {
+    target: availabilityTarget && {
+      maxBookingDurationMinutes: maintenance ? 0 : availabilityTarget.maxBookingDurationMinutes,
+    },
+    creation: true,
+  });
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = formState?.draft ?? creation.window;
 
@@ -191,6 +201,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           <BookingForm
             mode="add"
             density="compact"
+            fixedTimezone
             displayTimezone={preferences.timeZone}
             eventKind={creation.eventKind}
             initialTarget={creation.target}
@@ -198,9 +209,9 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             initialWindow={creation.window}
             lockTarget={creation.lockTarget}
             pending={mutation.isPending}
-            error={mutation.error ? t(bookingCreationProblemKey(mutation.error)) : undefined}
+            error={problem.message}
             outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
-            submissionBlocked={isBookingOverlapError(mutation.error) || isBookingOutcomeUncertain(mutation.error)}
+            submissionBlocked={isBookingConflictError(mutation.error) || isBookingOutcomeUncertain(mutation.error)}
             onCancel={requestClose}
             onMoreOptions={maintenance ? undefined : openMoreOptions}
             onStateChange={updateFormState}
