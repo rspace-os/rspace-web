@@ -110,6 +110,22 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
+  @Autowired private LoginBookkeeping loginBookkeeping;
+
+  @Override
+  public void recordLoginSuccess(User subject) {
+    User state = loginBookkeeping.recordSuccess(subject.getUsername());
+    subject.setLastLogin(state.getLastLogin());
+    subject.setLoginFailure(state.getLoginFailure());
+    subject.setNumConsecutiveLoginFailures(state.getNumConsecutiveLoginFailures());
+    subject.setAccountLocked(state.isAccountLocked());
+  }
+
+  @Override
+  public void recordLoginFailure(String usernameOrAlias) {
+    loginBookkeeping.recordFailure(usernameOrAlias);
+  }
+
   /** {@inheritDoc} */
   public User getUser(String userId) {
     return userDao.get(Long.valueOf(userId));
