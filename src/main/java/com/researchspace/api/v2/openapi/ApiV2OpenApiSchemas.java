@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.converter.ResolvedSchema;
+import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.core.jackson.TypeNameResolver;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.lang.reflect.Type;
@@ -28,15 +30,37 @@ final class ApiV2OpenApiSchemas {
   // Swagger's Json31 mapper uses NON_NULL for its own models, unlike Spring's wire mapper.
   private static final ObjectMapper RESPONSE_MAPPER = Jackson2ObjectMapperBuilder.json().build();
 
+  private static final ModelConverters CONVERTERS = new ModelConverters(true);
+
+  static {
+    CONVERTERS.addConverter(
+        new ModelResolver(Json31.mapper(), new NestedTypeNameResolver()).openapi31(true));
+  }
+
   private ApiV2OpenApiSchemas() {}
+
+  /**
+   * Names a nested type after its enclosing types, so {@code ApiV2Config.Branding} becomes {@code
+   * ApiV2ConfigBranding} and features cannot collide on short names such as {@code Entry}. An
+   * explicit {@code @Schema(name)} still wins.
+   */
+  private static final class NestedTypeNameResolver extends TypeNameResolver {
+    @Override
+    protected String nameForClass(Class<?> cls, Set<Options> options) {
+      String name = super.nameForClass(cls, options);
+      Class<?> enclosing = cls.getEnclosingClass();
+      return enclosing != null && name.equals(cls.getSimpleName())
+          ? nameForClass(enclosing, options) + name
+          : name;
+    }
+  }
 
   static Map<String, Object> schemaFor(Type type, Map<String, Object> components) {
     if (type == byte[].class) {
       return ordered("type", "string", "format", "binary");
     }
     ResolvedSchema resolved =
-        ModelConverters.getInstance(true)
-            .resolveAsResolvedSchema(new AnnotatedType(type).resolveAsRef(true));
+        CONVERTERS.resolveAsResolvedSchema(new AnnotatedType(type).resolveAsRef(true));
     resolved.referencedSchemas.forEach(
         (name, schema) -> components.put(name, Json31.jsonSchemaAsMap(schema)));
     return resolved.schema == null

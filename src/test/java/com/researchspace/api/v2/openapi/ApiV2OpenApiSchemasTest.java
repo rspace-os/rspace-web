@@ -47,7 +47,7 @@ class ApiV2OpenApiSchemasTest {
 
     Map<String, Object> components = new LinkedHashMap<>();
     ApiV2OpenApiSchemas.responseSchemaFor(Document.class, components);
-    Map<String, Object> schema = map(components.get("Document"));
+    Map<String, Object> schema = map(components.get("ApiV2OpenApiSchemasTestDocument"));
     Map<String, Object> properties = map(schema.get("properties"));
     assertEquals(List.of("string", "null"), map(properties.get("role")).get("type"));
     assertEquals(List.of("string", "null"), map(properties.get("includedEmptyRole")).get("type"));
@@ -63,7 +63,7 @@ class ApiV2OpenApiSchemasTest {
   void requestSchemasRetainTheirDeclaredNullability() {
     Map<String, Object> components = new LinkedHashMap<>();
     ApiV2OpenApiSchemas.schemaFor(Document.class, components);
-    Map<String, Object> schema = map(components.get("Document"));
+    Map<String, Object> schema = map(components.get("ApiV2OpenApiSchemasTestDocument"));
     assertEquals(
         List.of("string", "null"), map(map(schema.get("properties")).get("detail")).get("type"));
     assertTrue(((List<?>) schema.get("required")).contains("detail"));

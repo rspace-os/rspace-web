@@ -98,7 +98,7 @@ class ApiV2OpenApiAnnotationMergerTest {
     assertEquals(
         List.of("string", "null"),
         objectMap(configProperties.get("deploymentHelpEmail")).get("type"));
-    assertTrue(schemas(document).containsKey("Branding"));
+    assertTrue(schemas(document).containsKey("ApiV2ConfigBranding"));
   }
 
   @Test
@@ -126,8 +126,8 @@ class ApiV2OpenApiAnnotationMergerTest {
         schemas,
         "ApiV2Config",
         Set.of("version", "branding", "helpLinks", "deploymentDescription", "deploymentHelpEmail"));
-    assertRequiredProperties(schemas, "Branding", Set.of("bannerImageUrl"));
-    assertRequiredProperties(schemas, "HelpLink", Set.of("label", "url"));
+    assertRequiredProperties(schemas, "ApiV2ConfigBranding", Set.of("bannerImageUrl"));
+    assertRequiredProperties(schemas, "ApiV2ConfigHelpLink", Set.of("label", "url"));
     assertRequiredProperties(
         schemas,
         "ApiV2CurrentUser",
@@ -147,11 +147,14 @@ class ApiV2OpenApiAnnotationMergerTest {
             "capabilities",
             "livechat",
             "session"));
-    assertRequiredProperties(schemas, "Orcid", Set.of("available", "id"));
+    assertRequiredProperties(schemas, "ApiV2CurrentUserOrcid", Set.of("available", "id"));
     assertRequiredProperties(
-        schemas, "Capabilities", Set.of("canUseInventory", "canPublish", "canViewSystem"));
-    assertRequiredProperties(schemas, "LiveChat", Set.of("enabled", "serverKey"));
-    assertRequiredProperties(schemas, "Session", Set.of("operatedAs", "lastSession"));
+        schemas,
+        "ApiV2CurrentUserCapabilities",
+        Set.of("canUseInventory", "canPublish", "canViewSystem"));
+    assertRequiredProperties(schemas, "ApiV2CurrentUserLiveChat", Set.of("enabled", "serverKey"));
+    assertRequiredProperties(
+        schemas, "ApiV2CurrentUserSession", Set.of("operatedAs", "lastSession"));
     assertRequiredProperties(schemas, "ApiV2UiToken", Set.of("accessToken"));
 
     assertEquals(
@@ -169,10 +172,13 @@ class ApiV2OpenApiAnnotationMergerTest {
     assertEquals(
         "support@example.org",
         property(schemas, "ApiV2Config", "deploymentHelpEmail").get("example"));
-    assertEquals("uri-reference", property(schemas, "Branding", "bannerImageUrl").get("format"));
-    assertEquals("/public/banner", property(schemas, "Branding", "bannerImageUrl").get("example"));
-    assertEquals("Help", property(schemas, "HelpLink", "label").get("example"));
-    assertEquals("uri-reference", property(schemas, "HelpLink", "url").get("format"));
+    assertEquals(
+        "uri-reference", property(schemas, "ApiV2ConfigBranding", "bannerImageUrl").get("format"));
+    assertEquals(
+        "/public/banner",
+        property(schemas, "ApiV2ConfigBranding", "bannerImageUrl").get("example"));
+    assertEquals("Help", property(schemas, "ApiV2ConfigHelpLink", "label").get("example"));
+    assertEquals("uri-reference", property(schemas, "ApiV2ConfigHelpLink", "url").get("format"));
 
     assertEquals(
         "Stable user identifier.", property(schemas, "ApiV2CurrentUser", "id").get("description"));
@@ -195,16 +201,24 @@ class ApiV2OpenApiAnnotationMergerTest {
     assertEquals(
         "uri-reference", property(schemas, "ApiV2CurrentUser", "profileImageApiUrl").get("format"));
 
-    assertEquals(List.of("string", "null"), property(schemas, "Orcid", "id").get("type"));
     assertEquals(
-        "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$", property(schemas, "Orcid", "id").get("pattern"));
-    assertEquals("0000-0002-1825-0097", property(schemas, "Orcid", "id").get("example"));
-    assertEquals(List.of("string", "null"), property(schemas, "LiveChat", "serverKey").get("type"));
+        List.of("string", "null"), property(schemas, "ApiV2CurrentUserOrcid", "id").get("type"));
     assertEquals(
-        List.of("string", "null"), property(schemas, "Session", "lastSession").get("type"));
-    assertEquals("date-time", property(schemas, "Session", "lastSession").get("format"));
+        "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$",
+        property(schemas, "ApiV2CurrentUserOrcid", "id").get("pattern"));
     assertEquals(
-        "2026-08-01T20:00:00Z", property(schemas, "Session", "lastSession").get("example"));
+        "0000-0002-1825-0097", property(schemas, "ApiV2CurrentUserOrcid", "id").get("example"));
+    assertEquals(
+        List.of("string", "null"),
+        property(schemas, "ApiV2CurrentUserLiveChat", "serverKey").get("type"));
+    assertEquals(
+        List.of("string", "null"),
+        property(schemas, "ApiV2CurrentUserSession", "lastSession").get("type"));
+    assertEquals(
+        "date-time", property(schemas, "ApiV2CurrentUserSession", "lastSession").get("format"));
+    assertEquals(
+        "2026-08-01T20:00:00Z",
+        property(schemas, "ApiV2CurrentUserSession", "lastSession").get("example"));
     assertEquals(
         "OAuth bearer token for REST API requests.",
         property(schemas, "ApiV2UiToken", "accessToken").get("description"));
@@ -247,8 +261,8 @@ class ApiV2OpenApiAnnotationMergerTest {
     assertEquals(
         List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())),
         operation.get("security"));
-    assertTrue(schemas(document).containsKey("CustomInput"));
-    assertTrue(schemas(document).containsKey("CustomOutput"));
+    assertTrue(schemas(document).containsKey("ApiV2OpenApiAnnotationMergerTestCustomInput"));
+    assertTrue(schemas(document).containsKey("ApiV2OpenApiAnnotationMergerTestCustomOutput"));
   }
 
   @Test

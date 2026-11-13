@@ -542,7 +542,7 @@
         "properties" : {
           "branding" : {
             "allOf" : [ {
-              "$ref" : "#/components/schemas/Branding"
+              "$ref" : "#/components/schemas/ApiV2ConfigBranding"
             } ],
             "description" : "Deployment branding displayed by API clients."
           },
@@ -559,7 +559,7 @@
           "helpLinks" : {
             "description" : "Deployment-specific help links.",
             "items" : {
-              "$ref" : "#/components/schemas/HelpLink"
+              "$ref" : "#/components/schemas/ApiV2ConfigHelpLink"
             },
             "type" : "array"
           },
@@ -570,6 +570,34 @@
           }
         },
         "required" : [ "branding", "deploymentDescription", "deploymentHelpEmail", "helpLinks", "version" ],
+        "type" : "object"
+      },
+      "ApiV2ConfigBranding" : {
+        "properties" : {
+          "bannerImageUrl" : {
+            "description" : "Root-relative URL of the deployment banner image.",
+            "example" : "/public/banner",
+            "format" : "uri-reference",
+            "type" : "string"
+          }
+        },
+        "required" : [ "bannerImageUrl" ],
+        "type" : "object"
+      },
+      "ApiV2ConfigHelpLink" : {
+        "properties" : {
+          "label" : {
+            "description" : "Link label shown to users.",
+            "example" : "Help",
+            "type" : "string"
+          },
+          "url" : {
+            "description" : "Configured help URL.",
+            "format" : "uri-reference",
+            "type" : "string"
+          }
+        },
+        "required" : [ "label", "url" ],
         "type" : "object"
       },
       "ApiV2CountResult" : {
@@ -590,7 +618,7 @@
         "properties" : {
           "capabilities" : {
             "allOf" : [ {
-              "$ref" : "#/components/schemas/Capabilities"
+              "$ref" : "#/components/schemas/ApiV2CurrentUserCapabilities"
             } ],
             "description" : "Capabilities enabled for the current user."
           },
@@ -629,13 +657,13 @@
           },
           "livechat" : {
             "allOf" : [ {
-              "$ref" : "#/components/schemas/LiveChat"
+              "$ref" : "#/components/schemas/ApiV2CurrentUserLiveChat"
             } ],
             "description" : "Live-chat configuration for the current user."
           },
           "orcid" : {
             "allOf" : [ {
-              "$ref" : "#/components/schemas/Orcid"
+              "$ref" : "#/components/schemas/ApiV2CurrentUserOrcid"
             } ],
             "description" : "ORCID availability and connection state."
           },
@@ -651,7 +679,7 @@
           },
           "session" : {
             "allOf" : [ {
-              "$ref" : "#/components/schemas/Session"
+              "$ref" : "#/components/schemas/ApiV2CurrentUserSession"
             } ],
             "description" : "State of the current authenticated session."
           },
@@ -669,6 +697,70 @@
         "required" : [ "capabilities", "email", "firstName", "hasPiRole", "hasSysAdminRole", "homeFolderId", "id", "lastName", "livechat", "orcid", "profileImageApiUrl", "profileImageUrl", "session", "username", "workbenchId" ],
         "type" : "object"
       },
+      "ApiV2CurrentUserCapabilities" : {
+        "properties" : {
+          "canPublish" : {
+            "description" : "Whether public sharing is available.",
+            "type" : "boolean"
+          },
+          "canUseInventory" : {
+            "description" : "Whether inventory is available.",
+            "type" : "boolean"
+          },
+          "canViewSystem" : {
+            "description" : "Whether system-administration views are available.",
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "canPublish", "canUseInventory", "canViewSystem" ],
+        "type" : "object"
+      },
+      "ApiV2CurrentUserLiveChat" : {
+        "properties" : {
+          "enabled" : {
+            "description" : "Whether live chat is enabled.",
+            "type" : "boolean"
+          },
+          "serverKey" : {
+            "description" : "Browser live-chat application key.",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "enabled", "serverKey" ],
+        "type" : "object"
+      },
+      "ApiV2CurrentUserOrcid" : {
+        "properties" : {
+          "available" : {
+            "description" : "Whether ORCID integration is available.",
+            "type" : "boolean"
+          },
+          "id" : {
+            "description" : "Connected ORCID identifier.",
+            "example" : "0000-0002-1825-0097",
+            "pattern" : "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "available", "id" ],
+        "type" : "object"
+      },
+      "ApiV2CurrentUserSession" : {
+        "properties" : {
+          "lastSession" : {
+            "description" : "Previous successful login instant.",
+            "example" : "2026-08-01T20:00:00Z",
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "operatedAs" : {
+            "description" : "Whether a system administrator is operating as another user.",
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "lastSession", "operatedAs" ],
+        "type" : "object"
+      },
       "ApiV2Problem" : {
         "additionalProperties" : true,
         "properties" : {
@@ -680,7 +772,7 @@
           },
           "invalidParams" : {
             "items" : {
-              "$ref" : "#/components/schemas/InvalidParam"
+              "$ref" : "#/components/schemas/ApiV2ProblemInvalidParam"
             },
             "type" : "array"
           },
@@ -695,11 +787,23 @@
         "required" : [ "code", "status", "title" ],
         "type" : "object"
       },
+      "ApiV2ProblemInvalidParam" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "reason" ],
+        "type" : "object"
+      },
       "ApiV2RuntimeFieldCatalog" : {
         "properties" : {
           "fields" : {
             "items" : {
-              "$ref" : "#/components/schemas/Entry"
+              "$ref" : "#/components/schemas/ApiV2RuntimeFieldCatalogEntry"
             },
             "type" : "array"
           },
@@ -721,6 +825,61 @@
         },
         "type" : "object"
       },
+      "ApiV2RuntimeFieldCatalogEntry" : {
+        "properties" : {
+          "columnSelectable" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "jsonType" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "operators" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "options" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "selector" : {
+            "type" : "string"
+          },
+          "sortable" : {
+            "type" : "boolean"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/ApiV2RuntimeFieldCatalogSource"
+          },
+          "supportsWildcards" : {
+            "type" : "boolean"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ApiV2RuntimeFieldCatalogSource" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ApiV2UiToken" : {
         "properties" : {
           "accessToken" : {
@@ -729,36 +888,6 @@
           }
         },
         "required" : [ "accessToken" ],
-        "type" : "object"
-      },
-      "Branding" : {
-        "properties" : {
-          "bannerImageUrl" : {
-            "description" : "Root-relative URL of the deployment banner image.",
-            "example" : "/public/banner",
-            "format" : "uri-reference",
-            "type" : "string"
-          }
-        },
-        "required" : [ "bannerImageUrl" ],
-        "type" : "object"
-      },
-      "Capabilities" : {
-        "properties" : {
-          "canPublish" : {
-            "description" : "Whether public sharing is available.",
-            "type" : "boolean"
-          },
-          "canUseInventory" : {
-            "description" : "Whether inventory is available.",
-            "type" : "boolean"
-          },
-          "canViewSystem" : {
-            "description" : "Whether system-administration views are available.",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "canPublish", "canUseInventory", "canViewSystem" ],
         "type" : "object"
       },
       "ContainersCreate" : {
@@ -838,66 +967,6 @@
         "x-rspace-access" : {
           "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
-      },
-      "Entry" : {
-        "properties" : {
-          "columnSelectable" : {
-            "type" : "boolean"
-          },
-          "id" : {
-            "type" : "string"
-          },
-          "jsonType" : {
-            "type" : "string"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "operators" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "options" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "selector" : {
-            "type" : "string"
-          },
-          "sortable" : {
-            "type" : "boolean"
-          },
-          "source" : {
-            "$ref" : "#/components/schemas/Source"
-          },
-          "supportsWildcards" : {
-            "type" : "boolean"
-          },
-          "type" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "HelpLink" : {
-        "properties" : {
-          "label" : {
-            "description" : "Link label shown to users.",
-            "example" : "Help",
-            "type" : "string"
-          },
-          "url" : {
-            "description" : "Configured help URL.",
-            "format" : "uri-reference",
-            "type" : "string"
-          }
-        },
-        "required" : [ "label", "url" ],
-        "type" : "object"
       },
       "InstrumentsCreate" : {
         "additionalProperties" : false,
@@ -1020,48 +1089,6 @@
         "x-rspace-access" : {
           "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
-      },
-      "InvalidParam" : {
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "reason" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "name", "reason" ],
-        "type" : "object"
-      },
-      "LiveChat" : {
-        "properties" : {
-          "enabled" : {
-            "description" : "Whether live chat is enabled.",
-            "type" : "boolean"
-          },
-          "serverKey" : {
-            "description" : "Browser live-chat application key.",
-            "type" : [ "string", "null" ]
-          }
-        },
-        "required" : [ "enabled", "serverKey" ],
-        "type" : "object"
-      },
-      "Orcid" : {
-        "properties" : {
-          "available" : {
-            "description" : "Whether ORCID integration is available.",
-            "type" : "boolean"
-          },
-          "id" : {
-            "description" : "Connected ORCID identifier.",
-            "example" : "0000-0002-1825-0097",
-            "pattern" : "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$",
-            "type" : [ "string", "null" ]
-          }
-        },
-        "required" : [ "available", "id" ],
-        "type" : "object"
       },
       "ResourceAccessAssignmentDocument" : {
         "properties" : {
@@ -1220,33 +1247,6 @@
             "type" : "string"
           },
           "role" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "Session" : {
-        "properties" : {
-          "lastSession" : {
-            "description" : "Previous successful login instant.",
-            "example" : "2026-08-01T20:00:00Z",
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "operatedAs" : {
-            "description" : "Whether a system administrator is operating as another user.",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "lastSession", "operatedAs" ],
-        "type" : "object"
-      },
-      "Source" : {
-        "properties" : {
-          "id" : {
-            "type" : "string"
-          },
-          "label" : {
             "type" : "string"
           }
         },
