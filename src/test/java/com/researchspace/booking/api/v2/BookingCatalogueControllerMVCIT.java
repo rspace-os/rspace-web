@@ -10,8 +10,10 @@ import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,17 +23,21 @@ import org.springframework.web.context.WebApplicationContext;
 
 @ApiV2WebIntegrationTest
 class BookingCatalogueControllerMVCIT {
-
   private final WebApplicationContext context;
   private final FeatureFlagManager featureFlags;
   private final UserManager userManager;
+  private final InstrumentEntityApiManager instrumentManager;
 
   @Autowired
   BookingCatalogueControllerMVCIT(
-      WebApplicationContext context, FeatureFlagManager featureFlags, UserManager userManager) {
+      WebApplicationContext context,
+      FeatureFlagManager featureFlags,
+      UserManager userManager,
+      InstrumentEntityApiManager instrumentManager) {
     this.context = context;
     this.featureFlags = featureFlags;
     this.userManager = userManager;
+    this.instrumentManager = instrumentManager;
   }
 
   private ApiV2Fixture fixture;
@@ -52,6 +58,48 @@ class BookingCatalogueControllerMVCIT {
   void tearDown() {
     fixture.cleanUp();
     setBookingEnabled(originalBookingBaseline);
+  }
+
+  @Test
+  void currentViewerOwnerPresetFiltersCatalogueAndConfigurations() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), fixture.marker());
+    long configuration = fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    for (String resource : List.of("booking-catalogue", "booking-configurations")) {
+      mockMvc
+          .perform(
+              get("/api/v2/" + resource)
+                  .header("apiKey", fixture.userKey())
+                  .queryParam("totals", "true")
+                  .queryParam("where", "id==" + configuration + ";targetOwner==me"))
+          .andExpect(status().isOk())
+          .andExpect(
+              jsonPath(resource.equals("booking-catalogue") ? "$.total" : "$.totalDocs").value(1));
+      for (String invalid : List.of("targetOwner==12", "targetOwner==me,id==0")) {
+        mockMvc
+            .perform(
+                get("/api/v2/" + resource)
+                    .header("apiKey", fixture.userKey())
+                    .queryParam("where", invalid))
+            .andExpect(status().isBadRequest());
+      }
+    }
+  }
+
+  @Test
+  void configurationsExcludeDeletedTargetsWithAndWithoutOwnerPreset() throws Exception {
+    long instrument = fixture.instrument(fixture.user(), fixture.marker());
+    long configuration = fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    instrumentManager.markInstrumentAsDeleted(instrument, fixture.user());
+    for (String suffix : List.of("", ";targetOwner==me")) {
+      mockMvc
+          .perform(
+              get("/api/v2/booking-configurations")
+                  .header("apiKey", fixture.userKey())
+                  .queryParam("totals", "true")
+                  .queryParam("where", "id==" + configuration + suffix))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(0));
+    }
   }
 
   @Test
