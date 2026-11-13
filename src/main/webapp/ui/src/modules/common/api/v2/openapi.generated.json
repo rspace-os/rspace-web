@@ -5778,6 +5778,13 @@
           }
         }, {
           "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : true,
           "schema" : {
@@ -5914,6 +5921,13 @@
           "schema" : {
             "enum" : [ "CREATE_BOOKING", "CREATE_BLOCKOUT" ],
             "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
           }
         }, {
           "in" : "query",
@@ -6058,6 +6072,13 @@
             "type" : "string"
           }
         }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "description" : "Inclusive interval start.",
           "in" : "query",
           "name" : "start",
@@ -6149,6 +6170,13 @@
           "required" : false,
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
           }
         }, {
           "in" : "query",

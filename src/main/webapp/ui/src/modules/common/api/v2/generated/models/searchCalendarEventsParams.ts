@@ -14,6 +14,7 @@ export type SearchCalendarEventsParams = {
   /** RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request. */
   where?: string;
   q?: string;
+  mine: boolean;
   page: number;
   limit: number;
   /** Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name. */

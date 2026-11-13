@@ -646,6 +646,7 @@ export const SearchCalendarEventsQueryParams = v.object({
   end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
   where: v.optional(v.pipe(v.string(), v.description('RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.'))),
   q: v.optional(v.string()),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer()),
   fields: v.optional(v.pipe(v.record(v.string(), v.string()), v.description('Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.'))),
@@ -665,6 +666,7 @@ export const SearchBookingCatalogueQueryParams = v.object({
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(v.picklist(['CREATE_BOOKING', 'CREATE_BLOCKOUT'])),
+  mine: v.boolean(),
   availability: v.optional(v.string()),
   start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.'))),
   end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.'))),
@@ -686,6 +688,7 @@ export const CountBookingCatalogueAvailabilityQueryParams = v.object({
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(v.picklist(['CREATE_BOOKING', 'CREATE_BLOCKOUT'])),
+  mine: v.boolean(),
   start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.'))),
   end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.'))),
   now: v.optional(v.pipe(v.string(), v.isoTimestamp()))
@@ -703,6 +706,7 @@ export const SearchCalendarCatalogueQueryParams = v.object({
   where: v.optional(v.pipe(v.string(), v.description('RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.'))),
   eventWhere: v.optional(v.pipe(v.string(), v.description('RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups.'))),
   q: v.optional(v.string()),
+  mine: v.boolean(),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer())
 })
