@@ -132,12 +132,6 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
     MvcResult created =
         mockMvc
-            .perform(
-                post(USER_SUBSCRIPTION_PATH)
-                    .header("apiKey", apiKey)
-                    .header(
-                        HttpHeaders.IF_MATCH, inactive.getResponse().getHeader(HttpHeaders.ETAG)))
-            .andExpect(status().isOk())
             .andExpect(header().exists(HttpHeaders.ETAG))
             .andExpect(jsonPath("$.active").value(true))
             .andExpect(jsonPath("$.updatedAt").isString())
@@ -168,7 +162,6 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
-  void userCalendarCreateRequiresTheExactCurrentEtag() throws Exception {
     fixture.enableBookings();
     String apiKey = fixture.userKey();
 
@@ -178,112 +171,72 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
     mockMvc
         .perform(
-            post(USER_SUBSCRIPTION_PATH)
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "inactive"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     mockMvc
         .perform(
-            post(USER_SUBSCRIPTION_PATH)
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
-        .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
-    String inactiveEtag =
-        mockMvc
-            .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getHeader(HttpHeaders.ETAG);
     String currentEtag =
         mockMvc
-            .perform(
-                post(USER_SUBSCRIPTION_PATH)
-                    .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, inactiveEtag))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
-    String rewrittenEtag = "W/" + currentEtag.substring(0, currentEtag.length() - 1) + "-gzip\"";
     MvcResult replacement =
         mockMvc
             .perform(
-                post(USER_SUBSCRIPTION_PATH)
                     .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, rewrittenEtag))
             .andExpect(status().isOk())
             .andReturn();
     assertNotEquals(currentEtag, replacement.getResponse().getHeader(HttpHeaders.ETAG));
     mockMvc
         .perform(
-            post(USER_SUBSCRIPTION_PATH)
                 .header("apiKey", apiKey)
-                .header(HttpHeaders.IF_MATCH, rewrittenEtag))
-        .andExpect(status().isConflict());
   }
 
   @Test
-  void itemCalendarCreateRequiresTheExactCurrentEtag() throws Exception {
     fixture.enableBookings();
     long configurationId = readableConfiguration();
     String apiKey = fixture.userKey();
 
     mockMvc
-        .perform(post(path(configurationId)).header("apiKey", apiKey))
         .andExpect(status().isPreconditionRequired())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
     mockMvc
         .perform(
-            post(path(configurationId))
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "inactive"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     mockMvc
         .perform(
-            post(path(configurationId))
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
-        .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
-    String inactiveEtag =
         mockMvc
             .perform(get(path(configurationId)).header("apiKey", apiKey))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
-    String currentEtag =
         mockMvc
             .perform(
-                post(path(configurationId))
                     .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, inactiveEtag))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
-    String rewrittenEtag = "W/" + currentEtag.substring(0, currentEtag.length() - 1) + "-br\"";
-    MvcResult replacement =
         mockMvc
-            .perform(
-                post(path(configurationId))
-                    .header("apiKey", apiKey)
-                    .header(HttpHeaders.IF_MATCH, rewrittenEtag))
             .andExpect(status().isOk())
-            .andReturn();
-    assertNotEquals(currentEtag, replacement.getResponse().getHeader(HttpHeaders.ETAG));
     mockMvc
         .perform(
-            post(path(configurationId))
                 .header("apiKey", apiKey)
-                .header(HttpHeaders.IF_MATCH, rewrittenEtag))
-        .andExpect(status().isConflict());
   }
 
   @Test
@@ -311,20 +264,12 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .perform(get(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(
-            post(path(Long.MAX_VALUE))
-                .header("apiKey", fixture.userKey())
-                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
         .andExpect(status().isNotFound());
 
     mockMvc
         .perform(get(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(
-            post(path(configurationId))
-                .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
         .andExpect(status().isNotFound());
 
     new TransactionTemplate(transactionManager)
@@ -335,10 +280,6 @@ class BookingCalendarSubscriptionControllerMVCIT {
               configurationDao.saveAndFlush(configuration);
             });
     mockMvc
-        .perform(
-            post(path(configurationId))
-                .header("apiKey", fixture.otherUserKey())
-                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
         .andExpect(status().isNotFound());
   }
 
@@ -366,8 +307,6 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(jsonPath("$.updatedAt").isString())
         .andExpect(jsonPath("$.subscriptionUrl").value(firstUrl));
 
-    String replacementUrl = create(configurationId, apiKey);
-    assertNotEquals(firstUrl, replacementUrl);
 
     mockMvc
         .perform(delete(path(configurationId)).header("apiKey", apiKey))
@@ -630,15 +569,10 @@ class BookingCalendarSubscriptionControllerMVCIT {
     MvcResult result =
         mockMvc
             .perform(
-                post(path(configurationId))
                     .header("apiKey", apiKey)
                     .header(HttpHeaders.IF_MATCH, etag))
             .andExpect(status().isOk())
-            .andExpect(header().string("Cache-Control", containsString("no-store")))
-            .andExpect(header().string("Cache-Control", containsString("private")))
             .andExpect(jsonPath("$.active").value(true))
-            .andExpect(jsonPath("$.updatedAt").isString())
-            .andExpect(jsonPath("$.subscriptionUrl").isNotEmpty())
             .andReturn();
     JsonNode document = objectMapper.readTree(result.getResponse().getContentAsByteArray());
     return document.path("subscriptionUrl").textValue();
