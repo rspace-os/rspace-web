@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.openapi;
 
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.putIfNotNull;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
@@ -13,7 +12,6 @@ import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
-import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.RelationshipSchema;
 import com.researchspace.model.collection.ResourceFieldSchema;
 import com.researchspace.model.collection.ResourceSchema;
@@ -25,8 +23,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 final class ApiV2OpenApiResourceDocumentBuilder {
 
@@ -122,8 +118,9 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       schema =
           new LinkedHashMap<>(
               writeOperation == null
-                  ? relationshipOutput(relationship, names)
-                  : relationshipInput(relationship, writeOperation, names));
+                  ? ApiV2OpenApiRelationshipSchemas.relationshipOutput(relationship, names)
+                  : ApiV2OpenApiRelationshipSchemas.relationshipInput(
+                      relationship, writeOperation, names));
     } else {
       throw new IllegalStateException("Unsupported resource field schema " + field.getClass());
     }
@@ -185,138 +182,6 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       schema.put("required", required);
     }
     return schema;
-  }
-
-  private static Map<String, Object> relationshipOutput(
-      RelationshipSchema relationship, Map<String, String> names) {
-    List<Map<String, Object>> variants = new ArrayList<>();
-    relationship
-        .targetResources()
-        .forEach(
-            target -> {
-              String prefix = relationship.globalIdPrefixesByTarget().get(target);
-              variants.add(
-                  prefix == null
-                      ? ref(names.get(target) + "Reference")
-                      : globalReferenceSchema(names.get(target) + "Reference", prefix, true));
-              variants.add(
-                  expandedReferenceSchema(target, ref(names.get(target) + "Read"), prefix));
-            });
-    return ordered("oneOf", variants);
-  }
-
-  private static Map<String, Object> relationshipInput(
-      RelationshipSchema relationship, WriteOperation operation, Map<String, String> names) {
-    List<Map<String, Object>> variants = new ArrayList<>();
-    Set<RelationshipInputForm> forms = relationship.inputForms().getOrDefault(operation, Set.of());
-    if (forms.contains(RelationshipInputForm.GLOBAL_ID)) {
-      String alternatives =
-          relationship.globalIdPrefixesByTarget().values().stream()
-              .map(ApiV2OpenApiResourceDocumentBuilder::escapeEcmaRegex)
-              .collect(Collectors.joining("|"));
-      variants.add(
-          ordered(
-              "type",
-              "string",
-              "pattern",
-              "^(?:" + alternatives + ")\\d+$",
-              "example",
-              relationship.globalIdPrefixesByTarget().values().iterator().next() + "1",
-              "description",
-              "RSpace global identifier. Permitted prefixes: "
-                  + String.join(", ", relationship.globalIdPrefixesByTarget().values())
-                  + "."));
-    }
-    if (forms.contains(RelationshipInputForm.OBJECT)) {
-      relationship
-          .targetResources()
-          .forEach(
-              target -> {
-                String referenceComponent = names.get(target) + "Reference";
-                String prefix = relationship.globalIdPrefixesByTarget().get(target);
-                variants.add(
-                    prefix == null
-                        ? ref(referenceComponent)
-                        : globalReferenceSchema(referenceComponent, prefix, false));
-              });
-    }
-    return variants.size() == 1 ? variants.get(0) : ordered("oneOf", variants);
-  }
-
-  private static Map<String, Object> globalReferenceSchema(
-      String referenceComponent, String prefix, boolean globalIdRequired) {
-    Map<String, Object> globalId =
-        ordered("type", "object", "properties", ordered("globalId", globalIdSchema(prefix)));
-    if (globalIdRequired) {
-      globalId.put("required", List.of("globalId"));
-    }
-    return ordered("allOf", List.of(ref(referenceComponent), globalId));
-  }
-
-  private static Map<String, Object> expandedReferenceSchema(
-      String target, Map<String, Object> value, String prefix) {
-    List<String> required = new ArrayList<>(List.of("relationTo", "value"));
-    Map<String, Object> properties =
-        ordered("relationTo", ordered("type", "string", "const", target), "value", value);
-    if (prefix != null) {
-      required.add("globalId");
-      properties.put("globalId", globalIdSchema(prefix));
-    }
-    return ordered("type", "object", "required", required, "properties", properties);
-  }
-
-  private static Map<String, Object> globalIdSchema(String prefix) {
-    return ordered(
-        "type",
-        "string",
-        "pattern",
-        "^" + escapeEcmaRegex(prefix) + "\\d+$",
-        "example",
-        prefix + "1");
-  }
-
-  /**
-   * The swagger converter renders a nullable reference property as {@code {"type": "null", "$ref":
-   * ...}}, which no value satisfies in OpenAPI 3.1. Rewrites each such property as {@code anyOf}
-   * the reference and {@code null}, keeping its other keywords such as the description.
-   */
-  static Object withNullableReferenceProperties(Object schema) {
-    if (!(schema instanceof Map<?, ?> component)
-        || !(component.get("properties") instanceof Map<?, ?> properties)
-        || properties.values().stream()
-            .noneMatch(ApiV2OpenApiResourceDocumentBuilder::isNullableReference)) {
-      return schema;
-    }
-    Map<String, Object> rewritten = new LinkedHashMap<>();
-    properties.forEach(
-        (name, property) ->
-            rewritten.put(
-                (String) name,
-                isNullableReference(property)
-                    ? nullableReference((Map<?, ?>) property)
-                    : property));
-    Map<String, Object> result = objectMap(component);
-    result.put("properties", rewritten);
-    return result;
-  }
-
-  private static boolean isNullableReference(Object property) {
-    return property instanceof Map<?, ?> map
-        && map.get("$ref") instanceof String
-        && ("null".equals(map.get("type"))
-            || map.get("type") instanceof List<?> types && types.contains("null"));
-  }
-
-  private static Map<String, Object> nullableReference(Map<?, ?> property) {
-    Map<String, Object> result = new LinkedHashMap<>();
-    result.put("anyOf", List.of(ordered("$ref", property.get("$ref")), ordered("type", "null")));
-    property.forEach(
-        (key, value) -> {
-          if (!"$ref".equals(key) && !"type".equals(key)) {
-            result.put((String) key, value);
-          }
-        });
-    return result;
   }
 
   private static Map<String, Object> nullable(Map<String, Object> schema, boolean nullable) {
@@ -422,16 +287,5 @@ final class ApiV2OpenApiResourceDocumentBuilder {
         .filter(field -> field.name().equals(name))
         .findFirst()
         .orElseThrow();
-  }
-
-  private static String escapeEcmaRegex(String value) {
-    StringBuilder escaped = new StringBuilder();
-    for (char character : value.toCharArray()) {
-      if ("\\^$.*+?()[]{}|/".indexOf(character) >= 0) {
-        escaped.append('\\');
-      }
-      escaped.append(character);
-    }
-    return escaped.toString();
   }
 }

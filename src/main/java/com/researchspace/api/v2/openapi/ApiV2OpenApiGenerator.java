@@ -6,7 +6,6 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.ad
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.withNullableReferenceProperties;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHeaders;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 
@@ -102,7 +101,8 @@ public final class ApiV2OpenApiGenerator {
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
 
-    schemas.replaceAll((name, schema) -> withNullableReferenceProperties(schema));
+    schemas.replaceAll(
+        (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
     components.put("responses", standardResponses());
