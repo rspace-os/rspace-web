@@ -52,6 +52,7 @@ public record ApiV2BookingConfigurationResource(
             title = "Booking target",
             description = "Instrument to which this booking configuration applies.")
         ResourceReference<BookableTargetType, Long> target,
+    @ApiV2ResourceMember(factory = "locationRelationship") ResourceReference<String, Long> location,
     @ApiV2ResourceField(
             createAccess = INHERITED,
             updateAccess = INHERITED,
@@ -123,7 +124,8 @@ public record ApiV2BookingConfigurationResource(
     @ApiV2ResourceMember(factory = "createdByNameField") String createdByName,
     @ApiV2ResourceMember(factory = "effectiveRoleField") String effectiveRole,
     @ApiV2ResourceMember(factory = "roleSourcesField") List<ResourceRoleSource> roleSources,
-    @ApiV2ResourceMember(factory = "capabilitiesField") BookingConfigurationCapabilities capabilities,
+    @ApiV2ResourceMember(factory = "capabilitiesField")
+        BookingConfigurationCapabilities capabilities,
     @ApiV2ResourceMember(factory = "ownerHealthField") BookingOwnerHealth ownerHealth) {
 
   public static final CollectionMutationLimits MUTATION_LIMITS =
@@ -220,6 +222,10 @@ public record ApiV2BookingConfigurationResource(
             List.of(new Sort("id", true)),
             access)
         .withFilter(new FilterSelector.Alias<>("targetOwner", "target"));
+  }
+
+  private static Relationship<BookingConfiguration> locationRelationship() {
+    return BookingLocationRelationship.relationship();
   }
 
   private static Field<BookingConfiguration, ?> openingHoursField() {

@@ -126,6 +126,7 @@ public class TimeSlotBooking implements Serializable {
   private transient boolean preparedCanEdit;
   private transient boolean preparedCanCancel;
   private transient boolean preparedCanViewConfiguration;
+  private transient Long preparedLocation;
 
   public TimeSlotBooking() {}
 
@@ -193,6 +194,20 @@ public class TimeSlotBooking implements Serializable {
     preparedCanEdit = preparedPrivacy == BookingPrivacy.FULL && canEdit;
     preparedCanCancel = preparedPrivacy == BookingPrivacy.FULL && canCancel;
     preparedCanViewConfiguration = canViewConfiguration;
+  }
+
+  /**
+   * Prepares the bookable item's immediate parent ID. The containers registration checks read
+   * access when rendering. It is shown only while the configuration is visible.
+   */
+  public void prepareLocation(Long location) {
+    preparedLocation = location;
+  }
+
+  /** Returns the prepared parent ID when the configuration is visible. */
+  @Transient
+  public Long getVisibleLocation() {
+    return preparedCanViewConfiguration ? preparedLocation : null;
   }
 
   /** Preparation for callers that use the same eligibility for both actions. */
