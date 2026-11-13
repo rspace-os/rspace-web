@@ -37,6 +37,7 @@ import { BookingEventList } from "./BookingEventList";
 import { lifecycleErrorKey } from "./bookableItemLifecycleHelpers";
 import { type BookingConfiguration } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
+import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 import { type BookableItemTab, useLoadedBookableItemPageActions } from "./useLoadedBookableItemPageActions";
 
 export const itemPageClassName = "mx-auto max-w-5xl space-y-6 p-4 sm:p-8";
@@ -184,6 +185,9 @@ export function LoadedBookableItemPage({
                       lockTarget
                       disabled={!configuration.enabled}
                     />
+                  ) : null}
+                  {configuration.capabilities.canSubscribeCalendar ? (
+                    <CalendarSubscriptionPopover configurationId={configuration.id} archived={!active} />
                   ) : null}
                   {active && configuration.capabilities.canLeaveConfiguration ? (
                     <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
