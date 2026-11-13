@@ -172,6 +172,71 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
   }
 
   @Test
+  void concurrentConfigurationSavesRejectTheCachedVersion() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Concurrent configuration saves");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    long version =
+        configurationManager
+            .getConfiguration(setup.configurationId(), owner)
+            .orElseThrow()
+            .getConfigurationVersion();
+    CountDownLatch firstSaved = new CountDownLatch(1);
+    CountDownLatch secondCached = new CountDownLatch(1);
+    ExecutorService workers = Executors.newFixedThreadPool(2);
+    try {
+      Future<?> first =
+          workers.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            configurationManager
+                                .updateConfiguration(
+                                    setup.configurationId(),
+                                    new BookingConfigurationManager.Patch(false, null),
+                                    version,
+                                    owner,
+                                    owner)
+                                .orElseThrow();
+                            firstSaved.countDown();
+                            await(secondCached);
+                          }));
+      assertTrue(firstSaved.await(20, TimeUnit.SECONDS));
+      Future<?> second =
+          workers.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            configurationDao.get(setup.configurationId());
+                            secondCached.countDown();
+                            configurationManager
+                                .updateConfiguration(
+                                    setup.configurationId(),
+                                    new BookingConfigurationManager.Patch(null, "Europe/Berlin"),
+                                    version,
+                                    owner,
+                                    owner)
+                                .orElseThrow();
+                          }));
+      first.get(20, TimeUnit.SECONDS);
+      ExecutionException rejected =
+          assertThrows(ExecutionException.class, () -> second.get(20, TimeUnit.SECONDS));
+      assertInstanceOf(BookingConcurrentModificationException.class, rejected.getCause());
+      BookingConfiguration saved =
+          configurationManager.getConfiguration(setup.configurationId(), owner).orElseThrow();
+      assertFalse(saved.isEnabled());
+      assertEquals("UTC", saved.getTimeZone());
+      assertEquals(version + 1, saved.getConfigurationVersion());
+    } finally {
+      secondCached.countDown();
+      workers.shutdownNow();
+      assertTrue(workers.awaitTermination(20, TimeUnit.SECONDS));
+    }
+  }
+
+  @Test
   void configurationLockDoesNotLockItsAuditActor() throws Exception {
     User owner = createInitAndLoginAnyUser();
     User actor = getSysAdminUser();
@@ -605,7 +670,7 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
     }
   }
 
-  private static void await(CountDownLatch latch) {
+  static void await(CountDownLatch latch) {
     try {
       assertTrue(latch.await(20, TimeUnit.SECONDS));
     } catch (InterruptedException exception) {
