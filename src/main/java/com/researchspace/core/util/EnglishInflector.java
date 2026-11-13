@@ -1,237 +1,317 @@
 /*
- * Ported to Java from hypertino/inflector 1.0.14 (commit
- * 89d1bcd2ef81dc8e7c208bd217900bb87311b501), files EnglishInflector.scala and
- * TwoFormInflector.scala: https://github.com/hypertino/inflector
+ * Ported to Java from pluralize 8.0.0 (pluralize.js): https://github.com/blakeembrey/pluralize
  *
- * Copyright (c) 2016-2017 Magomed Abdurakhmanov
- * All rights reserved.
+ * The MIT License (MIT)
  *
- * Redistribution and use in source and binary forms, with or without modification, are permitted
- * provided that the following conditions are met:
+ * Copyright (c) 2013 Blake Embrey (hello@blakeembrey.com)
  *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- * conditions and the following disclaimer.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of
- * conditions and the following disclaimer in the documentation and/or other materials provided
- * with the distribution.
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to
- * endorse or promote products derived from this software without specific prior written
- * permission.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
- * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * The upstream files are themselves modified from https://github.com/atteo/evo-inflector:
- *
- * Copyright 2016 Magomed Abdurakhmanov
- *
- * Modified from original sources located at: https://github.com/atteo/evo-inflector
- *
- * Copyright 2011 Atteo.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- * Changes from upstream: ported from Scala to Java; only the anglicized English inflector is kept
- * (no classical variant and its different-first-letter irregulars, naming-convention converters
- * or Scala.js code); suffix matching lowercases with Locale.ROOT; the "(ar)ves" singular
- * replacement no longer ends in a stray "$", which made singular("scarves") throw.
+ * Changes from upstream:
+ * - The rule tables are fixed: addPluralRule, addSingularRule, addUncountableRule and
+ *   addIrregularRule are not ported, nor is the inclusive count prefix of pluralize(word, count,
+ *   inclusive).
+ * - JavaScript regular expressions are translated to java.util.regex with the same matches: "$"
+ *   becomes "\z" (Java's "$" also matches before a final line terminator), "\b" becomes a lookbehind
+ *   for a non-[A-Za-z0-9_] character, and "pok[eé]mon" lists "É" because CASE_INSENSITIVE folds only
+ *   ASCII, which is otherwise what JavaScript's non-Unicode "i" flag does for these rules.
+ * - A "$n" replacement reference to a group the rule does not have expands to "" (upstream would
+ *   read the replace callback's offset or input arguments; no rule does this).
+ * - A null word throws NullPointerException.
  */
 package com.researchspace.core.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Converts English nouns between singular and plural forms using the anglicized rules of Damian
- * Conway's "An Algorithmic Approach to English Pluralization". Rules match the end of the word, so
- * compound words such as {@code booking-configurations} only change their last segment, and the
- * case of the unchanged prefix is preserved.
+ * Converts English nouns between singular and plural forms with the rules of the npm package
+ * pluralize 8.0.0. Rules match the end of the word, so compound words such as {@code
+ * booking-configurations} only change their last segment, and the case of the input is restored on
+ * the replaced part.
  */
 public final class EnglishInflector {
 
-  private static final List<String> CATEGORY_EX_ICES = List.of("codex", "murex", "silex");
-  private static final List<String> CATEGORY_IX_ICES = List.of("radix", "helix");
-  private static final List<String> CATEGORY_UM_A =
-      List.of(
-          "bacterium",
-          "agendum",
-          "desideratum",
-          "erratum",
-          "stratum",
-          "datum",
-          "ovum",
-          "extremum",
-          "candelabrum");
-  private static final List<String> CATEGORY_US_I =
-      List.of(
-          "alumnus",
-          "alveolus",
-          "bacillus",
-          "bronchus",
-          "locus",
-          "nucleus",
-          "stimulus",
-          "meniscus",
-          "thesaurus");
-  private static final List<String> CATEGORY_ON_A =
-      List.of(
-          "criterion",
-          "perihelion",
-          "aphelion",
-          "phenomenon",
-          "prolegomenon",
-          "noumenon",
-          "organon",
-          "asyndeton",
-          "hyperbaton");
-  private static final List<String> CATEGORY_A_AE =
-      List.of("alumna", "alga", "vertebra", "persona");
-  private static final List<String> CATEGORY_O_OS =
-      List.of(
-          "albino",
-          "archipelago",
-          "armadillo",
-          "commando",
-          "crescendo",
-          "fiasco",
-          "ditto",
-          "dynamo",
-          "embryo",
-          "ghetto",
-          "guano",
-          "inferno",
-          "jumbo",
-          "lumbago",
-          "magneto",
-          "manifesto",
-          "medico",
-          "octavo",
-          "photo",
-          "pro",
-          "quarto",
-          "canto",
-          "lingo",
-          "generalissimo",
-          "stylo",
-          "rhino",
-          "casino",
-          "auto",
-          "macro",
-          "zero",
-          "todo");
-  private static final List<String> CATEGORY_O_I =
-      List.of("solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso");
-  private static final List<String> CATEGORY_A_ATA =
-      List.of(
-          "anathema",
-          "enema",
-          "oedema",
-          "bema",
-          "enigma",
-          "sarcoma",
-          "carcinoma",
-          "gumma",
-          "schema",
-          "charisma",
-          "lemma",
-          "soma",
-          "diploma",
-          "lymphoma",
-          "stigma",
-          "dogma",
-          "magma",
-          "stoma",
-          "drama",
-          "melisma",
-          "trauma",
-          "edema",
-          "miasma");
-  private static final List<String> CATEGORY_IS_IDES = List.of("iris", "clitoris");
-  private static final List<String> CATEGORY_US_US =
-      List.of(
-          "apparatus",
-          "impetus",
-          "prospectus",
-          "cantus",
-          "nexus",
-          "sinus",
-          "coitus",
-          "plexus",
-          "status",
-          "hiatus");
-  private static final List<String> CATEGORY_S_ES =
-      List.of(
-          "acropolis",
-          "chaos",
-          "lens",
-          "aegis",
-          "cosmos",
-          "mantis",
-          "alias",
-          "dais",
-          "marquis",
-          "asbestos",
-          "digitalis",
-          "metropolis",
-          "atlas",
-          "epidermis",
-          "pathos",
-          "bathos",
-          "ethos",
-          "pelvis",
-          "bias",
-          "gas",
-          "polis",
-          "caddis",
-          "glottis",
-          "rhinoceros",
-          "cannabis",
-          "glottis",
-          "sassafras",
-          "canvas",
-          "ibis",
-          "trellis");
-  private static final List<String> CATEGORY_MAN_MANS =
-      List.of(
-          "human",
-          "Alabaman",
-          "Bahaman",
-          "Burman",
-          "German",
-          "Hiroshiman",
-          "Liman",
-          "Nakayaman",
-          "Oklahoman",
-          "Panaman",
-          "Selman",
-          "Sonaman",
-          "Tacoman",
-          "Yakiman",
-          "Yokohaman",
-          "Yuman");
+  private static final Pattern REFERENCE = Pattern.compile("\\$(\\d{1,2})");
 
-  private static final List<Rule> RULES = rules();
+  private static final Map<String, String> IRREGULAR_SINGLES;
+  private static final Map<String, String> IRREGULAR_PLURALS;
+
+  static {
+    String[][] irregulars = {
+      // Pronouns.
+      {"I", "we"},
+      {"me", "us"},
+      {"he", "they"},
+      {"she", "they"},
+      {"them", "them"},
+      {"myself", "ourselves"},
+      {"yourself", "yourselves"},
+      {"itself", "themselves"},
+      {"herself", "themselves"},
+      {"himself", "themselves"},
+      {"themself", "themselves"},
+      {"is", "are"},
+      {"was", "were"},
+      {"has", "have"},
+      {"this", "these"},
+      {"that", "those"},
+      // Words ending in with a consonant and `o`.
+      {"echo", "echoes"},
+      {"dingo", "dingoes"},
+      {"volcano", "volcanoes"},
+      {"tornado", "tornadoes"},
+      {"torpedo", "torpedoes"},
+      // Ends with `us`.
+      {"genus", "genera"},
+      {"viscus", "viscera"},
+      // Ends with `ma`.
+      {"stigma", "stigmata"},
+      {"stoma", "stomata"},
+      {"dogma", "dogmata"},
+      {"lemma", "lemmata"},
+      {"schema", "schemata"},
+      {"anathema", "anathemata"},
+      // Other irregular rules.
+      {"ox", "oxen"},
+      {"axe", "axes"},
+      {"die", "dice"},
+      {"yes", "yeses"},
+      {"foot", "feet"},
+      {"eave", "eaves"},
+      {"goose", "geese"},
+      {"tooth", "teeth"},
+      {"quiz", "quizzes"},
+      {"human", "humans"},
+      {"proof", "proofs"},
+      {"carve", "carves"},
+      {"valve", "valves"},
+      {"looey", "looies"},
+      {"thief", "thieves"},
+      {"groove", "grooves"},
+      {"pickaxe", "pickaxes"},
+      {"passerby", "passersby"}
+    };
+    // Later pairs overwrite earlier ones, as upstream's object assignments do.
+    Map<String, String> singles = new HashMap<>();
+    Map<String, String> plurals = new HashMap<>();
+    for (String[] pair : irregulars) {
+      String single = lower(pair[0]);
+      String plural = lower(pair[1]);
+      singles.put(single, plural);
+      plurals.put(plural, single);
+    }
+    IRREGULAR_SINGLES = Map.copyOf(singles);
+    IRREGULAR_PLURALS = Map.copyOf(plurals);
+  }
+
+  private static final Set<String> UNCOUNTABLES =
+      Set.of(
+          "adulthood",
+          "advice",
+          "agenda",
+          "aid",
+          "aircraft",
+          "alcohol",
+          "ammo",
+          "analytics",
+          "anime",
+          "athletics",
+          "audio",
+          "bison",
+          "blood",
+          "bream",
+          "buffalo",
+          "butter",
+          "carp",
+          "cash",
+          "chassis",
+          "chess",
+          "clothing",
+          "cod",
+          "commerce",
+          "cooperation",
+          "corps",
+          "debris",
+          "diabetes",
+          "digestion",
+          "elk",
+          "energy",
+          "equipment",
+          "excretion",
+          "expertise",
+          "firmware",
+          "flounder",
+          "fun",
+          "gallows",
+          "garbage",
+          "graffiti",
+          "hardware",
+          "headquarters",
+          "health",
+          "herpes",
+          "highjinks",
+          "homework",
+          "housework",
+          "information",
+          "jeans",
+          "justice",
+          "kudos",
+          "labour",
+          "literature",
+          "machinery",
+          "mackerel",
+          "mail",
+          "media",
+          "mews",
+          "moose",
+          "music",
+          "mud",
+          "manga",
+          "news",
+          "only",
+          "personnel",
+          "pike",
+          "plankton",
+          "pliers",
+          "police",
+          "pollution",
+          "premises",
+          "rain",
+          "research",
+          "rice",
+          "salmon",
+          "scissors",
+          "series",
+          "sewage",
+          "shambles",
+          "shrimp",
+          "software",
+          "species",
+          "staff",
+          "swine",
+          "tennis",
+          "traffic",
+          "transportation",
+          "trout",
+          "tuna",
+          "wealth",
+          "welfare",
+          "whiting",
+          "wildebeest",
+          "wildlife",
+          "you");
+
+  /** Uncountable patterns; upstream adds each as both a plural and a singular rule. */
+  private static final List<Rule> UNCOUNTABLE_RULES =
+      List.of(
+          rule("pok[eéÉ]mon$", "$0"),
+          rule("[^aeiou]ese$", "$0"), // "chinese", "japanese"
+          rule("deer$", "$0"), // "deer", "reindeer"
+          rule("fish$", "$0"), // "fish", "blowfish", "angelfish"
+          rule("measles$", "$0"),
+          rule("o[iu]s$", "$0"), // "carnivorous"
+          rule("pox$", "$0"), // "chickpox", "smallpox"
+          rule("sheep$", "$0"));
+
+  /** Plural rules in upstream order; the last matching rule wins. */
+  private static final List<Rule> PLURAL_RULES =
+      withUncountables(
+          rule("s?$", "s"),
+          rule("[^\\u0000-\\u007F]$", "$0"),
+          rule("([^aeiou]ese)$", "$1"),
+          rule("(ax|test)is$", "$1es"),
+          rule("(alias|[^aou]us|t[lm]as|gas|ris)$", "$1es"),
+          rule("(e[mn]u)s?$", "$1s"),
+          rule("([^l]ias|[aeiou]las|[ejzr]as|[iu]am)$", "$1"),
+          rule(
+              "(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)"
+                  + "(?:us|i)$",
+              "$1i"),
+          rule("(alumn|alg|vertebr)(?:a|ae)$", "$1ae"),
+          rule("(seraph|cherub)(?:im)?$", "$1im"),
+          rule("(her|at|gr)o$", "$1oes"),
+          rule(
+              "(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi"
+                  + "|curricul|automat|quor)(?:a|um)$",
+              "$1a"),
+          rule(
+              "(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr"
+                  + "|automat)(?:a|on)$",
+              "$1a"),
+          rule("sis$", "ses"),
+          rule("(?:(kni|wi|li)fe|(ar|l|ea|eo|oa|hoo)f)$", "$1$2ves"),
+          rule("([^aeiouy]|qu)y$", "$1ies"),
+          rule("([^ch][ieo][ln])ey$", "$1ies"),
+          rule("(x|ch|ss|sh|zz)$", "$1es"),
+          rule("(matr|cod|mur|sil|vert|ind|append)(?:ix|ex)$", "$1ices"),
+          rule("\\b((?:tit)?m|l)(?:ice|ouse)$", "$1ice"),
+          rule("(pe)(?:rson|ople)$", "$1ople"),
+          rule("(child)(?:ren)?$", "$1ren"),
+          rule("eaux$", "$0"),
+          rule("m[ae]n$", "men"),
+          rule("^thou$", "you"));
+
+  /** Singular rules in upstream order; the last matching rule wins. */
+  private static final List<Rule> SINGULAR_RULES =
+      withUncountables(
+          rule("s$", ""),
+          rule("(ss)$", "$1"),
+          rule("(wi|kni|(?:after|half|high|low|mid|non|night|[^\\w]|^)li)ves$", "$1fe"),
+          rule("(ar|(?:wo|[ae])l|[eo][ao])ves$", "$1f"),
+          rule("ies$", "y"),
+          rule(
+              "\\b([pl]|zomb|(?:neck|cross)?t|coll|faer|food|gen|goon|group|lass|talk|goal|cut)ies$",
+              "$1ie"),
+          rule("\\b(mon|smil)ies$", "$1ey"),
+          rule("\\b((?:tit)?m|l)ice$", "$1ouse"),
+          rule("(seraph|cherub)im$", "$1"),
+          rule(
+              "(x|ch|ss|sh|zz|tto|go|cho|alias|[^aou]us|t[lm]as|gas|(?:her|at|gr)o|[aeiou]ris)"
+                  + "(?:es)?$",
+              "$1"),
+          rule("(analy|diagno|parenthe|progno|synop|the|empha|cri|ne)(?:sis|ses)$", "$1sis"),
+          rule("(movie|twelve|abuse|e[mn]u)s$", "$1"),
+          rule("(test)(?:is|es)$", "$1is"),
+          rule(
+              "(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)"
+                  + "(?:us|i)$",
+              "$1us"),
+          rule(
+              "(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi"
+                  + "|curricul|quor)a$",
+              "$1um"),
+          rule(
+              "(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr"
+                  + "|automat)a$",
+              "$1on"),
+          rule("(alumn|alg|vertebr)ae$", "$1a"),
+          rule("(cod|mur|sil|vert|ind)ices$", "$1ex"),
+          rule("(matr|append)ices$", "$1ix"),
+          rule("(pe)(rson|ople)$", "$1rson"),
+          rule("(child)ren$", "$1"),
+          rule("(eau)x?$", "$1"),
+          rule("men$", "man"));
 
   private EnglishInflector() {}
 
@@ -242,25 +322,18 @@ public final class EnglishInflector {
    * @return the plural noun
    */
   public static String plural(String word) {
-    Objects.requireNonNull(word, "word");
-    for (Rule rule : RULES) {
-      Optional<String> result = rule.plural(word);
-      if (result.isPresent()) {
-        return result.get();
-      }
-    }
-    return word;
+    return replaceWord(word, IRREGULAR_SINGLES, IRREGULAR_PLURALS, PLURAL_RULES);
   }
 
   /**
-   * Returns {@code word} when {@code count} is 1, otherwise its plural form.
+   * Returns the singular form of {@code word} when {@code count} is 1, otherwise its plural form.
    *
-   * @param word a singular noun
+   * @param word a noun in either form
    * @param count how many of the noun are meant
    * @return the noun inflected for {@code count}
    */
   public static String plural(String word, int count) {
-    return count == 1 ? Objects.requireNonNull(word, "word") : plural(word);
+    return count == 1 ? singular(word) : plural(word);
   }
 
   /**
@@ -270,221 +343,131 @@ public final class EnglishInflector {
    * @return the singular noun
    */
   public static String singular(String word) {
-    Objects.requireNonNull(word, "word");
-    for (Rule rule : RULES) {
-      Optional<String> result = rule.singular(word);
-      if (result.isPresent()) {
-        return result.get();
+    return replaceWord(word, IRREGULAR_PLURALS, IRREGULAR_SINGLES, SINGULAR_RULES);
+  }
+
+  /**
+   * Returns whether {@code word} is already plural, that is, pluralizing it changes nothing.
+   *
+   * @param word a noun
+   * @return whether the noun is plural
+   */
+  public static boolean isPlural(String word) {
+    return checkWord(word, IRREGULAR_SINGLES, IRREGULAR_PLURALS, PLURAL_RULES);
+  }
+
+  /**
+   * Returns whether {@code word} is already singular, that is, singularizing it changes nothing.
+   *
+   * @param word a noun
+   * @return whether the noun is singular
+   */
+  public static boolean isSingular(String word) {
+    return checkWord(word, IRREGULAR_PLURALS, IRREGULAR_SINGLES, SINGULAR_RULES);
+  }
+
+  private static String replaceWord(
+      String word, Map<String, String> replaceMap, Map<String, String> keepMap, List<Rule> rules) {
+    String token = lower(Objects.requireNonNull(word, "word"));
+    if (keepMap.containsKey(token)) {
+      return restoreCase(word, token);
+    }
+    String replacement = replaceMap.get(token);
+    if (replacement != null) {
+      return restoreCase(word, replacement);
+    }
+    return sanitizeWord(token, word, rules);
+  }
+
+  private static boolean checkWord(
+      String word, Map<String, String> replaceMap, Map<String, String> keepMap, List<Rule> rules) {
+    String token = lower(Objects.requireNonNull(word, "word"));
+    if (keepMap.containsKey(token)) {
+      return true;
+    }
+    if (replaceMap.containsKey(token)) {
+      return false;
+    }
+    return sanitizeWord(token, token, rules).equals(token);
+  }
+
+  private static String sanitizeWord(String token, String word, List<Rule> rules) {
+    if (token.isEmpty() || UNCOUNTABLES.contains(token)) {
+      return word;
+    }
+    for (int i = rules.size() - 1; i >= 0; i--) {
+      Matcher matcher = rules.get(i).pattern().matcher(word);
+      if (matcher.find()) {
+        return replace(word, matcher, rules.get(i).replacement());
       }
     }
     return word;
   }
 
-  private static List<Rule> rules() {
-    List<Rule> rules = new ArrayList<>();
-    rules.add(
-        new CategoryRule(
-            List.of(
-                "fish",
-                "ois",
-                "sheep",
-                "deer",
-                "pox",
-                "itis",
-                "bison",
-                "flounder",
-                "pliers",
-                "bream",
-                "gallows",
-                "proceedings",
-                "breeches",
-                "graffiti",
-                "rabies",
-                "britches",
-                "headquarters",
-                "salmon",
-                "carp",
-                "herpes",
-                "scissors",
-                "chassis",
-                "high-jinks",
-                "sea-bass",
-                "clippers",
-                "homework",
-                "series",
-                "cod",
-                "innings",
-                "shears",
-                "contretemps",
-                "jackanapes",
-                "species",
-                "corps",
-                "mackerel",
-                "swine",
-                "debris",
-                "measles",
-                "trout",
-                "diabetes",
-                "mews",
-                "tuna",
-                "djinn",
-                "mumps",
-                "whiting",
-                "eland",
-                "news",
-                "wildebeest",
-                "elk",
-                "pincers",
-                "sugar",
-                "each"),
-            "",
-            ""));
-    rules.add(irregular("child", "children"));
-    rules.add(irregular("ephemeris", "ephemerides"));
-    rules.add(irregular("mongoose", "mongoose"));
-    rules.add(irregular("mythos", "mythoi"));
-    rules.add(irregular("soliloquy", "soliloquies"));
-    rules.add(irregular("trilby", "trilbys"));
-    rules.add(irregular("genus", "genera"));
-    rules.add(irregular("quiz", "quizzes"));
-    rules.add(irregular("basis", "bases"));
-    rules.add(irregular("slice", "slices"));
-    rules.add(irregular("cookie", "cookies"));
-    rules.add(irregular("response", "responses"));
-    rules.add(irregular("case", "cases"));
-    rules.add(irregular("license", "licenses"));
-    rules.add(irregular("licence", "licences"));
-    rules.add(irregular("beef", "beefs"));
-    rules.add(irregular("brother", "brothers"));
-    rules.add(irregular("cow", "cows"));
-    rules.add(irregular("genie", "genies"));
-    rules.add(irregular("money", "moneys"));
-    rules.add(irregular("octopus", "octopuses"));
-    rules.add(irregular("opus", "opuses"));
-    rules.add(new CategoryRule(CATEGORY_MAN_MANS, "", "s"));
-    rules.add(rule("man$", "man", "men$", "men"));
-    rules.add(rule("([lm])ouse$", "$1ouse", "([lm])ice", "$1ice"));
-    rules.add(rule("tooth$", "tooth", "teeth$", "teeth"));
-    rules.add(rule("goose$", "goose", "geese$", "geese"));
-    rules.add(rule("foot$", "foot", "feet$", "feet"));
-    rules.add(rule("zoon$", "zoon", "zoa$", "zoa"));
-    rules.add(pluralOnly("([csx])is$", "$1es"));
-    rules.add(new CategoryRule(CATEGORY_EX_ICES, "ex", "ices"));
-    rules.add(new CategoryRule(CATEGORY_IX_ICES, "ix", "ices"));
-    rules.add(new CategoryRule(CATEGORY_UM_A, "um", "a"));
-    rules.add(new CategoryRule(CATEGORY_ON_A, "on", "a"));
-    rules.add(new CategoryRule(CATEGORY_A_AE, "a", "ae"));
-    rules.add(new CategoryRule(CATEGORY_US_I, "us", "i"));
-    rules.add(rule("([cs]h)$", "$1", "([cs]h)es$", "$1es"));
-    rules.add(rule("([zx])$", "$1", "([zx])es$", "$1es"));
-    rules.add(new CategoryRule(CATEGORY_S_ES, "", "es"));
-    rules.add(new CategoryRule(CATEGORY_IS_IDES, "", "es"));
-    rules.add(new CategoryRule(CATEGORY_US_US, "", "es"));
-    rules.add(rule("(us)$", "$1x", "xes($)", "$1es"));
-    rules.add(new CategoryRule(CATEGORY_A_ATA, "", "s"));
-    rules.add(pluralOnly("([cs])h$", "$1hes"));
-    rules.add(rule("ss$", "ss", "sses$", "sses"));
-    rules.add(rule("([aeo]l)f$", "$1f", "([aeo]l)ves$", "$1ves"));
-    rules.add(rule("([^d]ea)f$", "$1f", "([^d]ea)ves$", "$1ves"));
-    rules.add(rule("(ar)f$", "$1f", "(ar)ves$", "$1ves"));
-    rules.add(rule("([nlw]i)fe$", "$1fe", "([nlw]i)ves$", "$1ves"));
-    rules.add(rule("([aeiou])y$", "$1y", "([aeiou])ys$", "$1ys"));
-    rules.add(rule("y$", "y", "ies$", "ies"));
-    rules.add(new CategoryRule(CATEGORY_O_I, "o", "os"));
-    rules.add(new CategoryRule(CATEGORY_O_OS, "o", "os"));
-    rules.add(rule("([aeiou])o$", "$1o", "([aeiou])os$", "$1os"));
-    rules.add(rule("o$", "o", "oes$", "oes"));
-    rules.add(rule("ulum", "ulum", "ula", "ula"));
-    rules.add(new CategoryRule(CATEGORY_A_ATA, "", "es"));
-    rules.add(rule("s$", "s", "ses$", "ses"));
-    rules.add(rule("$", "", "s$", "s"));
-    return List.copyOf(rules);
+  /** Replaces the first match, restoring the case of the matched text (or the preceding char). */
+  private static String replace(String word, Matcher matcher, String replacement) {
+    String match = matcher.group();
+    String result = interpolate(replacement, matcher);
+    String cased =
+        match.isEmpty()
+            ? restoreCase(String.valueOf(word.charAt(matcher.start() - 1)), result)
+            : restoreCase(match, result);
+    return word.substring(0, matcher.start()) + cased + word.substring(matcher.end());
   }
 
-  /** The singular and plural must share their first letter, whose case is preserved. */
-  private static Rule irregular(String singular, String plural) {
-    return new RegExpRule(
-        Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"),
-        "$1" + singular.substring(1),
-        Pattern.compile("(?i)(" + plural.charAt(0) + ")" + plural.substring(1) + "$"),
-        "$1" + plural.substring(1));
-  }
-
-  private static Rule rule(
-      String singularPattern, String singular, String pluralPattern, String plural) {
-    return new RegExpRule(
-        Pattern.compile("(?i)" + singularPattern),
-        singular,
-        Pattern.compile("(?i)" + pluralPattern),
-        plural);
-  }
-
-  private static Rule pluralOnly(String singularPattern, String plural) {
-    return new RegExpRule(Pattern.compile("(?i)" + singularPattern), null, null, plural);
-  }
-
-  private sealed interface Rule permits RegExpRule, CategoryRule {
-    Optional<String> plural(String word);
-
-    Optional<String> singular(String word);
-  }
-
-  /** A suffix rule; a rule without {@code pluralRegex} only pluralizes. */
-  private record RegExpRule(
-      Pattern singularRegex, String singular, Pattern pluralRegex, String plural) implements Rule {
-
-    @Override
-    public Optional<String> plural(String word) {
-      Matcher matcher = singularRegex.matcher(word);
-      return matcher.find() ? Optional.of(matcher.replaceFirst(plural)) : Optional.empty();
+  private static String interpolate(String replacement, Matcher match) {
+    Matcher reference = REFERENCE.matcher(replacement);
+    StringBuilder result = new StringBuilder();
+    while (reference.find()) {
+      int group = Integer.parseInt(reference.group(1));
+      String value = group <= match.groupCount() ? match.group(group) : null;
+      reference.appendReplacement(result, Matcher.quoteReplacement(value == null ? "" : value));
     }
-
-    @Override
-    public Optional<String> singular(String word) {
-      if (pluralRegex == null) {
-        return Optional.empty();
-      }
-      Matcher matcher = pluralRegex.matcher(word);
-      return matcher.find() ? Optional.of(matcher.replaceFirst(singular)) : Optional.empty();
-    }
+    reference.appendTail(result);
+    return result.toString();
   }
 
-  /** Words ending in one of {@code singularList} swap the {@code singular} suffix for plural. */
-  private record CategoryRule(
-      List<String> singularList, String singular, String plural, List<String> pluralList)
-      implements Rule {
-
-    CategoryRule(List<String> singularList, String singular, String plural) {
-      this(
-          singularList,
-          singular,
-          plural,
-          singularList.stream()
-              .map(s -> s.substring(0, s.length() - singular.length()) + plural)
-              .toList());
+  private static String restoreCase(String word, String token) {
+    if (word.equals(token)) {
+      return token;
     }
-
-    @Override
-    public Optional<String> plural(String word) {
-      return swapSuffix(word, singularList, singular, plural);
+    if (word.equals(lower(word))) {
+      return lower(token);
     }
-
-    @Override
-    public Optional<String> singular(String word) {
-      return swapSuffix(word, pluralList, plural, singular);
+    if (word.equals(upper(word))) {
+      return upper(token);
     }
-
-    private static Optional<String> swapSuffix(
-        String word, List<String> endings, String from, String to) {
-      String lowerWord = word.toLowerCase(Locale.ROOT);
-      if (endings.stream().noneMatch(lowerWord::endsWith)) {
-        return Optional.empty();
-      }
-      if (!lowerWord.endsWith(from)) {
-        throw new IllegalStateException(
-            "Internal error: " + lowerWord + " doesn't end with " + from);
-      }
-      return Optional.of(word.substring(0, word.length() - from.length()) + to);
+    String first = word.substring(0, 1);
+    if (first.equals(upper(first))) {
+      return token.isEmpty() ? token : upper(token.substring(0, 1)) + lower(token.substring(1));
     }
+    return lower(token);
   }
+
+  private static String lower(String value) {
+    return value.toLowerCase(Locale.ROOT);
+  }
+
+  private static String upper(String value) {
+    return value.toUpperCase(Locale.ROOT);
+  }
+
+  private static List<Rule> withUncountables(Rule... rules) {
+    List<Rule> result = new ArrayList<>(List.of(rules));
+    result.addAll(UNCOUNTABLE_RULES);
+    return List.copyOf(result);
+  }
+
+  /** Compiles a pluralize.js rule; see the file header for the regular expression translation. */
+  private static Rule rule(String javascript, String replacement) {
+    if (!javascript.endsWith("$")) {
+      throw new IllegalArgumentException("Rules match the end of the word: " + javascript);
+    }
+    String java =
+        javascript.substring(0, javascript.length() - 1).replace("\\b", "(?<![A-Za-z0-9_])")
+            + "\\z";
+    return new Rule(Pattern.compile(java, Pattern.CASE_INSENSITIVE), replacement);
+  }
+
+  private record Rule(Pattern pattern, String replacement) {}
 }
