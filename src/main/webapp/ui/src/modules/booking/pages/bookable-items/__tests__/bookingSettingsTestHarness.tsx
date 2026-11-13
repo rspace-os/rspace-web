@@ -23,8 +23,6 @@ export const bookingSettingsFixture = {
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
   institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
   configurationVersion: 0,
 };
 
@@ -40,7 +38,9 @@ export function serveBookingSettings(
   let current: BookingSettingsControllerAdminSettingsDocument = createBookingSettingsFixture(initial);
   server.use(
     http.get("/api/v2/booking-settings/admin", () =>
-      HttpResponse.json<BookingSettingsControllerAdminSettingsDocument>(current, { headers: { ETag: `"${current.configurationVersion}"` } }),
+      HttpResponse.json<BookingSettingsControllerAdminSettingsDocument>(current, {
+        headers: { ETag: `"${current.configurationVersion}"` },
+      }),
     ),
     http.patch<never, BookingSettingsControllerSettingsPatch>("/api/v2/booking-settings/admin", async ({ request }) => {
       expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
