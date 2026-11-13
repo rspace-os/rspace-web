@@ -10,6 +10,7 @@ import type { BookingConfigurationState } from "./bookingConfigurationState.ts";
 import type { BookingConfigurationsReadTargetCustomFields } from "./bookingConfigurationsReadTargetCustomFields.ts";
 import type { BookingIncrementUnit } from "./bookingIncrementUnit.ts";
 import type { BookingOwnerHealth } from "./bookingOwnerHealth.ts";
+import type { ContainersRelationship } from "./containersRelationship.ts";
 import type { DeclaredBookingOpeningHoursEntry } from "./declaredBookingOpeningHoursEntry.ts";
 import type { DeclaredResourceRoleSource } from "./declaredResourceRoleSource.ts";
 import type { InstrumentsRelationship } from "./instrumentsRelationship.ts";
@@ -45,6 +46,8 @@ export interface BookingConfigurationsRead {
   readonly id: number;
   /** Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays. */
   incrementUnit?: BookingIncrementUnit;
+  /** Filter-only: the bookable item's immediate Inventory parent Container or workbench, matched only where the caller may read it. Address a workbench as IC plus its ID. Responses render null; the booking catalogue returns each item's readable location. */
+  readonly location?: ContainersRelationship | null;
   /** Maximum elapsed minutes for one booking, where 0 disables the item limit. */
   maxBookingDurationMinutes?: number;
   /**

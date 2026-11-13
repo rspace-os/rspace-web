@@ -783,6 +783,41 @@ export default interface Resources {
         }
       }
     },
+    "allBookableItems": {
+      "actions": {
+        "access": "Access",
+        "book": "Book",
+        "nextDay": "Next day",
+        "previousDay": "Previous day",
+        "settings": "Settings",
+        "today": "Today",
+        "viewDetails": "View details"
+      },
+      "date": "Date",
+      "dateControls": "Availability date controls",
+      "dateNavigation": "Availability date navigation",
+      "fields": {
+        "actions": "Actions"
+      },
+      "filters": {
+        "location": "Location",
+        "locationOption": "{name} ({globalId})"
+      },
+      "jumpToDate": "Jump to date",
+      "plural": "All Bookable Items",
+      "quickFilters": {
+        "availableNow": "Available now",
+        "error": "Could not find available items.",
+        "freeLaterToday": "Free later today",
+        "legend": "Quick filters",
+        "loading": "Finding bookable items…",
+        "retry": "Retry",
+        "scope": "Availability uses the selected display date and timezone."
+      },
+      "singular": "Bookable item",
+      "title": "All Bookable Items",
+      "toolbar": "All Bookable Items controls"
+    },
     "availabilityBar": {
       "current": {
         "available": "Available",
@@ -1269,6 +1304,9 @@ export default interface Resources {
         "past": "Choose a start time in the future."
       }
     },
+    "breadcrumbs": {
+      "label": "Breadcrumbs"
+    },
     "calendar": {
       "actions": {
         "addForItem": "Add booking for {item}",
@@ -1277,6 +1315,7 @@ export default interface Resources {
         "label": "Booking actions",
         "viewDetails": "View details"
       },
+      "additionalEventResources": "{count, plural, one {# additional resource with a matching event is shown.} other {# additional resources with matching events are shown.}} Pagination applies to catalogue items.",
       "agenda": "Booking agenda",
       "availability": "Availability",
       "availabilityLoading": "Loading availability",
@@ -1520,6 +1559,7 @@ export default interface Resources {
     "sidebar": {
       "addBooking": "Add Booking",
       "administration": "Administration",
+      "allItems": "All items",
       "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
       "calendar": "Calendar",
@@ -1659,15 +1699,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
@@ -7419,6 +7450,11 @@ export default interface Resources {
               "unavailable": "The selected target is not available for booking."
             },
             "window": "Start time must be in the future and end time must be after start time."
+          },
+          "bookingCatalogue": {
+            "availability": {
+              "invalid": "Choose an availability window with a start and an end, ending no earlier than it starts and lasting at most 2 days."
+            }
           },
           "bookingConfiguration": {
             "buffer": {

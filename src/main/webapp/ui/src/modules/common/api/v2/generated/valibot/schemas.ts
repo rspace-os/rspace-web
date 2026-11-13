@@ -12,6 +12,7 @@ export const ApiV2CurrentUserCapabilitiesSchema = native.ApiV2CurrentUserCapabil
 export const ApiV2CurrentUserLiveChatSchema = native.ApiV2CurrentUserLiveChat;
 export const ApiV2CurrentUserOrcidSchema = native.ApiV2CurrentUserOrcid;
 export const ApiV2CurrentUserSessionSchema = native.ApiV2CurrentUserSession;
+export const ApiV2ListResultMapStringObjectSchema = native.ApiV2ListResultMapStringObject;
 export const ApiV2ProblemSchema = native.ApiV2Problem;
 export const ApiV2ProblemInvalidParamSchema = native.ApiV2ProblemInvalidParam;
 export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
@@ -19,31 +20,34 @@ export const ApiV2RuntimeFieldCatalogEntrySchema = native.ApiV2RuntimeFieldCatal
 export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCatalogSource;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
-export const BookingAdminSettingsDocumentSchema = native.BookingAdminSettingsDocument;
-export const BookingCalendarEventsPageSchema = native.BookingCalendarEventsPage;
 export const BookingCatalogueCapabilitySchema = native.BookingCatalogueCapability;
-export const BookingCatalogueFacetsSchema = native.BookingCatalogueFacets;
-export const BookingCatalogueItemDocumentSchema = native.BookingCatalogueItemDocument;
-export const BookingCatalogueLocationDocumentSchema = native.BookingCatalogueLocationDocument;
-export const BookingCatalogueLocationPageDocumentSchema = native.BookingCatalogueLocationPageDocument;
-export const BookingCataloguePageDocumentSchema = native.BookingCataloguePageDocument;
+export const BookingCatalogueManagerAvailabilityCountsSchema = native.BookingCatalogueManagerAvailabilityCounts;
+export const BookingCatalogueManagerFacetsSchema = native.BookingCatalogueManagerFacets;
+export const BookingCatalogueManagerItemSchema = native.BookingCatalogueManagerItem;
+export const BookingCatalogueManagerLocationSchema = native.BookingCatalogueManagerLocation;
+export const BookingCatalogueManagerLocationPageSchema = native.BookingCatalogueManagerLocationPage;
+export const BookingCatalogueManagerPageSchema = native.BookingCatalogueManagerPage;
 export const BookingConfigurationCapabilitiesSchema = native.BookingConfigurationCapabilities;
 export const BookingConfigurationStateSchema = native.BookingConfigurationState;
 export const BookingConfigurationTargetSchema = native.BookingConfigurationTarget;
-export const BookingConfigurationTargetDirectoryDocumentSchema = native.BookingConfigurationTargetDirectoryDocument;
+export const BookingConfigurationTargetControllerTargetDirectoryDocumentSchema =
+  native.BookingConfigurationTargetControllerTargetDirectoryDocument;
 export const BookingConfigurationsBulkResultSchema = native.BookingConfigurationsBulkResult;
 export const BookingConfigurationsCreateSchema = native.BookingConfigurationsCreate;
 export const BookingConfigurationsReadSchema = native.BookingConfigurationsRead;
 export const BookingConfigurationsReferenceSchema = native.BookingConfigurationsReference;
 export const BookingConfigurationsUpdateSchema = native.BookingConfigurationsUpdate;
 export const BookingDisplayPreferencesSchema = native.BookingDisplayPreferences;
-export const BookingDisplayPreferencesReplacementSchema = native.BookingDisplayPreferencesReplacement;
+export const BookingDisplayPreferencesControllerReplacementSchema =
+  native.BookingDisplayPreferencesControllerReplacement;
 export const BookingEventKindSchema = native.BookingEventKind;
 export const BookingIncrementUnitSchema = native.BookingIncrementUnit;
 export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
 export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
-export const BookingSettingsDocumentSchema = native.BookingSettingsDocument;
-export const BookingSettingsPatchSchema = native.BookingSettingsPatch;
+export const BookingSettingsControllerAdminSettingsDocumentSchema =
+  native.BookingSettingsControllerAdminSettingsDocument;
+export const BookingSettingsControllerSettingsDocumentSchema = native.BookingSettingsControllerSettingsDocument;
+export const BookingSettingsControllerSettingsPatchSchema = native.BookingSettingsControllerSettingsPatch;
 export const BookingStateSchema = native.BookingState;
 export const BookingTimezoneModeSchema = native.BookingTimezoneMode;
 export const BookingsCreateSchema = native.BookingsCreate;
@@ -52,6 +56,7 @@ export const BookingsReferenceSchema = native.BookingsReference;
 export const BookingsUpdateSchema = native.BookingsUpdate;
 export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
+export const ContainersRelationshipSchema = native.ContainersRelationship;
 export const DeclaredBookingOpeningHoursEntrySchema = native.DeclaredBookingOpeningHoursEntry;
 export const DeclaredResourceRoleSourceSchema = native.DeclaredResourceRoleSource;
 export const FeatureFlagsReadSchema = native.FeatureFlagsRead;
@@ -77,7 +82,6 @@ export const ResourceGranteeDirectoryDocumentSchema = native.ResourceGranteeDire
 export const ResourceGranteeDirectoryEntrySchema = native.ResourceGranteeDirectoryEntry;
 export const ResourceGranteeKindSchema = native.ResourceGranteeKind;
 export const ResourceRoleSourceSchema = native.ResourceRoleSource;
-export const ResourceRoleSourceGranteeSchema = native.ResourceRoleSourceGrantee;
 export const ResourceRoleSourceKindSchema = native.ResourceRoleSourceKind;
 export const UsersReadSchema = native.UsersRead;
 export const UsersReferenceSchema = native.UsersReference;
@@ -125,6 +129,10 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof ApiV2CurrentUserSessionSchema>, Models.ApiV2CurrentUserSession>>,
     Assert<Extends<Models.ApiV2CurrentUserSession, v.InferOutput<typeof ApiV2CurrentUserSessionSchema>>>,
   ];
+  ApiV2ListResultMapStringObject: [
+    Assert<Extends<v.InferOutput<typeof ApiV2ListResultMapStringObjectSchema>, Models.ApiV2ListResultMapStringObject>>,
+    Assert<Extends<Models.ApiV2ListResultMapStringObject, v.InferOutput<typeof ApiV2ListResultMapStringObjectSchema>>>,
+  ];
   ApiV2Problem: [
     Assert<Extends<v.InferOutput<typeof ApiV2ProblemSchema>, Models.ApiV2Problem>>,
     Assert<Extends<Models.ApiV2Problem, v.InferOutput<typeof ApiV2ProblemSchema>>>,
@@ -153,51 +161,57 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof AuditActionSchema>, Models.AuditAction>>,
     Assert<Extends<Models.AuditAction, v.InferOutput<typeof AuditActionSchema>>>,
   ];
-  BookingAdminSettingsDocument: [
-    Assert<Extends<v.InferOutput<typeof BookingAdminSettingsDocumentSchema>, Models.BookingAdminSettingsDocument>>,
-    Assert<Extends<Models.BookingAdminSettingsDocument, v.InferOutput<typeof BookingAdminSettingsDocumentSchema>>>,
-  ];
-  BookingCalendarEventsPage: [
-    Assert<Extends<v.InferOutput<typeof BookingCalendarEventsPageSchema>, Models.BookingCalendarEventsPage>>,
-    Assert<Extends<Models.BookingCalendarEventsPage, v.InferOutput<typeof BookingCalendarEventsPageSchema>>>,
-  ];
   BookingCatalogueCapability: [
     Assert<Extends<v.InferOutput<typeof BookingCatalogueCapabilitySchema>, Models.BookingCatalogueCapability>>,
     Assert<Extends<Models.BookingCatalogueCapability, v.InferOutput<typeof BookingCatalogueCapabilitySchema>>>,
   ];
-  BookingCatalogueFacets: [
-    Assert<Extends<v.InferOutput<typeof BookingCatalogueFacetsSchema>, Models.BookingCatalogueFacets>>,
-    Assert<Extends<Models.BookingCatalogueFacets, v.InferOutput<typeof BookingCatalogueFacetsSchema>>>,
-  ];
-  BookingCatalogueItemDocument: [
-    Assert<Extends<v.InferOutput<typeof BookingCatalogueItemDocumentSchema>, Models.BookingCatalogueItemDocument>>,
-    Assert<Extends<Models.BookingCatalogueItemDocument, v.InferOutput<typeof BookingCatalogueItemDocumentSchema>>>,
-  ];
-  BookingCatalogueLocationDocument: [
-    Assert<
-      Extends<v.InferOutput<typeof BookingCatalogueLocationDocumentSchema>, Models.BookingCatalogueLocationDocument>
-    >,
-    Assert<
-      Extends<Models.BookingCatalogueLocationDocument, v.InferOutput<typeof BookingCatalogueLocationDocumentSchema>>
-    >,
-  ];
-  BookingCatalogueLocationPageDocument: [
+  BookingCatalogueManagerAvailabilityCounts: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingCatalogueLocationPageDocumentSchema>,
-        Models.BookingCatalogueLocationPageDocument
+        v.InferOutput<typeof BookingCatalogueManagerAvailabilityCountsSchema>,
+        Models.BookingCatalogueManagerAvailabilityCounts
       >
     >,
     Assert<
       Extends<
-        Models.BookingCatalogueLocationPageDocument,
-        v.InferOutput<typeof BookingCatalogueLocationPageDocumentSchema>
+        Models.BookingCatalogueManagerAvailabilityCounts,
+        v.InferOutput<typeof BookingCatalogueManagerAvailabilityCountsSchema>
       >
     >,
   ];
-  BookingCataloguePageDocument: [
-    Assert<Extends<v.InferOutput<typeof BookingCataloguePageDocumentSchema>, Models.BookingCataloguePageDocument>>,
-    Assert<Extends<Models.BookingCataloguePageDocument, v.InferOutput<typeof BookingCataloguePageDocumentSchema>>>,
+  BookingCatalogueManagerFacets: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerFacetsSchema>, Models.BookingCatalogueManagerFacets>>,
+    Assert<Extends<Models.BookingCatalogueManagerFacets, v.InferOutput<typeof BookingCatalogueManagerFacetsSchema>>>,
+  ];
+  BookingCatalogueManagerItem: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerItemSchema>, Models.BookingCatalogueManagerItem>>,
+    Assert<Extends<Models.BookingCatalogueManagerItem, v.InferOutput<typeof BookingCatalogueManagerItemSchema>>>,
+  ];
+  BookingCatalogueManagerLocation: [
+    Assert<
+      Extends<v.InferOutput<typeof BookingCatalogueManagerLocationSchema>, Models.BookingCatalogueManagerLocation>
+    >,
+    Assert<
+      Extends<Models.BookingCatalogueManagerLocation, v.InferOutput<typeof BookingCatalogueManagerLocationSchema>>
+    >,
+  ];
+  BookingCatalogueManagerLocationPage: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingCatalogueManagerLocationPageSchema>,
+        Models.BookingCatalogueManagerLocationPage
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingCatalogueManagerLocationPage,
+        v.InferOutput<typeof BookingCatalogueManagerLocationPageSchema>
+      >
+    >,
+  ];
+  BookingCatalogueManagerPage: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerPageSchema>, Models.BookingCatalogueManagerPage>>,
+    Assert<Extends<Models.BookingCatalogueManagerPage, v.InferOutput<typeof BookingCatalogueManagerPageSchema>>>,
   ];
   BookingConfigurationCapabilities: [
     Assert<
@@ -215,17 +229,17 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof BookingConfigurationTargetSchema>, Models.BookingConfigurationTarget>>,
     Assert<Extends<Models.BookingConfigurationTarget, v.InferOutput<typeof BookingConfigurationTargetSchema>>>,
   ];
-  BookingConfigurationTargetDirectoryDocument: [
+  BookingConfigurationTargetControllerTargetDirectoryDocument: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingConfigurationTargetDirectoryDocumentSchema>,
-        Models.BookingConfigurationTargetDirectoryDocument
+        v.InferOutput<typeof BookingConfigurationTargetControllerTargetDirectoryDocumentSchema>,
+        Models.BookingConfigurationTargetControllerTargetDirectoryDocument
       >
     >,
     Assert<
       Extends<
-        Models.BookingConfigurationTargetDirectoryDocument,
-        v.InferOutput<typeof BookingConfigurationTargetDirectoryDocumentSchema>
+        Models.BookingConfigurationTargetControllerTargetDirectoryDocument,
+        v.InferOutput<typeof BookingConfigurationTargetControllerTargetDirectoryDocumentSchema>
       >
     >,
   ];
@@ -257,17 +271,17 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof BookingDisplayPreferencesSchema>, Models.BookingDisplayPreferences>>,
     Assert<Extends<Models.BookingDisplayPreferences, v.InferOutput<typeof BookingDisplayPreferencesSchema>>>,
   ];
-  BookingDisplayPreferencesReplacement: [
+  BookingDisplayPreferencesControllerReplacement: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingDisplayPreferencesReplacementSchema>,
-        Models.BookingDisplayPreferencesReplacement
+        v.InferOutput<typeof BookingDisplayPreferencesControllerReplacementSchema>,
+        Models.BookingDisplayPreferencesControllerReplacement
       >
     >,
     Assert<
       Extends<
-        Models.BookingDisplayPreferencesReplacement,
-        v.InferOutput<typeof BookingDisplayPreferencesReplacementSchema>
+        Models.BookingDisplayPreferencesControllerReplacement,
+        v.InferOutput<typeof BookingDisplayPreferencesControllerReplacementSchema>
       >
     >,
   ];
@@ -287,13 +301,47 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof BookingOwnerHealthSchema>, Models.BookingOwnerHealth>>,
     Assert<Extends<Models.BookingOwnerHealth, v.InferOutput<typeof BookingOwnerHealthSchema>>>,
   ];
-  BookingSettingsDocument: [
-    Assert<Extends<v.InferOutput<typeof BookingSettingsDocumentSchema>, Models.BookingSettingsDocument>>,
-    Assert<Extends<Models.BookingSettingsDocument, v.InferOutput<typeof BookingSettingsDocumentSchema>>>,
+  BookingSettingsControllerAdminSettingsDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingSettingsControllerAdminSettingsDocumentSchema>,
+        Models.BookingSettingsControllerAdminSettingsDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingSettingsControllerAdminSettingsDocument,
+        v.InferOutput<typeof BookingSettingsControllerAdminSettingsDocumentSchema>
+      >
+    >,
   ];
-  BookingSettingsPatch: [
-    Assert<Extends<v.InferOutput<typeof BookingSettingsPatchSchema>, Models.BookingSettingsPatch>>,
-    Assert<Extends<Models.BookingSettingsPatch, v.InferOutput<typeof BookingSettingsPatchSchema>>>,
+  BookingSettingsControllerSettingsDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingSettingsControllerSettingsDocumentSchema>,
+        Models.BookingSettingsControllerSettingsDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingSettingsControllerSettingsDocument,
+        v.InferOutput<typeof BookingSettingsControllerSettingsDocumentSchema>
+      >
+    >,
+  ];
+  BookingSettingsControllerSettingsPatch: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingSettingsControllerSettingsPatchSchema>,
+        Models.BookingSettingsControllerSettingsPatch
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingSettingsControllerSettingsPatch,
+        v.InferOutput<typeof BookingSettingsControllerSettingsPatchSchema>
+      >
+    >,
   ];
   BookingState: [
     Assert<Extends<v.InferOutput<typeof BookingStateSchema>, Models.BookingState>>,
@@ -326,6 +374,10 @@ export type SchemaModelTypeChecks = {
   ContainersReference: [
     Assert<Extends<v.InferOutput<typeof ContainersReferenceSchema>, Models.ContainersReference>>,
     Assert<Extends<Models.ContainersReference, v.InferOutput<typeof ContainersReferenceSchema>>>,
+  ];
+  ContainersRelationship: [
+    Assert<Extends<v.InferOutput<typeof ContainersRelationshipSchema>, Models.ContainersRelationship>>,
+    Assert<Extends<Models.ContainersRelationship, v.InferOutput<typeof ContainersRelationshipSchema>>>,
   ];
   DeclaredBookingOpeningHoursEntry: [
     Assert<
@@ -442,10 +494,6 @@ export type SchemaModelTypeChecks = {
   ResourceRoleSource: [
     Assert<Extends<v.InferOutput<typeof ResourceRoleSourceSchema>, Models.ResourceRoleSource>>,
     Assert<Extends<Models.ResourceRoleSource, v.InferOutput<typeof ResourceRoleSourceSchema>>>,
-  ];
-  ResourceRoleSourceGrantee: [
-    Assert<Extends<v.InferOutput<typeof ResourceRoleSourceGranteeSchema>, Models.ResourceRoleSourceGrantee>>,
-    Assert<Extends<Models.ResourceRoleSourceGrantee, v.InferOutput<typeof ResourceRoleSourceGranteeSchema>>>,
   ];
   ResourceRoleSourceKind: [
     Assert<Extends<v.InferOutput<typeof ResourceRoleSourceKindSchema>, Models.ResourceRoleSourceKind>>,
