@@ -6,6 +6,7 @@ import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.booking.dao.BookingCalendarCurrentAccessDao;
 import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -34,11 +35,14 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -408,6 +412,55 @@ class PermissionSourceGateIT extends RealTransactionSpringTestBase {
   }
 
   @ParameterizedTest
+  @EnumSource(Path.class)
+  void rollbackRetainsSourceAccessAndToken(Path path) throws Exception {
+    withBookingEnabled(
+        () -> {
+          Fixture f = fixture(path);
+          BookingCalendarManager.Created before =
+              calendars.create(f.configurationId(), f.reader(), f.reader());
+          BookingCalendarCurrentAccessDao actual =
+              applicationContext.getBean(BookingCalendarCurrentAccessDao.class);
+          BookingCalendarCurrentAccessDao failing =
+              Mockito.mock(BookingCalendarCurrentAccessDao.class);
+          Mockito.when(
+                  failing.revokeDenied(
+                      ArgumentMatchers.anySet(),
+                      ArgumentMatchers.anySet(),
+                      ArgumentMatchers.anyBoolean()))
+              .thenAnswer(
+                  invocation -> {
+                    actual.revokeDenied(
+                        invocation.getArgument(0),
+                        invocation.getArgument(1),
+                        invocation.getArgument(2));
+                    throw new RevocationFailure();
+                  });
+          BookingCalendarRevocationCoordinator coordinator =
+              new BookingCalendarRevocationCoordinator(
+                  gate, failing, applicationContext.getBean(SessionFactory.class));
+          assertThrows(
+              RevocationFailure.class,
+              () ->
+                  new TransactionTemplate(transactions)
+                      .executeWithoutResult(
+                          status -> {
+                            coordinator.affectAll();
+                            f.source().run();
+                          }));
+          assertEquals(1, linkCount(f));
+          assertEquals(
+              before.status().etag().replace("\"", ""),
+              jdbc.queryForObject(
+                  "select tokenHash from BookableItemCalendarSubscription where"
+                      + " bookingConfiguration_id = ? and user_id = ?",
+                  String.class,
+                  f.configurationId(),
+                  f.reader().getId()));
+        });
+  }
+
+  @ParameterizedTest
   @EnumSource(
       value = Path.class,
       names = {"OWNER_TRANSFER", "DELETE"})
@@ -556,6 +609,8 @@ class PermissionSourceGateIT extends RealTransactionSpringTestBase {
                   f.reader().getId()));
         });
   }
+
+  private static class RevocationFailure extends RuntimeException {}
 
   private int linkCount(Fixture f) {
     assertEquals(
