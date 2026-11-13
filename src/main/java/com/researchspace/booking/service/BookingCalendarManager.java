@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -24,6 +25,27 @@ public interface BookingCalendarManager {
     }
   }
 
+  /**
+   * A subscription link returned by create or rotate.
+   *
+   * @param newlyIssued false when create returned the caller's existing link unchanged
+   */
+  record ItemLink(
+      Long configurationId,
+      Long targetId,
+      String itemName,
+      Date updatedAt,
+      String subscriptionUrl) {
+
+    public ItemLink {
+      updatedAt = updatedAt == null ? null : new Date(updatedAt.getTime());
+    }
+
+    @Override
+    public Date updatedAt() {
+      return updatedAt == null ? null : new Date(updatedAt.getTime());
+    }
+  }
 
   sealed interface FeedResult permits Available, NotFound, AtCapacity, Oversized {}
 
@@ -61,6 +83,10 @@ public interface BookingCalendarManager {
   /** Returns the caller's active subscription for a readable configuration, including its URL. */
   Status status(Long configurationId, User subject, User actor);
 
+  /**
+   * Returns the caller's link for an active configuration they can subscribe to, issuing one only
+   * when none exists. Repeating the call returns the same link.
+   */
 
   /** Revokes only the caller's credential for an active configuration the caller can read. */
   void revoke(Long configurationId, User subject, User actor);

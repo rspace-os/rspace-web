@@ -35,9 +35,12 @@ import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.testutils.TestFactory;
@@ -46,7 +49,10 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -232,6 +238,16 @@ class BookingCalendarManagerSubscriptionTest {
     verify(subscriptionDao).saveAndFlush(any(BookableItemCalendarSubscription.class));
   }
 
+  void disabledBookingIsUnavailableForCalendarWrites() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.create(CONFIGURATION_ID, owner, owner));
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.createUser(owner, owner));
+  }
+
   @Test
   void statusRequiresAnActivePersonalCaller() {
     User delegate = TestFactory.createAnyUser("delegate");
@@ -280,6 +296,7 @@ class BookingCalendarManagerSubscriptionTest {
   @Test
   void statusReturnsTheExistingSubscriptionUrl() {
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
+        .thenReturn(Optional.of(BookingCalendarManagerTest.subscription(configuration, owner)));
 
     BookingCalendarManager.Status status = manager.status(CONFIGURATION_ID, owner, owner);
 
@@ -419,5 +436,21 @@ class BookingCalendarManagerSubscriptionTest {
     MISSING,
     UNREADABLE,
     ARCHIVED_WITHOUT_ACCESS
+  }
+  private BookingConfiguration configuration(long id, long instrumentId) {
+    BookingConfiguration value = new BookingConfiguration();
+    value.setId(id);
+    value.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId));
+    return value;
+  }
+
+  private BookableItemCalendarSubscription subscription(
+      BookingConfiguration forConfiguration, String rawToken) {
+    return new BookableItemCalendarSubscription(
+        forConfiguration, owner, CryptoUtils.hashToken(rawToken), rawToken, new Date(1000L));
+  }
+
+  private static InstrumentReadSummary instrument(long id, String name, boolean deleted) {
+    return new InstrumentReadSummary(id, name, deleted, null);
   }
 }
