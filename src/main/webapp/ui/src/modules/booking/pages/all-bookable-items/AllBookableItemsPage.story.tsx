@@ -9,11 +9,11 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
-import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
+import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 
-export function BookableItemsStory() {
+export function AllBookableItemsStory() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({
