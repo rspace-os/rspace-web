@@ -110,11 +110,17 @@ public class BookingCatalogueController {
   public BookingCatalogueManager.LocationPage searchLocations(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(name = "type", required = false) List<String> targetTypes,
+      @RequestParam(name = "globalId", required = false) @Size(max = 100) List<String> globalIds,
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return manager.searchLocations(
-        query, targetTypes == null ? List.of() : targetTypes, page, limit, caller.subject());
+        query,
+        targetTypes == null ? List.of() : targetTypes,
+        globalIds == null ? List.of() : globalIds,
+        page,
+        limit,
+        caller.subject());
   }
 }
