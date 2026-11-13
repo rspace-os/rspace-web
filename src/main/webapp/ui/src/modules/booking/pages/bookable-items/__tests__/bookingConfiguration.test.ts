@@ -1,13 +1,40 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { parseTableViewState } from "@/modules/common/table-list/utils/viewStorage";
 import {
+  bookingConfigurationConfig,
   bookingConfigurationFields,
   fetchBookingConfigurationByTarget,
   fetchBookingConfigurationDetailsByTarget,
 } from "../bookingConfiguration";
 import { mapBookingConfiguration } from "../bookingConfigurationSchema";
 import { collectionPage } from "../mocks/bookableItemsMocks";
+
+it.each(["openingStart", "openingEnd", "openDays", "openingExceptions"])(
+  "does not restore the removed schedule field %s from a saved view",
+  (field) => {
+    const config = resolveCollectionConfig(bookingConfigurationConfig);
+    const restored = parseTableViewState(
+      JSON.stringify({
+        v: 1,
+        search: "Microscope",
+        where: `enabled==true;${field}=="09:00"`,
+        columns: JSON.stringify({ fields: ["target", field] }),
+        defaults: JSON.stringify({ fields: config.defaultColumns }),
+        sort: field,
+      }),
+      config,
+    );
+    expect(restored).toEqual({
+      search: "Microscope",
+      where: null,
+      columns: config.defaultColumns,
+      sort: config.defaultSort ?? [],
+    });
+  },
+);
 
 const configuration = {
   id: 7,
