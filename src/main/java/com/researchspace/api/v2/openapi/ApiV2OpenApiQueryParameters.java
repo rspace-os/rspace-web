@@ -13,7 +13,6 @@ import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.model.collection.FilterSchema;
 import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.Operator;
-import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipSchema;
 import com.researchspace.model.collection.ResourceFieldSchema;
 import com.researchspace.model.collection.ResourceRegistry;

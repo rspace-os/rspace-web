@@ -166,7 +166,7 @@ final class ApiV2OpenApiResourceAccessDocs {
       ResourceAccessOperation operationKind) {
     Map<String, Object> operation = new LinkedHashMap<>();
     operation.put(
-        "operationId", operationKind.operationId(ApiV2OpenApiGenerator.singularName(resource)));
+        "operationId", operationKind.operationId(ApiV2OpenApiNames.singularName(resource)));
     operation.put("summary", operationKind.summary());
     operation.put("tags", List.of(resource.resourceName()));
     operation.put("security", AUTHENTICATED_SECURITY);
