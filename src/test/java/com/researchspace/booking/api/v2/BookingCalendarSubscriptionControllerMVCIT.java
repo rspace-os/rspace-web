@@ -3,6 +3,8 @@ package com.researchspace.booking.api.v2;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static com.researchspace.testutils.BookingResourceTestFixtures.useSnapshotIsolation;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -60,6 +62,8 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
   private static final String USER_SUBSCRIPTION_PATH =
       "/api/v2/users/me/booking-calendar-subscription";
+  private static final String ITEM_LINKS_PATH =
+      "/api/v2/users/me/bookable-item-calendar-subscriptions";
 
   private final WebApplicationContext context;
   private final BookingCalendarSubscriptionDao subscriptionDao;
@@ -307,6 +311,11 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(jsonPath("$.updatedAt").isString())
         .andExpect(jsonPath("$.subscriptionUrl").value(firstUrl));
 
+    mockMvc
+        .perform(post(path(configurationId)).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.subscriptionUrl").value(firstUrl));
+    assertNotEquals(firstUrl, rotate(configurationId, apiKey));
 
     mockMvc
         .perform(delete(path(configurationId)).header("apiKey", apiKey))
@@ -321,6 +330,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(jsonPath("$.subscriptionUrl").value((Object) null));
   }
 
+  @Test
   @Test
   void deleteIsIdempotentForALiveConfiguration() throws Exception {
     long configurationId = readableConfiguration();
