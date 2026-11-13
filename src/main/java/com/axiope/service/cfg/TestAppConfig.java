@@ -60,6 +60,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * Run profile spring configuration used for running the web application in test/dev environments.
@@ -176,7 +177,8 @@ public class TestAppConfig extends BaseConfig {
       BookingConfigurationManager configurationManager,
       TimeSlotBookingManager bookingManager,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
-      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao) {
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
+      PlatformTransactionManager transactionManager) {
     return new BookingFixturesAppInitialiser(
         devUserPassword,
         userDao,
@@ -188,7 +190,8 @@ public class TestAppConfig extends BaseConfig {
         configurationManager,
         bookingManager,
         configurationDao,
-        bookingDao);
+        bookingDao,
+        transactionManager);
   }
 
   @Bean
