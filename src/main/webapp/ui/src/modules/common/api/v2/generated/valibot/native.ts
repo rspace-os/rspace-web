@@ -634,9 +634,39 @@ export const BookingConfigurationsUpdate = v.object({
   ),
 });
 
-export const BookingEventKind = v.picklist(["BOOKING", "MAINTENANCE"]);
-
 export const BookingTimezoneMode = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
+
+export const BookingDisplayPreferences = v.object({
+  availabilityWindowEnd: v.optional(v.string()),
+  availabilityWindowStart: v.optional(v.string()),
+  customTimezone: v.nullish(v.string()),
+  institutionTimezone: v.optional(
+    v.pipe(v.string(), v.description("The running institution's JVM-default IANA timezone.")),
+  ),
+  overridden: v.optional(
+    v.pipe(v.boolean(), v.description("Whether these values come from an explicit user override.")),
+  ),
+  timezoneMode: v.optional(BookingTimezoneMode),
+});
+
+export const BookingDisplayPreferencesControllerReplacement = v.object({
+  availabilityWindowEnd: v.pipe(v.string(), v.regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$/)),
+  availabilityWindowStart: v.pipe(v.string(), v.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/)),
+  customTimezone: v.nullish(
+    v.pipe(
+      v.string(),
+      v.minLength(0),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description("Required only when timezoneMode is CUSTOM; must be a valid IANA timezone."),
+    ),
+  ),
+  timezoneMode: BookingTimezoneMode,
+});
+
+export const BookingEventKind = v.picklist(["BOOKING", "MAINTENANCE"]);
 
 export const BookingSettingsControllerAdminSettingsDocument = v.object({
   allowDoubleBooking: v.optional(v.boolean()),
@@ -671,8 +701,8 @@ export const BookingSettingsControllerSettingsDocument = v.object({
 
 export const BookingSettingsControllerSettingsPatch = v.object({
   allowDoubleBooking: v.nullish(v.boolean()),
-  availabilityWindowEnd: v.nullish(v.pipe(v.string(), v.regex(/(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)/))),
-  availabilityWindowStart: v.nullish(v.pipe(v.string(), v.regex(/(?:[01]\d|2[0-3]):[0-5]\d/))),
+  availabilityWindowEnd: v.nullish(v.pipe(v.string(), v.regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$/))),
+  availabilityWindowStart: v.nullish(v.pipe(v.string(), v.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/))),
   bufferAfterMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))),
   bufferBeforeMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10080))),
   customTimezone: v.nullish(
@@ -2786,6 +2816,20 @@ export const CountUsersResponse = ApiV2CountResult;
  * @summary Get the current user
  */
 export const GetCurrentUserResponse = ApiV2CurrentUser;
+
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export const GetMyBookingPreferencesResponse = BookingDisplayPreferences;
+
+/**
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * @summary Replace Booking display preferences
+ */
+export const ReplaceMyBookingPreferencesBody = BookingDisplayPreferencesControllerReplacement;
+
+export const ReplaceMyBookingPreferencesResponse = BookingDisplayPreferences;
 
 /**
  * Returns one visible users. A resource that is absent or not readable is reported as not found.

@@ -35,6 +35,9 @@ export const BookingConfigurationsCreateSchema = native.BookingConfigurationsCre
 export const BookingConfigurationsReadSchema = native.BookingConfigurationsRead;
 export const BookingConfigurationsReferenceSchema = native.BookingConfigurationsReference;
 export const BookingConfigurationsUpdateSchema = native.BookingConfigurationsUpdate;
+export const BookingDisplayPreferencesSchema = native.BookingDisplayPreferences;
+export const BookingDisplayPreferencesControllerReplacementSchema =
+  native.BookingDisplayPreferencesControllerReplacement;
 export const BookingEventKindSchema = native.BookingEventKind;
 export const BookingIncrementUnitSchema = native.BookingIncrementUnit;
 export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
@@ -242,6 +245,24 @@ export type SchemaModelTypeChecks = {
   BookingConfigurationsUpdate: [
     Assert<Extends<v.InferOutput<typeof BookingConfigurationsUpdateSchema>, Models.BookingConfigurationsUpdate>>,
     Assert<Extends<Models.BookingConfigurationsUpdate, v.InferOutput<typeof BookingConfigurationsUpdateSchema>>>,
+  ];
+  BookingDisplayPreferences: [
+    Assert<Extends<v.InferOutput<typeof BookingDisplayPreferencesSchema>, Models.BookingDisplayPreferences>>,
+    Assert<Extends<Models.BookingDisplayPreferences, v.InferOutput<typeof BookingDisplayPreferencesSchema>>>,
+  ];
+  BookingDisplayPreferencesControllerReplacement: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingDisplayPreferencesControllerReplacementSchema>,
+        Models.BookingDisplayPreferencesControllerReplacement
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingDisplayPreferencesControllerReplacement,
+        v.InferOutput<typeof BookingDisplayPreferencesControllerReplacementSchema>
+      >
+    >,
   ];
   BookingEventKind: [
     Assert<Extends<v.InferOutput<typeof BookingEventKindSchema>, Models.BookingEventKind>>,
