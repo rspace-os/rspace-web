@@ -27,6 +27,7 @@ const target: BookableItemOption = {
   name: "Confocal microscope",
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "06:00", end: "22:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
