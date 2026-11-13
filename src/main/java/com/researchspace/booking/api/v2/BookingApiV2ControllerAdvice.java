@@ -5,7 +5,6 @@ import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.controller.ApiV2ProblemFactory;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.booking.service.BookingPolicyException;
-import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
 import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.StaleBookingSettingsException;
@@ -40,12 +39,6 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleInvalidBookingDisplaySettings(
       InvalidBookingDisplaySettingsException ex) {
     return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
-  }
-
-  @ExceptionHandler(InvalidBookingDefaultSharingException.class)
-  public ResponseEntity<ApiV2Problem> handleInvalidBookingDefaultSharing() {
-    return problem(
-        HttpStatus.BAD_REQUEST, "errors.api.v2.bookingConfiguration.defaultSharing.invalid");
   }
 
   @ExceptionHandler(BookingPolicyException.class)
