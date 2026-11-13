@@ -35,12 +35,26 @@ export const crossResourceInvalidation: ReadonlyArray<{
     invalidates: [{ query: "listBookings" }, { query: "countBookings" }],
   },
   {
-    onMutations: ["createOrReplaceUserBookingCalendarSubscription", "revokeUserBookingCalendarSubscription"],
+    onMutations: [
+      "createUserBookingCalendarSubscription",
+      "rotateUserBookingCalendarSubscription",
+      "revokeUserBookingCalendarSubscription",
+    ],
     invalidates: [{ query: "getUserBookingCalendarSubscription" }],
   },
   {
     onMutations: ["updateBookingConfiguration", "deleteBookingConfiguration"],
     invalidates: [{ query: "getBookingCalendarSubscription", params: ["id"] }],
+  },
+  {
+    onMutations: [
+      "createBookingCalendarSubscription",
+      "rotateBookingCalendarSubscription",
+      "revokeBookingCalendarSubscription",
+      "updateBookingConfiguration",
+      "deleteBookingConfiguration",
+    ],
+    invalidates: [{ query: "listMyBookableItemCalendarSubscriptions" }],
   },
   {
     onMutations: [
