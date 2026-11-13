@@ -39,6 +39,7 @@ import {
   getSearchBookingCatalogueQueryKey,
 } from "../booking-catalogue/booking-catalogue.ts";
 import { getSearchBookingConfigurationTargetsQueryKey } from "../booking-configuration-targets/booking-configuration-targets.ts";
+import { getCountBookingsQueryKey, getListBookingsQueryKey } from "../bookings/bookings.ts";
 import type {
   ApiV2Problem,
   AuditEventsResponse,
@@ -1539,6 +1540,8 @@ export const getDeleteBookingConfigurationMutationOptions = <
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getListBookingsQueryKey(),
+            getCountBookingsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -2084,6 +2087,8 @@ export const getUpdateBookingConfigurationMutationOptions = <
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getListBookingsQueryKey(),
+            getCountBookingsQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
