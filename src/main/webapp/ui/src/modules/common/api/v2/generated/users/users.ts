@@ -33,9 +33,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
-
-import { apiV2Fetch } from "../../apiV2Fetch.ts";
-import { apiV2HeadersFetch } from "../../apiV2Fetch.ts";
+import { apiV2Fetch, apiV2HeadersFetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import type {
   ApiV2CurrentUser,
@@ -1443,12 +1441,13 @@ export const getGetUserBookingCalendarSubscriptionQueryKey = () => {
 
 export const getGetUserBookingCalendarSubscriptionQueryOptions = <
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>, TError, TData>>;
   request?: SecondParameter<typeof apiV2HeadersFetch>;
@@ -1470,22 +1469,20 @@ export const getGetUserBookingCalendarSubscriptionQueryOptions = <
 export type GetUserBookingCalendarSubscriptionQueryResult = NonNullable<
   Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>
 >;
-export type GetUserBookingCalendarSubscriptionQueryError =
-  | UnauthenticatedResponse
-  | NotFoundResponse
-  | NotAcceptableResponse
-  | TooManyRequestsResponse
-  | UnexpectedErrorResponse;
+export type GetUserBookingCalendarSubscriptionQueryError = ErrorType<
+  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
+>;
 
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>, TError, TData>> &
@@ -1504,12 +1501,13 @@ export function useGetUserBookingCalendarSubscription<
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>, TError, TData>> &
@@ -1528,12 +1526,13 @@ export function useGetUserBookingCalendarSubscription<
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>, TError, TData>>;
@@ -1544,12 +1543,13 @@ export function useGetUserBookingCalendarSubscription<
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscription<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>, TError, TData>>;
@@ -1580,12 +1580,13 @@ export const invalidateGetUserBookingCalendarSubscription = async (
 
 export const getGetUserBookingCalendarSubscriptionSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(options?: {
   query?: Partial<
     UseSuspenseQueryOptions<Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>, TError, TData>
@@ -1611,22 +1612,20 @@ export const getGetUserBookingCalendarSubscriptionSuspenseQueryOptions = <
 export type GetUserBookingCalendarSubscriptionSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>
 >;
-export type GetUserBookingCalendarSubscriptionSuspenseQueryError =
-  | UnauthenticatedResponse
-  | NotFoundResponse
-  | NotAcceptableResponse
-  | TooManyRequestsResponse
-  | UnexpectedErrorResponse;
+export type GetUserBookingCalendarSubscriptionSuspenseQueryError = ErrorType<
+  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
+>;
 
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options: {
     query: Partial<
@@ -1639,12 +1638,13 @@ export function useGetUserBookingCalendarSubscriptionSuspense<
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options?: {
     query?: Partial<
@@ -1657,12 +1657,13 @@ export function useGetUserBookingCalendarSubscriptionSuspense<
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options?: {
     query?: Partial<
@@ -1675,12 +1676,13 @@ export function useGetUserBookingCalendarSubscriptionSuspense<
 /** @summary Get the caller's booking calendar subscription */
 export function useGetUserBookingCalendarSubscriptionSuspense<
   TData = Awaited<ReturnType<typeof getUserBookingCalendarSubscription>>,
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
 >(
   options?: {
     query?: Partial<
@@ -1719,12 +1721,13 @@ export const getCreateUserBookingCalendarSubscriptionMutationKey = () =>
   ["createUserBookingCalendarSubscription"] as const;
 
 export const getCreateUserBookingCalendarSubscriptionMutationOptions = <
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
   TContext = unknown,
 >(
   queryClient: QueryClient,
@@ -1774,24 +1777,22 @@ export type CreateUserBookingCalendarSubscriptionMutationResult = NonNullable<
   Awaited<ReturnType<typeof createUserBookingCalendarSubscription>>
 >;
 
-export type CreateUserBookingCalendarSubscriptionMutationError =
-  | UnauthenticatedResponse
-  | NotFoundResponse
-  | NotAcceptableResponse
-  | TooManyRequestsResponse
-  | UnexpectedErrorResponse;
+export type CreateUserBookingCalendarSubscriptionMutationError = ErrorType<
+  UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
+>;
 
 /**
  * Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.
  * @summary Create the caller's booking calendar subscription
  */
 export const useCreateUserBookingCalendarSubscription = <
-  TError =
+  TError = ErrorType<
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
   TContext = unknown,
 >(
   options?: {
@@ -1836,14 +1837,15 @@ export const getRotateUserBookingCalendarSubscriptionMutationKey = () =>
   ["rotateUserBookingCalendarSubscription"] as const;
 
 export const getRotateUserBookingCalendarSubscriptionMutationOptions = <
-  TError =
+  TError = ErrorType<
     | BadRequestResponse
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | ApiV2Problem
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
   TContext = unknown,
 >(
   queryClient: QueryClient,
@@ -1903,14 +1905,15 @@ export type RotateUserBookingCalendarSubscriptionMutationResult = NonNullable<
   Awaited<ReturnType<typeof rotateUserBookingCalendarSubscription>>
 >;
 
-export type RotateUserBookingCalendarSubscriptionMutationError =
+export type RotateUserBookingCalendarSubscriptionMutationError = ErrorType<
   | BadRequestResponse
   | UnauthenticatedResponse
   | NotFoundResponse
   | NotAcceptableResponse
   | ApiV2Problem
   | TooManyRequestsResponse
-  | UnexpectedErrorResponse;
+  | UnexpectedErrorResponse
+>;
 export type RotateUserBookingCalendarSubscriptionMutationVariables = {
   headers: RotateUserBookingCalendarSubscriptionHeaders;
 };
@@ -1920,14 +1923,15 @@ export type RotateUserBookingCalendarSubscriptionMutationVariables = {
  * @summary Replace the caller's booking calendar subscription URL
  */
 export const useRotateUserBookingCalendarSubscription = <
-  TError =
+  TError = ErrorType<
     | BadRequestResponse
     | UnauthenticatedResponse
     | NotFoundResponse
     | NotAcceptableResponse
     | ApiV2Problem
     | TooManyRequestsResponse
-    | UnexpectedErrorResponse,
+    | UnexpectedErrorResponse
+  >,
   TContext = unknown,
 >(
   options?: {
