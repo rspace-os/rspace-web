@@ -151,9 +151,9 @@ class ApiV2DeclaredArrayOpenApiTest {
     List<?> fields = (List<?>) array.get("x-rspace-fields");
     Map<String, Object> name = map(fields.get(0));
     String policy = String.valueOf(map(name.get("createAccess")).get("$ref"));
-    assertTrue(policy.startsWith("#/components/x-rspace-access-policies/AccessPolicy"), policy);
+    assertEquals("#/components/x-rspace-access-policies/Authenticated", policy);
     assertEquals(
-        Set.of("description", "authenticationRequirement", "denialReasonCodes"),
+        Set.of("description", "authentication", "denialReasonCodes"),
         map(map(map(document.get("components")).get("x-rspace-access-policies"))
                 .get(policy.substring(policy.lastIndexOf('/') + 1)))
             .keySet());

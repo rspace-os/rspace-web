@@ -133,7 +133,9 @@ class ReadOnlyCollectionOpenApiTest {
         document.at("/components/parameters/ContainersWhere/x-rspace-filter/$ref").asText());
     assertTrue(document.at("/components/x-rspace-filters/Containers/selectors").isObject());
     String policy = document.at("/components/schemas/ContainersRead/x-rspace-access/$ref").asText();
-    assertTrue(policy.startsWith("#/components/x-rspace-access-policies/AccessPolicy"), policy);
+    assertEquals("#/components/x-rspace-access-policies/Never", policy);
+    assertEquals(
+        policy, document.at("/paths/~1api~1v2~1containers/get/x-rspace-access/$ref").asText());
     assertTrue(document.at(policy.substring(1) + "/description").isTextual());
   }
 

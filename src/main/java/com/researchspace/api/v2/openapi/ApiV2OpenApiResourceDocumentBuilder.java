@@ -102,7 +102,9 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       }
     }
     Map<String, Object> schema = closedObjectSchema(properties, required);
-    schema.put("x-rspace-access", accessExtension(access(resource.access(), writeOperation)));
+    schema.put(
+        "x-rspace-access",
+        ApiV2OpenApiAccessPolicies.extension(access(resource.access(), writeOperation)));
     return schema;
   }
 
@@ -173,7 +175,8 @@ final class ApiV2OpenApiResourceDocumentBuilder {
     if (readOnlyBeforeAccess && writeOperation == null && field.readOnly()) {
       property.put("readOnly", true);
     }
-    property.put("x-rspace-access", accessExtension(access(field, writeOperation)));
+    property.put(
+        "x-rspace-access", ApiV2OpenApiAccessPolicies.extension(access(field, writeOperation)));
     if (!readOnlyBeforeAccess && writeOperation == null && field.readOnly()) {
       property.put("readOnly", true);
     }
@@ -298,16 +301,6 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       throw new IllegalArgumentException(
           "OpenAPI value '" + value + "' is not a valid " + type, ex);
     }
-  }
-
-  private static Map<String, Object> accessExtension(AccessDocumentation access) {
-    return ordered(
-        "description",
-        access.description(),
-        "authentication",
-        access.authenticationRequirement().name(),
-        "denialReasonCodes",
-        access.denialReasonCodes());
   }
 
   static FieldSchema field(ResourceSchema resource, String name) {

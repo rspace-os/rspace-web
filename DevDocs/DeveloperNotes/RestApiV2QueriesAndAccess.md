@@ -283,7 +283,8 @@ in batches. A missing or unreadable protected resource returns the same `404`.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
-`AccessDocumentation` with its authentication rule and denial codes.
+`AccessDocumentation` with a PascalCase name, its authentication rule and denial codes. The name
+keys the policy in the OpenAPI document, so reuse a name only for the same policy.
 
 A custom `createAccess` function runs after structural parsing and before relationship resolution
 and persistence. For one create document, `context.requireInput()` returns the complete immutable
@@ -292,6 +293,7 @@ and persistence. For one create document, `context.requireInput()` returns the c
 ```java
 AccessFunction documentedCreateAccess =
     AccessFunction.documented(
+        "WorkspaceMemberCreate",
         "A member can create a widget only in a workspace of that member.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN),
         context -> {
@@ -523,8 +525,10 @@ hold shared query parameters (`<Resource>Where`, `<Resource>WhereRequired`, `<Re
 `PermanentlyRemoved`, and `<Resource>IfMatchRequired`), and documented problem examples named by
 error code. Two custom sections hold extension values: `x-rspace-filters.<Resource>` is the
 `x-rspace-filter` catalogue of that resource's `where` parameters, and
-`x-rspace-access-policies.AccessPolicy<digest>` holds each distinct `x-rspace-access` object and
-`x-rspace-fields` access policy, named by a digest of its content. A component exists only when an
+`x-rspace-access-policies.<Name>` holds each `x-rspace-access` object and `x-rspace-fields` access
+policy under the name its `AccessDocumentation` declares, such as `Authenticated` or
+`ContainerRead`. Operations, schemas and fields that apply one policy share one entry, and
+generation fails when two different policies declare the same name. A component exists only when an
 operation or schema refers to it.
 
 The document service merges Swagger annotations from concrete controllers. It validates the complete

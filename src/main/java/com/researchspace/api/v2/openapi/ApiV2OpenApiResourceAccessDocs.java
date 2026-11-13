@@ -24,10 +24,10 @@ import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 final class ApiV2OpenApiResourceAccessDocs {
 
@@ -119,11 +119,16 @@ final class ApiV2OpenApiResourceAccessDocs {
     operation.put("security", AUTHENTICATED_SECURITY);
     operation.put(
         "x-rspace-access",
-        operationAccessExtension(
+        ApiV2OpenApiAccessPolicies.extension(
             operationKind.managesAssignments()
-                ? text.get(Key.ACCESS_MANAGING_CALLERS)
-                : text.get(Key.ACCESS_AUTHORIZED_CALLERS),
-            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+                ? new AccessDocumentation(
+                    "ResourceAccessManagers",
+                    text.get(Key.ACCESS_MANAGING_CALLERS),
+                    Set.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN))
+                : new AccessDocumentation(
+                    "ResourceAccessAuthorized",
+                    text.get(Key.ACCESS_AUTHORIZED_CALLERS),
+                    Set.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN))));
     List<Map<String, Object>> parameters = new ArrayList<>();
     parameters.add(idParameter(resource.description().schema(), text));
     if (operationKind == ResourceAccessOperation.REPLACE) {
@@ -215,9 +220,7 @@ final class ApiV2OpenApiResourceAccessDocs {
 
   static void applyAccess(Map<String, Object> operation, AccessDocumentation access) {
     operation.put("security", security(access.authenticationRequirement()));
-    operation.put(
-        "x-rspace-access",
-        operationAccessExtension(access.description(), access.denialReasonCodes()));
+    operation.put("x-rspace-access", ApiV2OpenApiAccessPolicies.extension(access));
   }
 
   private static List<Map<String, List<String>>> security(
@@ -225,10 +228,5 @@ final class ApiV2OpenApiResourceAccessDocs {
     return authenticationRequirement == AuthenticationRequirement.PUBLIC
         ? List.of()
         : AUTHENTICATED_SECURITY;
-  }
-
-  static Map<String, Object> operationAccessExtension(
-      String description, Collection<String> denialReasonCodes) {
-    return ordered("description", description, "denialReasonCodes", denialReasonCodes);
   }
 }

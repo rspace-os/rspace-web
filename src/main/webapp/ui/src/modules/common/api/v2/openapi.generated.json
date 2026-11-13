@@ -883,7 +883,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
+          "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       },
       "ContainersRead" : {
@@ -894,21 +894,21 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
+              "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
             }
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
+              "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
             }
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
+              "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
             }
           },
           "id" : {
@@ -916,7 +916,7 @@
             "readOnly" : true,
             "type" : "integer",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
+              "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
             }
           },
           "name" : {
@@ -924,14 +924,14 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
+              "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
             }
           }
         },
         "required" : [ "id" ],
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
+          "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
         }
       },
       "ContainersReference" : {
@@ -953,7 +953,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
+          "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       },
       "InstrumentsCreate" : {
@@ -961,7 +961,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
+          "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       },
       "InstrumentsRead" : {
@@ -978,7 +978,7 @@
             "title" : "Deleted",
             "type" : "boolean",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
+              "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             }
           },
           "extraFields" : {
@@ -992,7 +992,7 @@
             "title" : "Global ID",
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
+              "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             }
           },
           "id" : {
@@ -1003,7 +1003,7 @@
             "title" : "Instrument ID",
             "type" : "integer",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
+              "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             }
           },
           "name" : {
@@ -1014,7 +1014,7 @@
             "title" : "Name",
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
+              "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             }
           },
           "parentContainer" : {
@@ -1039,7 +1039,7 @@
             } ],
             "readOnly" : true,
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
+              "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
             "x-rspace-relationship" : {
               "targets" : {
@@ -1053,7 +1053,7 @@
         "required" : [ "id" ],
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
+          "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
         }
       },
       "InstrumentsReference" : {
@@ -1075,7 +1075,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
+          "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       },
       "ResourceAccessAssignmentDocument" : {
@@ -1245,7 +1245,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
+          "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       },
       "UsersRead" : {
@@ -1257,7 +1257,7 @@
             "readOnly" : true,
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+              "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
             }
           },
           "email" : {
@@ -1267,7 +1267,7 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+              "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
             }
           },
           "firstName" : {
@@ -1275,7 +1275,7 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+              "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
             }
           },
           "id" : {
@@ -1285,7 +1285,7 @@
             "readOnly" : true,
             "type" : "integer",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+              "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
             }
           },
           "lastName" : {
@@ -1293,7 +1293,7 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+              "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
             }
           },
           "username" : {
@@ -1302,14 +1302,14 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+              "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
             }
           }
         },
         "required" : [ "id" ],
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
+          "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
         }
       },
       "UsersReference" : {
@@ -1331,7 +1331,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
+          "$ref" : "#/components/x-rspace-access-policies/Never"
         }
       }
     },
@@ -1353,37 +1353,25 @@
       }
     },
     "x-rspace-access-policies" : {
-      "AccessPolicy35c71ff4" : {
+      "ContainerRead" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
         "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
       },
-      "AccessPolicy4739d966" : {
+      "InstrumentRead" : {
+        "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
         "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
       },
-      "AccessPolicybb3e0867" : {
+      "Never" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
         "description" : "This action is not permitted."
       },
-      "AccessPolicyc0cca6e1" : {
-        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-        "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
-      },
-      "AccessPolicyd69bc6ba" : {
-        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-        "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
-      },
-      "AccessPolicyf215fc14" : {
+      "SysadminOrSelf" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
         "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
-      },
-      "AccessPolicyfe52a367" : {
-        "authentication" : "AUTHENTICATED",
-        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-        "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
       }
     },
     "x-rspace-filters" : {
@@ -1699,7 +1687,7 @@
         "summary" : "List containers",
         "tags" : [ "containers" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyc0cca6e1"
+          "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
         },
         "x-rspace-operation" : "LIST"
       }
@@ -1744,7 +1732,7 @@
         "summary" : "Count containers",
         "tags" : [ "containers" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyc0cca6e1"
+          "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
         },
         "x-rspace-operation" : "COUNT"
       }
@@ -1811,7 +1799,7 @@
         "summary" : "Get one containers",
         "tags" : [ "containers" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyc0cca6e1"
+          "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
         },
         "x-rspace-operation" : "READ"
       }
@@ -1923,7 +1911,7 @@
         "summary" : "List instruments",
         "tags" : [ "instruments" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy4739d966"
+          "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
         },
         "x-rspace-operation" : "LIST"
       }
@@ -1968,7 +1956,7 @@
         "summary" : "Count instruments",
         "tags" : [ "instruments" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy4739d966"
+          "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
         },
         "x-rspace-operation" : "COUNT"
       }
@@ -2134,7 +2122,7 @@
         "summary" : "Get one instruments",
         "tags" : [ "instruments" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy4739d966"
+          "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
         },
         "x-rspace-operation" : "READ"
       }
@@ -2338,7 +2326,7 @@
         "summary" : "List users",
         "tags" : [ "users" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyd69bc6ba"
+          "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
         },
         "x-rspace-operation" : "LIST"
       }
@@ -2383,7 +2371,7 @@
         "summary" : "Count users",
         "tags" : [ "users" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyd69bc6ba"
+          "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
         },
         "x-rspace-operation" : "COUNT"
       }
@@ -2533,7 +2521,7 @@
         "summary" : "Get one users",
         "tags" : [ "users" ],
         "x-rspace-access" : {
-          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyd69bc6ba"
+          "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
         },
         "x-rspace-operation" : "READ"
       }

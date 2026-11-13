@@ -1,26 +1,20 @@
 package com.researchspace.api.v2.openapi;
 
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.researchspace.model.collection.AccessDocumentation;
 import io.swagger.v3.core.util.Json31;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.HexFormat;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Moves access policy objects into {@code components.x-rspace-access-policies} and replaces each
- * use with a reference. A policy is named by a digest of its content, so identical policies share
- * one entry and a name changes only when its policy does.
+ * use with a reference. Each policy is keyed by the name its {@link AccessDocumentation} declares;
+ * two different policies that declare one name fail generation.
  */
 final class ApiV2OpenApiAccessPolicies {
 
@@ -30,9 +24,12 @@ final class ApiV2OpenApiAccessPolicies {
   private static final Set<String> FIELD_ACCESS =
       Set.of("readAccess", "createAccess", "updateAccess");
   private static final TypeReference<List<Object>> FIELD_LIST = new TypeReference<>() {};
+  private static final String NAME = "name";
+  private static final String DESCRIPTION = "description";
+  private static final String AUTHENTICATION = "authentication";
   private static final String DENIAL_REASON_CODES = "denialReasonCodes";
-  private static final ObjectMapper CANONICAL =
-      Json31.mapper().copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+  private static final Set<String> KEYS =
+      Set.of(NAME, DESCRIPTION, AUTHENTICATION, DENIAL_REASON_CODES);
 
   private ApiV2OpenApiAccessPolicies() {}
 
@@ -81,23 +78,36 @@ final class ApiV2OpenApiAccessPolicies {
     }
   }
 
-  private static Map<String, Object> policy(Map<?, ?> raw, ApiV2OpenApiComponents components) {
-    Map<String, Object> policy = new LinkedHashMap<>(ApiV2OpenApiMaps.objectMap(raw));
-    if (policy.get(DENIAL_REASON_CODES) instanceof Collection<?> codes) {
-      // The codes come from a set, so sort them to name equal policies alike.
-      policy.put(DENIAL_REASON_CODES, codes.stream().map(String::valueOf).sorted().toList());
-    }
-    return components.reference(SECTION, name(policy), policy);
+  /** The {@code x-rspace-access} object for {@code access}, before {@link #share} names it. */
+  static Map<String, Object> extension(AccessDocumentation access) {
+    return ordered(
+        NAME,
+        access.name(),
+        DESCRIPTION,
+        access.description(),
+        AUTHENTICATION,
+        access.authenticationRequirement().name(),
+        DENIAL_REASON_CODES,
+        access.denialReasonCodes());
   }
 
-  private static String name(Map<String, Object> policy) {
-    try {
-      byte[] digest =
-          MessageDigest.getInstance("SHA-256")
-              .digest(CANONICAL.writeValueAsString(policy).getBytes(StandardCharsets.UTF_8));
-      return "AccessPolicy" + HexFormat.of().formatHex(digest, 0, 4);
-    } catch (JsonProcessingException | NoSuchAlgorithmException ex) {
-      throw new IllegalStateException("Cannot name OpenAPI access policy", ex);
+  private static Map<String, Object> policy(Map<?, ?> raw, ApiV2OpenApiComponents components) {
+    Map<String, Object> policy = ApiV2OpenApiMaps.objectMap(raw);
+    if (!KEYS.equals(policy.keySet()) || !(policy.get(NAME) instanceof String name)) {
+      throw new IllegalStateException(
+          "OpenAPI access policy must have exactly " + KEYS + ": " + raw);
     }
+    // The codes come from a set, so sort them to keep equal policies equal.
+    Collection<?> codes = (Collection<?>) policy.get(DENIAL_REASON_CODES);
+    return components.reference(
+        SECTION,
+        name,
+        ordered(
+            DESCRIPTION,
+            policy.get(DESCRIPTION),
+            AUTHENTICATION,
+            policy.get(AUTHENTICATION),
+            DENIAL_REASON_CODES,
+            codes.stream().map(String::valueOf).sorted().toList()));
   }
 }
