@@ -3005,6 +3005,59 @@
           "$ref" : "#/components/x-rspace-access-policies/Authenticated"
         }
       },
+      "BookingDisplayPreferences" : {
+        "properties" : {
+          "availabilityWindowEnd" : {
+            "type" : "string"
+          },
+          "availabilityWindowStart" : {
+            "type" : "string"
+          },
+          "customTimezone" : {
+            "type" : [ "string", "null" ]
+          },
+          "institutionTimezone" : {
+            "description" : "The running institution's JVM-default IANA timezone.",
+            "readOnly" : true,
+            "type" : "string"
+          },
+          "overridden" : {
+            "description" : "Whether these values come from an explicit user override.",
+            "readOnly" : true,
+            "type" : "boolean"
+          },
+          "timezoneMode" : {
+            "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingDisplayPreferencesControllerReplacement" : {
+        "properties" : {
+          "availabilityWindowEnd" : {
+            "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+            "type" : "string"
+          },
+          "availabilityWindowStart" : {
+            "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+            "type" : "string"
+          },
+          "customTimezone" : {
+            "description" : "Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.",
+            "example" : "America/New_York",
+            "maxLength" : 255,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "timezoneMode" : {
+            "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "availabilityWindowEnd", "availabilityWindowStart", "timezoneMode" ],
+        "type" : "object"
+      },
       "BookingOpeningHoursEntry" : {
         "properties" : {
           "dayOfWeek" : {
@@ -3143,11 +3196,11 @@
             "type" : [ "boolean", "null" ]
           },
           "availabilityWindowEnd" : {
-            "pattern" : "(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)",
+            "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
             "type" : [ "string", "null" ]
           },
           "availabilityWindowStart" : {
-            "pattern" : "(?:[01]\\d|2[0-3]):[0-5]\\d",
+            "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
             "type" : [ "string", "null" ]
           },
           "bufferAfterMinutes" : {
@@ -9613,6 +9666,104 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Get the current user",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-preferences" : {
+      "delete" : {
+        "description" : "Deletes the logical override so subsequent reads inherit global defaults.",
+        "operationId" : "resetMyBookingPreferences",
+        "responses" : {
+          "204" : {
+            "description" : "The override was reset."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Reset Booking display preferences",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "get" : {
+        "description" : "Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.",
+        "operationId" : "getMyBookingPreferences",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingDisplayPreferences"
+                }
+              }
+            },
+            "description" : "Resolved Booking display preferences."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get resolved Booking display preferences",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "put" : {
+        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.",
+        "operationId" : "replaceMyBookingPreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingDisplayPreferencesControllerReplacement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingDisplayPreferences"
+                }
+              }
+            },
+            "description" : "Stored Booking display preferences."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replace Booking display preferences",
         "tags" : [ "users" ],
         "x-rspace-operation" : "CUSTOM"
       }

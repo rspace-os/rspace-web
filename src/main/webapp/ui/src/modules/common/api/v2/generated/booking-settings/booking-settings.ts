@@ -25,6 +25,7 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 import {
+  matchQuery,
   queryOptions as queryOptionsBuilder,
   useMutation,
   useQuery,
@@ -32,7 +33,6 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { ErrorType } from "../../apiV2Fetch.ts";
-
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2HeadersFetch } from "../../apiV2HeadersFetch.ts";
 import type {
@@ -46,6 +46,7 @@ import type {
   PatchAdminBookingSettingsHeaders,
   UnauthenticatedResponse,
 } from "../models";
+import { getGetMyBookingPreferencesQueryKey } from "../users/users.ts";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -588,7 +589,14 @@ export const getPatchAdminBookingSettingsMutationOptions = <
     context: MutationFunctionContext,
   ) => {
     if (!options?.skipInvalidation) {
-      queryClient.invalidateQueries({ queryKey: getGetBookingSettingsQueryKey() });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          [
+            getGetBookingSettingsQueryKey(),
+            getGetAdminBookingSettingsQueryKey(),
+            getGetMyBookingPreferencesQueryKey(),
+          ].some((queryKey) => matchQuery({ queryKey }, query)),
+      });
     }
     mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
   };
