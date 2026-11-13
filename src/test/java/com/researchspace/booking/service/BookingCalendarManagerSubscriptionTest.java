@@ -544,6 +544,7 @@ class BookingCalendarManagerSubscriptionTest {
     UNREADABLE,
     ARCHIVED_WITHOUT_ACCESS
   }
+
   private UserBookingCalendarSubscription verifySavedUserSubscription() {
     ArgumentCaptor<UserBookingCalendarSubscription> saved =
         ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
