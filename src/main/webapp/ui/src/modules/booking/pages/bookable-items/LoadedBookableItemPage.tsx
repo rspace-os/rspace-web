@@ -3,6 +3,8 @@ import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import {
@@ -154,6 +156,15 @@ export function LoadedBookableItemPage({
             target={target}
             action={
               <>
+                {active &&
+                (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
+                  <BookingCreationButtonGroup
+                    ownerId={`bookable-item-${configuration.id}`}
+                    target={bookableItemOption({ ...configuration, target })}
+                    lockTarget
+                    disabled={!configuration.enabled}
+                  />
+                ) : null}
                 {active && configuration.capabilities.canLeaveConfiguration ? (
                   <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
                     {t("bookableItemDetails.actions.leave")}
