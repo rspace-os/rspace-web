@@ -4,6 +4,7 @@ import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.DeletePolicy;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.core.util.EnglishInflector;
 import com.researchspace.model.collection.CollectionDescription;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -33,10 +34,11 @@ final class ApiV2OpenApiNames {
     String name = resource.resourceName();
     if (!resource.description().singular().isBlank())
       return pascalCase(resource.description().singular());
-    if (!name.endsWith("s") || name.endsWith("ss") || name.endsWith("ies")) {
+    String singular = EnglishInflector.singular(name);
+    if (!EnglishInflector.plural(singular).equals(name)) {
       throw new IllegalArgumentException("Resource needs an explicit singular definition: " + name);
     }
-    return pascalCase(name.substring(0, name.length() - 1));
+    return pascalCase(singular);
   }
 
   private static String pascalCase(String value) {
