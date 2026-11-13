@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserAccountEventDao;
@@ -49,6 +50,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class UserManagerImplTest extends BaseManagerMockTestCase {
@@ -65,6 +67,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock IPropertyHolder properties;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
   private final RSpacePasswordEncoder passwordEncoder = new RSpacePasswordEncoder();
+  private @Mock BookingCalendarRevocationCoordinator bookingCalendarRevocationCoordinator;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -81,6 +84,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
             verificationPasswordValidator,
             new MessageSourceUtils(new JsonMessageSource()),
             passwordEncoder);
+    ReflectionTestUtils.setField(
+        userManager, "calendarRevocations", bookingCalendarRevocationCoordinator);
   }
 
   @Test
