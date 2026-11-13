@@ -8,5 +8,8 @@
 
 export interface BookingNotificationSubscriptionManagerPreferences {
   autoSubscribeOwnedItems?: boolean;
+  emailDelivery?: boolean;
+  notifyOnCancelled?: boolean;
+  notifyOnCreated?: boolean;
   notifyOwnActions?: boolean;
 }
