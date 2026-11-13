@@ -1,10 +1,12 @@
 package com.researchspace.api.v2.openapi;
 
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.annotationRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.parameterRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.requestBodyRef;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.responseRef;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -149,7 +151,7 @@ final class ApiV2OpenApiAnnotationMerger {
       String responseCode = documented.responseCode();
       boolean success = isSuccessResponse(responseCode);
       if (!documented.ref().isBlank()) {
-        responses.put(responseCode, annotationRef("responses", documented.ref()));
+        responses.put(responseCode, responseRef(documented.ref()));
       } else if (success
           || responseCode.startsWith("1")
           || responseCode.startsWith("3")
@@ -221,7 +223,7 @@ final class ApiV2OpenApiAnnotationMerger {
   private static Map<String, Object> parameter(
       Parameter documented, Type type, ParameterLocation location, Map<String, Object> schemas) {
     if (documented != null && !documented.ref().isBlank()) {
-      return annotationRef("parameters", documented.ref());
+      return parameterRef(documented.ref());
     }
     Components components = new Components();
     var parameter =
@@ -283,7 +285,7 @@ final class ApiV2OpenApiAnnotationMerger {
     if (documented != null) {
       putIfText(result, "description", documented.description());
       if (!documented.ref().isBlank()) {
-        return Optional.of(annotationRef("requestBodies", documented.ref()));
+        return Optional.of(requestBodyRef(documented.ref()));
       }
     }
     result.put("required", documented != null ? documented.required() : true);

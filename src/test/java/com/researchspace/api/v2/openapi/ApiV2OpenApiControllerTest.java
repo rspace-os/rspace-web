@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
@@ -16,7 +17,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
-import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class ApiV2OpenApiControllerTest {
 
@@ -24,27 +27,33 @@ class ApiV2OpenApiControllerTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void productionCachesTheDocumentAndSupportsConditionalGets() {
+  void productionCachesTheDocumentAndSupportsConditionalGets() throws Exception {
     when(documents.generate()).thenReturn(Map.of("openapi", "3.1.0"));
     MockEnvironment environment = new MockEnvironment();
     environment.setActiveProfiles("prod");
-    ApiV2OpenApiController controller =
-        new ApiV2OpenApiController(documents, objectMapper, environment);
+    MockMvc mvc =
+        MockMvcBuilders.standaloneSetup(
+                new ApiV2OpenApiController(documents, objectMapper, environment))
+            .build();
 
-    ResponseEntity<Map<String, Object>> first = controller.openApi(new MockHttpServletRequest());
-    String etag = first.getHeaders().getETag();
-    MockHttpServletRequest conditionalRequest = new MockHttpServletRequest();
-    conditionalRequest.addHeader(HttpHeaders.IF_NONE_MATCH, etag);
-    ResponseEntity<Map<String, Object>> conditional = controller.openApi(conditionalRequest);
+    MockHttpServletResponse first =
+        mvc.perform(get("/api/v2/openapi.json")).andReturn().getResponse();
+    String etag = first.getHeader(HttpHeaders.ETAG);
+    MockHttpServletResponse conditional =
+        mvc.perform(get("/api/v2/openapi.json").header(HttpHeaders.IF_NONE_MATCH, etag))
+            .andReturn()
+            .getResponse();
 
-    assertEquals(HttpStatus.OK, first.getStatusCode());
+    assertEquals(HttpStatus.OK.value(), first.getStatus());
     assertNotNull(etag);
-    assertTrue(first.getHeaders().getCacheControl().contains("private"));
-    assertTrue(first.getHeaders().getCacheControl().contains("max-age=3600"));
-    assertTrue(first.getHeaders().getCacheControl().contains("must-revalidate"));
-    assertEquals(HttpStatus.NOT_MODIFIED, conditional.getStatusCode());
-    assertEquals(etag, conditional.getHeaders().getETag());
-    assertNull(conditional.getBody());
+    String cacheControl = first.getHeader(HttpHeaders.CACHE_CONTROL);
+    assertTrue(cacheControl.contains("private"));
+    assertTrue(cacheControl.contains("max-age=3600"));
+    assertTrue(cacheControl.contains("must-revalidate"));
+    assertEquals(HttpStatus.NOT_MODIFIED.value(), conditional.getStatus());
+    assertEquals(etag, conditional.getHeader(HttpHeaders.ETAG));
+    assertEquals(cacheControl, conditional.getHeader(HttpHeaders.CACHE_CONTROL));
+    assertEquals("", conditional.getContentAsString());
     verify(documents).generate();
   }
 
@@ -54,8 +63,8 @@ class ApiV2OpenApiControllerTest {
     ApiV2OpenApiController controller =
         new ApiV2OpenApiController(documents, objectMapper, new MockEnvironment());
 
-    ResponseEntity<Map<String, Object>> first = controller.openApi(new MockHttpServletRequest());
-    ResponseEntity<Map<String, Object>> second = controller.openApi(new MockHttpServletRequest());
+    ResponseEntity<Map<String, Object>> first = controller.openApi();
+    ResponseEntity<Map<String, Object>> second = controller.openApi();
 
     assertEquals("no-store", first.getHeaders().getCacheControl());
     assertNull(first.getHeaders().getETag());
@@ -71,7 +80,7 @@ class ApiV2OpenApiControllerTest {
     ApiV2OpenApiController controller =
         new ApiV2OpenApiController(documents, objectMapper, environment);
 
-    ResponseEntity<Map<String, Object>> response = controller.openApi(new MockHttpServletRequest());
+    ResponseEntity<Map<String, Object>> response = controller.openApi();
 
     assertEquals("no-store", response.getHeaders().getCacheControl());
     assertNull(response.getHeaders().getETag());

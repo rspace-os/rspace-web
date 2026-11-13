@@ -13,6 +13,7 @@ import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.core.jackson.TypeNameResolver;
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.core.util.RefUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -190,7 +191,7 @@ final class ApiV2OpenApiSchemas {
   private static Map<String, Object> nonNullSchema(
       Map<String, Object> schema, Map<String, Object> components) {
     if (schema.get("$ref") instanceof String ref) {
-      return mutableObjectMap(components.get(ref.substring(ref.lastIndexOf('/') + 1)));
+      return mutableObjectMap(components.get(RefUtils.extractSimpleName(ref).getLeft()));
     }
     for (String keyword : List.of("anyOf", "oneOf", "allOf")) {
       if (schema.get(keyword) instanceof List<?> alternatives) {

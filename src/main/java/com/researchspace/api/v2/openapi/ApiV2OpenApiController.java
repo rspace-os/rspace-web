@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -19,8 +18,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -84,14 +81,9 @@ public final class ApiV2OpenApiController implements ApplicationListener<Context
         @ApiResponse(responseCode = "429", description = "The request was throttled."),
         @ApiResponse(responseCode = "500", description = "Document generation failed.")
       })
-  public ResponseEntity<Map<String, Object>> openApi(HttpServletRequest request) {
+  public ResponseEntity<Map<String, Object>> openApi() {
+    // Spring answers If-None-Match with 304 for a 200 ResponseEntity that carries an ETag.
     CachedDocument current = production ? productionDocument() : generate();
-    if (production && etagMatches(request.getHeader(HttpHeaders.IF_NONE_MATCH), current.etag())) {
-      return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
-          .cacheControl(productionCacheControl())
-          .eTag(current.etag())
-          .build();
-    }
     CacheControl cacheControl = production ? productionCacheControl() : CacheControl.noStore();
     ResponseEntity.BodyBuilder response = ResponseEntity.ok().cacheControl(cacheControl);
     if (production) {
@@ -122,19 +114,6 @@ public final class ApiV2OpenApiController implements ApplicationListener<Context
 
   private static CacheControl productionCacheControl() {
     return CacheControl.maxAge(Duration.ofHours(1)).cachePrivate().mustRevalidate();
-  }
-
-  private static boolean etagMatches(String ifNoneMatch, String etag) {
-    if (ifNoneMatch == null) {
-      return false;
-    }
-    for (String candidate : ifNoneMatch.split(",")) {
-      String normalized = candidate.trim();
-      if (normalized.equals("*") || normalized.equals(etag) || normalized.equals("W/" + etag)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private record CachedDocument(Map<String, Object> value, String etag) {}

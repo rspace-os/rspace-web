@@ -18,6 +18,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 public final class ApiV2OpenApiDocumentService {
@@ -126,9 +127,7 @@ public final class ApiV2OpenApiDocumentService {
                           path.startsWith("/api/v2/")
                               ? path.substring("/api/v2/".length())
                               : path.replaceFirst("^/+", "");
-                      String tag = relative.split("/")[0];
-                      int extension = tag.lastIndexOf('.');
-                      if (extension > 0) tag = tag.substring(0, extension);
+                      String tag = StringUtils.stripFilenameExtension(relative.split("/")[0]);
                       operation.put("tags", List.of(tag));
                       used.add(tag);
                       Object description =

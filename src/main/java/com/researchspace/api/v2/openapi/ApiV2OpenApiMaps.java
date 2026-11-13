@@ -1,6 +1,9 @@
 package com.researchspace.api.v2.openapi;
 
 import io.swagger.v3.core.util.RefUtils;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -49,14 +52,18 @@ final class ApiV2OpenApiMaps {
     return Map.of("$ref", RefUtils.constructRef(name, "#/components/" + section + "/"));
   }
 
-  /**
-   * A reference written in an annotation. A full reference or URL is kept as written, and a bare
-   * component name is placed in {@code section}, as swagger's model {@code $ref} setters do.
-   */
-  static Map<String, Object> annotationRef(String section, String value) {
-    return value.indexOf('/') >= 0 || value.indexOf('.') >= 0
-        ? Map.of("$ref", value)
-        : componentRef(section, value);
+  // Annotation references go through swagger's model $ref setters, which keep a full reference
+  // and place a bare component name in the model's components section.
+  static Map<String, Object> responseRef(String value) {
+    return Map.of("$ref", new ApiResponse().$ref(value).get$ref());
+  }
+
+  static Map<String, Object> parameterRef(String value) {
+    return Map.of("$ref", new Parameter().$ref(value).get$ref());
+  }
+
+  static Map<String, Object> requestBodyRef(String value) {
+    return Map.of("$ref", new RequestBody().$ref(value).get$ref());
   }
 
   static void putIfNotNull(Map<String, Object> target, String name, Object value) {

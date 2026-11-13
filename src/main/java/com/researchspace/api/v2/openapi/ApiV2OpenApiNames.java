@@ -6,11 +6,14 @@ import com.researchspace.api.v2.resource.DeletePolicy;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.core.util.EnglishInflector;
 import com.researchspace.model.collection.CollectionDescription;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
 
 /** Component names, operation IDs and default operation text for registered resources. */
 final class ApiV2OpenApiNames {
@@ -42,16 +45,14 @@ final class ApiV2OpenApiNames {
   }
 
   private static String pascalCase(String value) {
-    StringBuilder result = new StringBuilder();
-    for (String part : value.split("[^A-Za-z0-9]+")) {
-      if (!part.isEmpty()) {
-        result.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
-      }
-    }
+    String result =
+        Arrays.stream(value.split("[^A-Za-z0-9]+"))
+            .map(StringUtils::capitalize)
+            .collect(Collectors.joining());
     if (result.isEmpty() || Character.isDigit(result.charAt(0))) {
       throw new IllegalArgumentException("Invalid OpenAPI component name for " + value);
     }
-    return result.toString();
+    return result;
   }
 
   static String operationId(ResourceOperation operation, String component, String singular) {

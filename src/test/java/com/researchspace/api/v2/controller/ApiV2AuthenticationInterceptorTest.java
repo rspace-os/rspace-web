@@ -21,7 +21,6 @@ import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
-import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -69,9 +68,7 @@ class ApiV2AuthenticationInterceptorTest {
         new ApiV2OpenApiController(
             mock(ApiV2OpenApiDocumentService.class), new ObjectMapper(), new MockEnvironment());
     HandlerMethod handler =
-        new HandlerMethod(
-            controller,
-            ApiV2OpenApiController.class.getMethod("openApi", HttpServletRequest.class));
+        new HandlerMethod(controller, ApiV2OpenApiController.class.getMethod("openApi"));
 
     assertTrue(interceptor.preHandle(request, response, handler));
 
