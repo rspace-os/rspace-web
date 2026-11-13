@@ -431,6 +431,41 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
+  void listsTheCallersItemLinksUntilTheyAreRevoked() throws Exception {
+    long configurationId = readableConfiguration();
+    String apiKey = fixture.userKey();
+
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.docs.length()").value(0));
+
+    String url = create(configurationId, apiKey);
+
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", containsString("no-store")))
+        .andExpect(jsonPath("$.docs.length()").value(1))
+        .andExpect(jsonPath("$.docs[0].configurationId").value(configurationId))
+        .andExpect(jsonPath("$.docs[0].itemGlobalId").value(startsWith("IN")))
+        .andExpect(jsonPath("$.docs[0].itemName").isString())
+        .andExpect(jsonPath("$.docs[0].updatedAt").isString())
+        .andExpect(jsonPath("$.docs[0].subscriptionUrl").value(url));
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", fixture.otherUserKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.docs.length()").value(0));
+
+    mockMvc
+        .perform(delete(path(configurationId)).header("apiKey", apiKey))
+        .andExpect(status().isNoContent());
+    mockMvc
+        .perform(get(ITEM_LINKS_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.docs.length()").value(0));
+  }
+
   @Test
   void deleteIsIdempotentForALiveConfiguration() throws Exception {
     long configurationId = readableConfiguration();
