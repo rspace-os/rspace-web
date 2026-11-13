@@ -21,7 +21,7 @@ class ApiV2OpenApiSecurityTest {
 
   @Test
   void controllerSecurityMatchesTheRuntimeEndpointCatalog() {
-    var endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog();
+    var endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog(List.of());
     try (var handlers = ApiV2TestHandlerMappings.newContext()) {
       var mapping = ApiV2TestHandlerMappings.mapping(handlers);
       var generator =
@@ -67,7 +67,13 @@ class ApiV2OpenApiSecurityTest {
       var catalog = context.getBean(ApiV2ResourceCatalog.class);
       var document =
           Json31.mapper()
-              .valueToTree(new ApiV2OpenApiGenerator(catalog, com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(), "API", "2.0.0").generate());
+              .valueToTree(
+                  new ApiV2OpenApiGenerator(
+                          catalog,
+                          com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                          "API",
+                          "2.0.0")
+                      .generate());
       for (var resource : catalog.routableResources()) {
         boolean anonymous =
             resource.description().schema().access().readAccess().authenticationRequirement()
