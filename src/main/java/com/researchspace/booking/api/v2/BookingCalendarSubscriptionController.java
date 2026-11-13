@@ -86,6 +86,7 @@ public class BookingCalendarSubscriptionController {
     this.manager = manager;
   }
 
+  static String isoTimestamp(Date value) {
     return value == null ? null : DateTimeFormatter.ISO_INSTANT.format(value.toInstant());
   }
 
@@ -96,6 +97,11 @@ public class BookingCalendarSubscriptionController {
       summary = "Get calendar subscription status",
       description = "Returns the caller's current subscription URL when one exists.",
       responses = {
+        @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
         @ApiResponse(
             responseCode = "200",
             description = "Current subscription status.",
@@ -119,16 +125,40 @@ public class BookingCalendarSubscriptionController {
   @PostMapping
   @Operation(
       tags = "booking-calendar-subscriptions",
+      operationId = "createBookingCalendarSubscription",
+      summary = "Create a calendar subscription",
       description =
+          "Returns the caller's existing subscription URL unchanged, or issues one when none"
+              + " exists. Repeating the request is safe. Use the rotate operation to replace a"
+              + " URL.",
       responses = {
         @ApiResponse(
+            responseCode = "406",
+            description = "The requested representation is unavailable."),
+        @ApiResponse(responseCode = "429", description = "Too many requests."),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error."),
+        @ApiResponse(
             responseCode = "200",
+            description = "The existing subscription URL.",
             headers = {
               @Header(
                   name = "Cache-Control",
                   schema = @Schema(types = "string", allowableValues = "private, no-store")),
               @Header(name = "ETag", ref = "#/components/headers/ETag")
             }),
+        @ApiResponse(
+            responseCode = "201",
+            description = "A newly issued subscription URL.",
+            headers = {
+              @Header(
+                  name = "Cache-Control",
+                  schema = @Schema(types = "string", allowableValues = "private, no-store")),
+              @Header(name = "ETag", ref = "#/components/headers/ETag")
+            }),
+        @ApiResponse(responseCode = "401", description = "Authentication is required."),
+        @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
+        @ApiResponse(responseCode = "409", description = "The item is archived.")
+      })
         @ApiResponse(
             responseCode = "406",
             description = "The requested representation is unavailable."),
