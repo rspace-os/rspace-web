@@ -4,6 +4,7 @@ import static com.researchspace.api.v1.config.ProdAPIConfig.API_GLOBAL_MIN_INTER
 import static com.researchspace.api.v1.config.ProdAPIConfig.API_USER_MIN_INTERVAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
@@ -13,6 +14,7 @@ import com.researchspace.api.v1.controller.FilesAPIHandler;
 import com.researchspace.api.v1.service.ExportApiHandler;
 import com.researchspace.api.v1.service.RSFormApiHandler;
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
+import com.researchspace.api.v2.auth.ApiV2Authenticator;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.IUserPermissionUtils;
 import com.researchspace.service.ApiAvailabilityHandler;
@@ -68,6 +70,11 @@ public class ProdProfileCanSetFromPropertiesTest {
     OAuthTokenAuthenticator oAuthTokenAuthenticator() {
       initMocks();
       return oAuthTokenAuthenticator;
+    }
+
+    @Bean
+    ApiV2Authenticator apiV2Authenticator() {
+      return mock(ApiV2Authenticator.class);
     }
 
     @Bean

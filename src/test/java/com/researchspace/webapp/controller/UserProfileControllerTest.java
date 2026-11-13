@@ -17,7 +17,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
@@ -32,7 +31,6 @@ import com.researchspace.model.frontend.PublicOAuthAppInfo;
 import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
-import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
@@ -45,6 +43,7 @@ import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.ShiroTestUtils;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.UserProfileController.ApiKeyInfo;
 import com.researchspace.webapp.controller.UserProfileController.UserGroupInfo;
@@ -104,26 +103,12 @@ public class UserProfileControllerTest {
     AuthorizationException refused =
         assertThrows(
             AuthorizationException.class,
-            () -> userProfileController.getInventoryOauthToken(anonymousGuest::getUsername));
+            () ->
+                userProfileController.getInventoryOauthToken(
+                    anonymousGuest::getUsername, mockRequest));
 
     assertEquals("Login required", refused.getMessage());
     verifyNoInteractions(oAuthTokenManager);
-  }
-
-  @Test
-  public void signedInUserCanCreateInventoryOauthToken() {
-    userProfileController.init();
-    NewOAuthTokenResponse tokenResponse = new NewOAuthTokenResponse();
-    tokenResponse.setAccessToken("inventory-token");
-    when(usrMgr.getUserByUsername(anyUser.getUsername())).thenReturn(anyUser);
-    when(oAuthTokenManager.createNewJwtToken(
-            "rsInventoryWebClient", "rsInventoryPublicSecret", anyUser, OAuthTokenType.UI_TOKEN))
-        .thenReturn(new ServiceOperationResult<>(tokenResponse, true));
-
-    AjaxReturnObject<String> result =
-        userProfileController.getInventoryOauthToken(anyUser::getUsername);
-
-    assertEquals("inventory-token", result.getData());
   }
 
   @Test
@@ -170,6 +155,31 @@ public class UserProfileControllerTest {
     assertNotNull(aro.getData());
     assertNull(aro.getError());
     assertEquals(result.getClientId(), aro.getData().getOAuthApps().get(0).getClientId());
+  }
+
+  @Test
+  public void inventoryOAuthTokenDelegatesToSharedUiTokenCreation() {
+    Principal principal = () -> sessionUser.getUsername();
+    when(usrMgr.getUserByUsername(sessionUser.getUsername())).thenReturn(sessionUser);
+    when(oAuthTokenManager.createUiToken(sessionUser)).thenReturn("access-token");
+
+    AjaxReturnObject<String> result =
+        userProfileController.getInventoryOauthToken(principal, mockRequest);
+
+    assertEquals("access-token", result.getData());
+    verify(oAuthTokenManager).createUiToken(sessionUser);
+  }
+
+  @Test
+  public void inventoryOAuthTokenRefusesRunAsSession() {
+    Principal principal = () -> sessionUser.getUsername();
+    mockRequest.getSession().setAttribute(SessionAttributeUtils.IS_RUN_AS, Boolean.TRUE);
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> userProfileController.getInventoryOauthToken(principal, mockRequest));
+
+    verify(oAuthTokenManager, never()).createUiToken(Mockito.any());
   }
 
   @Test

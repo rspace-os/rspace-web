@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 public final class CollectionDescription<T> {
 
   private final String resourceName;
+  private final String singular;
   private final Class<T> entityType;
   private final Map<String, ResourceMember<T>> fields;
   private final Map<String, FilterSelector<T>> publicFilterSelectors;
@@ -81,6 +82,23 @@ public final class CollectionDescription<T> {
       List<Sort> defaultSort,
       AccessPolicy accessPolicy,
       List<InternalFilter> internalFilters) {
+    this(resourceName, entityType, fields, idField, defaultSort, accessPolicy, internalFilters, "");
+  }
+
+  /**
+   * Describes a collection with server-only filters and an explicit singular operation name. The
+   * singular name is required when generating REST API v2 operation identifiers.
+   */
+  public CollectionDescription(
+      String resourceName,
+      Class<T> entityType,
+      List<? extends ResourceMember<T>> fields,
+      String idField,
+      List<Sort> defaultSort,
+      AccessPolicy accessPolicy,
+      List<InternalFilter> internalFilters,
+      String singular) {
+    this.singular = Objects.requireNonNull(singular, "Singular operation name");
     this.accessPolicy = Objects.requireNonNull(accessPolicy, "Access policy");
     this.resourceName = requireText(resourceName, "Resource name");
     this.entityType = Objects.requireNonNull(entityType, "Entity type");
@@ -116,6 +134,16 @@ public final class CollectionDescription<T> {
             selector -> {
               if (selectors.putIfAbsent(selector.name(), selector) != null) {
                 throw new IllegalArgumentException("Duplicate filter selector " + selector.name());
+              }
+            });
+    fields.stream()
+        .filter(member -> member instanceof FilterOnly<?>)
+        .forEach(
+            member -> {
+              @SuppressWarnings("unchecked")
+              FilterOnly<T> filter = (FilterOnly<T>) member;
+              if (selectors.putIfAbsent(filter.name(), filter.selector()) != null) {
+                throw new IllegalArgumentException("Duplicate filter selector " + filter.name());
               }
             });
     publicFilterSelectors = Collections.unmodifiableMap(selectors);
@@ -227,6 +255,26 @@ public final class CollectionDescription<T> {
         accessPolicy,
         internalFilters,
         Objects.requireNonNull(fieldTypes, "Field type registry"));
+  }
+
+  /** Adds a filter-only member while retaining the existing server-only selectors. */
+  public CollectionDescription<T> withFilter(FilterSelector<T> selector) {
+    List<ResourceMember<T>> members = new ArrayList<>(fields.values());
+    members.add(new FilterOnly<>(selector));
+    List<InternalFilter> internal =
+        compilableSelectors.entrySet().stream()
+            .filter(entry -> !publicFilterSelectors.containsKey(entry.getKey()))
+            .map(entry -> (FilterSelector.Property<T>) entry.getValue())
+            .map(
+                property ->
+                    new InternalFilter(property.name(), property.property(), property.type()))
+            .toList();
+    return new CollectionDescription<>(
+        resourceName, entityType, members, idField, defaultSort, accessPolicy, internal, singular);
+  }
+
+  public String singular() {
+    return singular;
   }
 
   public String resourceName() {
