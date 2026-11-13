@@ -6,8 +6,11 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
 import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
+import com.researchspace.core.util.throttling.ThrottleInterval;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
@@ -164,15 +167,14 @@ final class ApiV2OpenApiResponses {
   }
 
   /** The throttle intervals named by the per-interval rate-limit headers. */
-  static final List<String> RATE_LIMIT_INTERVALS = List.of("quarter_min", "hour", "day");
+  static final List<String> RATE_LIMIT_INTERVALS =
+      Arrays.stream(ThrottleInterval.values())
+          .map(interval -> interval.name().toLowerCase(Locale.ROOT))
+          .toList();
 
   /** The rate-limit headers a successful response documents itself. */
   static Map<String, Object> rateLimitHeaders() {
     return ordered(
-        "X-Rate-Limit-Limit",
-        headerRef("RateLimitLimit"),
-        "X-Rate-Limit-Remaining",
-        headerRef("RateLimitRemaining"),
         "X-Rate-Limit-WaitTimeMillis",
         headerRef("RateLimitWait"),
         "X-Rate-Limit-MinWaitIntervalMillis",

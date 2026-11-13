@@ -142,11 +142,7 @@ class ReadOnlyCollectionOpenApiTest {
     JsonNode document =
         referencingDocument(resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()));
     List<String> base =
-        List.of(
-            "X-Rate-Limit-Limit",
-            "X-Rate-Limit-Remaining",
-            "X-Rate-Limit-WaitTimeMillis",
-            "X-Rate-Limit-MinWaitIntervalMillis");
+        List.of("X-Rate-Limit-WaitTimeMillis", "X-Rate-Limit-MinWaitIntervalMillis");
     List<String> listed = new ArrayList<>();
     document
         .at("/paths/~1api~1v2~1containers/get/responses/200/headers")
