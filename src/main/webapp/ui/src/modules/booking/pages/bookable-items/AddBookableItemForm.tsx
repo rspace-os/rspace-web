@@ -9,15 +9,12 @@ import {
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
-import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { searchBookingConfigurationTargets } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
   useCreateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { type BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
-import { type BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
 import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
@@ -33,12 +30,7 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
-
-export async function searchBookingTargets(query: string, signal?: AbortSignal) {
-  return (await searchBookingConfigurationTargets({ q: query.trim(), limit: 20 }, { signal })).docs.map(
-    requireEligibleBookingTarget,
-  );
-}
+import { searchBookingTargets } from "./bookingConfigurationTargets";
 
 export const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
@@ -233,14 +225,4 @@ export function AddBookableItemForm({
       </Form>
     </main>
   );
-}
-
-export function requireEligibleBookingTarget(target: BookingConfigurationTarget) {
-  if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
-  return {
-    ...target,
-    id: requireBookingValue(target.id, "id"),
-    globalId: requireBookingValue(target.globalId, "globalId"),
-    name: requireBookingValue(target.name, "name"),
-  };
 }
