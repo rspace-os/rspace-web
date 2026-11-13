@@ -4,6 +4,7 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
@@ -58,15 +59,22 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   @Override
   public ResourcePage<TimeSlotBooking> getReadableResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return getCalendarResources(request, targetAccess, null);
+  }
+
+  @Override
+  public ResourcePage<TimeSlotBooking> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess targetAccess,
+      RsqlCollectionQuery.Predicate restriction) {
     return collectionQuery.pageWithBatchedFetch(
         criteriaBuilderFactory,
         getSession(),
         request.restrict(ACTIVE),
-        null,
+        restriction,
         targetAccess,
         List.of(
             "bookingConfiguration",
-            "bookingConfiguration.resourceAccess",
             "bookingConfiguration.createdBy",
             "bookingConfiguration.updatedBy",
             "requester",
