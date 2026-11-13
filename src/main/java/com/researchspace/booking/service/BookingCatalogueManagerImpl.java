@@ -4,6 +4,7 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingCalendarQuery;
 import com.researchspace.booking.dao.BookingItemQuery;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
@@ -15,6 +16,7 @@ import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.PageOffsets;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceReference;
@@ -26,13 +28,18 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +52,9 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   /** The configuration target reference in the catalogue's configuration query. */
   private static final String CONFIGURATION_TARGET = "bookingConfiguration.target";
 
+  /** Configurations classified per availability batch, and so event query bind values. */
+  static final int AVAILABILITY_BATCH_SIZE = 100;
+
   private final BookingConfigurationManager configurations;
   private final InstrumentDao instruments;
   private final BookingInstrumentQueryDao bookingInstruments;
@@ -52,6 +62,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   private final BookingItemQuery itemQuery;
   private final BookingCalendarQuery calendarQuery;
   private final BookingLocationFilterManager locations;
+  private final TimeSlotBookingDao bookings;
 
   public BookingCatalogueManagerImpl(
       BookingConfigurationManager configurations,
@@ -60,7 +71,8 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       FeatureFlagManager featureFlags,
       BookingItemQuery itemQuery,
       BookingCalendarQuery calendarQuery,
-      BookingLocationFilterManager locations) {
+      BookingLocationFilterManager locations,
+      TimeSlotBookingDao bookings) {
     this.configurations = configurations;
     this.instruments = instruments;
     this.bookingInstruments = bookingInstruments;
@@ -68,6 +80,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     this.itemQuery = itemQuery;
     this.calendarQuery = calendarQuery;
     this.locations = locations;
+    this.bookings = bookings;
   }
 
   @Override
@@ -81,7 +94,35 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       int page,
       int limit,
       User caller) {
-    return scope(
+    return search(
+        query,
+        targetGlobalId,
+        request,
+        targetTypes,
+        locationGlobalIds,
+        capability,
+        null,
+        null,
+        page,
+        limit,
+        caller);
+  }
+
+  @Override
+  public Page search(
+      String query,
+      String targetGlobalId,
+      ResourceRequest request,
+      List<String> targetTypes,
+      List<String> locationGlobalIds,
+      Capability capability,
+      Availability availability,
+      AvailabilityWindow window,
+      int page,
+      int limit,
+      User caller) {
+    Optional<Scope> scope =
+        scope(
             query,
             targetGlobalId,
             request,
@@ -89,9 +130,64 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             locationGlobalIds,
             capability,
             caller,
-            null)
-        .map(scope -> page(scope, page, limit, caller))
-        .orElseGet(() -> emptyPage(page, limit));
+            null);
+    if (scope.isEmpty()) {
+      return emptyPage(page, limit);
+    }
+    if (availability == null) {
+      return page(scope.get(), page, limit, caller);
+    }
+    Objects.requireNonNull(window, "An availability filter needs its window");
+    long firstRow = PageOffsets.offset(page, limit);
+    List<BookingConfiguration> rows = new ArrayList<>();
+    long[] total = {0};
+    scanAvailability(
+        scope.get(),
+        window,
+        caller,
+        (configuration, category) -> {
+          if (category != availability) {
+            return;
+          }
+          if (total[0] >= firstRow && rows.size() < limit) {
+            rows.add(configuration);
+          }
+          total[0]++;
+        });
+    return page(rows, page, limit, total[0], caller);
+  }
+
+  @Override
+  public AvailabilityCounts countAvailability(
+      String query,
+      String targetGlobalId,
+      ResourceRequest request,
+      List<String> targetTypes,
+      List<String> locationGlobalIds,
+      Capability capability,
+      AvailabilityWindow window,
+      User caller) {
+    Optional<Scope> scope =
+        scope(
+            query,
+            targetGlobalId,
+            request,
+            targetTypes,
+            locationGlobalIds,
+            capability,
+            caller,
+            null);
+    Map<Availability, Long> counts = new EnumMap<>(Availability.class);
+    scope.ifPresent(
+        value ->
+            scanAvailability(
+                value,
+                window,
+                caller,
+                (ignored, category) -> counts.merge(category, 1L, Long::sum)));
+    return new AvailabilityCounts(
+        counts.getOrDefault(Availability.AVAILABLE_NOW, 0L),
+        counts.getOrDefault(Availability.FREE_LATER_TODAY, 0L));
   }
 
   @Override
@@ -252,6 +348,61 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         limit,
         total,
         new Facets(total == 0 ? List.of() : List.of("INSTRUMENT")));
+  }
+
+  /**
+   * Classifies every item in the scope, in catalogue order, reading configurations and their events
+   * one keyset batch at a time so memory and bound parameters stay bounded.
+   */
+  private void scanAvailability(
+      Scope scope,
+      AvailabilityWindow window,
+      User caller,
+      BiConsumer<BookingConfiguration, Availability> visitor) {
+    long after = 0;
+    while (true) {
+      ResourceRequest batch =
+          new Scope(
+                  scope.request().restrict(comparison("id", Operator.GREATER_THAN, after)),
+                  scope.restriction())
+              .page(1, AVAILABILITY_BATCH_SIZE);
+      List<BookingConfiguration> found =
+          configurations.getConfigurations(batch, caller, scope.restriction()).resources();
+      Map<Long, List<TimeSlotBookingDao.EventInterval>> events = events(found, window);
+      for (BookingConfiguration configuration : found) {
+        BookingCurrentAvailability.classify(
+                configuration, events.getOrDefault(configuration.getId(), List.of()), window)
+            .ifPresent(category -> visitor.accept(configuration, category));
+      }
+      if (found.size() < AVAILABILITY_BATCH_SIZE) {
+        return;
+      }
+      after = found.get(found.size() - 1).getId();
+    }
+  }
+
+  /** Confirmed events that can reach the window once widened by any item's buffers. */
+  private Map<Long, List<TimeSlotBookingDao.EventInterval>> events(
+      List<BookingConfiguration> found, AvailabilityWindow window) {
+    if (found.isEmpty() || !window.start().isBefore(window.end())) {
+      return Map.of();
+    }
+    long sharedGapMinutes =
+        found.stream()
+            .mapToLong(
+                configuration ->
+                    Math.max(
+                        configuration.getBufferBeforeMinutes(),
+                        configuration.getBufferAfterMinutes()))
+            .max()
+            .orElse(0);
+    return bookings
+        .findConfirmedEventIntervals(
+            found.stream().map(BookingConfiguration::getId).toList(),
+            Date.from(window.start().minus(sharedGapMinutes, ChronoUnit.MINUTES)),
+            Date.from(window.end().plus(sharedGapMinutes, ChronoUnit.MINUTES)))
+        .stream()
+        .collect(Collectors.groupingBy(TimeSlotBookingDao.EventInterval::configurationId));
   }
 
   @Override
