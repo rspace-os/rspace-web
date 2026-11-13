@@ -1,6 +1,13 @@
 import { type Locator, page, userEvent } from "vitest/browser";
 
 export class AllBookableItemsPage {
+  readonly table = page.getByRole("table");
+  get detailsButton(): Locator {
+    return this.table
+      .getByRole("row")
+      .filter({ hasText: "Confocal microscope" })
+      .getByRole("link", { name: "View details for Confocal microscope", exact: true });
+  }
   get filterButton(): Locator {
     return page.getByRole("button", { name: "Filters, none applied" });
   }

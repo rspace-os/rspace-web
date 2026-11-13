@@ -16,9 +16,10 @@ import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
 import { getGetApiV2OpenApiDocumentQueryKey } from "@/modules/common/api/v2/generated/openapi/openapi";
 import { getGetCurrentUserQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import AllBookableItemsPage from "../all-bookable-items/AllBookableItemsPage";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
 
-/** Fetches preferences so reload persistence is observable. */
+/** A multi-route story that deliberately fetches preferences so reload persistence is observable. */
 export function BookingPreferencesPageStory() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -37,6 +38,11 @@ export function BookingPreferencesPageStory() {
           path: "/calendar/",
           validateSearch: bookingFormSearch,
           component: CalendarPage,
+        }),
+        createRoute({
+          getParentRoute: () => booking,
+          path: "/all-items/",
+          component: AllBookableItemsPage,
         }),
       ]),
     ]),

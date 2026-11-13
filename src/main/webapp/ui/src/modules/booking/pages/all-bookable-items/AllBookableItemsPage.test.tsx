@@ -22,10 +22,11 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
+import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { mutateBookableItems } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -36,11 +37,15 @@ import {
   collectionPage,
   ownerBookingAccess,
 } from "../bookable-items/mocks/bookableItemsMocks";
-import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
 beforeEach(() => {
+  server.use(
+    http.get("/api/v2/booking-catalogue/availability-counts", () =>
+      HttpResponse.json({ availableNow: 2, freeLaterToday: 1 }),
+    ),
+  );
   vi.mocked(useCurrentUserQuery).mockReturnValue({
     data: { hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
@@ -197,6 +202,17 @@ function realI18nWrapper() {
 }
 
 describe("BookableItemsPage", () => {
+  it("shows today's server availability counts", async () => {
+    server.use(
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(pagedCollectionResponse([bookingConfiguration], 1)),
+      ),
+    );
+    renderBookableItemsPage();
+    expect(await screen.findByText("booking:allBookableItems.quickFilters.availableNow: 2")).toBeInTheDocument();
+  });
+
   it("starts at the first page when applying the owner-attention filter", async () => {
     const user = userEvent.setup();
     const filteredPages: string[] = [];
