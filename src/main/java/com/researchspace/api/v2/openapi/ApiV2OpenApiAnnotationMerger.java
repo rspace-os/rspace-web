@@ -10,6 +10,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.responseRef;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
@@ -42,6 +43,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -134,7 +136,7 @@ final class ApiV2OpenApiAnnotationMerger {
       operation.put("security", security(endpoints, handler));
     }
 
-    List<Map<String, Object>> parameters = parameters(handler, metadata, schemas);
+    List<Map<String, Object>> parameters = parameters(handler, metadata, schemas, text);
     if (!parameters.isEmpty()) {
       operation.put("parameters", parameters);
     }
@@ -198,7 +200,10 @@ final class ApiV2OpenApiAnnotationMerger {
   }
 
   private static List<Map<String, Object>> parameters(
-      HandlerMethod handler, Operation metadata, Map<String, Object> schemas) {
+      HandlerMethod handler,
+      Operation metadata,
+      Map<String, Object> schemas,
+      ApiV2OpenApiText text) {
     List<Map<String, Object>> result = new ArrayList<>();
     for (Parameter documented : metadata.parameters()) {
       if (!documented.hidden()) {
@@ -207,6 +212,13 @@ final class ApiV2OpenApiAnnotationMerger {
     }
     for (var parameter : handler.getMethod().getParameters()) {
       Parameter documented = AnnotatedElementUtils.findMergedAnnotation(parameter, Parameter.class);
+      if (ApiV2FieldsetQuery.class.isAssignableFrom(parameter.getType())
+          && parameter.isAnnotationPresent(ModelAttribute.class)
+          && (documented == null || !documented.hidden())) {
+        replaceParameter(result, ApiV2OpenApiQueryParameters.fieldset("fields", text));
+        replaceParameter(result, ApiV2OpenApiQueryParameters.fieldset("exclude", text));
+        continue;
+      }
       ParameterLocation location = parameterLocation(parameter, parameter.getName(), documented);
       if (location != null && (documented == null || !documented.hidden())) {
         replaceParameter(

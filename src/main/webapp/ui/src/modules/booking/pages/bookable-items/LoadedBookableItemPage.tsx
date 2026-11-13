@@ -1,6 +1,6 @@
 import { Tabs } from "@base-ui/react/tabs";
 import { PencilIcon } from "lucide-react";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
@@ -24,12 +24,14 @@ import {
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Input } from "@/modules/common/ui/input";
+import { Heading } from "@/modules/common/ui/typography";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
 import { BookableItemConfigurationForm } from "./BookableItemConfigurationForm";
 import { BookableItemFactsAside } from "./BookableItemFactsAside";
 import { BookableItemRulesReadOut } from "./BookableItemRulesReadOut";
 import { BookableItemSpotlightHeader } from "./BookableItemSpotlightHeader";
 import { BookingConfigurationActionsMenu } from "./BookingConfigurationActionsMenu";
+import { BookingEventList } from "./BookingEventList";
 import { lifecycleErrorKey } from "./bookableItemLifecycleHelpers";
 import { type BookingConfiguration } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
@@ -40,7 +42,7 @@ export const itemPageClassName = "mx-auto max-w-5xl space-y-6 p-4 sm:p-8";
 export const itemColumnsClassName = "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_16rem]";
 
 export function bookableItemTab(tab: string | undefined): BookableItemTab {
-  return tab === "details" || tab === "audit" || tab === "access" ? tab : "details";
+  return tab === "details" || tab === "audit" || tab === "access" ? tab : "bookings";
 }
 
 export function PageTab({
@@ -118,6 +120,8 @@ export function LoadedBookableItemPage({
     updateMutation,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab });
 
+  const [cutoff] = useState(() => new Date().toISOString());
+
   const formId = `bookable-item-details-${useId()}`;
   const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
 
@@ -147,7 +151,7 @@ export function LoadedBookableItemPage({
             value={tab}
             onValueChange={(value) => {
               if (updateMutation.isPending) return;
-              const nextTab = value === "details" || value === "audit" || value === "access" ? value : "details";
+              const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
               setTab(nextTab);
             }}
             className="min-w-0 space-y-6"
@@ -190,6 +194,9 @@ export function LoadedBookableItemPage({
             />
 
             <Tabs.List className="flex flex-wrap border-b">
+              <PageTab value="bookings" disabled={updateMutation.isPending}>
+                {t("bookableItemDetails.tabs.bookings")}
+              </PageTab>
               <PageTab value="details" disabled={updateMutation.isPending}>
                 {t("bookableItemDetails.tabs.details")}
               </PageTab>
@@ -204,6 +211,27 @@ export function LoadedBookableItemPage({
                 </PageTab>
               ) : null}
             </Tabs.List>
+
+            <Tabs.Panel value="bookings" className="space-y-8 outline-none">
+              <section className="space-y-4" aria-labelledby="upcoming-events-heading">
+                <Heading level={3} as="h2" id="upcoming-events-heading">
+                  {t("bookableItemDetails.upcoming")}
+                </Heading>
+                <BookingEventList
+                  globalId={globalId}
+                  timezone={preferences.timeZone}
+                  period="upcoming"
+                  cutoff={cutoff}
+                />
+              </section>
+
+              <section className="space-y-4" aria-labelledby="past-events-heading">
+                <Heading level={3} as="h2" id="past-events-heading">
+                  {t("bookableItemDetails.past")}
+                </Heading>
+                <BookingEventList globalId={globalId} timezone={preferences.timeZone} period="past" cutoff={cutoff} />
+              </section>
+            </Tabs.Panel>
 
             <Tabs.Panel value="details" keepMounted className="outline-none">
               <Card>
