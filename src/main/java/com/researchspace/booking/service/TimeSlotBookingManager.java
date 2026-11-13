@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
@@ -140,6 +141,10 @@ public interface TimeSlotBookingManager {
 
   /** Returns one page selected by a parsed collection request. */
   ResourcePage<TimeSlotBooking> getBookings(ResourceRequest request, User actor);
+
+  /** Reads visible Calendar events with a server-owned text predicate before pagination. */
+  ResourcePage<TimeSlotBooking> getBookings(
+      ResourceRequest request, User actor, RsqlCollectionQuery.Predicate restriction);
 
   /** Counts bookings selected by a parsed collection request. */
   long countBookings(ResourceRequest request, User actor);
