@@ -12,9 +12,12 @@ import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
@@ -23,12 +26,17 @@ import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.StaleObjectStateException;
 import org.hibernate.exception.ConstraintViolationException;
@@ -149,9 +157,19 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
+        .map(this::itemStatus)
         .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
+  private Status itemStatus(BookableItemCalendarSubscription subscription) {
+    return new Status(
+        true,
+        subscription.getUpdatedAt(),
+        subscriptionUrl(subscription.getRawToken()),
+        itemEtag(subscription));
+  }
+
+  @Override
   @Override
     permissionGate.assertNoSuspendedAncestor();
     if (permissionGate.hasActiveGate()) {
@@ -330,6 +348,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         saved.getId());
     String url = subscriptionUrl(rawToken);
+  private boolean listable(BookingConfiguration configuration) {
+    BookableTargetReference target = configuration.getTarget();
+    return configuration.getState() != BookingConfigurationState.ARCHIVED
+        && target != null
+        && target.type() == BookableTargetType.INSTRUMENT
+        && target.id() != null;
   }
 
   @Override
@@ -440,6 +464,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private void requireFeatureEnabled(User subject) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
+      throw new BookingCalendarNotFoundException();
     }
   }
 
