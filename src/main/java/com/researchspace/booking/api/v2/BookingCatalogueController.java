@@ -3,8 +3,11 @@ package com.researchspace.booking.api.v2;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.booking.service.BookingCatalogueManager;
+import com.researchspace.service.FeatureFlagManager;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.extensions.Extension;
 import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,11 +34,15 @@ public class BookingCatalogueController {
 
   private final BookingCatalogueManager manager;
   private final ApiV2ResourceCatalog resources;
+  private final FeatureFlagManager featureFlags;
 
   public BookingCatalogueController(
-      BookingCatalogueManager manager, ApiV2ResourceCatalog resources) {
+      BookingCatalogueManager manager,
+      ApiV2ResourceCatalog resources,
+      FeatureFlagManager featureFlags) {
     this.manager = manager;
     this.resources = resources;
+    this.featureFlags = featureFlags;
   }
 
   @GetMapping
@@ -54,21 +61,29 @@ public class BookingCatalogueController {
   public BookingCatalogueManager.Page search(
       @RequestParam(name = "q", required = false) @Size(max = 255) String query,
       @RequestParam(required = false) String target,
-      @RequestParam(required = false) String where,
+      @Parameter(
+              description =
+                  "RSQL item filters, including targetOwner==me (equality only, outside OR groups)."
+                      + " The effective subject is resolved on every request.")
+          @RequestParam(required = false)
+          String where,
       @RequestParam(name = "type", required = false) List<String> targetTypes,
       @RequestParam(name = "location", required = false) List<String> locations,
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
+    ApiV2ResourceRegistration<?, ?> registration =
+        resources.find("booking-configurations").orElseThrow();
     return manager.search(
         query,
         target,
         ApiV2ResourceRequestParser.filtered(
-                where,
-                resources.find("booking-configurations").orElseThrow().description(),
-                resources.registry())
-            .filter(),
+            where,
+            registration.description(),
+            resources.registry(),
+            registration.runtimeFieldContext(caller.subject())),
         targetTypes == null ? List.of() : targetTypes,
         locations == null ? List.of() : locations,
         capability,
@@ -98,6 +113,7 @@ public class BookingCatalogueController {
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return manager.searchLocations(
         query, targetTypes == null ? List.of() : targetTypes, page, limit, caller.subject());
   }
