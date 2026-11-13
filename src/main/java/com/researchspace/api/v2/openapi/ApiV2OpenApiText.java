@@ -45,6 +45,7 @@ public final class ApiV2OpenApiText {
     HEADER_RATE_LIMIT_REMAINING("headers.rateLimitRemaining"),
     HEADER_RATE_LIMIT_WAIT("headers.rateLimitWait"),
     HEADER_RATE_LIMIT_MIN_WAIT("headers.rateLimitMinWait"),
+    HEADER_RATE_LIMIT_INTERVALS("headers.rateLimitIntervals"),
     HEADER_PRIVATE_NO_STORE("headers.privateNoStore"),
 
     RESPONSE_BAD_REQUEST("responses.badRequest"),

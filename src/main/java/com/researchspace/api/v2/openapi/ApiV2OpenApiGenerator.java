@@ -6,6 +6,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.ad
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitsExtension;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHeaders;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 
@@ -133,7 +134,8 @@ public final class ApiV2OpenApiGenerator {
         .info(new Info().title(title).version(version).description(text.get(Key.INFO_DESCRIPTION)))
         .servers(List.of(new Server().url(serverUrl).description(text.get(Key.SERVER_DESCRIPTION))))
         .paths(Json31.mapper().convertValue(paths, Paths.class))
-        .components(Json31.mapper().convertValue(components, Components.class));
+        .components(Json31.mapper().convertValue(components, Components.class))
+        .extensions(Map.of("x-rspace-rate-limits", rateLimitsExtension(text)));
   }
 
   private Map<String, Object> privateNoStoreHeaders() {

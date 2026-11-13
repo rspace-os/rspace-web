@@ -5,10 +5,11 @@
         "headers": {
           "etag": "Strong entity tag for the returned representation.",
           "privateNoStore": "Prevents storage of caller-specific subscription state.",
-          "rateLimitLimit": "Configured request limit for the shortest throttle interval.",
+          "rateLimitIntervals": "Per-interval rate-limit headers. Every response that lists X-Rate-Limit-Limit also carries each of these headers once for every listed interval, with the interval name as the header suffix.",
+          "rateLimitLimit": "Configured request limit for the shortest throttle interval, or for the interval that suffixes the header name.",
           "rateLimitMinWait": "Configured minimum interval between requests, in milliseconds.",
-          "rateLimitRemaining": "Requests remaining in the shortest throttle interval.",
-          "rateLimitWait": "Minimum wait before another request, in milliseconds."
+          "rateLimitRemaining": "Requests remaining in the shortest throttle interval, or in the interval that suffixes the header name.",
+          "rateLimitWait": "Minimum wait before another request, in milliseconds. With an interval suffix, the wait before that interval allows another request."
         },
         "info": {
           "description": "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.",

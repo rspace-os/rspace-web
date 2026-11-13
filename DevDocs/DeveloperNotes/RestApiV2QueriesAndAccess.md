@@ -355,7 +355,11 @@ throttling](../public/RSpaceConfiguration.md#api-throttling). REST API v2 suppor
 `api.global.limit.15s`, and `api.global.minInterval`.
 
 When throttling is enabled, responses contain `X-Rate-Limit-*` usage headers. Rejected requests
-return 429 and an API problem body.
+return 429 and an API problem body. OpenAPI lists the base headers (`X-Rate-Limit-Limit`,
+`X-Rate-Limit-Remaining`, `X-Rate-Limit-WaitTimeMillis`, and `X-Rate-Limit-MinWaitIntervalMillis`)
+on each successful response, and the shared 429 response lists every header. The top-level
+`x-rspace-rate-limits` extension names the throttle intervals and the per-interval headers, such as
+`X-Rate-Limit-Remaining-{interval}`, that accompany the base headers.
 
 Authenticated buckets use a SHA-256 fingerprint of the stable actor ID. Public, anonymous, and
 invalid-credential buckets use a fingerprint of the client address. Bucket keys retain neither user

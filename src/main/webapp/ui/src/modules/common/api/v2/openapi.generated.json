@@ -9,7 +9,7 @@
         }
       },
       "RateLimitLimit" : {
-        "description" : "Configured request limit for the shortest throttle interval.",
+        "description" : "Configured request limit for the shortest throttle interval, or for the interval that suffixes the header name.",
         "schema" : {
           "format" : "int64",
           "type" : "integer"
@@ -23,14 +23,14 @@
         }
       },
       "RateLimitRemaining" : {
-        "description" : "Requests remaining in the shortest throttle interval.",
+        "description" : "Requests remaining in the shortest throttle interval, or in the interval that suffixes the header name.",
         "schema" : {
           "format" : "int64",
           "type" : "integer"
         }
       },
       "RateLimitWait" : {
-        "description" : "Minimum wait before another request, in milliseconds.",
+        "description" : "Minimum wait before another request, in milliseconds. With an interval suffix, the wait before that interval allows another request.",
         "schema" : {
           "format" : "int64",
           "type" : "integer"
@@ -379,40 +379,13 @@
           "X-Rate-Limit-Limit" : {
             "$ref" : "#/components/headers/RateLimitLimit"
           },
-          "X-Rate-Limit-Limit-day" : {
-            "$ref" : "#/components/headers/RateLimitLimit"
-          },
-          "X-Rate-Limit-Limit-hour" : {
-            "$ref" : "#/components/headers/RateLimitLimit"
-          },
-          "X-Rate-Limit-Limit-quarter_min" : {
-            "$ref" : "#/components/headers/RateLimitLimit"
-          },
           "X-Rate-Limit-MinWaitIntervalMillis" : {
             "$ref" : "#/components/headers/RateLimitMinWait"
           },
           "X-Rate-Limit-Remaining" : {
             "$ref" : "#/components/headers/RateLimitRemaining"
           },
-          "X-Rate-Limit-Remaining-day" : {
-            "$ref" : "#/components/headers/RateLimitRemaining"
-          },
-          "X-Rate-Limit-Remaining-hour" : {
-            "$ref" : "#/components/headers/RateLimitRemaining"
-          },
-          "X-Rate-Limit-Remaining-quarter_min" : {
-            "$ref" : "#/components/headers/RateLimitRemaining"
-          },
           "X-Rate-Limit-WaitTimeMillis" : {
-            "$ref" : "#/components/headers/RateLimitWait"
-          },
-          "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-            "$ref" : "#/components/headers/RateLimitWait"
-          },
-          "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-            "$ref" : "#/components/headers/RateLimitWait"
-          },
-          "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
             "$ref" : "#/components/headers/RateLimitWait"
           }
         }
@@ -1706,40 +1679,13 @@
               "X-Rate-Limit-Limit" : {
                 "$ref" : "#/components/headers/RateLimitLimit"
               },
-              "X-Rate-Limit-Limit-day" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-hour" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
               "X-Rate-Limit-MinWaitIntervalMillis" : {
                 "$ref" : "#/components/headers/RateLimitMinWait"
               },
               "X-Rate-Limit-Remaining" : {
                 "$ref" : "#/components/headers/RateLimitRemaining"
               },
-              "X-Rate-Limit-Remaining-day" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-hour" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
               "X-Rate-Limit-WaitTimeMillis" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
                 "$ref" : "#/components/headers/RateLimitWait"
               }
             }
@@ -1848,40 +1794,13 @@
               "X-Rate-Limit-Limit" : {
                 "$ref" : "#/components/headers/RateLimitLimit"
               },
-              "X-Rate-Limit-Limit-day" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-hour" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
               "X-Rate-Limit-MinWaitIntervalMillis" : {
                 "$ref" : "#/components/headers/RateLimitMinWait"
               },
               "X-Rate-Limit-Remaining" : {
                 "$ref" : "#/components/headers/RateLimitRemaining"
               },
-              "X-Rate-Limit-Remaining-day" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-hour" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
               "X-Rate-Limit-WaitTimeMillis" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
                 "$ref" : "#/components/headers/RateLimitWait"
               }
             }
@@ -1996,40 +1915,13 @@
               "X-Rate-Limit-Limit" : {
                 "$ref" : "#/components/headers/RateLimitLimit"
               },
-              "X-Rate-Limit-Limit-day" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-hour" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
               "X-Rate-Limit-MinWaitIntervalMillis" : {
                 "$ref" : "#/components/headers/RateLimitMinWait"
               },
               "X-Rate-Limit-Remaining" : {
                 "$ref" : "#/components/headers/RateLimitRemaining"
               },
-              "X-Rate-Limit-Remaining-day" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-hour" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
               "X-Rate-Limit-WaitTimeMillis" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
                 "$ref" : "#/components/headers/RateLimitWait"
               }
             }
@@ -2237,40 +2129,13 @@
               "X-Rate-Limit-Limit" : {
                 "$ref" : "#/components/headers/RateLimitLimit"
               },
-              "X-Rate-Limit-Limit-day" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-hour" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
               "X-Rate-Limit-MinWaitIntervalMillis" : {
                 "$ref" : "#/components/headers/RateLimitMinWait"
               },
               "X-Rate-Limit-Remaining" : {
                 "$ref" : "#/components/headers/RateLimitRemaining"
               },
-              "X-Rate-Limit-Remaining-day" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-hour" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
               "X-Rate-Limit-WaitTimeMillis" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
                 "$ref" : "#/components/headers/RateLimitWait"
               }
             }
@@ -2477,40 +2342,13 @@
               "X-Rate-Limit-Limit" : {
                 "$ref" : "#/components/headers/RateLimitLimit"
               },
-              "X-Rate-Limit-Limit-day" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-hour" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
               "X-Rate-Limit-MinWaitIntervalMillis" : {
                 "$ref" : "#/components/headers/RateLimitMinWait"
               },
               "X-Rate-Limit-Remaining" : {
                 "$ref" : "#/components/headers/RateLimitRemaining"
               },
-              "X-Rate-Limit-Remaining-day" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-hour" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
               "X-Rate-Limit-WaitTimeMillis" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
                 "$ref" : "#/components/headers/RateLimitWait"
               }
             }
@@ -2702,40 +2540,13 @@
               "X-Rate-Limit-Limit" : {
                 "$ref" : "#/components/headers/RateLimitLimit"
               },
-              "X-Rate-Limit-Limit-day" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-hour" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
-              "X-Rate-Limit-Limit-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitLimit"
-              },
               "X-Rate-Limit-MinWaitIntervalMillis" : {
                 "$ref" : "#/components/headers/RateLimitMinWait"
               },
               "X-Rate-Limit-Remaining" : {
                 "$ref" : "#/components/headers/RateLimitRemaining"
               },
-              "X-Rate-Limit-Remaining-day" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-hour" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
-              "X-Rate-Limit-Remaining-quarter_min" : {
-                "$ref" : "#/components/headers/RateLimitRemaining"
-              },
               "X-Rate-Limit-WaitTimeMillis" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-day" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-hour" : {
-                "$ref" : "#/components/headers/RateLimitWait"
-              },
-              "X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min" : {
                 "$ref" : "#/components/headers/RateLimitWait"
               }
             }
@@ -2799,6 +2610,21 @@
     "description" : "User accounts, profiles and personal settings.",
     "name" : "users"
   } ],
+  "x-rspace-rate-limits" : {
+    "description" : "Per-interval rate-limit headers. Every response that lists X-Rate-Limit-Limit also carries each of these headers once for every listed interval, with the interval name as the header suffix.",
+    "intervals" : [ "quarter_min", "hour", "day" ],
+    "perIntervalHeaders" : {
+      "X-Rate-Limit-Limit-{interval}" : {
+        "$ref" : "#/components/headers/RateLimitLimit"
+      },
+      "X-Rate-Limit-Remaining-{interval}" : {
+        "$ref" : "#/components/headers/RateLimitRemaining"
+      },
+      "X-Rate-Limit-WaitTimeTillNextRequestMillis-{interval}" : {
+        "$ref" : "#/components/headers/RateLimitWait"
+      }
+    }
+  },
   "x-tagGroups" : [ {
     "name" : "Inventory",
     "tags" : [ "containers", "instruments" ]

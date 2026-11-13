@@ -36,6 +36,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.UserManager;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.PathItem;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -134,6 +135,33 @@ class ReadOnlyCollectionOpenApiTest {
     String policy = document.at("/components/schemas/ContainersRead/x-rspace-access/$ref").asText();
     assertTrue(policy.startsWith("#/components/x-rspace-access-policies/AccessPolicy"), policy);
     assertTrue(document.at(policy.substring(1) + "/description").isTextual());
+  }
+
+  @Test
+  void documentsPerIntervalRateLimitHeadersOnce() {
+    JsonNode document =
+        referencingDocument(resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()));
+    List<String> base =
+        List.of(
+            "X-Rate-Limit-Limit",
+            "X-Rate-Limit-Remaining",
+            "X-Rate-Limit-WaitTimeMillis",
+            "X-Rate-Limit-MinWaitIntervalMillis");
+    List<String> listed = new ArrayList<>();
+    document
+        .at("/paths/~1api~1v2~1containers/get/responses/200/headers")
+        .fieldNames()
+        .forEachRemaining(listed::add);
+    assertEquals(base, listed);
+    JsonNode limits = document.path("x-rspace-rate-limits");
+    assertEquals("[\"quarter_min\",\"hour\",\"day\"]", limits.path("intervals").toString());
+    assertEquals(
+        "#/components/headers/RateLimitWait",
+        limits
+            .at("/perIntervalHeaders/X-Rate-Limit-WaitTimeTillNextRequestMillis-{interval}/$ref")
+            .asText());
+    assertEquals(
+        base.size() + 9, document.at("/components/responses/TooManyRequests/headers").size());
   }
 
   @Test

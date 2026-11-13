@@ -75,7 +75,7 @@ final class ApiV2OpenApiResponses {
                 429,
                 ApiV2ErrorCodes.messageKeyFor(HttpStatus.TOO_MANY_REQUESTS)),
             "headers",
-            rateLimitHeaders()),
+            allRateLimitHeaders()),
         STANDARD_RESPONSE_NAMES.get("500"),
         problemResponse(
             text.get(Key.RESPONSE_UNEXPECTED_ERROR),
@@ -163,24 +163,55 @@ final class ApiV2OpenApiResponses {
         "description", description, "schema", ordered("type", "integer", "format", "int64"));
   }
 
+  /** The throttle intervals named by the per-interval rate-limit headers. */
+  static final List<String> RATE_LIMIT_INTERVALS = List.of("quarter_min", "hour", "day");
+
+  /** The rate-limit headers a successful response documents itself. */
   static Map<String, Object> rateLimitHeaders() {
-    Map<String, Object> headers =
-        ordered(
-            "X-Rate-Limit-Limit",
-            headerRef("RateLimitLimit"),
-            "X-Rate-Limit-Remaining",
-            headerRef("RateLimitRemaining"),
-            "X-Rate-Limit-WaitTimeMillis",
-            headerRef("RateLimitWait"),
-            "X-Rate-Limit-MinWaitIntervalMillis",
-            headerRef("RateLimitMinWait"));
-    for (String interval : List.of("quarter_min", "hour", "day")) {
-      headers.put("X-Rate-Limit-Limit-" + interval, headerRef("RateLimitLimit"));
-      headers.put("X-Rate-Limit-Remaining-" + interval, headerRef("RateLimitRemaining"));
-      headers.put(
-          "X-Rate-Limit-WaitTimeTillNextRequestMillis-" + interval, headerRef("RateLimitWait"));
+    return ordered(
+        "X-Rate-Limit-Limit",
+        headerRef("RateLimitLimit"),
+        "X-Rate-Limit-Remaining",
+        headerRef("RateLimitRemaining"),
+        "X-Rate-Limit-WaitTimeMillis",
+        headerRef("RateLimitWait"),
+        "X-Rate-Limit-MinWaitIntervalMillis",
+        headerRef("RateLimitMinWait"));
+  }
+
+  /** The per-interval headers, keyed by name with {@code {interval}} for the interval. */
+  private static Map<String, Object> perIntervalRateLimitHeaders() {
+    return ordered(
+        "X-Rate-Limit-Limit-{interval}",
+        headerRef("RateLimitLimit"),
+        "X-Rate-Limit-Remaining-{interval}",
+        headerRef("RateLimitRemaining"),
+        "X-Rate-Limit-WaitTimeTillNextRequestMillis-{interval}",
+        headerRef("RateLimitWait"));
+  }
+
+  /** The base rate-limit headers and every per-interval header, listed by the 429 response. */
+  private static Map<String, Object> allRateLimitHeaders() {
+    Map<String, Object> headers = rateLimitHeaders();
+    for (String interval : RATE_LIMIT_INTERVALS) {
+      perIntervalRateLimitHeaders()
+          .forEach((name, header) -> headers.put(name.replace("{interval}", interval), header));
     }
     return headers;
+  }
+
+  /**
+   * The top-level {@code x-rspace-rate-limits} extension: the per-interval headers sent with every
+   * response that documents the base rate-limit headers, which those responses do not repeat.
+   */
+  static Map<String, Object> rateLimitsExtension(ApiV2OpenApiText text) {
+    return ordered(
+        "description",
+        text.get(Key.HEADER_RATE_LIMIT_INTERVALS),
+        "intervals",
+        RATE_LIMIT_INTERVALS,
+        "perIntervalHeaders",
+        perIntervalRateLimitHeaders());
   }
 
   static Map<String, Object> headerRef(String name) {
