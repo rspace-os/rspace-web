@@ -5933,6 +5933,11 @@ export default interface Resources {
       "allFields": {
         "required": "Please fill in all the fields."
       },
+      "api": {
+        "v2": {
+          "forbidden": "You do not have permission to perform this action."
+        }
+      },
       "authorization": {
         "apiError": "Authorisation error",
         "audit": {
@@ -6202,6 +6207,11 @@ export default interface Resources {
     "requestType": {
       "passwordReminder": "password reminder",
       "usernameReminder": "username reminder"
+    },
+    "resourceAccess": {
+      "audiences": {
+        "allUsers": "All users"
+      }
     },
     "resourceType": {
       "community": "Community",

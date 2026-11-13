@@ -265,7 +265,12 @@ public final class RsqlFilterParser {
 
     @Override
     public FilterExpression visit(OrNode node, State state) {
-      return new FilterExpression.Or(visitLogical(node, state));
+      state.orDepth++;
+      try {
+        return new FilterExpression.Or(visitLogical(node, state));
+      } finally {
+        state.orDepth--;
+      }
     }
 
     @Override
@@ -276,6 +281,9 @@ public final class RsqlFilterParser {
           runtimeField != null ? runtimeField : relatedSelector(node.getSelector());
       if (selector == null) {
         selector = description.requirePublicFilterSelector(node.getSelector());
+      }
+      if (selector instanceof FilterSelector.Alias<?> && state.orDepth > 0) {
+        throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
       }
       Operator operator = toOperator(node.getOperator());
       if (!selector.operators().contains(operator)) {
@@ -343,6 +351,11 @@ public final class RsqlFilterParser {
 
   private Object parse(FilterSelector<?> selector, String argument) {
     try {
+      if (selector instanceof FilterSelector.Alias<?>) {
+        selector.parse(argument);
+        if (runtimeFields.actor() == null) throw new IllegalArgumentException("Missing subject");
+        return runtimeFields.actor();
+      }
       return selector.parse(resolveCurrentSubjectAlias(selector, argument));
     } catch (RuntimeException ex) {
       throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
@@ -385,6 +398,7 @@ public final class RsqlFilterParser {
 
   private static final class State {
 
+    private int orDepth;
     private int comparisons;
     private int depth;
     private int arguments;

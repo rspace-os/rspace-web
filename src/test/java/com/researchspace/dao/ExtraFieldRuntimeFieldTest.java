@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResolvedRuntimeField;
@@ -16,13 +15,11 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
-import com.researchspace.service.inventory.impl.ExtraFieldRuntimeManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,29 +27,16 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
 
   private final InstrumentDao instrumentDao;
   private final InstrumentReadAccess instrumentReadAccess;
-  private final ExtraFieldDao extraFieldDao;
+  private final ExtraFieldRuntimeManager<Instrument> extraFields;
 
   @Autowired
   ExtraFieldRuntimeFieldTest(
       InstrumentDao instrumentDao,
       InstrumentReadAccess instrumentReadAccess,
-      ExtraFieldDao extraFieldDao) {
+      ExtraFieldRuntimeManager<Instrument> extraFields) {
     this.instrumentDao = instrumentDao;
     this.instrumentReadAccess = instrumentReadAccess;
-    this.extraFieldDao = extraFieldDao;
-  }
-
-  private ExtraFieldRuntimeManager<Instrument> extraFields;
-
-  @BeforeEach
-  public void setUpProvider() {
-    extraFields =
-        new ExtraFieldRuntimeManagerImpl<>(
-            extraFieldDao,
-            Instrument.class,
-            ApiV2InstrumentResource.DESCRIPTION,
-            "instrumentEntity",
-            instrumentReadAccess::check);
+    this.extraFields = extraFields;
   }
 
   private Instrument instrumentWith(

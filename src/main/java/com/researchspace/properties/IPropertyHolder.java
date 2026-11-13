@@ -14,6 +14,10 @@ public interface IPropertyHolder extends Versionable {
   /** Returns the version displayed in page footers, including its {@code v} prefix. */
   String getWebappVersion();
 
+  boolean isLiveChatEnabled();
+
+  String getLiveChatServerKey();
+
   String getCopyrightYear();
 
   /**
