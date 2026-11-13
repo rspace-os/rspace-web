@@ -68,6 +68,21 @@ class ApiV2OpenApiAnnotationMergerTest {
     assertTrue(objectMap(documents.generate().get("paths")).isEmpty());
   }
 
+  @Test
+  void rejectsDuplicateOperationIds() throws Exception {
+    Method config = SchemaController.class.getMethod("config");
+    Map<RequestMappingInfo, HandlerMethod> handlers =
+        Map.of(
+            RequestMappingInfo.paths("/api/v2/one").methods(RequestMethod.GET).build(),
+            new HandlerMethod(new SchemaController(), config),
+            RequestMappingInfo.paths("/api/v2/two").methods(RequestMethod.GET).build(),
+            new HandlerMethod(new SchemaController(), config));
+    var endpoints = new ApiV2EndpointCatalog(List.of());
+
+    var error = assertThrows(IllegalStateException.class, () -> generate(endpoints, handlers));
+    assertTrue(error.getMessage().contains("Duplicate OpenAPI operationId schemaConfig"));
+  }
+
   private static final class UndocumentedController {
     public void missing() {}
 

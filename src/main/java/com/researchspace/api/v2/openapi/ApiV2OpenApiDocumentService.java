@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +63,36 @@ public final class ApiV2OpenApiDocumentService {
           if (schema instanceof Map<?, ?> map && map.isEmpty())
             throw new IllegalStateException("Unconstrained OpenAPI component: " + name);
         });
+    requireUniqueOperationIds(document);
     buildTags(document, controllerTags);
     return document;
+  }
+
+  /** Generated names can coincide (an uncountable singular equals its plural), so check here. */
+  private static void requireUniqueOperationIds(Map<String, Object> document) {
+    Map<String, String> seen = new HashMap<>();
+    ApiV2OpenApiMaps.mutableObjectMap(document.get("paths"))
+        .forEach(
+            (path, item) ->
+                ApiV2OpenApiMaps.mutableObjectMap(item)
+                    .forEach(
+                        (method, operation) -> {
+                          if (operation instanceof Map<?, ?> map
+                              && map.get("operationId") instanceof String id) {
+                            String previous = seen.putIfAbsent(id, method + " " + path);
+                            if (previous != null) {
+                              throw new IllegalStateException(
+                                  "Duplicate OpenAPI operationId "
+                                      + id
+                                      + ": "
+                                      + previous
+                                      + " and "
+                                      + method
+                                      + " "
+                                      + path);
+                            }
+                          }
+                        }));
   }
 
   private record TagMetadata(String description, String group) {}
