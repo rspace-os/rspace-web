@@ -12,6 +12,9 @@ export const apiV2Operations: Record<
 > = {
   searchCalendarEvents: { responses: { "200": { "application/json": native.SearchCalendarEventsResponse } } },
   searchBookingCatalogue: { responses: { "200": { "application/json": native.SearchBookingCatalogueResponse } } },
+  countBookingCatalogueAvailability: {
+    responses: { "200": { "application/json": native.CountBookingCatalogueAvailabilityResponse } },
+  },
   searchCalendarCatalogue: { responses: { "200": { "application/json": native.SearchCalendarCatalogueResponse } } },
   searchBookingCatalogueLocations: {
     responses: { "200": { "application/json": native.SearchBookingCatalogueLocationsResponse } },

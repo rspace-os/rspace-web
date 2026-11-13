@@ -19,6 +19,7 @@ export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
 export const ApiV2RuntimeFieldCatalogEntrySchema = native.ApiV2RuntimeFieldCatalogEntry;
 export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCatalogSource;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
+export const BookingCatalogueManagerAvailabilityCountsSchema = native.BookingCatalogueManagerAvailabilityCounts;
 export const BookingCatalogueManagerFacetsSchema = native.BookingCatalogueManagerFacets;
 export const BookingCatalogueManagerItemSchema = native.BookingCatalogueManagerItem;
 export const BookingCatalogueManagerLocationSchema = native.BookingCatalogueManagerLocation;
@@ -147,6 +148,20 @@ export type SchemaModelTypeChecks = {
   ApiV2UiToken: [
     Assert<Extends<v.InferOutput<typeof ApiV2UiTokenSchema>, Models.ApiV2UiToken>>,
     Assert<Extends<Models.ApiV2UiToken, v.InferOutput<typeof ApiV2UiTokenSchema>>>,
+  ];
+  BookingCatalogueManagerAvailabilityCounts: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingCatalogueManagerAvailabilityCountsSchema>,
+        Models.BookingCatalogueManagerAvailabilityCounts
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingCatalogueManagerAvailabilityCounts,
+        v.InferOutput<typeof BookingCatalogueManagerAvailabilityCountsSchema>
+      >
+    >,
   ];
   BookingCatalogueManagerFacets: [
     Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerFacetsSchema>, Models.BookingCatalogueManagerFacets>>,
