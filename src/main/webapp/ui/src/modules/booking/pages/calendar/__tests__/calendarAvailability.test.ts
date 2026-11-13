@@ -1,8 +1,9 @@
 import { HttpResponse, http } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 import { loadCalendarAvailability } from "../calendarAvailability";
 
@@ -132,6 +133,8 @@ describe("calendar availability", () => {
   });
 
   it("splits 1,000 target IDs into request-safe batches", async () => {
+    const token = "t".repeat(2500);
+    onTestFinished(setApiV2TokenProvider({ getToken: async () => token, recover: async () => token }));
     const requests: { url: URL; authorization: string | null; requestedWith: string | null }[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
@@ -153,13 +156,14 @@ describe("calendar availability", () => {
 
     expect(result.size).toBe(1000);
     expect(requests.length).toBeGreaterThan(2);
-    for (const { url } of requests) {
+    for (const { url, authorization, requestedWith } of requests) {
       const targetList = url.searchParams.get("where")?.split("target=in=(")[1]?.split(")")[0] ?? "";
       const targetIds = targetList ? targetList.split(",") : [];
       expect(targetIds.length).toBeGreaterThan(0);
       expect(targetIds.length).toBeLessThanOrEqual(500);
-      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n\r\n`;
-      expect(new TextEncoder().encode(requestLine).length).toBeLessThanOrEqual(6000);
+      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n`;
+      const headers = `authorization: ${authorization}\r\nx-requested-with: ${requestedWith}\r\n\r\n`;
+      expect(new TextEncoder().encode(`${requestLine}${headers}`).length).toBeLessThanOrEqual(6000);
     }
   });
 
