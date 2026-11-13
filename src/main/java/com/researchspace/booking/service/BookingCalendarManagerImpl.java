@@ -317,10 +317,30 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireFeatureRead(subject);
     return userSubscriptionDao
         .findByUserId(subject.getId())
+        .map(this::userStatus)
         .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
+  private Status userStatus(UserBookingCalendarSubscription subscription) {
+    return new Status(
+        true,
+        subscription.getUpdatedAt(),
+        subscriptionUrl(subscription.getRawToken()),
+        userEtag(subscription));
+  }
+
   @Override
+  public Created createUser(User subject, User actor) {
+    return createUserLink(subject, actor, null);
+  }
+
+  @Override
+  public Created rotateUser(User subject, User actor, String expectedEtag) {
+    Objects.requireNonNull(expectedEtag, "Expected ETag");
+    return createUserLink(subject, actor, expectedEtag);
+  }
+
+  private Created createUserLink(User subject, User actor, String rotateFromEtag) {
     permissionGate.assertNoSuspendedAncestor();
     requirePersonalCaller(subject, actor);
     if (permissionGate.hasActiveGate()) {
@@ -328,6 +348,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       throw new IllegalStateException(
           "User-wide calendar links cannot be created or rotated inside a gated transaction");
     }
+    return creationTransaction.create(
+        subject.getId(), freshSubject -> issueUserLink(freshSubject, actor, rotateFromEtag));
+  }
+
+  /** User-wide counterpart of {@link #issueItemLink}, serialized on the user row lock. */
+  private Created issueUserLink(User subject, User actor, String rotateFromEtag) {
     requireFeatureMutation(subject);
     User lockedUser = userSubscriptionDao.lockUser(subject.getId());
     if (lockedUser == null) {
@@ -335,6 +361,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     Optional<UserBookingCalendarSubscription> existing =
         userSubscriptionDao.findByUserId(subject.getId());
+    if (rotateFromEtag == null && existing.isPresent()) {
+      Status current = userStatus(existing.get());
+      return new Created(current, current.subscriptionUrl(), false);
+    }
+    if (rotateFromEtag != null
+        && (existing.isEmpty() || !Objects.equals(rotateFromEtag, userEtag(existing.get())))) {
       throw new UserSubscriptionConflictException();
     }
     String rawToken = tokenSupplier.get();
@@ -371,6 +403,11 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         saved.getId());
     String url = subscriptionUrl(rawToken);
+    return new Created(new Status(true, saved.getUpdatedAt(), url, userEtag(saved)), url, true);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   private boolean listable(BookingConfiguration configuration) {
     BookableTargetReference target = configuration.getTarget();
     return configuration.getState() != BookingConfigurationState.ARCHIVED
