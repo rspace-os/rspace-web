@@ -864,15 +864,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
@@ -962,7 +953,35 @@ export default interface Resources {
       "weekNumberHeader": "Week Number"
     },
     "collectionForm": {
-      "fieldHelp": "About {label}"
+      "actions": {
+        "clear": "Clear {field}",
+        "openOptions": "Show options for {field}"
+      },
+      "examples": {
+        "fields": {
+          "collaborators": "Collaborators",
+          "enabled": "Enabled",
+          "id": "ID",
+          "modified": "Modified",
+          "notes": "Notes",
+          "owner": "Owner",
+          "score": "Score",
+          "status": "Status",
+          "title": "Title",
+          "titleDescription": "The human-readable name of the record."
+        },
+        "inventoryItem": "Inventory item",
+        "record": "Research record",
+        "recordDetails": "Record details",
+        "records": "Research records",
+        "relationships": "Relationships"
+      },
+      "fieldHelp": "About {label}",
+      "relationship": {
+        "empty": "No options found",
+        "remove": "Remove {item} from {field}",
+        "search": "Search {field}"
+      }
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
