@@ -43,6 +43,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +136,15 @@ public final class BookingConfigurationResourceOperations
             "errors.api.v2.bookingConfiguration.create", "errors.api.v2.bookingConfiguration.patch")
         .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
         .documentation(
+            ResourceOperation.LIST,
+            OpenApiOperationDocumentation.builder()
+                .description(
+                    "Lists readable configurations on undeleted targets. The where member"
+                        + " targetOwner accepts only ==me outside OR groups, resolves to the"
+                        + " effective subject on each request, and includes the Inventory read"
+                        + " constraint.")
+                .build())
+        .documentation(
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
                 .description(
@@ -176,12 +186,11 @@ public final class BookingConfigurationResourceOperations
                                     == BookingConfigurationLifecycleException.class))
                 .toList())
         .mutationLimits(ApiV2BookingConfigurationResource.MUTATION_LIMITS)
-        .resourceAccess(
-            new ResourceAccessSpec<>(protectedResourceAccess))
+        .resourceAccess(new ResourceAccessSpec<>(protectedResourceAccess))
         .audit(
             new ResourceAuditPolicy<>(
                 (id, actor) ->
-                    enabled(actor) ? manager.getConfiguration(id, actor) : Optional.empty(),
+                    enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty(),
                 (configuration, actor) -> {},
                 configuration ->
                     Map.of(
@@ -239,6 +248,14 @@ public final class BookingConfigurationResourceOperations
         configuration.getTarget().type().name(),
         "target.id",
         configuration.getTarget().id().toString());
+  }
+
+  public Optional<BookingConfiguration> findByIdForAudit(Long id, User actor) {
+    return enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty();
+  }
+
+  public Instant relatedAuditFallbackFrom(BookingConfiguration configuration) {
+    return configuration.getCreatedAt() == null ? null : configuration.getCreatedAt().toInstant();
   }
 
   public Set<String> relatedAuditFields() {
