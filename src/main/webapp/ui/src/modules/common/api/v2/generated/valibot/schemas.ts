@@ -19,6 +19,8 @@ export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
 export const ApiV2RuntimeFieldCatalogEntrySchema = native.ApiV2RuntimeFieldCatalogEntry;
 export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCatalogSource;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
+export const BookingCalendarSubscriptionCreatedSchema = native.BookingCalendarSubscriptionCreated;
+export const BookingCalendarSubscriptionStatusSchema = native.BookingCalendarSubscriptionStatus;
 export const BookingCatalogueManagerAvailabilityCountsSchema = native.BookingCatalogueManagerAvailabilityCounts;
 export const BookingCatalogueManagerFacetsSchema = native.BookingCatalogueManagerFacets;
 export const BookingCatalogueManagerItemSchema = native.BookingCatalogueManagerItem;
@@ -74,6 +76,10 @@ export const ResourceAccessReplacementSchema = native.ResourceAccessReplacement;
 export const ResourceGranteeDirectoryDocumentSchema = native.ResourceGranteeDirectoryDocument;
 export const ResourceGranteeDirectoryEntrySchema = native.ResourceGranteeDirectoryEntry;
 export const ResourceRoleSourceSchema = native.ResourceRoleSource;
+export const UserBookingCalendarSubscriptionControllerItemLinkDocumentSchema =
+  native.UserBookingCalendarSubscriptionControllerItemLinkDocument;
+export const UserBookingCalendarSubscriptionControllerItemLinksDocumentSchema =
+  native.UserBookingCalendarSubscriptionControllerItemLinksDocument;
 export const UsersCreateSchema = native.UsersCreate;
 export const UsersReadSchema = native.UsersRead;
 export const UsersReferenceSchema = native.UsersReference;
@@ -148,6 +154,22 @@ export type SchemaModelTypeChecks = {
   ApiV2UiToken: [
     Assert<Extends<v.InferOutput<typeof ApiV2UiTokenSchema>, Models.ApiV2UiToken>>,
     Assert<Extends<Models.ApiV2UiToken, v.InferOutput<typeof ApiV2UiTokenSchema>>>,
+  ];
+  BookingCalendarSubscriptionCreated: [
+    Assert<
+      Extends<v.InferOutput<typeof BookingCalendarSubscriptionCreatedSchema>, Models.BookingCalendarSubscriptionCreated>
+    >,
+    Assert<
+      Extends<Models.BookingCalendarSubscriptionCreated, v.InferOutput<typeof BookingCalendarSubscriptionCreatedSchema>>
+    >,
+  ];
+  BookingCalendarSubscriptionStatus: [
+    Assert<
+      Extends<v.InferOutput<typeof BookingCalendarSubscriptionStatusSchema>, Models.BookingCalendarSubscriptionStatus>
+    >,
+    Assert<
+      Extends<Models.BookingCalendarSubscriptionStatus, v.InferOutput<typeof BookingCalendarSubscriptionStatusSchema>>
+    >,
   ];
   BookingCatalogueManagerAvailabilityCounts: [
     Assert<
@@ -450,6 +472,34 @@ export type SchemaModelTypeChecks = {
   ResourceRoleSource: [
     Assert<Extends<v.InferOutput<typeof ResourceRoleSourceSchema>, Models.ResourceRoleSource>>,
     Assert<Extends<Models.ResourceRoleSource, v.InferOutput<typeof ResourceRoleSourceSchema>>>,
+  ];
+  UserBookingCalendarSubscriptionControllerItemLinkDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof UserBookingCalendarSubscriptionControllerItemLinkDocumentSchema>,
+        Models.UserBookingCalendarSubscriptionControllerItemLinkDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.UserBookingCalendarSubscriptionControllerItemLinkDocument,
+        v.InferOutput<typeof UserBookingCalendarSubscriptionControllerItemLinkDocumentSchema>
+      >
+    >,
+  ];
+  UserBookingCalendarSubscriptionControllerItemLinksDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof UserBookingCalendarSubscriptionControllerItemLinksDocumentSchema>,
+        Models.UserBookingCalendarSubscriptionControllerItemLinksDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.UserBookingCalendarSubscriptionControllerItemLinksDocument,
+        v.InferOutput<typeof UserBookingCalendarSubscriptionControllerItemLinksDocumentSchema>
+      >
+    >,
   ];
   UsersCreate: [
     Assert<Extends<v.InferOutput<typeof UsersCreateSchema>, Models.UsersCreate>>,
