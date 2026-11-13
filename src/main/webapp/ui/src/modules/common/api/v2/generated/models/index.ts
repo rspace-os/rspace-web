@@ -85,6 +85,7 @@ export * from "./bookingsReadTargetCustomFields.ts";
 export * from "./bookingsReference.ts";
 export * from "./bookingsUpdate.ts";
 export * from "./bookingsWhereParameter.ts";
+export * from "./bookingTimeFormat.ts";
 export * from "./bookingTimezoneMode.ts";
 export * from "./bulkLimitResponse.ts";
 export * from "./containersExcludeParameter.ts";
