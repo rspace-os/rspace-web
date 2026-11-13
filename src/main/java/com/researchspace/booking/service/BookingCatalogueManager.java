@@ -86,6 +86,21 @@ public interface BookingCatalogueManager {
       User caller);
 
   /** Finds one page of exact immediate-parent locations visible in both domains. */
+  default LocationPage searchLocations(
+      String query, List<String> targetTypes, int page, int limit, User caller) {
+    return searchLocations(query, targetTypes, List.of(), page, limit, caller);
+  }
+
+  /**
+   * As {@link #searchLocations(String, List, int, int, User)}. A query that is a Container or
+   * workbench global ID matches that location. Non-empty {@code globalIds} restrict the page to
+   * those locations, for restoring saved filters; unreadable and unknown IDs are omitted alike.
+   */
   LocationPage searchLocations(
-      String query, List<String> targetTypes, int page, int limit, User caller);
+      String query,
+      List<String> targetTypes,
+      List<String> globalIds,
+      int page,
+      int limit,
+      User caller);
 }

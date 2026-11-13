@@ -6,13 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingCalendarQuery;
 import com.researchspace.booking.dao.BookingItemQuery;
+import com.researchspace.booking.dao.BookingLocationQuery;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
@@ -29,11 +32,14 @@ import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +59,8 @@ class BookingCatalogueManagerImplTest {
   @Mock private FeatureFlagManager featureFlags;
   @Mock private BookingItemQuery itemQuery;
   @Mock private BookingCalendarQuery calendarQuery;
+  @Mock private BookingLocationQuery locationQuery;
+  @Mock private InstrumentReadAccess instrumentReadAccess;
   @Mock private User caller;
 
   private BookingCatalogueManagerImpl manager;
@@ -66,7 +74,9 @@ class BookingCatalogueManagerImplTest {
             bookingInstruments,
             featureFlags,
             itemQuery,
-            calendarQuery);
+            calendarQuery,
+            new BookingLocationFilterManagerImpl(
+                bookingInstruments, instrumentReadAccess, locationQuery));
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)).thenReturn(true);
   }
 
@@ -95,7 +105,8 @@ class BookingCatalogueManagerImplTest {
     when(bookingInstruments.getBookingRelationshipTargets(Set.of(101L)))
         .thenReturn(Map.of(101L, instrument));
     when(bookingInstruments.getReadableParentLocationSummaries(Set.of(101L), caller))
-        .thenReturn(Map.of());
+        .thenReturn(
+            Map.of(101L, new BookingCatalogueLocation(44L, "Workbench", ContainerType.WORKBENCH)));
 
     BookingCatalogueManager.Page result =
         search(
@@ -105,6 +116,9 @@ class BookingCatalogueManagerImplTest {
     assertEquals(7, result.pageSize());
     assertEquals(2, result.total());
     assertEquals(openingHours, result.items().get(0).openingHours());
+    assertEquals(
+        new BookingCatalogueManager.Location("BE44", "Workbench"),
+        result.items().get(0).location());
     ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations)
         .getConfigurations(request.capture(), same(caller), same(accessRestriction));
@@ -119,6 +133,88 @@ class BookingCatalogueManagerImplTest {
                 comparison ->
                     comparison.field().equals("enabled")
                         && comparison.operator() == Operator.EQUAL));
+  }
+
+  @Test
+  void answersATopLevelLocationFilterWithACorrelatedRestrictionBeforeTheConfigurationQuery() {
+    RsqlCollectionQuery.Predicate inTwelve =
+        new RsqlCollectionQuery.Predicate("EXISTS storedInTwelve", Map.of());
+    when(locationQuery.readableParent(
+            caller,
+            "bookingConfiguration.target",
+            Set.of(12L),
+            true,
+            "bookingConfiguration_target_location0",
+            null,
+            null))
+        .thenReturn(inTwelve);
+    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller), same(inTwelve)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+
+    search(ResourceRequest.unpaged(location(12L)), null, 1, 20);
+
+    ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(configurations).getConfigurations(request.capture(), same(caller), same(inTwelve));
+    assertEquals(null, request.getValue().filter());
+    verify(bookingInstruments, never()).findConfiguredInstrumentIdsInReadableParents(any(), any());
+  }
+
+  @Test
+  void stillListsTheItemsOfALocationInsideADisjunction() {
+    when(bookingInstruments.findConfiguredInstrumentIdsInReadableParents(Set.of(12L), caller))
+        .thenReturn(Set.of(5L));
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    FilterExpression none =
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(0L), false);
+
+    search(
+        ResourceRequest.unpaged(new FilterExpression.Or(List.of(location(12L), none))),
+        null,
+        1,
+        20);
+
+    ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(configurations)
+        .getConfigurations(
+            request.capture(), same(caller), isNull(RsqlCollectionQuery.Predicate.class));
+    assertEquals(
+        new FilterExpression.Or(
+            List.of(
+                new FilterExpression.Comparison("target.value", Operator.IN, List.of(5L), false),
+                none)),
+        request.getValue().filter());
+  }
+
+  private static FilterExpression location(long containerId) {
+    return new FilterExpression.Comparison(
+        "location",
+        Operator.EQUAL,
+        List.of(new ResourceReference<>("containers", containerId)),
+        false);
+  }
+
+  @Test
+  void searchesLocationsByGlobalIdAndRestoresOnlyTheRequestedOnes() {
+    when(bookingInstruments.getBookingCatalogueLocations(null, Set.of(7L), 1, 20, caller))
+        .thenReturn(
+            new ResourcePage<>(
+                List.of(new BookingCatalogueLocation(7L, "WB reader", ContainerType.WORKBENCH)),
+                1));
+
+    BookingCatalogueManager.LocationPage byGlobalId =
+        manager.searchLocations("be7", List.of(), List.of(), 1, 20, caller);
+    BookingCatalogueManager.LocationPage restored =
+        manager.searchLocations(null, List.of(), List.of("IC7", "SA9", "bad"), 1, 20, caller);
+
+    assertEquals(
+        List.of(new BookingCatalogueManager.Location("BE7", "WB reader")), byGlobalId.items());
+    assertEquals(byGlobalId.items(), restored.items());
+    assertEquals(
+        0,
+        manager.searchLocations(null, List.of(), List.of("SA9"), 1, 20, caller).total(),
+        "an ID of another kind names no location");
   }
 
   @Test
@@ -163,14 +259,17 @@ class BookingCatalogueManagerImplTest {
             ResourceFieldSelections.root(FieldSelection.exclude(Set.of("id"))),
             new IncludeTree(Map.of("target", IncludeTree.empty())),
             runtime);
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
 
     search(request, null, 3, 7);
 
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(configurations).getConfigurations(captured.capture(), same(caller));
+    verify(configurations)
+        .getConfigurations(
+            captured.capture(), same(caller), isNull(RsqlCollectionQuery.Predicate.class));
     ResourceRequest catalogueRequest = captured.getValue();
     assertSame(callerFilter, catalogueRequest.filter());
     assertSame(runtime, catalogueRequest.runtime());
