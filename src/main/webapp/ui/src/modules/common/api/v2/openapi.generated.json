@@ -1549,6 +1549,38 @@
         "required" : [ "canChangeFeatureFlagBaselines", "canOverrideFeatureFlags", "canUseDevtools", "lastSession", "operatedAs" ],
         "type" : "object"
       },
+      "ApiV2ListResultMapStringObject" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "additionalProperties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "hasNextPage" : {
+            "type" : "boolean"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalDocs" : {
+            "description" : "Present only when totals=true.",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalIsLowerBound" : {
+            "description" : "True when the requested total exceeds max.",
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "ApiV2Problem" : {
         "additionalProperties" : true,
         "properties" : {
@@ -5389,6 +5421,126 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/v2/booking-calendar/events" : {
+      "get" : {
+        "operationId" : "searchCalendarEvents",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.",
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "fields",
+          "required" : false,
+          "schema" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "style" : "deepObject",
+          "x-rspace-comma-separated-values" : true,
+          "x-rspace-mutually-exclusive-with" : "exclude"
+        }, {
+          "description" : "Comma-separated nested field paths by resource type, using square-bracket keys such as exclude[resource]=id,name.",
+          "explode" : true,
+          "in" : "query",
+          "name" : "exclude",
+          "required" : false,
+          "schema" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "style" : "deepObject",
+          "x-rspace-comma-separated-values" : true,
+          "x-rspace-mutually-exclusive-with" : "fields"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2ListResultMapStringObject"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search visible calendar events",
+        "tags" : [ "booking-calendar" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/booking-catalogue" : {
       "get" : {
         "operationId" : "searchBookingCatalogue",
@@ -5494,6 +5646,104 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Search the Booking catalogue",
+        "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-catalogue/calendar" : {
+      "get" : {
+        "operationId" : "searchCalendarCatalogue",
+        "parameters" : [ {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups.",
+          "in" : "query",
+          "name" : "eventWhere",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerPage"
+                }
+              }
+            },
+            "description" : "Matching calendar results."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search bookable instruments in a calendar interval",
         "tags" : [ "booking-catalogue" ],
         "x-rspace-operation" : "CUSTOM"
       }
@@ -9946,6 +10196,9 @@
     "url" : "/"
   } ],
   "tags" : [ {
+    "description" : "Calendar event searches and availability views.",
+    "name" : "booking-calendar"
+  }, {
     "description" : "The catalogue of bookable resources and their availability.",
     "name" : "booking-catalogue"
   }, {
@@ -10002,7 +10255,7 @@
   },
   "x-tagGroups" : [ {
     "name" : "Booking",
-    "tags" : [ "booking-catalogue", "booking-configuration-targets", "booking-configurations", "booking-settings", "bookings" ]
+    "tags" : [ "booking-calendar", "booking-catalogue", "booking-configuration-targets", "booking-configurations", "booking-settings", "bookings" ]
   }, {
     "name" : "Inventory",
     "tags" : [ "containers", "instruments" ]
