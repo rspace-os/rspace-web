@@ -6,7 +6,6 @@ import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import { getGetCurrentUserQueryKey } from "@/modules/common/api/v2/generated/users/users";
-
 import { BookingCreationButtonGroup } from "../BookingCreationButtonGroup";
 import { bookableItemOption } from "../bookableItemOption";
 import { BookingCreationStoreProvider, createBookingCreationStore } from "../bookingCreationStore";
