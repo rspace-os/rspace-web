@@ -555,7 +555,9 @@ export const BookingConfigurationsRead = v.object({
         (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
         "Invalid length: Expected <=255",
       ),
-      v.description("Read-only scheduling timezone used for opening hours and booking policy."),
+      v.description(
+        "Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.",
+      ),
     ),
   ),
   updatedAt: v.nullish(
@@ -623,6 +625,18 @@ export const BookingConfigurationsCreate = v.object({
   target: v.pipe(
     InstrumentsRelationshipInput,
     v.description("Instrument to which this booking configuration applies."),
+  ),
+  timezone: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+      v.description(
+        "Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.",
+      ),
+    ),
   ),
 });
 
