@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public record ApiV2ListResult<T>(
@@ -8,8 +9,14 @@ public record ApiV2ListResult<T>(
     int page,
     int limit,
     boolean hasNextPage,
-    @JsonInclude(JsonInclude.Include.NON_NULL) Long totalDocs,
-    @JsonInclude(JsonInclude.Include.NON_NULL) Boolean totalIsLowerBound) {
+    @Schema(
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+            description = "Present only when totals=true.")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Long totalDocs,
+    @Schema(description = "True when the requested total exceeds max.")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Boolean totalIsLowerBound) {
   /** Derives navigation from the known total, independently of optional capped metadata. */
   public static <T> ApiV2ListResult<T> counted(
       List<T> docs, long total, int page, int limit, boolean includeTotals, Integer max) {

@@ -83,9 +83,10 @@ same way.
 
 ### Per-actor fields
 
-A collection can publish caller-specific runtime fields. Each field kind has a namespace, provider,
-identity scheme, and catalog route: `/api/v2/{resource}/fields/{namespace}`. Use `q` for free-text
-catalog search. Clients must use the published catalog routes instead of constructing them.
+A collection can publish caller-specific fields that cannot appear in OpenAPI. Each field kind has a
+namespace, provider, identity scheme, and catalog route: `/api/v2/{resource}/fields/{namespace}`.
+Use `q` for free-text catalog search. The document publishes these namespaces and routes in
+`x-rspace-runtime-fields`. Clients must use the published routes instead of constructing them.
 
 Instruments publish two:
 
@@ -116,6 +117,74 @@ Hibernate Search. `=contains=` matches a substring anywhere. `=like=` splits on 
 requires every word as a substring, in any order, including partial words. For example, `=like=lab
 BSL-2` matches `Level BSL-2 lab`. See `InstrumentCustomFieldTextSearchIT` for examples.
 
+### Fields reached through a relationship
+
+The `where` parameter's `x-rspace-filter.selectors` map (a reference into
+`components.x-rspace-filters`) publishes immediate target scalar fields,
+keyed by `<relationship>.<field>`. `viaTitle` carries the relationship's title:
+
+```json
+"selectors": {
+  "target.name":     {"schema": {"type": "string"}, "operators": ["==", "=contains=", "=like="],
+                      "wildcards": true, "title": "Name", "viaTitle": "Booking target"},
+  "target.globalId": {"schema": {"type": "string"}, "operators": [], "wildcards": false,
+                      "title": "Global ID", "viaTitle": "Booking target"}
+}
+```
+
+A relationship declaration makes its target fields available as optional table columns. Fields with
+operators are also available as filters.
+
+Keep wildcard equality and `=like=` as separate operations. Wildcard equality anchors the complete
+value. `=like=` finds words anywhere in the value. Client labels must show this difference.
+
+`operators` is empty for a field with no backing column, such as a global ID derived from an ID. The
+API publishes the field so clients can display it, but `where` rejects it as unsupported.
+Entries with non-empty `operators` can be used in filter expressions. An entry's presence alone
+does not make it filterable.
+
+A polymorphic relationship publishes only fields shared by every destination with the same schema
+and the intersection of their operators. This avoids columns empty for half the rows and filters
+whose meaning depends on the destination.
+
+This selector map covers one relationship hop. It does not include paths such as
+`target.parentContainer.name`; the query language does not accept those multi-hop filters.
+
+### Discovering nested relationships for display
+
+Each relationship property in a resource's `Read` component carries `x-rspace-relationship.targets`.
+The map identifies every permitted target resource and points to its existing read schema. For
+example, `InstrumentsRead.properties.parentContainer` includes:
+
+```json
+"x-rspace-relationship": {
+  "targets": {
+    "containers": {"$ref": "#/components/schemas/ContainersRead"}
+  }
+}
+```
+
+To build a relationship browser, start from the response's read schema, display its properties,
+and follow each relationship's target pointer to discover the next resource's properties. Existing
+property titles and `x-rspace-access` metadata describe the field at each step. Polymorphic
+relationships list every possible target separately; keep those branches distinct because their
+fields may differ.
+
+These pointers form a finite graph, including self-references and cycles. Resolve them lazily when
+a user expands a relationship. Track pointers on the current traversal path and stop automatic
+expansion when a pointer repeats; do not globally suppress the same resource on unrelated branches.
+Set a display depth limit as well. The `$ref` values inside this extension are pointers for the
+application to resolve against `components.schemas`; standard OpenAPI tools need not resolve
+extension contents automatically. The extension is server-owned and overrides any schema annotation
+extension with the same name on a read relationship property.
+
+Graph discovery describes possible response shapes. It does not grant access to records or enable
+additional query paths. Request `depth` controls how many relationship levels the server expands,
+and `fields[resource]` controls selected fields on each resource. Missing or unreadable targets can
+render as `null`. Use the original endpoint's `x-rspace-filter.selectors` and its non-empty operator
+lists to determine which paths can be filtered. In particular, following several schema pointers
+does not make the resulting multi-hop path a supported filter.
+
 ### Scalar read documents
 
 Collections may declare a `ScalarReader` on the spec (`.scalarReader(reader)`); its `read` and
@@ -134,6 +203,11 @@ policy even at depth zero, and renders unreadable targets as `null`. Selected ex
 target field access and global IDs. Container relationship reads also project scalar rows, avoiding
 hydration of the Inventory aggregate. Entity reads remain available to internal domain callers and
 write-side relationship resolution.
+
+OpenAPI read schemas declare optional object maps for projected runtime namespaces, including
+eligible relationship prefixes. The document root stays closed. The maps accept caller-specific
+field IDs without publishing them in the cached schema. Runtime projection properties are excluded
+from create and update schemas.
 
 ## Access control
 
@@ -207,6 +281,11 @@ the capability and Owner-health read fields they support. Use the trusted
 `ResourceRoleMembershipConstraint` for collection selection; resolve capability fields for the page
 in batches. A missing or unreadable protected resource returns the same `404`.
 
+Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
+matching collection operation's documentation. Every other access function must include
+`AccessDocumentation` with a PascalCase name, its authentication rule and denial codes. The name
+keys the policy in the OpenAPI document, so reuse a name only for the same policy.
+
 A custom `createAccess` function runs after structural parsing and before relationship resolution
 and persistence. For one create document, `context.requireInput()` returns the complete immutable
 `ParsedDocument`. For bulk create, `context.inputs()` returns all documents in input order.
@@ -214,6 +293,7 @@ and persistence. For one create document, `context.requireInput()` returns the c
 ```java
 AccessFunction documentedCreateAccess =
     AccessFunction.documented(
+        "WorkspaceMemberCreate",
         "A member can create a widget only in a workspace of that member.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN),
         context -> {
@@ -253,7 +333,8 @@ Starting and ending legacy Shiro run-as rotates the opaque browser authenticatio
 from before either transition therefore fail immediately, even if their JWT expiry has not passed.
 The UI mints a fresh v2 token after each page load. It does not trust a token retained in session
 storage across a run-as redirect. Authenticated responses default to `Cache-Control: no-store,
-private, no-transform`. Public configuration responses keep their explicit cache policies.
+private, no-transform`. Public configuration and OpenAPI responses keep their explicit cache
+policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 validates
 session-bound REST API v2 UI tokens against the matching live browser session. AuthStore keeps the
@@ -276,7 +357,13 @@ throttling](../public/RSpaceConfiguration.md#api-throttling). REST API v2 suppor
 `api.global.limit.15s`, and `api.global.minInterval`.
 
 When throttling is enabled, responses contain `X-Rate-Limit-*` usage headers. Rejected requests
-return 429 and an API problem body.
+return 429 and an API problem body. Every throttle interval (`quarter_min`, `hour`, `day`) sends
+`X-Rate-Limit-Limit-{interval}`, `X-Rate-Limit-Remaining-{interval}` (whole requests), and
+`X-Rate-Limit-WaitTimeTillNextRequestMillis-{interval}`. Unlike API v1, the 15-second interval is
+suffixed too. `X-Rate-Limit-WaitTimeMillis` and `X-Rate-Limit-MinWaitIntervalMillis` give the
+largest value across the intervals. OpenAPI lists those two on each successful response, the shared
+429 response lists every header, and the top-level `x-rspace-rate-limits` extension names the
+intervals and the per-interval headers.
 
 Authenticated buckets use a SHA-256 fingerprint of the stable actor ID. Public, anonymous, and
 invalid-credential buckets use a fingerprint of the client address. Bucket keys retain neither user
@@ -424,3 +511,68 @@ callers. Relationship fallback lookups split larger ID sets into pages of at mos
 the readable results before applying read overrides. `PageOffsets` shares overflow-safe arithmetic
 for one-based pages. Collection requests, runtime-field catalogs and response metadata retain
 separate validation, limits, and pagination contracts.
+
+## OpenAPI
+
+The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
+and its schemas. Relationships refer to registered resources and their schemas.
+
+Repeated content is published once under `components` and referenced with `$ref`, so readers must
+resolve local references before inspecting a parameter, response, or extension. Standard sections
+hold shared query parameters (`<Resource>Where`, `<Resource>WhereRequired`, `<Resource>Fields`,
+`<Resource>Exclude`, `<Resource>Id`, and the resource-independent `Page`, `Limit`, `Totals`,
+`Max`, `Depth`, `IfMatch`, and `Permanent`), shared responses (`CountResult`,
+`PermanentlyRemoved`, and `<Resource>IfMatchRequired`), and documented problem examples named by
+error code. Two custom sections hold extension values: `x-rspace-filters.<Resource>` is the
+`x-rspace-filter` catalogue of that resource's `where` parameters, and
+`x-rspace-access-policies.<Name>` holds each `x-rspace-access` object and `x-rspace-fields` access
+policy under the name its `AccessDocumentation` declares, such as `Authenticated` or
+`ContainerRead`. Operations, schemas and fields that apply one policy share one entry, and
+generation fails when two different policies declare the same name. A component exists only when an
+operation or schema refers to it.
+
+The document service merges Swagger annotations from concrete controllers. It validates the complete
+document before returning it.
+
+Production creates the document after a context refresh, caches it privately for one hour, and
+supplies an `ETag`. A matching `If-None-Match` request returns 304.
+
+Development creates and validates the document for each request. Responses use `Cache-Control:
+no-store`.
+
+Use `OpenApiOperationDocumentation` for resource-specific descriptions and examples:
+
+```java
+Map.of(
+    ResourceOperation.CREATE,
+    OpenApiOperationDocumentation.builder()
+        .description("Creates one widget in the selected workspace.")
+        .requestExample(Map.of("name", "Centrifuge rotor", "enabled", true))
+        .build())
+```
+
+Declare each non-standard error in the resource spec. Each mapping:
+
+| # | Requirement |
+| --- | --- |
+| 1. | Converts the domain exception to the specified HTTP response for that operation. |
+| 2. | Resolves a stable title and optional occurrence detail from catalog keys. |
+| 3. | Adds the error response to OpenAPI. |
+
+`ApiV2ErrorMapping.forException(type).status(status).documentedError(code, description)` starts a
+typed builder. The optional `arguments` extractor customizes the mapping before `build()`.
+Keep runtime translation and the documented response on the same mapping.
+
+When exception classes overlap, the most specific matching class applies. An unmapped exception
+continues through the normal controller-advice chain. Startup fails if a mapping refers to an
+operation that the resource does not expose.
+
+For a concrete controller, use the standard Swagger annotations. These include `@Operation`,
+`@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`. Every `/api/v2/**` handler must declare
+`@Operation` or be explicitly `@Hidden` on its method or controller. The merger rejects undocumented
+handlers. The generic CRUD controller is hidden because the resource catalog generates its concrete
+paths. `ApiV2OperationCoverageTest` checks the production handler map without loading service or
+database dependencies.
+
+The public OpenAPI endpoint uses the same problem format for invalid supplied credentials and
+exceeded request limits.

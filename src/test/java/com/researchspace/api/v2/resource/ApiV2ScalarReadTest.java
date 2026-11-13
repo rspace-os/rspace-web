@@ -66,6 +66,7 @@ class ApiV2ScalarReadTest {
           List.of(new Sort("id", true)),
           AccessPolicy.readOnly(
               AccessFunction.documented(
+                  "TestScalarRows",
                   "Test scalar row access.",
                   Set.of(),
                   ignored -> AccessResult.allowedWhere(ROW_ACCESS))));

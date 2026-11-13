@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,6 +13,8 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.throttling.APIRequestThrottler;
+import com.researchspace.api.v2.throttling.APIUsageStats;
+import com.researchspace.core.util.throttling.ThrottleInterval;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.model.User;
 import java.util.Optional;
@@ -35,6 +38,31 @@ class ApiV2RequestThrottlingInterceptorTest {
     assertTrue(allowed);
     verify(client, never()).proceed(anyString());
     verify(global, never()).proceed(anyString());
+  }
+
+  @Test
+  void namesEveryIntervalsHeadersUniformlyAndReportsTheLargestWaits() {
+    APIRequestThrottler client = mock(APIRequestThrottler.class);
+    when(client.getStats("key", ThrottleInterval.QUARTER_MIN))
+        .thenReturn(Optional.of(new APIUsageStats(10, 0.5f, 100, 15)));
+    when(client.getStats("key", ThrottleInterval.HOUR))
+        .thenReturn(Optional.of(new APIUsageStats(1000, 999.7f, 250, 3600)));
+    when(client.getStats("key", ThrottleInterval.DAY)).thenReturn(Optional.empty());
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    new ApiV2RequestThrottlingInterceptor(client, mock(APIRequestThrottler.class))
+        .setUsageHeaderStats(new MockHttpServletRequest(), response, "key");
+
+    assertEquals("10", response.getHeader("X-Rate-Limit-Limit-quarter_min"));
+    assertEquals("0", response.getHeader("X-Rate-Limit-Remaining-quarter_min"));
+    assertEquals(
+        "751", response.getHeader("X-Rate-Limit-WaitTimeTillNextRequestMillis-quarter_min"));
+    assertEquals("999", response.getHeader("X-Rate-Limit-Remaining-hour"));
+    assertEquals("250", response.getHeader("X-Rate-Limit-WaitTimeTillNextRequestMillis-hour"));
+    assertEquals("751", response.getHeader("X-Rate-Limit-WaitTimeMillis"));
+    assertEquals("250", response.getHeader("X-Rate-Limit-MinWaitIntervalMillis"));
+    assertFalse(response.containsHeader("X-Rate-Limit-Limit"));
+    assertFalse(response.containsHeader("X-Rate-Limit-Limit-day"));
   }
 
   @Test

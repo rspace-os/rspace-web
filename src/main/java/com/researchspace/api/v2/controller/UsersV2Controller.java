@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.extensions.Extension;
 import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Date;
@@ -98,7 +99,11 @@ public class UsersV2Controller {
         @ApiResponse(
             responseCode = "200",
             description = "Current profile image.",
-            headers = @Header(name = "Cache-Control", description = "Always contains no-store.")),
+            headers =
+                @Header(
+                    name = "Cache-Control",
+                    description = "Always contains no-store.",
+                    schema = @Schema(implementation = String.class))),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Access is forbidden."),
         @ApiResponse(responseCode = "404", description = "The user has no profile image."),

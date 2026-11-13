@@ -70,6 +70,7 @@ public record ApiV2MaintenanceResource(
   private static final AccessFunction READ_ACCESS =
       AccessFunction.documented(
           new AccessDocumentation(
+              "MaintenanceRead",
               "Anyone may read current and future maintenance; authenticated callers may also read "
                   + "past maintenance.",
               Set.of(),

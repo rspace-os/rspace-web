@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
@@ -26,11 +27,24 @@ public interface CollectionFieldType<V> {
    *
    * @param structure additional JSON Schema keywords describing a structured value, such as {@code
    *     items}; empty for scalars
+   * @param objectType Java type of each object value, array rows included, or null for scalars and
+   *     untyped structures. Without declared fields, the generated API metadata documents the value
+   *     from this type.
    */
-  record Schema(String jsonType, String format, Integer maxLength, Map<String, Object> structure) {
+  record Schema(
+      String jsonType,
+      String format,
+      Integer maxLength,
+      Map<String, Object> structure,
+      @JsonIgnore Class<?> objectType) {
 
     public Schema(String jsonType, String format, Integer maxLength) {
       this(jsonType, format, maxLength, Map.of());
+    }
+
+    public Schema(
+        String jsonType, String format, Integer maxLength, Map<String, Object> structure) {
+      this(jsonType, format, maxLength, structure, null);
     }
 
     public Schema {

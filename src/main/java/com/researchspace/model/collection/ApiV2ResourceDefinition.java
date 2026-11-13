@@ -14,6 +14,9 @@ public @interface ApiV2ResourceDefinition {
 
   String name();
 
+  /** Explicit singular for operation names when removing a trailing s is insufficient. */
+  String singular() default "";
+
   Class<?> entity();
 
   String id();
