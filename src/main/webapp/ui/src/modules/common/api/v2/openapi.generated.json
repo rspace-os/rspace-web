@@ -6420,14 +6420,14 @@
     },
     "/api/v2/booking-configuration-targets" : {
       "get" : {
+        "description" : "Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.",
         "operationId" : "searchBookingConfigurationTargets",
         "parameters" : [ {
-          "description" : "Case-insensitive search text.",
+          "description" : "Optional case-insensitive search text. Omit it or provide an empty or whitespace-only value to browse the first `limit` eligible targets by name. A nonblank value must have at least two characters after trimming.",
           "in" : "query",
           "name" : "q",
-          "required" : true,
+          "required" : false,
           "schema" : {
-            "minLength" : 2,
             "type" : "string"
           }
         }, {
@@ -6790,6 +6790,26 @@
                   "dayOfWeek" : 1,
                   "end" : "18:00",
                   "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 2,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 3,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 4,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 5,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 6,
+                  "end" : "16:00",
+                  "start" : "10:00"
                 } ],
                 "slotGranularityMinutes" : 15,
                 "target" : {
@@ -8466,7 +8486,7 @@
         "x-rspace-operation" : "LIST"
       },
       "post" : {
-        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.",
+        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "createBooking",
         "parameters" : [ {
           "$ref" : "#/components/parameters/IdempotencyKey"
@@ -8799,7 +8819,7 @@
         "x-rspace-operation" : "READ"
       },
       "patch" : {
-        "description" : "Partially updates one bookings and returns the updated document.",
+        "description" : "Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "updateBooking",
         "parameters" : [ {
           "$ref" : "#/components/parameters/BookingsId"
