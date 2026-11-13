@@ -1,18 +1,12 @@
 package com.researchspace.booking.api.v2;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.controller.ApiV2ConditionalRequest;
-import com.researchspace.api.v2.controller.ResourceAccessController;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
-import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import com.researchspace.model.booking.BookingDefaultAccessGrantee;
-import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
@@ -20,8 +14,6 @@ import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
-import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryDocument;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.extensions.Extension;
@@ -37,7 +29,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -52,7 +43,6 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Singleton REST v2 interface for global Booking defaults. */
@@ -64,31 +54,6 @@ import org.springframework.web.bind.annotation.RestController;
     extensions =
         @Extension(properties = @ExtensionProperty(name = "x-tag-group", value = "Booking")))
 public final class BookingSettingsController {
-
-  public record SelectedAccessGrantee(
-      String kind, long id, String key, String name, String detail, boolean available) {
-
-    static SelectedAccessGrantee from(BookingDefaultAccessGrantee grantee) {
-      boolean available =
-          switch (grantee.getGranteeKind()) {
-            case USER -> grantee.getUser() != null && grantee.getUser().isEnabled();
-            case GROUP ->
-                grantee.getGroup() != null && grantee.getGroup().getEnabledMemberSize() > 0;
-            case AUDIENCE -> false;
-          };
-      return new SelectedAccessGrantee(
-          grantee.getGranteeKind().name(),
-          numericId(grantee.getGranteeKey()),
-          grantee.getGranteeKey(),
-          grantee.getNameSnapshot(),
-          grantee.getDetailSnapshot(),
-          available);
-    }
-
-    private static long numericId(String key) {
-      return Long.parseLong(key.substring(key.indexOf(':') + 1));
-    }
-  }
 
   public record SettingsDocument(
       long slotGranularityMinutes,
@@ -134,8 +99,6 @@ public final class BookingSettingsController {
       BookingTimezoneMode timezoneMode,
       @Schema(nullable = true) String customTimezone,
       String institutionTimezone,
-      BookingDefaultSharedWith defaultSharedWith,
-      List<SelectedAccessGrantee> selectedAccessGrantees,
       long configurationVersion) {
 
     static AdminSettingsDocument from(
@@ -153,8 +116,6 @@ public final class BookingSettingsController {
           defaults.getTimezoneMode(),
           defaults.getCustomTimezone(),
           institutionClock.getZone().getId(),
-          defaults.getDefaultSharedWith(),
-          defaults.getSelectedAccessGrantees().stream().map(SelectedAccessGrantee::from).toList(),
           defaults.getConfigurationVersion());
     }
   }
@@ -234,15 +195,7 @@ public final class BookingSettingsController {
           @Schema(
               types = {"string", "null"},
               nullable = true)
-          String customTimezone,
-      @Schema(
-              types = {"string", "null"},
-              nullable = true)
-          BookingDefaultSharedWith defaultSharedWith,
-      @Schema(
-              types = {"array", "null"},
-              nullable = true)
-          List<String> selectedGranteeKeys) {
+          String customTimezone) {
 
     @AssertTrue(message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
     public boolean isCustomTimezoneValid() {
@@ -291,17 +244,14 @@ public final class BookingSettingsController {
 
   private final BookingConfigurationDefaultsManager manager;
   private final FeatureFlagManager featureFlags;
-  private final ResourceAccessDirectoryManager directoryManager;
   private final Clock institutionClock;
 
   public BookingSettingsController(
       BookingConfigurationDefaultsManager manager,
       FeatureFlagManager featureFlags,
-      ResourceAccessDirectoryManager directoryManager,
       @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock) {
     this.manager = manager;
     this.featureFlags = featureFlags;
-    this.directoryManager = directoryManager;
     this.institutionClock = institutionClock;
   }
 
@@ -325,7 +275,7 @@ public final class BookingSettingsController {
       })
   public ResponseEntity<SettingsDocument> get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     var defaults = manager.getDefaults(caller.subject());
     return versioned(defaults, SettingsDocument.from(defaults, institutionClock));
   }
@@ -349,43 +299,9 @@ public final class BookingSettingsController {
       })
   public ResponseEntity<AdminSettingsDocument> getAdmin(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     var defaults = manager.getAdminDefaults(caller.subject());
     return versioned(defaults, AdminSettingsDocument.from(defaults, institutionClock));
-  }
-
-  @GetMapping("/access-grantees")
-  @Operation(
-      operationId = "searchBookingSettingsAccessGrantees",
-      summary = "Search eligible default-access grantees",
-      tags = "booking-directories",
-      responses = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Eligible users and groups in docs, without paging metadata."),
-        @ApiResponse(responseCode = "400"),
-        @ApiResponse(responseCode = "401"),
-        @ApiResponse(responseCode = "403", description = "Sysadmin access is required."),
-        @ApiResponse(responseCode = "404", description = "Booking is unavailable."),
-        @ApiResponse(responseCode = "429"),
-        @ApiResponse(responseCode = "500")
-      })
-  public ResourceGranteeDirectoryDocument accessGrantees(
-      @Parameter(description = "Case-insensitive search text.", schema = @Schema(minLength = 2))
-          @RequestParam(name = "q")
-          String query,
-      @Parameter(
-              description = "Maximum results to return.",
-              schema = @Schema(minimum = "1", maximum = "50", defaultValue = "20"))
-          @RequestParam(defaultValue = "20")
-          int limit,
-      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
-    return new ResourceGranteeDirectoryDocument(
-        directoryManager.searchForSettings(
-            ResourceAccessController.validateQuery(query),
-            ResourceAccessController.validateLimit(limit),
-            caller.subject()));
   }
 
   @PatchMapping(value = "/admin", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -414,13 +330,11 @@ public final class BookingSettingsController {
           @RequestHeader(name = HttpHeaders.IF_MATCH, required = false)
           String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     var defaults =
         manager.updateDefaults(
             patch.schedulingPatch(),
             patch.displayPatch(),
-            patch.defaultSharedWith(),
-            patch.selectedGranteeKeys(),
             ApiV2ConditionalRequest.parseVersion(
                 ifMatch, "errors.api.v2.bookingConfiguration.ifMatchRequired"),
             caller.subject(),
@@ -433,11 +347,5 @@ public final class BookingSettingsController {
         .eTag("\"" + defaults.getConfigurationVersion() + "\"")
         .header(HttpHeaders.CACHE_CONTROL, "no-transform")
         .body(body);
-  }
-
-  private void requireEnabledRead(User actor) {
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
-      throw new NotFoundException();
-    }
   }
 }

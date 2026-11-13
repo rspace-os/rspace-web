@@ -280,8 +280,8 @@ class BookingSettingsControllerMVCIT {
         .perform(get("/api/v2/booking-settings/admin").header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
         .andExpect(header().string("ETag", "\"" + before.getConfigurationVersion() + "\""))
-        .andExpect(jsonPath("$.defaultSharedWith").isString())
-        .andExpect(jsonPath("$.selectedAccessGrantees").isArray())
+        .andExpect(jsonPath("$.defaultSharedWith").doesNotExist())
+        .andExpect(jsonPath("$.selectedAccessGrantees").doesNotExist())
         .andExpect(jsonPath("$.configurationVersion").isNumber());
 
     mockMvc
