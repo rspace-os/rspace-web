@@ -46,8 +46,7 @@ class ApiV2OpenApiSchemasTest {
         assertThrows(
             IllegalStateException.class,
             () -> ApiV2OpenApiSchemas.schemaFor(ClashName.class, components));
-    assertTrue(
-        error.getMessage().contains("ApiV2OpenApiSchemasTestClashName"), error.getMessage());
+    assertTrue(error.getMessage().contains("ApiV2OpenApiSchemasTestClashName"), error.getMessage());
   }
 
   @Test

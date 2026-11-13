@@ -52,48 +52,49 @@ class ApiV2DeclaredArrayOpenApiTest {
           List.of(COUNT),
           values -> new Detail((Integer) values.get("count"), "private"));
   private static final DeclaredFieldType<List<Row>> ROWS = rows(10);
-  private static final String ROW_REF = "#/components/schemas/DeclaredApiV2DeclaredArrayOpenApiTestRow";
+  private static final String ROW_REF =
+      "#/components/schemas/DeclaredApiV2DeclaredArrayOpenApiTestRow";
 
   private static DeclaredFieldType<List<Row>> rows(int nameLength) {
     return CollectionFieldTypes.array(
-          Row.class,
-          List.of(
-              Field.embedded("name", CollectionFieldTypes.text(nameLength), Row::name)
-                  .required()
-                  .documented(
-                      OpenApiSchemaDocumentation.builder()
-                          .example("123")
-                          .additionalExample("true")
-                          .additionalExample("null")
-                          .additionalExample("\"abc\"")
-                          .build()),
-              Field.embedded("group", DETAIL, Row::group)
-                  .required()
-                  .documented(
-                      OpenApiSchemaDocumentation.builder()
-                          .example("{\"count\":3}")
-                          .additionalExample("{\"count\":4}")
-                          .build()),
-              Field.embedded("children", DETAILS, Row::children)
-                  .defaultValue(List.of(new Detail(2, "private")))
-                  .documented(
-                      OpenApiSchemaDocumentation.builder()
-                          .example("[{\"count\":5}]")
-                          .additionalExample("[{\"count\":6}]")
-                          .build()),
-              Field.embedded("createOnly", CollectionFieldTypes.text(), Row::createOnly)
-                  .writeOnlyOn(WriteOperation.CREATE)
-                  .readableBy(AccessFunction.never())),
-          values ->
-              new Row(
-                  (String) values.get("name"),
-                  (Detail) values.get("group"),
-                  details(values.get("children")),
-                  (String) values.get("createOnly")),
-          row -> {},
-          rows -> {},
-          1,
-          7);
+        Row.class,
+        List.of(
+            Field.embedded("name", CollectionFieldTypes.text(nameLength), Row::name)
+                .required()
+                .documented(
+                    OpenApiSchemaDocumentation.builder()
+                        .example("123")
+                        .additionalExample("true")
+                        .additionalExample("null")
+                        .additionalExample("\"abc\"")
+                        .build()),
+            Field.embedded("group", DETAIL, Row::group)
+                .required()
+                .documented(
+                    OpenApiSchemaDocumentation.builder()
+                        .example("{\"count\":3}")
+                        .additionalExample("{\"count\":4}")
+                        .build()),
+            Field.embedded("children", DETAILS, Row::children)
+                .defaultValue(List.of(new Detail(2, "private")))
+                .documented(
+                    OpenApiSchemaDocumentation.builder()
+                        .example("[{\"count\":5}]")
+                        .additionalExample("[{\"count\":6}]")
+                        .build()),
+            Field.embedded("createOnly", CollectionFieldTypes.text(), Row::createOnly)
+                .writeOnlyOn(WriteOperation.CREATE)
+                .readableBy(AccessFunction.never())),
+        values ->
+            new Row(
+                (String) values.get("name"),
+                (Detail) values.get("group"),
+                details(values.get("children")),
+                (String) values.get("createOnly")),
+        row -> {},
+        rows -> {},
+        1,
+        7);
   }
 
   @Test
@@ -186,7 +187,10 @@ class ApiV2DeclaredArrayOpenApiTest {
   @Test
   void collectionsDeclaringOneRowTypeAlikeShareItsReadComponent() {
     Map<String, Object> schemas =
-        schemas(document(List.of(description("items", "rows", ROWS), description("others", "entries", ROWS)), false));
+        schemas(
+            document(
+                List.of(description("items", "rows", ROWS), description("others", "entries", ROWS)),
+                false));
 
     for (var property : List.of(List.of("ItemsRead", "rows"), List.of("OthersRead", "entries"))) {
       Map<String, Object> array =
@@ -208,7 +212,8 @@ class ApiV2DeclaredArrayOpenApiTest {
     Map<String, Object> schemas =
         schemas(
             document(
-                List.of(description("items", "rows", ROWS), description("others", "entries", rows(20))),
+                List.of(
+                    description("items", "rows", ROWS), description("others", "entries", rows(20))),
                 false));
 
     assertFalse(schemas.containsKey("DeclaredApiV2DeclaredArrayOpenApiTestRow"));
@@ -226,7 +231,10 @@ class ApiV2DeclaredArrayOpenApiTest {
   @Test
   void nullableDeclaredObjectReferencesItsComponentOrNull() {
     Map<String, Object> detail =
-        map(map(map(schemas(document(description("rows"), false)).get("ItemsRead")).get("properties")).get("detail"));
+        map(
+            map(map(schemas(document(description("rows"), false)).get("ItemsRead"))
+                    .get("properties"))
+                .get("detail"));
 
     assertEquals(
         List.of(
@@ -248,7 +256,8 @@ class ApiV2DeclaredArrayOpenApiTest {
     assertTrue(summary.containsKey("x-rspace-access"));
     assertEquals(
         "Rows counted",
-        map(map(map(schemas.get("ApiV2DeclaredArrayOpenApiTestSummary")).get("properties")).get("rows"))
+        map(map(map(schemas.get("ApiV2DeclaredArrayOpenApiTestSummary")).get("properties"))
+                .get("rows"))
             .get("description"));
     assertFalse(map(map(schemas.get("ItemsCreate")).get("properties")).containsKey("summary"));
   }
