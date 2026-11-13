@@ -1,24 +1,14 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import { bookingSettingsQuery } from "@/modules/booking/configuration/schedulingSettingsApi";
-import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
-import { AddBookableItemForm, requireEligibleBookingTarget } from "./AddBookableItemForm";
+import { AddBookableItemForm } from "./AddBookableItemForm";
 import { AddBookableItemSkeleton } from "./AddBookableItemSkeleton";
+import { bookingRouteTargetQuery } from "./bookingConfigurationApi";
 
 export function AddBookableItemContent() {
   const defaults = useSuspenseQuery(bookingSettingsQuery()).data;
   const search = useSearch({ from: "/booking/bookable-items/add/" });
-  const routeTargetResults = useQuery(
-    getSearchBookingConfigurationTargetsQueryOptions(
-      { q: search.target ?? "", limit: 20 },
-      {
-        query: {
-          enabled: search.target !== undefined,
-          select: (response) => response.docs.map(requireEligibleBookingTarget),
-        },
-      },
-    ),
-  );
+  const routeTargetResults = useQuery(bookingRouteTargetQuery(search.target));
   if (search.target !== undefined && routeTargetResults.isPending && !routeTargetResults.isFetched) {
     return <AddBookableItemSkeleton />;
   }
