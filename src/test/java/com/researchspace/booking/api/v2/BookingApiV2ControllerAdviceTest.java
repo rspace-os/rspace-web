@@ -9,6 +9,7 @@ import com.researchspace.api.v2.controller.ApiV2ProblemFactory;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.*;
 import com.researchspace.booking.service.BookingCreateExecutor;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.service.FeatureFlagManager;
@@ -83,6 +84,7 @@ class BookingApiV2ControllerAdviceTest {
     var operations =
         new BookingConfigurationResourceOperations(
             mock(BookingConfigurationManager.class),
+            mock(BookingLocationFilterManager.class),
             mock(BookingConfigurationProtectedResourceAccess.class),
             mock(FeatureFlagManager.class),
             Clock.systemUTC(),
@@ -135,6 +137,7 @@ class BookingApiV2ControllerAdviceTest {
             mock(FeatureFlagManager.class),
             ApiV2TimeSlotBookingResource.DESCRIPTION,
             mock(MessageSourceUtils.class),
+            mock(BookingLocationFilterManager.class),
             mock(BookingCreateExecutor.class));
     var spec = operations.timeSlotBookingApiV2Resource();
     var shared =

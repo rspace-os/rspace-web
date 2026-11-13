@@ -16,6 +16,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingCreateExecutor;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.User;
@@ -62,7 +63,9 @@ class TimeSlotBookingResourceOperationsTest {
           featureFlags,
           ApiV2TimeSlotBookingResource.DESCRIPTION,
           mock(MessageSourceUtils.class),
+          mock(BookingLocationFilterManager.class, invocation -> invocation.getArgument(0)),
           creates);
+
   private final User actor = mock(User.class);
 
   @BeforeEach

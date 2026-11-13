@@ -12,6 +12,7 @@ import com.researchspace.api.v2.controller.ApiV2ProblemFactory;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingCreateExecutor;
+import com.researchspace.booking.service.BookingLocationFilterManager;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.ConflictingEvent;
@@ -58,6 +59,7 @@ class TimeSlotBookingProblemContractTest {
             mock(FeatureFlagManager.class),
             ApiV2TimeSlotBookingResource.DESCRIPTION,
             messages,
+            mock(BookingLocationFilterManager.class),
             mock(BookingCreateExecutor.class));
   }
 
