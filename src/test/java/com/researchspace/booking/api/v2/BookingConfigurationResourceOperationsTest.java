@@ -1,6 +1,7 @@
 package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -166,6 +167,18 @@ class BookingConfigurationResourceOperationsTest {
     verify(manager).archiveConfiguration(42L, 3L, actor, actor);
   }
 
+  @Test
+  void excludesTargetlessRelatedAuditRowsWhenCreationTimeIsUnknown() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setCreatedAt(null);
+    assertNull(
+        operations
+            .bookingConfigurationApiV2Resource()
+            .audit()
+            .orElseThrow()
+            .relatedAuditFallbackFrom(configuration));
+  }
+
   @ParameterizedTest
   @MethodSource("schedulingPatches")
   void translatesSchedulingPatchesToTheSharedManagerInterface(
@@ -220,6 +233,13 @@ class BookingConfigurationResourceOperationsTest {
     assertEquals(List.of(), operations.find(request, actor).resources());
     assertEquals(0, operations.count(request, actor));
     assertEquals(Optional.empty(), operations.findById(42L, actor));
+    assertEquals(
+        Optional.empty(),
+        operations
+            .bookingConfigurationApiV2Resource()
+            .audit()
+            .orElseThrow()
+            .findByIdForAudit(42L, actor));
     ApiV2Caller caller = ApiV2Caller.direct(actor);
     assertThrows(
         NotFoundException.class, () -> operations.create(document, caller, null).resource());

@@ -16,6 +16,7 @@ import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
@@ -122,7 +123,8 @@ public record ApiV2BookingConfigurationResource(
     @ApiV2ResourceMember(factory = "createdByNameField") String createdByName,
     @ApiV2ResourceMember(factory = "effectiveRoleField") String effectiveRole,
     @ApiV2ResourceMember(factory = "roleSourcesField") List<ResourceRoleSource> roleSources,
-    @ApiV2ResourceMember(factory = "capabilitiesField") BookingConfigurationCapabilities capabilities,
+    @ApiV2ResourceMember(factory = "capabilitiesField")
+        BookingConfigurationCapabilities capabilities,
     @ApiV2ResourceMember(factory = "ownerHealthField") BookingOwnerHealth ownerHealth) {
 
   public static final CollectionMutationLimits MUTATION_LIMITS =
@@ -214,10 +216,11 @@ public record ApiV2BookingConfigurationResource(
             AccessFunction.authenticated(),
             AccessFunction.authenticated());
     return CollectionDescription.fromApiV2Resource(
-        ApiV2BookingConfigurationResource.class,
-        BookingConfiguration.class,
-        List.of(new Sort("id", true)),
-        access);
+            ApiV2BookingConfigurationResource.class,
+            BookingConfiguration.class,
+            List.of(new Sort("id", true)),
+            access)
+        .withFilter(new FilterSelector.Alias<>("targetOwner", "target"));
   }
 
   private static Field<BookingConfiguration, ?> openingHoursField() {
