@@ -42,12 +42,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
 
+  /** The configuration target reference in the catalogue's configuration query. */
+  private static final String CONFIGURATION_TARGET = "bookingConfiguration.target";
+
   private final BookingConfigurationManager configurations;
   private final InstrumentDao instruments;
   private final BookingInstrumentQueryDao bookingInstruments;
   private final FeatureFlagManager featureFlags;
   private final BookingItemQuery itemQuery;
   private final BookingCalendarQuery calendarQuery;
+  private final BookingLocationFilterManager locations;
 
   public BookingCatalogueManagerImpl(
       BookingConfigurationManager configurations,
@@ -55,13 +59,15 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       BookingInstrumentQueryDao bookingInstruments,
       FeatureFlagManager featureFlags,
       BookingItemQuery itemQuery,
-      BookingCalendarQuery calendarQuery) {
+      BookingCalendarQuery calendarQuery,
+      BookingLocationFilterManager locations) {
     this.configurations = configurations;
     this.instruments = instruments;
     this.bookingInstruments = bookingInstruments;
     this.featureFlags = featureFlags;
     this.itemQuery = itemQuery;
     this.calendarQuery = calendarQuery;
+    this.locations = locations;
   }
 
   @Override
@@ -75,17 +81,17 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       int page,
       int limit,
       User caller) {
-    return search(
-        query,
-        targetGlobalId,
-        request,
-        targetTypes,
-        locationGlobalIds,
-        capability,
-        page,
-        limit,
-        caller,
-        null);
+    return scope(
+            query,
+            targetGlobalId,
+            request,
+            targetTypes,
+            locationGlobalIds,
+            capability,
+            caller,
+            null)
+        .map(scope -> page(scope, page, limit, caller))
+        .orElseGet(() -> emptyPage(page, limit));
   }
 
   @Override
@@ -98,36 +104,66 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       int page,
       int limit,
       User caller) {
-    return search(
-        null,
-        null,
-        items,
-        List.of(),
-        List.of(),
-        null,
-        page,
-        limit,
-        caller,
-        calendarQuery.resources(events, start, end, query, caller));
+    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) {
+      throw new NotFoundException();
+    }
+    return scope(
+            null,
+            null,
+            items,
+            List.of(),
+            List.of(),
+            null,
+            caller,
+            calendarEvents(events, start, end, query, caller))
+        .map(scope -> page(scope, page, limit, caller))
+        .orElseGet(() -> emptyPage(page, limit));
   }
 
-  private Page search(
+  /** The Calendar event scope, answering top-level event location rules without item lists. */
+  private Predicate calendarEvents(
+      ResourceRequest events, Instant start, Instant end, String query, User caller) {
+    BookingLocationFilterManager.Resolved resolved =
+        locations.resolveLocations(events, caller, BookingCalendarQuery.RESOURCE_EVENT_TARGET);
+    return calendarQuery.resources(
+        resolved.request(), resolved.restriction(), start, end, query, caller);
+  }
+
+  /** Every catalogue filter of one request, before paging. */
+  private record Scope(ResourceRequest request, Predicate restriction) {
+
+    ResourceRequest page(int page, int limit) {
+      return new ResourceRequest(
+          request.filter(),
+          request.serverConstraint(),
+          request.sort(),
+          new ResourceRequest.Page(page, limit),
+          request.fieldSelections(),
+          request.includes(),
+          request.runtime());
+    }
+  }
+
+  /** The complete scope, or empty when a filter can already match nothing. */
+  private Optional<Scope> scope(
       String query,
       String targetGlobalId,
       ResourceRequest request,
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
-      int page,
-      int limit,
       User caller,
       Predicate restriction) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) {
       throw new NotFoundException();
     }
     if (!targetTypes.isEmpty() && !targetTypes.contains("INSTRUMENT")) {
-      return emptyPage(page, limit);
+      return Optional.empty();
     }
+    BookingLocationFilterManager.Resolved resolved =
+        locations.resolveLocations(request, caller, CONFIGURATION_TARGET);
+    request = resolved.request();
+    restriction = Predicate.and(restriction, resolved.restriction());
 
     List<FilterExpression> filters = new ArrayList<>();
     filters.add(comparison("enabled", Operator.EQUAL, true));
@@ -138,10 +174,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
           Predicate.and(
               restriction,
               itemQuery.restriction(
-                  caller,
-                  true,
-                  capability == Capability.CREATE_BLOCKOUT,
-                  "bookingConfiguration.target"));
+                  caller, true, capability == Capability.CREATE_BLOCKOUT, CONFIGURATION_TARGET));
     }
     if (query != null && !query.isBlank()) {
       Set<Long> matchingTargetIds =
@@ -152,7 +185,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         matchingTargetIds.add(globalIdTarget.id());
       }
       if (matchingTargetIds.isEmpty()) {
-        return emptyPage(page, limit);
+        return Optional.empty();
       }
       filters.add(
           new FilterExpression.Comparison(
@@ -161,7 +194,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     if (targetGlobalId != null && !targetGlobalId.isBlank()) {
       ResourceReference<BookableTargetType, Long> target = instrumentReference(targetGlobalId);
       if (target == null) {
-        return emptyPage(page, limit);
+        return Optional.empty();
       }
       filters.add(comparison("target", Operator.EQUAL, target));
     }
@@ -169,36 +202,44 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<ResourceReference<BookableTargetType, Long>> candidateTargets =
           visibleLocationTargets(locationGlobalIds, caller);
       if (candidateTargets.isEmpty()) {
-        return emptyPage(page, limit);
+        return Optional.empty();
       }
       filters.add(
           new FilterExpression.Comparison(
               "target", Operator.IN, List.copyOf(candidateTargets), false));
     }
 
-    ResourceRequest scopedRequest =
-        new ResourceRequest(
-                request.filter(),
-                request.serverConstraint(),
-                List.of(),
-                new ResourceRequest.Page(page, limit),
-                ResourceFieldSelections.root(FieldSelection.all()),
-                IncludeTree.empty(),
-                request.runtime())
-            .restrict(new FilterExpression.And(filters));
+    return Optional.of(
+        new Scope(
+            new ResourceRequest(
+                    request.filter(),
+                    request.serverConstraint(),
+                    List.of(),
+                    new ResourceRequest.Page(1, 1),
+                    ResourceFieldSelections.root(FieldSelection.all()),
+                    IncludeTree.empty(),
+                    request.runtime())
+                .restrict(new FilterExpression.And(filters)),
+            restriction));
+  }
+
+  private Page page(Scope scope, int page, int limit, User caller) {
     ResourcePage<BookingConfiguration> result =
-        restriction == null
-            ? configurations.getConfigurations(scopedRequest, caller)
-            : configurations.getConfigurations(scopedRequest, caller, restriction);
+        configurations.getConfigurations(scope.page(page, limit), caller, scope.restriction());
+    return page(result.resources(), page, limit, result.total(), caller);
+  }
+
+  private Page page(
+      List<BookingConfiguration> configurations, int page, int limit, long total, User caller) {
     Set<Long> targetIds =
-        result.resources().stream()
+        configurations.stream()
             .map(configuration -> configuration.getTarget().id())
             .collect(Collectors.toSet());
     Map<Long, Instrument> targets = bookingInstruments.getBookingRelationshipTargets(targetIds);
     Map<Long, BookingCatalogueLocation> locations =
         bookingInstruments.getReadableParentLocationSummaries(targetIds, caller);
     return new Page(
-        result.resources().stream()
+        configurations.stream()
             .map(
                 configuration ->
                     item(
@@ -209,35 +250,65 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             .toList(),
         page,
         limit,
-        result.total(),
-        new Facets(result.total() == 0 ? List.of() : List.of("INSTRUMENT")));
+        total,
+        new Facets(total == 0 ? List.of() : List.of("INSTRUMENT")));
   }
 
   @Override
   public LocationPage searchLocations(
-      String query, List<String> targetTypes, int page, int limit, User caller) {
+      String query,
+      List<String> targetTypes,
+      List<String> globalIds,
+      int page,
+      int limit,
+      User caller) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) {
       throw new NotFoundException();
     }
     if (!targetTypes.isEmpty() && !targetTypes.contains("INSTRUMENT")) {
       return new LocationPage(List.of(), page, limit, 0);
     }
+    Set<Long> containerIds = globalIds.isEmpty() ? null : locationIds(globalIds);
+    String nameQuery = query;
+    Set<Long> queriedId = query == null ? null : locationIds(List.of(query.trim()));
+    if (queriedId != null && !queriedId.isEmpty()) {
+      nameQuery = null;
+      containerIds =
+          containerIds == null
+              ? queriedId
+              : containerIds.stream().filter(queriedId::contains).collect(Collectors.toSet());
+    }
+    if (containerIds != null && containerIds.isEmpty()) {
+      return new LocationPage(List.of(), page, limit, 0);
+    }
     ResourcePage<BookingCatalogueLocation> result =
-        bookingInstruments.getBookingCatalogueLocations(query, page, limit, caller);
+        bookingInstruments.getBookingCatalogueLocations(
+            nameQuery, containerIds, page, limit, caller);
     return new LocationPage(
         result.resources().stream()
-            .map(
-                location ->
-                    new Location(
-                        (location.containerType() == Container.ContainerType.WORKBENCH
-                                ? GlobalIdPrefix.BE
-                                : GlobalIdPrefix.IC)
-                            + location.id().toString(),
-                        location.name()))
+            .map(BookingLocationFilterManagerImpl::location)
+            .map(location -> new Location(location.globalId(), location.name()))
             .toList(),
         page,
         limit,
         result.total());
+  }
+
+  /** Container IDs named by {@code IC} or {@code BE} global IDs; other values name nothing. */
+  private static Set<Long> locationIds(List<String> globalIds) {
+    Set<Long> ids = new HashSet<>();
+    for (String globalId : globalIds) {
+      if (globalId == null || !GlobalIdentifier.isValid(globalId.toUpperCase(Locale.ROOT))) {
+        continue;
+      }
+      GlobalIdentifier identifier = new GlobalIdentifier(globalId.toUpperCase(Locale.ROOT));
+      if ((identifier.getPrefix() == GlobalIdPrefix.IC
+              || identifier.getPrefix() == GlobalIdPrefix.BE)
+          && !identifier.hasVersionId()) {
+        ids.add(identifier.getDbId());
+      }
+    }
+    return ids;
   }
 
   private static Page emptyPage(int page, int limit) {
