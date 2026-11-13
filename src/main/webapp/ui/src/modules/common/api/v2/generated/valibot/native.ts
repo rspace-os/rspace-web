@@ -10,7 +10,7 @@ import * as v from 'valibot';
 export const ApiV2AuditEvent = v.object({
   action: v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE']),
   description: v.nullish(v.string()),
-  domain: v.picklist(['MESSAGING', 'RECORD', 'FOLDER', 'NOTEBOOK', 'MEDIA', 'USER', 'GROUP', 'COMMUNITY', 'FORM', 'AUDIT', 'INV_SAMPLE', 'INV_SUBSAMPLE', 'INV_CONTAINER', 'INV_INSTRUMENT', 'REQUEST', 'WORKSPACE', 'UNKNOWN']),
+  domain: v.picklist(['MESSAGING', 'RECORD', 'FOLDER', 'NOTEBOOK', 'MEDIA', 'USER', 'GROUP', 'COMMUNITY', 'FORM', 'AUDIT', 'INV_SAMPLE', 'INV_SUBSAMPLE', 'INV_CONTAINER', 'INV_INSTRUMENT', 'REQUEST', 'BOOKING', 'WORKSPACE', 'UNKNOWN']),
   eventId: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64')),
   fullName: v.nullish(v.string()),
   payload: v.record(v.string(), v.unknown()),
