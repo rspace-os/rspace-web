@@ -166,27 +166,36 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
+  void userCalendarRotateRequiresTheExactCurrentEtag() throws Exception {
     fixture.enableBookings();
     String apiKey = fixture.userKey();
 
     mockMvc
         .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(post(USER_SUBSCRIPTION_PATH + "/rotate").header("apiKey", apiKey))
         .andExpect(status().isPreconditionRequired())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
     mockMvc
         .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "inactive"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     mockMvc
         .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
     String currentEtag =
         mockMvc
+            .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -194,53 +203,116 @@ class BookingCalendarSubscriptionControllerMVCIT {
     MvcResult replacement =
         mockMvc
             .perform(
+                post(USER_SUBSCRIPTION_PATH + "/rotate")
                     .header("apiKey", apiKey)
+                    .header(HttpHeaders.IF_MATCH, currentEtag))
             .andExpect(status().isOk())
             .andReturn();
     assertNotEquals(currentEtag, replacement.getResponse().getHeader(HttpHeaders.ETAG));
     mockMvc
         .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
                 .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, currentEtag))
+        .andExpect(status().isPreconditionFailed());
   }
 
   @Test
+  void itemCalendarRotateRequiresTheExactCurrentEtag() throws Exception {
     fixture.enableBookings();
     long configurationId = readableConfiguration();
     String apiKey = fixture.userKey();
+    create(configurationId, apiKey);
 
     mockMvc
+        .perform(post(path(configurationId) + "/rotate").header("apiKey", apiKey))
         .andExpect(status().isPreconditionRequired())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
     mockMvc
         .perform(
+            post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "inactive"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     mockMvc
         .perform(
+            post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
                 .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
 
+    String currentEtag =
         mockMvc
             .perform(get(path(configurationId)).header("apiKey", apiKey))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
+    MvcResult replacement =
         mockMvc
             .perform(
+                post(path(configurationId) + "/rotate")
                     .header("apiKey", apiKey)
+                    .header(HttpHeaders.IF_MATCH, currentEtag))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNotEquals(currentEtag, replacement.getResponse().getHeader(HttpHeaders.ETAG));
+    mockMvc
+        .perform(
+            post(path(configurationId) + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, currentEtag))
+        .andExpect(status().isPreconditionFailed());
+  }
+
+  @Test
+  void rotateAcceptsCurrentEtagsAsCompressingProxiesRewriteThem() throws Exception {
+    fixture.enableBookings();
+    String apiKey = fixture.userKey();
+    String userEtag =
+        mockMvc
+            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
+    String gzipped = userEtag.substring(0, userEtag.length() - 1) + "-gzip\"";
+
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, gzipped))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.ETAG, not(userEtag)));
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH + "/rotate")
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, gzipped))
+        .andExpect(status().isPreconditionFailed())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
+
+    long configurationId = readableConfiguration();
+    create(configurationId, apiKey);
+    String itemEtag =
+        mockMvc
+            .perform(get(path(configurationId)).header("apiKey", apiKey))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
             .getHeader(HttpHeaders.ETAG);
-        mockMvc
-            .andExpect(status().isOk())
     mockMvc
         .perform(
+            post(path(configurationId) + "/rotate")
                 .header("apiKey", apiKey)
+                .header(
+                    HttpHeaders.IF_MATCH,
+                    "W/" + itemEtag.substring(0, itemEtag.length() - 1) + "-br\""))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
   }
 
   @Test
@@ -583,6 +655,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
     return document.path("subscriptionUrl").textValue();
   }
 
+  private String rotate(long configurationId, String apiKey) throws Exception {
     String etag =
         mockMvc
             .perform(get(path(configurationId)).header("apiKey", apiKey))
@@ -593,6 +666,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
     MvcResult result =
         mockMvc
             .perform(
+                post(path(configurationId) + "/rotate")
                     .header("apiKey", apiKey)
                     .header(HttpHeaders.IF_MATCH, etag))
             .andExpect(status().isOk())
