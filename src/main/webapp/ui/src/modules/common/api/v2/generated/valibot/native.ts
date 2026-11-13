@@ -58,6 +58,9 @@ export const ApiV2CurrentUserOrcid = v.object({
 })
 
 export const ApiV2CurrentUserSession = v.object({
+  canChangeFeatureFlagBaselines: v.pipe(v.boolean(), v.description('Whether the user may change feature-flag baselines.')),
+  canOverrideFeatureFlags: v.pipe(v.boolean(), v.description('Whether the user may override feature flags.')),
+  canUseDevtools: v.pipe(v.boolean(), v.description('Whether the feature-flag developer tools are available.')),
   lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp(), v.description('Previous successful login instant.'))),
   operatedAs: v.pipe(v.boolean(), v.description('Whether a system administrator is operating as another user.'))
 })
@@ -140,6 +143,27 @@ export const ContainersReference = v.object({
 })
 
 export const ContainersUpdate = v.object({})
+
+export const FeatureFlagsCreate = v.object({})
+
+export const FeatureFlagsRead = v.object({
+  baselineValue: v.optional(v.pipe(v.boolean(), v.description('Instance value before a user override is applied. Only a real sysadmin can change it.'))),
+  canOverride: v.optional(v.pipe(v.boolean(), v.description('Whether this caller can set a user override.'))),
+  name: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Stable lower-camel-case feature flag name.')),
+  overrideValue: v.nullish(v.pipe(v.boolean(), v.description('Caller override. Set null to clear the override.'))),
+  source: v.optional(v.pipe(v.picklist(['DEFAULT', 'DATABASE', 'USER_OVERRIDE', 'PROPERTIES_FILE']), v.description('Source of the effective value.'))),
+  value: v.optional(v.pipe(v.boolean(), v.description('Effective value for this caller.')))
+})
+
+export const FeatureFlagsReference = v.object({
+  relationTo: v.literal('feature-flags'),
+  value: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'))
+})
+
+export const FeatureFlagsUpdate = v.object({
+  baselineValue: v.optional(v.pipe(v.boolean(), v.description('Instance value before a user override is applied. Only a real sysadmin can change it.'))),
+  overrideValue: v.nullish(v.pipe(v.boolean(), v.description('Caller override. Set null to clear the override.')))
+})
 
 export const InstrumentsCreate = v.object({})
 
@@ -360,6 +384,106 @@ export const ListContainerAuditEventsQueryParams = v.object({
 })
 
 export const ListContainerAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  truncated: v.boolean()
+})
+
+
+/**
+ * Returns a paginated view of feature-flags. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * @summary List feature-flags
+ */
+export const ListFeatureFlagsQueryParams = v.object({
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))),
+  sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
+  totals: v.optional(v.pipe(v.boolean(), v.description('Include totalDocs and totalIsLowerBound. Defaults to false.')), false),
+  max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.'))),
+  depth: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10), v.description('Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.')), 0),
+  fields: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.'))),
+  exclude: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[feature-flags]=id,name.')))
+})
+
+export const ListFeatureFlagsResponse = v.object({
+  docs: v.array(FeatureFlagsRead),
+  hasNextPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  page: v.pipe(v.number(), v.integer()),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.')))
+})
+
+
+/**
+ * Counts feature-flags matching the optional bounded filter.
+ * @summary Count feature-flags
+ */
+export const CountFeatureFlagsQueryParams = v.object({
+  max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.')))
+})
+
+export const CountFeatureFlagsResponse = ApiV2CountResult
+
+
+/**
+ * Returns one visible feature-flags. A resource that is absent or not readable is reported as not found.
+ * @summary Get one feature-flags
+ */
+export const GetFeatureFlagParams = v.object({
+  id: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Resource identifier.'))
+})
+
+export const GetFeatureFlagQueryParams = v.object({
+  depth: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10), v.description('Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.')), 0),
+  fields: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.'))),
+  exclude: v.optional(v.pipe(v.object({
+  'feature-flags': v.optional(v.string())
+}), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[feature-flags]=id,name.')))
+})
+
+export const GetFeatureFlagResponse = FeatureFlagsRead
+
+
+/**
+ * Changes the caller override for one feature flag. A real sysadmin can also change the instance baseline.
+ * @summary Update one feature-flags
+ */
+export const UpdateFeatureFlagParams = v.object({
+  id: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Resource identifier.'))
+})
+
+export const UpdateFeatureFlagBody = FeatureFlagsUpdate
+
+export const UpdateFeatureFlagResponse = FeatureFlagsRead
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one feature-flags resource
+ */
+export const ListFeatureFlagAuditEventsParams = v.object({
+  id: v.pipe(v.string(), v.check((value) => value.length <= 128 || (value.length <= 256 && [...value].length <= 128), 'Invalid length: Expected <=128'), v.description('Resource identifier.'))
+})
+
+export const ListFeatureFlagAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.')))
+})
+
+export const ListFeatureFlagAuditEventsResponse = v.object({
   docs: v.array(ApiV2AuditEvent),
   endExclusive: v.pipe(v.string(), v.isoTimestamp()),
   limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
