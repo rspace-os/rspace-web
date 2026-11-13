@@ -67,10 +67,10 @@ export interface BookingConfigurationsRead {
   target?: BookingConfigurationsReadTarget;
   'target.customFields'?: BookingConfigurationsReadTargetCustomFields;
   /**
-     * Read-only scheduling timezone used for opening hours and booking policy.
+     * Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.
      * @maxLength 255
      */
-  readonly timezone?: string;
+  timezone?: string;
   /**
      * Time at which the resource was last updated.
      * @nullable
