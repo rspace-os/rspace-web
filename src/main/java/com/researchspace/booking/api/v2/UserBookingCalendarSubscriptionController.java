@@ -54,6 +54,8 @@ public class UserBookingCalendarSubscriptionController {
     }
   }
 
+  public record ItemLinksDocument(List<ItemLinkDocument> docs) {}
+
   private final BookingCalendarManager manager;
 
   public UserBookingCalendarSubscriptionController(BookingCalendarManager manager) {
@@ -227,6 +229,11 @@ public class UserBookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
+  public ItemLinksDocument itemLinks(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    return new ItemLinksDocument(
+        manager.itemLinks(caller.subject(), caller.actor()).stream()
+            .map(ItemLinkDocument::from)
+            .toList());
   }
 }
