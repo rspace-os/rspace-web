@@ -139,6 +139,7 @@ class BookingCalendarManagerSubscriptionTest {
 
   @Test
   void createStoresTheTokenAndReturnsTheFixedFeedQueryUrl() {
+    BookingCalendarManager.Created created = manager.create(CONFIGURATION_ID, owner, owner);
 
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
