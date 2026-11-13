@@ -1,6 +1,7 @@
 package com.researchspace.booking.dao;
 
 import com.researchspace.dao.CollectionDao;
+import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.RelationshipReadAccess;
@@ -16,6 +17,12 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
 
   /** Finds an original create identity, including later cancelled or lifecycle-hidden rows. */
   Optional<TimeSlotBooking> findByCreatorAndKey(Long creatorId, String key);
+
+  /** Applies Calendar text scope before event paging and counts. */
+  ResourcePage<TimeSlotBooking> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess access,
+      RsqlCollectionQuery.Predicate restriction);
 
   /** Returns a page after target read rules and soft deletion are applied in SQL. */
   ResourcePage<TimeSlotBooking> getReadableResources(
