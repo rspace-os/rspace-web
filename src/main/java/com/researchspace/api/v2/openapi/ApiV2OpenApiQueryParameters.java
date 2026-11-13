@@ -136,9 +136,7 @@ final class ApiV2OpenApiQueryParameters {
     if (operation == ResourceOperation.READ
         || operation == ResourceOperation.UPDATE
         || operation == ResourceOperation.DELETE) {
-      FieldSchema id = field(schema, schema.idField());
-      parameters.add(
-          parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
+      parameters.add(idParameter(schema));
     }
     if (operation == ResourceOperation.LIST) {
       parameters.add(where(schema, false, resourceSchemas, registry, runtimeFields));
@@ -542,6 +540,24 @@ final class ApiV2OpenApiQueryParameters {
         description,
         "schema",
         schema);
+  }
+
+  static Map<String, Object> idParameter(ResourceSchema schema) {
+    return parameter(
+        "id",
+        "path",
+        true,
+        scalarSchema(field(schema, schema.idField()).type(), false),
+        "Resource identifier.");
+  }
+
+  static Map<String, Object> ifMatchParameter(String description) {
+    return parameter(
+        "If-Match",
+        "header",
+        true,
+        ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
+        description);
   }
 
   private static Map<String, Object> pageParameter() {

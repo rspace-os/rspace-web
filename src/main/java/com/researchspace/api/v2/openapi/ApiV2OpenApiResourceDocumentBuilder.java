@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.putIfNotNull;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
@@ -95,11 +96,7 @@ final class ApiV2OpenApiResourceDocumentBuilder {
         required.add(field.name());
       }
     }
-    Map<String, Object> schema =
-        ordered("type", "object", "additionalProperties", false, "properties", properties);
-    if (!required.isEmpty()) {
-      schema.put("required", required);
-    }
+    Map<String, Object> schema = closedObjectSchema(properties, required);
     schema.put("x-rspace-access", accessExtension(access(resource.access(), writeOperation)));
     return schema;
   }
@@ -177,6 +174,11 @@ final class ApiV2OpenApiResourceDocumentBuilder {
         required.add(child.name());
       }
     }
+    return closedObjectSchema(properties, required);
+  }
+
+  private static Map<String, Object> closedObjectSchema(
+      Map<String, Object> properties, List<String> required) {
     Map<String, Object> schema =
         ordered("type", "object", "additionalProperties", false, "properties", properties);
     if (!required.isEmpty()) {
@@ -196,7 +198,7 @@ final class ApiV2OpenApiResourceDocumentBuilder {
               variants.add(
                   prefix == null
                       ? ref(names.get(target) + "Reference")
-                      : globalReferenceSchema(names.get(target) + "Reference", prefix));
+                      : globalReferenceSchema(names.get(target) + "Reference", prefix, true));
               variants.add(
                   expandedReferenceSchema(target, ref(names.get(target) + "Read"), prefix));
             });
@@ -235,34 +237,20 @@ final class ApiV2OpenApiResourceDocumentBuilder {
                 variants.add(
                     prefix == null
                         ? ref(referenceComponent)
-                        : globalInputReferenceSchema(referenceComponent, prefix));
+                        : globalReferenceSchema(referenceComponent, prefix, false));
               });
     }
     return variants.size() == 1 ? variants.get(0) : ordered("oneOf", variants);
   }
 
   private static Map<String, Object> globalReferenceSchema(
-      String referenceComponent, String prefix) {
-    return ordered(
-        "allOf",
-        List.of(
-            ref(referenceComponent),
-            ordered(
-                "type",
-                "object",
-                "required",
-                List.of("globalId"),
-                "properties",
-                ordered("globalId", globalIdSchema(prefix)))));
-  }
-
-  private static Map<String, Object> globalInputReferenceSchema(
-      String referenceComponent, String prefix) {
-    return ordered(
-        "allOf",
-        List.of(
-            ref(referenceComponent),
-            ordered("type", "object", "properties", ordered("globalId", globalIdSchema(prefix)))));
+      String referenceComponent, String prefix, boolean globalIdRequired) {
+    Map<String, Object> globalId =
+        ordered("type", "object", "properties", ordered("globalId", globalIdSchema(prefix)));
+    if (globalIdRequired) {
+      globalId.put("required", List.of("globalId"));
+    }
+    return ordered("allOf", List.of(ref(referenceComponent), globalId));
   }
 
   private static Map<String, Object> expandedReferenceSchema(
@@ -307,8 +295,7 @@ final class ApiV2OpenApiResourceDocumentBuilder {
                 isNullableReference(property)
                     ? nullableReference((Map<?, ?>) property)
                     : property));
-    Map<String, Object> result = new LinkedHashMap<>();
-    component.forEach((key, value) -> result.put((String) key, value));
+    Map<String, Object> result = objectMap(component);
     result.put("properties", rewritten);
     return result;
   }

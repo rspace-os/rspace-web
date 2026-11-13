@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -60,7 +61,7 @@ final class ApiV2OpenApiSchemas {
     Map<String, Object> object = nonNullSchema(schema, components);
     if (type.isCollectionLikeType() || type.isArrayType()) {
       if (object.get("items") instanceof Map<?, ?> items) {
-        normalizeResponse(type.getContentType(), objectMap(items), components, visited);
+        normalizeResponse(type.getContentType(), mutableObjectMap(items), components, visited);
       }
       return;
     }
@@ -76,7 +77,7 @@ final class ApiV2OpenApiSchemas {
           || !(properties.get(property.getName()) instanceof Map<?, ?> value)) {
         continue;
       }
-      Map<String, Object> shape = objectMap(value);
+      Map<String, Object> shape = mutableObjectMap(value);
       JavaType propertyType = property.getPrimaryType();
       var annotation = property.getPrimaryMember().getAnnotation(Schema.class);
       if (annotation != null
@@ -116,7 +117,9 @@ final class ApiV2OpenApiSchemas {
     for (String keyword : List.of("anyOf", "oneOf")) {
       if (schema.get(keyword) instanceof List<?> alternatives
           && alternatives.stream()
-              .anyMatch(value -> value instanceof Map<?, ?> branch && hasNull(objectMap(branch)))) {
+              .anyMatch(
+                  value ->
+                      value instanceof Map<?, ?> branch && hasNull(mutableObjectMap(branch)))) {
         return true;
       }
     }
@@ -153,7 +156,7 @@ final class ApiV2OpenApiSchemas {
                 .toList();
         if (nonNull.size() == 1 && nonNull.get(0) instanceof Map<?, ?> branch) {
           schema.remove(keyword);
-          schema.putAll(objectMap(branch));
+          schema.putAll(mutableObjectMap(branch));
         } else schema.put(keyword, nonNull);
       }
     }
@@ -162,22 +165,17 @@ final class ApiV2OpenApiSchemas {
   private static Map<String, Object> nonNullSchema(
       Map<String, Object> schema, Map<String, Object> components) {
     if (schema.get("$ref") instanceof String ref) {
-      return objectMap((Map<?, ?>) components.get(ref.substring(ref.lastIndexOf('/') + 1)));
+      return mutableObjectMap(components.get(ref.substring(ref.lastIndexOf('/') + 1)));
     }
     for (String keyword : List.of("anyOf", "oneOf", "allOf")) {
       if (schema.get(keyword) instanceof List<?> alternatives) {
         for (Object value : alternatives) {
           if (value instanceof Map<?, ?> branch && !"null".equals(branch.get("type"))) {
-            return nonNullSchema(objectMap(branch), components);
+            return nonNullSchema(mutableObjectMap(branch), components);
           }
         }
       }
     }
     return schema;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static Map<String, Object> objectMap(Map<?, ?> value) {
-    return (Map<String, Object>) value;
   }
 }

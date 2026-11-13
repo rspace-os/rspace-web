@@ -1,10 +1,13 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.JSON;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.putIfNotNull;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.ifMatchParameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameters;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.access;
@@ -15,10 +18,9 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuild
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.withNullableReferenceProperties;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitHeaders;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.responseRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHeaders;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponseReference;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.bulkResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.listResult;
@@ -52,8 +54,6 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 
 public final class ApiV2OpenApiGenerator {
-
-  private static final String JSON = "application/json";
   static final List<Map<String, List<String>>> AUTHENTICATED_SECURITY =
       List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of()));
 
@@ -195,9 +195,8 @@ public final class ApiV2OpenApiGenerator {
               "headers",
               Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
               "content",
-              Map.of(JSON, Map.of("schema", ref("ApiV2RuntimeFieldCatalog")))));
-      for (String code : List.of("400", "401", "403", "404", "406", "429", "500"))
-        responses.put(code, standardResponseReference(code));
+              content(JSON, ref("ApiV2RuntimeFieldCatalog"))));
+      putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
       paths.put(
           collectionPath + "/fields/{namespace}",
           Map.of(
@@ -295,12 +294,7 @@ public final class ApiV2OpenApiGenerator {
             queryParameters.runtimeFieldsExtension(resource));
     if (requiresIfMatch(resource, operation)) {
       parameters.add(
-          parameter(
-              "If-Match",
-              "header",
-              true,
-              ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
-              "Strong entity tag containing the current resource version."));
+          ifMatchParameter("Strong entity tag containing the current resource version."));
     }
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
@@ -317,10 +311,7 @@ public final class ApiV2OpenApiGenerator {
     if (!parameters.isEmpty()) {
       result.put("parameters", parameters);
     }
-    if (operation == ResourceOperation.CREATE
-        || operation == ResourceOperation.BULK_CREATE
-        || operation == ResourceOperation.UPDATE
-        || operation == ResourceOperation.BULK_UPDATE) {
+    if (hasRequestBody(operation)) {
       Map<String, Object> media = new LinkedHashMap<>();
       if (operation == ResourceOperation.BULK_CREATE) {
         media.put(
@@ -348,6 +339,13 @@ public final class ApiV2OpenApiGenerator {
     result.put("x-rspace-operation", operation.name());
     result.putAll(documentation.extensions());
     return result;
+  }
+
+  private static boolean hasRequestBody(ResourceOperation operation) {
+    return operation == ResourceOperation.CREATE
+        || operation == ResourceOperation.BULK_CREATE
+        || operation == ResourceOperation.UPDATE
+        || operation == ResourceOperation.BULK_UPDATE;
   }
 
   private static boolean requiresIfMatch(
@@ -403,23 +401,17 @@ public final class ApiV2OpenApiGenerator {
               "headers",
               rateLimitHeaders()));
     }
-    responses.put("400", responseRef("BadRequest"));
-    responses.put("401", responseRef("Unauthenticated"));
-    responses.put("403", responseRef("Forbidden"));
+    putStandardResponses(responses, "400", "401", "403", "406", "429", "500");
     if (operation == ResourceOperation.READ
         || operation == ResourceOperation.UPDATE
         || operation == ResourceOperation.DELETE) {
-      responses.put("404", responseRef("NotFound"));
+      putStandardResponses(responses, "404");
     }
-    if (operation == ResourceOperation.CREATE
-        || operation == ResourceOperation.BULK_CREATE
-        || operation == ResourceOperation.UPDATE
-        || operation == ResourceOperation.BULK_UPDATE) {
-      responses.put("415", responseRef("UnsupportedMediaType"));
+    if (hasRequestBody(operation)) {
+      putStandardResponses(responses, "415");
     }
-    responses.put("406", responseRef("NotAcceptable"));
     if (operation == ResourceOperation.BULK_UPDATE || operation == ResourceOperation.BULK_DELETE) {
-      responses.put("422", responseRef("BulkLimit"));
+      putStandardResponses(responses, "422");
     }
     if (requiresIfMatch(resource, operation)) {
       responses.put(
@@ -431,8 +423,6 @@ public final class ApiV2OpenApiGenerator {
                   .ifMatchRequiredCode()
                   .orElse(ApiV2ErrorCodes.messageKeyFor(HttpStatus.PRECONDITION_REQUIRED))));
     }
-    responses.put("429", responseRef("TooManyRequests"));
-    responses.put("500", responseRef("UnexpectedError"));
     documentation.responses().entrySet().stream()
         .filter(entry -> !entry.getValue().errors().isEmpty())
         .forEach(

@@ -21,6 +21,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.OAuthTokenManager;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.extensions.Extension;
 import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -74,24 +75,14 @@ class ApiV2OpenApiAnnotationMergerTest {
 
   @Test
   void mergesConcretePublicControllerMetadataIntoTheGeneratedDocument() throws Exception {
-    ApiV2OpenApiGenerator generator =
-        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0");
     ConfigV2Controller controller = new ConfigV2Controller(mock(IPropertyHolder.class));
-    Method method = ConfigV2Controller.class.getMethod("getConfig");
-    RequestMappingInfo mapping =
-        RequestMappingInfo.paths("/api/v2/config").methods(RequestMethod.GET).build();
-
-    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
-    when(handlerMapping.getHandlerMethods())
-        .thenReturn(Map.of(mapping, new HandlerMethod(controller, method)));
     Map<String, Object> document =
-        new ApiV2OpenApiDocumentService(
-                generator,
-                new ApiV2EndpointCatalog(
-                    List.of(
-                        new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()))),
-                () -> Stream.of(handlerMapping))
-            .generate();
+        generate(
+            new ApiV2EndpointCatalog(
+                List.of(new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()))),
+            Map.of(
+                RequestMappingInfo.paths("/api/v2/config").methods(RequestMethod.GET).build(),
+                new HandlerMethod(controller, ConfigV2Controller.class.getMethod("getConfig"))));
 
     Map<String, Object> paths = objectMap(document.get("paths"));
     Map<String, Object> operation = objectMap(objectMap(paths.get("/api/v2/config")).get("get"));
@@ -111,9 +102,9 @@ class ApiV2OpenApiAnnotationMergerTest {
   @Test
   void generatedDtoSchemasPreserveRequiredFieldsAndNullableMetadata() throws Exception {
     SchemaController controller = new SchemaController();
-    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
-    when(handlerMapping.getHandlerMethods())
-        .thenReturn(
+    Map<String, Object> document =
+        generate(
+            new ApiV2EndpointCatalog(List.of()),
             Map.of(
                 RequestMappingInfo.paths("/api/v2/schema/config")
                     .methods(RequestMethod.GET)
@@ -127,13 +118,6 @@ class ApiV2OpenApiAnnotationMergerTest {
                     .methods(RequestMethod.GET)
                     .build(),
                 new HandlerMethod(controller, SchemaController.class.getMethod("uiToken"))));
-
-    Map<String, Object> document =
-        new ApiV2OpenApiDocumentService(
-                new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0"),
-                new ApiV2EndpointCatalog(List.of()),
-                () -> Stream.of(handlerMapping))
-            .generate();
     Map<String, Object> schemas = schemas(document);
 
     assertRequiredProperties(
@@ -226,21 +210,14 @@ class ApiV2OpenApiAnnotationMergerTest {
 
   @Test
   void mergesParametersRequestBodiesAndExplicitResponseSchemas() throws Exception {
-    ApiV2OpenApiGenerator generator =
-        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0");
-    CustomController controller = new CustomController();
     Method method =
         CustomController.class.getMethod("create", long.class, String.class, CustomInput.class);
-    RequestMappingInfo mapping =
-        RequestMappingInfo.paths("/api/v2/things/{id}").methods(RequestMethod.POST).build();
-    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
-    when(handlerMapping.getHandlerMethods())
-        .thenReturn(Map.of(mapping, new HandlerMethod(controller, method)));
-
     Map<String, Object> document =
-        new ApiV2OpenApiDocumentService(
-                generator, new ApiV2EndpointCatalog(List.of()), () -> Stream.of(handlerMapping))
-            .generate();
+        generate(
+            new ApiV2EndpointCatalog(List.of()),
+            Map.of(
+                RequestMappingInfo.paths("/api/v2/things/{id}").methods(RequestMethod.POST).build(),
+                new HandlerMethod(new CustomController(), method)));
     Map<String, Object> operation =
         objectMap(
             objectMap(objectMap(document.get("paths")).get("/api/v2/things/{id}")).get("post"));
@@ -249,6 +226,21 @@ class ApiV2OpenApiAnnotationMergerTest {
     assertEquals(
         List.of("id", "mode"), parameters.stream().map(value -> value.get("name")).toList());
     assertEquals(true, parameters.get(0).get("required"));
+    assertEquals(
+        Map.of(
+            "name",
+            "mode",
+            "in",
+            "query",
+            "description",
+            "Creation mode.",
+            "required",
+            true,
+            "example",
+            "fast",
+            "schema",
+            Map.of("type", "string")),
+        parameters.get(1));
     assertTrue(objectMap(operation.get("requestBody")).containsKey("content"));
     assertEquals(
         List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())),
@@ -259,29 +251,23 @@ class ApiV2OpenApiAnnotationMergerTest {
 
   @Test
   void documentsBrowserSessionAuthenticationOnlyForTheUiTokenEndpoint() throws Exception {
-    ApiV2OpenApiGenerator generator =
-        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0");
     OAuthTokensV2Controller controller = new OAuthTokensV2Controller(mock(OAuthTokenManager.class));
     Method method =
         OAuthTokensV2Controller.class.getMethod(
             "createToken", ApiV2Caller.class, HttpServletRequest.class);
-    RequestMappingInfo mapping =
-        RequestMappingInfo.paths("/api/v2/oauth/tokens").methods(RequestMethod.POST).build();
-    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
-    when(handlerMapping.getHandlerMethods())
-        .thenReturn(Map.of(mapping, new HandlerMethod(controller, method)));
-
     Map<String, Object> document =
-        new ApiV2OpenApiDocumentService(
-                generator,
-                new ApiV2EndpointCatalog(
-                    List.of(
-                        new ApiV2EndpointSpec(
-                            OAuthTokensV2Controller.class,
-                            AccessFunction.authenticated(),
-                            ApiV2AuthenticationMode.BROWSER_SESSION))),
-                () -> Stream.of(handlerMapping))
-            .generate();
+        generate(
+            new ApiV2EndpointCatalog(
+                List.of(
+                    new ApiV2EndpointSpec(
+                        OAuthTokensV2Controller.class,
+                        AccessFunction.authenticated(),
+                        ApiV2AuthenticationMode.BROWSER_SESSION))),
+            Map.of(
+                RequestMappingInfo.paths("/api/v2/oauth/tokens")
+                    .methods(RequestMethod.POST)
+                    .build(),
+                new HandlerMethod(controller, method)));
 
     Map<String, Object> operation =
         objectMap(
@@ -309,7 +295,9 @@ class ApiV2OpenApiAnnotationMergerTest {
                 description = "Created.",
                 content = @Content(schema = @Schema(implementation = CustomOutput.class))))
     public CustomOutput create(
-        @PathVariable long id, @RequestParam String mode, @RequestBody CustomInput input) {
+        @PathVariable long id,
+        @RequestParam @Parameter(description = "Creation mode.", example = "fast") String mode,
+        @RequestBody CustomInput input) {
       return new CustomOutput(id, input.name());
     }
   }
@@ -348,6 +336,17 @@ class ApiV2OpenApiAnnotationMergerTest {
   private record CustomInput(@Schema(description = "Name to assign.", minLength = 1) String name) {}
 
   private record CustomOutput(long id, String name) {}
+
+  private static Map<String, Object> generate(
+      ApiV2EndpointCatalog endpoints, Map<RequestMappingInfo, HandlerMethod> handlers) {
+    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
+    when(handlerMapping.getHandlerMethods()).thenReturn(handlers);
+    return new ApiV2OpenApiDocumentService(
+            new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0"),
+            endpoints,
+            () -> Stream.of(handlerMapping))
+        .generate();
+  }
 
   private static Map<String, Object> schemas(Map<String, Object> document) {
     return objectMap(objectMap(document.get("components")).get("schemas"));

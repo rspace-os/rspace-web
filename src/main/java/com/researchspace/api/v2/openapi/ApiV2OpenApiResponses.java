@@ -7,6 +7,7 @@ import com.researchspace.api.v2.ApiV2ErrorCodes;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.http.HttpStatus;
 
 /** Shared OpenAPI problem responses and response headers. */
@@ -80,6 +81,13 @@ final class ApiV2OpenApiResponses {
   static Map<String, Object> standardResponseReference(String status) {
     String name = STANDARD_RESPONSE_NAMES.get(status);
     return name == null ? null : Map.of("$ref", "#/components/responses/" + name);
+  }
+
+  /** Adds a reference to the shared component response for each status. */
+  static void putStandardResponses(Map<String, Object> responses, String... statuses) {
+    for (String status : statuses) {
+      responses.put(status, Objects.requireNonNull(standardResponseReference(status), status));
+    }
   }
 
   static Map<String, Object> problemResponse(String description, int status, String code) {
@@ -158,10 +166,6 @@ final class ApiV2OpenApiResponses {
           "X-Rate-Limit-WaitTimeTillNextRequestMillis-" + interval, headerRef("RateLimitWait"));
     }
     return headers;
-  }
-
-  static Map<String, Object> responseRef(String name) {
-    return Map.of("$ref", "#/components/responses/" + name);
   }
 
   static Map<String, Object> headerRef(String name) {

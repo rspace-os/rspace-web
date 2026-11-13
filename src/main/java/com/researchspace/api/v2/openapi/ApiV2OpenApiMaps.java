@@ -6,6 +6,8 @@ import java.util.Map;
 /** Small ordered-map helpers shared by the generated OpenAPI builders. */
 final class ApiV2OpenApiMaps {
 
+  static final String JSON = "application/json";
+
   private ApiV2OpenApiMaps() {}
 
   static Map<String, Object> ordered(Object... entries) {
@@ -32,6 +34,11 @@ final class ApiV2OpenApiMaps {
     Map<String, Object> result = new LinkedHashMap<>();
     source.forEach((key, value) -> result.put(String.class.cast(key), value));
     return result;
+  }
+
+  /** A content map with one media type whose only member is {@code schema}. */
+  static Map<String, Object> content(String mediaType, Map<String, Object> schema) {
+    return Map.of(mediaType, ordered("schema", schema));
   }
 
   static Map<String, Object> ref(String name) {

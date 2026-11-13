@@ -1,15 +1,17 @@
 package com.researchspace.api.v2.openapi;
 
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator.AUTHENTICATED_SECURITY;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.JSON;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.idParameter;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.ifMatchParameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameter;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.field;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.scalarSchema;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.headerRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.responseRef;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
@@ -18,7 +20,6 @@ import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessPolicySchema;
-import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccessRequest;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
@@ -32,8 +33,6 @@ import java.util.Objects;
 import java.util.Set;
 
 final class ApiV2OpenApiResourceAccessDocs {
-
-  private static final String JSON = "application/json";
 
   private enum ResourceAccessOperation {
     READ("get", "Access", "Get direct access assignments", "ACCESS_READ"),
@@ -179,25 +178,12 @@ final class ApiV2OpenApiResourceAccessDocs {
                 : "Authenticated callers authorized by the registered protected resource.",
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
     List<Map<String, Object>> parameters = new ArrayList<>();
-    FieldSchema id =
-        field(resource.description().schema(), resource.description().schema().idField());
-    parameters.add(
-        parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
+    parameters.add(idParameter(resource.description().schema()));
     if (operationKind == ResourceAccessOperation.REPLACE) {
-      parameters.add(
-          parameter(
-              "If-Match",
-              "header",
-              true,
-              ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
-              "Strong ETag from the latest access document."));
+      parameters.add(ifMatchParameter("Strong ETag from the latest access document."));
       operation.put(
           "requestBody",
-          ordered(
-              "required",
-              true,
-              "content",
-              Map.of(JSON, ordered("schema", ref("ResourceAccessReplacement")))));
+          ordered("required", true, "content", content(JSON, ref("ResourceAccessReplacement"))));
     }
     if (operationKind == ResourceAccessOperation.SEARCH) {
       parameters.add(
@@ -238,17 +224,13 @@ final class ApiV2OpenApiResourceAccessDocs {
                   ? "Eligible users and groups."
                   : "Current direct assignments and caller capabilities.",
               "content",
-              Map.of(JSON, ordered("schema", schema)));
+              content(JSON, schema));
       if (operationKind != ResourceAccessOperation.SEARCH) {
         success.put("headers", ordered("ETag", headerRef("ETag")));
       }
       responses.put("200", success);
     }
-    responses.put("400", responseRef("BadRequest"));
-    responses.put("401", responseRef("Unauthenticated"));
-    responses.put("403", responseRef("Forbidden"));
-    responses.put("404", responseRef("NotFound"));
-    responses.put("406", responseRef("NotAcceptable"));
+    putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
     if (operationKind.changesAssignments()) {
       responses.put(
           "409",
@@ -264,7 +246,7 @@ final class ApiV2OpenApiResourceAccessDocs {
               "The access document changed since it was read.",
               412,
               "errors.api.v2.resourceAccess.stale"));
-      responses.put("415", responseRef("UnsupportedMediaType"));
+      putStandardResponses(responses, "415");
       responses.put(
           "428",
           problemResponse(
@@ -272,8 +254,6 @@ final class ApiV2OpenApiResourceAccessDocs {
               428,
               "errors.api.v2.resourceAccess.ifMatchRequired"));
     }
-    responses.put("429", responseRef("TooManyRequests"));
-    responses.put("500", responseRef("UnexpectedError"));
     return responses;
   }
 

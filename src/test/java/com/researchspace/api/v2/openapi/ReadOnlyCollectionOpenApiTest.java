@@ -67,13 +67,10 @@ class ReadOnlyCollectionOpenApiTest {
 
   @Test
   void publishesOptionalAndCappedTotalsForEveryCollection() {
-    var catalog =
-        new ApiV2ResourceCatalog(
-            List.of(
-                resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
-                resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of())));
     JsonNode document =
-        Json31.mapper().valueToTree(new ApiV2OpenApiGenerator(catalog, "API", "2.0.0").generate());
+        document(
+            resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
+            resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()));
     for (String resource : List.of("containers", "instruments")) {
       JsonNode list = document.at("/paths/~1api~1v2~1" + resource + "/get");
       JsonNode totals = parameter(list.path("parameters"), "totals");
@@ -127,11 +124,7 @@ class ReadOnlyCollectionOpenApiTest {
                   Set.of(
                       ResourceOperation.READ, ResourceOperation.UPDATE, ResourceOperation.DELETE))
               .build();
-      JsonNode document =
-          Json31.mapper()
-              .valueToTree(
-                  new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "API", "2.0.0")
-                      .generate());
+      JsonNode document = document(spec);
       JsonNode path = document.at("/paths/~1api~1v2~1users~1{id}");
       assertFalse(path.at("/get/responses").has("428"));
       for (String method : List.of("patch", "delete")) {
@@ -152,16 +145,9 @@ class ReadOnlyCollectionOpenApiTest {
   @Test
   void publishesContainersAndInstrumentParentRelationship() {
     JsonNode document =
-        Json31.mapper()
-            .valueToTree(
-                new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(
-                            List.of(
-                                resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
-                                resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()))),
-                        "API",
-                        "2.0.0")
-                    .generate());
+        document(
+            resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
+            resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()));
     assertTrue(document.at("/paths/~1api~1v2~1containers/get").isObject());
     JsonNode properties = document.at("/components/schemas/InstrumentsRead/properties");
     String relationship = properties.path("parentContainer").toString();
@@ -176,16 +162,7 @@ class ReadOnlyCollectionOpenApiTest {
   void publishesRecursiveAndPolymorphicDisplayEdgesWithoutAddingNestedFilters() {
     var nodes = graphDescription("nodes", List.of("nodes", "branches"));
     var branches = graphDescription("branches", List.of("nodes"));
-    JsonNode document =
-        Json31.mapper()
-            .valueToTree(
-                new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(
-                            List.of(
-                                resourceSpec(nodes, List.of()), resourceSpec(branches, List.of()))),
-                        "API",
-                        "2.0.0")
-                    .generate());
+    JsonNode document = document(resourceSpec(nodes, List.of()), resourceSpec(branches, List.of()));
     JsonNode schemas = document.at("/components/schemas");
     JsonNode nodeSchema = schemas.path("NodesRead");
     JsonNode targets = nodeSchema.at("/properties/related/x-rspace-relationship/targets");
@@ -253,17 +230,10 @@ class ReadOnlyCollectionOpenApiTest {
             "id",
             List.of(new Sort("id", true)));
     JsonNode document =
-        Json31.mapper()
-            .valueToTree(
-                new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(
-                            List.of(
-                                resourceSpec(description, List.of()),
-                                resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()),
-                                resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()))),
-                        "API",
-                        "2.0.0")
-                    .generate());
+        document(
+            resourceSpec(description, List.of()),
+            resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()),
+            resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()));
     for (String name : List.of("fields", "exclude")) {
       JsonNode fieldset = parameter(document.at("/paths/~1api~1v2~1sources/get/parameters"), name);
       assertTrue(fieldset.at("/schema/properties/containers").isObject());
@@ -303,11 +273,7 @@ class ReadOnlyCollectionOpenApiTest {
             .mutationErrors("errors.api.v2.invalidRequest", "errors.api.v2.invalidRequest")
             .expose(Set.of(ResourceOperation.LIST, ResourceOperation.READ))
             .build();
-    JsonNode json =
-        Json31.mapper()
-            .valueToTree(
-                new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "API", "2.0.0")
-                    .generate());
+    JsonNode json = document(spec);
     JsonNode filters = whereSelectors(json.at("/paths/~1api~1v2~1gadgets/get/parameters"));
 
     assertEquals("[\"OPEN\",\"CLOSED\"]", filters.at("/phase/schema/enum").toString());
@@ -353,12 +319,7 @@ class ReadOnlyCollectionOpenApiTest {
     ApiV2ResourceSpec<NamespaceSource, Long> sourceSpec =
         resourceSpec(sourceDescription, List.of());
 
-    JsonNode document =
-        Json31.mapper()
-            .valueToTree(
-                new ApiV2OpenApiGenerator(
-                        new ApiV2ResourceCatalog(List.of(sourceSpec, targetSpec)), "API", "2.0.0")
-                    .generate());
+    JsonNode document = document(sourceSpec, targetSpec);
     JsonNode sourceWhere =
         parameter(document.at("/paths/~1api~1v2~1sources/get/parameters"), "where");
     JsonNode targetWhere =
@@ -386,6 +347,13 @@ class ReadOnlyCollectionOpenApiTest {
       }
     }
     throw new AssertionError("No " + name + " parameter");
+  }
+
+  private static JsonNode document(ApiV2ResourceSpec<?, ?>... specs) {
+    return Json31.mapper()
+        .valueToTree(
+            new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(specs)), "API", "2.0.0")
+                .generate());
   }
 
   private static <T> ApiV2ResourceSpec<T, Long> resourceSpec(
