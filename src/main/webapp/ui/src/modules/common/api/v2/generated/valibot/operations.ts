@@ -15,6 +15,16 @@ export const apiV2Operations: Record<
   countContainers: { responses: { "200": { "application/json": native.CountContainersResponse } } },
   getContainer: { responses: { "200": { "application/json": native.GetContainerResponse } } },
   listContainerAuditEvents: { responses: { "200": { "application/json": native.ListContainerAuditEventsResponse } } },
+  listFeatureFlags: { public: true, responses: { "200": { "application/json": native.ListFeatureFlagsResponse } } },
+  countFeatureFlags: { public: true, responses: { "200": { "application/json": native.CountFeatureFlagsResponse } } },
+  getFeatureFlag: { public: true, responses: { "200": { "application/json": native.GetFeatureFlagResponse } } },
+  updateFeatureFlag: {
+    request: native.UpdateFeatureFlagBody,
+    responses: { "200": { "application/json": native.UpdateFeatureFlagResponse } },
+  },
+  listFeatureFlagAuditEvents: {
+    responses: { "200": { "application/json": native.ListFeatureFlagAuditEventsResponse } },
+  },
   listInstruments: { responses: { "200": { "application/json": native.ListInstrumentsResponse } } },
   countInstruments: { responses: { "200": { "application/json": native.CountInstrumentsResponse } } },
   getInstrumentRuntimeFields: {

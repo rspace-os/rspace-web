@@ -21,6 +21,9 @@ export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
 export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
+export const FeatureFlagsReadSchema = native.FeatureFlagsRead;
+export const FeatureFlagsReferenceSchema = native.FeatureFlagsReference;
+export const FeatureFlagsUpdateSchema = native.FeatureFlagsUpdate;
 export const InstrumentsReadSchema = native.InstrumentsRead;
 export const InstrumentsReferenceSchema = native.InstrumentsReference;
 export const MaintenancesBulkResultSchema = native.MaintenancesBulkResult;
@@ -120,6 +123,18 @@ export type SchemaModelTypeChecks = {
   ContainersReference: [
     Assert<Extends<v.InferOutput<typeof ContainersReferenceSchema>, Models.ContainersReference>>,
     Assert<Extends<Models.ContainersReference, v.InferOutput<typeof ContainersReferenceSchema>>>,
+  ];
+  FeatureFlagsRead: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsReadSchema>, Models.FeatureFlagsRead>>,
+    Assert<Extends<Models.FeatureFlagsRead, v.InferOutput<typeof FeatureFlagsReadSchema>>>,
+  ];
+  FeatureFlagsReference: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsReferenceSchema>, Models.FeatureFlagsReference>>,
+    Assert<Extends<Models.FeatureFlagsReference, v.InferOutput<typeof FeatureFlagsReferenceSchema>>>,
+  ];
+  FeatureFlagsUpdate: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsUpdateSchema>, Models.FeatureFlagsUpdate>>,
+    Assert<Extends<Models.FeatureFlagsUpdate, v.InferOutput<typeof FeatureFlagsUpdateSchema>>>,
   ];
   InstrumentsRead: [
     Assert<Extends<v.InferOutput<typeof InstrumentsReadSchema>, Models.InstrumentsRead>>,
