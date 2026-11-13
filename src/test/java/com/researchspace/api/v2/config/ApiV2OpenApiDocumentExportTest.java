@@ -65,7 +65,7 @@ class ApiV2OpenApiDocumentExportTest {
                   context.getBean(ApiV2EndpointCatalog.class),
                   () -> Stream.of(ApiV2TestHandlerMappings.mapping(handlers)))
               .generate();
-      var path = Path.of("src/main/webapp/ui/src/modules/common/api/v2/openapi.json");
+      var path = Path.of("src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json");
       assertTagDocumentation(MAPPER.valueToTree(document));
       var json =
           new ObjectMapper()
