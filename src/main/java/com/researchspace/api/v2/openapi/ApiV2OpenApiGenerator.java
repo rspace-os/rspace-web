@@ -119,6 +119,8 @@ public final class ApiV2OpenApiGenerator {
 
     schemas.replaceAll(
         (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
+    ApiV2OpenApiAccessPolicies.share(schemas, referenced);
+    ApiV2OpenApiAccessPolicies.share(paths, referenced);
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
     components.put("responses", standardResponses(text));

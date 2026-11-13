@@ -119,7 +119,8 @@ BSL-2` matches `Level BSL-2 lab`. See `InstrumentCustomFieldTextSearchIT` for ex
 
 ### Fields reached through a relationship
 
-The `where` parameter's `x-rspace-filter.selectors` map publishes immediate target scalar fields,
+The `where` parameter's `x-rspace-filter.selectors` map (a reference into
+`components.x-rspace-filters`) publishes immediate target scalar fields,
 keyed by `<relationship>.<field>`. `viaTitle` carries the relationship's title:
 
 ```json
@@ -507,6 +508,18 @@ separate validation, limits, and pagination contracts.
 
 The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
 and its schemas. Relationships refer to registered resources and their schemas.
+
+Repeated content is published once under `components` and referenced with `$ref`, so readers must
+resolve local references before inspecting a parameter, response, or extension. Standard sections
+hold shared query parameters (`<Resource>Where`, `<Resource>WhereRequired`, `<Resource>Fields`,
+`<Resource>Exclude`, `<Resource>Id`, and the resource-independent `Page`, `Limit`, `Totals`,
+`Max`, `Depth`, `IfMatch`, and `Permanent`), shared responses (`CountResult`,
+`PermanentlyRemoved`, and `<Resource>IfMatchRequired`), and documented problem examples named by
+error code. Two custom sections hold extension values: `x-rspace-filters.<Resource>` is the
+`x-rspace-filter` catalogue of that resource's `where` parameters, and
+`x-rspace-access-policies.AccessPolicy<digest>` holds each distinct `x-rspace-access` object and
+`x-rspace-fields` access policy, named by a digest of its content. A component exists only when an
+operation or schema refers to it.
 
 The document service merges Swagger annotations from concrete controllers. It validates the complete
 document before returning it.

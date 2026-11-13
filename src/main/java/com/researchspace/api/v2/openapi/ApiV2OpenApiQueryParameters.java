@@ -24,6 +24,9 @@ final class ApiV2OpenApiQueryParameters {
 
   static final String PARAMETERS = "parameters";
 
+  /** The custom components section holding each resource's {@code x-rspace-filter} catalogue. */
+  static final String FILTERS = "x-rspace-filters";
+
   private ApiV2OpenApiQueryParameters() {}
 
   /** The parameters of a standard operation, as references to components. */
@@ -47,7 +50,15 @@ final class ApiV2OpenApiQueryParameters {
           components.reference(
               PARAMETERS,
               component + "Where",
-              where(schema, false, resourceSchemas, registry, runtimeFields, text)));
+              where(
+                  schema,
+                  false,
+                  component,
+                  components,
+                  resourceSchemas,
+                  registry,
+                  runtimeFields,
+                  text)));
       Map<String, Object> sort =
           parameter(
               "sort",
@@ -103,7 +114,15 @@ final class ApiV2OpenApiQueryParameters {
           components.reference(
               PARAMETERS,
               component + (required ? "WhereRequired" : "Where"),
-              where(schema, required, resourceSchemas, registry, runtimeFields, text)));
+              where(
+                  schema,
+                  required,
+                  component,
+                  components,
+                  resourceSchemas,
+                  registry,
+                  runtimeFields,
+                  text)));
     }
     if (operation == ResourceOperation.LIST || operation == ResourceOperation.READ) {
       parameters.add(
@@ -149,6 +168,8 @@ final class ApiV2OpenApiQueryParameters {
   private static Map<String, Object> where(
       ResourceSchema schema,
       boolean required,
+      String component,
+      ApiV2OpenApiComponents components,
       Map<String, ResourceSchema> resourceSchemas,
       ResourceRegistry registry,
       List<Map<String, Object>> runtimeFields,
@@ -165,7 +186,10 @@ final class ApiV2OpenApiQueryParameters {
                     : Key.PARAMETER_WHERE_WITH_RUNTIME_FIELDS));
     parameter.put(
         "x-rspace-filter",
-        ApiV2OpenApiFilterExtension.filterExtension(schema, resourceSchemas, registry, text));
+        components.reference(
+            FILTERS,
+            component,
+            ApiV2OpenApiFilterExtension.filterExtension(schema, resourceSchemas, registry, text)));
     if (!runtimeFields.isEmpty()) {
       parameter.put("x-rspace-runtime-fields", runtimeFields);
     }

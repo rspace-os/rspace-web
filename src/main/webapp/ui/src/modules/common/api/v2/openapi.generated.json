@@ -102,43 +102,7 @@
           "type" : "string"
         },
         "x-rspace-filter" : {
-          "maximumArguments" : 1000,
-          "maximumComparisons" : 50,
-          "maximumLikeComparisons" : 10,
-          "maximumNesting" : 10,
-          "selectors" : {
-            "containerType" : {
-              "operators" : [ "!=", "==", "=exists=" ],
-              "schema" : {
-                "enum" : [ "LIST", "GRID", "IMAGE", "WORKBENCH" ],
-                "type" : "string"
-              },
-              "wildcards" : false
-            },
-            "deleted" : {
-              "operators" : [ "!=", "==", "=exists=" ],
-              "schema" : {
-                "type" : "boolean"
-              },
-              "wildcards" : false
-            },
-            "id" : {
-              "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
-              "schema" : {
-                "format" : "int64",
-                "type" : "integer"
-              },
-              "wildcards" : false
-            },
-            "name" : {
-              "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
-              "schema" : {
-                "maxLength" : 255,
-                "type" : "string"
-              },
-              "wildcards" : true
-            }
-          }
+          "$ref" : "#/components/x-rspace-filters/Containers"
         }
       },
       "Depth" : {
@@ -225,84 +189,7 @@
           "type" : "string"
         },
         "x-rspace-filter" : {
-          "maximumArguments" : 1000,
-          "maximumComparisons" : 50,
-          "maximumLikeComparisons" : 10,
-          "maximumNesting" : 10,
-          "selectors" : {
-            "deleted" : {
-              "operators" : [ "!=", "==", "=exists=" ],
-              "schema" : {
-                "type" : "boolean"
-              },
-              "title" : "Deleted",
-              "wildcards" : false
-            },
-            "id" : {
-              "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
-              "schema" : {
-                "format" : "int64",
-                "type" : "integer"
-              },
-              "title" : "Instrument ID",
-              "wildcards" : false
-            },
-            "name" : {
-              "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
-              "schema" : {
-                "maxLength" : 255,
-                "type" : "string"
-              },
-              "title" : "Name",
-              "wildcards" : true
-            },
-            "parentContainer.containerType" : {
-              "operators" : [ "==" ],
-              "schema" : {
-                "enum" : [ "LIST", "GRID", "IMAGE", "WORKBENCH" ],
-                "type" : "string"
-              },
-              "wildcards" : false
-            },
-            "parentContainer.deleted" : {
-              "operators" : [ "==" ],
-              "schema" : {
-                "type" : "boolean"
-              },
-              "wildcards" : false
-            },
-            "parentContainer.globalId" : {
-              "operators" : [ ],
-              "schema" : {
-                "type" : "string"
-              },
-              "wildcards" : false
-            },
-            "parentContainer.id" : {
-              "operators" : [ "==", "=in=" ],
-              "schema" : {
-                "format" : "int64",
-                "type" : "integer"
-              },
-              "wildcards" : false
-            },
-            "parentContainer.name" : {
-              "operators" : [ "==", "=contains=", "=in=", "=like=" ],
-              "schema" : {
-                "maxLength" : 255,
-                "type" : "string"
-              },
-              "wildcards" : true
-            },
-            "parentContainer.value" : {
-              "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
-              "schema" : {
-                "format" : "int64",
-                "type" : "integer"
-              },
-              "wildcards" : false
-            }
-          }
+          "$ref" : "#/components/x-rspace-filters/Instruments"
         },
         "x-rspace-runtime-fields" : [ {
           "catalog" : "/api/v2/instruments/fields/customFields",
@@ -444,56 +331,7 @@
           "type" : "string"
         },
         "x-rspace-filter" : {
-          "maximumArguments" : 1000,
-          "maximumComparisons" : 50,
-          "maximumLikeComparisons" : 10,
-          "maximumNesting" : 10,
-          "selectors" : {
-            "createdAt" : {
-              "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
-              "schema" : {
-                "format" : "date-time",
-                "type" : [ "string", "null" ]
-              },
-              "wildcards" : false
-            },
-            "email" : {
-              "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
-              "schema" : {
-                "type" : "string"
-              },
-              "wildcards" : true
-            },
-            "firstName" : {
-              "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
-              "schema" : {
-                "type" : "string"
-              },
-              "wildcards" : true
-            },
-            "id" : {
-              "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
-              "schema" : {
-                "format" : "int64",
-                "type" : "integer"
-              },
-              "wildcards" : false
-            },
-            "lastName" : {
-              "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
-              "schema" : {
-                "type" : "string"
-              },
-              "wildcards" : true
-            },
-            "username" : {
-              "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
-              "schema" : {
-                "type" : "string"
-              },
-              "wildcards" : true
-            }
-          }
+          "$ref" : "#/components/x-rspace-filters/Users"
         }
       }
     },
@@ -955,9 +793,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-          "description" : "This action is not permitted."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
       },
       "ContainersRead" : {
@@ -968,27 +804,21 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
             }
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
             }
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
             }
           },
           "id" : {
@@ -996,9 +826,7 @@
             "readOnly" : true,
             "type" : "integer",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
             }
           },
           "name" : {
@@ -1006,18 +834,14 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
             }
           }
         },
         "required" : [ "id" ],
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy35c71ff4"
         }
       },
       "ContainersReference" : {
@@ -1039,9 +863,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-          "description" : "This action is not permitted."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
       },
       "Entry" : {
@@ -1109,9 +931,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-          "description" : "This action is not permitted."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
       },
       "InstrumentsRead" : {
@@ -1128,9 +948,7 @@
             "title" : "Deleted",
             "type" : "boolean",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
             }
           },
           "extraFields" : {
@@ -1144,9 +962,7 @@
             "title" : "Global ID",
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
             }
           },
           "id" : {
@@ -1157,9 +973,7 @@
             "title" : "Instrument ID",
             "type" : "integer",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
             }
           },
           "name" : {
@@ -1170,9 +984,7 @@
             "title" : "Name",
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
             }
           },
           "parentContainer" : {
@@ -1197,9 +1009,7 @@
             } ],
             "readOnly" : true,
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
             },
             "x-rspace-relationship" : {
               "targets" : {
@@ -1213,9 +1023,7 @@
         "required" : [ "id" ],
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyfe52a367"
         }
       },
       "InstrumentsReference" : {
@@ -1237,9 +1045,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-          "description" : "This action is not permitted."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
       },
       "InvalidParam" : {
@@ -1478,9 +1284,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-          "description" : "This action is not permitted."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
       },
       "UsersRead" : {
@@ -1492,9 +1296,7 @@
             "readOnly" : true,
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
             }
           },
           "email" : {
@@ -1504,9 +1306,7 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
             }
           },
           "firstName" : {
@@ -1514,9 +1314,7 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
             }
           },
           "id" : {
@@ -1526,9 +1324,7 @@
             "readOnly" : true,
             "type" : "integer",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
             }
           },
           "lastName" : {
@@ -1536,9 +1332,7 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
             }
           },
           "username" : {
@@ -1547,18 +1341,14 @@
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
-              "authentication" : "AUTHENTICATED",
-              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-              "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+              "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
             }
           }
         },
         "required" : [ "id" ],
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyf215fc14"
         }
       },
       "UsersReference" : {
@@ -1580,9 +1370,7 @@
         "properties" : { },
         "type" : "object",
         "x-rspace-access" : {
-          "authentication" : "AUTHENTICATED",
-          "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
-          "description" : "This action is not permitted."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicybb3e0867"
         }
       }
     },
@@ -1601,6 +1389,213 @@
         "in" : "cookie",
         "name" : "JSESSIONID",
         "type" : "apiKey"
+      }
+    },
+    "x-rspace-access-policies" : {
+      "AccessPolicy35c71ff4" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+      },
+      "AccessPolicy4739d966" : {
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+      },
+      "AccessPolicybb3e0867" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
+        "description" : "This action is not permitted."
+      },
+      "AccessPolicyc0cca6e1" : {
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+      },
+      "AccessPolicyd69bc6ba" : {
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+      },
+      "AccessPolicyf215fc14" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+      },
+      "AccessPolicyfe52a367" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+      }
+    },
+    "x-rspace-filters" : {
+      "Containers" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "containerType" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "enum" : [ "LIST", "GRID", "IMAGE", "WORKBENCH" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "deleted" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
+          },
+          "id" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "name" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "wildcards" : true
+          }
+        }
+      },
+      "Instruments" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "deleted" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "title" : "Deleted",
+            "wildcards" : false
+          },
+          "id" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "title" : "Instrument ID",
+            "wildcards" : false
+          },
+          "name" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "title" : "Name",
+            "wildcards" : true
+          },
+          "parentContainer.containerType" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "enum" : [ "LIST", "GRID", "IMAGE", "WORKBENCH" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "parentContainer.deleted" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
+          },
+          "parentContainer.globalId" : {
+            "operators" : [ ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "parentContainer.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "parentContainer.name" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "parentContainer.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          }
+        }
+      },
+      "Users" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "createdAt" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : false
+          },
+          "email" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "firstName" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "id" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "lastName" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "username" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          }
+        }
       }
     }
   },
@@ -1776,8 +1771,7 @@
         "summary" : "List containers",
         "tags" : [ "containers" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyc0cca6e1"
         },
         "x-rspace-operation" : "LIST"
       }
@@ -1822,8 +1816,7 @@
         "summary" : "Count containers",
         "tags" : [ "containers" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyc0cca6e1"
         },
         "x-rspace-operation" : "COUNT"
       }
@@ -1923,8 +1916,7 @@
         "summary" : "Get one containers",
         "tags" : [ "containers" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active containers visible directly or through an immediate child under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyc0cca6e1"
         },
         "x-rspace-operation" : "READ"
       }
@@ -2069,8 +2061,7 @@
         "summary" : "List instruments",
         "tags" : [ "instruments" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy4739d966"
         },
         "x-rspace-operation" : "LIST"
       }
@@ -2115,8 +2106,7 @@
         "summary" : "Count instruments",
         "tags" : [ "instruments" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy4739d966"
         },
         "x-rspace-operation" : "COUNT"
       }
@@ -2315,8 +2305,7 @@
         "summary" : "Get one instruments",
         "tags" : [ "instruments" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in session is required. Only active instruments visible under the inventory sharing policy are returned."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicy4739d966"
         },
         "x-rspace-operation" : "READ"
       }
@@ -2553,8 +2542,7 @@
         "summary" : "List users",
         "tags" : [ "users" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyd69bc6ba"
         },
         "x-rspace-operation" : "LIST"
       }
@@ -2599,8 +2587,7 @@
         "summary" : "Count users",
         "tags" : [ "users" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyd69bc6ba"
         },
         "x-rspace-operation" : "COUNT"
       }
@@ -2783,8 +2770,7 @@
         "summary" : "Get one users",
         "tags" : [ "users" ],
         "x-rspace-access" : {
-          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
-          "description" : "A logged-in system administrator may access every resource; other users may access only the resource identified by their own user id."
+          "$ref" : "#/components/x-rspace-access-policies/AccessPolicyd69bc6ba"
         },
         "x-rspace-operation" : "READ"
       }
