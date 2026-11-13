@@ -62,7 +62,7 @@ class ApiV2TimeSlotBookingResourceTest {
         ApiV2TimeSlotBookingResource.calendarFilterDescription(AccessFunction.authenticated());
     new RsqlFilterParser(calendar).parse("timezone==UTC");
     assertEquals(
-        List.of("requester", "target"),
+        List.of("requester", "target", "location"),
         ApiV2TimeSlotBookingResource.DESCRIPTION.relationships().stream()
             .map(relationship -> relationship.name())
             .toList());

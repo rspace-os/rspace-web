@@ -28,6 +28,7 @@ import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Date;
 import java.util.List;
@@ -136,6 +137,22 @@ class TimeSlotBookingManagerLifecycleTest {
     assertTrue(page.resources().get(1).isCanEdit());
     assertTrue(page.resources().get(1).isCanViewConfiguration());
     verify(accessManager).resolveAll(any(), eq(actor));
+  }
+
+  @Test
+  void preparesParentIdsWithOneBatchedLookup() {
+    TimeSlotBooking stored = booking(1L, 12L, actor);
+    TimeSlotBooking unreadable = booking(2L, 13L, actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(stored, unreadable), 2));
+    when(fixture.bookingInstruments.getBookingSummaries(Set.of(12L, 13L)))
+        .thenReturn(Map.of(12L, new InstrumentReadSummary(12L, "Item", false, 7L)));
+
+    List<TimeSlotBooking> prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources();
+
+    assertEquals(7L, prepared.get(0).getVisibleLocation());
+    assertNull(prepared.get(1).getVisibleLocation());
   }
 
   @Test
