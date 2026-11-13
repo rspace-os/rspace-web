@@ -62,7 +62,7 @@ final class ApiV2OpenApiAnnotationMerger {
     for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
       HandlerMethod handler = entry.getValue();
       if (entry.getKey().getPatternValues().stream()
-          .noneMatch(path -> path.equals("/api/v2") || path.startsWith("/api/v2/"))) {
+          .noneMatch(ApiV2OpenApiAnnotationMerger::isApiV2Path)) {
         continue;
       }
       if (AnnotatedElementUtils.hasAnnotation(handler.getMethod(), Hidden.class)
@@ -79,7 +79,7 @@ final class ApiV2OpenApiAnnotationMerger {
         continue;
       }
       for (String path : entry.getKey().getPatternValues()) {
-        if (!path.equals("/api/v2") && !path.startsWith("/api/v2/")) {
+        if (!isApiV2Path(path)) {
           continue;
         }
         for (RequestMethod method : entry.getKey().getMethodsCondition().getMethods()) {
@@ -90,6 +90,10 @@ final class ApiV2OpenApiAnnotationMerger {
         }
       }
     }
+  }
+
+  private static boolean isApiV2Path(String path) {
+    return path.equals("/api/v2") || path.startsWith("/api/v2/");
   }
 
   private static Map<String, Object> operation(
