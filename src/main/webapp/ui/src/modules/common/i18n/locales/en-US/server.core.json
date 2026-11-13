@@ -157,6 +157,11 @@
             "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
           }
         },
+        "bookingCatalogue": {
+          "availability": {
+            "invalid": "Choose an availability window with a start and an end, ending no earlier than it starts and lasting at most 2 days."
+          }
+        },
         "bookingDisplayPreferences": {
           "availabilityWindow": {
             "invalid": "Availability window times must use HH:mm with start before end; the end may be 24:00."

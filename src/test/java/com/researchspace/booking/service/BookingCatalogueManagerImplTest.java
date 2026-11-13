@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.dao.BookingCalendarQuery;
 import com.researchspace.booking.dao.BookingItemQuery;
 import com.researchspace.booking.dao.BookingLocationQuery;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
@@ -23,6 +25,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
@@ -40,9 +43,13 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +68,7 @@ class BookingCatalogueManagerImplTest {
   @Mock private BookingCalendarQuery calendarQuery;
   @Mock private BookingLocationQuery locationQuery;
   @Mock private InstrumentReadAccess instrumentReadAccess;
+  @Mock private TimeSlotBookingDao bookings;
   @Mock private User caller;
 
   private BookingCatalogueManagerImpl manager;
@@ -76,7 +84,8 @@ class BookingCatalogueManagerImplTest {
             itemQuery,
             calendarQuery,
             new BookingLocationFilterManagerImpl(
-                bookingInstruments, instrumentReadAccess, locationQuery));
+                bookingInstruments, instrumentReadAccess, locationQuery),
+            bookings);
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)).thenReturn(true);
   }
 
@@ -288,5 +297,140 @@ class BookingCatalogueManagerImplTest {
       ResourceRequest request, BookingCatalogueManager.Capability capability, int page, int size) {
     return manager.search(
         null, null, request, List.of(), List.of(), capability, page, size, caller);
+  }
+
+  @Test
+  void pagesOnlyTheRequestedAvailabilityInCatalogueOrderWithItsTotal() {
+    stubAvailabilityCatalogue();
+
+    BookingCatalogueManager.Page freeNow =
+        manager.search(
+            null,
+            null,
+            ResourceRequest.unpaged(null),
+            List.of(),
+            List.of(),
+            null,
+            BookingCatalogueManager.Availability.AVAILABLE_NOW,
+            NINE_UTC,
+            1,
+            20,
+            caller);
+
+    assertEquals(1, freeNow.total());
+    assertEquals(List.of("INSTRUMENT"), freeNow.facets().types());
+    verify(bookingInstruments).getBookingRelationshipTargets(Set.of(101L));
+  }
+
+  @Test
+  void countsBothAvailabilityCategoriesWithoutRows() {
+    stubAvailabilityCatalogue();
+
+    assertEquals(
+        new BookingCatalogueManager.AvailabilityCounts(1, 1),
+        manager.countAvailability(
+            null,
+            null,
+            ResourceRequest.unpaged(null),
+            List.of(),
+            List.of(),
+            null,
+            NINE_UTC,
+            caller));
+    verify(bookings)
+        .findConfirmedEventIntervals(
+            List.of(1L, 2L, 3L),
+            Date.from(NINE_UTC.start().minusSeconds(20 * 60)),
+            Date.from(NINE_UTC.end().plusSeconds(20 * 60)));
+  }
+
+  @Test
+  void readsAvailabilityCandidatesInKeysetBatchesAndSlicesTheRequestedPage() {
+    int batch = BookingCatalogueManagerImpl.AVAILABILITY_BATCH_SIZE;
+    List<BookingConfiguration> first =
+        LongStream.rangeClosed(1, batch).mapToObj(id -> open(id)).toList();
+    List<BookingConfiguration> second = List.of(open(batch + 1L), open(batch + 2L));
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
+        .thenAnswer(
+            invocation -> {
+              long after = afterId(invocation.<ResourceRequest>getArgument(0).serverConstraint());
+              return new ResourcePage<>(
+                  after == 0 ? first : after == batch ? second : List.of(), 0);
+            });
+
+    BookingCatalogueManager.Page page =
+        manager.search(
+            null,
+            null,
+            ResourceRequest.unpaged(null),
+            List.of(),
+            List.of(),
+            null,
+            BookingCatalogueManager.Availability.AVAILABLE_NOW,
+            NINE_UTC,
+            2,
+            batch / 2 + 1,
+            caller);
+
+    assertEquals(batch + 2, page.total());
+    Set<Long> secondPage =
+        LongStream.rangeClosed(batch / 2 + 2, batch + 2)
+            .map(id -> id + 100)
+            .boxed()
+            .collect(Collectors.toSet());
+    verify(bookingInstruments).getBookingRelationshipTargets(secondPage);
+  }
+
+  private static final BookingCatalogueManager.AvailabilityWindow NINE_UTC =
+      new BookingCatalogueManager.AvailabilityWindow(
+          Instant.parse("2026-08-17T00:00:00Z"),
+          Instant.parse("2026-08-18T00:00:00Z"),
+          Instant.parse("2026-08-17T09:00:00Z"));
+
+  /** Item 1 is free now, item 2 is booked now and free later, item 3 is closed on Mondays. */
+  private void stubAvailabilityCatalogue() {
+    BookingConfiguration buffered = open(1);
+    buffered.setBufferBeforeMinutes(10);
+    buffered.setBufferAfterMinutes(20);
+    BookingConfiguration closedMonday = open(3);
+    closedMonday.setOpeningHours(hours("00:00", "24:00", 2, 3, 4, 5, 6, 7));
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
+        .thenReturn(new ResourcePage<>(List.of(buffered, open(2), closedMonday), 3));
+    when(bookings.findConfirmedEventIntervals(any(), any(), any()))
+        .thenReturn(
+            List.of(
+                new TimeSlotBookingDao.EventInterval(
+                    2L,
+                    BookingEventKind.BOOKING,
+                    Date.from(Instant.parse("2026-08-17T08:00:00Z")),
+                    Date.from(Instant.parse("2026-08-17T10:00:00Z")))));
+  }
+
+  private static BookingConfiguration open(long id) {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(id);
+    configuration.replaceTarget(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, id + 100));
+    configuration.setTimeZone("UTC");
+    configuration.setOpeningHours(hours("00:00", "24:00"));
+    return configuration;
+  }
+
+  /** The keyset lower bound of one availability batch, or 0 when none is present. */
+  private static long afterId(QueryConstraint constraint) {
+    if (constraint instanceof QueryConstraint.And and) {
+      return and.children().stream().mapToLong(child -> afterId(child)).max().orElse(0);
+    }
+    if (constraint instanceof FilterExpression.And and) {
+      return and.children().stream().mapToLong(child -> afterId(child)).max().orElse(0);
+    }
+    if (constraint instanceof FilterExpression.Comparison comparison
+        && comparison.field().equals("id")
+        && comparison.operator() == Operator.GREATER_THAN) {
+      return ((Number) comparison.values().get(0)).longValue();
+    }
+    return 0;
   }
 }
