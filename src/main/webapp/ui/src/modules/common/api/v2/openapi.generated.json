@@ -1712,6 +1712,42 @@
         "required" : [ "accessToken" ],
         "type" : "object"
       },
+      "BookingCalendarSubscriptionCreated" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "subscriptionUrl" : {
+            "format" : "uri",
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "active", "subscriptionUrl", "updatedAt" ],
+        "type" : "object"
+      },
+      "BookingCalendarSubscriptionStatus" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "subscriptionUrl" : {
+            "format" : "uri",
+            "type" : [ "string", "null" ]
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "active", "subscriptionUrl", "updatedAt" ],
+        "type" : "object"
+      },
       "BookingCatalogueManagerAvailabilityCounts" : {
         "properties" : {
           "availableNow" : {
@@ -4598,6 +4634,38 @@
         },
         "type" : "object"
       },
+      "UserBookingCalendarSubscriptionControllerItemLinkDocument" : {
+        "properties" : {
+          "configurationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "itemGlobalId" : {
+            "type" : "string"
+          },
+          "itemName" : {
+            "type" : "string"
+          },
+          "subscriptionUrl" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UserBookingCalendarSubscriptionControllerItemLinksDocument" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UserBookingCalendarSubscriptionControllerItemLinkDocument"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "UsersCreate" : {
         "additionalProperties" : false,
         "properties" : { },
@@ -6847,6 +6915,312 @@
         "x-rspace-operation" : "COUNT"
       }
     },
+    "/api/v2/booking-configurations/{configurationId}/calendar-subscription" : {
+      "delete" : {
+        "operationId" : "revokeBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "The subscription is inactive.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Revoke a calendar subscription",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "get" : {
+        "description" : "Returns the caller's current subscription URL when one exists.",
+        "operationId" : "getBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionStatus"
+                }
+              }
+            },
+            "description" : "Current subscription status.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get calendar subscription status",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "post" : {
+        "description" : "Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.",
+        "operationId" : "createBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The existing subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "A newly issued subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The item is archived."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create a calendar subscription",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate" : {
+      "post" : {
+        "description" : "Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.",
+        "operationId" : "rotateBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Strong ETag from the latest subscription status.",
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The new subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The item is archived."
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The subscription is missing or changed."
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "If-Match is required."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replace a calendar subscription URL",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/booking-configurations/{id}" : {
       "delete" : {
         "description" : "Archives one booking-configurations and returns the archived document. Repeating ordinary DELETE is a no-op. The explicit permanent=true option permanently removes the resource for a direct sysadmin and returns no document.",
@@ -8021,6 +8395,71 @@
           "$ref" : "#/components/x-rspace-access-policies/Authenticated"
         },
         "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/bookings/{bookingId}/calendar-file" : {
+      "get" : {
+        "description" : "Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.",
+        "operationId" : "downloadBookingCalendarFile",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "bookingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "text/calendar" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "The generated calendar file.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "Content-Disposition" : {
+                "schema" : {
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Download a booking as a calendar file",
+        "tags" : [ "bookings" ],
+        "x-rspace-operation" : "CUSTOM"
       }
     },
     "/api/v2/bookings/{id}" : {
@@ -10307,6 +10746,306 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Get the current user",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/bookable-item-calendar-subscriptions" : {
+      "get" : {
+        "description" : "Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.",
+        "operationId" : "listMyBookableItemCalendarSubscriptions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserBookingCalendarSubscriptionControllerItemLinksDocument"
+                }
+              }
+            },
+            "description" : "The caller's item links.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List the caller's bookable-item calendar links",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-calendar-subscription" : {
+      "delete" : {
+        "operationId" : "revokeUserBookingCalendarSubscription",
+        "responses" : {
+          "204" : {
+            "description" : "The subscription is inactive.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Revoke the caller's booking calendar subscription",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "get" : {
+        "operationId" : "getUserBookingCalendarSubscription",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionStatus"
+                }
+              }
+            },
+            "description" : "Current subscription status.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get the caller's booking calendar subscription",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "post" : {
+        "description" : "Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.",
+        "operationId" : "createUserBookingCalendarSubscription",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The existing subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "A newly issued subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create the caller's booking calendar subscription",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-calendar-subscription/rotate" : {
+      "post" : {
+        "description" : "Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.",
+        "operationId" : "rotateUserBookingCalendarSubscription",
+        "parameters" : [ {
+          "description" : "Strong ETag from the latest subscription status.",
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The new subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The subscription is missing or changed since it was read."
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "If-Match is required."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replace the caller's booking calendar subscription URL",
         "tags" : [ "users" ],
         "x-rspace-operation" : "CUSTOM"
       }

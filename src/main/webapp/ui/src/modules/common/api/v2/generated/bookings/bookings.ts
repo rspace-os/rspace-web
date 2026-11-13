@@ -67,6 +67,7 @@ import type {
 
 import { apiV2Fetch } from '../../apiV2Fetch.ts';
 import type { ErrorType , BodyType } from '../../apiV2Fetch.ts';
+import { apiV2BlobFetch } from '../../apiV2HeadersFetch.ts';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -589,6 +590,198 @@ export function useCountBookingsSuspense<TData = Awaited<ReturnType<typeof count
  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getCountBookingsSuspenseQueryOptions(params,options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getDownloadBookingCalendarFileUrl = (bookingId: number,) => {
+
+
+
+
+  return `/api/v2/bookings/${bookingId}/calendar-file`
+}
+
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export const downloadBookingCalendarFile = (bookingId: number, options?: Parameters<typeof apiV2BlobFetch>[1]) => {
+
+  return apiV2BlobFetch<string>(getDownloadBookingCalendarFileUrl(bookingId),
+  {
+      operationId: 'downloadBookingCalendarFile',
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadBookingCalendarFileQueryKey = (bookingId: number,) => {
+    return [
+    `/api/v2/bookings/${bookingId}/calendar-file`
+    ] as const;
+    }
+
+
+export const getDownloadBookingCalendarFileQueryOptions = <TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(bookingId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadBookingCalendarFileQueryKey(bookingId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadBookingCalendarFile>>> = ({ signal }) => downloadBookingCalendarFile(bookingId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: bookingId !== null && bookingId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadBookingCalendarFileQueryResult = NonNullable<Awaited<ReturnType<typeof downloadBookingCalendarFile>>>
+export type DownloadBookingCalendarFileQueryError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
+
+
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFile<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
+          TError,
+          Awaited<ReturnType<typeof downloadBookingCalendarFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFile<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadBookingCalendarFile>>,
+          TError,
+          Awaited<ReturnType<typeof downloadBookingCalendarFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFile<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFile<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadBookingCalendarFileQueryOptions(bookingId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useDownloadBookingCalendarFile} query
+ */
+export const invalidateDownloadBookingCalendarFile = async (
+ queryClient: QueryClient, bookingId: number, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getDownloadBookingCalendarFileQueryKey(bookingId) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getDownloadBookingCalendarFileSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(bookingId: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadBookingCalendarFileQueryKey(bookingId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadBookingCalendarFile>>> = ({ signal }) => downloadBookingCalendarFile(bookingId, { signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type DownloadBookingCalendarFileSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof downloadBookingCalendarFile>>>
+export type DownloadBookingCalendarFileSuspenseQueryError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse
+
+
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFileSuspense<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFileSuspense<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFileSuspense<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.
+ * @summary Download a booking as a calendar file
+ */
+export function useDownloadBookingCalendarFileSuspense<TData = Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError = UnauthenticatedResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse>(
+ bookingId: number, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof downloadBookingCalendarFile>>, TError, TData>>, request?: SecondParameter<typeof apiV2BlobFetch>}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadBookingCalendarFileSuspenseQueryOptions(bookingId,options)
 
   const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
