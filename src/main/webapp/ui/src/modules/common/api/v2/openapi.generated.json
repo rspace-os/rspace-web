@@ -1,5 +1,103 @@
 {
   "components" : {
+    "examples" : {
+      "errors.api.v2.booking.buffer" : {
+        "summary" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it.",
+        "value" : {
+          "code" : "errors.api.v2.booking.buffer",
+          "status" : 409,
+          "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
+        }
+      },
+      "errors.api.v2.booking.concurrentModification" : {
+        "summary" : "The schedule changed while the booking was being created.",
+        "value" : {
+          "code" : "errors.api.v2.booking.concurrentModification",
+          "status" : 409,
+          "title" : "The schedule changed while the booking was being created."
+        }
+      },
+      "errors.api.v2.booking.duration" : {
+        "summary" : "The booking interval exceeds 527040 elapsed minutes.",
+        "value" : {
+          "code" : "errors.api.v2.booking.duration",
+          "status" : 400,
+          "title" : "The booking interval exceeds 527040 elapsed minutes."
+        }
+      },
+      "errors.api.v2.booking.granularity" : {
+        "summary" : "The interval violates the scheduling policy.",
+        "value" : {
+          "code" : "errors.api.v2.booking.granularity",
+          "status" : 400,
+          "title" : "The interval violates the scheduling policy."
+        }
+      },
+      "errors.api.v2.booking.overlap" : {
+        "summary" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event.",
+        "value" : {
+          "code" : "errors.api.v2.booking.overlap",
+          "status" : 409,
+          "title" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event."
+        }
+      },
+      "errors.api.v2.booking.state.transition" : {
+        "summary" : "The requested state transition is invalid.",
+        "value" : {
+          "code" : "errors.api.v2.booking.state.transition",
+          "status" : 409,
+          "title" : "The requested state transition is invalid."
+        }
+      },
+      "errors.api.v2.booking.target.unavailable" : {
+        "summary" : "The selected target is unavailable.",
+        "value" : {
+          "code" : "errors.api.v2.booking.target.unavailable",
+          "status" : 409,
+          "title" : "The selected target is unavailable."
+        }
+      },
+      "errors.api.v2.booking.window" : {
+        "summary" : "The booking interval is invalid.",
+        "value" : {
+          "code" : "errors.api.v2.booking.window",
+          "status" : 400,
+          "title" : "The booking interval is invalid."
+        }
+      },
+      "errors.api.v2.bookingConfiguration.granularity.invalid" : {
+        "summary" : "The scheduling settings are invalid.",
+        "value" : {
+          "code" : "errors.api.v2.bookingConfiguration.granularity.invalid",
+          "status" : 400,
+          "title" : "The scheduling settings are invalid."
+        }
+      },
+      "errors.api.v2.bookingConfiguration.lifecycleConflict" : {
+        "summary" : "Restore an archived configuration before changing it.",
+        "value" : {
+          "code" : "errors.api.v2.bookingConfiguration.lifecycleConflict",
+          "status" : 409,
+          "title" : "Restore an archived configuration before changing it."
+        }
+      },
+      "errors.api.v2.bookingConfiguration.target.conflict" : {
+        "summary" : "The instrument already has a booking configuration.",
+        "value" : {
+          "code" : "errors.api.v2.bookingConfiguration.target.conflict",
+          "status" : 409,
+          "title" : "The instrument already has a booking configuration."
+        }
+      },
+      "errors.api.v2.bookingConfiguration.target.invalid" : {
+        "summary" : "The target is not an eligible instrument.",
+        "value" : {
+          "code" : "errors.api.v2.bookingConfiguration.target.invalid",
+          "status" : 400,
+          "title" : "The target is not an eligible instrument."
+        }
+      }
+    },
     "headers" : {
       "ETag" : {
         "description" : "Strong entity tag for the returned representation.",
@@ -82,6 +180,294 @@
           "format" : "date-time",
           "type" : "string"
         }
+      },
+      "BookingConfigurationsExclude" : {
+        "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[booking-configurations]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "exclude",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "booking-configurations" : {
+              "type" : "string"
+            },
+            "containers" : {
+              "type" : "string"
+            },
+            "instruments" : {
+              "type" : "string"
+            },
+            "users" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+          "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
+          "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
+          "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "fields"
+      },
+      "BookingConfigurationsFields" : {
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[booking-configurations]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "fields",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "booking-configurations" : {
+              "type" : "string"
+            },
+            "containers" : {
+              "type" : "string"
+            },
+            "instruments" : {
+              "type" : "string"
+            },
+            "users" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+          "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
+          "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
+          "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "exclude"
+      },
+      "BookingConfigurationsId" : {
+        "description" : "Resource identifier.",
+        "in" : "path",
+        "name" : "id",
+        "required" : true,
+        "schema" : {
+          "format" : "int64",
+          "type" : "integer"
+        }
+      },
+      "BookingConfigurationsWhere" : {
+        "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+        "in" : "query",
+        "name" : "where",
+        "required" : false,
+        "schema" : {
+          "maxLength" : 32768,
+          "type" : "string"
+        },
+        "x-rspace-filter" : {
+          "$ref" : "#/components/x-rspace-filters/BookingConfigurations"
+        },
+        "x-rspace-runtime-fields" : [ {
+          "catalog" : "/api/v2/instruments/fields/customFields",
+          "catalogDefaultLimit" : 50,
+          "catalogIdsParameter" : "ids",
+          "catalogMaximumIds" : 50,
+          "catalogMaximumLimit" : 200,
+          "catalogSearchParameter" : "q",
+          "columnSelectable" : true,
+          "filterable" : true,
+          "maximumProjections" : 50,
+          "namespace" : "target.customFields",
+          "responseField" : "target.customFields",
+          "sortable" : false,
+          "via" : "target",
+          "viaResource" : "instruments"
+        }, {
+          "catalog" : "/api/v2/instruments/fields/extraFields",
+          "catalogDefaultLimit" : 50,
+          "catalogIdsParameter" : "ids",
+          "catalogMaximumIds" : 50,
+          "catalogMaximumLimit" : 200,
+          "catalogSearchParameter" : "q",
+          "columnSelectable" : false,
+          "filterable" : true,
+          "maximumProjections" : 0,
+          "namespace" : "target.extraFields",
+          "responseField" : "",
+          "sortable" : false,
+          "via" : "target",
+          "viaResource" : "instruments"
+        } ]
+      },
+      "BookingConfigurationsWhereRequired" : {
+        "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+        "in" : "query",
+        "name" : "where",
+        "required" : true,
+        "schema" : {
+          "maxLength" : 32768,
+          "type" : "string"
+        },
+        "x-rspace-filter" : {
+          "$ref" : "#/components/x-rspace-filters/BookingConfigurations"
+        },
+        "x-rspace-runtime-fields" : [ {
+          "catalog" : "/api/v2/instruments/fields/customFields",
+          "catalogDefaultLimit" : 50,
+          "catalogIdsParameter" : "ids",
+          "catalogMaximumIds" : 50,
+          "catalogMaximumLimit" : 200,
+          "catalogSearchParameter" : "q",
+          "columnSelectable" : true,
+          "filterable" : true,
+          "maximumProjections" : 50,
+          "namespace" : "target.customFields",
+          "responseField" : "target.customFields",
+          "sortable" : false,
+          "via" : "target",
+          "viaResource" : "instruments"
+        }, {
+          "catalog" : "/api/v2/instruments/fields/extraFields",
+          "catalogDefaultLimit" : 50,
+          "catalogIdsParameter" : "ids",
+          "catalogMaximumIds" : 50,
+          "catalogMaximumLimit" : 200,
+          "catalogSearchParameter" : "q",
+          "columnSelectable" : false,
+          "filterable" : true,
+          "maximumProjections" : 0,
+          "namespace" : "target.extraFields",
+          "responseField" : "",
+          "sortable" : false,
+          "via" : "target",
+          "viaResource" : "instruments"
+        } ]
+      },
+      "BookingsExclude" : {
+        "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[bookings]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "exclude",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "bookings" : {
+              "type" : "string"
+            },
+            "containers" : {
+              "type" : "string"
+            },
+            "instruments" : {
+              "type" : "string"
+            },
+            "users" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target" ],
+          "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
+          "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
+          "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "fields"
+      },
+      "BookingsFields" : {
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[bookings]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "fields",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "bookings" : {
+              "type" : "string"
+            },
+            "containers" : {
+              "type" : "string"
+            },
+            "instruments" : {
+              "type" : "string"
+            },
+            "users" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target" ],
+          "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
+          "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
+          "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "exclude"
+      },
+      "BookingsId" : {
+        "description" : "Resource identifier.",
+        "in" : "path",
+        "name" : "id",
+        "required" : true,
+        "schema" : {
+          "format" : "int64",
+          "type" : "integer"
+        }
+      },
+      "BookingsWhere" : {
+        "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
+        "in" : "query",
+        "name" : "where",
+        "required" : false,
+        "schema" : {
+          "maxLength" : 32768,
+          "type" : "string"
+        },
+        "x-rspace-filter" : {
+          "$ref" : "#/components/x-rspace-filters/Bookings"
+        },
+        "x-rspace-runtime-fields" : [ {
+          "catalog" : "/api/v2/instruments/fields/customFields",
+          "catalogDefaultLimit" : 50,
+          "catalogIdsParameter" : "ids",
+          "catalogMaximumIds" : 50,
+          "catalogMaximumLimit" : 200,
+          "catalogSearchParameter" : "q",
+          "columnSelectable" : true,
+          "filterable" : true,
+          "maximumProjections" : 50,
+          "namespace" : "target.customFields",
+          "responseField" : "target.customFields",
+          "sortable" : false,
+          "via" : "target",
+          "viaResource" : "instruments"
+        }, {
+          "catalog" : "/api/v2/instruments/fields/extraFields",
+          "catalogDefaultLimit" : 50,
+          "catalogIdsParameter" : "ids",
+          "catalogMaximumIds" : 50,
+          "catalogMaximumLimit" : 200,
+          "catalogSearchParameter" : "q",
+          "columnSelectable" : false,
+          "filterable" : true,
+          "maximumProjections" : 0,
+          "namespace" : "target.extraFields",
+          "responseField" : "",
+          "sortable" : false,
+          "via" : "target",
+          "viaResource" : "instruments"
+        } ]
       },
       "ContainersExclude" : {
         "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[containers]=id,name.",
@@ -227,6 +613,28 @@
         },
         "x-rspace-filter" : {
           "$ref" : "#/components/x-rspace-filters/FeatureFlags"
+        }
+      },
+      "IdempotencyKey" : {
+        "description" : "Creator-scoped request identity, retained for the resource lifetime.",
+        "in" : "header",
+        "name" : "Idempotency-Key",
+        "required" : false,
+        "schema" : {
+          "maxLength" : 64,
+          "minLength" : 1,
+          "pattern" : "^[A-Za-z0-9._:-]+$",
+          "type" : "string"
+        }
+      },
+      "IfMatch" : {
+        "description" : "Strong entity tag containing the current resource version.",
+        "in" : "header",
+        "name" : "If-Match",
+        "required" : true,
+        "schema" : {
+          "pattern" : "^\\\"[0-9]+\\\"$",
+          "type" : "string"
         }
       },
       "IfMatchOptional" : {
@@ -459,6 +867,16 @@
           "type" : "integer"
         }
       },
+      "Permanent" : {
+        "description" : "When true, permanently removes the resource. This is restricted to a direct sysadmin and returns 204. The default false performs the ordinary retry-safe archive transition.",
+        "in" : "query",
+        "name" : "permanent",
+        "required" : false,
+        "schema" : {
+          "default" : false,
+          "type" : "boolean"
+        }
+      },
       "Totals" : {
         "description" : "Include totalDocs and totalIsLowerBound. Defaults to false.",
         "in" : "query",
@@ -625,6 +1043,36 @@
         },
         "description" : "The request is invalid."
       },
+      "BookingConfigurationsIfMatchRequired" : {
+        "content" : {
+          "application/problem+json" : {
+            "example" : {
+              "code" : "errors.api.v2.bookingConfiguration.ifMatchRequired",
+              "status" : 428,
+              "title" : "A strong If-Match header is required."
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ApiV2Problem"
+            }
+          }
+        },
+        "description" : "A strong If-Match header is required."
+      },
+      "BookingsIfMatchRequired" : {
+        "content" : {
+          "application/problem+json" : {
+            "example" : {
+              "code" : "errors.api.v2.booking.ifMatchRequired",
+              "status" : 428,
+              "title" : "A strong If-Match header is required."
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ApiV2Problem"
+            }
+          }
+        },
+        "description" : "A strong If-Match header is required."
+      },
       "BulkLimit" : {
         "content" : {
           "application/problem+json" : {
@@ -702,6 +1150,17 @@
           }
         },
         "description" : "The resource was not found or is not visible."
+      },
+      "PermanentlyRemoved" : {
+        "description" : "The resource and its dependent live data were permanently removed.",
+        "headers" : {
+          "X-Rate-Limit-MinWaitIntervalMillis" : {
+            "$ref" : "#/components/headers/RateLimitMinWait"
+          },
+          "X-Rate-Limit-WaitTimeMillis" : {
+            "$ref" : "#/components/headers/RateLimitWait"
+          }
+        }
       },
       "TooManyRequests" : {
         "content" : {
@@ -1097,6 +1556,7 @@
             "type" : "string"
           },
           "detail" : {
+            "description" : "Optional explanation specific to this occurrence.",
             "type" : "string"
           },
           "invalidParams" : {
@@ -1110,6 +1570,7 @@
             "type" : "integer"
           },
           "title" : {
+            "description" : "Stable summary for this problem code.",
             "type" : "string"
           }
         },
@@ -1219,6 +1680,1848 @@
         "required" : [ "accessToken" ],
         "type" : "object"
       },
+      "BookingCatalogueManagerFacets" : {
+        "properties" : {
+          "types" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingCatalogueManagerItem" : {
+        "properties" : {
+          "allowDoubleBooking" : {
+            "type" : "boolean"
+          },
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "capabilities" : {
+            "$ref" : "#/components/schemas/BookingConfigurationCapabilities"
+          },
+          "configurationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "configurationVersion" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "effectiveRole" : {
+            "type" : [ "string", "null" ]
+          },
+          "globalId" : {
+            "type" : "string"
+          },
+          "incrementUnit" : {
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "type" : "string"
+          },
+          "location" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/BookingCatalogueManagerLocation"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "maxBookingDurationMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "openingHours" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
+            },
+            "type" : "array"
+          },
+          "slotGranularityMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "targetId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "targetType" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingCatalogueManagerLocation" : {
+        "properties" : {
+          "globalId" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingCatalogueManagerLocationPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingCatalogueManagerLocation"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageSize" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingCatalogueManagerPage" : {
+        "properties" : {
+          "facets" : {
+            "$ref" : "#/components/schemas/BookingCatalogueManagerFacets"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingCatalogueManagerItem"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageSize" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingConfigurationCapabilities" : {
+        "properties" : {
+          "canCreateBlockout" : {
+            "type" : "boolean"
+          },
+          "canCreateBooking" : {
+            "type" : "boolean"
+          },
+          "canEditConfiguration" : {
+            "type" : "boolean"
+          },
+          "canLeaveConfiguration" : {
+            "type" : "boolean"
+          },
+          "canManageAllEvents" : {
+            "type" : "boolean"
+          },
+          "canManageAssignments" : {
+            "type" : "boolean"
+          },
+          "canManageOwnBookings" : {
+            "type" : "boolean"
+          },
+          "canManageOwners" : {
+            "type" : "boolean"
+          },
+          "canSubscribeCalendar" : {
+            "type" : "boolean"
+          },
+          "canViewAccess" : {
+            "type" : "boolean"
+          },
+          "canViewAudit" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingConfigurationTarget" : {
+        "properties" : {
+          "deleted" : {
+            "type" : "boolean"
+          },
+          "globalId" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingConfigurationTargetControllerTargetDirectoryDocument" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingConfigurationTarget"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "docs" ],
+        "type" : "object"
+      },
+      "BookingConfigurationsCreate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "allowDoubleBooking" : {
+            "description" : "Whether overlapping bookings are permitted.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "bufferAfterMinutes" : {
+            "description" : "Unavailable minutes after a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "bufferBeforeMinutes" : {
+            "description" : "Unavailable minutes before a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "enabled" : {
+            "description" : "Whether bookings are enabled for the target.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "example" : "MINUTES",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "maxBookingDurationMinutes" : {
+            "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
+            "example" : 120,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "openingHours" : {
+            "description" : "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
+            "items" : {
+              "additionalProperties" : false,
+              "properties" : {
+                "dayOfWeek" : {
+                  "description" : "ISO weekday, Monday = 1.",
+                  "example" : 1,
+                  "format" : "int32",
+                  "maximum" : 7,
+                  "minimum" : 1,
+                  "type" : "integer",
+                  "x-rspace-access" : {
+                    "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                  }
+                },
+                "end" : {
+                  "description" : "Exclusive closing time in HH:mm; 24:00 is next midnight.",
+                  "example" : "24:00",
+                  "maxLength" : 5,
+                  "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+                  "type" : "string",
+                  "x-rspace-access" : {
+                    "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                  }
+                },
+                "start" : {
+                  "description" : "Opening time in HH:mm.",
+                  "example" : "09:00",
+                  "maxLength" : 5,
+                  "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+                  "type" : "string",
+                  "x-rspace-access" : {
+                    "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                  }
+                }
+              },
+              "required" : [ "dayOfWeek", "end", "start" ],
+              "type" : "object"
+            },
+            "maxItems" : 7,
+            "minItems" : 1,
+            "type" : "array",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-fields" : [ {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "dayOfWeek",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "ISO weekday, Monday = 1.",
+                "example" : "1",
+                "extensions" : { }
+              },
+              "property" : "dayOfWeek",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "format" : "int32",
+                "jsonType" : "integer",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "maximum" : 7,
+                "minimum" : 1
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "start",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "Opening time in HH:mm.",
+                "example" : "09:00",
+                "extensions" : { }
+              },
+              "property" : "start",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "maxLength" : 5,
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "end",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "Exclusive closing time in HH:mm; 24:00 is next midnight.",
+                "example" : "24:00",
+                "extensions" : { }
+              },
+              "property" : "end",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "maxLength" : 5,
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$"
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            } ]
+          },
+          "slotGranularityMinutes" : {
+            "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "target" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/InstrumentsReference"
+            }, {
+              "properties" : {
+                "globalId" : {
+                  "example" : "IN1",
+                  "pattern" : "^IN\\d+$",
+                  "type" : "string"
+                }
+              },
+              "type" : "object"
+            } ],
+            "description" : "Instrument to which this booking configuration applies.",
+            "title" : "Booking target",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "required" : [ "target" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        }
+      },
+      "BookingConfigurationsRead" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "allowDoubleBooking" : {
+            "description" : "Whether overlapping bookings are permitted.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "bufferAfterMinutes" : {
+            "description" : "Unavailable minutes after a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "bufferBeforeMinutes" : {
+            "description" : "Unavailable minutes before a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "capabilities" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/BookingConfigurationCapabilities"
+            } ],
+            "readOnly" : true,
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "configurationVersion" : {
+            "description" : "Optimistic configuration revision.",
+            "format" : "int64",
+            "readOnly" : true,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "createdAt" : {
+            "description" : "Time at which the resource was created.",
+            "format" : "date-time",
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "createdBy" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/UsersReference"
+              }, {
+                "properties" : {
+                  "relationTo" : {
+                    "const" : "users",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/UsersRead"
+                  }
+                },
+                "required" : [ "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "User who created the resource.",
+            "readOnly" : true,
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "users" : {
+                  "$ref" : "#/components/schemas/UsersRead"
+                }
+              }
+            }
+          },
+          "createdByName" : {
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "effectiveRole" : {
+            "maxLength" : 64,
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "enabled" : {
+            "description" : "Whether bookings are enabled for the target.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "id" : {
+            "description" : "Stable booking-configuration identifier.",
+            "example" : 7,
+            "format" : "int64",
+            "readOnly" : true,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "example" : "MINUTES",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "maxBookingDurationMinutes" : {
+            "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
+            "example" : 120,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "openingHours" : {
+            "description" : "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
+            "items" : {
+              "$ref" : "#/components/schemas/DeclaredBookingOpeningHoursEntry"
+            },
+            "maxItems" : 7,
+            "minItems" : 1,
+            "type" : "array",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-fields" : [ {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "dayOfWeek",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "ISO weekday, Monday = 1.",
+                "example" : "1",
+                "extensions" : { }
+              },
+              "property" : "dayOfWeek",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "format" : "int32",
+                "jsonType" : "integer",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "maximum" : 7,
+                "minimum" : 1
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "start",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "Opening time in HH:mm.",
+                "example" : "09:00",
+                "extensions" : { }
+              },
+              "property" : "start",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "maxLength" : 5,
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "end",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "Exclusive closing time in HH:mm; 24:00 is next midnight.",
+                "example" : "24:00",
+                "extensions" : { }
+              },
+              "property" : "end",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "maxLength" : 5,
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$"
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            } ]
+          },
+          "ownerHealth" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/BookingOwnerHealth"
+            }, {
+              "type" : "null"
+            } ],
+            "readOnly" : true,
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Sysadmin"
+            }
+          },
+          "roleSources" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DeclaredResourceRoleSource"
+            },
+            "readOnly" : true,
+            "type" : "array",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-fields" : [ {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "kind",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "kind",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "structure" : {
+                  "enum" : [ "DIRECT", "GROUP", "AUDIENCE", "IMPLICIT" ]
+                }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "role",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "role",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ {
+                "createAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "fields" : [ ],
+                "filterOperators" : [ ],
+                "name" : "kind",
+                "nullable" : false,
+                "openApi" : {
+                  "additionalExamples" : [ ],
+                  "deprecated" : false,
+                  "extensions" : { }
+                },
+                "property" : "kind",
+                "readAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "readOnly" : false,
+                "requiredOnCreate" : true,
+                "sortable" : false,
+                "supportsWildcards" : false,
+                "type" : {
+                  "jsonType" : "string",
+                  "structure" : { }
+                },
+                "updateAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "writeConstraints" : { },
+                "writeOperations" : [ "CREATE", "UPDATE" ]
+              }, {
+                "createAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "fields" : [ ],
+                "filterOperators" : [ ],
+                "name" : "key",
+                "nullable" : false,
+                "openApi" : {
+                  "additionalExamples" : [ ],
+                  "deprecated" : false,
+                  "extensions" : { }
+                },
+                "property" : "key",
+                "readAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "readOnly" : false,
+                "requiredOnCreate" : true,
+                "sortable" : false,
+                "supportsWildcards" : false,
+                "type" : {
+                  "jsonType" : "string",
+                  "structure" : { }
+                },
+                "updateAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "writeConstraints" : { },
+                "writeOperations" : [ "CREATE", "UPDATE" ]
+              }, {
+                "createAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "fields" : [ ],
+                "filterOperators" : [ ],
+                "name" : "id",
+                "nullable" : false,
+                "openApi" : {
+                  "additionalExamples" : [ ],
+                  "deprecated" : false,
+                  "extensions" : { }
+                },
+                "property" : "id",
+                "readAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "readOnly" : false,
+                "requiredOnCreate" : true,
+                "sortable" : false,
+                "supportsWildcards" : false,
+                "type" : {
+                  "jsonType" : "integer",
+                  "structure" : {
+                    "oneOf" : [ {
+                      "format" : "int64",
+                      "type" : "integer"
+                    }, {
+                      "enum" : [ "ALL_USERS" ],
+                      "type" : "string"
+                    } ]
+                  }
+                },
+                "updateAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "writeConstraints" : { },
+                "writeOperations" : [ "CREATE", "UPDATE" ]
+              }, {
+                "createAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "fields" : [ ],
+                "filterOperators" : [ ],
+                "name" : "name",
+                "nullable" : false,
+                "openApi" : {
+                  "additionalExamples" : [ ],
+                  "deprecated" : false,
+                  "extensions" : { }
+                },
+                "property" : "name",
+                "readAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "readOnly" : false,
+                "requiredOnCreate" : true,
+                "sortable" : false,
+                "supportsWildcards" : false,
+                "type" : {
+                  "jsonType" : "string",
+                  "structure" : { }
+                },
+                "updateAccess" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                },
+                "writeConstraints" : { },
+                "writeOperations" : [ "CREATE", "UPDATE" ]
+              } ],
+              "filterOperators" : [ ],
+              "name" : "grantee",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "grantee",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : false,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "object",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            } ]
+          },
+          "slotGranularityMinutes" : {
+            "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "state" : {
+            "description" : "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.",
+            "enum" : [ "ACTIVE", "ARCHIVED" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "target" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "allOf" : [ {
+                  "$ref" : "#/components/schemas/InstrumentsReference"
+                }, {
+                  "properties" : {
+                    "globalId" : {
+                      "example" : "IN1",
+                      "pattern" : "^IN\\d+$",
+                      "type" : "string"
+                    }
+                  },
+                  "required" : [ "globalId" ],
+                  "type" : "object"
+                } ]
+              }, {
+                "properties" : {
+                  "globalId" : {
+                    "example" : "IN1",
+                    "pattern" : "^IN\\d+$",
+                    "type" : "string"
+                  },
+                  "relationTo" : {
+                    "const" : "instruments",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/InstrumentsRead"
+                  }
+                },
+                "required" : [ "globalId", "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Instrument to which this booking configuration applies.",
+            "title" : "Booking target",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "instruments" : {
+                  "$ref" : "#/components/schemas/InstrumentsRead"
+                }
+              }
+            }
+          },
+          "target.customFields" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          },
+          "timezone" : {
+            "description" : "Read-only scheduling timezone used for opening hours and booking policy.",
+            "example" : "Europe/Berlin",
+            "maxLength" : 255,
+            "readOnly" : true,
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "updatedAt" : {
+            "description" : "Time at which the resource was last updated.",
+            "format" : "date-time",
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "updatedBy" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/UsersReference"
+              }, {
+                "properties" : {
+                  "relationTo" : {
+                    "const" : "users",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/UsersRead"
+                  }
+                },
+                "required" : [ "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "User who last updated the resource.",
+            "readOnly" : true,
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "users" : {
+                  "$ref" : "#/components/schemas/UsersRead"
+                }
+              }
+            }
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        }
+      },
+      "BookingConfigurationsReference" : {
+        "properties" : {
+          "relationTo" : {
+            "const" : "booking-configurations",
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "relationTo", "value" ],
+        "type" : "object"
+      },
+      "BookingConfigurationsUpdate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "allowDoubleBooking" : {
+            "description" : "Whether overlapping bookings are permitted.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "bufferAfterMinutes" : {
+            "description" : "Unavailable minutes after a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "bufferBeforeMinutes" : {
+            "description" : "Unavailable minutes before a booking.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "enabled" : {
+            "description" : "Whether bookings are enabled for the target.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "example" : "MINUTES",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "maxBookingDurationMinutes" : {
+            "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
+            "example" : 120,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "openingHours" : {
+            "description" : "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
+            "items" : {
+              "additionalProperties" : false,
+              "properties" : {
+                "dayOfWeek" : {
+                  "description" : "ISO weekday, Monday = 1.",
+                  "example" : 1,
+                  "format" : "int32",
+                  "maximum" : 7,
+                  "minimum" : 1,
+                  "type" : "integer",
+                  "x-rspace-access" : {
+                    "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                  }
+                },
+                "end" : {
+                  "description" : "Exclusive closing time in HH:mm; 24:00 is next midnight.",
+                  "example" : "24:00",
+                  "maxLength" : 5,
+                  "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+                  "type" : "string",
+                  "x-rspace-access" : {
+                    "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                  }
+                },
+                "start" : {
+                  "description" : "Opening time in HH:mm.",
+                  "example" : "09:00",
+                  "maxLength" : 5,
+                  "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+                  "type" : "string",
+                  "x-rspace-access" : {
+                    "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                  }
+                }
+              },
+              "required" : [ "dayOfWeek", "end", "start" ],
+              "type" : "object"
+            },
+            "maxItems" : 7,
+            "minItems" : 1,
+            "type" : "array",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-fields" : [ {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "dayOfWeek",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "ISO weekday, Monday = 1.",
+                "example" : "1",
+                "extensions" : { }
+              },
+              "property" : "dayOfWeek",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "format" : "int32",
+                "jsonType" : "integer",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "maximum" : 7,
+                "minimum" : 1
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "start",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "Opening time in HH:mm.",
+                "example" : "09:00",
+                "extensions" : { }
+              },
+              "property" : "start",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "maxLength" : 5,
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "end",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "description" : "Exclusive closing time in HH:mm; 24:00 is next midnight.",
+                "example" : "24:00",
+                "extensions" : { }
+              },
+              "property" : "end",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "maxLength" : 5,
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : {
+                "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$"
+              },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            } ]
+          },
+          "slotGranularityMinutes" : {
+            "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
+            "example" : 15,
+            "format" : "int64",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "state" : {
+            "description" : "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.",
+            "enum" : [ "ACTIVE", "ARCHIVED" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        }
+      },
+      "BookingOpeningHoursEntry" : {
+        "properties" : {
+          "dayOfWeek" : {
+            "format" : "int32",
+            "maximum" : 7,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "end" : {
+            "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+            "type" : "string"
+          },
+          "start" : {
+            "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+            "type" : "string"
+          }
+        },
+        "required" : [ "dayOfWeek", "end", "start" ],
+        "type" : "object"
+      },
+      "BookingOwnerHealth" : {
+        "properties" : {
+          "hasEffectiveOwner" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingSettingsControllerAdminSettingsDocument" : {
+        "properties" : {
+          "allowDoubleBooking" : {
+            "type" : "boolean"
+          },
+          "availabilityWindowEnd" : {
+            "type" : "string"
+          },
+          "availabilityWindowStart" : {
+            "type" : "string"
+          },
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "configurationVersion" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "customTimezone" : {
+            "type" : [ "string", "null" ]
+          },
+          "incrementUnit" : {
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "type" : "string"
+          },
+          "institutionTimezone" : {
+            "type" : "string"
+          },
+          "maxBookingDurationMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "openingHours" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
+            },
+            "type" : "array"
+          },
+          "slotGranularityMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "timezoneMode" : {
+            "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingSettingsControllerSettingsDocument" : {
+        "properties" : {
+          "allowDoubleBooking" : {
+            "type" : "boolean"
+          },
+          "availabilityWindowEnd" : {
+            "type" : "string"
+          },
+          "availabilityWindowStart" : {
+            "type" : "string"
+          },
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "customTimezone" : {
+            "type" : [ "string", "null" ]
+          },
+          "incrementUnit" : {
+            "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+            "type" : "string"
+          },
+          "institutionTimezone" : {
+            "type" : "string"
+          },
+          "maxBookingDurationMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "openingHours" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
+            },
+            "type" : "array"
+          },
+          "slotGranularityMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "timezoneMode" : {
+            "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingSettingsControllerSettingsPatch" : {
+        "properties" : {
+          "allowDoubleBooking" : {
+            "type" : [ "boolean", "null" ]
+          },
+          "availabilityWindowEnd" : {
+            "pattern" : "(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)",
+            "type" : [ "string", "null" ]
+          },
+          "availabilityWindowStart" : {
+            "pattern" : "(?:[01]\\d|2[0-3]):[0-5]\\d",
+            "type" : [ "string", "null" ]
+          },
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "maximum" : 10080,
+            "minimum" : 0,
+            "type" : [ "integer", "null" ]
+          },
+          "bufferBeforeMinutes" : {
+            "format" : "int64",
+            "maximum" : 10080,
+            "minimum" : 0,
+            "type" : [ "integer", "null" ]
+          },
+          "customTimezone" : {
+            "maxLength" : 255,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "customTimezoneValid" : {
+            "type" : "boolean"
+          },
+          "incrementUnit" : {
+            "description" : "Unit of the time increment. DAYS counts calendar days in the item's timezone and needs slotGranularityMinutes to be a whole number of days.",
+            "enum" : [ "MINUTES", "HOURS", "DAYS", null ],
+            "type" : [ "string", "null" ]
+          },
+          "maxBookingDurationMinutes" : {
+            "format" : "int64",
+            "maximum" : 527040,
+            "minimum" : 0,
+            "type" : [ "integer", "null" ]
+          },
+          "openingHours" : {
+            "description" : "Independent opening interval for each listed ISO weekday; omitted days are closed.",
+            "items" : {
+              "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
+            },
+            "maxItems" : 7,
+            "minItems" : 1,
+            "type" : [ "array", "null" ]
+          },
+          "slotGranularityMinutes" : {
+            "format" : "int64",
+            "maximum" : 527040,
+            "minimum" : 1,
+            "type" : [ "integer", "null" ]
+          },
+          "timezoneMode" : {
+            "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM", null ],
+            "type" : [ "string", "null" ]
+          }
+        },
+        "type" : "object"
+      },
+      "BookingsCreate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "end" : {
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "kind" : {
+            "enum" : [ "BOOKING", "MAINTENANCE" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "purpose" : {
+            "maxLength" : 1000,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "start" : {
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "target" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/InstrumentsReference"
+            }, {
+              "properties" : {
+                "globalId" : {
+                  "example" : "IN1",
+                  "pattern" : "^IN\\d+$",
+                  "type" : "string"
+                }
+              },
+              "type" : "object"
+            } ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "required" : [ "end", "start", "target" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        }
+      },
+      "BookingsRead" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "bookedBy" : {
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "canCancel" : {
+            "readOnly" : true,
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "canEdit" : {
+            "readOnly" : true,
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "canViewConfiguration" : {
+            "readOnly" : true,
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "readOnly" : true,
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "createdBy" : {
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "end" : {
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "id" : {
+            "format" : "int64",
+            "readOnly" : true,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "kind" : {
+            "enum" : [ "BOOKING", "MAINTENANCE" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "privacy" : {
+            "readOnly" : true,
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "purpose" : {
+            "maxLength" : 1000,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "requester" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/UsersReference"
+              }, {
+                "properties" : {
+                  "relationTo" : {
+                    "const" : "users",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/UsersRead"
+                  }
+                },
+                "required" : [ "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "The user who requested this event, when the event is visible in full detail.",
+            "readOnly" : true,
+            "title" : "Requester",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "users" : {
+                  "$ref" : "#/components/schemas/UsersRead"
+                }
+              }
+            }
+          },
+          "start" : {
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "state" : {
+            "enum" : [ "CONFIRMED", "CANCELLED" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "target" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "allOf" : [ {
+                  "$ref" : "#/components/schemas/InstrumentsReference"
+                }, {
+                  "properties" : {
+                    "globalId" : {
+                      "example" : "IN1",
+                      "pattern" : "^IN\\d+$",
+                      "type" : "string"
+                    }
+                  },
+                  "required" : [ "globalId" ],
+                  "type" : "object"
+                } ]
+              }, {
+                "properties" : {
+                  "globalId" : {
+                    "example" : "IN1",
+                    "pattern" : "^IN\\d+$",
+                    "type" : "string"
+                  },
+                  "relationTo" : {
+                    "const" : "instruments",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/InstrumentsRead"
+                  }
+                },
+                "required" : [ "globalId", "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "instruments" : {
+                  "$ref" : "#/components/schemas/InstrumentsRead"
+                }
+              }
+            }
+          },
+          "target.customFields" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          },
+          "timezone" : {
+            "maxLength" : 255,
+            "readOnly" : true,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "readOnly" : true,
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "version" : {
+            "format" : "int64",
+            "readOnly" : true,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        }
+      },
+      "BookingsReference" : {
+        "properties" : {
+          "relationTo" : {
+            "const" : "bookings",
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "relationTo", "value" ],
+        "type" : "object"
+      },
+      "BookingsUpdate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "end" : {
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "purpose" : {
+            "maxLength" : 1000,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "start" : {
+            "format" : "date-time",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "state" : {
+            "enum" : [ "CONFIRMED", "CANCELLED" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        }
+      },
       "ContainersCreate" : {
         "additionalProperties" : false,
         "properties" : { },
@@ -1296,6 +3599,230 @@
         "x-rspace-access" : {
           "$ref" : "#/components/x-rspace-access-policies/Never"
         }
+      },
+      "DeclaredBookingOpeningHoursEntry" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "dayOfWeek" : {
+            "description" : "ISO weekday, Monday = 1.",
+            "example" : 1,
+            "format" : "int32",
+            "maximum" : 7,
+            "minimum" : 1,
+            "type" : "integer",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "end" : {
+            "description" : "Exclusive closing time in HH:mm; 24:00 is next midnight.",
+            "example" : "24:00",
+            "maxLength" : 5,
+            "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "start" : {
+            "description" : "Opening time in HH:mm.",
+            "example" : "09:00",
+            "maxLength" : 5,
+            "pattern" : "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "type" : "object"
+      },
+      "DeclaredResourceRoleSource" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "grantee" : {
+            "additionalProperties" : false,
+            "properties" : {
+              "id" : {
+                "oneOf" : [ {
+                  "format" : "int64",
+                  "type" : "integer"
+                }, {
+                  "enum" : [ "ALL_USERS" ],
+                  "type" : "string"
+                } ],
+                "x-rspace-access" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                }
+              },
+              "key" : {
+                "type" : "string",
+                "x-rspace-access" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                }
+              },
+              "kind" : {
+                "type" : "string",
+                "x-rspace-access" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                }
+              },
+              "name" : {
+                "type" : "string",
+                "x-rspace-access" : {
+                  "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+                }
+              }
+            },
+            "type" : "object",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-fields" : [ {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "kind",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "kind",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "key",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "key",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "id",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "id",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "integer",
+                "structure" : {
+                  "oneOf" : [ {
+                    "format" : "int64",
+                    "type" : "integer"
+                  }, {
+                    "enum" : [ "ALL_USERS" ],
+                    "type" : "string"
+                  } ]
+                }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            }, {
+              "createAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "fields" : [ ],
+              "filterOperators" : [ ],
+              "name" : "name",
+              "nullable" : false,
+              "openApi" : {
+                "additionalExamples" : [ ],
+                "deprecated" : false,
+                "extensions" : { }
+              },
+              "property" : "name",
+              "readAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "readOnly" : false,
+              "requiredOnCreate" : true,
+              "sortable" : false,
+              "supportsWildcards" : false,
+              "type" : {
+                "jsonType" : "string",
+                "structure" : { }
+              },
+              "updateAccess" : {
+                "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+              },
+              "writeConstraints" : { },
+              "writeOperations" : [ "CREATE", "UPDATE" ]
+            } ]
+          },
+          "kind" : {
+            "enum" : [ "DIRECT", "GROUP", "AUDIENCE", "IMPLICIT" ],
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "role" : {
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "type" : "object"
       },
       "FeatureFlagsCreate" : {
         "additionalProperties" : false,
@@ -2019,6 +4546,16 @@
         "denialReasonCodes" : [ "errors.api.v2.forbidden" ],
         "description" : "This action is not permitted."
       },
+      "ResourceAccessAuthorized" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+        "description" : "Authenticated callers authorized by the registered protected resource."
+      },
+      "ResourceAccessManagers" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+        "description" : "Authenticated callers with the registered assignment-management capability."
+      },
       "Sysadmin" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
@@ -2031,6 +4568,487 @@
       }
     },
     "x-rspace-filters" : {
+      "BookingConfigurations" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "allowDoubleBooking" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
+          },
+          "bufferAfterMinutes" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "bufferBeforeMinutes" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "configurationVersion" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "createdAt" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : false
+          },
+          "createdBy.createdAt" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : false
+          },
+          "createdBy.email" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "createdBy.firstName" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "createdBy.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "createdBy.lastName" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "createdBy.username" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "createdBy.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "enabled" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
+          },
+          "id" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "incrementUnit" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "enum" : [ "MINUTES", "HOURS", "DAYS" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "maxBookingDurationMinutes" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "slotGranularityMinutes" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "state" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "enum" : [ "ACTIVE", "ARCHIVED" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "target" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "picker" : {
+              "globalIdPrefix" : "IN",
+              "identity" : "globalId",
+              "resource" : "instruments"
+            },
+            "schema" : {
+              "description" : "RSpace global identifier.",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "target.deleted" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "title" : "Deleted",
+            "viaTitle" : "Booking target",
+            "wildcards" : false
+          },
+          "target.globalId" : {
+            "operators" : [ ],
+            "schema" : {
+              "type" : "string"
+            },
+            "title" : "Global ID",
+            "viaTitle" : "Booking target",
+            "wildcards" : false
+          },
+          "target.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "title" : "Instrument ID",
+            "viaTitle" : "Booking target",
+            "wildcards" : false
+          },
+          "target.name" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "title" : "Name",
+            "viaTitle" : "Booking target",
+            "wildcards" : true
+          },
+          "target.relationTo" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "enum" : [ "instruments" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "target.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "targetOwner" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "timezone" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "updatedAt" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : false
+          },
+          "updatedBy.createdAt" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : false
+          },
+          "updatedBy.email" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "updatedBy.firstName" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "updatedBy.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "updatedBy.lastName" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "updatedBy.username" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "updatedBy.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          }
+        }
+      },
+      "Bookings" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "createdAt" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "end" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "id" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "kind" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "enum" : [ "BOOKING", "MAINTENANCE" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "purpose" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "maxLength" : 1000,
+              "type" : [ "string", "null" ]
+            },
+            "wildcards" : true
+          },
+          "requester.createdAt" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : [ "string", "null" ]
+            },
+            "viaTitle" : "Requester",
+            "wildcards" : false
+          },
+          "requester.email" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "viaTitle" : "Requester",
+            "wildcards" : true
+          },
+          "requester.firstName" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "viaTitle" : "Requester",
+            "wildcards" : true
+          },
+          "requester.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "viaTitle" : "Requester",
+            "wildcards" : false
+          },
+          "requester.lastName" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "viaTitle" : "Requester",
+            "wildcards" : true
+          },
+          "requester.username" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "viaTitle" : "Requester",
+            "wildcards" : true
+          },
+          "requester.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "start" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "state" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "enum" : [ "CONFIRMED", "CANCELLED" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "target" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "picker" : {
+              "globalIdPrefix" : "IN",
+              "identity" : "globalId",
+              "resource" : "instruments"
+            },
+            "schema" : {
+              "description" : "RSpace global identifier.",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "target.deleted" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "title" : "Deleted",
+            "wildcards" : false
+          },
+          "target.globalId" : {
+            "operators" : [ ],
+            "schema" : {
+              "type" : "string"
+            },
+            "title" : "Global ID",
+            "wildcards" : false
+          },
+          "target.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "title" : "Instrument ID",
+            "wildcards" : false
+          },
+          "target.name" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "title" : "Name",
+            "wildcards" : true
+          },
+          "target.relationTo" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "enum" : [ "instruments" ],
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "target.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
+          "updatedAt" : {
+            "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            },
+            "wildcards" : false
+          }
+        }
+      },
       "Containers" : {
         "maximumArguments" : 1000,
         "maximumComparisons" : 50,
@@ -2318,6 +5336,2257 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/v2/booking-catalogue" : {
+      "get" : {
+        "operationId" : "searchBookingCatalogue",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "target",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "explode" : true,
+          "in" : "query",
+          "name" : "type",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "explode" : true,
+          "in" : "query",
+          "name" : "location",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "in" : "query",
+          "name" : "capability",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CREATE_BOOKING", "CREATE_BLOCKOUT" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerPage"
+                }
+              }
+            },
+            "description" : "Matching bookable instruments."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search the Booking catalogue",
+        "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-catalogue/locations" : {
+      "get" : {
+        "operationId" : "searchBookingCatalogueLocations",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "explode" : true,
+          "in" : "query",
+          "name" : "type",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerLocationPage"
+                }
+              }
+            },
+            "description" : "Locations containing bookable instruments."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search Booking catalogue locations",
+        "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-configuration-targets" : {
+      "get" : {
+        "operationId" : "searchBookingConfigurationTargets",
+        "parameters" : [ {
+          "description" : "Case-insensitive search text.",
+          "in" : "query",
+          "name" : "q",
+          "required" : true,
+          "schema" : {
+            "minLength" : 2,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Maximum results to return.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : true,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 5E+1,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingConfigurationTargetControllerTargetDirectoryDocument"
+                }
+              }
+            },
+            "description" : "Eligible Instrument summaries in docs, without paging metadata."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search eligible Booking configuration targets",
+        "tags" : [ "booking-configuration-targets" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-configurations" : {
+      "delete" : {
+        "description" : "Archives every booking-configurations matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+        "operationId" : "deleteManyBookingConfigurations",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsWhereRequired"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                      },
+                      "type" : "array"
+                    }
+                  },
+                  "required" : [ "docs" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful bulk_delete.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "422" : {
+            "$ref" : "#/components/responses/BulkLimit"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Archive matching booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "BULK_DELETE"
+      },
+      "get" : {
+        "description" : "Lists readable configurations on undeleted targets. The where member targetOwner accepts only ==me outside OR groups, resolves to the effective subject on each request, and includes the Inventory read constraint.",
+        "operationId" : "listBookingConfigurations",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsWhere"
+        }, {
+          "description" : "Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "x-rspace-sort" : {
+            "default" : [ "id" ],
+            "fields" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdAt", "updatedAt" ],
+            "maximumFields" : 5
+          }
+        }, {
+          "$ref" : "#/components/parameters/Page"
+        }, {
+          "$ref" : "#/components/parameters/Limit"
+        }, {
+          "$ref" : "#/components/parameters/Totals"
+        }, {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/BookingConfigurationsFields"
+        }, {
+          "$ref" : "#/components/parameters/BookingConfigurationsExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful list.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "LIST"
+      },
+      "patch" : {
+        "description" : "Updates every booking-configurations matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+        "operationId" : "updateManyBookingConfigurations",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsWhereRequired"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingConfigurationsUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                      },
+                      "type" : "array"
+                    }
+                  },
+                  "required" : [ "docs" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful bulk_update.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.granularity.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.granularity.invalid"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.invalid"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The scheduling settings are invalid. The target is not an eligible instrument."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.lifecycleConflict" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.lifecycleConflict"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.conflict" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.conflict"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The instrument already has a booking configuration. Restore an archived configuration before changing it."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "422" : {
+            "$ref" : "#/components/responses/BulkLimit"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update matching booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "BULK_UPDATE"
+      },
+      "post" : {
+        "description" : "Creates booking configuration for an instrument. Each instrument may have only one booking configuration.",
+        "operationId" : "createBookingConfiguration",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "example" : {
+                "allowDoubleBooking" : false,
+                "bufferAfterMinutes" : 15,
+                "bufferBeforeMinutes" : 15,
+                "enabled" : true,
+                "incrementUnit" : "MINUTES",
+                "maxBookingDurationMinutes" : 120,
+                "openingHours" : [ {
+                  "dayOfWeek" : 1,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                } ],
+                "slotGranularityMinutes" : 15,
+                "target" : {
+                  "relationTo" : "instruments",
+                  "value" : 123
+                }
+              },
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingConfigurationsCreate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                }
+              }
+            },
+            "description" : "Successful create.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.granularity.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.granularity.invalid"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.invalid"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The scheduling settings are invalid. The target is not an eligible instrument."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.target.conflict",
+                  "status" : 409,
+                  "title" : "The instrument already has a booking configuration."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The instrument already has a booking configuration."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create one booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "CREATE"
+      }
+    },
+    "/api/v2/booking-configurations/bulk" : {
+      "post" : {
+        "description" : "Creates the supplied booking-configurations documents in input order. The batch is handled as one service-layer mutation; validation failure prevents the entire batch from being created.",
+        "operationId" : "createManyBookingConfigurations",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "additionalProperties" : false,
+                "properties" : {
+                  "docs" : {
+                    "items" : {
+                      "$ref" : "#/components/schemas/BookingConfigurationsCreate"
+                    },
+                    "minItems" : 1,
+                    "type" : "array"
+                  }
+                },
+                "required" : [ "docs" ],
+                "type" : "object"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                      },
+                      "type" : "array"
+                    }
+                  },
+                  "required" : [ "docs" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful bulk_create.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.granularity.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.granularity.invalid"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.invalid"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The scheduling settings are invalid. The target is not an eligible instrument."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.target.conflict",
+                  "status" : 409,
+                  "title" : "The instrument already has a booking configuration."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The instrument already has a booking configuration."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create many booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "BULK_CREATE"
+      }
+    },
+    "/api/v2/booking-configurations/count" : {
+      "get" : {
+        "description" : "Counts booking-configurations matching the optional bounded filter.",
+        "operationId" : "countBookingConfigurations",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/BookingConfigurationsWhere"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/CountResult"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Count booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/booking-configurations/{id}" : {
+      "delete" : {
+        "description" : "Archives one booking-configurations and returns the archived document. Repeating ordinary DELETE is a no-op. The explicit permanent=true option permanently removes the resource for a direct sysadmin and returns no document.",
+        "operationId" : "deleteBookingConfiguration",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsId"
+        }, {
+          "$ref" : "#/components/parameters/IfMatch"
+        }, {
+          "$ref" : "#/components/parameters/Permanent"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                }
+              }
+            },
+            "description" : "Successful delete.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "204" : {
+            "$ref" : "#/components/responses/PermanentlyRemoved"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.granularity.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.granularity.invalid"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.invalid"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The scheduling settings are invalid. The target is not an eligible instrument."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.lifecycleConflict" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.lifecycleConflict"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.conflict" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.conflict"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The instrument already has a booking configuration. Restore an archived configuration before changing it."
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.concurrentModification",
+                  "status" : 412,
+                  "title" : "The configuration changed while it was being edited."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The configuration changed while it was being edited."
+          },
+          "428" : {
+            "$ref" : "#/components/responses/BookingConfigurationsIfMatchRequired"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Archive one booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "DELETE"
+      },
+      "get" : {
+        "description" : "Returns one visible booking-configurations. A resource that is absent or not readable is reported as not found.",
+        "operationId" : "getBookingConfiguration",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsId"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/BookingConfigurationsFields"
+        }, {
+          "$ref" : "#/components/parameters/BookingConfigurationsExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                }
+              }
+            },
+            "description" : "Successful read.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get one booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "READ"
+      },
+      "patch" : {
+        "description" : "Partially updates one booking-configurations and returns the updated document.",
+        "operationId" : "updateBookingConfiguration",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsId"
+        }, {
+          "$ref" : "#/components/parameters/IfMatch"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingConfigurationsUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingConfigurationsRead"
+                }
+              }
+            },
+            "description" : "Successful update.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.granularity.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.granularity.invalid"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.invalid" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.invalid"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The scheduling settings are invalid. The target is not an eligible instrument."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.bookingConfiguration.lifecycleConflict" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.lifecycleConflict"
+                  },
+                  "errors.api.v2.bookingConfiguration.target.conflict" : {
+                    "$ref" : "#/components/examples/errors.api.v2.bookingConfiguration.target.conflict"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The instrument already has a booking configuration. Restore an archived configuration before changing it."
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.concurrentModification",
+                  "status" : 412,
+                  "title" : "The configuration changed while it was being edited."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The configuration changed while it was being edited."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "428" : {
+            "$ref" : "#/components/responses/BookingConfigurationsIfMatchRequired"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update one booking-configurations",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "UPDATE"
+      }
+    },
+    "/api/v2/booking-configurations/{id}/access" : {
+      "get" : {
+        "operationId" : "getBookingConfigurationAccess",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResourceAccessDocument"
+                }
+              }
+            },
+            "description" : "Current direct assignments and caller capabilities.",
+            "headers" : {
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get direct access assignments",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/ResourceAccessAuthorized"
+        },
+        "x-rspace-operation" : "ACCESS_READ"
+      },
+      "put" : {
+        "operationId" : "replaceBookingConfigurationAccess",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Strong ETag from the latest access document.",
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^\\\"[0-9]+\\\"$",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResourceAccessReplacement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResourceAccessDocument"
+                }
+              }
+            },
+            "description" : "Current direct assignments and caller capabilities.",
+            "headers" : {
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.resourceAccess.ownerRequired",
+                  "status" : 409,
+                  "title" : "The assignment change would violate a resource invariant."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The assignment change would violate a resource invariant."
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.resourceAccess.stale",
+                  "status" : 412,
+                  "title" : "The access document changed since it was read."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The access document changed since it was read."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.resourceAccess.ifMatchRequired",
+                  "status" : 428,
+                  "title" : "A strong If-Match header is required."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "A strong If-Match header is required."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replace direct access assignments",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/ResourceAccessManagers"
+        },
+        "x-rspace-operation" : "ACCESS_REPLACE"
+      }
+    },
+    "/api/v2/booking-configurations/{id}/access/grantees" : {
+      "get" : {
+        "operationId" : "searchBookingConfigurationAccessGrantees",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Case-insensitive user or group search text.",
+          "in" : "query",
+          "name" : "q",
+          "required" : true,
+          "schema" : {
+            "minLength" : 2,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Maximum grantees to return.",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "maximum" : 5E+1,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResourceGranteeDirectoryDocument"
+                }
+              }
+            },
+            "description" : "Eligible users and groups."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Search eligible access grantees",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/ResourceAccessManagers"
+        },
+        "x-rspace-operation" : "ACCESS_GRANTEE_SEARCH"
+      }
+    },
+    "/api/v2/booking-configurations/{id}/access/me" : {
+      "delete" : {
+        "operationId" : "leaveBookingConfigurationAccess",
+        "parameters" : [ {
+          "description" : "Resource identifier.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "The direct assignment is absent."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.resourceAccess.ownerRequired",
+                  "status" : 409,
+                  "title" : "The assignment change would violate a resource invariant."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The assignment change would violate a resource invariant."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Remove the caller's direct assignment",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/ResourceAccessAuthorized"
+        },
+        "x-rspace-operation" : "ACCESS_LEAVE"
+      }
+    },
+    "/api/v2/booking-configurations/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listBookingConfigurationAuditEvents",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingConfigurationsId"
+        }, {
+          "$ref" : "#/components/parameters/AuditStart"
+        }, {
+          "$ref" : "#/components/parameters/AuditEnd"
+        }, {
+          "$ref" : "#/components/parameters/AuditSearch"
+        }, {
+          "$ref" : "#/components/parameters/AuditActions"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/AuditEvents"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/AuditInvalidRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/AuditUnavailable"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one booking-configurations resource",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/AuditRead"
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
+    "/api/v2/booking-settings" : {
+      "get" : {
+        "description" : "Returns scheduling defaults for future bookable items and account display fallbacks.",
+        "operationId" : "getBookingSettings",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingSettingsControllerSettingsDocument"
+                }
+              }
+            },
+            "description" : "Current booking defaults.",
+            "headers" : {
+              "ETag" : {
+                "description" : "Current settings version.",
+                "schema" : {
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get global Booking defaults",
+        "tags" : [ "booking-settings" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-settings/admin" : {
+      "get" : {
+        "operationId" : "getAdminBookingSettings",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingSettingsControllerAdminSettingsDocument"
+                }
+              }
+            },
+            "description" : "Current Booking administration settings.",
+            "headers" : {
+              "ETag" : {
+                "description" : "Current settings version.",
+                "schema" : {
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get global Booking administration settings",
+        "tags" : [ "booking-settings" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "patch" : {
+        "description" : "Changes scheduling defaults for future items and display fallbacks for users without an override, without modifying existing item scheduling rules.",
+        "operationId" : "patchAdminBookingSettings",
+        "parameters" : [ {
+          "description" : "ETag from the settings GET; required for writes.",
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingSettingsControllerSettingsPatch"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingSettingsControllerAdminSettingsDocument"
+                }
+              }
+            },
+            "description" : "Updated booking defaults.",
+            "headers" : {
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The settings changed since they were read."
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "If-Match is required."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Patch global Booking defaults",
+        "tags" : [ "booking-settings" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/bookings" : {
+      "get" : {
+        "description" : "Returns a paginated view of bookings. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
+        "operationId" : "listBookings",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingsWhere"
+        }, {
+          "description" : "Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "x-rspace-sort" : {
+            "default" : [ "start", "id" ],
+            "fields" : [ "id", "kind", "start", "end", "state", "createdAt", "updatedAt" ],
+            "maximumFields" : 5
+          }
+        }, {
+          "$ref" : "#/components/parameters/Page"
+        }, {
+          "$ref" : "#/components/parameters/Limit"
+        }, {
+          "$ref" : "#/components/parameters/Totals"
+        }, {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/BookingsFields"
+        }, {
+          "$ref" : "#/components/parameters/BookingsExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/BookingsRead"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful list.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List bookings",
+        "tags" : [ "bookings" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "LIST"
+      },
+      "post" : {
+        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.",
+        "operationId" : "createBooking",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/IdempotencyKey"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "example" : {
+                "end" : "2026-10-25T09:00:00Z",
+                "purpose" : "Image plate 4",
+                "start" : "2026-10-25T07:30:00Z",
+                "target" : {
+                  "relationTo" : "instruments",
+                  "value" : 123
+                }
+              },
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingsCreate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingsRead"
+                }
+              }
+            },
+            "description" : "Current booking returned for an identical create retry.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingsRead"
+                }
+              }
+            },
+            "description" : "Successful create.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.booking.duration" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.duration"
+                  },
+                  "errors.api.v2.booking.granularity" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.granularity"
+                  },
+                  "errors.api.v2.booking.window" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.window"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The interval violates the scheduling policy. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.booking.buffer" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.buffer"
+                  },
+                  "errors.api.v2.booking.concurrentModification" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.concurrentModification"
+                  },
+                  "errors.api.v2.booking.overlap" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.overlap"
+                  },
+                  "errors.api.v2.booking.target.unavailable" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.target.unavailable"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The schedule changed while the booking was being created."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.booking.idempotencyKey.conflict",
+                  "status" : 422,
+                  "title" : "The Idempotency-Key was already used for a different booking request."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The Idempotency-Key was already used for a different booking request."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create one bookings",
+        "tags" : [ "bookings" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "CREATE"
+      }
+    },
+    "/api/v2/bookings/count" : {
+      "get" : {
+        "description" : "Counts bookings matching the optional bounded filter.",
+        "operationId" : "countBookings",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/BookingsWhere"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/CountResult"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Count bookings",
+        "tags" : [ "bookings" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/bookings/{id}" : {
+      "get" : {
+        "description" : "Returns one visible bookings. A resource that is absent or not readable is reported as not found.",
+        "operationId" : "getBooking",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingsId"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/BookingsFields"
+        }, {
+          "$ref" : "#/components/parameters/BookingsExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingsRead"
+                }
+              }
+            },
+            "description" : "Successful read.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get one bookings",
+        "tags" : [ "bookings" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "READ"
+      },
+      "patch" : {
+        "description" : "Partially updates one bookings and returns the updated document.",
+        "operationId" : "updateBooking",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingsId"
+        }, {
+          "$ref" : "#/components/parameters/IfMatch"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookingsUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingsRead"
+                }
+              }
+            },
+            "description" : "Successful update.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.booking.duration" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.duration"
+                  },
+                  "errors.api.v2.booking.granularity" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.granularity"
+                  },
+                  "errors.api.v2.booking.window" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.window"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The interval violates the scheduling policy. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "examples" : {
+                  "errors.api.v2.booking.buffer" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.buffer"
+                  },
+                  "errors.api.v2.booking.overlap" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.overlap"
+                  },
+                  "errors.api.v2.booking.state.transition" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.state.transition"
+                  },
+                  "errors.api.v2.booking.target.unavailable" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.target.unavailable"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The selected target is unavailable. The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event. The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it. The requested state transition is invalid."
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.booking.concurrentModification",
+                  "status" : 412,
+                  "title" : "The event changed while it was being edited."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The event changed while it was being edited."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "428" : {
+            "$ref" : "#/components/responses/BookingsIfMatchRequired"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update one bookings",
+        "tags" : [ "bookings" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "UPDATE"
+      }
+    },
+    "/api/v2/bookings/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listBookingAuditEvents",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/BookingsId"
+        }, {
+          "$ref" : "#/components/parameters/AuditStart"
+        }, {
+          "$ref" : "#/components/parameters/AuditEnd"
+        }, {
+          "$ref" : "#/components/parameters/AuditSearch"
+        }, {
+          "$ref" : "#/components/parameters/AuditActions"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/AuditEvents"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/AuditInvalidRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/AuditUnavailable"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one bookings resource",
+        "tags" : [ "bookings" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/AuditRead"
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
     "/api/v2/config" : {
       "get" : {
         "description" : "Returns branding, help links, and deployment information.",
@@ -4526,6 +9795,21 @@
     "url" : "/"
   } ],
   "tags" : [ {
+    "description" : "The catalogue of bookable resources and their availability.",
+    "name" : "booking-catalogue"
+  }, {
+    "description" : "Inventory targets eligible for a booking configuration.",
+    "name" : "booking-configuration-targets"
+  }, {
+    "description" : "Bookable resource configurations and related subscription settings.",
+    "name" : "booking-configurations"
+  }, {
+    "description" : "Booking policies and administrative settings.",
+    "name" : "booking-settings"
+  }, {
+    "description" : "Bookings, cancellations and maintenance reservations.",
+    "name" : "bookings"
+  }, {
     "description" : "Public deployment configuration and branding.",
     "name" : "config"
   }, {
@@ -4566,6 +9850,9 @@
     }
   },
   "x-tagGroups" : [ {
+    "name" : "Booking",
+    "tags" : [ "booking-catalogue", "booking-configuration-targets", "booking-configurations", "booking-settings", "bookings" ]
+  }, {
     "name" : "Inventory",
     "tags" : [ "containers", "instruments" ]
   }, {
