@@ -19,13 +19,47 @@ export const ApiV2RuntimeFieldCatalogEntrySchema = native.ApiV2RuntimeFieldCatal
 export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCatalogSource;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
+export const BookingCatalogueCapabilitySchema = native.BookingCatalogueCapability;
+export const BookingCatalogueManagerFacetsSchema = native.BookingCatalogueManagerFacets;
+export const BookingCatalogueManagerItemSchema = native.BookingCatalogueManagerItem;
+export const BookingCatalogueManagerLocationSchema = native.BookingCatalogueManagerLocation;
+export const BookingCatalogueManagerLocationPageSchema = native.BookingCatalogueManagerLocationPage;
+export const BookingCatalogueManagerPageSchema = native.BookingCatalogueManagerPage;
+export const BookingConfigurationCapabilitiesSchema = native.BookingConfigurationCapabilities;
+export const BookingConfigurationStateSchema = native.BookingConfigurationState;
+export const BookingConfigurationTargetSchema = native.BookingConfigurationTarget;
+export const BookingConfigurationTargetControllerTargetDirectoryDocumentSchema =
+  native.BookingConfigurationTargetControllerTargetDirectoryDocument;
+export const BookingConfigurationsBulkResultSchema = native.BookingConfigurationsBulkResult;
+export const BookingConfigurationsCreateSchema = native.BookingConfigurationsCreate;
+export const BookingConfigurationsReadSchema = native.BookingConfigurationsRead;
+export const BookingConfigurationsReferenceSchema = native.BookingConfigurationsReference;
+export const BookingConfigurationsUpdateSchema = native.BookingConfigurationsUpdate;
+export const BookingEventKindSchema = native.BookingEventKind;
+export const BookingIncrementUnitSchema = native.BookingIncrementUnit;
+export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
+export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
+export const BookingSettingsControllerAdminSettingsDocumentSchema =
+  native.BookingSettingsControllerAdminSettingsDocument;
+export const BookingSettingsControllerSettingsDocumentSchema = native.BookingSettingsControllerSettingsDocument;
+export const BookingSettingsControllerSettingsPatchSchema = native.BookingSettingsControllerSettingsPatch;
+export const BookingStateSchema = native.BookingState;
+export const BookingTimezoneModeSchema = native.BookingTimezoneMode;
+export const BookingsCreateSchema = native.BookingsCreate;
+export const BookingsReadSchema = native.BookingsRead;
+export const BookingsReferenceSchema = native.BookingsReference;
+export const BookingsUpdateSchema = native.BookingsUpdate;
 export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
+export const DeclaredBookingOpeningHoursEntrySchema = native.DeclaredBookingOpeningHoursEntry;
+export const DeclaredResourceRoleSourceSchema = native.DeclaredResourceRoleSource;
 export const FeatureFlagsReadSchema = native.FeatureFlagsRead;
 export const FeatureFlagsReferenceSchema = native.FeatureFlagsReference;
 export const FeatureFlagsUpdateSchema = native.FeatureFlagsUpdate;
 export const InstrumentsReadSchema = native.InstrumentsRead;
 export const InstrumentsReferenceSchema = native.InstrumentsReference;
+export const InstrumentsRelationshipSchema = native.InstrumentsRelationship;
+export const InstrumentsRelationshipInputSchema = native.InstrumentsRelationshipInput;
 export const MaintenancesBulkResultSchema = native.MaintenancesBulkResult;
 export const MaintenancesCreateSchema = native.MaintenancesCreate;
 export const MaintenancesReadSchema = native.MaintenancesRead;
@@ -45,6 +79,7 @@ export const ResourceRoleSourceSchema = native.ResourceRoleSource;
 export const ResourceRoleSourceKindSchema = native.ResourceRoleSourceKind;
 export const UsersReadSchema = native.UsersRead;
 export const UsersReferenceSchema = native.UsersReference;
+export const UsersRelationshipSchema = native.UsersRelationship;
 type Assert<T extends true> = T;
 type Extends<A, B> = [A] extends [B] ? true : false;
 export type SchemaModelTypeChecks = {
@@ -116,6 +151,180 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof AuditActionSchema>, Models.AuditAction>>,
     Assert<Extends<Models.AuditAction, v.InferOutput<typeof AuditActionSchema>>>,
   ];
+  BookingCatalogueCapability: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueCapabilitySchema>, Models.BookingCatalogueCapability>>,
+    Assert<Extends<Models.BookingCatalogueCapability, v.InferOutput<typeof BookingCatalogueCapabilitySchema>>>,
+  ];
+  BookingCatalogueManagerFacets: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerFacetsSchema>, Models.BookingCatalogueManagerFacets>>,
+    Assert<Extends<Models.BookingCatalogueManagerFacets, v.InferOutput<typeof BookingCatalogueManagerFacetsSchema>>>,
+  ];
+  BookingCatalogueManagerItem: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerItemSchema>, Models.BookingCatalogueManagerItem>>,
+    Assert<Extends<Models.BookingCatalogueManagerItem, v.InferOutput<typeof BookingCatalogueManagerItemSchema>>>,
+  ];
+  BookingCatalogueManagerLocation: [
+    Assert<
+      Extends<v.InferOutput<typeof BookingCatalogueManagerLocationSchema>, Models.BookingCatalogueManagerLocation>
+    >,
+    Assert<
+      Extends<Models.BookingCatalogueManagerLocation, v.InferOutput<typeof BookingCatalogueManagerLocationSchema>>
+    >,
+  ];
+  BookingCatalogueManagerLocationPage: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingCatalogueManagerLocationPageSchema>,
+        Models.BookingCatalogueManagerLocationPage
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingCatalogueManagerLocationPage,
+        v.InferOutput<typeof BookingCatalogueManagerLocationPageSchema>
+      >
+    >,
+  ];
+  BookingCatalogueManagerPage: [
+    Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerPageSchema>, Models.BookingCatalogueManagerPage>>,
+    Assert<Extends<Models.BookingCatalogueManagerPage, v.InferOutput<typeof BookingCatalogueManagerPageSchema>>>,
+  ];
+  BookingConfigurationCapabilities: [
+    Assert<
+      Extends<v.InferOutput<typeof BookingConfigurationCapabilitiesSchema>, Models.BookingConfigurationCapabilities>
+    >,
+    Assert<
+      Extends<Models.BookingConfigurationCapabilities, v.InferOutput<typeof BookingConfigurationCapabilitiesSchema>>
+    >,
+  ];
+  BookingConfigurationState: [
+    Assert<Extends<v.InferOutput<typeof BookingConfigurationStateSchema>, Models.BookingConfigurationState>>,
+    Assert<Extends<Models.BookingConfigurationState, v.InferOutput<typeof BookingConfigurationStateSchema>>>,
+  ];
+  BookingConfigurationTarget: [
+    Assert<Extends<v.InferOutput<typeof BookingConfigurationTargetSchema>, Models.BookingConfigurationTarget>>,
+    Assert<Extends<Models.BookingConfigurationTarget, v.InferOutput<typeof BookingConfigurationTargetSchema>>>,
+  ];
+  BookingConfigurationTargetControllerTargetDirectoryDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingConfigurationTargetControllerTargetDirectoryDocumentSchema>,
+        Models.BookingConfigurationTargetControllerTargetDirectoryDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingConfigurationTargetControllerTargetDirectoryDocument,
+        v.InferOutput<typeof BookingConfigurationTargetControllerTargetDirectoryDocumentSchema>
+      >
+    >,
+  ];
+  BookingConfigurationsBulkResult: [
+    Assert<
+      Extends<v.InferOutput<typeof BookingConfigurationsBulkResultSchema>, Models.BookingConfigurationsBulkResult>
+    >,
+    Assert<
+      Extends<Models.BookingConfigurationsBulkResult, v.InferOutput<typeof BookingConfigurationsBulkResultSchema>>
+    >,
+  ];
+  BookingConfigurationsCreate: [
+    Assert<Extends<v.InferOutput<typeof BookingConfigurationsCreateSchema>, Models.BookingConfigurationsCreate>>,
+    Assert<Extends<Models.BookingConfigurationsCreate, v.InferOutput<typeof BookingConfigurationsCreateSchema>>>,
+  ];
+  BookingConfigurationsRead: [
+    Assert<Extends<v.InferOutput<typeof BookingConfigurationsReadSchema>, Models.BookingConfigurationsRead>>,
+    Assert<Extends<Models.BookingConfigurationsRead, v.InferOutput<typeof BookingConfigurationsReadSchema>>>,
+  ];
+  BookingConfigurationsReference: [
+    Assert<Extends<v.InferOutput<typeof BookingConfigurationsReferenceSchema>, Models.BookingConfigurationsReference>>,
+    Assert<Extends<Models.BookingConfigurationsReference, v.InferOutput<typeof BookingConfigurationsReferenceSchema>>>,
+  ];
+  BookingConfigurationsUpdate: [
+    Assert<Extends<v.InferOutput<typeof BookingConfigurationsUpdateSchema>, Models.BookingConfigurationsUpdate>>,
+    Assert<Extends<Models.BookingConfigurationsUpdate, v.InferOutput<typeof BookingConfigurationsUpdateSchema>>>,
+  ];
+  BookingEventKind: [
+    Assert<Extends<v.InferOutput<typeof BookingEventKindSchema>, Models.BookingEventKind>>,
+    Assert<Extends<Models.BookingEventKind, v.InferOutput<typeof BookingEventKindSchema>>>,
+  ];
+  BookingIncrementUnit: [
+    Assert<Extends<v.InferOutput<typeof BookingIncrementUnitSchema>, Models.BookingIncrementUnit>>,
+    Assert<Extends<Models.BookingIncrementUnit, v.InferOutput<typeof BookingIncrementUnitSchema>>>,
+  ];
+  BookingOpeningHoursEntry: [
+    Assert<Extends<v.InferOutput<typeof BookingOpeningHoursEntrySchema>, Models.BookingOpeningHoursEntry>>,
+    Assert<Extends<Models.BookingOpeningHoursEntry, v.InferOutput<typeof BookingOpeningHoursEntrySchema>>>,
+  ];
+  BookingOwnerHealth: [
+    Assert<Extends<v.InferOutput<typeof BookingOwnerHealthSchema>, Models.BookingOwnerHealth>>,
+    Assert<Extends<Models.BookingOwnerHealth, v.InferOutput<typeof BookingOwnerHealthSchema>>>,
+  ];
+  BookingSettingsControllerAdminSettingsDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingSettingsControllerAdminSettingsDocumentSchema>,
+        Models.BookingSettingsControllerAdminSettingsDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingSettingsControllerAdminSettingsDocument,
+        v.InferOutput<typeof BookingSettingsControllerAdminSettingsDocumentSchema>
+      >
+    >,
+  ];
+  BookingSettingsControllerSettingsDocument: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingSettingsControllerSettingsDocumentSchema>,
+        Models.BookingSettingsControllerSettingsDocument
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingSettingsControllerSettingsDocument,
+        v.InferOutput<typeof BookingSettingsControllerSettingsDocumentSchema>
+      >
+    >,
+  ];
+  BookingSettingsControllerSettingsPatch: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingSettingsControllerSettingsPatchSchema>,
+        Models.BookingSettingsControllerSettingsPatch
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingSettingsControllerSettingsPatch,
+        v.InferOutput<typeof BookingSettingsControllerSettingsPatchSchema>
+      >
+    >,
+  ];
+  BookingState: [
+    Assert<Extends<v.InferOutput<typeof BookingStateSchema>, Models.BookingState>>,
+    Assert<Extends<Models.BookingState, v.InferOutput<typeof BookingStateSchema>>>,
+  ];
+  BookingTimezoneMode: [
+    Assert<Extends<v.InferOutput<typeof BookingTimezoneModeSchema>, Models.BookingTimezoneMode>>,
+    Assert<Extends<Models.BookingTimezoneMode, v.InferOutput<typeof BookingTimezoneModeSchema>>>,
+  ];
+  BookingsCreate: [
+    Assert<Extends<v.InferOutput<typeof BookingsCreateSchema>, Models.BookingsCreate>>,
+    Assert<Extends<Models.BookingsCreate, v.InferOutput<typeof BookingsCreateSchema>>>,
+  ];
+  BookingsRead: [
+    Assert<Extends<v.InferOutput<typeof BookingsReadSchema>, Models.BookingsRead>>,
+    Assert<Extends<Models.BookingsRead, v.InferOutput<typeof BookingsReadSchema>>>,
+  ];
+  BookingsReference: [
+    Assert<Extends<v.InferOutput<typeof BookingsReferenceSchema>, Models.BookingsReference>>,
+    Assert<Extends<Models.BookingsReference, v.InferOutput<typeof BookingsReferenceSchema>>>,
+  ];
+  BookingsUpdate: [
+    Assert<Extends<v.InferOutput<typeof BookingsUpdateSchema>, Models.BookingsUpdate>>,
+    Assert<Extends<Models.BookingsUpdate, v.InferOutput<typeof BookingsUpdateSchema>>>,
+  ];
   ContainersRead: [
     Assert<Extends<v.InferOutput<typeof ContainersReadSchema>, Models.ContainersRead>>,
     Assert<Extends<Models.ContainersRead, v.InferOutput<typeof ContainersReadSchema>>>,
@@ -123,6 +332,18 @@ export type SchemaModelTypeChecks = {
   ContainersReference: [
     Assert<Extends<v.InferOutput<typeof ContainersReferenceSchema>, Models.ContainersReference>>,
     Assert<Extends<Models.ContainersReference, v.InferOutput<typeof ContainersReferenceSchema>>>,
+  ];
+  DeclaredBookingOpeningHoursEntry: [
+    Assert<
+      Extends<v.InferOutput<typeof DeclaredBookingOpeningHoursEntrySchema>, Models.DeclaredBookingOpeningHoursEntry>
+    >,
+    Assert<
+      Extends<Models.DeclaredBookingOpeningHoursEntry, v.InferOutput<typeof DeclaredBookingOpeningHoursEntrySchema>>
+    >,
+  ];
+  DeclaredResourceRoleSource: [
+    Assert<Extends<v.InferOutput<typeof DeclaredResourceRoleSourceSchema>, Models.DeclaredResourceRoleSource>>,
+    Assert<Extends<Models.DeclaredResourceRoleSource, v.InferOutput<typeof DeclaredResourceRoleSourceSchema>>>,
   ];
   FeatureFlagsRead: [
     Assert<Extends<v.InferOutput<typeof FeatureFlagsReadSchema>, Models.FeatureFlagsRead>>,
@@ -143,6 +364,14 @@ export type SchemaModelTypeChecks = {
   InstrumentsReference: [
     Assert<Extends<v.InferOutput<typeof InstrumentsReferenceSchema>, Models.InstrumentsReference>>,
     Assert<Extends<Models.InstrumentsReference, v.InferOutput<typeof InstrumentsReferenceSchema>>>,
+  ];
+  InstrumentsRelationship: [
+    Assert<Extends<v.InferOutput<typeof InstrumentsRelationshipSchema>, Models.InstrumentsRelationship>>,
+    Assert<Extends<Models.InstrumentsRelationship, v.InferOutput<typeof InstrumentsRelationshipSchema>>>,
+  ];
+  InstrumentsRelationshipInput: [
+    Assert<Extends<v.InferOutput<typeof InstrumentsRelationshipInputSchema>, Models.InstrumentsRelationshipInput>>,
+    Assert<Extends<Models.InstrumentsRelationshipInput, v.InferOutput<typeof InstrumentsRelationshipInputSchema>>>,
   ];
   MaintenancesBulkResult: [
     Assert<Extends<v.InferOutput<typeof MaintenancesBulkResultSchema>, Models.MaintenancesBulkResult>>,
@@ -231,5 +460,9 @@ export type SchemaModelTypeChecks = {
   UsersReference: [
     Assert<Extends<v.InferOutput<typeof UsersReferenceSchema>, Models.UsersReference>>,
     Assert<Extends<Models.UsersReference, v.InferOutput<typeof UsersReferenceSchema>>>,
+  ];
+  UsersRelationship: [
+    Assert<Extends<v.InferOutput<typeof UsersRelationshipSchema>, Models.UsersRelationship>>,
+    Assert<Extends<Models.UsersRelationship, v.InferOutput<typeof UsersRelationshipSchema>>>,
   ];
 };
