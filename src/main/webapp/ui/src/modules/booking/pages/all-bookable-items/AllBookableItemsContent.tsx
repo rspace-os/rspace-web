@@ -18,14 +18,22 @@ import {
   getListBookingConfigurationAuditEventsQueryKey,
   getListBookingConfigurationsQueryKey,
   getSearchBookingConfigurationAccessGranteesQueryKey,
+  invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
   listBookingConfigurations,
   updateManyBookingConfigurations,
   useDeleteManyBookingConfigurations,
   useUpdateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { getCountBookingsQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { getGetUserBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import {
+  getCountBookingsQueryKey,
+  getListBookingsQueryKey,
+  invalidateListBookings,
+} from "@/modules/common/api/v2/generated/bookings/bookings";
+import {
+  getGetUserBookingCalendarSubscriptionQueryKey,
+  getListMyBookableItemCalendarSubscriptionsQueryKey,
+} from "@/modules/common/api/v2/generated/users/users";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
@@ -165,11 +173,22 @@ export function AllBookableItemsContent() {
     (id: number, version: number) => permanentlyDeleteBookingConfiguration(id, version),
     [],
   );
-  const onChanged = useCallback(() => void invalidateListBookingConfigurations(queryClient), [queryClient]);
+  const onChanged = useCallback(
+    async (configurationId?: number) => {
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient),
+        invalidateListBookings(queryClient),
+        ...(configurationId === undefined
+          ? []
+          : [invalidateGetBookingCalendarSubscription(queryClient, configurationId)]),
+      ]);
+    },
+    [queryClient],
+  );
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
-    onSuccess: onChanged,
+    onSuccess: (_data, configuration) => onChanged(configuration.id),
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -287,6 +306,7 @@ export function AllBookableItemsContent() {
       ) : null}
       <TableList
         {...table.tableProps}
+        headingClassName="text-2xl font-semibold"
         status={
           table.tableProps.status === "error" || (ownerAttentionOnly && ownerAttention.isError)
             ? "error"
@@ -353,6 +373,7 @@ async function invalidateBookableItemRecords(
       ? [
           queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() }),
           queryClient.invalidateQueries({ queryKey: getCountBookingsQueryKey() }),
+          queryClient.invalidateQueries({ queryKey: getListMyBookableItemCalendarSubscriptionsQueryKey() }),
           queryClient.invalidateQueries({ queryKey: getGetUserBookingCalendarSubscriptionQueryKey() }),
         ]
       : []),
