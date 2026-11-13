@@ -3,7 +3,9 @@ package com.researchspace.booking.dao;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.model.User;
@@ -16,15 +18,14 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.resourceaccess.ResourceAccess;
-import com.researchspace.model.resourceaccess.ResourceAudience;
 import jakarta.persistence.LockModeType;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.hibernate.SessionFactory;
+import org.hibernate.StaleObjectStateException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
@@ -34,14 +35,20 @@ public class BookingConfigurationDaoHibernate
 
   private final CriteriaBuilderFactory criteriaBuilderFactory;
   private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
+  private final BookingItemQuery itemQuery;
+  private final InstrumentDao instruments;
 
   public BookingConfigurationDaoHibernate(
       SessionFactory sessionFactory,
       CriteriaBuilderFactory criteriaBuilderFactory,
+      BookingItemQuery itemQuery,
+      InstrumentDao instruments,
       @Qualifier(BookingResourceAccessConfiguration.BOOKING_CONFIGURATION_DESCRIPTION)
           CollectionDescription<BookingConfiguration> description) {
     super(BookingConfiguration.class, sessionFactory);
     this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.itemQuery = itemQuery;
+    this.instruments = instruments;
     collectionQuery =
         new CollectionQueryExecutor<>(
             BookingConfiguration.class, description, "bookingConfiguration");
@@ -50,13 +57,22 @@ public class BookingConfigurationDaoHibernate
   @Override
   public ResourcePage<BookingConfiguration> getResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return getCalendarResources(request, targetAccess, null);
+  }
+
+  @Override
+  public ResourcePage<BookingConfiguration> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess targetAccess,
+      RsqlCollectionQuery.Predicate restriction) {
+    // Fetch actors only after the ordered page has been selected.
     return collectionQuery.pageWithBatchedFetch(
         criteriaBuilderFactory,
         getSession(),
         request,
-        withoutDeletedTarget(),
+        RsqlCollectionQuery.Predicate.and(restriction, withoutDeletedTarget()),
         targetAccess,
-        List.of("resourceAccess", "createdBy", "updatedBy"));
+        List.of("createdBy", "updatedBy"));
   }
 
   @Override
@@ -101,11 +117,13 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> lockActiveByTarget(BookableTargetReference target) {
+    lockCurrentTarget(target);
     return byTarget(target, true, true).map(this::refreshSchedulingState);
   }
 
   @Override
   public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
+    lockTarget(target);
     return byTarget(target, false, true);
   }
 
@@ -143,6 +161,7 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> lockById(Long id) {
+    targetById(id).ifPresent(this::lockTarget);
     return getSession()
         .createQuery("from BookingConfiguration where id = :id", BookingConfiguration.class)
         .setParameter("id", id)
@@ -152,6 +171,7 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> lockActiveById(Long id) {
+    targetById(id).ifPresent(this::lockCurrentTarget);
     getSession().evict(getSession().getReference(BookingConfiguration.class, id));
     return getSession()
         .createQuery(
@@ -162,6 +182,46 @@ public class BookingConfigurationDaoHibernate
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResultOptional()
         .map(this::refreshSchedulingState);
+  }
+
+  private Optional<BookableTargetReference> targetById(Long id) {
+    return getSession()
+        .createQuery(
+            "select c.target from BookingConfiguration c where c.id = :id",
+            BookableTargetReference.class)
+        .setParameter("id", id)
+        .uniqueResultOptional();
+  }
+
+  private void lockTarget(BookableTargetReference target) {
+    if (target != null && target.type() == BookableTargetType.INSTRUMENT) {
+      instruments.lockById(target.id());
+    }
+  }
+
+  /** Locks the target and rejects permission facts changed after this transaction's snapshot. */
+  private void lockCurrentTarget(BookableTargetReference target) {
+    lockTarget(target);
+    if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
+      return;
+    }
+    // With snapshot isolation disabled, locking reads can return rows changed after the
+    // transaction's snapshot, so compare snapshot and current permission columns explicitly.
+    String permissionColumns =
+        "select owner_id, sharingMode, acl, deleted from InstrumentEntity where id = :id";
+    List<?> snapshot =
+        getSession()
+            .createNativeQuery(permissionColumns, Object[].class)
+            .setParameter("id", target.id())
+            .getResultList();
+    List<?> current =
+        getSession()
+            .createNativeQuery(permissionColumns + " for update", Object[].class)
+            .setParameter("id", target.id())
+            .getResultList();
+    if (!Arrays.deepEquals(snapshot.toArray(), current.toArray())) {
+      throw new StaleObjectStateException("InstrumentEntity", target.id());
+    }
   }
 
   private BookingConfiguration refreshSchedulingState(BookingConfiguration configuration) {
@@ -189,58 +249,22 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
-  public void removeConfigurationAndAccess(BookingConfiguration configuration) {
-    ResourceAccess access = configuration.getResourceAccess();
-    getSession().remove(configuration);
-    getSession().flush();
-    getSession().remove(access);
-    getSession().flush();
-  }
-
-  @Override
   public Set<Long> findBookableInstrumentIds(User caller, Set<String> readableRoleKeys) {
-    if (readableRoleKeys.isEmpty()) {
-      return Set.of();
+    if (readableRoleKeys.isEmpty()) return Set.of();
+    var query =
+        criteriaBuilderFactory
+            .create(getSession(), Long.class)
+            .from(BookingConfiguration.class, "bookingConfiguration")
+            .select("bookingConfiguration.target.id")
+            .distinct()
+            .where("bookingConfiguration.state")
+            .eq(BookingConfigurationState.ACTIVE)
+            .where("bookingConfiguration.enabled")
+            .eq(true);
+    var restriction = itemQuery.restriction(caller, false, false, "bookingConfiguration.target");
+    if (restriction != null) {
+      restriction.applyTo(query);
     }
-    if (caller.hasSysadminRole()) {
-      return Set.copyOf(
-          getSession()
-              .createQuery(
-                  "select configuration.target.id from BookingConfiguration configuration "
-                      + "where configuration.state = :state and configuration.enabled = true "
-                      + "and configuration.target.type = :targetType and exists ("
-                      + "select instrument.id from Instrument instrument "
-                      + "where instrument.id = configuration.target.id "
-                      + "and instrument.deleted = false)",
-                  Long.class)
-              .setParameter("targetType", BookableTargetType.INSTRUMENT)
-              .setParameter("state", BookingConfigurationState.ACTIVE)
-              .getResultList());
-    }
-    Set<Long> groupIds =
-        caller.getGroups().stream().map(group -> group.getId()).collect(Collectors.toSet());
-    if (groupIds.isEmpty()) {
-      groupIds = Set.of(-1L);
-    }
-    String hql =
-        new StringBuilder(
-                "select distinct configuration.target.id from BookingConfiguration configuration")
-            .append(" join configuration.resourceAccess.assignments assignment")
-            .append(" where configuration.state = :state and configuration.enabled = true")
-            .append(" and configuration.target.type = :targetType")
-            .append(" and assignment.roleKey in :readableRoleKeys")
-            .append(" and (assignment.user.id = :userId or assignment.group.id in :groupIds")
-            .append(" or assignment.audienceKey = :audience)")
-            .toString();
-    return Set.copyOf(
-        getSession()
-            .createQuery(hql, Long.class)
-            .setParameter("targetType", BookableTargetType.INSTRUMENT)
-            .setParameter("state", BookingConfigurationState.ACTIVE)
-            .setParameterList("readableRoleKeys", readableRoleKeys)
-            .setParameter("userId", caller.getId())
-            .setParameterList("groupIds", groupIds)
-            .setParameter("audience", ResourceAudience.ALL_USERS)
-            .getResultList());
+    return Set.copyOf(query.getResultList());
   }
 }
