@@ -21,6 +21,11 @@ export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
 export const InstrumentsReadSchema = native.InstrumentsRead;
 export const InstrumentsReferenceSchema = native.InstrumentsReference;
+export const MaintenancesBulkResultSchema = native.MaintenancesBulkResult;
+export const MaintenancesCreateSchema = native.MaintenancesCreate;
+export const MaintenancesReadSchema = native.MaintenancesRead;
+export const MaintenancesReferenceSchema = native.MaintenancesReference;
+export const MaintenancesUpdateSchema = native.MaintenancesUpdate;
 export const ResourceAccessAssignmentDocumentSchema = native.ResourceAccessAssignmentDocument;
 export const ResourceAccessCallerCapabilitiesSchema = native.ResourceAccessCallerCapabilities;
 export const ResourceAccessCallerDocumentSchema = native.ResourceAccessCallerDocument;
@@ -28,6 +33,7 @@ export const ResourceAccessDocumentSchema = native.ResourceAccessDocument;
 export const ResourceAccessGrantSchema = native.ResourceAccessGrant;
 export const ResourceAccessGranteeDocumentSchema = native.ResourceAccessGranteeDocument;
 export const ResourceAccessReplacementSchema = native.ResourceAccessReplacement;
+export const ResourceGranteeDirectoryDocumentSchema = native.ResourceGranteeDirectoryDocument;
 export const ResourceGranteeDirectoryEntrySchema = native.ResourceGranteeDirectoryEntry;
 export const ResourceGranteeKindSchema = native.ResourceGranteeKind;
 export const ResourceRoleSourceSchema = native.ResourceRoleSource;
@@ -114,6 +120,26 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof InstrumentsReferenceSchema>, Models.InstrumentsReference>>,
     Assert<Extends<Models.InstrumentsReference, v.InferOutput<typeof InstrumentsReferenceSchema>>>,
   ];
+  MaintenancesBulkResult: [
+    Assert<Extends<v.InferOutput<typeof MaintenancesBulkResultSchema>, Models.MaintenancesBulkResult>>,
+    Assert<Extends<Models.MaintenancesBulkResult, v.InferOutput<typeof MaintenancesBulkResultSchema>>>,
+  ];
+  MaintenancesCreate: [
+    Assert<Extends<v.InferOutput<typeof MaintenancesCreateSchema>, Models.MaintenancesCreate>>,
+    Assert<Extends<Models.MaintenancesCreate, v.InferOutput<typeof MaintenancesCreateSchema>>>,
+  ];
+  MaintenancesRead: [
+    Assert<Extends<v.InferOutput<typeof MaintenancesReadSchema>, Models.MaintenancesRead>>,
+    Assert<Extends<Models.MaintenancesRead, v.InferOutput<typeof MaintenancesReadSchema>>>,
+  ];
+  MaintenancesReference: [
+    Assert<Extends<v.InferOutput<typeof MaintenancesReferenceSchema>, Models.MaintenancesReference>>,
+    Assert<Extends<Models.MaintenancesReference, v.InferOutput<typeof MaintenancesReferenceSchema>>>,
+  ];
+  MaintenancesUpdate: [
+    Assert<Extends<v.InferOutput<typeof MaintenancesUpdateSchema>, Models.MaintenancesUpdate>>,
+    Assert<Extends<Models.MaintenancesUpdate, v.InferOutput<typeof MaintenancesUpdateSchema>>>,
+  ];
   ResourceAccessAssignmentDocument: [
     Assert<
       Extends<v.InferOutput<typeof ResourceAccessAssignmentDocumentSchema>, Models.ResourceAccessAssignmentDocument>
@@ -149,6 +175,14 @@ export type SchemaModelTypeChecks = {
   ResourceAccessReplacement: [
     Assert<Extends<v.InferOutput<typeof ResourceAccessReplacementSchema>, Models.ResourceAccessReplacement>>,
     Assert<Extends<Models.ResourceAccessReplacement, v.InferOutput<typeof ResourceAccessReplacementSchema>>>,
+  ];
+  ResourceGranteeDirectoryDocument: [
+    Assert<
+      Extends<v.InferOutput<typeof ResourceGranteeDirectoryDocumentSchema>, Models.ResourceGranteeDirectoryDocument>
+    >,
+    Assert<
+      Extends<Models.ResourceGranteeDirectoryDocument, v.InferOutput<typeof ResourceGranteeDirectoryDocumentSchema>>
+    >,
   ];
   ResourceGranteeDirectoryEntry: [
     Assert<Extends<v.InferOutput<typeof ResourceGranteeDirectoryEntrySchema>, Models.ResourceGranteeDirectoryEntry>>,

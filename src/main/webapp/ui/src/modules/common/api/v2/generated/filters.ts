@@ -17,6 +17,17 @@ export interface ApiV2FilterFields {
     "parentContainer.name": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
     "parentContainer.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
   };
+  Maintenances: {
+    endDate: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: string | Date };
+    id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
+    message: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
+    startDate: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: string | Date };
+    stopUserLoginDate: {
+      operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
+      value: string | Date;
+    };
+    version: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
+  };
   Users: {
     createdAt: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: string | Date };
     email: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
