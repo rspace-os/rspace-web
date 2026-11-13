@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, EyeIcon, HistoryIcon, PencilIcon, RefreshCwIcon } from "lucide-react";
+import { CalendarClockIcon, HistoryIcon, RefreshCwIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,18 +8,16 @@ import {
   mapBookingListDocument,
 } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { type CollectionRow } from "@/modules/common/collection/config";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { type FilterExpression } from "@/modules/common/table-list/types";
 import { Badge } from "@/modules/common/ui/badge";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Button } from "@/modules/common/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
+import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod } from "./search";
 
@@ -167,92 +164,21 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
       },
     ),
   );
-  const rowActions = useMemo<
-    TableListRowActions<CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration" | "state">>
-  >(
+  const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
       width: 176,
       minWidth: 176,
-      renderCell: ({ row }) => {
-        const viewDetailsLabel = t("myBookings.actions.viewDetails");
-        const editLabel = t("myBookings.actions.edit");
-        const itemCalendarLabel = t("myBookings.actions.itemCalendar");
-        return (
-          <div className="flex flex-wrap gap-1">
-            {row.canViewConfiguration ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={itemCalendarLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
-                      data-slot="button"
-                      to="/booking/bookable-items/$globalId/{-$tab}"
-                      params={{ globalId: row.target.globalId, tab: undefined }}
-                    />
-                  }
-                >
-                  <CalendarClockIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{itemCalendarLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.privacy === "full" ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={viewDetailsLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/$id"
-                      params={{ id: String(row.id) }}
-                    />
-                  }
-                >
-                  <EyeIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{viewDetailsLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.canEdit ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={editLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/$id/edit"
-                      params={{ id: String(row.id) }}
-                    />
-                  }
-                >
-                  <PencilIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{editLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.canCancel ? (
-              <DeleteBookingDialog
-                bookingId={row.id}
-                bookingVersion={row.version ?? 0}
-                itemName={row.target.value.name}
-                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
-                iconOnly
-                onDeleted={async () => {
-                  await table.refetch();
-                }}
-              />
-            ) : null}
-            {!row.canViewConfiguration && !row.canEdit && !row.canCancel ? (
-              <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
-            ) : null}
-          </div>
-        );
-      },
+      renderCell: ({ row }) => (
+        <BookingRowActions
+          row={row}
+          timeZone={preferences.timeZone}
+          onCancelled={async () => {
+            await table.refetch();
+          }}
+        />
+      ),
       renderInteraction: () => null,
     }),
     [preferences.timeZone, t],

@@ -46,6 +46,7 @@
       "overlap": "Booked and blocked out: {ranges}."
     },
     "slice": {
+      "bookedBy": "Booked by {user}",
       "count": "{count, plural, one {# event} other {# events}}",
       "details": "Details",
       "sources": {
